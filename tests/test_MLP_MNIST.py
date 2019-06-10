@@ -25,9 +25,9 @@ print('**** Creating MLP model...')
 
 model = Model()
 model.add( Input(shape=(784)), )
-model.add( FC(shape=(300), activation="relu") )
+model.add( FC(shape=(300), activation="sigmoid") )
 model.add( FC(shape=(200), activation="sigmoid") )
-model.add( FC(shape=(10), activation="sigmoid") )
+model.add( FC(shape=(10), activation="softmax") )
 
 # Data to train the NN. From MNIST
 import MNIST_basics

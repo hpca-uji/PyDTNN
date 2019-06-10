@@ -7,8 +7,8 @@ def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 def sigmoid_derivate(x):
-    x = sigmoid(x)
-    return np.multiply(x, (1-x))
+    dx = sigmoid(x)
+    return dx * (1 - dx)
 
 def relu(x):
     return (x > 0) * x
@@ -21,7 +21,7 @@ def tanh(x):
 
 def tanh_derivate(x):
     return 1 - np.tanh(x) ** 2
-
+ 
 def arctanh(x):
     return np.arctan(x)
 
@@ -35,14 +35,15 @@ def log_derivate(x):
     return log(x) * ( 1 - log(x))
 
 def softmax(x):
-    x -= np.max(x)
-    return (np.exp(x).T / np.sum(np.exp(x), axis=0)).T
+    ex = np.exp(x - np.max(x, axis=0).reshape(1,-1).repeat(x.shape[0], axis=0))    
+    return ex / ex.sum(axis=0) 
 
-def softmax_derivate(softmax):
+def softmax_derivate(x):
+    # TODO
     # Reshape the 1-d softmax to 2-d so that np.dot will do the matrix multiplication
-    s = softmax.reshape(-1,1)
-    return np.diagflat(s) - np.dot(s, s.T)
-
+    #s = softmax.reshape(-1,1)
+    #return np.diagflat(s) - np.dot(s, s.T)
+    return x
 
 def loss(targ, pred):
     return np.linalg.norm(np.linalg.norm(targ-pred))**2

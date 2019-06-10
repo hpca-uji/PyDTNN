@@ -28,6 +28,7 @@ model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 2), activation="sigmoid") )
 model.add( Pool2D(pool_shape=(2,2), func='max') )
 model.add( Flatten() )
 #model.add( FC(shape=(128,), activation="sigmoid") )
+#model.add( Dropout(prob=0.5) )
 #model.add( FC(shape=(36,), activation="sigmoid") )
 model.add( FC(shape=(10,), activation="sigmoid") )
 
@@ -56,9 +57,9 @@ print(np.sum(np.equal(targ, pred)), targ.shape[0])
 
 # Train the model
 print('**** Training...')
-eta     = 0.05   # Learning rate
+eta     = 0.1   # Learning rate
 nepochs = 100     # Number of epochs to train
-b       = 32      # Batch size
+b       = 64      # Batch size
 print('     Epochs:', nepochs, 'Batch size:', b, 'Learning rate:', eta)
 
 #print(model.infer(x))

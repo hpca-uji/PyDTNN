@@ -22,6 +22,12 @@ class Layer():
         print('#Neurons ', self.n)
         print('Shape    ', self.shape)
 
+    def backward(self, grad= []):
+        printf("\nbackward:", type(self).__name__, self.shape)
+        if grad == []: self.d = self.next_layer.get_gradient()
+        else:          self.d = grad
+        printf("    ", type(self).__name__, " self.d", self.d.shape)
+
 class Input(Layer):
     """ Input layer for neural network """
 
@@ -42,27 +48,21 @@ class FC(Layer):
         self.bias = np.random.uniform(-1, 1, (self.n, 1))
 
     def infer(self, prev_a):  
-        z = np.matmul(self.weights, prev_a) + self.bias
+        z = self.weights @ prev_a + self.bias
         return self.act(z)
 
     def forward(self, prev_a):        
-        z = np.matmul(self.weights, prev_a) + self.bias
+        z = self.weights @ prev_a + self.bias
         self.a = self.act(z)
         self.D = self.act_der(z)
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
-
-    def backward(self, grad= []):
-        printf("\nbackward:", type(self).__name__, self.shape)
-        if grad == []: self.d = self.next_layer.get_gradient()
-        else:          self.d = grad
-        printf("    ", type(self).__name__, " self.d", self.d.shape)
         
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
-        return np.matmul(np.transpose(self.weights), self.d) * self.prev_layer.D
+        return (self.weights.T @ self.d) * self.prev_layer.D
 
     def update_weights(self, eta, b):
-        self.weights-= (eta/b) * np.matmul(self.d, np.transpose(self.prev_layer.a))
+        self.weights-= (eta/b) * (self.d @ self.prev_layer.a.T)
         self.bias-= (eta/b) * self.d.sum(axis=1).reshape(self.bias.shape[0], 1)
         
 class Conv2D(Layer):
@@ -77,8 +77,8 @@ class Conv2D(Layer):
 
     def initialize(self, prev_layer):
         self.prev_layer = prev_layer
-        self.weights = np.random.uniform(-10, 10, (self.nfilters,)+self.filter_shape)
-        self.bias = np.random.uniform(-10, 10, (self.nfilters,))
+        self.weights = np.random.uniform(-1, 1, (self.nfilters,)+self.filter_shape)
+        self.bias = np.random.uniform(-1, 1, (self.nfilters,))
         h, w, c = self.prev_layer.shape
         ph, pw = convolve2d(np.zeros([h, w]), self.weights[0,...,0], mode='valid').shape
         self.shape = (ph, pw, self.nfilters)
@@ -112,34 +112,28 @@ class Conv2D(Layer):
         self.D = self.act_der(z)
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
-    def backward(self, grad= []):
-        printf("\nbackward:", type(self).__name__, self.shape)
-        if grad == []: self.d = self.next_layer.get_gradient()
-        else:          self.d = grad
-        printf("    ", type(self).__name__, " self.d", self.d.shape)
-
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
-        h, w, co, b = self.a.shape
-        ph, pw, ci = self.prev_layer.shape
+        ho, wo, co, b = self.a.shape
+        hi, pi, ci = self.prev_layer.shape
         kh, kw, ci = self.filter_shape
-        grad = np.zeros([ph, pw, ci, b])
+        grad = np.zeros([hi, hi, ci, b])
         for b_ in range(b):
             for ci_ in range(ci):
                 for co_ in range(co):
-                    grad[...,ci_,b_]+= convolve2d(self.d[...,co_,b_], np.rot90(self.weights[co_,...,ci_], 2),  mode='full')
-                grad[...,ci_,b_]*= self.prev_layer.D[...,ci_,b_]             
+                    grad[...,ci_,b_] += convolve2d(self.d[...,co_,b_], np.rot90(self.weights[co_,...,ci_], 2),  mode='full')
+                grad[...,ci_,b_] *= self.prev_layer.D[...,ci_,b_]             
         return grad
 
     def update_weights(self, eta, b):
-        h, w, co = self.shape
+        ho, wo, co = self.shape
         kh, kw, ci = self.filter_shape
         for b_ in range(b):
             for co_ in range(co):
                 for ci_ in range(ci):
-                    self.weights[co_,...,ci_]-= (eta/b) * \
+                    self.weights[co_,...,ci_] -= (eta/b) * \
                         np.rot90(convolve2d(self.prev_layer.a[...,ci_,b_], np.rot90(self.d[...,co_,b_], 2), mode='valid'), 2)
-                self.bias[co_]-= (eta/b) * self.d[...,co_,b_].sum(axis=-1).sum(axis=-1)
+                self.bias[co_] -= (eta/b) * self.d[...,co_,b_].sum(axis=-1).sum(axis=-1)
 
 class Pool2D(Layer):
     """ Pool2D layer for neural network """
@@ -176,12 +170,6 @@ class Pool2D(Layer):
                 D = mask * self.prev_layer.D[...,c_,b_]
                 self.D[...,c_,b_] = block_reduce(D, self.pool_shape, func=np.max)
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
-
-    def backward(self, grad = []):
-        printf("\nbackward:", type(self).__name__, self.shape)
-        if grad == []: self.d = self.next_layer.get_gradient()
-        else:          self.d = grad
-        printf("    ", type(self).__name__, " self.d", self.d.shape)
 
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
@@ -224,16 +212,42 @@ class Flatten(Layer):
             self.D = np.ones(self.a.shape)
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
-    def backward(self, grad = []):
-        printf("\nbackward:", type(self).__name__, self.shape)
-        if grad == []: self.d = self.next_layer.get_gradient()
-        else:          self.d = grad
-        printf("    ", type(self).__name__, " self.d", self.d.shape)
-
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
         b = self.a.shape[-1]
         return self.d.reshape(self.prev_layer.shape + (b,))
+
+    def update_weights(self, eta, b):
+        pass
+
+class Dropout(Layer):
+    """ Dropout layer for neural network """
+
+    def __init__(self, prob=0.5):
+        super().__init__()
+        self.prob = prob
+
+    def initialize(self, prev_layer):
+        self.prev_layer = prev_layer
+        self.shape = self.prev_layer.shape
+        self.n = np.prod(self.shape)
+
+    def infer(self, prev_a):
+        mask = np.random.binomial(1, self.prob, size=prev_a.shape) / self.prob
+        return prev_a * mask
+
+    def forward(self, prev_a):
+        self.mask = np.random.binomial(1, self.prob, size=prev_a.shape) / self.prob
+        self.a = prev_a * self.mask        
+        if hasattr(self.prev_layer, 'D'):
+            self.D = self.prev_layer.D * self.mask 
+        else:
+            self.D = np.ones(self.a.shape) * self.mask 
+        printf("forward:", type(self).__name__, self.shape, self.a.shape)
+
+    def get_gradient(self):
+        printf("  get_gradient:", type(self).__name__, self.shape)
+        return self.d * self.mask
 
     def update_weights(self, eta, b):
         pass
