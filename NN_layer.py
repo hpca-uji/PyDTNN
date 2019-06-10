@@ -65,7 +65,6 @@ class FC(Layer):
         self.weights-= (eta/b) * np.matmul(self.d, np.transpose(self.prev_layer.a))
         self.bias-= (eta/b) * self.d.sum(axis=1).reshape(self.bias.shape[0], 1)
         
-
 class Conv2D(Layer):
     """ Conv2D layer for neural network """
 
@@ -78,8 +77,8 @@ class Conv2D(Layer):
 
     def initialize(self, prev_layer):
         self.prev_layer = prev_layer
-        self.weights = np.random.uniform(-1, 1, (self.nfilters,)+self.filter_shape)
-        self.bias = np.random.uniform(-1, 1, (self.nfilters,))
+        self.weights = np.random.uniform(-10, 10, (self.nfilters,)+self.filter_shape)
+        self.bias = np.random.uniform(-10, 10, (self.nfilters,))
         h, w, c = self.prev_layer.shape
         ph, pw = convolve2d(np.zeros([h, w]), self.weights[0,...,0], mode='valid').shape
         self.shape = (ph, pw, self.nfilters)
@@ -91,10 +90,8 @@ class Conv2D(Layer):
 
     def infer(self, prev_a):
         co, kh, kw, ci = self.weights.shape
-        hi, wi, ci, b  = prev_a.shape
-    
-        z = np.zeros(self.shape + (b,))
-    
+        hi, wi, ci, b  = prev_a.shape    
+        z = np.zeros(self.shape + (b,))    
         for b_ in range(b):
             for co_ in range(co):         
                 for ci_ in range(ci):
@@ -104,16 +101,13 @@ class Conv2D(Layer):
 
     def forward(self, prev_a):
         co, kh, kw, ci = self.weights.shape
-        hi, wi, ci, b  = prev_a.shape
-    
-        z = np.zeros(self.shape + (b,))
-    
+        hi, wi, ci, b  = prev_a.shape    
+        z = np.zeros(self.shape + (b,))    
         for b_ in range(b):
             for co_ in range(co):         
                 for ci_ in range(ci):
                     z[...,co_,b_] += convolve2d(prev_a[...,ci_,b_], self.weights[co_,...,ci_], mode='valid')
                 z[...,co_,b_] += self.bias[co_]
-
         self.a = self.act(z)
         self.D = self.act_der(z)
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
@@ -133,8 +127,8 @@ class Conv2D(Layer):
         for b_ in range(b):
             for ci_ in range(ci):
                 for co_ in range(co):
-                    grad[...,ci_,b_]+= convolve2d(self.d[...,co_,b_], np.rot90(self.weights[co_,...,ci_], 2),  mode='full') * self.prev_layer.D[...,ci_,b_]
-
+                    grad[...,ci_,b_]+= convolve2d(self.d[...,co_,b_], np.rot90(self.weights[co_,...,ci_], 2),  mode='full')
+                grad[...,ci_,b_]*= self.prev_layer.D[...,ci_,b_]             
         return grad
 
     def update_weights(self, eta, b):
@@ -145,7 +139,7 @@ class Conv2D(Layer):
                 for ci_ in range(ci):
                     self.weights[co_,...,ci_]-= (eta/b) * \
                         np.rot90(convolve2d(self.prev_layer.a[...,ci_,b_], np.rot90(self.d[...,co_,b_], 2), mode='valid'), 2)
-
+                self.bias[co_]-= (eta/b) * self.d[...,co_,b_].sum(axis=-1).sum(axis=-1)
 
 class Pool2D(Layer):
     """ Pool2D layer for neural network """
@@ -211,7 +205,6 @@ class Pool2D(Layer):
     def update_weights(self, eta, b):
         pass
 
-
 class Flatten(Layer):
     """ Flatten layer for neural network """
 
@@ -249,4 +242,3 @@ class Flatten(Layer):
 
     def update_weights(self, eta, b):
         pass
-
