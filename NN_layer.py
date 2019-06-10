@@ -168,7 +168,6 @@ class Pool2D(Layer):
         h, w, c, b = prev_a.shape
         self.a = np.zeros(self.shape + (b,))
         self.D = np.zeros(self.shape + (b,))
-
         for b_ in range(b):
             for c_ in range(c):
                 self.a[...,c_,b_] = block_reduce(prev_a[...,c_,b_], self.pool_shape, self.func)
@@ -176,7 +175,6 @@ class Pool2D(Layer):
                 mask = np.equal(prev_a[...,c_,b_], r).astype(int)
                 D = mask * self.prev_layer.D[...,c_,b_]
                 self.D[...,c_,b_] = block_reduce(D, self.pool_shape, func=np.max)
-
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
     def backward(self, grad = []):
@@ -190,16 +188,13 @@ class Pool2D(Layer):
         b = self.a.shape[-1]
         h, w, c = self.shape
         ph, pw, c = self.prev_layer.shape
-
         grad = np.zeros([ph, pw, c, b])
-
         for b_ in range(b):
             for c_ in range(c):
                 prev_a= self.prev_layer.a[...,c_,b_]
                 r= np.kron(self.a[...,c_,b_], np.ones(self.pool_shape))[:prev_a.shape[0],:prev_a.shape[1]]
                 mask = np.equal(prev_a, r).astype(int)
                 grad[...,c_,b_] = mask * np.kron(self.d[...,c_,b_], np.ones(self.pool_shape))[:prev_a.shape[0],:prev_a.shape[1]]
-
         return grad
 
     def update_weights(self, eta, b):
