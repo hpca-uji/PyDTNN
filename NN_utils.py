@@ -1,74 +1,57 @@
 import numpy as np
 import math
 import random
+from scipy.signal import convolve2d
 
 def sigmoid(x):
-    """ Apply elementwise sigmoid function """
     return 1 / (1 + np.exp(-x))
-    #return math.exp(-numpy.logaddexp(0, -x))
 
 def sigmoid_derivate(x):
-    """ Apply elementwise sigmoid function f(x)"""
-    """ f'(x) = f(x) * (1 - f(x))"""
     x = sigmoid(x)
     return np.multiply(x, (1-x))
 
 def relu(x):
-    """ Apply elementwise ReLU function """
-    x[x<0]=0
-    return x
+    return (x > 0) * x
 
 def relu_derivate(x):
-    """ Apply elementwise derivative ReLU function """
-    """ f'(x) = 1 if x> 0, f'(x) = 0 otherwise """
-    x[x<0]=0
-    x[x>0]=1
-    return x
+    return (x > 0) * 1
 
-def convolution(weights, a):
-    ci, kh, kw, co = weights.shape
-    hi, wi, ci, b  = a.shape
-    ho             = hi-kh+1
-    wo             = wi-kw+1
-    z = np.zeros([ho, wo, co, b])
-    #### print(weights.shape)
-    #### print(a.shape)
-    #### print(z.shape)
-    
-    for i0 in range(b):
-        for i1 in range(ho):
-            for i2 in range(wo):
-                for i3 in range(co):
-                    sum = 0
-                    for i4 in range(kh):
-                        for i5 in range(kw):
-                            for i6 in range(ci):
-                                #### print(i1, i2, i3, i4, i5, i6, i1+i4, i2+i5)
-                                sum += a[i1+i4][i2+i5][i6][i0] * weights[i6][i4][i5][i3]
-                    z[i1][i2][i3][i0] = sum
+def tanh(x):    
+    return np.tanh(x)
 
-    return z
+def tanh_derivate(x):
+    return 1 - np.tanh(x) ** 2
 
-def convolution_transpose(weights, a):
-    ci, kh, kw, co = weights.shape
-    hi, wi, ci, b  = a.shape
-    ho             = hi-kh+1
-    wo             = wi-kw+1
-    z = np.zeros([ho, wo, co, b])
-    #### print(weights.shape)
-    #### print(a.shape)
-    #### print(z.shape)
-    
-    for i0 in range(b):
-        for i1 in range(ho):
-            for i2 in range(wo):
-                for i3 in range(co):
-                    sum = 0
-                    for i4 in range(kh):
-                        for i5 in range(kw):
-                            for i6 in range(ci):
-                                #### print(i1, i2, i3, i4, i5, i6, i1+i4, i2+i5)
-                                sum += a[i1+i4][i2+i5][i6][i0] * weights[i6][i5][i4][i3]
-                    z[i1][i2][i3][i0] = sum
+def arctanh(x):
+    return np.arctan(x)
 
-    return z
+def arctan_derivate(x):
+    return 1 / ( 1 + x ** 2)
+
+def log(x):
+    return 1 / (1 + np.exp(-1 * x))
+
+def log_derivate(x):
+    return log(x) * ( 1 - log(x))
+
+def softmax(x):
+    x -= np.max(x)
+    return (np.exp(x).T / np.sum(np.exp(x), axis=0)).T
+
+def softmax_derivate(softmax):
+    # Reshape the 1-d softmax to 2-d so that np.dot will do the matrix multiplication
+    s = softmax.reshape(-1,1)
+    return np.diagflat(s) - np.dot(s, s.T)
+
+
+def loss(targ, pred):
+    return np.linalg.norm(np.linalg.norm(targ-pred))**2
+
+def accuracy(targ, pred):
+    targ= np.argmax(targ, axis=0)
+    pred= np.argmax(pred, axis=0)
+    return np.sum(np.equal(targ, pred))*100/targ.shape[0]
+
+def printf(*args):
+    pass
+    #print(*args)
