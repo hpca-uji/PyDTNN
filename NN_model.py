@@ -20,7 +20,8 @@ class Model:
     def add(self, layer):
         if len(self.layers) > 0:          
             self.layers[-1].next_layer = layer
-            layer.initialize(self.layers[-1])
+            layer.prev_layer = self.layers[-1]
+            layer.initialize()
         self.layers.append(layer)
 
     def infer(self, sample):

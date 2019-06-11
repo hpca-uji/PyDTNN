@@ -10,7 +10,7 @@ from skimage.measure import block_reduce
 class Layer():
     """ Layer of a neural network """
 
-    def __init__(self, shape=(), activation = "sigmoid"):
+    def __init__(self, shape=()):
         self.shape = shape
         self.n = np.prod(shape)
         self.prev_layer = None
@@ -31,7 +31,7 @@ class Layer():
 class Input(Layer):
     """ Input layer for neural network """
 
-    def __init__(self, shape=(1,1,1)):
+    def __init__(self, shape=(1,)):
         super().__init__(shape)
 
 class FC(Layer):
@@ -42,8 +42,7 @@ class FC(Layer):
         self.act= getattr(NN_utils, activation)
         self.act_der= getattr(NN_utils, "%s_derivate" % activation)  
         
-    def initialize(self, prev_layer):
-        self.prev_layer = prev_layer
+    def initialize(self):
         self.weights = np.random.uniform(-1, 1, (self.n, self.prev_layer.n))
         self.bias = np.random.uniform(-1, 1, (self.n, 1))
 
@@ -68,15 +67,14 @@ class FC(Layer):
 class Conv2D(Layer):
     """ Conv2D layer for neural network """
 
-    def __init__(self, nfilters=5, filter_shape=(3, 3, 5), activation="sigmoid"):
-        super().__init__((1,), activation)
+    def __init__(self, nfilters=1, filter_shape=(3, 3, 1), activation="sigmoid"):
+        super().__init__()
         self.nfilters = nfilters
         self.filter_shape = filter_shape
         self.act= getattr(NN_utils, activation)
         self.act_der= getattr(NN_utils, "%s_derivate" % activation)          
 
-    def initialize(self, prev_layer):
-        self.prev_layer = prev_layer
+    def initialize(self):
         self.weights = np.random.uniform(-1, 1, (self.nfilters,)+self.filter_shape)
         self.bias = np.random.uniform(-1, 1, (self.nfilters,))
         h, w, c = self.prev_layer.shape
@@ -143,8 +141,7 @@ class Pool2D(Layer):
         self.pool_shape = pool_shape
         self.func= getattr(np, func)
 
-    def initialize(self, prev_layer):
-        self.prev_layer = prev_layer
+    def initialize(self,):
         h, w, c = self.prev_layer.shape
         ph, pw = block_reduce(np.zeros([h, w]), self.pool_shape, self.func).shape
         self.shape = (ph, pw, c)
@@ -194,8 +191,7 @@ class Flatten(Layer):
     def __init__(self):
         super().__init__()
 
-    def initialize(self, prev_layer):
-        self.prev_layer = prev_layer
+    def initialize(self):
         self.shape = (np.prod(self.prev_layer.shape),)
         self.n = np.prod(self.shape)
 
@@ -227,10 +223,13 @@ class Dropout(Layer):
         super().__init__()
         self.prob = prob
 
-    def initialize(self, prev_layer):
-        self.prev_layer = prev_layer
+    def initialize(self):
         self.shape = self.prev_layer.shape
         self.n = np.prod(self.shape)
+
+    def show(self):
+        super().show()
+        print('Prob:    ', self.prob)
 
     def infer(self, prev_a):
         mask = np.random.binomial(1, self.prob, size=prev_a.shape) / self.prob
