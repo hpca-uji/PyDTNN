@@ -61,16 +61,18 @@ class FC(Layer):
         return (self.weights.T @ self.d) * self.prev_layer.D
 
     def update_weights(self, eta, b):
-        self.weights-= (eta/b) * (self.d @ self.prev_layer.a.T)
-        self.bias-= (eta/b) * self.d.sum(axis=1).reshape(self.bias.shape[0], 1)
+        #self.weights-= (eta/b) * (self.d @ self.prev_layer.a.T)
+        #self.bias-= (eta/b) * self.d.sum(axis=1).reshape(self.bias.shape[0], 1)
         
 class Conv2D(Layer):
     """ Conv2D layer for neural network """
 
-    def __init__(self, nfilters=1, filter_shape=(3, 3, 1), activation="sigmoid"):
+    def __init__(self, nfilters=1, filter_shape=(3, 3, 1), padding=0, stride=1, activation="sigmoid"):
         super().__init__()
         self.nfilters = nfilters
         self.filter_shape = filter_shape
+        self.padding = padding
+        self.stride = stride
         self.act= getattr(NN_utils, activation)
         self.act_der= getattr(NN_utils, "%s_derivate" % activation)          
 
@@ -87,25 +89,13 @@ class Conv2D(Layer):
         print('#Filters ', self.weights.shape)
 
     def infer(self, prev_a):
-        co, kh, kw, ci = self.weights.shape
-        hi, wi, ci, b  = prev_a.shape    
-        z = np.zeros(self.shape + (b,))    
-        for b_ in range(b):
-            for co_ in range(co):         
-                for ci_ in range(ci):
-                    z[...,co_,b_] += convolve2d(prev_a[...,ci_,b_], self.weights[co_,...,ci_], mode='valid')
-                z[...,co_,b_] += self.bias[co_]
+        #z = NN_utils.convolve_scipy(prev_a, self.weights, self.bias, self.padding, self.stride)
+        z = NN_utils.convolve(prev_a, self.weights, self.bias, self.padding, self.stride) 
         return self.act(z)
 
     def forward(self, prev_a):
-        co, kh, kw, ci = self.weights.shape
-        hi, wi, ci, b  = prev_a.shape    
-        z = np.zeros(self.shape + (b,))    
-        for b_ in range(b):
-            for co_ in range(co):         
-                for ci_ in range(ci):
-                    z[...,co_,b_] += convolve2d(prev_a[...,ci_,b_], self.weights[co_,...,ci_], mode='valid')
-                z[...,co_,b_] += self.bias[co_]
+        #z = NN_utils.convolve_scipy(prev_a, self.weights, self.bias, self.padding, self.stride)
+        z = NN_utils.convolve(prev_a, self.weights, self.bias, self.padding, self.stride)                
         self.a = self.act(z)
         self.D = self.act_der(z)
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
@@ -119,7 +109,7 @@ class Conv2D(Layer):
         for b_ in range(b):
             for ci_ in range(ci):
                 for co_ in range(co):
-                    grad[...,ci_,b_] += convolve2d(self.d[...,co_,b_], np.rot90(self.weights[co_,...,ci_], 2),  mode='full')
+                    grad[...,ci_,b_] += convolve2d(self.d[...,co_,b_], self.weights[co_,...,ci_], mode='full')
                 grad[...,ci_,b_] *= self.prev_layer.D[...,ci_,b_]             
         return grad
 
@@ -130,7 +120,7 @@ class Conv2D(Layer):
             for co_ in range(co):
                 for ci_ in range(ci):
                     self.weights[co_,...,ci_] -= (eta/b) * \
-                        np.rot90(convolve2d(self.prev_layer.a[...,ci_,b_], np.rot90(self.d[...,co_,b_], 2), mode='valid'), 2)
+                        np.rot90(convolve2d(self.prev_layer.a[...,ci_,b_], self.d[...,co_,b_], mode='valid'), 2)
                 self.bias[co_] -= (eta/b) * self.d[...,co_,b_].sum(axis=-1).sum(axis=-1)
 
 class Pool2D(Layer):
