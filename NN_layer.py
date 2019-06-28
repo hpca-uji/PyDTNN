@@ -61,8 +61,8 @@ class FC(Layer):
         return (self.weights.T @ self.d) * self.prev_layer.D
 
     def update_weights(self, eta, b):
-        #self.weights-= (eta/b) * (self.d @ self.prev_layer.a.T)
-        #self.bias-= (eta/b) * self.d.sum(axis=1).reshape(self.bias.shape[0], 1)
+        self.weights-= (eta/b) * (self.d @ self.prev_layer.a.T)
+        self.bias-= (eta/b) * self.d.sum(axis=1).reshape(self.bias.shape[0], 1)
         
 class Conv2D(Layer):
     """ Conv2D layer for neural network """
