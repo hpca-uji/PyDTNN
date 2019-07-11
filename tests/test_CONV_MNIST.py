@@ -22,9 +22,9 @@ model = Model()
 # model.add( FC(shape=(10,), activation="softmax") )
 
 model.add( Input(shape=(28, 28, 1)) )
-model.add( Conv2D(nfilters=2, filter_shape=(3, 3, 1), padding=0, stride=1, activation="relu") )
+model.add( Conv2D(nfilters=2, filter_shape=(3, 3, 1), padding=1, stride=3, activation="relu") )
 model.add( Pool2D(pool_shape=(2,2), func='max') )
-model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 2), padding=0, stride=1, activation="sigmoid") )
+model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 2), padding=2, stride=2, activation="sigmoid") )
 model.add( Pool2D(pool_shape=(2,2), func='max') )
 model.add( Flatten() )#
 model.add( FC(shape=(128,), activation="sigmoid") )
@@ -63,7 +63,7 @@ b       = 64      # Batch size
 print('     Epochs:', nepochs, 'Batch size:', b, 'Learning rate:', eta)
 
 #print(model.infer(x))
-model.train(x, y, eta, nepochs, b, loss_func="accuracy")
+model.train(x, y, eta, nepochs, b, loss_func="loss")
 
 targ= np.argmax(y, axis=0)
 pred= np.argmax(model.infer(x), axis=0)
