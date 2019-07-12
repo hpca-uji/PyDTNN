@@ -53,7 +53,7 @@ def accuracy(targ, pred):
     pred= np.argmax(pred, axis=0)
     return np.sum(np.equal(targ, pred))*100 / targ.shape[-1]
 
-def get_im2col_indices(x_shape, kh, kw, c, h, w, p=0, s=1):
+def get_im2col_indices(x_shape, kh, kw, c, h, w, s=1):
     #b, c, h, w = x_shape
     i0 = np.repeat(np.arange(kh), kw)
     i0 = np.tile(i0, c)
@@ -65,12 +65,10 @@ def get_im2col_indices(x_shape, kh, kw, c, h, w, p=0, s=1):
     k = np.repeat(np.arange(c), kh * kw).reshape(-1, 1)
     return (k.astype(int), i.astype(int), j.astype(int))
 
-def im2col_indices(x, kh, kw, c, h, w, p=0, s=1): 
-    # Expected 'x' format (b, c, h, w)
-    x_padded = x #np.pad(x, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-    k, i, j = get_im2col_indices(x.shape, kh, kw, c, h, w, p, s)
-    cols = x_padded[:, k, i, j]    
-    cols = cols.transpose(1, 2, 0).reshape(kh * kw * c, -1)
+def im2col_indices(x, kh, kw, c, h, w, s=1): 
+    # Expected 'x' format (b, c, h, w)    
+    k, i, j = get_im2col_indices(x.shape, kh, kw, c, h, w, s)
+    cols = x[:, k, i, j].transpose(1, 2, 0).reshape(kh * kw * c, -1)
     return cols
 
 def convolve(input, weights, bias, p=0, s=1):
