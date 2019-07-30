@@ -193,7 +193,7 @@ class Pool2D(Layer):
             self.a = patched_a.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
             prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
             prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
-            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.hi-self.hp, self.wi-self.wp, self.stride, self.cached_idx)
+            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
             self.dz = patched_dz.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
 
     def get_gradient(self):     
