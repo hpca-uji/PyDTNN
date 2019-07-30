@@ -178,7 +178,7 @@ class Pool2D(Layer):
         b = prev_a.shape[-1]
         prev_a = prev_a.transpose(3, 2, 0, 1)
         prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi, self.wi)[...,:self.hi-self.hp,:self.wi-self.wp]
-        patched_a,  self.cached_idx= im2col(prev_a_,  self.kh, self.kw, 1, self.hi-self.hp, self.wi-self.wp, self.stride, self.cached_idx)        
+        patched_a,  self.cached_idx= im2col(prev_a_,  self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)        
 
         if self.func_str == "max":
             self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
