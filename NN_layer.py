@@ -167,23 +167,24 @@ class Pool2D(Layer):
 
     def infer(self, prev_a):
         b = prev_a.shape[-1]
-        prev_a = prev_a.transpose(3, 2, 0, 1).reshape(b * self.ci, 1, self.hi, self.wi)
-        patched_z, self.cached_idx= im2col(prev_a, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
-        if   self.func_str == "max": z = patched_z.max(axis=0)
-        elif self.func_str == "avg": z = patched_z.mean(axis=0)            
-        z = z.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-        return z
+        prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
+        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+        patched_a, self.cached_idx= im2col(prev_a_, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
+        if   self.func_str == "max": a = patched_a.max(axis=0)
+        elif self.func_str == "avg": a = patched_a.mean(axis=0)            
+        a = a.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+        return a
 
     def forward(self, prev_a):
         b = prev_a.shape[-1]
-        prev_a = prev_a.transpose(3, 2, 0, 1)
-        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi, self.wi)[...,:self.hi-self.hp,:self.wi-self.wp]
+        prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
+        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
         patched_a,  self.cached_idx= im2col(prev_a_,  self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)        
 
         if self.func_str == "max":
             self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
             r = np.kron(self.a.transpose(3, 2, 0, 1), np.ones(self.pool_shape))
-            self.mask = np.equal(prev_a[...,:self.hi-self.hp,:self.wi-self.wp], r).astype(int)
+            self.mask = np.equal(prev_a, r).astype(int)
             prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp] * self.mask
             prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
             patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
