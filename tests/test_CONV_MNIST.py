@@ -23,9 +23,9 @@ model = Model()
 
 model.add( Input(shape=(28, 28, 1)) )
 model.add( Conv2D(nfilters=2, filter_shape=(3, 3, 1), padding=2, stride=1, activation="relu") )
-model.add( Pool2D(pool_shape=(2,2), func='avg') )
+model.add( Pool2D(pool_shape=(2,2), func='max') )
 model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 2), padding=2, stride=1, activation="sigmoid") )
-model.add( Pool2D(pool_shape=(2,2), func='avg') )
+model.add( Pool2D(pool_shape=(2,2), func='max') )
 model.add( Flatten() )#
 model.add( FC(shape=(128,), activation="sigmoid") )
 #model.add( Dropout(prob=0.5) )
@@ -46,7 +46,7 @@ yall = numpy.zeros([10, train_dataset_size])
 for k in range(train_dataset_size):
   yall[zall[0, k], k] = 1
 
-subset_size = 1000
+subset_size = 300
 x = xall[...,:subset_size].copy()
 y = yall[...,:subset_size].copy()
 

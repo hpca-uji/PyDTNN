@@ -3,11 +3,7 @@ import math
 import random
 import NN_utils
 from NN_utils import printf, im2col, col2im, dilate_and_pad
-from math import floor, ceil
-
-
-from scipy.signal import convolve2d
-from skimage.measure import block_reduce
+from math import floor
 
 class Layer():
     """ Layer of a neural network """
@@ -154,8 +150,7 @@ class Pool2D(Layer):
     def __init__(self, pool_shape=(2,2), func='max', stride=1):
         super().__init__()
         self.pool_shape = pool_shape
-        self.func_str = func #getattr(np, func)
-        #self.func = getattr(np, func)
+        self.func_str = func
         self.stride = stride
         self.cached_idx_fp = self.cached_idx_gc = self.cached_idx_wu = self.b = None         
 
