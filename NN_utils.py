@@ -79,7 +79,7 @@ def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
     if not idx:
         idx = get_indices(x_shape, kh, kw, c, ho, wo, s)
     np.add.at(x, (slice(None), idx[0], idx[1], idx[2]), cols_reshaped) 
-    return x
+    return x, idx
 
 def dilate_and_pad(input, p=0, s=1):
     if s > 1: 

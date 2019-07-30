@@ -152,7 +152,7 @@ class Pool2D(Layer):
         self.pool_shape = pool_shape
         self.func_str = func
         self.stride = stride
-        self.cached_idx_fp = self.cached_idx_gc = self.cached_idx_wu = self.b = None         
+        self.cached_idx = None         
 
     def initialize(self,):
         self.hi, self.wi, self.ci = self.prev_layer.shape
@@ -169,7 +169,7 @@ class Pool2D(Layer):
         b = prev_a.shape[-1]
         prev_a = prev_a.transpose(3, 2, 0, 1)        
         prev_a = prev_a.reshape(b * self.ci, 1, self.hi, self.wi)
-        patched_z, self.cached_idx_fp= im2col(prev_a, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx_fp)
+        patched_z, self.cached_idx= im2col(prev_a, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
         if self.func_str == "max":   z = patched_z.max(axis=0)
         elif self.func_str == "avg": z = patched_z.mean(axis=0)            
         z = z.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
@@ -178,41 +178,31 @@ class Pool2D(Layer):
     def forward(self, prev_a):
         b = prev_a.shape[-1]
         prev_a = prev_a.transpose(3, 2, 0, 1)
-        prev_a = prev_a.reshape(b * self.ci, 1, self.hi, self.wi)[...,:self.hi-self.hp,:self.wi-self.wp]
-        prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)
-        prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi, self.wi)[...,:self.hi-self.hp,:self.wi-self.wp]
-        patched_a,  self.cached_idx_fp= im2col(prev_a,  self.kh, self.kw, 1, self.hi-self.hp, self.wi-self.wp, self.stride, self.cached_idx_fp)
-        patched_dz, self.cached_idx_fp= im2col(prev_dz, self.kh, self.kw, 1, self.hi-self.hp, self.wi-self.wp, self.stride, self.cached_idx_fp)
+        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi, self.wi)[...,:self.hi-self.hp,:self.wi-self.wp]
+        patched_a,  self.cached_idx= im2col(prev_a_,  self.kh, self.kw, 1, self.hi-self.hp, self.wi-self.wp, self.stride, self.cached_idx)        
 
         if self.func_str == "max":
-            self.patched_act_shape = patched_a.shape
-            self.max_indexes = np.argmax(patched_a, axis=0)
-            a = patched_a[self.max_indexes, range(self.max_indexes.size)]
-            self.a = a.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-            dz = patched_dz[self.max_indexes, range(self.max_indexes.size)]
-            self.dz = dz.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            r = np.kron(self.a.transpose(3, 2, 0, 1), np.ones(self.pool_shape))
+            self.mask = np.equal(prev_a[...,:self.hi-self.hp,:self.wi-self.wp], r).astype(int)
+            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp] * self.mask
+            prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
+            self.dz = patched_dz.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
 
         elif self.func_str == "avg":
-            a = patched_a.mean(axis=0)
-            self.a = a.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-            dz = patched_dz.mean(axis=0)
-            self.dz = dz.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            self.a = patched_a.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
+            prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.hi-self.hp, self.wi-self.wp, self.stride, self.cached_idx)
+            self.dz = patched_dz.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
 
-    def get_gradient(self):
-        b = self.a.shape[-1]
+    def get_gradient(self):     
         if self.func_str == "max":
-            dx_col = np.zeros(self.patched_act_shape)
-            dx_flat = self.dx.transpose(3, 2, 0, 1).transpose(2, 3, 0, 1).ravel()
-            dx_col[self.max_indexes, range(self.max_indexes.size)] = dx_flat
-            shape = (b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
-            dx = col2im(dx_col, shape, self.kh, self.kw, self.ho, self.wo, self.stride, self.cached_idx_fp)
-            dx = dx.reshape(b, self.ci, self.hi-self.hp, self.wi-self.wp)
-            dx = np.pad(dx, ((0, 0), (0, 0), (0, self.hp), (0, self.wp)), mode='constant').transpose(2, 3, 1, 0) # PyNN format
-
+            dx = np.kron(self.dx.transpose(3, 2, 0, 1), np.ones(self.pool_shape)) * self.mask
         elif self.func_str == "avg":
-            mask = np.ones((self.kh, self.kw)) / (self.kh * self.kw)
-            dx = np.kron(self.dx.transpose(3, 2, 0, 1), mask)
-            dx = np.pad(dx, ((0, 0), (0, 0), (0, self.hp), (0, self.wp)), mode='constant').transpose(2, 3, 1, 0) # PyNN format
+            dx = np.kron(self.dx.transpose(3, 2, 0, 1), (np.ones((self.kh, self.kw)) / (self.kh * self.kw)) )
+        dx = np.pad(dx, ((0, 0), (0, 0), (0, self.hp), (0, self.wp)), mode='constant').transpose(2, 3, 1, 0) # PyNN format
         return dx
 
     def update_weights(self, eta, b):

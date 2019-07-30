@@ -58,14 +58,14 @@ print(np.sum(np.equal(targ, pred)), targ.shape[0])
 # Train the model
 print('**** Training...')
 eta     = 0.1   # Learning rate
-nepochs = 100     # Number of epochs to train
+nepochs = 4     # Number of epochs to train
 b       = 64      # Batch size
 print('     Epochs:', nepochs, 'Batch size:', b, 'Learning rate:', eta)
 
-#import cProfile
-#cProfile.run('model.train(x, y, eta, nepochs, b, loss_func="accuracy")')
+import cProfile
+cProfile.run('model.train(x, y, eta, nepochs, b, loss_func="accuracy")')
 #print(model.infer(x))
-model.train(x, y, eta, nepochs, b, loss_func="accuracy")
+#model.train(x, y, eta, nepochs, b, loss_func="accuracy")
 
 targ= np.argmax(y, axis=0)
 pred= np.argmax(model.infer(x), axis=0)
