@@ -167,10 +167,9 @@ class Pool2D(Layer):
 
     def infer(self, prev_a):
         b = prev_a.shape[-1]
-        prev_a = prev_a.transpose(3, 2, 0, 1)        
-        prev_a = prev_a.reshape(b * self.ci, 1, self.hi, self.wi)
+        prev_a = prev_a.transpose(3, 2, 0, 1).reshape(b * self.ci, 1, self.hi, self.wi)
         patched_z, self.cached_idx= im2col(prev_a, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
-        if self.func_str == "max":   z = patched_z.max(axis=0)
+        if   self.func_str == "max": z = patched_z.max(axis=0)
         elif self.func_str == "avg": z = patched_z.mean(axis=0)            
         z = z.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
         return z
