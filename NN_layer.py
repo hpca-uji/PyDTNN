@@ -17,6 +17,7 @@ class Layer():
         self.n = np.prod(shape)
         self.prev_layer = None
         self.next_layer = None
+        self.changeW = []
 
     def show(self):
         print('Layer    ')
@@ -42,7 +43,8 @@ class FC(Layer):
     def __init__(self, shape=(1,), activation="sigmoid"):
         super().__init__(shape)
         self.act= getattr(NN_utils, activation)
-        self.act_der= getattr(NN_utils, "%s_derivate" % activation)  
+        self.act_der= getattr(NN_utils, "%s_derivate" % activation) 
+        self.mp = 1 
         
     def initialize(self):
         self.weights = np.random.uniform(-1, 1, (self.n, self.prev_layer.n))
@@ -62,9 +64,13 @@ class FC(Layer):
         printf("  get_gradient:", type(self).__name__, self.shape)
         return (self.weights.T @ self.dx) * self.prev_layer.dz
 
+    def calculate_change(self):
+        self.changeW = self.dx @ self.prev_layer.a.T
+        self.changeB = self.dx.sum(axis=1).reshape(self.bias.shape[0], 1)
+
     def update_weights(self, eta, b):
-        self.weights-= (eta/b) * (self.dx @ self.prev_layer.a.T)
-        self.bias-= (eta/b) * self.dx.sum(axis=1).reshape(self.bias.shape[0], 1)
+        self.weights-= eta * self.changeW
+        self.bias-= eta * self.changeB
         
 class Conv2D(Layer):
     """ Conv2D layer for neural network """
@@ -76,7 +82,8 @@ class Conv2D(Layer):
         self.padding = padding
         self.stride = stride
         self.act= getattr(NN_utils, activation)
-        self.act_der= getattr(NN_utils, "%s_derivate" % activation)          
+        self.act_der= getattr(NN_utils, "%s_derivate" % activation)  
+        self.mp = 1         
 
     def initialize(self):
         self.weights = np.random.uniform(-1, 1, (self.co,)+self.filter_shape)
@@ -98,7 +105,8 @@ class Conv2D(Layer):
         p= self.padding
         prev_a = prev_a.transpose(3, 2, 0, 1) # b, c, h, w, this is needed for padding
         prev_a = np.pad(prev_a, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.padding, self.stride)
+        patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride)
+        #patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.padding, self.stride)
         patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
         z = (((patched_weights @ patched_act).T + self.bias).T)
         z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
@@ -108,7 +116,8 @@ class Conv2D(Layer):
         p= self.padding
         prev_a = prev_a.transpose(3, 2, 0, 1) # b, c, h, w, this is needed for padding
         prev_a = np.pad(prev_a, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.padding, self.stride)
+        patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride)       
+        #patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.padding, self.stride)
         patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
         z = (((patched_weights @ patched_act).T + self.bias).T)
         z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
@@ -124,7 +133,8 @@ class Conv2D(Layer):
             mask = np.zeros((self.stride, self.stride));  mask[0,0] = 1
             d = np.kron(d, mask)[...,:-(self.stride-1),:-(self.stride-1)]
         d = np.pad(d, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_matrix= im2col_indices(d, self.kh, self.kw, self.co, self.hi, self.wi, p, 1)
+        patched_matrix= im2col_indices(d, self.kh, self.kw, self.co, self.hi, self.wi, 1)
+        #patched_matrix= im2col_indices(d, self.kh, self.kw, self.co, self.hi, self.wi, p, 1)
         patched_weights= np.rot90(self.weights.transpose(3, 0, 1, 2), 2, axes=(2,3)).reshape(self.ci, -1)
         dx = (patched_weights @ patched_matrix).reshape(self.ci, self.hi, self.wi, -1).transpose(1, 2, 0, 3) # PyNN format
         dx*= self.prev_layer.dz
@@ -136,7 +146,7 @@ class Conv2D(Layer):
         #             dx[...,ci_,b_] += convolve2d(self.dx[...,co_,b_], self.weights[co_,...,ci_], mode='full')
         #         dx[...,ci_,b_] *= self.prev_layer.dz[...,ci_,b_]    
 
-    def update_weights(self, eta, b):
+    def calculate_change(self):
         d = self.dx.transpose(3, 2, 0, 1) # b, c, h, w
         b = d.shape[0]
         if self.stride > 1: 
@@ -145,11 +155,16 @@ class Conv2D(Layer):
         b, c, ho, wo = d.shape
         p= self.padding
         act = np.pad(self.prev_layer.a.transpose(2, 3, 0, 1), ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_act= im2col_indices(act, ho, wo, b, self.kh, self.kw, self.padding, 1)
+        patched_act= im2col_indices(act, ho, wo, b, self.kh, self.kw, 1)
+        #patched_act= im2col_indices(act, ho, wo, b, self.kh, self.kw, self.padding, 1)
         patched_grad= d.transpose(1, 0, 2, 3).reshape(self.co, -1)
-        dw = (patched_grad @ patched_act).reshape(self.co, self.kh, self.kw, self.ci)
-        self.weights-= (eta/b) * dw
-        self.bias   -= (eta/b) * self.dx.transpose(2, 3, 0, 1).sum(axis=(1,2,3))
+        self.changeW = (patched_grad @ patched_act).reshape(self.co, self.kh, self.kw, self.ci)    
+        self.changeB = self.dx.transpose(2, 3, 0, 1).sum(axis=(1,2,3))
+
+
+    def update_weights(self, eta, b):
+        self.weights-= eta * self.changeW
+        self.bias   -= eta * self.changeB
         # Old code left as a reference
         # for b_ in range(b):
         #     for co_ in range(co):
@@ -207,6 +222,9 @@ class Pool2D(Layer):
                 grad[...,c_,b_] = mask * np.kron(self.dx[...,c_,b_], np.ones(self.pool_shape))[:prev_a.shape[0],:prev_a.shape[1]]
         return grad
 
+    def calculate_change(self):
+        pass
+
     def update_weights(self, eta, b):
         pass
 
@@ -237,6 +255,9 @@ class Flatten(Layer):
         printf("  get_gradient:", type(self).__name__, self.shape)
         b = self.a.shape[-1]
         return self.dx.reshape(self.prev_layer.shape + (b,))
+
+    def calculate_change(self):
+        pass
 
     def update_weights(self, eta, b):
         pass
@@ -272,6 +293,9 @@ class Dropout(Layer):
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
         return self.dx * self.mask
+
+    def calculate_change(self):
+        pass
 
     def update_weights(self, eta, b):
         pass
