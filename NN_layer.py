@@ -2,12 +2,9 @@ import numpy as np
 import math
 import random
 import NN_utils
-from NN_utils import printf, im2col_indices
-from math import ceil
 
-
-from scipy.signal import convolve2d
-from skimage.measure import block_reduce
+from NN_utils import printf, im2col, col2im, dilate_and_pad
+from math import floor
 
 class Layer():
     """ Layer of a neural network """
@@ -64,7 +61,7 @@ class FC(Layer):
         printf("  get_gradient:", type(self).__name__, self.shape)
         return (self.weights.T @ self.dx) * self.prev_layer.dz
 
-    def calculate_change(self):
+    def calculate_change(self, b):
         self.changeW = self.dx @ self.prev_layer.a.T
         self.changeB = self.dx.sum(axis=1).reshape(self.bias.shape[0], 1)
 
@@ -84,40 +81,35 @@ class Conv2D(Layer):
         self.act= getattr(NN_utils, activation)
         self.act_der= getattr(NN_utils, "%s_derivate" % activation)  
         self.mp = 1         
+        self.cached_idx_fp = self.cached_idx_gc = self.cached_idx_wu = self.b = None      
 
     def initialize(self):
         self.weights = np.random.uniform(-1, 1, (self.co,)+self.filter_shape)
         self.bias = np.random.uniform(-1, 1, (self.co,))
         self.hi, self.wi, self.ci = self.prev_layer.shape
         self.kh, self.kw, self.ci = self.filter_shape
-        self.ho = ceil((self.hi + 2 * self.padding - self.kh) / self.stride + 1)
-        self.wo = ceil((self.wi + 2 * self.padding - self.kw) / self.stride + 1)
+        self.ho = floor((self.hi + 2 * self.padding - self.kh) / self.stride) + 1
+        self.wo = floor((self.wi + 2 * self.padding - self.kw) / self.stride) + 1
         self.shape = (self.ho, self.wo, self.co)
         self.n = np.prod(self.shape)
 
     def show(self):
         super().show()
+        print('Padding  ', self.padding)
+        print('Stride   ', self.stride) 
         print('#Filters ', self.weights.shape)
 
     def infer(self, prev_a):
-        #z = NN_utils.convolve_scipy(prev_a, self.weights, self.bias, self.padding, self.stride)
-        #z = NN_utils.convolve(prev_a, self.weights, self.bias, self.padding, self.stride) 
-        p= self.padding
-        prev_a = prev_a.transpose(3, 2, 0, 1) # b, c, h, w, this is needed for padding
-        prev_a = np.pad(prev_a, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride)
-        #patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.padding, self.stride)
+        prev_a = dilate_and_pad(prev_a.transpose(3, 2, 0, 1), self.padding)
+        patched_act, self.cached_idx_fp= im2col(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride, self.cached_idx_fp)
         patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
         z = (((patched_weights @ patched_act).T + self.bias).T)
         z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
         return self.act(z)
 
     def forward(self, prev_a):
-        p= self.padding
-        prev_a = prev_a.transpose(3, 2, 0, 1) # b, c, h, w, this is needed for padding
-        prev_a = np.pad(prev_a, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride)       
-        #patched_act= im2col_indices(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.padding, self.stride)
+        prev_a = dilate_and_pad(prev_a.transpose(3, 2, 0, 1), self.padding)
+        patched_act, self.cached_idx_fp= im2col(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride, self.cached_idx_fp)
         patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
         z = (((patched_weights @ patched_act).T + self.bias).T)
         z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
@@ -127,102 +119,89 @@ class Conv2D(Layer):
 
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
-        p = self.kh-self.padding-1
-        d = self.dx.transpose(3, 2, 0, 1) # b, c, h, w
-        if self.stride > 1: 
-            mask = np.zeros((self.stride, self.stride));  mask[0,0] = 1
-            d = np.kron(d, mask)[...,:-(self.stride-1),:-(self.stride-1)]
-        d = np.pad(d, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_matrix= im2col_indices(d, self.kh, self.kw, self.co, self.hi, self.wi, 1)
-        #patched_matrix= im2col_indices(d, self.kh, self.kw, self.co, self.hi, self.wi, p, 1)
+        d = dilate_and_pad(self.dx.transpose(3, 2, 0, 1), self.kh-self.padding-1, self.stride)
+        patched_matrix, self.cached_idx_gc= im2col(d, self.kh, self.kw, self.co, self.hi, self.wi, 1, self.cached_idx_gc)
         patched_weights= np.rot90(self.weights.transpose(3, 0, 1, 2), 2, axes=(2,3)).reshape(self.ci, -1)
         dx = (patched_weights @ patched_matrix).reshape(self.ci, self.hi, self.wi, -1).transpose(1, 2, 0, 3) # PyNN format
         dx*= self.prev_layer.dz
         return dx
-        # Old code left as a reference
-        # for b_ in range(b):
-        #     for ci_ in range(ci):
-        #         for co_ in range(co):
-        #             dx[...,ci_,b_] += convolve2d(self.dx[...,co_,b_], self.weights[co_,...,ci_], mode='full')
-        #         dx[...,ci_,b_] *= self.prev_layer.dz[...,ci_,b_]    
 
-    def calculate_change(self):
-        d = self.dx.transpose(3, 2, 0, 1) # b, c, h, w
-        b = d.shape[0]
-        if self.stride > 1: 
-            mask = np.zeros((self.stride, self.stride));  mask[0,0] = 1
-            d = np.kron(d, mask)[...,:-(self.stride-1),:-(self.stride-1)]
-        b, c, ho, wo = d.shape
-        p= self.padding
-        act = np.pad(self.prev_layer.a.transpose(2, 3, 0, 1), ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-        patched_act= im2col_indices(act, ho, wo, b, self.kh, self.kw, 1)
-        #patched_act= im2col_indices(act, ho, wo, b, self.kh, self.kw, self.padding, 1)
+    def calculate_change(self, b):
+        d = dilate_and_pad(self.dx.transpose(3, 2, 0, 1), 0, self.stride)
+        act = dilate_and_pad(self.prev_layer.a.transpose(2, 3, 0, 1), self.padding)        
+        if self.b != b: self.cached_idx_wu = None
+        self.b, co, ho, wo = d.shape
+        patched_act, self.cached_idx_wu= im2col(act, ho, wo, b, self.kh, self.kw, 1, self.cached_idx_wu)
         patched_grad= d.transpose(1, 0, 2, 3).reshape(self.co, -1)
-        self.changeW = (patched_grad @ patched_act).reshape(self.co, self.kh, self.kw, self.ci)    
+        self.changeW = (patched_grad @ patched_act).reshape(self.co, self.kh, self.kw, self.ci)
         self.changeB = self.dx.transpose(2, 3, 0, 1).sum(axis=(1,2,3))
-
 
     def update_weights(self, eta, b):
         self.weights-= eta * self.changeW
         self.bias   -= eta * self.changeB
-        # Old code left as a reference
-        # for b_ in range(b):
-        #     for co_ in range(co):
-        #         for ci_ in range(ci):
-        #             self.weights[co_,...,ci_] -= (eta/b) * \
-        #                convolve2d(self.prev_layer.a[...,ci_,b_], self.dx[...,co_,b_], mode='valid')
-        #         self.bias[co_] -= (eta/b) * self.dx[...,co_,b_].sum(axis=-1).sum(axis=-1)        
 
 class Pool2D(Layer):
     """ Pool2D layer for neural network """
 
-    def __init__(self, pool_shape=(2,2), func='max'):
+    def __init__(self, pool_shape=(2,2), func='max', stride=1):
         super().__init__()
         self.pool_shape = pool_shape
-        self.func= getattr(np, func)
+        self.func_str = func
+        self.stride = stride
+        self.cached_idx = None         
 
     def initialize(self,):
-        h, w, c = self.prev_layer.shape
-        ph, pw = block_reduce(np.zeros([h, w]), self.pool_shape, self.func).shape
-        self.shape = (ph, pw, c)
+        self.hi, self.wi, self.ci = self.prev_layer.shape
+        self.kh, self.kw = self.pool_shape
+        self.stride = self.kh
+        self.ho = floor((self.hi - self.kh) / self.stride) + 1
+        self.wo = floor((self.wi - self.kw) / self.stride) + 1
+        self.co = self.ci
+        self.hp, self.wp = (self.hi - self.kh) % self.stride, (self.wi - self.kw) % self.stride
+        self.shape = (self.ho, self.wo, self.co)
         self.n = np.prod(self.shape)
 
     def infer(self, prev_a):
-        h, w, c, b = prev_a.shape
-        a = np.zeros(self.shape + (b,))
-        for b_ in range(b):
-            for c_ in range(c):
-                a[...,c_,b_] = block_reduce(prev_a[...,c_,b_], self.pool_shape, self.func)
+        b = prev_a.shape[-1]
+        prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
+        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+        patched_a, self.cached_idx= im2col(prev_a_, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
+        if   self.func_str == "max": a = patched_a.max(axis=0)
+        elif self.func_str == "avg": a = patched_a.mean(axis=0)            
+        a = a.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
         return a
 
     def forward(self, prev_a):
-        h, w, c, b = prev_a.shape
-        self.a  = np.zeros(self.shape + (b,))
-        self.dz = np.zeros(self.shape + (b,))
-        for b_ in range(b):
-            for c_ in range(c):
-                self.a[...,c_,b_] = block_reduce(prev_a[...,c_,b_], self.pool_shape, self.func)
-                r= np.kron(self.a[...,c_,b_], np.ones(self.pool_shape))[:prev_a[...,c_,b_].shape[0],:prev_a[...,c_,b_].shape[1]]
-                mask = np.equal(prev_a[...,c_,b_], r).astype(int)
-                D = mask * self.prev_layer.dz[...,c_,b_]
-                self.dz[...,c_,b_] = block_reduce(D, self.pool_shape, func=np.max)
-        printf("forward:", type(self).__name__, self.shape, self.a.shape)
+        b = prev_a.shape[-1]
+        prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
+        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+        patched_a,  self.cached_idx= im2col(prev_a_,  self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)        
 
-    def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
-        b = self.a.shape[-1]
-        h, w, c = self.shape
-        ph, pw, c = self.prev_layer.shape
-        grad = np.zeros([ph, pw, c, b])
-        for b_ in range(b):
-            for c_ in range(c):
-                prev_a= self.prev_layer.a[...,c_,b_]
-                r= np.kron(self.a[...,c_,b_], np.ones(self.pool_shape))[:prev_a.shape[0],:prev_a.shape[1]]
-                mask = np.equal(prev_a, r).astype(int)
-                grad[...,c_,b_] = mask * np.kron(self.dx[...,c_,b_], np.ones(self.pool_shape))[:prev_a.shape[0],:prev_a.shape[1]]
-        return grad
+        if self.func_str == "max":
+            self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            r = np.kron(self.a.transpose(3, 2, 0, 1), np.ones(self.pool_shape))
+            self.mask = np.equal(prev_a, r).astype(int)
+            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp] * self.mask
+            prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
+            self.dz = patched_dz.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
 
-    def calculate_change(self):
+        elif self.func_str == "avg":
+            self.a = patched_a.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
+            prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
+            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
+            self.dz = patched_dz.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+
+    def get_gradient(self):     
+        if self.func_str == "max":
+            dx = np.kron(self.dx.transpose(3, 2, 0, 1), np.ones(self.pool_shape)) * self.mask
+        elif self.func_str == "avg":
+            dx = np.kron(self.dx.transpose(3, 2, 0, 1), (np.ones((self.kh, self.kw)) / (self.kh * self.kw)) )
+        dx = np.pad(dx, ((0, 0), (0, 0), (0, self.hp), (0, self.wp)), mode='constant').transpose(2, 3, 1, 0) # PyNN format
+        return dx
+
+    def calculate_change(self, b):
         pass
 
     def update_weights(self, eta, b):
@@ -256,7 +235,7 @@ class Flatten(Layer):
         b = self.a.shape[-1]
         return self.dx.reshape(self.prev_layer.shape + (b,))
 
-    def calculate_change(self):
+    def calculate_change(self, b):
         pass
 
     def update_weights(self, eta, b):
@@ -294,7 +273,7 @@ class Dropout(Layer):
         printf("  get_gradient:", type(self).__name__, self.shape)
         return self.dx * self.mask
 
-    def calculate_change(self):
+    def calculate_change(self, b):
         pass
 
     def update_weights(self, eta, b):

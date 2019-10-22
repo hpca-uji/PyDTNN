@@ -57,7 +57,7 @@ class Model:
 
         # Back propagation. Gradient computation (GC) and calculate changes local
         self.layers[-1].backward((self.layers[-1].a - batch_labels))
-        self.layers[-1].calculate_change()
+        self.layers[-1].calculate_change(b)
         if self.comm != None and len(self.layers[-1].changeW)>0:
             WB[-1] = np.append(self.layers[-1].changeW.reshape(-1), self.layers[-1].changeB.reshape(-1))
             aux[-1] = np.zeros_like(WB[-1])
@@ -66,7 +66,7 @@ class Model:
     
         for l in range(len(self.layers)-2, 0, -1):
             self.layers[l].backward()
-            self.layers[l].calculate_change()
+            self.layers[l].calculate_change(b)
             if self.comm != None and len(self.layers[l].changeW)>0:
                 WB[l] = np.append(self.layers[l].changeW.reshape(-1), self.layers[l].changeB.reshape(-1))
                 aux[l] = np.zeros_like(WB[l])
@@ -139,42 +139,3 @@ class Model:
 
 
         print('**** Access order to samples during training')
-
-
-
-
-
-
-
-
-
-
-
-
-        #nsamples = samples.shape[-1] # Numer of samples
-        #savecost = []                # Error after each epoch training
-        #loss_func_= getattr(NN_utils, loss_func)
-       
-        #for counter in range(nepochs):
-            #print('------- Epoch',counter+1)
-            #s = list(range(nsamples))
-            #random.shuffle(s)         # shuffle for random ordering of the batch
-
-            #counter3 = 1    
-            #for counter2 in range(0, nsamples, b):
-                #nb = min(nsamples-counter2+1, b)       # Number of samples in current batch
-                #indices = s[counter2:counter2+nb]      # Indices into samples for current batch
-
-                #batch_samples = samples[...,indices]    # Current batch samples
-                #batch_labels  = labels[...,indices]     # Current batch labels
-
-                #self.train_batch(batch_samples, batch_labels, eta)
-
-                #savecost.append(loss_func_(labels, self.infer(samples)))
-
-                #print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
-                #counter3 = counter3+1
-
-        #print('**** Access order to samples during training')
-
-
