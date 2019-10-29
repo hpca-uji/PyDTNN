@@ -40,7 +40,7 @@ class Model:
             z = l.infer(z)
         return z
 
-    def train_batch(self, batch_samples, batch_labels, eta):
+    def train_batch(self, batch_samples, batch_labels, eta, loss_func):
         """ Single step (batched) SGD """
 
         b = batch_samples.shape[-1]  # Batch size = number of columns in the batch
@@ -54,6 +54,10 @@ class Model:
         for l in range(1, len(self.layers)):
             self.layers[l].forward(self.layers[l-1].a)
 
+        total_loss = np.zeros(1)
+        loss= np.array([loss_func(batch_labels, self.layers[-1].a)])
+        if self.comm != None:
+           loss_req = self.comm.Iallreduce( loss, total_loss, op = MPI.SUM)
 
         # Back propagation. Gradient computation (GC) and calculate changes local
         self.layers[-1].backward((self.layers[-1].a - batch_labels))
@@ -80,6 +84,10 @@ class Model:
                 self.layers[l].changeW = aux[l][0:self.layers[l].weights.size].reshape(self.layers[l].weights.shape) 
                 self.layers[l].changeB = aux[l][WB[l].size-self.layers[l].bias.size:].reshape(self.layers[l].bias.shape)   
             self.layers[l].update_weights(eta, b)
+
+        if self.comm != None:
+           loss_req.Wait()
+        return total_loss[0]/self.nprocs
 
     def train(self, samples, labels, eta, nepochs, b, loss_func= "loss", early_stop= True):
         """ SGD over all samples, in batches of size b """
@@ -112,11 +120,12 @@ class Model:
                 batch_samples = samples[...,indices]    # Current batch samples
                 batch_labels  = labels[...,indices]     # Current batch labels
 
-                self.train_batch(batch_samples, batch_labels, eta/batchGlobal)  #TRAIN
+                total_loss = self.train_batch(batch_samples, batch_labels, eta/batchGlobal, loss_func_)  #TRAIN
 
                 if self.rank == 0:                                              #TEST
-                    savecost.append(loss_func_(labels, self.infer(samples)))
-                    print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
+                    #savecost.append(loss_func_(labels, self.infer(samples)))
+                    #print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
+                    print('            Batch', counter3, "Cost fnct (%s): " % loss_func, total_loss)
                 counter3 = counter3 + 1
 
 
@@ -131,11 +140,12 @@ class Model:
             batch_samples = samples[...,indices]    # Current batch samples
             batch_labels  = labels[...,indices]     # Current batch labels
 
-            self.train_batch(batch_samples, batch_labels, eta/lastIter)     #TRAIN
+            total_loss = self.train_batch(batch_samples, batch_labels, eta/lastIter, loss_func_)     #TRAIN
 
             if self.rank == 0:                                              #TEST
-                savecost.append(loss_func_(labels, self.infer(samples)))
-                print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
+                #savecost.append(loss_func_(labels, self.infer(samples)))
+                #print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
+                print('            Batch', counter3, "Cost fnct (%s): " % loss_func, total_loss)
 
 
         print('**** Access order to samples during training')

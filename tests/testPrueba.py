@@ -2,6 +2,13 @@ import random
 import numpy
 import os
 import sys
+
+#TracingLibrary = "libmpitrace.so"
+#import ctypes
+#ctypes.CDLL("/home/dolzm/install/extrae-3.7.1/lib/" + TracingLibrary)
+#import pyextrae.common.extrae as pyextrae
+#pyextrae.startTracing( TracingLibrary )
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import time
@@ -11,10 +18,11 @@ from NN_layer import *
 
 from mpi4py import MPI
 
+os.environ["MKL_NUM_THREADS"] = '16'
+
 t1 = time.time()
 
 comm = None
-
 
 if len(sys.argv) == 1:
     comm = MPI.COMM_WORLD
@@ -41,9 +49,9 @@ model = Model(comm)
 # model.add( FC(shape=(10,), activation="softmax") )
 
 model.add( Input(shape=(28, 28, 1)) )
-model.add( Conv2D(nfilters=2, filter_shape=(3, 3, 1), padding=0, stride=1, activation="sigmoid") )
+model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 1), padding=0, stride=1, activation="sigmoid") )
 model.add( Pool2D(pool_shape=(2,2), func='max') )
-model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 2), padding=0, stride=1, activation="sigmoid") )
+model.add( Conv2D(nfilters=6, filter_shape=(3, 3, 4), padding=0, stride=1, activation="sigmoid") )
 model.add( Pool2D(pool_shape=(2,2), func='max') )
 model.add( Flatten() )#
 model.add( FC(shape=(128,), activation="sigmoid") )
@@ -66,26 +74,23 @@ yall = numpy.zeros([10, train_dataset_size])
 for k in range(train_dataset_size):
   yall[zall[0, k], k] = 1
 
-subset_size = 300
+subset_size = 60000
 x = xall[...,:subset_size].copy()
 y = yall[...,:subset_size].copy()
 
 targ= np.argmax(y, axis=0)
 pred= np.argmax(model.infer(x), axis=0)
 
-#    print("Accuracy: %.2f %%" % (np.sum(np.equal(targ, pred))*100/targ.shape[0]))
-#    print(np.sum(np.equal(targ, pred)), targ.shape[0])
-    # Train the model
-
 eta     = 0.1   # Learning rate
-nepochs = 100     # Number of epochs to train
-b       = 16*prcs      # Batch size
+nepochs = 1     # Number of epochs to train
+b       = 64 * prcs      # Batch size
+
 if rank == 0:
+    print("Accuracy: %.2f %%" % (np.sum(np.equal(targ, pred))*100/targ.shape[0]))
+    print(np.sum(np.equal(targ, pred)), targ.shape[0])
+
     print('**** Training...')
     print('     Epochs:', nepochs, 'Batch size:', b, 'Learning rate:', eta)
-
-#print(model.infer(x))
-
 
 model.train(x, y, eta, nepochs, b, loss_func="accuracy")
 
