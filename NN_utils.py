@@ -3,6 +3,8 @@ import math
 import random
 from scipy.signal import convolve2d
 
+PYDL_EVT = 60000001
+
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
@@ -44,6 +46,9 @@ def softmax_derivate(x):
     #s = softmax.reshape(-1,1)
     #return np.diagflat(s) - np.dot(s, s.T)
     return x
+
+def matmul(a, b):
+    return np.matmul(a,b)
 
 def loss(targ, pred):
     return 0.5 * np.linalg.norm(pred - targ)**2 / pred.shape[-1] # equals to b

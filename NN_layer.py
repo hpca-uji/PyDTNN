@@ -3,7 +3,10 @@ import math
 import random
 import NN_utils
 
-from NN_utils import printf, im2col, col2im, dilate_and_pad
+import pyextrae.common.extrae as pyextrae
+from mpi4py import MPI
+
+from NN_utils import printf, im2col, col2im, dilate_and_pad, PYDL_EVT
 from math import floor
 
 class Layer():
@@ -14,10 +17,11 @@ class Layer():
         self.n = np.prod(shape)
         self.prev_layer = None
         self.next_layer = None
+        self.id = None
         self.changeW = []
 
     def show(self):
-        print('Layer    ')
+        print('Layer    ', self.id)
         print('Type     ', type(self).__name__)
         print('#Neurons ', self.n)
         print('Shape    ', self.shape)
@@ -28,6 +32,19 @@ class Layer():
         else:        self.dx = dX
         printf("    ", type(self).__name__, " self.dx", self.dx.shape)
 
+    def reduce_weights(self, comm):
+        if comm != None and len(self.changeW) > 0:
+           self.WB = np.append(self.changeW.reshape(-1), self.changeB.reshape(-1))
+           self.red_WB = np.zeros_like(self.WB)
+           #self.req_AR = MPI.REQUEST_NULL
+           self.req_AR = comm.Iallreduce( self.WB, self.red_WB, op = MPI.SUM )
+     
+    def wait_allreduce(self, comm):
+        if comm != None and len(self.changeW) > 0:
+           self.req_AR.Wait()
+           self.changeW = self.red_WB[0:self.weights.size].reshape(self.weights.shape)
+           self.changeB = self.red_WB[self.WB.size-self.bias.size:].reshape(self.bias.shape)    
+     
 class Input(Layer):
     """ Input layer for neural network """
 
@@ -48,8 +65,8 @@ class FC(Layer):
         self.bias = np.random.uniform(-1, 1, (self.n, 1))
 
     def infer(self, prev_a):  
-        z = self.weights @ prev_a + self.bias
-        return self.act(z)
+        a = self.act(self.weights @ prev_a + self.bias)
+        return a
 
     def forward(self, prev_a):        
         z = self.weights @ prev_a + self.bias
@@ -59,7 +76,8 @@ class FC(Layer):
         
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
-        return (self.weights.T @ self.dx) * self.prev_layer.dz
+        dX = (self.weights.T @ self.dx) * self.prev_layer.dz
+        return dX
 
     def calculate_change(self, b):
         self.changeW = self.dx @ self.prev_layer.a.T
@@ -105,7 +123,8 @@ class Conv2D(Layer):
         patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
         z = (((patched_weights @ patched_act).T + self.bias).T)
         z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
-        return self.act(z)
+        a = self.act(z)
+        return a
 
     def forward(self, prev_a):
         prev_a = dilate_and_pad(prev_a.transpose(3, 2, 0, 1), self.padding)
@@ -219,7 +238,8 @@ class Flatten(Layer):
 
     def infer(self, prev_a):
         b = prev_a.shape[-1]
-        return prev_a.reshape(-1, b)
+        a = prev_a.reshape(-1, b)
+        return a
 
     def forward(self, prev_a):
         b = prev_a.shape[-1]
@@ -233,7 +253,8 @@ class Flatten(Layer):
     def get_gradient(self):
         printf("  get_gradient:", type(self).__name__, self.shape)
         b = self.a.shape[-1]
-        return self.dx.reshape(self.prev_layer.shape + (b,))
+        dX = self.dx.reshape(self.prev_layer.shape + (b,))
+        return dX
 
     def calculate_change(self, b):
         pass
