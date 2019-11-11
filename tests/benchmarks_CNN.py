@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     if rank == 0:
         print('Running with %d procs' % nprocs)
-        print('**** Creating CONV model...')
+        print('**** Creating %s model...', args.model)
         model.show()
     
     #eta     = 0.1               # Learning rate
