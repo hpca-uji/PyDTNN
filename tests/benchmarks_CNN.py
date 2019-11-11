@@ -28,7 +28,7 @@ def parse_options():
     parser.add_argument('--model', type=str, default='simplecnn')
     parser.add_argument('--dataset', type=str, default='mnist')
     parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--num_steps', type=int, default=0)
+    parser.add_argument('--steps_per_epoch', type=int, default=0)
     parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--learning_rate', type=float, default=0.1)
     parser.add_argument('--parallel', type=str, default=None)
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     #steps   = 6
     b       = args.batch_size * batch_factor # Batch size
     
-    if args.num_steps != 0:
-       subset_size = b * nprocs * args.num_steps
+    if args.steps_per_epoch != 0:
+       subset_size = b * nprocs * args.steps_per_epoch
        x = x[...,:subset_size]
        y = y[...,:subset_size]
     
