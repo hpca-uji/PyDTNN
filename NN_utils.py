@@ -16,7 +16,7 @@ def relu(x):
     return (x > 0) * x
 
 def relu_derivate(x):
-    return (x > 0) * 1
+    return (x > 0) * 1.0
 
 def tanh(x):    
     return np.tanh(x)

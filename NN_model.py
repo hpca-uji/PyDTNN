@@ -81,10 +81,10 @@ class Model:
             self.layers[l].forward(self.layers[l-1].a)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
-        total_loss = np.zeros(1)
-        loss= np.array([loss_func(batch_labels, self.layers[-1].a)])
-        if self.comm != None:
-           loss_req = self.comm.Iallreduce( loss, total_loss, op = MPI.SUM)
+        #total_loss = np.zeros(1)
+        #loss= np.array([loss_func(batch_labels, self.layers[-1].a)])
+        #if self.comm != None:
+        #   loss_req = self.comm.Iallreduce( loss, total_loss, op = MPI.SUM)
 
         # Back propagation. Gradient computation (GC) and calculate changes local
         for l in range(len(self.layers)-1, 0, -1):
@@ -112,9 +112,9 @@ class Model:
             self.layers[l].update_weights(eta, b)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
-        if self.comm != None:
-           loss_req.Wait()
-        return total_loss[0]/self.nprocs
+        #if self.comm != None:
+        #   loss_req.Wait()
+        return 0 #total_loss[0]/self.nprocs
 
     def train(self, samples, labels, eta, nepochs, b, loss_func= "loss", early_stop= True):
         """ SGD over all samples, in batches of size b """
