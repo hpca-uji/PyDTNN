@@ -21,7 +21,7 @@
     <counters enabled="yes" />
   </pthread>
 
-  <user-functions enabled="yes" list="function-list" exclude-automatic-functions="no">
+  <user-functions enabled="yes" list="function-list" exclude-automatic-functions="yes">
     <counters enabled="yes" />
   </user-functions>
 

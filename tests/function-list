@@ -15,13 +15,15 @@ relu_derivate
 dilate_and_pad
 outer
 im2col
+col2im
 get_indices
 kron
 matmul
 reshape
 transpose
 reduce
-_pad_simple
 sum
 max
 min
+tile
+repeat

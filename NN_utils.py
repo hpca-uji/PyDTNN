@@ -4,6 +4,9 @@ import random
 from scipy.signal import convolve2d
 
 PYDL_EVT = 60000001
+PYDL_OPS_EVT = 60000002
+PYDL_NUM_EVTS = 7
+PYDL_OPS_NUM_EVTS = 9
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -47,8 +50,9 @@ def softmax_derivate(x):
     #return np.diagflat(s) - np.dot(s, s.T)
     return x
 
-def matmul(a, b):
-    return np.matmul(a,b)
+def matmul(a, b, msg=None):
+    if msg: printf_trace("%s; m; %8d; n; %8d; k; %8d;" % (msg, a.shape[0], b.shape[1], a.shape[1]) )
+    return a @ b
 
 def loss(targ, pred):
     return 0.5 * np.linalg.norm(pred - targ)**2 / pred.shape[-1] # equals to b
@@ -70,11 +74,12 @@ def get_indices(x_shape, kh, kw, c, h, w, s=1):
     k = np.repeat(np.arange(c), kh * kw).reshape(-1, 1)
     return (k.astype(int), i.astype(int), j.astype(int))
 
-def im2col(x, kh, kw, c, h, w, s=1, idx=None): 
+def im2col(x, kh, kw, c, h, w, s=1, idx=None, msg=None): 
     # Expected 'x' format (b, c, h, w)
     if not idx:
         idx = get_indices(x.shape, kh, kw, c, h, w, s)
     cols = x[:, idx[0], idx[1], idx[2]].transpose(1, 2, 0).reshape(kh * kw * c, -1)
+    if msg: printf_trace("%s; m; %8d; n; %8d; k; %8d;" % (msg, 0, cols.shape[0], cols.shape[1]) )
     return cols, idx
 
 def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
@@ -87,12 +92,13 @@ def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
     return x, idx
 
 def dilate_and_pad(input, p=0, s=1):
-    if s > 1: 
-        mask = np.zeros((s, s));  mask[0,0] = 1
-        input = np.kron(input, mask)[...,:-s+1,:-s+1]
-    if p > 0:
-        input = np.pad(input, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-    return input
+    if s > 1 or p > 0:
+        b, c, h, w = input.shape
+        h_, w_ = (h+((h-1)*(s-1))+2*p, w+((w-1)*(s-1))+2*p)
+        res = np.zeros([b, c, h_, w_])
+        res[...,p:h_-p:s,p:w_-p:s] = input
+        return res
+    return input 
 
 def convolve(input, weights, bias, p=0, s=1):
     h, w, ci, b    = input.shape
@@ -120,6 +126,9 @@ def convolve_scipy(input, weights, bias, p=0, s=1):
                 z[...,co_,b_] += convolve2d(input[...,ci_,b_], np.rot90(weights[co_,...,ci_], 2), mode='valid')
             z[...,co_,b_] += bias[co_]
     return z
+
+def printf_trace(*args):
+    print(*args)
 
 def printf(*args):
     pass

@@ -5,7 +5,7 @@ import ctypes, os
 import NN_utils
 import pyextrae.common.extrae as pyextrae
 
-from NN_utils import PYDL_EVT
+from NN_utils import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_NUM_EVTS
 from mpi4py import MPI
 
 class Model:
@@ -36,7 +36,7 @@ class Model:
         layer.id = len(self.layers) - 1
 
     def define_event_type(self):
-        nvalues = len(self.layers) * 7 + 1
+        nvalues = len(self.layers) * PYDL_NUM_EVTS + 1
         description = "Model layers"
         values = (ctypes.c_ulonglong * nvalues)()
         description_values = (ctypes.c_char_p * nvalues)()
@@ -45,16 +45,42 @@ class Model:
         for i in range(1, nvalues):
           values[i] = i
         for i in range(len(self.layers)):
-          description_values[i*7+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference ").encode('utf-8')
-          description_values[i*7+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
-          description_values[i*7+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX ").encode('utf-8')
-          description_values[i*7+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW ").encode('utf-8')
-          description_values[i*7+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
-          description_values[i*7+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dW ").encode('utf-8')
-          description_values[i*7+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
 
         pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
             ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_EVT)),
+            ctypes.c_char_p(description.encode('utf-8')),
+            ctypes.pointer(ctypes.c_uint(nvalues)),
+            ctypes.pointer(values),
+            ctypes.pointer(description_values) )
+
+        nvalues = len(self.layers) * PYDL_OPS_NUM_EVTS + 1
+        description = "PYDL ops per layer"
+        values = (ctypes.c_ulonglong * nvalues)()
+        description_values = (ctypes.c_char_p * nvalues)()
+        values[0] = 0
+        description_values[0] = "End".encode('utf-8')
+        for i in range(1, nvalues):
+          values[i] = i
+        for i in range(len(self.layers)):
+          description_values[i*PYDL_OPS_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+8] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+9] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_allreduce_dW ").encode('utf-8')
+
+        pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+            ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_OPS_EVT)),
             ctypes.c_char_p(description.encode('utf-8')),
             ctypes.pointer(ctypes.c_uint(nvalues)),
             ctypes.pointer(values),
@@ -81,40 +107,40 @@ class Model:
             self.layers[l].forward(self.layers[l-1].a)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
-        #total_loss = np.zeros(1)
-        #loss= np.array([loss_func(batch_labels, self.layers[-1].a)])
-        #if self.comm != None:
-        #   loss_req = self.comm.Iallreduce( loss, total_loss, op = MPI.SUM)
+        total_loss = np.zeros(1)
+        loss= np.array([loss_func(batch_labels, self.layers[-1].a)])
+        if self.comm != None:
+           loss_req = self.comm.Iallreduce( loss, total_loss, op = MPI.SUM)
 
         # Back propagation. Gradient computation (GC) and calculate changes local
         for l in range(len(self.layers)-1, 0, -1):
-            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * 7 + 3)
+            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
             if l == len(self.layers)-1: dX = (self.layers[-1].a - batch_labels)
             else:                       dX = []
             self.layers[l].backward(dX)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
-            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * 7 + 4)
+            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 4)
             self.layers[l].calculate_change(b)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
-            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * 7 + 5)
+            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
             self.layers[l].reduce_weights(self.comm)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
         # Weight update (WU)
         for l in range(len(self.layers)-1, 0, -1):
-            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * 7 + 6)
+            pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [self.layers[l].id * PYDL_NUM_EVTS + 6, self.layers[l].id * PYDL_OPS_NUM_EVTS + 9])
             self.layers[l].wait_allreduce(self.comm)
-            pyextrae.eventandcounters(PYDL_EVT, 0)
+            pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
 
-            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * 7 + 7)
+            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 7)
             self.layers[l].update_weights(eta, b)
             pyextrae.eventandcounters(PYDL_EVT, 0)
 
-        #if self.comm != None:
-        #   loss_req.Wait()
-        return 0 #total_loss[0]/self.nprocs
+        if self.comm != None:
+           loss_req.Wait()
+        return total_loss[0]/self.nprocs
 
     def train(self, samples, labels, eta, nepochs, b, loss_func= "loss", early_stop= True):
         """ SGD over all samples, in batches of size b """
