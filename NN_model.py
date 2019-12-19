@@ -1,11 +1,13 @@
 import numpy as np
 import math
 import random
+import ctypes, os
 import NN_utils
+import pyextrae.common.extrae as pyextrae
+import time
 
+from NN_utils import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_NUM_EVTS
 from mpi4py import MPI
-
-from scipy.signal import convolve2d
 
 class Model:
     """ Neural network (NN) """
@@ -32,54 +34,148 @@ class Model:
             layer.prev_layer = self.layers[-1]
             layer.initialize()
         self.layers.append(layer)
+        layer.id = len(self.layers) - 1
 
-    def infer(self, sample):
+    def define_event_type(self):
+        nvalues = len(self.layers) * PYDL_NUM_EVTS + 1
+        description = "Model layers"
+        values = (ctypes.c_ulonglong * nvalues)()
+        description_values = (ctypes.c_char_p * nvalues)()
+        values[0] = 0
+        description_values[0] = "End".encode('utf-8')
+        for i in range(1, nvalues):
+          values[i] = i
+        for i in range(len(self.layers)):
+          description_values[i*PYDL_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dW ").encode('utf-8')
+          description_values[i*PYDL_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
+
+        pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+            ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_EVT)),
+            ctypes.c_char_p(description.encode('utf-8')),
+            ctypes.pointer(ctypes.c_uint(nvalues)),
+            ctypes.pointer(values),
+            ctypes.pointer(description_values) )
+
+        nvalues = len(self.layers) * PYDL_OPS_NUM_EVTS + 1
+        description = "PYDL ops per layer"
+        values = (ctypes.c_ulonglong * nvalues)()
+        description_values = (ctypes.c_char_p * nvalues)()
+        values[0] = 0
+        description_values[0] = "End".encode('utf-8')
+        for i in range(1, nvalues):
+          values[i] = i
+        for i in range(len(self.layers)):
+          description_values[i*PYDL_OPS_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_im2col ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+8] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_matmul ").encode('utf-8')
+          description_values[i*PYDL_OPS_NUM_EVTS+9] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
+
+        pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+            ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_OPS_EVT)),
+            ctypes.c_char_p(description.encode('utf-8')),
+            ctypes.pointer(ctypes.c_uint(nvalues)),
+            ctypes.pointer(values),
+            ctypes.pointer(description_values) )
+
+    def inference(self, sample):
         """ Inference """
         z = sample
         for l in self.layers[1:]:
+            pyextrae.eventandcounters(PYDL_EVT, l.id * 7 + 1)
             z = l.infer(z)
+            pyextrae.eventandcounters(PYDL_EVT, 0)
         return z
 
-    def train_batch(self, batch_samples, batch_labels, eta):
+    def train_batch(self, batch_samples, batch_labels, eta, loss_func):
         """ Single step (batched) SGD """
 
         b = batch_samples.shape[-1]  # Batch size = number of columns in the batch
-        if self.comm != None:
-            requests = [MPI.REQUEST_NULL  for i in range(0,len(self.layers))]
-            WB  = [None for l in range(0, len(self.layers))]
-            aux = [None for l in range(0, len(self.layers))]
+        times_iallreduce = [[0,0]] * len(self.layers)
 
         # Forward pass (FP)
         self.layers[0].a = batch_samples
         for l in range(1, len(self.layers)):
+            pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * 7 + 2)
             self.layers[l].forward(self.layers[l-1].a)
+            pyextrae.eventandcounters(PYDL_EVT, 0)
 
-
-        # Back propagation. Gradient computation (GC) and calculate changes local
-        self.layers[-1].backward((self.layers[-1].a - batch_labels))
-        self.layers[-1].calculate_change()
-        if self.comm != None and len(self.layers[-1].changeW)>0:
-            WB[-1] = np.append(self.layers[-1].changeW.reshape(-1), self.layers[-1].changeB.reshape(-1))
-            aux[-1] = np.zeros_like(WB[-1])
-            requests[-1] = self.comm.Iallreduce( WB[-1], aux[-1], op = MPI.SUM)
-
+        total_loss = np.zeros(1)
+        loss= np.array([loss_func(batch_labels, self.layers[-1].a)])
+        if self.comm != None:
+           loss_req = self.comm.Iallreduce( loss, total_loss, op = MPI.SUM)
+        
+        mode = "synchronous"
+        if mode == "asynchronous":
+            # Back propagation. Gradient computation (GC) and calculate changes local
+            for l in range(len(self.layers)-1, 0, -1):
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
+                if l == len(self.layers)-1: dX = (self.layers[-1].a - batch_labels)
+                else:                       dX = []
+                self.layers[l].backward(dX)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
     
-        for l in range(len(self.layers)-2, 0, -1):
-            self.layers[l].backward()
-            self.layers[l].calculate_change()
-            if self.comm != None and len(self.layers[l].changeW)>0:
-                WB[l] = np.append(self.layers[l].changeW.reshape(-1), self.layers[l].changeB.reshape(-1))
-                aux[l] = np.zeros_like(WB[l])
-                requests[l] = self.comm.Iallreduce( WB[l], aux[l], op = MPI.SUM)
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 4)
+                self.layers[l].calculate_change(b)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
+    
+                if len(self.layers[l].changeW) > 0:
+                   times_iallreduce[l] = time.time()
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
+                self.layers[l].reduce_weights(self.comm)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
+    
+            # Weight update (WU)
+            for l in range(len(self.layers)-1, 0, -1):
+                pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [self.layers[l].id * PYDL_NUM_EVTS + 6, self.layers[l].id * PYDL_OPS_NUM_EVTS + 9])
+                self.layers[l].wait_allreduce(self.comm)
+                pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+                if len(self.layers[l].changeW) > 0:
+                   times_iallreduce[l] = [time.time() - times_iallreduce[l], len(self.layers[l].WB)]
+    
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 7)
+                self.layers[l].update_weights(eta, b)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
 
+        elif mode == "synchronous":
+            # Back propagation. Gradient computation (GC) and calculate changes local
+            for l in range(len(self.layers)-1, 0, -1):
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
+                if l == len(self.layers)-1: dX = (self.layers[-1].a - batch_labels)
+                else:                       dX = []
+                self.layers[l].backward(dX)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
+    
+            # Weight update (WU)
+            for l in range(len(self.layers)-1, 0, -1):
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 4)
+                self.layers[l].calculate_change(b)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
+    
+                if len(self.layers[l].changeW) > 0:
+                   times_iallreduce[l] = time.time()
+                #pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [self.layers[l].id * PYDL_NUM_EVTS + 5, self.layers[l].id * PYDL_OPS_NUM_EVTS + 9])
+                self.layers[l].reduce_weights_sync(self.comm)
+                #pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+                if len(self.layers[l].changeW) > 0:
+                   times_iallreduce[l] = [time.time() - times_iallreduce[l], len(self.layers[l].WB)]
+    
+                pyextrae.eventandcounters(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 7)
+                self.layers[l].update_weights(eta, b)
+                pyextrae.eventandcounters(PYDL_EVT, 0)
 
-        # Weight update (WU)
-        for l in range(len(self.layers)-1, 0, -1):
-            if self.comm != None and len(self.layers[l].changeW)>0:
-                requests[l].Wait()
-                self.layers[l].changeW = aux[l][0:self.layers[l].weights.size].reshape(self.layers[l].weights.shape) 
-                self.layers[l].changeB = aux[l][WB[l].size-self.layers[l].bias.size:].reshape(self.layers[l].bias.shape)   
-            self.layers[l].update_weights(eta, b)
+        if self.comm != None:
+           loss_req.Wait()
+        return total_loss[0]/self.nprocs, times_iallreduce
 
     def train(self, samples, labels, eta, nepochs, b, loss_func= "loss", early_stop= True):
         """ SGD over all samples, in batches of size b """
@@ -88,7 +184,9 @@ class Model:
         if self.rank == 0: #self.comm == None or (self.comm != None and rank == 0):
             savecost = []                # Error after each epoch training
         loss_func_= getattr(NN_utils, loss_func)
-       
+        
+        times_iallreduce_global= np.zeros(len(self.layers))
+        sizes_iallreduce_global= np.zeros(len(self.layers))
         #EPOCHS
         for counter in range(nepochs):
 
@@ -106,20 +204,25 @@ class Model:
                 endFor = nsamples - rest  #the rest of samples are a new batch (mini)
                 lastIter = rest
 
-            #BATCHS (except the last one)
+            #BATCHES (except the last one)
             for counter2 in range(0, endFor, batchGlobal):
                 indices = s[counter2+b*self.rank:counter2+b*(self.rank+1)]  
                 batch_samples = samples[...,indices]    # Current batch samples
                 batch_labels  = labels[...,indices]     # Current batch labels
 
-                self.train_batch(batch_samples, batch_labels, eta/batchGlobal)  #TRAIN
+                total_loss, times_iallreduce = self.train_batch(batch_samples, batch_labels, eta/batchGlobal, loss_func_)  #TRAIN
 
                 if self.rank == 0:                                              #TEST
-                    savecost.append(loss_func_(labels, self.infer(samples)))
-                    print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
+                    #savecost.append(loss_func_(labels, self.infer(samples)))
+                    #print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
+                    print('            Batch', counter3, "Cost fnct (%s): " % loss_func, total_loss)
+
+                for l in range(1, len(self.layers)):
+                   times_iallreduce_global[l] = (times_iallreduce[l][0] + times_iallreduce_global[l] * (counter3-1))/counter3
+                   sizes_iallreduce_global[l] = times_iallreduce[l][1]
+
                 counter3 = counter3 + 1
-
-
+             
            #LAST BATCH
             newb = lastIter // self.nprocs #new size of batch/process
             ini = endFor + newb*self.rank
@@ -131,50 +234,22 @@ class Model:
             batch_samples = samples[...,indices]    # Current batch samples
             batch_labels  = labels[...,indices]     # Current batch labels
 
-            self.train_batch(batch_samples, batch_labels, eta/lastIter)     #TRAIN
+            total_loss, times_iallreduce = self.train_batch(batch_samples, batch_labels, eta/lastIter, loss_func_)     #TRAIN
+
+            for l in range(1, len(self.layers)):
+                times_iallreduce_global[l] = (times_iallreduce[l][0] + times_iallreduce_global[l] * (counter3-1))/counter3
+                sizes_iallreduce_global[l] = times_iallreduce[l][1]
 
             if self.rank == 0:                                              #TEST
-                savecost.append(loss_func_(labels, self.infer(samples)))
-                print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
-
-
-        print('**** Access order to samples during training')
-
-
-
-
-
-
-
-
-
-
-
-
-        #nsamples = samples.shape[-1] # Numer of samples
-        #savecost = []                # Error after each epoch training
-        #loss_func_= getattr(NN_utils, loss_func)
-       
-        #for counter in range(nepochs):
-            #print('------- Epoch',counter+1)
-            #s = list(range(nsamples))
-            #random.shuffle(s)         # shuffle for random ordering of the batch
-
-            #counter3 = 1    
-            #for counter2 in range(0, nsamples, b):
-                #nb = min(nsamples-counter2+1, b)       # Number of samples in current batch
-                #indices = s[counter2:counter2+nb]      # Indices into samples for current batch
-
-                #batch_samples = samples[...,indices]    # Current batch samples
-                #batch_labels  = labels[...,indices]     # Current batch labels
-
-                #self.train_batch(batch_samples, batch_labels, eta)
-
                 #savecost.append(loss_func_(labels, self.infer(samples)))
-
                 #print('            Batch', counter3, "Cost fnct (%s): " % loss_func, savecost[-1])
-                #counter3 = counter3+1
+                print('            Batch', counter3, "Cost fnct (%s): " % loss_func, total_loss)
+
+            if self.rank == 0:
+              for l in range(1, len(self.layers)):
+                print("Iallred : %d_%s : %.9f : %d " % (l, type(self.layers[l]).__name__, times_iallreduce_global[l], sizes_iallreduce_global[l]))
+
+
 
         #print('**** Access order to samples during training')
-
-
+        self.define_event_type()
