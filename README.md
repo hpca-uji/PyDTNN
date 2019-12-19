@@ -1,6 +1,6 @@
 # Python Distributed Training of Neural Networks - PyDTNN
 
-## Introduction ##
+## Introduction
 
 **PyDTNN** is a light-weight library for distributed Deep Learning training 
 and inference that offers an initial starting point for interaction 
@@ -21,15 +21,13 @@ Currently, **PyDTNN** supports the following layers:
   * Max pooling
   * Average pooling
 
-<!--
-## Install and compile instructions
+## References
 
-See the [install and compile notes](doc/install-notes.md).
+Publications describing PyDTNN
 
-## Publications describing PyDTNN
+* "..."
 
-### References
--->
+## Acknowledgments
 
 The **PyDTNN** library has been partially supported by:
 
