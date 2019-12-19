@@ -17,9 +17,11 @@ which are realized BLAS calls via NumPy.
 Currently, **PyDTNN** supports the following layers:
 
   * Fully-connected
-  * Convolutional
+  * Convolutional 2D
   * Max pooling
   * Average pooling
+  * Flatten
+  * Dropout
 
 ## References
 
