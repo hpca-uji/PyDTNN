@@ -21,13 +21,15 @@ Currently, **PyDTNN** supports the followint layers:
   * Max pooling
   * Average pooling
 
-[comment]: ## Install and compile instructions
+<!--
+## Install and compile instructions
 
-[comment]: See the [install and compile notes](doc/install-notes.md).
+See the [install and compile notes](doc/install-notes.md).
 
-[comment]: ## Publications describing PyDTNN
+## Publications describing PyDTNN
 
-[comment]: ### References
+### References
+-->
 
 The **PyDTNN** library has been partially supported by:
 
