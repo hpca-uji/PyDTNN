@@ -128,7 +128,8 @@ def convolve_scipy(input, weights, bias, p=0, s=1):
     return z
 
 def printf_trace(*args):
-    print(*args)
+    pass
+    #print(*args)
 
 def printf(*args):
     pass

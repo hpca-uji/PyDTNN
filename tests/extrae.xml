@@ -30,7 +30,7 @@
       <set enabled="yes" domain="all" changeat-time="0">
         <!--PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_L1_DCM,PAPI_L2_DCM,PAPI_L3_TCM,PAPI_FP_INS-->
         PAPI_TOT_INS,PAPI_TOT_CYC,PAPI_FP_INS,PAPI_L3_TCM
-        <sampling enabled="yes" period="10000000">
+        <sampling enabled="no" period="10000000">
           PAPI_FP_INS
         </sampling>
       </set>

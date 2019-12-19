@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-TracingLibrary = "libmpitrace.so"
+TracingLibrary = "libptmpitrace.so"
 import ctypes
 ctypes.CDLL("/home/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
 import pyextrae.common.extrae as pyextrae

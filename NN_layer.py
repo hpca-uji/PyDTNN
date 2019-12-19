@@ -6,7 +6,7 @@ import NN_utils
 import pyextrae.common.extrae as pyextrae
 from mpi4py import MPI
 
-from NN_utils import printf, im2col, col2im, dilate_and_pad, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_utils import printf, im2col, col2im, dilate_and_pad, PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 from math import floor
 
 class Layer():
@@ -27,16 +27,15 @@ class Layer():
         print('Shape    ', self.shape)
 
     def backward(self, dX= []):
-        printf("\nbackward:", type(self).__name__, self.shape)
+        printf(" _%d_%s_backward: " % (self.id, type(self).__name__), self.shape, len(dX))
         if dX == []: self.dx = self.next_layer.get_gradient()
         else:        self.dx = dX
-        printf("    ", type(self).__name__, " self.dx", self.dx.shape)
+        #printf("    ", type(self).__name__, " self.dx", self.dx.shape)
 
     def reduce_weights(self, comm):
         if comm != None and len(self.changeW) > 0:
            self.WB = np.append(self.changeW.reshape(-1), self.changeB.reshape(-1))
            self.red_WB = np.zeros_like(self.WB)
-           #self.req_AR = MPI.REQUEST_NULL
            self.req_AR = comm.Iallreduce( self.WB, self.red_WB, op = MPI.SUM )
      
     def wait_allreduce(self, comm):
@@ -45,6 +44,16 @@ class Layer():
            self.changeW = self.red_WB[0:self.weights.size].reshape(self.weights.shape)
            self.changeB = self.red_WB[self.WB.size-self.bias.size:].reshape(self.bias.shape)    
      
+    def reduce_weights_sync(self, comm):
+        if comm != None and len(self.changeW) > 0:
+           self.WB = np.append(self.changeW.reshape(-1), self.changeB.reshape(-1))
+           self.red_WB = np.zeros_like(self.WB)
+           pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [self.id * PYDL_NUM_EVTS + 5, self.id * PYDL_OPS_NUM_EVTS + 9])
+           comm.Allreduce( self.WB, self.red_WB, op = MPI.SUM )
+           pyextrae.neventandcounters([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+           self.changeW = self.red_WB[0:self.weights.size].reshape(self.weights.shape)
+           self.changeB = self.red_WB[self.WB.size-self.bias.size:].reshape(self.bias.shape)    
+
 class Input(Layer):
     """ Input layer for neural network """
 
@@ -85,11 +94,11 @@ class FC(Layer):
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
         
     def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
+        printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
 
-        pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 6)
+        pyextrae.eventandcounters(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 6)
         res_matmul = NN_utils.matmul(self.weights.T, self.dx,
-            "%d_%s_compute_dX_matmul" % (self.id, type(self).__name__))
+            "%d_%s_compute_dX_matmul" % (self.id-1, type(self).__name__))
         pyextrae.eventandcounters(PYDL_OPS_EVT, 0)
 
         dX = res_matmul * self.prev_layer.dz
@@ -181,20 +190,20 @@ class Conv2D(Layer):
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
     def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
+        printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
         d = dilate_and_pad(self.dx.transpose(3, 2, 0, 1), self.kh-self.padding-1, self.stride)
 
-        pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        pyextrae.eventandcounters(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 5)
         patched_matrix, self.cached_idx_gc= im2col(d, self.kh, self.kw, 
             self.co, self.hi, self.wi, 1, self.cached_idx_gc,
-            "%d_%s_compute_dX_im2col" % (self.id, type(self).__name__))
+            "%d_%s_compute_dX_im2col" % (self.id-1, type(self).__name__))
         pyextrae.eventandcounters(PYDL_OPS_EVT, 0)
 
         patched_weights= np.rot90(self.weights.transpose(3, 0, 1, 2), 2, axes=(2,3)).reshape(self.ci, -1)
 
-        pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 6)
+        pyextrae.eventandcounters(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 6)
         res_matmul = NN_utils.matmul(patched_weights, patched_matrix,
-            "%d_%s_compute_dX_matmul" % (self.id, type(self).__name__))
+            "%d_%s_compute_dX_matmul" % (self.id-1, type(self).__name__))
         pyextrae.eventandcounters(PYDL_OPS_EVT, 0)
 
         dx = res_matmul.reshape(self.ci, self.hi, self.wi, -1).transpose(1, 2, 0, 3) # PyNN format
@@ -283,7 +292,7 @@ class Pool2D(Layer):
             prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp] * self.mask
             prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
 
-            pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+            pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
             patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 
                 1, self.ho, self.wo, self.stride, self.cached_idx,
                 "%d_%s_forward2_im2col" % (self.id, type(self).__name__))
@@ -296,7 +305,7 @@ class Pool2D(Layer):
             prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
             prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
 
-            pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+            pyextrae.eventandcounters(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
             patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 
                 1, self.ho, self.wo, self.stride, self.cached_idx,
                 "%d_%s_forward2_im2col" % (self.id, type(self).__name__))
@@ -305,6 +314,7 @@ class Pool2D(Layer):
             self.dz = patched_dz.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
 
     def get_gradient(self):     
+        printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
         if self.func_str == "max":
             #dx = np.kron(self.dx.transpose(3, 2, 0, 1), np.ones(self.pool_shape)) * self.mask
             dx = np.repeat(np.repeat(self.dx.transpose(3, 2, 0, 1), self.pool_shape[0], axis=2), self.pool_shape[1], axis=3)
@@ -384,7 +394,7 @@ class Dropout(Layer):
         printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
     def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
+        printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
         return self.dx * self.mask
 
     def calculate_change(self, b):
