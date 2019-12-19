@@ -25,7 +25,7 @@ Currently, **PyDTNN** supports the following layers:
 
 Publications describing PyDTNN
 
-* "..."
+* ...
 
 ## Acknowledgments
 
