@@ -14,7 +14,7 @@ PyDTNN uses MPI4Py for message-passing and im2col transforms to cast the
 convolutions in terms of dense matrix-matrix multiplications, 
 which are realized BLAS calls via NumPy.
 
-Currently, **PyDTNN** supports the followint layers:
+Currently, **PyDTNN** supports the following layers:
 
   * Fully-connected
   * Convolutional
