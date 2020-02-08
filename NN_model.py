@@ -39,56 +39,57 @@ class Model:
         layer.model = self
 
     def define_event_type(self):
-        nvalues = len(self.layers) * PYDL_NUM_EVTS + 1
-        description = "Model layers"
-        values = (ctypes.c_ulonglong * nvalues)()
-        description_values = (ctypes.c_char_p * nvalues)()
-        values[0] = 0
-        description_values[0] = "End".encode('utf-8')
-        for i in range(1, nvalues):
-          values[i] = i
-        for i in range(len(self.layers)):
-          description_values[i*PYDL_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference ").encode('utf-8')
-          description_values[i*PYDL_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
-          description_values[i*PYDL_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX ").encode('utf-8')
-          description_values[i*PYDL_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW ").encode('utf-8')
-          description_values[i*PYDL_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
-          description_values[i*PYDL_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dW ").encode('utf-8')
-          description_values[i*PYDL_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
-
-        pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
-            ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_EVT)),
-            ctypes.c_char_p(description.encode('utf-8')),
-            ctypes.pointer(ctypes.c_uint(nvalues)),
-            ctypes.pointer(values),
-            ctypes.pointer(description_values) )
-
-        nvalues = len(self.layers) * PYDL_OPS_NUM_EVTS + 1
-        description = "PYDL ops per layer"
-        values = (ctypes.c_ulonglong * nvalues)()
-        description_values = (ctypes.c_char_p * nvalues)()
-        values[0] = 0
-        description_values[0] = "End".encode('utf-8')
-        for i in range(1, nvalues):
-          values[i] = i
-        for i in range(len(self.layers)):
-          description_values[i*PYDL_OPS_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_im2col ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_matmul ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_im2col ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_matmul ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_im2col ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+8] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_matmul ").encode('utf-8')
-          description_values[i*PYDL_OPS_NUM_EVTS+9] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
-
-        pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
-            ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_OPS_EVT)),
-            ctypes.c_char_p(description.encode('utf-8')),
-            ctypes.pointer(ctypes.c_uint(nvalues)),
-            ctypes.pointer(values),
-            ctypes.pointer(description_values) )
-
+        if self.training:
+            nvalues = len(self.layers) * PYDL_NUM_EVTS + 1
+            description = "Model layers"
+            values = (ctypes.c_ulonglong * nvalues)()
+            description_values = (ctypes.c_char_p * nvalues)()
+            values[0] = 0
+            description_values[0] = "End".encode('utf-8')
+            for i in range(1, nvalues):
+              values[i] = i
+            for i in range(len(self.layers)):
+              description_values[i*PYDL_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dW ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
+    
+            pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+                ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_EVT)),
+                ctypes.c_char_p(description.encode('utf-8')),
+                ctypes.pointer(ctypes.c_uint(nvalues)),
+                ctypes.pointer(values),
+                ctypes.pointer(description_values) )
+    
+            nvalues = len(self.layers) * PYDL_OPS_NUM_EVTS + 1
+            description = "PYDL ops per layer"
+            values = (ctypes.c_ulonglong * nvalues)()
+            description_values = (ctypes.c_char_p * nvalues)()
+            values[0] = 0
+            description_values[0] = "End".encode('utf-8')
+            for i in range(1, nvalues):
+              values[i] = i
+            for i in range(len(self.layers)):
+              description_values[i*PYDL_OPS_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_im2col ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_im2col ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_im2col ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+8] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+9] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
+    
+            pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+                ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_OPS_EVT)),
+                ctypes.c_char_p(description.encode('utf-8')),
+                ctypes.pointer(ctypes.c_uint(nvalues)),
+                ctypes.pointer(values),
+                ctypes.pointer(description_values) )
+    
     def emit_event(self, evt, val):
         if self.tracing:
             pyextrae.eventandcounters(evt, val)
