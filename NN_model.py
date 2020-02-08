@@ -187,7 +187,6 @@ class Model:
 
         if self.comm != None:
            loss_req.Wait()
-        print
         return total_loss[0]/self.nprocs #, times_iallreduce
 
     def train(self, samples, labels, eta, nepochs, b, loss_func= "loss", early_stop= True):
