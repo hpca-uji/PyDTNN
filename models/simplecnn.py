@@ -1,8 +1,8 @@
 from NN_model import *
 from NN_layer import *
 
-def create_simplecnn(comm):
-    model = Model(comm)
+def create_simplecnn(comm, tracing):
+    model = Model(comm, tracing)
     model.add( Input(shape=(28, 28, 1)) )
     model.add( Conv2D(nfilters=4, filter_shape=(3, 3, 1), padding=0, stride=1, activation="sigmoid") )
     model.add( Pool2D(pool_shape=(2,2), func='max') )

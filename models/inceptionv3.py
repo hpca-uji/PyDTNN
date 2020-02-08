@@ -1,8 +1,8 @@
 from NN_model import *
 from NN_layer import *
 
-def create_inceptionv3(comm):
-    model = Model(comm)
+def create_inceptionv3(comm, tracing):
+    model = Model(comm, tracing)
     model.add( Input(shape=(225, 225, 3)) )
     model.add( Conv2D(nfilters=32, filter_shape=(3, 3, 3), padding=0, stride=2, activation="relu") )
     model.add( Conv2D(nfilters=32, filter_shape=(3, 3, 32), padding=1, stride=1, activation="relu") )

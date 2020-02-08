@@ -1,14 +1,19 @@
 #!/usr/bin/python
 
 from __future__ import print_function
+import os
 
-TracingLibrary = "libptmpitrace.so"
-import ctypes
-ctypes.CDLL("/home/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
-import pyextrae.common.extrae as pyextrae
-pyextrae.startTracing( TracingLibrary )
+if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == 1:
+  TracingLibrary = "libptmpitrace.so"
+  import ctypes
+  ctypes.CDLL("/home/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
 
-from mpi4py import MPI
+  import pyextrae.common.extrae as pyextrae
+  pyextrae.startTracing( TracingLibrary )
+  Extrae_tracing = True
+else:
+  Extrae_tracing = False
+  
 import random
 import numpy
 import os
@@ -32,7 +37,8 @@ def parse_options():
     parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--learning_rate', type=float, default=0.1)
     parser.add_argument('--parallel', type=str, default=None)
-    parser.add_argument('--inference', action="store_true")
+    parser.add_argument('--inference', action="store_true", default=True)
+    parser.add_argument('--tracing', action="store_false", default=False)
     args = parser.parse_args()
     return args
 
@@ -40,10 +46,12 @@ if __name__ == "__main__":
     args = parse_options()
 
     if args.parallel == "data":
+        from mpi4py import MPI
         comm = MPI.COMM_WORLD
         batch_factor = 1
         nprocs = comm.Get_size()
         rank = comm.Get_rank()
+        print('Running with %d procs' % nprocs)
 
     elif args.parallel == None:
         comm = None
@@ -55,16 +63,15 @@ if __name__ == "__main__":
     random.seed(0)
     numpy.set_printoptions(precision=15)
     numpy.random.seed(30)
-    
-    model = create_model(args.model, comm)
+    print(args.tracing)
+    model = create_model(args, comm)
     x, y  = read_dataset(args.dataset)
 
     if args.model == "vgg16":
         x = x[:224,:224,...] 
 
     if rank == 0:
-        print('Running with %d procs' % nprocs)
-        print('**** Creating %s model...', args.model)
+        print('**** Creating %s model...' % args.model)
         model.show()
     
     #eta     = 0.1               # Learning rate

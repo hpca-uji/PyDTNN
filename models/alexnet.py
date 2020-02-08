@@ -1,8 +1,8 @@
 from NN_model import *
 from NN_layer import *
 
-def create_alexnet(comm):
-    model = Model(comm)
+def create_alexnet(comm, tracing):
+    model = Model(comm, tracing)
     model.add( Input(shape=(227, 227, 3)) )
     model.add( Conv2D(nfilters=96, filter_shape=(11, 11, 3), padding=0, stride=4, activation="relu") )
     model.add( Pool2D(pool_shape=(3,3), func='max', stride=2) )

@@ -1,8 +1,8 @@
 from NN_model import *
 from NN_layer import *
 
-def create_vgg16(comm):
-    model = Model(comm)
+def create_vgg16(comm, tracing):
+    model = Model(comm, tracing)
     model.add( Input(shape=(224, 224, 3)) )
     model.add( Conv2D(nfilters=64, filter_shape=(3, 3, 3), padding=1, stride=1, activation="relu") )
     model.add( Conv2D(nfilters=64, filter_shape=(3, 3, 64), padding=1, stride=1, activation="relu") )
