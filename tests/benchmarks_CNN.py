@@ -63,7 +63,7 @@ if __name__ == "__main__":
     random.seed(0)
     numpy.set_printoptions(precision=15)
     numpy.random.seed(30)
-    print(args.tracing)
+
     model = create_model(args, comm)
     x, y  = read_dataset(args.dataset)
 
