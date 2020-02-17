@@ -39,7 +39,7 @@ class Model:
         layer.model = self
 
     def define_event_type(self):
-        if self.training:
+        if self.tracing:
             nvalues = len(self.layers) * PYDL_NUM_EVTS + 1
             description = "Model layers"
             values = (ctypes.c_ulonglong * nvalues)()

@@ -299,7 +299,6 @@ class Pool2D(Layer):
 
             self.dz = patched_dz[self.argmax].reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
 
-
         elif self.func_str == "avg":
             self.a = patched_a.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
             prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
@@ -318,9 +317,8 @@ class Pool2D(Layer):
         if self.func_str == "max":
                             # Expected (h, w, b, c)    PyNN to requested  o.transpose(0,1,3,2) , Normal to requested o.transpose(2,3,0,1)
             b = self.dx.shape[-1]
-            dx_reshaped = self.dx.transpose(0,1,3,2).flatten()
-            patched_dx = np.zeros_like(dx)
-            patched_dx[self.argmax] = dx_reshaped
+            patched_dx = np.zeros((self.kh * self.kw, np.prod(self.dx.shape)))
+            patched_dx[self.argmax] = self.dx.transpose(0,1,3,2).flatten()
             dx, self.cached_idx = col2im(patched_dx, (b * self.ci, 1, self.hi-self.hp, self.wi-self.wp), \
                                      self.kh, self.kw, self.ho, self.wo, self.stride, self.cached_idx)
             dx = dx.reshape(b, self.ci, self.hi-self.hp, self.wi-self.wp)
