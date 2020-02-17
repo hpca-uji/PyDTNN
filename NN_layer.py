@@ -3,7 +3,7 @@ import math
 import random
 import NN_utils
 
-from mpi4py import MPI
+#from mpi4py import MPI
 
 from NN_utils import printf, im2col, col2im, dilate_and_pad, PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 from math import floor
@@ -273,6 +273,7 @@ class Pool2D(Layer):
         return a
 
     def forward(self, prev_a):
+
         b = prev_a.shape[-1]
         prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
         prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
@@ -285,10 +286,9 @@ class Pool2D(Layer):
 
         if self.func_str == "max":
             self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-            #r = np.kron(self.a.transpose(3, 2, 0, 1), np.ones(self.pool_shape))
-            r = np.repeat(np.repeat(self.a.transpose(3, 2, 0, 1), self.pool_shape[0], axis=2), self.pool_shape[1], axis=3)
-            self.mask = np.equal(prev_a, r).astype(int)
-            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp] * self.mask
+            self.argmax = [patched_a.argmax(axis=0), np.arange(patched_a.shape[1])]
+
+            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
             prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
 
             self.model.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
@@ -297,7 +297,8 @@ class Pool2D(Layer):
                 "%d_%s_forward2_im2col" % (self.id, type(self).__name__))
             self.model.emit_event(PYDL_OPS_EVT, 0)
 
-            self.dz = patched_dz.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+            self.dz = patched_dz[self.argmax].reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+
 
         elif self.func_str == "avg":
             self.a = patched_a.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
@@ -315,13 +316,20 @@ class Pool2D(Layer):
     def get_gradient(self):     
         printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
         if self.func_str == "max":
-            #dx = np.kron(self.dx.transpose(3, 2, 0, 1), np.ones(self.pool_shape)) * self.mask
-            dx = np.repeat(np.repeat(self.dx.transpose(3, 2, 0, 1), self.pool_shape[0], axis=2), self.pool_shape[1], axis=3)
+                            # Expected (h, w, b, c)    PyNN to requested  o.transpose(0,1,3,2) , Normal to requested o.transpose(2,3,0,1)
+            b = self.dx.shape[-1]
+            dx = np.repeat(self.dx.transpose(0,1,3,2).reshape(1,-1), self.kh*self.kw, axis=0)
+            patched_dx = np.zeros_like(dx)
+            patched_dx[self.argmax] = dx[self.argmax]
+            dx, self.cached_idx = col2im(patched_dx, (b * self.ci, 1, self.hi-self.hp, self.wi-self.wp), \
+                                     self.kh, self.kw, self.ho, self.wo, self.stride, self.cached_idx)
+            dx = dx.reshape(b, self.ci, self.hi-self.hp, self.wi-self.wp)
+
         elif self.func_str == "avg":
             dx = np.kron(self.dx.transpose(3, 2, 0, 1), (np.ones((self.kh, self.kw)) / (self.kh * self.kw)) )
         dx = np.pad(dx, ((0, 0), (0, 0), (0, self.hp), (0, self.wp)), mode='constant').transpose(2, 3, 1, 0) # PyNN format
         return dx
-
+                     
     def calculate_change(self, b):
         pass
 

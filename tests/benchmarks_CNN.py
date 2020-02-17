@@ -37,7 +37,7 @@ def parse_options():
     parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--learning_rate', type=float, default=0.1)
     parser.add_argument('--parallel', type=str, default=None)
-    parser.add_argument('--inference', action="store_true", default=True)
+    parser.add_argument('--inference', action="store_true", default=False)
     parser.add_argument('--tracing', action="store_false", default=False)
     args = parser.parse_args()
     return args
