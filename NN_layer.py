@@ -286,7 +286,7 @@ class Pool2D(Layer):
 
         if self.func_str == "max":
             self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-            self.argmax = self.tuple([patched_a.argmax(axis=0), np.arange(patched_a.shape[1])])
+            self.argmax = tuple([patched_a.argmax(axis=0), np.arange(patched_a.shape[1])])
 
             prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
             prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
