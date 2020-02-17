@@ -318,9 +318,9 @@ class Pool2D(Layer):
         if self.func_str == "max":
                             # Expected (h, w, b, c)    PyNN to requested  o.transpose(0,1,3,2) , Normal to requested o.transpose(2,3,0,1)
             b = self.dx.shape[-1]
-            dx = np.repeat(self.dx.transpose(0,1,3,2).reshape(1,-1), self.kh*self.kw, axis=0)
+            dx_reshaped = self.dx.transpose(0,1,3,2).flatten()
             patched_dx = np.zeros_like(dx)
-            patched_dx[self.argmax] = dx[self.argmax]
+            patched_dx[self.argmax] = dx_reshaped
             dx, self.cached_idx = col2im(patched_dx, (b * self.ci, 1, self.hi-self.hp, self.wi-self.wp), \
                                      self.kh, self.kw, self.ho, self.wo, self.stride, self.cached_idx)
             dx = dx.reshape(b, self.ci, self.hi-self.hp, self.wi-self.wp)
