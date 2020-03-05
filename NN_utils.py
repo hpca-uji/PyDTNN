@@ -1,12 +1,15 @@
 import numpy as np
 import math
 import random
+import NN_im2col_cython
 from scipy.signal import convolve2d
 
 PYDL_EVT = 60000001
 PYDL_OPS_EVT = 60000002
 PYDL_NUM_EVTS = 7
 PYDL_OPS_NUM_EVTS = 9
+im2col_mode = "fancy"
+im2col_mode = "fast"
 
 def sigmoid(x):
     return 1 / (1 + np.exp(-x))
@@ -40,8 +43,8 @@ def log_derivate(x):
     return log(x) * ( 1 - log(x))
 
 def softmax(x):
-    ex = np.exp(x - np.max(x, axis=0).reshape(1,-1).repeat(x.shape[0], axis=0))    
-    return ex / ex.sum(axis=0) 
+    ex = np.exp(x - np.max(x, axis=0).reshape(1,-1).repeat(x.shape[0], axis=0))
+    return ex / ex.sum(axis=0)
 
 def softmax_derivate(x):
     # TODO
@@ -74,15 +77,14 @@ def get_indices(x_shape, kh, kw, c, h, w, s=1):
     k = np.repeat(np.arange(c), kh * kw).reshape(-1, 1)
     return (k.astype(int), i.astype(int), j.astype(int))
 
-def im2col(x, kh, kw, c, h, w, s=1, idx=None, msg=None): 
+def im2col_fancy(x, kh, kw, c, h, w, s=1, idx=None):
     # Expected 'x' format (b, c, h, w)
     if not idx:
         idx = get_indices(x.shape, kh, kw, c, h, w, s)
     cols = x[:, idx[0], idx[1], idx[2]].transpose(1, 2, 0).reshape(kh * kw * c, -1)
-    if msg: printf_trace("%s; m; %8d; n; %8d; k; %8d;" % (msg, 0, cols.shape[0], cols.shape[1]) )
     return cols, idx
 
-def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
+def col2im_fancy(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
     b, c, h, w = x_shape    
     cols_reshaped = cols.reshape(c * kh * kw, -1, b).transpose(2, 0, 1)
     x = np.zeros((b, c, h, w), dtype=cols.dtype)
@@ -90,6 +92,24 @@ def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
         idx = get_indices(x_shape, kh, kw, c, ho, wo, s)
     np.add.at(x, (slice(None), idx[0], idx[1], idx[2]), cols_reshaped) 
     return x, idx
+
+def im2col(x, kh, kw, c, h, w, s=1, idx=None, msg=None):
+    if im2col_mode == "fast":
+       cols= NN_im2col_cython.im2col_cython(x.astype(np.float64), kh, kw, h, w, 0, s)
+       idx= None
+    elif im2col_mode == "fancy":
+       cols, idx= im2col_fancy(x, kh, kw, c, h, w, s, idx)
+    if msg: printf_trace("%s; m; %8d; n; %8d; k; %8d;" % (msg, 0, cols.shape[0], cols.shape[1]) )
+    return cols, None
+
+def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
+    b, c, h, w = x_shape    
+    if im2col_mode == "fast":
+       cols= NN_im2col_cython.col2im_cython(cols, b, c, h, w, kh, kw, 0, s)
+       idx= None
+    elif im2col_mode == "fancy":
+       cols, idx= col2im_fancy(cols, x_shape, kh, kw, ho, wo, s, idx)
+    return cols, idx
 
 def dilate_and_pad(input, p=0, s=1):
     if s > 1 or p > 0:

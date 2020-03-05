@@ -81,8 +81,13 @@ if __name__ == "__main__":
     
     if args.steps_per_epoch != 0:
        subset_size = b * nprocs * args.steps_per_epoch
-       x = x[...,:subset_size]
-       y = y[...,:subset_size]
+       if subset_size > x.shape[-1]:
+          scale = ceil(subset_size/float(x.shape[-1]))
+          x = np.tile(x, scale)[...,:subset_size]
+          y = np.tile(y, scale)[...,:subset_size]
+       else:
+          x = x[...,:subset_size]
+          y = y[...,:subset_size]
     
     if rank == 0:
         if args.inference:
@@ -98,13 +103,27 @@ if __name__ == "__main__":
     if args.parallel:
         comm.Barrier()
 
+    import cProfile, pstats
+    from io import StringIO
+    pr = cProfile.Profile()
+    pr.enable()
     model.train(x, y, args.learning_rate, args.num_epochs, b, loss_func="accuracy")
+    pr.disable()
+    s = StringIO()
+    sortby = 'time'
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    print(s.getvalue())
+
+    #model.train(x, y, args.learning_rate, args.num_epochs, b, loss_func="accuracy")
     
     if rank == 0:
         t2 = time.time()
         print('**** Done... and thanks for all the fish!!!')
         print('**** Time: ', t2-t1)
-        
+        subset_size = subset_size if args.steps_per_epoch != 0 else x.shape[-1]
+        print('**** Images/s: ', (subset_size * args.num_epochs)/(t2-t1))
+
         if args.inference:
             targ= np.argmax(y, axis=0)
             pred= np.argmax(model.inference(x), axis=0)

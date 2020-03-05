@@ -4,10 +4,10 @@ import numpy as np
 
 def read_dataset(dataset):
     if dataset == "imagenet":
-        xall = np.load("../datasets/imagenet/imagenet_xall.npy")
-        yall = np.load("../datasets/imagenet/imagenet_yall.npy")
-        xall = np.tile(xall, 10)
-        yall = np.tile(yall, 10)
+        xall = np.load("../datasets/imagenet/imagenet_xall.npy").astype(np.float64)
+        yall = np.load("../datasets/imagenet/imagenet_yall.npy").astype(np.float64)
+        #xall = np.tile(xall, 10)
+        #yall = np.tile(yall, 10)
         # Random values
         #xall = np.random.random((227, 227, 3, 3072))
         #zall = np.random.randint(1000, size=(3072))
