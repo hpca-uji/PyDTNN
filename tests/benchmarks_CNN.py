@@ -14,12 +14,7 @@ if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == 1:
 else:
   Extrae_tracing = False
   
-import random
-import numpy
-import os
-import sys
-import time
-import argparse
+import numpy, random, os, sys, math, time, argparse
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -82,7 +77,7 @@ if __name__ == "__main__":
     if args.steps_per_epoch != 0:
        subset_size = b * nprocs * args.steps_per_epoch
        if subset_size > x.shape[-1]:
-          scale = ceil(subset_size/float(x.shape[-1]))
+          scale = math.ceil(subset_size/float(x.shape[-1]))
           x = np.tile(x, scale)[...,:subset_size]
           y = np.tile(y, scale)[...,:subset_size]
        else:

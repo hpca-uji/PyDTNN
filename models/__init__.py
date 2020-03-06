@@ -10,7 +10,7 @@ import models.simplemlp as simplemlp
 def create_model(args, comm):
     if args.model == "vgg16":
         model = vgg16.create_vgg16(comm, args.tracing)
-    if args.model == "vgg11":
+    elif args.model == "vgg11":
         model = vgg11.create_vgg11(comm, args.tracing)
     elif args.model == "alexnet":
         model = alexnet.create_alexnet(comm, args.tracing)
