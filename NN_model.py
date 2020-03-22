@@ -40,7 +40,7 @@ __version__ = "1.0.0"
 import numpy as np
 
 import random, sys
-import NN_utils, NN_activation, NN_optimizer, datasets.NN_dataset
+import NN_util, NN_activation, NN_optimizer, datasets.NN_dataset
 from NN_tracer import Tracer, PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, \
                               PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 from tqdm import tqdm
@@ -197,7 +197,7 @@ class Model:
                       loss_metrics=["accuracy", "categorical_cross_entropy"], 
                       optimizer="SGD", bar_width=110):
 
-        loss_funcs = [getattr(NN_utils, l) for l in loss_metrics]
+        loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
         optimizer_func = getattr(NN_optimizer, optimizer)
         
         for epoch in range(nepochs):
@@ -238,7 +238,7 @@ class Model:
         self.tracer.define_event_type()
 
     def evaluate(self, X, Y, loss_metrics=["accuracy", "categorical_cross_entropy"]):
-        loss_funcs = [getattr(NN_utils, l) for l in loss_metrics]
+        loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
 
         # Forward pass (FP)
         if X.shape[0] == 0: return 0

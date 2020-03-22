@@ -38,10 +38,10 @@ __version__ = "1.0.0"
 
 
 import numpy as np
-import NN_utils
+import NN_util
 
 from math import floor
-from NN_utils import matmul, printf
+from NN_util import matmul, printf
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
@@ -99,8 +99,8 @@ class FC(Layer):
                  bias_initializer="zeros_initializer"):
         super().__init__(shape)
         self.act = activation
-        self.weights_initializer = getattr(NN_utils, weights_initializer)
-        self.bias_initializer = getattr(NN_utils, bias_initializer)
+        self.weights_initializer = getattr(NN_util, weights_initializer)
+        self.bias_initializer = getattr(NN_util, bias_initializer)
         
     def initialize(self):
         self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), np.prod(self.shape[0])), self)
@@ -137,8 +137,8 @@ class Conv2D(Layer):
         self.filter_shape = filter_shape
         self.padding = padding
         self.stride = stride
-        self.weights_initializer = getattr(NN_utils, weights_initializer)
-        self.bias_initializer = getattr(NN_utils, bias_initializer)
+        self.weights_initializer = getattr(NN_util, weights_initializer)
+        self.bias_initializer = getattr(NN_util, bias_initializer)
         self.act = activation
 
     def initialize(self):

@@ -37,7 +37,7 @@ __status__ = "Production"
 __version__ = "1.0.0"
 
 
-import ctypes, os, NN_utils
+import ctypes, os, NN_util
 
 PYDL_EVT = 60000001
 PYDL_OPS_EVT = 60000002
@@ -71,7 +71,7 @@ class Tracer:
               description_values[i*PYDL_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
     
             pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
-                ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_EVT)),
+                ctypes.pointer(ctypes.c_uint(NN_util.PYDL_EVT)),
                 ctypes.c_char_p(description.encode('utf-8')),
                 ctypes.pointer(ctypes.c_uint(nvalues)),
                 ctypes.pointer(values),
@@ -97,7 +97,7 @@ class Tracer:
               description_values[i*PYDL_OPS_NUM_EVTS+9] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
     
             pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
-                ctypes.pointer(ctypes.c_uint(NN_utils.PYDL_OPS_EVT)),
+                ctypes.pointer(ctypes.c_uint(NN_util.PYDL_OPS_EVT)),
                 ctypes.c_char_p(description.encode('utf-8')),
                 ctypes.pointer(ctypes.c_uint(nvalues)),
                 ctypes.pointer(values),
