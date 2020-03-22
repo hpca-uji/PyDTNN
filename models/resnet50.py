@@ -43,9 +43,10 @@ from NN_activation import *
 
 def create_resnet50(params):
     model = Model(params, comm=params.comm, 
-                      blocking_mpi=params.blocking_mpi,
-                      tracing=params.tracing, 
-                      dtype=params.dtype)
+                          blocking_mpi=params.blocking_mpi,
+                          tracing=params.tracing, 
+                          dtype=params.dtype)
+    
     model.add( Input(shape=(229, 229, 3)) )
     # Pending ...
     return model
