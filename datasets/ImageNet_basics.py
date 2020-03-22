@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import sys
 from matplotlib import pyplot as plt
 
 FLAGS = tf.app.flags.FLAGS
@@ -142,7 +143,7 @@ def decode_jpeg(image_buffer, scope=None):
     # After this point, all image pixels reside in [0,1)
     # until the very end, when they're rescaled to (-1, 1).  The various
     # adjust_* ops all require this range for dtype float.
-    image = tf.image.convert_image_dtype(image, dtype=tf.float32)
+    image = tf.image.convert_image_dtype(image, dtype=tf.uint8)
     return image
 
 def eval_image(image, height, width, scope=None):
@@ -173,8 +174,8 @@ def image_preprocessing(image_buffer, bbox, thread_id=0):
   image = eval_image(image, height, width)
 
   # Finally, rescale to [-1,1] instead of [0, 1)
-  image = tf.subtract(image, 0.5)
-  image = tf.multiply(image, 2.0)
+  #image = tf.subtract(image, 0.5)
+  #image = tf.multiply(image, 2.0)
   return image
 
 def _parse_function(example_serialized):
@@ -238,11 +239,12 @@ def load_tfrecords(srcfile, image_size, elems):
         try:
             image_buffer, label_index, bbox, _ = sess.run(next_data)
             image = image_preprocessing(image_buffer, bbox)
-            
+            if count==10: break
+            #print(count)
             if images == []:
-              images = np.expand_dims(np.array(image.eval(session=sess)), axis=-1)
+              images = np.expand_dims(np.array(image.eval(session=sess)).astype(np.uint8), axis=-1)
             else:
-              images = np.concatenate((images, np.expand_dims(np.array(image.eval(session=sess)), axis=-1)), axis=-1)
+              images = np.concatenate((images, np.expand_dims(np.array(image.eval(session=sess)).astype(np.uint8), axis=-1)), axis=-1)
             labels.extend([label_index])
             
             #plt.imshow(data, interpolation='nearest')
@@ -254,4 +256,10 @@ def load_tfrecords(srcfile, image_size, elems):
     labels = np.array(labels)
     return images, labels
 
+if __name__ == "__main__":
+
+    start, end = int(sys.argv[1]), int(sys.argv[2])
+    for file in range(start, end):
+        x, y = load_tfrecords("/scratch/imagenet/train/train-%05d-01024" % file, 227, 10000)
+        np.savez_compressed("/scratch/imagenet/np/train/train-%05d-01024" % file, x=x.transpose(3,2,0,1), y=y)
 

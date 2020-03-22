@@ -1,70 +1,105 @@
+""" Python Distributed Training of Neural Networks - PyDTNN
+
+PyDTNN is a light-weight library for distributed Deep Learning training and 
+inference that offers an initial starting point for interaction with 
+distributed training of (and inference with) deep neural networks. PyDTNN 
+priorizes simplicity over efficiency, providing an amiable user interface 
+which enables a flat accessing curve. To perform the training and inference 
+processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+for clusters and intra-process (via multi-threading) parallelism to leverage 
+the presence of multicore processors at node level.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
+__author__ = "Manuel F. Dolz, Enrique S. Quintana, \
+              Mar Catalan, Adrian Castello"
+__contact__ = "dolzm@uji.es"
+__copyright__ = "Copyright 2020, Universitat Jaume I"
+__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
+               "Mar Catalan", "Adrian Castello"]
+__date__ = "2020/03/22"
+
+__email__ =  "dolzm@uji.es"
+__license__ = "GPLv3"
+__maintainer__ = "Manuel F. Dolz"
+__status__ = "Production"
+__version__ = "1.0.0"
+
+
 import numpy as np
-import math
-import random
-import NN_im2col_cython
 from scipy.signal import convolve2d
+import scipy.linalg.blas as slb
 
-PYDL_EVT = 60000001
-PYDL_OPS_EVT = 60000002
-PYDL_NUM_EVTS = 7
-PYDL_OPS_NUM_EVTS = 9
-im2col_mode = "fancy"
-im2col_mode = "fast"
+# Initializers
 
-def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+def glorot_initializer(out_shape, layer):
+    lim = np.sqrt(6.0 / float((np.prod(layer.prev_layer.shape)+np.prod(layer.shape))))
+    return np.random.uniform(-lim, lim, out_shape).astype(layer.dtype)
+        
+def zeros_initializer(out_shape, layer):
+    return np.zeros(out_shape).astype(layer.dtype)
 
-def sigmoid_derivate(x):
-    dx = sigmoid(x)
-    return dx * (1 - dx)
+# Matmul operation
 
-def relu(x):
-    return (x > 0) * x
+def matmul(a, b):
+    if a.dtype == np.float32: 
+        c = slb.sgemm(1.0, a, b)
+    elif a.dtype == np.float64:
+        c = slb.dgemm(1.0, a, b)
+    else:
+        c = a @ b
+    return c
 
-def relu_derivate(x):
-    return (x >= 0) * 1.0
+# Loss functions for classification CNNs
 
-def tanh(x):    
-    return np.tanh(x)
+def cross_entropy_class(Y_pred, Y_targ):
+    b = Y_targ.shape[0]
+    return -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)])) / b
 
-def tanh_derivate(x):
-    return 1 - np.tanh(x) ** 2
- 
-def arctanh(x):
-    return np.arctan(x)
+def accuracy_class(Y_pred, Y_targ):
+    b = Y_targ.shape[0]
+    return np.sum(Y_targ[np.arange(b), np.argmax(Y_pred, axis=1)])*100 / b
 
-def arctan_derivate(x):
-    return 1 / ( 1 + x ** 2)
+def hinge_class(Y_pred, Y_targ):
+    b = Y_targ.shape[0]
+    targ = np.argmax(Y_targ, axis=1)
+    v = 1 - Y_pred[np.arange(b), targ] * targ
+    return np.sum(np.maximum(np.zeros_like(v),v))
 
-def log(x):
-    return 1 / (1 + np.exp(-1 * x))
+def mse_class(Y_pred, Y_targ):
+    b = Y_targ.shape[0]
+    targ = np.argmax(Y_targ, axis=1)
+    return np.square(np.subtract(Y_pred[np.arange(b), targ], targ)).mean()
 
-def log_derivate(x):
-    return log(x) * ( 1 - log(x))
+def mae_class(Y_pred, Y_targ):
+    b = Y_targ.shape[0]
+    targ = np.argmax(Y_targ, axis=1)
+    return np.sum(np.absolute(np.subtract(Y_pred[np.arange(b), targ], targ)))
 
-def softmax(x):
-    ex = np.exp(x - np.max(x, axis=0).reshape(1,-1).repeat(x.shape[0], axis=0))
-    return ex / ex.sum(axis=0)
 
-def softmax_derivate(x):
-    # TODO
-    # Reshape the 1-d softmax to 2-d so that np.dot will do the matrix multiplication
-    #s = softmax.reshape(-1,1)
-    #return np.diagflat(s) - np.dot(s, s.T)
-    return x
+# Some utility functions for debugging
+def printf_trace(*args):
+    pass
+    #print(*args)
 
-def matmul(a, b, msg=None):
-    if msg: printf_trace("%s; m; %8d; n; %8d; k; %8d;" % (msg, a.shape[0], b.shape[1], a.shape[1]) )
-    return a @ b
+def printf(*args):
+    pass
+    #print(*args)
 
-def loss(targ, pred):
-    return 0.5 * np.linalg.norm(pred - targ)**2 / pred.shape[-1] # equals to b
+# All these functions below have been deprecated - use them with care!
 
-def accuracy(targ, pred):
-    targ= np.argmax(targ, axis=0)
-    pred= np.argmax(pred, axis=0)
-    return np.sum(np.equal(targ, pred))*100 / targ.shape[-1]
-
+# Only for fancy im2col/col2im indexing!
 def get_indices(x_shape, kh, kw, c, h, w, s=1):
     #b, c, h, w = x_shape
     i0 = np.repeat(np.arange(kh), kw)
@@ -77,6 +112,7 @@ def get_indices(x_shape, kh, kw, c, h, w, s=1):
     k = np.repeat(np.arange(c), kh * kw).reshape(-1, 1)
     return (k.astype(int), i.astype(int), j.astype(int))
 
+# Only for fancy im2col/col2im indexing!
 def im2col_fancy(x, kh, kw, c, h, w, s=1, idx=None):
     # Expected 'x' format (b, c, h, w)
     if not idx:
@@ -84,6 +120,7 @@ def im2col_fancy(x, kh, kw, c, h, w, s=1, idx=None):
     cols = x[:, idx[0], idx[1], idx[2]].transpose(1, 2, 0).reshape(kh * kw * c, -1)
     return cols, idx
 
+# Only for fancy im2col/col2im indexing!
 def col2im_fancy(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
     b, c, h, w = x_shape    
     cols_reshaped = cols.reshape(c * kh * kw, -1, b).transpose(2, 0, 1)
@@ -93,24 +130,18 @@ def col2im_fancy(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
     np.add.at(x, (slice(None), idx[0], idx[1], idx[2]), cols_reshaped) 
     return x, idx
 
-def im2col(x, kh, kw, c, h, w, s=1, idx=None, msg=None):
-    if im2col_mode == "fast":
-       cols= NN_im2col_cython.im2col_cython(x.astype(np.float64), kh, kw, h, w, 0, s)
-       idx= None
-    elif im2col_mode == "fancy":
-       cols, idx= im2col_fancy(x, kh, kw, c, h, w, s, idx)
-    if msg: printf_trace("%s; m; %8d; n; %8d; k; %8d;" % (msg, 0, cols.shape[0], cols.shape[1]) )
+# Only for fancy im2col/col2im indexing!
+def im2col_fancy(x, kh, kw, c, h, w, s=1, idx=None):
+    cols, idx= im2col_fancy(x, kh, kw, c, h, w, s, idx)
     return cols, None
 
-def col2im(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
+# Only for fancy im2col/col2im indexing!
+def col2im_fancy(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
     b, c, h, w = x_shape    
-    if im2col_mode == "fast":
-       cols= NN_im2col_cython.col2im_cython(cols, b, c, h, w, kh, kw, 0, s)
-       idx= None
-    elif im2col_mode == "fancy":
-       cols, idx= col2im_fancy(cols, x_shape, kh, kw, ho, wo, s, idx)
+    cols, idx= col2im_fancy(cols, x_shape, kh, kw, ho, wo, s, idx)
     return cols, idx
 
+# Only for fancy im2col/col2im indexing!
 def dilate_and_pad(input, p=0, s=1):
     if s > 1 or p > 0:
         b, c, h, w = input.shape
@@ -120,6 +151,7 @@ def dilate_and_pad(input, p=0, s=1):
         return res
     return input 
 
+# Only for fancy im2col/col2im indexing!
 def convolve(input, weights, bias, p=0, s=1):
     h, w, ci, b    = input.shape
     co, kh, kw, ci = weights.shape
@@ -133,7 +165,8 @@ def convolve(input, weights, bias, p=0, s=1):
     out = out.transpose(1, 2, 0, 3) # PyNN format
     return out
 
-def convolve_scipy(input, weights, bias, p=0, s=1):
+# Only for fancy im2col/col2im indexing!
+def convolve_scipy(input, weights, bias):
     """ Does not support padding nor stride!! """
     h, w, ci, b  = input.shape  
     co, kh, kw, ci = weights.shape    
@@ -147,10 +180,4 @@ def convolve_scipy(input, weights, bias, p=0, s=1):
             z[...,co_,b_] += bias[co_]
     return z
 
-def printf_trace(*args):
-    pass
-    #print(*args)
 
-def printf(*args):
-    pass
-    #print(*args)
