@@ -202,7 +202,7 @@ class Model:
                 self.tracer.emit_event(PYDL_EVT, 0)
 
         if self.comm != None:
-            for i in range(loss_req): 
+            for i in range(loss_reqs): 
                 loss_reqs[i].Wait(); loss_res[i] /= self.nprocs
 
         return loss_res
