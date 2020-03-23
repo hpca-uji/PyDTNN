@@ -260,21 +260,21 @@ class ImageNet(Dataset):
         return Y_expanded
 
     def train_data_generator(self):
-        for f in range(self.train_files):
+        for f in range(len(self.train_files)):
             values = np.load("%s/%s" % (self.train_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
             y = self.__expand_labels(values['y'].astype(np.int16))
             yield (x, y)
 
     def val_data_generator(self):
-        for f in range(self.val_files):
+        for f in range(len(self.val_files)):
             values = np.load("%s/%s" % (self.val_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
             y = self.__expand_labels(values['y'].astype(np.int16))        
             yield (x, y)
 
     def test_data_generator(self):
-        for f in range(self.test_files):
+        for f in range(len(self.test_files)):
             values = np.load("%s/%s" % (self.test_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
             y = self.__expand_labels(values['y'].astype(np.int16))  
