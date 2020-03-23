@@ -290,16 +290,18 @@ class ImageNet(Dataset):
         self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_file)
 
         end = self.val_start + self.val_size
-        if end > self.nfiles:
-            val_indices = np.arange(self.val_start, self.nfiles)
+        if end > len(self.train_val_files):
+            val_indices = np.arange(self.val_start, len(self.train_val_files))
             self.val_start = self.val_size - val_indices.shape[0]
-            self.val_files = np.concatenate((val_indices, np.arange(0, self.val_start)))
+            val_idx_files = np.concatenate((val_indices, np.arange(0, self.val_start)))
         else:
-            self.val_files = np.arange(self.val_start, end)
+            val_idx_files = np.arange(self.val_start, end)
             self.val_start = end
 
-        self.train_files = np.setdiff1d(np.arange(self.train_val_files), val_indices)
-        self.train_nsamples = self.train_files * self.images_per_file
+        train_idx_files = np.setdiff1d(np.arange(len(self.train_val_files)), val_indices)
+        self.train_files = [self.train_val_files[f] for f in train_idx_files]
+        self.val_files = [self.train_val_files[f] for f in val_idx_files]
+        self.train_nsamples = len(self.train_files) * self.images_per_file
 
     def adjust_steps_per_epoch(self, steps_per_epoch, local_batch_size, nprocs):
         if steps_per_epoch > 0:
