@@ -41,7 +41,7 @@ import numpy as np
 import NN_util
 
 from math import floor
-from NN_util import matmul, printf
+from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
@@ -112,17 +112,17 @@ class FC(Layer):
 
     def forward(self, prev_a):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        res = matmul(prev_a.reshape(prev_a.shape[0], -1), self.weights)
+        res = self.matmul(prev_a.reshape(prev_a.shape[0], -1), self.weights)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         self.a = res + self.bias
         
     def backward(self, prev_dx):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 6)
-        dx = matmul(prev_dx, self.weights.T)
+        dx = self.matmul(prev_dx, self.weights.T)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 8)
-        self.dw = matmul(self.prev_layer.a.reshape(self.prev_layer.a.shape[0], -1).T, prev_dx)
+        self.dw = self.matmul(self.prev_layer.a.reshape(self.prev_layer.a.shape[0], -1).T, prev_dx)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         self.db = prev_dx.sum(axis=0)
         return dx
@@ -163,7 +163,7 @@ class Conv2D(Layer):
 
         w_cols = self.weights.reshape(self.co, -1)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        res = matmul(w_cols, self.prev_a_cols)
+        res = self.matmul(w_cols, self.prev_a_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         a = (res.T + self.bias).T
@@ -176,7 +176,7 @@ class Conv2D(Layer):
         w_cols = self.weights.reshape(self.co, -1).T
 
         self.tracer.emit_event(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 6)
-        res = matmul(w_cols, dx_cols)
+        res = self.matmul(w_cols, dx_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.tracer.emit_event(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 5)
@@ -185,7 +185,7 @@ class Conv2D(Layer):
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 8)
-        res = matmul(dx_cols, self.prev_a_cols.T)
+        res = self.matmul(dx_cols, self.prev_a_cols.T)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.dw = res.reshape(self.weights.shape)

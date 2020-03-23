@@ -41,12 +41,7 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_simplecnn(params):
-    model = Model(params, comm=params.comm, 
-                          blocking_mpi=params.blocking_mpi,
-                          tracing=params.tracing, 
-                          dtype=params.dtype)
-
+def create_simplecnn(model):
     model.add( Input(shape=(1, 28, 28)) )
     model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=0, stride=1, activation=Relu()) )
     model.add( Conv2D(nfilters=8, filter_shape=(3, 3), padding=0, stride=1, activation=Relu()) )

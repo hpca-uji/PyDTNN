@@ -41,12 +41,7 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_simplemlp(params):
-    model = Model(params, comm=params.comm, 
-                          blocking_mpi=params.blocking_mpi,
-                          tracing=params.tracing, 
-                          dtype=params.dtype)
-
+def create_simplemlp(model):
     model.add( Input(shape=(1, 28, 28)) )
     #model.add( Flatten() )
     model.add( FC(shape=(512,), activation=Relu()) )
