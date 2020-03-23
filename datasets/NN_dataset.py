@@ -291,9 +291,9 @@ class ImageNet(Dataset):
 
         end = self.val_start + self.val_size
         if end > len(self.train_val_files):
-            val_indices = np.arange(self.val_start, len(self.train_val_files))
-            self.val_start = self.val_size - val_indices.shape[0]
-            val_idx_files = np.concatenate((val_indices, np.arange(0, self.val_start)))
+            val_idx_files = np.arange(self.val_start, len(self.train_val_files))
+            self.val_start = self.val_size - val_idx_files.shape[0]
+            val_idx_files = np.concatenate((val_idx_files, np.arange(0, self.val_start)))
         else:
             val_idx_files = np.arange(self.val_start, end)
             self.val_start = end
