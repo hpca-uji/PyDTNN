@@ -249,7 +249,7 @@ class ImageNet(Dataset):
             self.train_files = self.train_val_files
             self.train_nsamples = self.train_val_nsamples
 
-    def __trim_image(self, X, model):
+    def __trim_image(self, X):
         if "vgg" in self.model: # for VGG models input shape must be (3,224,224)
             return X[...,1:225,1:225]
         else: return X
