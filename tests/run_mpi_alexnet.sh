@@ -14,8 +14,8 @@
 #HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
 #mpirun -genv LD_PRELOAD $EXTRAELIB \
 
-export MKL_NUM_THREADS=4
-mpirun -ppn 1 -np 4 \
+export MKL_NUM_THREADS=2
+mpirun -np 12 \
        python3 -u benchmarks_CNN.py \
           --model=alexnet \
           --dataset=imagenet \
