@@ -164,6 +164,7 @@ class MNIST(Dataset):
 
         self.X_train_val = self.X_train_val.flatten().reshape(self.train_val_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
         self.Y_train_val = self.__expand_labels(self.Y_train_val.astype(np.int16))
+        self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
         self.X_test = self.X_test.flatten().reshape(self.test_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
         self.Y_test = self.__expand_labels(self.Y_test.astype(np.int16))
         self.train_nsamples = self.X_train_val.shape[0]
@@ -234,6 +235,7 @@ class ImageNet(Dataset):
         self.train_val_files = os.listdir(self.train_path)
         self.images_per_file = 1251
         self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
+        self.X_train_files = self.X_train_val
 
         self.test_files  = os.listdir(self.test_path)
         self.test_nfiles = len(self.test_files)
@@ -291,7 +293,7 @@ class ImageNet(Dataset):
             self.val_files = np.arange(self.val_start, end)
             self.val_start = end
 
-        self.train_files = np.setdiff1d(np.arange(self.train_val_nsamples), val_indices)
+        self.train_files = np.setdiff1d(np.arange(self.train_val_files), val_indices)
         self.train_nsamples = self.train_files * self.images_per_file
 
     def adjust_steps_per_epoch(self, steps_per_epoch, local_batch_size, nprocs):
