@@ -66,12 +66,12 @@ except:
 class Model:
     """ Neural network (NN) """
 
-    def __init__(self, params, comm=None, blocking_mpi=True, 
+    def __init__(self, params, comm=None, non_blocking_mpi=False, 
                  tracing=False, enable_gpu=False, dtype=np.float32):
         self.layers = []
         self.params = params
         self.comm = comm
-        self.blocking_mpi = blocking_mpi
+        self.blocking_mpi = not non_blocking_mpi
         self.tracer = Tracer(tracing)
         self.enable_gpu = enable_gpu
         self.dtype = dtype

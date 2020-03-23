@@ -28,5 +28,4 @@ mpirun -np 12 \
           --learning_rate=0.01 \
           --loss_func=categorical_accuracy,categorical_cross_entropy \
           --parallel=data \
-          --blocking_mpi \
           --dtype=float32

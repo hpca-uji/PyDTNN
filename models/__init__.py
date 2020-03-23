@@ -5,7 +5,7 @@ def get_model(params):
     try:
         model_mod = importlib.import_module("models." + params.model)
         model = Model(params, comm=params.comm, 
-                              blocking_mpi=params.blocking_mpi,
+                              non_blocking_mpi=params.non_blocking_mpi,
                               tracing=params.tracing,
                               enable_gpu=params.enable_gpu, 
                               dtype=params.dtype)

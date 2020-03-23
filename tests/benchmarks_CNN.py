@@ -82,7 +82,7 @@ def parse_options():
     parser.add_argument('--loss_func', type=str, default="accuracy,categorical_cross_entropy")
     # Parallelization + tracing
     parser.add_argument('--parallel', type=str, default="sequential")
-    parser.add_argument('--blocking_mpi', action="store_true", default=True)
+    parser.add_argument('--non_blocking_mpi', action="store_true", default=False)
     parser.add_argument('--tracing', action="store_true", default=False)
     parser.add_argument('--profile', action="store_true", default=False)
     parser.add_argument('--enable_gpu', action="store_true", default=False)

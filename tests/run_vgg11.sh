@@ -16,5 +16,4 @@ python3 -u benchmarks_CNN.py \
          --momentum=0.9 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=sequential \
-         --blocking_mpi \
          --dtype=float32

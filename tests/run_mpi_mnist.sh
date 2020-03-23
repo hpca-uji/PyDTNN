@@ -14,18 +14,7 @@ mpirun -np 12 \
          --learning_rate=0.001 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=data \
-         --blocking_mpi \
          --dtype=float32 --evaluate
          #--test_as_validation
-         # --profile
+         #--profile
          #--enable_gpu
-
-         #--evaluate \
-         # 
-         # --decay_rate=0.99 \
-         # --epsilon=1e-08 \
-         # --momentum=0.9 \ 
-         # --steps_per_epoch=0 \
-         # --evaluate=True \
-         # --tracing=False \
-         # --profile=False \
