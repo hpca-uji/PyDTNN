@@ -84,13 +84,13 @@ def matmul_gpu(a, b):
 
 # Loss functions for classification CNNs
 
-loss_format = {"categorical_accuracy":      prefix + "acc: %5.2f%%", 
-               "categorical_cross_entropy": prefix + "cro: %.2f",
-               "categorical_hinge":         prefix + "hin: %.2f",
-               "categorical_mse":           prefix + "mse: %.2f",
-               "categorical_mae":           prefix + "mae: %.2f",
-               "regression_mse":            prefix + "mse: %.2f",
-               "regression_mae":            prefix + "mae: %.2f"}
+loss_format = {"categorical_accuracy":      "acc: %5.2f%%", 
+               "categorical_cross_entropy": "cro: %.2f",
+               "categorical_hinge":         "hin: %.2f",
+               "categorical_mse":           "mse: %.2f",
+               "categorical_mae":           "mae: %.2f",
+               "regression_mse":            "mse: %.2f",
+               "regression_mae":            "mae: %.2f"}
 
 def categorical_cross_entropy(Y_pred, Y_targ):
     b = Y_targ.shape[0]
