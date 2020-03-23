@@ -184,7 +184,7 @@ class MNIST(Dataset):
     def __expand_labels(self, Y):
         Y_expanded = np.zeros((Y.shape[0], self.nclasses))
         Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
-        Y_expanded[np.arange(Y.shape[0]), Y.flatten()] = 1
+        Y_expanded[np.arange(Y.shape[0]), Y] = 1
         return Y_expanded
 
     def make_train_val_partitions(self, val_split=0.2):
@@ -261,7 +261,7 @@ class ImageNet(Dataset):
     def __expand_labels(self, Y):
         Y_expanded = np.zeros((Y.shape[0], self.nclasses))
         Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
-        Y_expanded[np.arange(Y.shape[0]), Y.flatten()] = 1
+        Y_expanded[np.arange(Y.shape[0]), (Y.flatten()-1)] = 1
         return Y_expanded
 
     def train_data_generator(self):
