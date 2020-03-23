@@ -1,26 +1,19 @@
-import sys
-import models.alexnet as alexnet
-import models.vgg16 as vgg16
-import models.vgg11 as vgg11
-import models.inceptionv3 as inceptionv3
-import models.resnet50 as resnet50
-import models.simplecnn as simplecnn
+import importlib, sys
+from NN_model import *
 
-def create_model(nn, comm):
-    if nn == "vgg16":
-        model = vgg16.create_vgg16(comm)
-    if nn == "vgg11":
-        model = vgg11.create_vgg11(comm)
-    elif nn == "alexnet":
-        model = alexnet.create_alexnet(comm)
-    elif nn == "inceptionv3":
-       model = inceptionv3.create_inceptionv3(comm)
-    elif nn == "resnet50":
-        model = resnet50.create_resnet50(comm)
-    elif nn == "simplecnn":
-        model = simplecnn.create_simplecnn(comm)
-    else:
-        print("Model %s not found!" % nn)
+def get_model(params):
+    try:
+        model_mod = importlib.import_module("models." + params.model)
+        model = Model(params, comm=params.comm, 
+                              non_blocking_mpi=params.non_blocking_mpi,
+                              tracing=params.tracing,
+                              enable_gpu=params.enable_gpu, 
+                              dtype=params.dtype)
+        model = getattr(model_mod, "create_" + params.model)(model)
+       
+    except Exception as e:
+        import traceback
+        print(traceback.format_exc())
         sys.exit(-1)
     return model
 
