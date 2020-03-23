@@ -66,7 +66,7 @@ class Dataset:
         yield (self.X_test, self.Y_test)
 
     def get_train_val_generator(self, local_batch_size=64, rank=0, nprocs=1, val_split=0.2):
-        if val_split > 0 and not self.test_as_validation:
+        if self.test_as_validation:
             self.make_train_val_partitions(val_split)
         return ( self.train_batch_generator(self.train_data_generator(), 
                                             local_batch_size, rank, nprocs),
@@ -221,8 +221,8 @@ class MNIST(Dataset):
             self.train_val_nsamples = self.X_train_val.shape[0]
             self.train_nsamples = self.train_val_nsamples
 
-            self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
-            self.X_val, self.Y_val = np.array([]), self.np.array([])
+            #self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
+            #self.X_val, self.Y_val = np.array([]), self.np.array([])
  
 class ImageNet(Dataset):
         
@@ -314,6 +314,6 @@ class ImageNet(Dataset):
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
                 self.train_nsamples = self.train_val_nsamples
-                self.train_files = self.train_val_files
-                self.val_files = []
+                #self.train_files = self.train_val_files
+                #self.val_files = []
 
