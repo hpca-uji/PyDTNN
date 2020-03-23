@@ -212,6 +212,9 @@ class Pool2D(Layer):
         self.shape = (self.co, self.ho, self.wo)
         self.n = np.prod(self.shape)
 
+    def show(self):
+        super().show("│{:^17s}│{:^9d}│{:^9d}│".format("", self.padding, self.stride))
+
     def forward(self, prev_a):
         prev_a_ = prev_a.reshape(prev_a.shape[0] * self.ci, 1, self.hi, self.wi)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)

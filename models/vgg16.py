@@ -55,7 +55,7 @@ def create_vgg16(params):
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
             model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
-        model.add( Pool2D(pool_shape=(2,2), func='max', stride=1) )
+        model.add( Pool2D(pool_shape=(2,2), func='max', stride=2) )
     
     model.add( FC(shape=(4096,), activation=Relu()) )
     model.add( FC(shape=(4096,), activation=Relu()) )
