@@ -219,8 +219,9 @@ class MNIST(Dataset):
                 self.Y_train_val = self.Y_train_val[:subset_size,...]
             self.train_val_nsamples = self.X_train_val.shape[0]
             self.train_nsamples = self.train_val_nsamples
-            self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
 
+            self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
+            self.X_val, self.Y_val = np.array([]), self.np.array([])
  
 class ImageNet(Dataset):
         
@@ -305,6 +306,7 @@ class ImageNet(Dataset):
                 subset_files = subset_size // self.images_per_file
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
-                self.train_files = self.train_val_files
                 self.train_nsamples = self.train_val_nsamples
+                self.train_files = self.train_val_files
+                self.val_files = []
 
