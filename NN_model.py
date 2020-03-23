@@ -45,15 +45,27 @@ from NN_tracer import Tracer, PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, \
                               PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 from tqdm import tqdm
 
+try:
+    import pycuda.autoinit
+    import pycuda.gpuarray as gpuarray
+    import pycuda.driver as drv
+    import skcuda.linalg as culinalg
+    import skcuda.misc as cumisc
+    supported_gpu = True
+except:
+    pass
+
 class Model:
     """ Neural network (NN) """
 
-    def __init__(self, params, comm=None, blocking_mpi=True, tracing=False, dtype=np.float32):
+    def __init__(self, params, comm=None, blocking_mpi=True, 
+                 tracing=False, enable_gpu=False, dtype=np.float32):
         self.layers = []
-        self.tracer = Tracer(tracing)
         self.params = params
         self.comm = comm
         self.blocking_mpi = blocking_mpi
+        self.tracer = Tracer(tracing)
+        self.enable_gpu = enable_gpu
         self.dtype = dtype
 
         self.rank = 0
@@ -63,6 +75,9 @@ class Model:
             from mpi4py import MPI
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
+
+        if self.enable_gpu and supported_gpu:
+            culinalg.init()
         
     def show(self):
         print("┌───────┬──────────┬─────────┬───────────────┬─────────────────┬─────────┬─────────┐")
@@ -76,6 +91,7 @@ class Model:
         layer.id = len(self.layers)
         layer.tracer = self.tracer
         layer.dtype = self.dtype
+        layer.matmul = getattr(NN_util, {False: "matmul", True: "matmul_gpu"}[self.enable_gpu])
 
         if len(self.layers) > 0:          
             self.layers[-1].next_layer = layer

@@ -41,15 +41,8 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_vgg16(params):
-    input_shape = getattr(params, "input_shape", (3, 224, 224))
-
-    model = Model(params, comm=params.comm, 
-                          blocking_mpi=params.blocking_mpi,
-                          tracing=params.tracing, 
-                          dtype=params.dtype)
-    
-    model.add( Input(shape=input_shape) )
+def create_vgg16(model):
+    model.add( Input(shape=(3, 224, 224)) )
 
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:

@@ -41,12 +41,7 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_alexnet(params):
-    model = Model(params, comm=params.comm, 
-                          blocking_mpi=params.blocking_mpi,
-                          tracing=params.tracing, 
-                          dtype=params.dtype)
-
+def create_alexnet(model):
     model.add( Input(shape=(3, 227, 227)) )
     model.add( Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation=Relu()) )
     model.add( Pool2D(pool_shape=(3,3), func='max', stride=2) )

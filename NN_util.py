@@ -41,6 +41,15 @@ import numpy as np
 from scipy.signal import convolve2d
 import scipy.linalg.blas as slb
 
+try:
+    import pycuda.autoinit
+    import pycuda.gpuarray as gpuarray
+    import pycuda.driver as drv
+    import skcuda.linalg as culinalg
+    import skcuda.misc as cumisc
+except:
+    pass
+
 # Initializers
 
 def glorot_initializer(out_shape, layer):
@@ -59,10 +68,15 @@ def matmul(a, b):
     #elif a.dtype == np.float64:
     #    c = slb.dgemm(1.0, a, b)
     #else:
-    # Naive matmul gets more performance scipy blas!
+    # Naive matmul gets more performance than scipy blas!
     c = a @ b
     return c
 
+def matmul_gpu(a, b):
+    a_gpu = gpuarray.to_gpu(a)
+    b_gpu = gpuarray.to_gpu(b)
+    c_gpu = culinalg.dot(a_gpu, a_gpu) 
+    return c_gpu.get()
 
 # Loss functions for classification CNNs
 

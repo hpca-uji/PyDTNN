@@ -85,6 +85,7 @@ def parse_options():
     parser.add_argument('--blocking_mpi', action="store_true", default=True)
     parser.add_argument('--tracing', action="store_true", default=False)
     parser.add_argument('--profile', action="store_true", default=False)
+    parser.add_argument('--enable_gpu', type="store_true", default=False)
     parser.add_argument('--dtype', type=str, default="float32")
 
     return parser.parse_args()
