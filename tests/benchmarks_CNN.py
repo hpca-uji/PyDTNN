@@ -122,7 +122,7 @@ if __name__ == "__main__":
         model.show()
         print('**** Parameters:')
         show_options(params)        
-        print('**** Reading %s dataset...' % params.dataset)
+        print('**** Loading %s dataset...' % params.dataset)
 
     dataset = get_dataset(params)
 

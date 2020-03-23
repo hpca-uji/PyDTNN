@@ -88,6 +88,12 @@ def categorical_mae(Y_pred, Y_targ):
     targ = np.argmax(Y_targ, axis=1)
     return np.sum(np.absolute(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]))
 
+def regression_mse(Y_pred, Y_targ):
+    return np.square(Y_targ - Y_pred).mean()
+
+def regression_mae(Y_pred, Y_targ):
+    return np.sum(np.absolute(Y_targ - Y_pred))
+
 
 # Some utility functions for debugging
 def printf_trace(*args):
