@@ -52,6 +52,7 @@ class Dataset:
         self.train_val_nsamples = X_train.shape[0] + X_val.shape[0]
         self.train_nsamples = self.X_train.shape[0]
         self.test_as_validation = False
+
     def make_train_val_partitions(self, val_split=0.2):
         pass
 
@@ -238,11 +239,14 @@ class ImageNet(Dataset):
         self.test_nfiles = len(self.test_files)
         self.test_nsamples  = 10000
 
+        self.train_nsamples = self.train_val_nsamples
+
         if self.test_as_validation:
             print("  Using test as validation data - val_split parameter is ignored!")
             self.val_path, self.val_files = self.test_path, self.test_files
             self.train_files = self.train_val_files
-
+            self.train_nsamples = self.train_val_nsamples
+            
     def __trim_image(self, X, model):
         if "vgg" in self.model: # for VGG models input shape must be (3,224,224)
             return X[...,1:225,1:225]
