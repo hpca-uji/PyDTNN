@@ -125,8 +125,11 @@ if __name__ == "__main__":
         print('**** Reading %s dataset...' % params.dataset)
 
     dataset = get_dataset(params)
-    
+
     loss_metrics = [f for f in params.loss_func.replace(" ","").split(",")]
+
+    if params.steps_per_epoch > 0:
+        dataset.adjust_steps_per_epoch(params.steps_per_epoch, params.batch_size, nprocs)
 
     if params.evaluate and dataset.X_test.shape[0] > 0:
         if rank == 0:
@@ -135,20 +138,18 @@ if __name__ == "__main__":
         if rank == 0:
             print(model.get_metric_results(test_loss, loss_metrics))
 
-        print('**** Training...')
-        t1 = time.time()
-    
     if params.parallel in ["data", "model"]:
         comm.Barrier()
 
-    if params.profile:
-        import cProfile, pstats
-        from io import StringIO
-        pr = cProfile.Profile(); pr.enable()
+    if rank == 0
+        print('**** Training...')
+        t1 = time.time()
 
-    if params.steps_per_epoch > 0:
-        dataset.adjust_steps_per_epoch(params.steps_per_epoch, params.batch_size, nprocs)
-
+        if params.profile:
+            import cProfile, pstats
+            from io import StringIO
+            pr = cProfile.Profile(); pr.enable()
+    
     # Training a model directly from a dataset
     model.train_dataset(dataset,
                          nepochs                = params.num_epochs, 
@@ -165,12 +166,15 @@ if __name__ == "__main__":
     #             loss_metrics     = loss_metrics, 
     #             optimizer        = params.optimizer)
 
-    if params.profile:
-        pr.disable(); s = StringIO(); sortby = 'time'
-        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-        ps.print_stats(); print(s.getvalue())
+    if params.parallel in ["data", "model"]:
+        comm.Barrier()
 
     if rank == 0:
+        if params.profile:
+            pr.disable(); s = StringIO(); sortby = 'time'
+            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps.print_stats(); print(s.getvalue())
+
         t2 = time.time()
         print('**** Done... and thanks for all the fish!!!')
         total_time = (t2-t1)
