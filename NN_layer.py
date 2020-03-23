@@ -44,7 +44,11 @@ from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
-
+try:
+    from mpi4py import MPI
+except:
+    pass
+    
 class Layer():
 
     def __init__(self, shape=()):
