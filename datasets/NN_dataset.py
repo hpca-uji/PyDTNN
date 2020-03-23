@@ -256,7 +256,7 @@ class ImageNet(Dataset):
 
     def __expand_labels(self, Y):
         Y_expanded = np.zeros((Y.shape[0], self.nclasses))
-        Y_expanded[np.arange(Y.shape[0]), Y] = 1
+        Y_expanded[np.arange(Y.shape[0]), Y.flatten()] = 1
         return Y_expanded
 
     def train_data_generator(self):
