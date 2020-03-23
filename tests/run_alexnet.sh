@@ -5,9 +5,9 @@ python3 -u benchmarks_CNN.py \
          --dataset=imagenet \
          --dataset_train_path=/scratch/imagenet/np/train \
          --dataset_test_path=/scratch/imagenet/np/validation \
-         --batch_size=64 \
+         --batch_size=128 \
          --validation_split=0.0 \
-         --steps_per_epoch=30 \
+         --steps_per_epoch=0 \
          --num_epochs=10 \
          --optimizer=SGDMomentum \
          --learning_rate=0.01 \
