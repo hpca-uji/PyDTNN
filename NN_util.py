@@ -88,7 +88,7 @@ loss_format = {"categorical_accuracy":      prefix + "acc: %5.2f%%",
                "categorical_cross_entropy": prefix + "cro: %.2f",
                "categorical_hinge":         prefix + "hin: %.2f",
                "categorical_mse":           prefix + "mse: %.2f",
-               "categorical_mae":           prefix + "mae: %.2f"
+               "categorical_mae":           prefix + "mae: %.2f",
                "regression_mse":            prefix + "mse: %.2f",
                "regression_mae":            prefix + "mae: %.2f"}
 
