@@ -10,7 +10,7 @@ python3 -u benchmarks_CNN.py \
          --num_epochs=10 \
          --optimizer=Adam \
          --learning_rate=0.001 \
-         --loss_func=categorical_accuracy,categorical_mae,categorical_mse \
+         --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=sequential \
          --blocking_mpi \
          --dtype=float32 --test_as_validation

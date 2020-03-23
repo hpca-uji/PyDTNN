@@ -128,17 +128,11 @@ class Model:
 
     def __update_running_average(self, curr, total, count, loss, prefix=""):
         string = ""
-        loss_format = {"categorical_accuracy":      prefix + "acc: %5.2f%%", 
-                       "categorical_cross_entropy": prefix + "cro: %.2f",
-                       "categorical_hinge":         prefix + "hin: %.2f",
-                       "categorical_mse":           prefix + "mse: %.2f",
-                       "categorical_mae":           prefix + "mae: %.2f"}
-
         for c in range(len(curr)):
             total[c] = (curr[c] + (total[c] * count)) / (count+1)
-            try:    loss_str = loss_format[loss[c]]
+            try:    loss_str = NN_util.loss_format[loss[c]]
             except: loss_str = loss[c]
-            string += ("%s, " % (loss_str)) % total[c]
+            string += ("%s, " % (prefix+loss_str)) % total[c]
         string = string[:-2]
         return total, count+1, string
 
