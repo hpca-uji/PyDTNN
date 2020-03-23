@@ -14,7 +14,7 @@ python3 -u benchmarks_CNN.py \
          --decay_rate=0.99 \
          --epsilon=1e-08 \
          --momentum=0.9 \
-         --loss_func=accuracy,cross_entropy \
+         --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=sequential \
          --blocking_mpi \
          --dtype=float32

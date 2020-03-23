@@ -72,7 +72,7 @@ def parse_options():
     parser.add_argument('--validation_split', type=float, default=0.0)
     parser.add_argument('--steps_per_epoch', type=int, default=0)
     parser.add_argument('--num_epochs', type=int, default=1)
-    parser.add_argument('--evaluate', action="store_true", default=True)
+    parser.add_argument('--evaluate', action="store_true", default=False)
     # Optimizer
     parser.add_argument('--optimizer', type=str, default="SGDMomentum")
     parser.add_argument('--learning_rate', type=float, default=1e-2)
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     if params.parallel in ["data", "model"]:
         comm.Barrier()
 
-    if rank == 0
+    if rank == 0:
         print('**** Training...')
         t1 = time.time()
 

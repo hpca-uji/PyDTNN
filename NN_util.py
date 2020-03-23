@@ -50,6 +50,7 @@ def glorot_initializer(out_shape, layer):
 def zeros_initializer(out_shape, layer):
     return np.zeros(out_shape).astype(layer.dtype)
 
+
 # Matmul operation
 
 def matmul(a, b):
@@ -61,31 +62,30 @@ def matmul(a, b):
         c = a @ b
     return c
 
+
 # Loss functions for classification CNNs
 
-def cross_entropy_class(Y_pred, Y_targ):
+def categorical_cross_entropy(Y_pred, Y_targ):
     b = Y_targ.shape[0]
     return -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)])) / b
 
-def accuracy_class(Y_pred, Y_targ):
+def categorical_accuracy(Y_pred, Y_targ):
     b = Y_targ.shape[0]
     return np.sum(Y_targ[np.arange(b), np.argmax(Y_pred, axis=1)])*100 / b
 
-def hinge_class(Y_pred, Y_targ):
-    b = Y_targ.shape[0]
-    targ = np.argmax(Y_targ, axis=1)
-    v = 1 - Y_pred[np.arange(b), targ] * targ
-    return np.sum(np.maximum(np.zeros_like(v),v))
+def categorical_hinge(Y_targ, Y_pred):
+    pos = K.sum(Y_targ * Y_pred, axis=-1)
+    neg = K.max((1.0 - Y_targ) * Y_pred, axis=-1)
+    return K.mean(K.maximum(0.0, neg - pos + 1), axis=-1)
 
-def mse_class(Y_pred, Y_targ):
+def categorical_mse(Y_pred, Y_targ):
     b = Y_targ.shape[0]
-    targ = np.argmax(Y_targ, axis=1)
-    return np.square(np.subtract(Y_pred[np.arange(b), targ], targ)).mean()
+    return np.square(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]).mean()
 
-def mae_class(Y_pred, Y_targ):
+def categorical_mae(Y_pred, Y_targ):
     b = Y_targ.shape[0]
     targ = np.argmax(Y_targ, axis=1)
-    return np.sum(np.absolute(np.subtract(Y_pred[np.arange(b), targ], targ)))
+    return np.sum(np.absolute(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]))
 
 
 # Some utility functions for debugging

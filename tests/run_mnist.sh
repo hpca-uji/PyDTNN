@@ -10,11 +10,12 @@ python3 -u benchmarks_CNN.py \
          --num_epochs=10 \
          --optimizer=Adam \
          --learning_rate=0.001 \
-         --loss_func=accuracy_class,cross_entropy_class \
+         --loss_func=categorical_accuracy,categorical_mae,categorical_mse \
          --parallel=sequential \
          --blocking_mpi \
          --dtype=float32 --test_as_validation
 
+         #--evaluate \
          # 
          # --decay_rate=0.99 \
          # --epsilon=1e-08 \

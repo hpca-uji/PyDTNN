@@ -112,11 +112,11 @@ class Model:
 
     def __update_running_average(self, curr, total, count, loss, prefix=""):
         string = ""
-        loss_format = {"accuracy_class":      prefix + "acc: %5.2f%%", 
-                       "cross_entropy_class": prefix + "cat: %.2f",
-                       "hinge_class":         prefix + "hin: %.2f",
-                       "mse_class":           prefix + "mse: %.2f",
-                       "mae_class":           prefix + "mae: %.2f"}
+        loss_format = {"categorical_accuracy":      prefix + "acc: %5.2f%%", 
+                       "categorical_cross_entropy": prefix + "cro: %.2f",
+                       "categorical_hinge":         prefix + "hin: %.2f",
+                       "categorical_mse":           prefix + "mse: %.2f",
+                       "categorical_mae":           prefix + "mae: %.2f"}
 
         for c in range(len(curr)):
             total[c] = (curr[c] + (total[c] * count)) / (count+1)
