@@ -55,6 +55,11 @@ try:
 except:
     pass
 
+try:
+    from mpi4py import MPI
+except:
+    pass
+
 class Model:
     """ Neural network (NN) """
 
