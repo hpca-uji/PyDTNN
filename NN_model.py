@@ -118,7 +118,7 @@ class Model:
 
     def apply_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
         loss_reqs = []
-        loss_results = []
+        loss_res = []
         for func in loss_funcs:
             loss_req = None
             total_loss = np.zeros(1)
@@ -131,9 +131,9 @@ class Model:
             else:
                 total_loss[0] = loss
             loss_reqs.append(loss_req)
-            loss_results.append(total_loss)
+            loss_res.append(total_loss)
 
-        return loss_results, loss_reqs
+        return loss_res, loss_reqs
 
     def get_metric_results(self, curr, loss):
         total, count, string = self.__update_running_average(curr, np.zeros(len(loss)), 0, loss, prefix="test_")
@@ -141,6 +141,7 @@ class Model:
 
     def __update_running_average(self, curr, total, count, loss, prefix=""):
         string = ""
+        if type(curr) == int: curr = [curr]
         for c in range(len(curr)):
             total[c] = (curr[c] + (total[c] * count)) / (count+1)
             try:    loss_str = NN_util.loss_format[loss[c]]
@@ -203,7 +204,8 @@ class Model:
 
         if self.comm != None:
             for i in range(len(loss_reqs)): 
-                loss_reqs[i].Wait(); loss_res[i] /= self.nprocs
+                loss_reqs[i].Wait()
+                loss_res[i] /= self.nprocs
 
         return loss_res
 
@@ -250,7 +252,7 @@ class Model:
                 pbar.close()
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self.evaluate(X_batch, Y_batch, loss_metrics)
+                val_batch_loss, _ = self.evaluate(X_batch, Y_batch, loss_metrics)
                 if self.rank == 0 and X_batch.shape[0] > 0:
                     val_total_loss, val_batch_count, string = \
                         self.__update_running_average(val_batch_loss, val_total_loss, 
@@ -274,5 +276,5 @@ class Model:
 
         loss_res, loss_reqs = self.apply_loss_funcs(self.layers[-1].a, Y, 
                                                     loss_funcs, blocking=True)
-        return loss_res
+        return loss_res, self.layers[-1].a
 
