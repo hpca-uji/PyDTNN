@@ -57,6 +57,7 @@ except:
 
 try:
     from mpi4py import MPI
+    supported_mpi4py = True
 except:
     pass
 
@@ -76,14 +77,19 @@ class Model:
         self.rank = 0
         self.nprocs = 1
 
-        if self.comm != None:
-            from mpi4py import MPI
+        if self.comm != None and supported_mpi4py:
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
+        else:
+            print("You must install mpi4py to allow parallel MPI execution!")
+            sys.exit(-1)
 
         if self.enable_gpu and supported_gpu:
             culinalg.init()
-        
+        else:
+            print("You must install pycuda+skcuda to allow parallel MPI execution!")
+            sys.exit(-1)
+
     def show(self):
         print("┌───────┬──────────┬─────────┬───────────────┬─────────────────┬─────────┬─────────┐")
         print("│ Layer │   Type   │ #Params │ Output shape  │  Weights shape  │ Padding │ Stride  │")
