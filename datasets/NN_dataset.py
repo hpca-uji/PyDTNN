@@ -246,7 +246,7 @@ class ImageNet(Dataset):
             self.val_path, self.val_files = self.test_path, self.test_files
             self.train_files = self.train_val_files
             self.train_nsamples = self.train_val_nsamples
-            
+
     def __trim_image(self, X, model):
         if "vgg" in self.model: # for VGG models input shape must be (3,224,224)
             return X[...,1:225,1:225]
@@ -271,7 +271,7 @@ class ImageNet(Dataset):
             y = self.__expand_labels(values['y'].astype(np.int16))        
             yield (x, y)
 
-    def __test_generator(self):
+    def __test_data_generator(self):
         for f in range(self.test_files):
             values = np.load("%s/%s" % (self.test_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
