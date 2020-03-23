@@ -140,7 +140,7 @@ if __name__ == "__main__":
             print(model.get_metric_results(test_loss, loss_metrics))
 
     if params.parallel in ["data", "model"]:
-        comm.Barrier()
+        params.comm.Barrier()
 
     if rank == 0:
         print('**** Training...')
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     #             optimizer        = params.optimizer)
 
     if params.parallel in ["data", "model"]:
-        comm.Barrier()
+        params.comm.Barrier()
 
     if rank == 0:
         if params.profile:
