@@ -298,7 +298,7 @@ class ImageNet(Dataset):
             val_idx_files = np.arange(self.val_start, end)
             self.val_start = end
 
-        train_idx_files = np.setdiff1d(np.arange(len(self.train_val_files)), val_indices)
+        train_idx_files = np.setdiff1d(np.arange(len(self.train_val_files)), val_idx_files)
         self.train_files = [self.train_val_files[f] for f in train_idx_files]
         self.val_files = [self.train_val_files[f] for f in val_idx_files]
         self.train_nsamples = len(self.train_files) * self.images_per_file
