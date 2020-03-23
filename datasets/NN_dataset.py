@@ -182,7 +182,8 @@ class MNIST(Dataset):
             return np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
 
     def __expand_labels(self, Y):
-        Y_expanded = np.zeros((Y.shape[0], self.nclasses)).astype(self.dtype)
+        Y_expanded = np.zeros((Y.shape[0], self.nclasses))
+        Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
         Y_expanded[np.arange(Y.shape[0]), Y] = 1
         return Y_expanded
 
@@ -258,8 +259,9 @@ class ImageNet(Dataset):
         else: return X
 
     def __expand_labels(self, Y):
-        Y_expanded = np.zeros((Y.shape[0], self.nclasses)).astype(self.dtype)
-        Y_expanded[np.arange(Y.shape[0]), (Y.flatten()-1)] = 1
+        Y_expanded = np.zeros((Y.shape[0], self.nclasses))
+        Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
+        Y_expanded[np.arange(Y.shape[0]), Y] = 1
         return Y_expanded
 
     def train_data_generator(self):
