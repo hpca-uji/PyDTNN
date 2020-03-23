@@ -70,7 +70,7 @@ class Dataset:
             self.make_train_val_partitions(val_split)
         return ( self.train_batch_generator(self.train_data_generator(), 
                                             local_batch_size, rank, nprocs),
-                 self.val_test_batch_generator(self.__val_data_generator(), 
+                 self.val_test_batch_generator(self.val_data_generator(), 
                                             rank, nprocs) )
 
     def get_test_generator(self, local_batch_size=64, rank=0, nprocs=1):
