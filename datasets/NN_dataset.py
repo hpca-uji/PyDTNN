@@ -56,25 +56,25 @@ class Dataset:
     def make_train_val_partitions(self, val_split=0.2):
         pass
 
-    def __train_data_generator(self):
+    def train_data_generator(self):
         yield (self.X_train, self.Y_train)
 
-    def __val_data_generator(self):
+    def val_data_generator(self):
         yield (self.X_val, self.Y_val)
 
-    def __test_data_generator(self):
+    def test_data_generator(self):
         yield (self.X_test, self.Y_test)
 
     def get_train_val_generator(self, local_batch_size=64, rank=0, nprocs=1, val_split=0.2):
         if val_split > 0 and not self.test_as_validation:
             self.make_train_val_partitions(val_split)
-        return ( self.train_batch_generator(self.__train_data_generator(), 
+        return ( self.train_batch_generator(self.train_data_generator(), 
                                             local_batch_size, rank, nprocs),
                  self.val_test_batch_generator(self.__val_data_generator(), 
                                             rank, nprocs) )
 
     def get_test_generator(self, local_batch_size=64, rank=0, nprocs=1):
-        return self.test_batch_generator(self.__test_data_generator(), 
+        return self.test_batch_generator(self.test_data_generator(), 
                                             local_batch_size, rank, nprocs)
 
     def train_batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1):
@@ -257,21 +257,21 @@ class ImageNet(Dataset):
         Y_expanded[np.arange(Y.shape[0]), Y] = 1
         return Y_expanded
 
-    def __train_data_generator(self):
+    def train_data_generator(self):
         for f in range(self.train_files):
             values = np.load("%s/%s" % (self.train_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
             y = self.__expand_labels(values['y'].astype(np.int16))
             yield (x, y)
 
-    def __val_data_generator(self):
+    def val_data_generator(self):
         for f in range(self.val_files):
             values = np.load("%s/%s" % (self.val_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
             y = self.__expand_labels(values['y'].astype(np.int16))        
             yield (x, y)
 
-    def __test_data_generator(self):
+    def test_data_generator(self):
         for f in range(self.test_files):
             values = np.load("%s/%s" % (self.test_path, self.files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype))
