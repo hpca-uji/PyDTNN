@@ -224,16 +224,16 @@ class ImageNet(Dataset):
                  test_as_validation=False, dtype=np.float32):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
-        self.train_files = os.listdir(self.train_path)
+        self.train_val_files = os.listdir(self.train_path)
         self.test_files  = os.listdir(self.test_path)
         self.model = model
         self.dtype = dtype
         self.nclasses = 1000
         self.val_start = 0
 
-        self.train_nfiles = len(self.train_files)
+        self.train_val_files = len(self.train_files)
         self.images_per_file = 1251
-        self.train_val_nsamples = self.nfiles * self.images_per_file
+        self.train_val_nsamples = self.train_val_files * self.images_per_file
 
         self.test_nfiles = len(self.test_files)
         self.test_nsamples  = 10000
@@ -241,7 +241,7 @@ class ImageNet(Dataset):
         if self.test_as_validation:
             print("  Using test as validation data - val_split parameter is ignored!")
             self.val_path, self.val_files = self.test_path, self.test_files
-            self.train_nsamples = self.train_val_nsamples
+            self.train_files = self.train_val_files
 
     def __trim_image(self, X, model):
         if "vgg" in self.model: # for VGG models input shape must be (3,224,224)

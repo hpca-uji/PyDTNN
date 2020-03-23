@@ -54,12 +54,13 @@ def zeros_initializer(out_shape, layer):
 # Matmul operation
 
 def matmul(a, b):
-    if a.dtype == np.float32: 
-        c = slb.sgemm(1.0, a, b)
-    elif a.dtype == np.float64:
-        c = slb.dgemm(1.0, a, b)
-    else:
-        c = a @ b
+    #if a.dtype == np.float32: 
+    #    c = slb.sgemm(1.0, a, b)
+    #elif a.dtype == np.float64:
+    #    c = slb.dgemm(1.0, a, b)
+    #else:
+    # Naive matmul gets more performance scipy blas!
+    c = a @ b
     return c
 
 
