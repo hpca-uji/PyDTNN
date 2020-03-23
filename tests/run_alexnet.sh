@@ -17,4 +17,5 @@ python3 -u benchmarks_CNN.py \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=sequential \
          --blocking_mpi \
-         --dtype=float32
+         --dtype=float32 
+         #--enable_gpu

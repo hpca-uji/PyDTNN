@@ -5,7 +5,7 @@ python3 -u benchmarks_CNN.py \
          --dataset=imagenet \
          --dataset_train_path=/scratch/imagenet/np/train \
          --dataset_test_path=/scratch/imagenet/np/validation \
-         --batch_size=64 \
+         --batch_size=128 \
          --validation_split=0.0 \
          --steps_per_epoch=2 \
          --num_epochs=10 \
@@ -17,4 +17,4 @@ python3 -u benchmarks_CNN.py \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=sequential \
          --blocking_mpi \
-         --dtype=float32 --profile --enable_gpu
+         --dtype=float32

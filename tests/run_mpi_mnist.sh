@@ -1,6 +1,8 @@
 #!/bin/bash
 
-python3 -u benchmarks_CNN.py \
+export OMP_NUM_THREADS=2
+mpirun -np 12 \
+   python3 -u benchmarks_CNN.py \
          --model=simplecnn \
          --dataset=mnist \
          --dataset_train_path=../datasets/mnist \
@@ -11,7 +13,7 @@ python3 -u benchmarks_CNN.py \
          --optimizer=Adam \
          --learning_rate=0.001 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
-         --parallel=sequential \
+         --parallel=data \
          --blocking_mpi \
          --dtype=float32 --evaluate
          #--test_as_validation
