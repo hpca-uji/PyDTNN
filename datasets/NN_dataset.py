@@ -161,6 +161,8 @@ class MNIST(Dataset):
             self.Y_train_val = self.__read_file("%s/%s" % (self.train_path, Y_train_filename))
             self.X_test = self.__read_file("%s/%s" % (self.test_path, X_test_filename))
             self.Y_test = self.__read_file("%s/%s" % (self.test_path, Y_test_filename))
+            self.X_val = np.array([])
+            self.Y_val = np.array([])
 
         self.X_train_val = self.X_train_val.flatten().reshape(self.train_val_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
         self.Y_train_val = self.__expand_labels(self.Y_train_val.astype(np.int16))
@@ -241,6 +243,7 @@ class ImageNet(Dataset):
         self.images_per_file = 1251
         self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
         self.train_files = self.train_val_files
+        self.val_files = []
 
         self.test_files  = os.listdir(self.test_path)
         self.test_files.sort()
