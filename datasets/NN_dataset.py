@@ -224,17 +224,18 @@ class ImageNet(Dataset):
                  test_as_validation=False, dtype=np.float32):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
-        self.train_val_files = os.listdir(self.train_path)
-        self.test_files  = os.listdir(self.test_path)
         self.model = model
+        self.test_as_validation = test_as_validation
         self.dtype = dtype
         self.nclasses = 1000
         self.val_start = 0
 
+        self.train_val_files = os.listdir(self.train_path)
         self.train_val_files = len(self.train_val_files)
         self.images_per_file = 1251
         self.train_val_nsamples = self.train_val_files * self.images_per_file
 
+        self.test_files  = os.listdir(self.test_path)
         self.test_nfiles = len(self.test_files)
         self.test_nsamples  = 10000
 
