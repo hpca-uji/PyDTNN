@@ -104,7 +104,8 @@ if __name__ == "__main__":
         params.comm = MPI.COMM_WORLD
         nprocs = params.comm.Get_size()
         rank = params.comm.Get_rank()
-        print('**** Running with %d processes...' % nprocs)
+        if rank == 0
+            print('**** Running with %d processes...' % nprocs)
 
     elif params.parallel == "sequential":
         params.comm = None
