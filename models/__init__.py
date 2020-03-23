@@ -1,4 +1,5 @@
 import importlib, sys
+from NN_model import *
 
 def get_model(params):
     try:
