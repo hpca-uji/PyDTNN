@@ -45,6 +45,8 @@ from NN_tracer import Tracer, PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, \
                               PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 from tqdm import tqdm
 
+supported_gpu = False
+supported_mpi4py = False
 try:
     import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
@@ -80,13 +82,13 @@ class Model:
         if self.comm != None and supported_mpi4py:
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
-        else:
+        elif self.comm != None:
             print("You must install mpi4py to allow parallel MPI execution!")
             sys.exit(-1)
 
         if self.enable_gpu and supported_gpu:
             culinalg.init()
-        else:
+        elif self.enable_gpu:
             print("You must install pycuda+skcuda to allow parallel MPI execution!")
             sys.exit(-1)
 
