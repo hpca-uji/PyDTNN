@@ -304,6 +304,7 @@ class ImageNet(Dataset):
             subset_size = local_batch_size * nprocs * steps_per_epoch
             if subset_size < self.train_val_nsamples:
                 subset_files = subset_size // self.images_per_file
+                if subset_files == 0: subset_files = 1
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
                 self.train_nsamples = self.train_val_nsamples
