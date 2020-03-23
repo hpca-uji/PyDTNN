@@ -79,7 +79,7 @@ def matmul_gpu(a, b):
         b = np.ascontiguousarray(b, requirements="CA")
     a_gpu = gpuarray.to_gpu(a)
     b_gpu = gpuarray.to_gpu(b)
-    c_gpu = culinalg.dot(a_gpu, a_gpu) 
+    c_gpu = culinalg.dot(a_gpu, b_gpu) 
     return c_gpu.get()
 
 # Loss functions for classification CNNs
