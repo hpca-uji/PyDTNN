@@ -74,9 +74,9 @@ def matmul(a, b):
 
 def matmul_gpu(a, b):
     if not a.flags["C_CONTIGUOUS"]: 
-        a = np.ascontiguousarray(a, requirements="CA")
+        a = np.ascontiguousarray(a)
     if not b.flags["C_CONTIGUOUS"]: 
-        b = np.ascontiguousarray(b, requirements="CA")
+        b = np.ascontiguousarray(b)
     a_gpu = gpuarray.to_gpu(a)
     b_gpu = gpuarray.to_gpu(b)
     c_gpu = culinalg.dot(a_gpu, b_gpu) 
