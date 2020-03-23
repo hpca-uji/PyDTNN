@@ -287,7 +287,7 @@ class ImageNet(Dataset):
 
     def make_train_val_partitions(self, val_split=0.2):
         assert 0 <= val_split < 1        
-        self.val_size = int((self.train_val_nsamples * val_size) / self.images_per_file)
+        self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_file)
 
         end = self.val_start + self.val_size
         if end > self.nfiles:
