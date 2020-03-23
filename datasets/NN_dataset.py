@@ -235,7 +235,7 @@ class ImageNet(Dataset):
         self.train_val_files = os.listdir(self.train_path)
         self.images_per_file = 1251
         self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
-        self.X_train_files = self.X_train_val_files
+        self.train_files = self.train_val_files
 
         self.test_files  = os.listdir(self.test_path)
         self.test_nfiles = len(self.test_files)
