@@ -136,7 +136,7 @@ if __name__ == "__main__":
     if params.evaluate and dataset.X_test.shape[0] > 0:
         if rank == 0:
             print('**** Evaluating on test dataset...')        
-        test_loss, Y_pred = model.evaluate(dataset.X_test, dataset.Y_test, loss_metrics)
+        test_loss = model.evaluate(dataset.X_test, dataset.Y_test, loss_metrics)
         if rank == 0:
             print(model.get_metric_results(test_loss, loss_metrics))
 
@@ -186,6 +186,6 @@ if __name__ == "__main__":
     if params.evaluate and dataset.X_test.shape[0] > 0:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-        test_loss, Y_pred = model.evaluate(dataset.X_test, dataset.Y_test, loss_metrics)
+        test_loss = model.evaluate(dataset.X_test, dataset.Y_test, loss_metrics)
         if rank == 0:
             print(model.get_metric_results(test_loss, loss_metrics))

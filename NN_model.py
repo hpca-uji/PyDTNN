@@ -218,7 +218,7 @@ class Model:
                            loss_metrics, optimizer, bar_width)
 
     def train_dataset(self, dataset, nepochs, local_batch_size, 
-                      val_split = 0.2, use_test_as_validation = False,
+                      val_split=0.2, use_test_as_validation=False,
                       loss_metrics=["accuracy", "categorical_cross_entropy"], 
                       optimizer="SGD", bar_width=110):
 
@@ -252,7 +252,7 @@ class Model:
                 pbar.close()
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
-                val_batch_loss, _ = self.evaluate(X_batch, Y_batch, loss_metrics)
+                val_batch_loss = self.evaluate(X_batch, Y_batch, loss_metrics)
                 if self.rank == 0 and X_batch.shape[0] > 0:
                     val_total_loss, val_batch_count, string = \
                         self.__update_running_average(val_batch_loss, val_total_loss, 
@@ -276,5 +276,5 @@ class Model:
 
         loss_res, loss_reqs = self.apply_loss_funcs(self.layers[-1].a, Y, 
                                                     loss_funcs, blocking=True)
-        return loss_res, self.layers[-1].a
+        return loss_res
 

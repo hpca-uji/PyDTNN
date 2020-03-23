@@ -66,7 +66,7 @@ class Dataset:
         yield (self.X_test, self.Y_test)
 
     def get_train_val_generator(self, local_batch_size=64, rank=0, nprocs=1, val_split=0.2):
-        if self.test_as_validation:
+        if val_split > 0 and not self.test_as_validation:
             self.make_train_val_partitions(val_split)
         return ( self.train_batch_generator(self.train_data_generator(), 
                                             local_batch_size, rank, nprocs),

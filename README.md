@@ -26,32 +26,32 @@ Currently, **PyDTNN** supports the following layers:
 
 PyDTNN launcher `benchmarks_CNN.py` supports different options.
 * Model parameters:
- * ``--model``: Neural network model: `simplemlp`, `simplecnn`, `alexnet`, `vgg11`, `vgg16`.
- * ``--dataset``: Dataset to train: `mnist`, `imagenet`.
- * ``--dataset_train_path``: Path to the training dataset.
- * ``--dataset_test_path``: Path to the training dataset.
- * ``--test_as_validation``: Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.
- * ``--batch_size``: Batch size per MPI rank.
- * ``--validation_split``: Split between training and validation data.
- * ``--steps_per_epoch``: Trims the training data depending on the given number of steps per epoch. Default: 0, i.e., do not trim.
- * ``--num_epochs``: Number of epochs to perform. Default value: 1.
- * ``--evaluate``: Evaluate the model before and after training the model. Default: False.
+    * ``--model``: Neural network model: `simplemlp`, `simplecnn`, `alexnet`, `vgg11`, `vgg16`.
+    * ``--dataset``: Dataset to train: `mnist`, `imagenet`.
+    * ``--dataset_train_path``: Path to the training dataset.
+    * ``--dataset_test_path``: Path to the training dataset.
+    * ``--test_as_validation``: Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.
+    * ``--batch_size``: Batch size per MPI rank.
+    * ``--validation_split``: Split between training and validation data.
+    * ``--steps_per_epoch``: Trims the training data depending on the given number of steps per epoch. Default: 0, i.e., do not trim.
+    * ``--num_epochs``: Number of epochs to perform. Default value: 1.
+    * ``--evaluate``: Evaluate the model before and after training the model. Default: False.
 
 * Optimizer parameters:
- * ``--optimizer``: Optimizers: `SGD`, `SGDMomentum`, `RMSProp`, `Adam`. Default: `SGDMomentum`.
- * ``--learning_rate``: Learning rate. Default: 0.01.
- * ``--decay_rate``: Decay rate for `RMSProp` and `Adam` optimizers. Default: 0.99.
- * ``--epsilon``: Decay rate for `RMSProp` and `Adam` optimizers. Default: 1e-8.
- * ``--momentum``: Decay rate for `SGDMomentum` optimizer. Default: 0.9.
- * ``--loss_func``: List of comma-separated loss functions that Are evaluated on each trained batch: `categorical_accuracy`,`categorical_cross_entropy`,`categorical_hinge`,`categorical_mse`,`categorical_mae`,`regression_mse`,`regression_mae`.
+    * ``--optimizer``: Optimizers: `SGD`, `SGDMomentum`, `RMSProp`, `Adam`. Default: `SGDMomentum`.
+    * ``--learning_rate``: Learning rate. Default: 0.01.
+    * ``--decay_rate``: Decay rate for `RMSProp` and `Adam` optimizers. Default: 0.99.
+    * ``--epsilon``: Decay rate for `RMSProp` and `Adam` optimizers. Default: 1e-8.
+    * ``--momentum``: Decay rate for `SGDMomentum` optimizer. Default: 0.9.
+    * ``--loss_func``: List of comma-separated loss functions that Are evaluated on each trained batch: `categorical_accuracy`,`categorical_cross_entropy`,`categorical_hinge`,`categorical_mse`,`categorical_mae`,`regression_mse`,`regression_mae`.
 
 * Parallelization and other performance-related parameters:
- * ``--parallel``: Data parallelization modes: `sequential`, `data`. Default: `sequential`.
- * ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
- * ``--tracing``: Obtain Extrae traces.
- * ``--profile``: Obtain cProfile profiles.
- * ``--enable_gpu``: Enable GPU for matmul operations.
- * ``--dtype``: Dataype to use: `float32`, `float64`.
+    * ``--parallel``: Data parallelization modes: `sequential`, `data`. Default: `sequential`.
+    * ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
+    * ``--tracing``: Obtain Extrae traces.
+    * ``--profile``: Obtain cProfile profiles.
+    * ``--enable_gpu``: Enable GPU for matmul operations.
+    * ``--dtype``: Dataype to use: `float32`, `float64`.
 
 
 ## Example: Training MNIST
