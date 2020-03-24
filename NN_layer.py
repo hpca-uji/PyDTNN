@@ -86,7 +86,7 @@ class Layer():
         if comm and self.weights.size > 0:
             self.dwb = np.append(self.dw.reshape(-1), self.db.reshape(-1))
             self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.id * PYDL_NUM_EVTS + 5, self.id * PYDL_OPS_NUM_EVTS + 9])
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.id * PYDL_NUM_EVTS + 3, self.id * PYDL_OPS_NUM_EVTS + 6])
             comm.Allreduce( self.dwb, self.red_dwb, op = MPI.SUM )
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
             self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
@@ -116,17 +116,17 @@ class FC(Layer):
         super().show("│{:^17s}│{:^9s}│{:^9s}│".format(str(self.weights.shape),"",""))
 
     def forward(self, prev_a):
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
         res = self.matmul(prev_a.reshape(prev_a.shape[0], -1), self.weights)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         self.a = res + self.bias
         
     def backward(self, prev_dx):
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 6)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
         dx = self.matmul(prev_dx, self.weights.T)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 8)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
         self.dw = self.matmul(self.prev_layer.a.reshape(self.prev_layer.a.shape[0], -1).T, prev_dx)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         self.db = prev_dx.sum(axis=0)
@@ -162,12 +162,12 @@ class Conv2D(Layer):
         super().show("│{:^17s}│{:^9d}│{:^9d}│".format(str(self.weights.shape), self.padding, self.stride))
 
     def forward(self, prev_a):
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
         self.prev_a_cols = im2col_cython(prev_a, self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         w_cols = self.weights.reshape(self.co, -1)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
         res = self.matmul(w_cols, self.prev_a_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
@@ -180,16 +180,16 @@ class Conv2D(Layer):
         dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
 
-        self.tracer.emit_event(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 6)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
         res = self.matmul(w_cols, dx_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        self.tracer.emit_event(PYDL_OPS_EVT, (self.id-1) * PYDL_OPS_NUM_EVTS + 5)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
         dx = col2im_cython(res, prev_dx.shape[0], self.ci, self.hi, self.wi, 
                                    self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 8)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
         res = self.matmul(dx_cols, self.prev_a_cols.T)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
@@ -222,7 +222,7 @@ class Pool2D(Layer):
 
     def forward(self, prev_a):
         prev_a_ = prev_a.reshape(prev_a.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
         a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
@@ -234,11 +234,12 @@ class Pool2D(Layer):
         #printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
         dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape))).astype(self.dtype)
         dx_cols[self.maxids] = prev_dx.flatten()
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
         dx = col2im_cython(dx_cols, prev_dx.shape[0] * self.ci, 1, self.hi, self.wi, 
                            self.kh, self.kw, self.padding, self.stride)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
         dx = dx.reshape(prev_dx.shape[0], self.ci, self.hi, self.wi)
         return dx
-
 
 class Dropout(Layer):
 
@@ -255,7 +256,6 @@ class Dropout(Layer):
 
     def backward(self, prev_dx):
         return prev_dx * self.mask
-
  
 # Flatten layers are not needed anymore!
 # class Flatten(Layer):

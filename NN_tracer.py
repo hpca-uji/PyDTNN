@@ -41,8 +41,8 @@ import ctypes, os, NN_util
 
 PYDL_EVT = 60000001
 PYDL_OPS_EVT = 60000002
-PYDL_NUM_EVTS = 7
-PYDL_OPS_NUM_EVTS = 9
+PYDL_NUM_EVTS = 5
+PYDL_OPS_NUM_EVTS = 6
 
 class Tracer:
 
@@ -62,13 +62,11 @@ class Tracer:
             for i in range(1, nvalues):
               values[i] = i
             for i in range(len(self.layers)):
-              description_values[i*PYDL_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference ").encode('utf-8')
-              description_values[i*PYDL_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
-              description_values[i*PYDL_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX ").encode('utf-8')
-              description_values[i*PYDL_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW ").encode('utf-8')
-              description_values[i*PYDL_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
-              description_values[i*PYDL_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dW ").encode('utf-8')
-              description_values[i*PYDL_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dW ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_backward ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dw ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_wait_dw ").encode('utf-8')
+              description_values[i*PYDL_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_update_dw ").encode('utf-8')
     
             pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
                 ctypes.pointer(ctypes.c_uint(NN_util.PYDL_EVT)),
@@ -86,15 +84,12 @@ class Tracer:
             for i in range(1, nvalues):
               values[i] = i
             for i in range(len(self.layers)):
-              description_values[i*PYDL_OPS_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_im2col ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_inference_matmul ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_im2col ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dX_matmul ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+7] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_im2col ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+8] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dW_matmul ").encode('utf-8')
-              description_values[i*PYDL_OPS_NUM_EVTS+9] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dW ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+1] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+2] = (str(i) + "_" + type(self.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+3] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dx_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+4] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dx_col2im ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+5] = (str(i) + "_" + type(self.layers[i]).__name__ + "_compute_dw_matmul ").encode('utf-8')
+              description_values[i*PYDL_OPS_NUM_EVTS+6] = (str(i) + "_" + type(self.layers[i]).__name__ + "_allreduce_dw ").encode('utf-8')
     
             pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
                 ctypes.pointer(ctypes.c_uint(NN_util.PYDL_OPS_EVT)),

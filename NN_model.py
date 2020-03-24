@@ -151,14 +151,13 @@ class Model:
         return total, count+1, string
 
     def __train_batch(self, X_batch, Y_batch, loss_funcs, optimizer_func):
-        """ Single step (batched) """
 
         if X_batch.shape[0] == 0: return 0
 
         # Forward pass (FP)
         self.layers[0].a = X_batch
         for l in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDL_EVT, self.layers[l].id * 7 + 2)
+            self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 1)
             self.layers[l].forward(self.layers[l-1].a)
             self.tracer.emit_event(PYDL_EVT, 0)
 
@@ -166,39 +165,39 @@ class Model:
                                                     loss_funcs, blocking=False)
         if self.blocking_mpi:
             # Blocking MPI
-            # Back propagation. Gradient computation (GC) and calculate changes local
+            # Back propagation. Gradient computation (GC) and weights update (WU)
             dx = (self.layers[-1].a - Y_batch)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
+                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
                 dx = self.layers[l].backward(dx)
                 self.tracer.emit_event(PYDL_EVT, 0)
     
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
                 self.layers[l].reduce_weights_sync(self.comm)
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 7)
+                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
                 self.layers[l].update_weights(optimizer_func, self.params)
                 self.tracer.emit_event(PYDL_EVT, 0)            
         else:
             # Non-blocking MPI
-            # Back propagation. Gradient computation (GC) and calculate changes local
+            # Back propagation. Gradient computation (GC) and weights update (WU)
             dx = (self.layers[-1].a - Y_batch)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
+                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
                 dx = self.layers[l].backward(dx)
                 self.tracer.emit_event(PYDL_EVT, 0)
 
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
+                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
                 self.layers[l].reduce_weights_async(self.comm)
                 self.tracer.emit_event(PYDL_EVT, 0)
     
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.layers[l].id * PYDL_NUM_EVTS + 6, self.layers[l].id * PYDL_OPS_NUM_EVTS + 9])
+                self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.layers[l].id * PYDL_NUM_EVTS + 4, self.layers[l].id * PYDL_OPS_NUM_EVTS + 6])
                 self.layers[l].wait_allreduce_async(self.comm)
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
     
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 7)
+                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
                 self.layers[l].update_weights(optimizer_func, self.params)
                 self.tracer.emit_event(PYDL_EVT, 0)
 
