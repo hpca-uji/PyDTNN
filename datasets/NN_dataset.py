@@ -91,7 +91,8 @@ class Dataset:
             else:
                 end_for  = nsamples - remaining 
                 last_batch_size = remaining
-                
+            
+            # Generate batches
             for batch_num in range(0, end_for, batch_size):
                 start = batch_num +  rank    * local_batch_size 
                 end   = batch_num + (rank+1) * local_batch_size 
@@ -100,6 +101,7 @@ class Dataset:
                 Y_local_batch = Y_data[indices,...]
                 yield (X_local_batch, Y_local_batch, batch_size)
     
+            # Generate last batch
             local_batch_size = last_batch_size // nprocs
             start = end_for + local_batch_size * rank
             end   = start + local_batch_size
