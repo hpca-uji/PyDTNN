@@ -167,10 +167,10 @@ class MNIST(Dataset):
             self.Y_val = np.array([])
 
         self.X_train_val = self.X_train_val.flatten().reshape(self.train_val_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
-        self.Y_train_val = self.__expand_labels(self.Y_train_val.astype(np.int16))
+        self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
         self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
         self.X_test = self.X_test.flatten().reshape(self.test_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
-        self.Y_test = self.__expand_labels(self.Y_test.astype(np.int16))
+        self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
         self.train_nsamples = self.X_train_val.shape[0]
 
         if self.test_as_validation:
@@ -185,11 +185,10 @@ class MNIST(Dataset):
             shape = tuple(struct.unpack('>I', f.read(4))[0] for d in range(dims))
             return np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
 
-    def __expand_labels(self, Y):
-        Y_expanded = np.zeros((Y.shape[0], self.nclasses))
-        Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
-        Y_expanded[np.arange(Y.shape[0]), Y] = 1
-        return Y_expanded
+    def __one_hot_encoder(self, Y):
+        Y_one_hot = np.zeros((Y.shape[0], self.nclasses), dtype=self.dtype, order="C")
+        Y_one_hot[np.arange(Y.shape[0]), Y] = 1
+        return Y_one_hot
 
     def make_train_val_partitions(self, val_split=0.2):
         assert 0 <= val_split < 1
@@ -265,7 +264,7 @@ class ImageNet(Dataset):
             return X[...,1:225,1:225]
         else: return X
 
-    def __expand_labels(self, Y):
+    def __one_hot_encoder(self, Y):
         Y_expanded = np.zeros((Y.shape[0], self.nclasses))
         Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
         Y_expanded[np.arange(Y.shape[0]), (Y.flatten()-1)] = 1
@@ -275,21 +274,21 @@ class ImageNet(Dataset):
         for f in range(len(self.train_files)):
             values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            y = self.__expand_labels(values['y'].astype(np.int16))
+            y = self.__one_hot_encoder(values['y'].astype(np.int16))
             yield (x, y)
 
     def val_data_generator(self):
         for f in range(len(self.val_files)):
             values = np.load("%s/%s" % (self.val_path, self.val_files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            y = self.__expand_labels(values['y'].astype(np.int16))        
+            y = self.__one_hot_encoder(values['y'].astype(np.int16))        
             yield (x, y)
 
     def test_data_generator(self):
         for f in range(len(self.test_files)):
             values = np.load("%s/%s" % (self.test_path, self.test_files[f]))
             x = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            y = self.__expand_labels(values['y'].astype(np.int16))  
+            y = self.__one_hot_encoder(values['y'].astype(np.int16))  
             yield (x, y)
 
     def make_train_val_partitions(self, val_split=0.2):
