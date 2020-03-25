@@ -279,10 +279,14 @@ class ImageNet(Dataset):
             Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
             count += 1
             if count == files_per_batch:
+                if X_buffer.size == 0:
+                    X_buffer, Y_buffer = X_data, Y_data
                 yield (X_buffer, Y_buffer)
                 X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
                 Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
                 count = 0
+            elif X_buffer.size == 0:
+                X_buffer, Y_buffer = X_data, Y_data
             else:
                 X_buffer = np.concatenate((X_buffer, X_data), axis=0)
                 Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
