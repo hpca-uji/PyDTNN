@@ -69,7 +69,6 @@ class Dataset:
         batch_size = local_batch_size * nprocs
         if not self.test_as_validation:
             self.make_train_val_partitions(val_split)
-        val_batch_size = self.
         return ( self.train_batch_generator(self.train_data_generator(batch_size), 
                                             local_batch_size, rank, nprocs),
                  self.val_test_batch_generator(self.val_data_generator(), rank, nprocs) )
