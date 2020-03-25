@@ -301,13 +301,13 @@ class ImageNet(Dataset):
             yield (X_data, Y_data)
 
     def train_data_generator(self):
-        return data_generator(self.train_path, self.train_files)
+        return self.data_generator(self.train_path, self.train_files)
 
     def val_data_generator(self):
-        return data_generator(self.val_path, self.val_files)
+        return self.data_generator(self.val_path, self.val_files)
 
     def test_data_generator(self):
-        return data_generator(self.test_path, self.test_files)
+        return self.data_generator(self.test_path, self.test_files)
 
     def make_train_val_partitions(self, val_split=0.2):
         assert 0 <= val_split < 1        
