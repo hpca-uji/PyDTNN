@@ -127,7 +127,7 @@ if __name__ == "__main__":
         print('**** Loading %s dataset...' % params.dataset)
 
     dataset = get_dataset(params)
-
+    
     loss_metrics = [f for f in params.loss_func.replace(" ","").split(",")]
 
     if params.steps_per_epoch > 0:
@@ -136,9 +136,9 @@ if __name__ == "__main__":
     if params.evaluate and dataset.X_test.shape[0] > 0:
         if rank == 0:
             print('**** Evaluating on test dataset...')        
-        test_loss = model.evaluate(dataset.X_test, dataset.Y_test, loss_metrics)
-        if rank == 0:
-            print(model.get_metric_results(test_loss, loss_metrics))
+        test_loss = model.evaluate_dataset(dataset, loss_metrics)
+        #if rank == 0:
+           # print(model.get_metric_results(test_loss, loss_metrics))
 
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
@@ -186,6 +186,6 @@ if __name__ == "__main__":
     if params.evaluate and dataset.X_test.shape[0] > 0:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-        test_loss = model.evaluate(dataset.X_test, dataset.Y_test, loss_metrics)
-        if rank == 0:
-            print(model.get_metric_results(test_loss, loss_metrics))
+        test_loss = model.evaluate_dataset(dataset, loss_metrics)
+        #if rank == 0:
+           # print(model.get_metric_results(test_loss, loss_metrics))

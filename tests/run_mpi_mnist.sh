@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export OMP_NUM_THREADS=2
-mpirun -np 12 \
+export OMP_NUM_THREADS=1
+mpirun -np 4 \
    python3 -u benchmarks_CNN.py \
          --model=simplecnn \
          --dataset=mnist \
@@ -14,7 +14,7 @@ mpirun -np 12 \
          --learning_rate=0.001 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=data \
-         --dtype=float32 --evaluate
+         --dtype=float32 --evaluate --non_blocking_mpi
          #--test_as_validation
          #--profile
          #--enable_gpu

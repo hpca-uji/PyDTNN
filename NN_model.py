@@ -116,43 +116,36 @@ class Model:
             layer.act.shape = layer.shape
             self.add(layer.act)
 
-    def apply_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
-        loss_reqs = []
-        loss_res = []
-        for func in loss_funcs:
-            loss_req = None
-            total_loss = np.zeros(1)
-            loss = np.array([func(Y_pred, Y_targ)])
-            if self.comm != None and blocking:
-                self.comm.Allreduce(loss, total_loss, op = MPI.SUM)
-                total_loss /= self.nprocs
-            elif self.comm != None and not blocking:
-                loss_req = self.comm.Iallreduce(loss, total_loss, op = MPI.SUM)
-            else:
-                total_loss[0] = loss
-            loss_reqs.append(loss_req)
-            loss_res.append(total_loss)
-
-        return loss_res, loss_reqs
+    def compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
+        loss_req = None
+        total_loss = np.zeros(len(loss_funcs), dtype=np.float32)
+        partial_loss = np.array([func(Y_pred, Y_targ) for func in loss_funcs], dtype=np.float32)
+        if self.comm != None and blocking:
+            self.comm.Reduce(partial_loss, total_loss, op=MPI.SUM, root=0)
+            total_loss /= self.nprocs
+        elif self.comm != None and not blocking:
+            loss_req = self.comm.Ireduce(partial_loss, total_loss, op=MPI.SUM)
+        else:
+            total_loss = partial_loss
+        return total_loss, loss_req
 
     def get_metric_results(self, curr, loss):
         total, count, string = self.__update_running_average(curr, np.zeros(len(loss)), 0, loss, prefix="test_")
         return string
 
-    def __update_running_average(self, curr, total, count, loss, prefix=""):
+    def __update_running_average(self, curr, total, count, loss_metrics, prefix=""):
         string = ""
-        if type(curr) == int: curr = [curr]
-        for c in range(len(curr)):
-            total[c] = (curr[c] + (total[c] * count)) / (count+1)
-            try:    loss_str = NN_util.loss_format[loss[c]]
-            except: loss_str = loss[c]
+        total = (curr + (total * count)) / (count+1)
+        for c in range(len(total)):
+            try:    loss_str = NN_util.loss_format[loss_metrics[c]]
+            except: loss_str = loss_metrics[c]
             string += ("%s, " % (prefix+loss_str)) % total[c]
         string = string[:-2]
         return total, count+1, string
 
     def __train_batch(self, X_batch, Y_batch, loss_funcs, optimizer_func):
 
-        if X_batch.shape[0] == 0: return 0
+        if X_batch.shape[0] == 0: return [0]
 
         # Forward pass (FP)
         self.layers[0].a = X_batch
@@ -161,12 +154,13 @@ class Model:
             self.layers[l].forward(self.layers[l-1].a)
             self.tracer.emit_event(PYDL_EVT, 0)
 
-        loss_res, loss_reqs = self.apply_loss_funcs(self.layers[-1].a, Y_batch, 
-                                                    loss_funcs, blocking=False)
+        Y_pred = self.layers[-1].a
+        total_loss, loss_req = self.compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=False)
+       
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            dx = (self.layers[-1].a - Y_batch)
+            dx = (Y_pred - Y_batch)
             for l in range(len(self.layers)-1, 0, -1):
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
                 dx = self.layers[l].backward(dx)
@@ -202,23 +196,24 @@ class Model:
                 self.tracer.emit_event(PYDL_EVT, 0)
 
         if self.comm != None:
-            for i in range(len(loss_reqs)): 
-                loss_reqs[i].Wait()
-                loss_res[i] /= self.nprocs
+            #if self.rank == 0: print("total: ", total_loss)
+            loss_req.Wait()
+            total_loss /= self.nprocs
+            #if self.rank == 0: print("total: ", total_loss)
 
-        return loss_res
+        return total_loss
 
     def train(self, X_train, Y_train, X_val, Y_val, nepochs, local_batch_size,
-                    loss_metrics=["accuracy", "categorical_cross_entropy"], 
+                    loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
                     optimizer="SGD", bar_width=110):
 
-        dataset = datasets.NN_dataset.Dataset(X_train, Y_train, X_val, Y_val)
+        dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train, X_val=X_val, Y_val=Y_val)
         self.train_dataset(dataset, nepochs, local_batch_size, 0, False,
                            loss_metrics, optimizer, bar_width)
 
     def train_dataset(self, dataset, nepochs, local_batch_size, 
                       val_split=0.2, use_test_as_validation=False,
-                      loss_metrics=["accuracy", "categorical_cross_entropy"], 
+                      loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
                       optimizer="SGD", bar_width=110):
 
         loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
@@ -251,7 +246,7 @@ class Model:
                 pbar.close()
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self.evaluate(X_batch, Y_batch, loss_metrics)
+                val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
                 if self.rank == 0 and X_batch.shape[0] > 0:
                     val_total_loss, val_batch_count, string = \
                         self.__update_running_average(val_batch_loss, val_total_loss, 
@@ -261,19 +256,51 @@ class Model:
 
         self.tracer.define_event_type()
 
-    def evaluate(self, X, Y, loss_metrics=["accuracy", "categorical_cross_entropy"]):
-        loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
+    def __evaluate_batch(self, X_batch, Y_batch, loss_funcs):
 
         # Forward pass (FP)
-        if X.shape[0] == 0: return 0
+        if X_batch.shape[0] == 0: return [0]
 
-        self.layers[0].a = X
+        self.layers[0].a = X_batch
         for l in range(1, len(self.layers)):
             self.tracer.emit_event(PYDL_EVT, self.layers[l].id * 7 + 2)
             self.layers[l].forward(self.layers[l-1].a)
             self.tracer.emit_event(PYDL_EVT, 0)
 
-        loss_res, loss_reqs = self.apply_loss_funcs(self.layers[-1].a, Y, 
-                                                    loss_funcs, blocking=True)
+        Y_pred = self.layers[-1].a
+        loss_res, loss_reqs = self.compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
         return loss_res
+
+    def evaluate(self, X_test, Y_test, 
+                 loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                 bar_width=110):
+
+        dataset = datasets.NN_dataset.Dataset(X_test=X_test, Y_test=Y_test)
+        self.evaluate_dataset(dataset, loss_metrics, bar_width)
+
+    def evaluate_dataset(self, dataset, 
+                         loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                         bar_width=120):
+
+        loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
+        test_batch_generator = dataset.get_test_generator(self.rank, self.nprocs)
+
+        if self.rank == 0:
+            test_total_loss, test_batch_count = np.zeros(len(loss_funcs)), 0
+            pbar = tqdm(total=dataset.test_nsamples, ncols=bar_width, 
+                        ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
+                        desc="Testing ", unit=" samples")
+
+        for X_batch, Y_batch, batch_size in test_batch_generator:
+            test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
+            if self.rank == 0 and X_batch.shape[0] > 0:
+                val_total_loss, val_batch_count, string = \
+                    self.__update_running_average(test_batch_loss, test_total_loss, 
+                                                  test_batch_count, loss_metrics, 
+                                                  prefix="test_")
+                pbar.set_postfix_str(s=string, refresh=True)
+                pbar.update(batch_size)
+
+        if self.rank == 0:
+            pbar.close()
 
