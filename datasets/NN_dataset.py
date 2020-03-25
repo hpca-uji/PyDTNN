@@ -77,6 +77,8 @@ class Dataset:
         return self.val_test_batch_generator(self.test_data_generator(), rank, nprocs)
 
     def train_batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1):
+        batch_size = local_batch_size * nprocs
+        
         for X_data, Y_data in generator:
             nsamples = X_data.shape[0]
             s = np.arange(nsamples)
