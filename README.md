@@ -31,6 +31,14 @@ Supported datasets:
   in the key 'x' with the shape NCHW = (1251, 3, 227, 227) and the labels with the shape 
   NL = (1251, 1) in the key 'y'. Images shall be stored in np.uint8 data type in the 
   range [0..255] while the labels can be stored in np.int16 in the range [1..1000].
+  ```
+  >>> import numpy as np
+  >>> data = np.load("/scratch/imagenet/train/train-00000-of-01024.npz")
+  >>> data['x'].shape
+  (1251, 3, 227, 227)
+  >>> data['y'].shape
+  (1251, 1)
+  ```
 
 ## Installing PyDTNN
 
