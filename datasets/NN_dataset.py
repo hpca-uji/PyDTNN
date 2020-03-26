@@ -336,8 +336,11 @@ class ImageNet(Dataset):
                 values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
                 X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-                X_buffer = np.concatenate((X_buffer, X_data), axis=0)
-                Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
+                if X_buffer.size == 0:
+                    X_buffer, Y_buffer = X_data, Y_data
+                else:
+                    X_buffer = np.concatenate((X_buffer, X_data), axis=0)
+                    Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
     
                 if X_buffer.data[0] >= batch_size:
                     yield (X_buffer[:batch_size,...], Y_buffer[:batch_size,...])
