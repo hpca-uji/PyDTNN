@@ -116,23 +116,20 @@ class Dataset:
 
     def val_test_batch_generator(self, generator, rank=0, nprocs=1):
         for X_data, Y_data in generator:
-            if X_data.shape[0] < nprocs:
+            nsamples = X_data.shape[0]
+            batch_size = nsamples // nprocs
+            remaining  = nsamples % nprocs
 
+            if rank < remaining:
+               start =  rank    * (batch_size+1)
+               end   = (rank+1) * (batch_size+1)
             else:
-                nsamples = X_data.shape[0]
-                batch_size = nsamples // nprocs
-                remaining  = nsamples % nprocs
-    
-                if rank < remaining:
-                   start =  rank    * (batch_size+1)
-                   end   = (rank+1) * (batch_size+1)
-                else:
-                   start = remaining * (batch_size+1) + (rank-remaining) * batch_size
-                   end   = remaining * (batch_size+1) + (rank-remaining+1) * batch_size
-    
-                X_local_batch = X_data[start:end,...]
-                Y_local_batch = Y_data[start:end,...]
-                yield (X_local_batch, Y_local_batch, nsamples)
+               start = remaining * (batch_size+1) + (rank-remaining) * batch_size
+               end   = remaining * (batch_size+1) + (rank-remaining+1) * batch_size
+
+            X_local_batch = X_data[start:end,...]
+            Y_local_batch = Y_data[start:end,...]
+            yield (X_local_batch, Y_local_batch, nsamples)
 
 
 class MNIST(Dataset):
@@ -323,7 +320,7 @@ class ImageNet(Dataset):
     
             if X_buffer.shape[0] > 0:
                 yield (X_buffer, Y_buffer)
-                
+
         # For batch_sizes <= 1251, full files of 1251 samples are yield
         else:
             for f in range(len(files)):
