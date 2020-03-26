@@ -269,34 +269,6 @@ class ImageNet(Dataset):
         Y_one_hot[np.arange(Y.shape[0]), Y] = 1
         return Y_one_hot
 
-    def train_data_generator(self, batch_size):
-        X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
-        Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
-        
-        count = 0
-        files_per_batch = math.ceil(batch_size / float(self.images_per_train_file))
-        
-        for f in range(len(self.train_files)):
-            values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
-            X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-            count += 1
-            if count == files_per_batch:
-                if X_buffer.size == 0:
-                    X_buffer, Y_buffer = X_data, Y_data
-                yield (X_buffer, Y_buffer)
-                X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
-                Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
-                count = 0
-            elif X_buffer.size == 0:
-                X_buffer, Y_buffer = X_data, Y_data
-            else:
-                X_buffer = np.concatenate((X_buffer, X_data), axis=0)
-                Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
-
-        if X_buffer.shape[0] > 0:
-            yield (X_buffer, Y_buffer)
-
     def data_generator(self, path, files, batch_size):
         # For batch sizes > 1251 it is needed to concatenate more than one file
         # In this case we yield chunks of batch_size
