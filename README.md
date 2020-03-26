@@ -14,17 +14,50 @@ PyDTNN uses MPI4Py for message-passing and im2col transforms to cast the
 convolutions in terms of dense matrix-matrix multiplications, 
 which are realized BLAS calls via NumPy.
 
-Currently, **PyDTNN** supports the following layers:
+Supported layers:
 
   * Fully-connected
   * Convolutional 2D
   * Max pooling
   * Dropout
 
+Supported datasets:
+
+  * MNIST handwritten digit database: this dataset is included into the project.
+
+  * ImageNet: due to memory constraints, the PyDTNN module for this dataset requires 
+  a preprocessed ImageNet dataset split into 1,024 files in the NPZ Numpy's compressed 
+  array format contaning. Each of these files should store the images in the key 'x' with
+  the shape NCHW = (1251, 3, 227, 227) and the labels with the shape NL = (1251, 1) 
+  in the key 'y'. Images shall be stored in np.uint8 data type in the range [0..255] 
+  while the labels can be stored in np.int16 in the range [1..1000].
+
+## Installing PyDTNN
+
+The requirements of PyDTNN include the following packages:
+```
+    mpi4py==3.0.2
+    tqdm==4.43.0
+    scipy==1.3.0
+    Cython==0.29.13
+    numpy==1.17.2
+    pycuda==2019.1.2
+```
+
+To run run the im2col/col2im transforms for Convolutional layers, it is necessary to compile
+the correponding Cython module.
+```
+LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
+```
+
+Note that the ``-fopenmp`` compilation flat is needed in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
+
 
 ## PyDTNN launcher options
 
-PyDTNN launcher `benchmarks_CNN.py` supports different options.
+PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` which
+supports the following options:
+
 * Model parameters:
     * ``--model``: Neural network model: `simplemlp`, `simplecnn`, `alexnet`, `vgg11`, `vgg16`.
     * ``--dataset``: Dataset to train: `mnist`, `imagenet`.
@@ -74,9 +107,7 @@ $ mpirun -np 12 \
          --learning_rate=0.01 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=data \
-         --blocking_mpi \
          --dtype=float32 --evaluate
-
 $ bash run_mpi_mnist.sh
 **** Running with 12 processes...
 **** Creating simplecnn model...
@@ -128,7 +159,7 @@ $ bash run_mpi_mnist.sh
   dtype              : float32
 **** Loading mnist dataset...
 **** Evaluating on test dataset...
-test_acc: 10.07%, test_cro: 2.3007619
+Testing: 100%|█████████████████████| 10000/10000 [00:01<00:00, 30623.08 samples/s, test_acc: 10.07%, test_cro: 2.3007619]
 **** Training...
 Epoch  1/10: 100%|████████████████| 48000/48000 [00:01<00:00, 29545.50 samples/s, acc: 82.75%, cro: 0.5958990, val_acc: 91.65%, val_cro: 0.3004644]                                              
 Epoch  2/10: 100%|████████████████| 48000/48000 [00:01<00:00, 30469.53 samples/s, acc: 93.29%, cro: 0.2284573, val_acc: 94.69%, val_cro: 0.1804817]                                              
@@ -144,14 +175,15 @@ Epoch 10/10: 100%|████████████████| 48000/48000 
 Time: 18.34 s
 Throughput: 32712.78 samples/s
 **** Evaluating on test dataset...
-test_acc: 98.17%, test_cro: 0.0636805
+Testing: 100%|█████████████████████| 10000/10000 [00:01<00:00, 30423.38 samples/s, test_acc: 98.17%, test_cro: 0.0636805]
+
 ```
 
 ## References
 
 Publications describing PyDTNN
 
-* ...
+* Not yet available.
 
 ## Acknowledgments
 
@@ -162,3 +194,6 @@ The **PyDTNN** library has been partially supported by:
 * Project RTI2018-098156-B-C51 **"Innovative Technologies of Processors, Accelerators and Networks for Data Centers and High Performance Computing"** funded by the Spanish Ministry of Science, Innocation and Universities.
 
 * Project CDEIGENT/2017/04 **"High Performance Computing for Neural Networks"** funded by the Valencian Government.
+
+* Project UJI-A2019-11 **"Energy-Aware High Performance Computing for Deep Neural Networks"** funded by the Universitat Jaume I.
+

@@ -38,12 +38,12 @@ __version__ = "1.0.0"
 
 
 import numpy as np
-import importlib
-import random, os, struct
+import importlib, gc
+import random, os, struct, math
 
 class Dataset:
 
-    def __init__(self, X_train, Y_train,
+    def __init__(self, X_train=np.array([]), Y_train=np.array([]),
                        X_val=np.array([]),   Y_val=np.array([]),
                        X_test=np.array([]),  Y_test=np.array([]) ):
         self.X_train, self.Y_train = X_train, Y_train
@@ -56,34 +56,38 @@ class Dataset:
     def make_train_val_partitions(self, val_split=0.2):
         pass
 
-    def train_data_generator(self):
+    def train_data_generator(self, batch_size):
         yield (self.X_train, self.Y_train)
 
-    def val_data_generator(self):
+    def val_data_generator(self, batch_size):
         yield (self.X_val, self.Y_val)
 
-    def test_data_generator(self):
+    def test_data_generator(self, batch_size):
         yield (self.X_test, self.Y_test)
 
     def get_train_val_generator(self, local_batch_size=64, rank=0, nprocs=1, val_split=0.2):
-        if val_split > 0 and not self.test_as_validation:
-            self.make_train_val_partitions(val_split)
-        return ( self.train_batch_generator(self.train_data_generator(), 
+        batch_size = local_batch_size * nprocs
+        if not self.test_as_validation: self.make_train_val_partitions(val_split)
+        return ( self.train_batch_generator(self.train_data_generator(batch_size), 
                                             local_batch_size, rank, nprocs),
-                 self.val_test_batch_generator(self.val_data_generator(), 
-                                            rank, nprocs) )
+                 self.val_test_batch_generator(self.val_data_generator(batch_size), rank, nprocs) )
 
-    def get_test_generator(self, local_batch_size=64, rank=0, nprocs=1):
-        return self.test_batch_generator(self.test_data_generator(), 
-                                            local_batch_size, rank, nprocs)
+    def get_test_generator(self, rank=0, nprocs=1):
+        # Fixed batch size for testing:
+        #   This is done to ensure that the returned X_data, Y_data to the
+        #   val_test_batch_generator will be larger enough to feed all processes.
+        local_batch_size = 64
+        batch_size = local_batch_size * nprocs
+        return self.val_test_batch_generator(self.test_data_generator(batch_size), rank, nprocs)
 
     def train_batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1):
+        batch_size = local_batch_size * nprocs
+
         for X_data, Y_data in generator:
             nsamples = X_data.shape[0]
             s = np.arange(nsamples)
             np.random.shuffle(s)
     
-            batch_size = local_batch_size * nprocs
             remaining = nsamples % batch_size
             if remaining < (batch_size / 4):
                 end_for  = nsamples - batch_size - remaining
@@ -154,24 +158,20 @@ class MNIST(Dataset):
             self.Y_test = mnist.test_labels()
 
         else:
-            X_train_filename = "train-images-idx3-ubyte"
-            Y_train_filename = "train-labels-idx1-ubyte"       
-            X_test_filename  = "t10k-images-idx3-ubyte"
-            Y_test_filename  = "t10k-labels-idx1-ubyte"
+            X_train_fname = "train-images-idx3-ubyte"
+            Y_train_fname = "train-labels-idx1-ubyte"       
+            X_test_fname  = "t10k-images-idx3-ubyte"
+            Y_test_fname  = "t10k-labels-idx1-ubyte"
     
-            self.X_train_val = self.__read_file("%s/%s" % (self.train_path, X_train_filename))
-            self.Y_train_val = self.__read_file("%s/%s" % (self.train_path, Y_train_filename))
-            self.X_test = self.__read_file("%s/%s" % (self.test_path, X_test_filename))
-            self.Y_test = self.__read_file("%s/%s" % (self.test_path, Y_test_filename))
-            self.X_val = np.array([])
-            self.Y_val = np.array([])
+            self.X_train_val = self.__read_file("%s/%s" % (self.train_path, X_train_fname))
+            self.Y_train_val = self.__read_file("%s/%s" % (self.train_path, Y_train_fname))
+            self.X_test = self.__read_file("%s/%s" % (self.test_path, X_test_fname))
+            self.Y_test = self.__read_file("%s/%s" % (self.test_path, Y_test_fname))
 
         self.X_train_val = self.X_train_val.flatten().reshape(self.train_val_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
         self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
-        self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
         self.X_test = self.X_test.flatten().reshape(self.test_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
-        self.train_nsamples = self.X_train_val.shape[0]
 
         if self.test_as_validation:
             print("  Using test as validation data - val_split parameter is ignored!")
@@ -179,8 +179,8 @@ class MNIST(Dataset):
             self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
             self.train_nsamples = self.X_train.shape[0]
 
-    def __read_file(self, filename):
-        with open(filename, 'rb') as f:
+    def __read_file(self, fname):
+        with open(fname, 'rb') as f:
             zero, data_type, dims = struct.unpack('>HBB', f.read(4))
             shape = tuple(struct.unpack('>I', f.read(4))[0] for d in range(dims))
             return np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
@@ -224,8 +224,6 @@ class MNIST(Dataset):
             self.train_val_nsamples = self.X_train_val.shape[0]
             self.train_nsamples = self.train_val_nsamples
 
-            #self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
-            #self.X_val, self.Y_val = np.array([]), self.np.array([])
  
 class ImageNet(Dataset):
         
@@ -239,19 +237,17 @@ class ImageNet(Dataset):
         self.nclasses = 1000
         self.val_start = 0
 
+        # Variables for training + validation datasets
         self.train_val_files = os.listdir(self.train_path)
         self.train_val_files.sort()
-        self.images_per_file = 1251
-        self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
-        self.train_files = self.train_val_files
-        self.val_files = []
+        self.images_per_train_file = 1251
+        self.train_val_nsamples = len(self.train_val_files) * self.images_per_train_file
 
+        # Variables for testing dataset
         self.test_files  = os.listdir(self.test_path)
         self.test_files.sort()
-        self.test_nfiles = len(self.test_files)
-        self.test_nsamples  = 10000
-
-        self.train_nsamples = self.train_val_nsamples
+        self.images_per_test_file = 390
+        self.test_nsamples = len(self.test_files) * self.images_per_test_file
 
         if self.test_as_validation:
             print("  Using test as validation data - val_split parameter is ignored!")
@@ -265,35 +261,59 @@ class ImageNet(Dataset):
         else: return X
 
     def __one_hot_encoder(self, Y):
-        Y_expanded = np.zeros((Y.shape[0], self.nclasses))
-        Y_expanded = np.require(Y_expanded, dtype=self.dtype, requirements="CA")
-        Y_expanded[np.arange(Y.shape[0]), (Y.flatten()-1)] = 1
-        return Y_expanded
+        Y_one_hot = np.zeros((Y.shape[0], self.nclasses), dtype=self.dtype, order="C")
+        Y_one_hot[np.arange(Y.shape[0]), Y] = 1
+        return Y_one_hot
 
-    def train_data_generator(self):
-        for f in range(len(self.train_files)):
-            values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
-            x = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            y = self.__one_hot_encoder(values['y'].astype(np.int16))
-            yield (x, y)
+    def data_generator(self, path, files, batch_size, op="train"):
+        # For batch sizes > 1251 it is needed to concatenate more than one file of 1251 samples
+        # In this case we yield bigger chunks of size batch_size
+        images_per_file = {"train": self.images_per_train_file, \
+                           "test":  self.images_per_test_file}[op]
+        if batch_size > self.images_per_train_file:
+            X_buffer, Y_buffer = np.array([]), np.array([])
+            
+            for f in range(len(files)):
+                values = np.load("%s/%s" % (path, files[f]))
+                X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+                Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
+                if X_buffer.size == 0:
+                    X_buffer, Y_buffer = X_data, Y_data
+                else:
+                    X_buffer = np.concatenate((X_buffer, X_data), axis=0)
+                    Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
+    
+                if X_buffer.shape[0] >= batch_size:
+                    yield (X_buffer[:batch_size,...], Y_buffer[:batch_size,...])
+                    X_buffer = X_buffer[batch_size:,...]
+                    Y_buffer = Y_buffer[batch_size:,...]
+                    gc.collect()
+    
+            if X_buffer.shape[0] > 0:
+                yield (X_buffer, Y_buffer)
+                gc.collect()
 
-    def val_data_generator(self):
-        for f in range(len(self.val_files)):
-            values = np.load("%s/%s" % (self.val_path, self.val_files[f]))
-            x = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            y = self.__one_hot_encoder(values['y'].astype(np.int16))        
-            yield (x, y)
+        # For batch_sizes <= 1251, complete files of 1251 samples are yield
+        else:
+            for f in range(len(files)):
+                values = np.load("%s/%s" % (path, files[f]))
+                X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+                Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
+                yield (X_data, Y_data)
+                gc.collect()
 
-    def test_data_generator(self):
-        for f in range(len(self.test_files)):
-            values = np.load("%s/%s" % (self.test_path, self.test_files[f]))
-            x = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            y = self.__one_hot_encoder(values['y'].astype(np.int16))  
-            yield (x, y)
+    def train_data_generator(self, batch_size):
+        return self.data_generator(self.train_path, self.train_files, batch_size, op="train")
+
+    def val_data_generator(self, batch_size):
+        return self.data_generator(self.val_path, self.val_files, batch_size, op="train")
+
+    def test_data_generator(self, batch_size):
+        return self.data_generator(self.test_path, self.test_files, batch_size, op="test")
 
     def make_train_val_partitions(self, val_split=0.2):
         assert 0 <= val_split < 1        
-        self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_file)
+        self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_train_file)
 
         end = self.val_start + self.val_size
         if end > len(self.train_val_files):
@@ -307,16 +327,16 @@ class ImageNet(Dataset):
         train_idx_files = np.setdiff1d(np.arange(len(self.train_val_files)), val_idx_files)
         self.train_files = [self.train_val_files[f] for f in train_idx_files]
         self.val_files = [self.train_val_files[f] for f in val_idx_files]
-        self.train_nsamples = len(self.train_files) * self.images_per_file
+        self.train_nsamples = len(self.train_files) * self.images_per_train_file
 
     def adjust_steps_per_epoch(self, steps_per_epoch, local_batch_size, nprocs):
         if steps_per_epoch > 0:
             subset_size = local_batch_size * nprocs * steps_per_epoch
             if subset_size < self.train_val_nsamples:
-                subset_files = subset_size // self.images_per_file
+                subset_files = subset_size // self.images_per_train_file
                 if subset_files == 0: subset_files = 1
                 self.train_val_files = self.train_val_files[:subset_files]
-                self.train_val_nsamples = len(self.train_val_files) * self.images_per_file
+                self.train_val_nsamples = len(self.train_val_files) * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples
                 #self.train_files = self.train_val_files
                 #self.val_files = []

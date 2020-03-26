@@ -63,8 +63,10 @@ class Layer():
         self.shape = self.prev_layer.shape
 
     def show(self, attrs=""):
-        if not attrs: attrs= "│{:^17s}│{:^9s}│{:^9s}│".format("","","")
-        print(f"│{self.id:^7d}│{type(self).__name__:^10s}│{self.params:^9d}│{str(self.shape):^15}" + attrs)
+        if not attrs: attrs= "|{:^17s}|{:^9s}|{:^9s}|".format("","","")
+        print(f"|{self.id:^7d}|{type(self).__name__:^10s}|{self.params:^9d}|{str(self.shape):^15}" + attrs)
+        # if not attrs: attrs= "│{:^17s}│{:^9s}│{:^9s}│".format("","","")
+        # print(f"│{self.id:^7d}│{type(self).__name__:^10s}│{self.params:^9d}│{str(self.shape):^15}" + attrs)
 
     def update_weights(self, optimizer, params):
         if self.weights.size > 0:
@@ -72,7 +74,7 @@ class Layer():
 
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
-            self.dwb = np.append(self.dw.reshape(-1), self.db.reshape(-1))
+            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
             self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
             self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op = MPI.SUM )
      
@@ -84,18 +86,22 @@ class Layer():
      
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
-            self.dwb = np.append(self.dw.reshape(-1), self.db.reshape(-1))
+            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
             self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.id * PYDL_NUM_EVTS + 3, self.id * PYDL_OPS_NUM_EVTS + 6])
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                    [self.id * PYDL_NUM_EVTS + 3, 
+                                     self.id * PYDL_OPS_NUM_EVTS + 6])
             comm.Allreduce( self.dwb, self.red_dwb, op = MPI.SUM )
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
             self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
             self.db = self.red_dwb[-self.bias.size:].reshape(self.bias.shape)
 
+
 class Input(Layer):
 
     def __init__(self, shape=(1,)):
         super().__init__(shape)
+
 
 class FC(Layer):
 
@@ -108,12 +114,14 @@ class FC(Layer):
         self.bias_initializer = getattr(NN_util, bias_initializer)
         
     def initialize(self):
-        self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), np.prod(self.shape[0])), self)
+        self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
+                                                 np.prod(self.shape[0])), self)
         self.bias = self.bias_initializer((np.prod(self.shape),), self)
         self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
         
     def show(self):
-        super().show("│{:^17s}│{:^9s}│{:^9s}│".format(str(self.weights.shape),"",""))
+        super().show("|{:^17s}|{:^9s}|{:^9s}|".format(str(self.weights.shape),"",""))
+        # super().show("│{:^17s}│{:^9s}│{:^9s}│".format(str(self.weights.shape),"",""))
 
     def forward(self, prev_a):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
@@ -132,6 +140,7 @@ class FC(Layer):
         self.db = prev_dx.sum(axis=0)
         return dx
         
+
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
@@ -159,7 +168,8 @@ class Conv2D(Layer):
         self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
 
     def show(self):
-        super().show("│{:^17s}│{:^9d}│{:^9d}│".format(str(self.weights.shape), self.padding, self.stride))
+        super().show("|{:^17s}|{:^9d}|{:^9d}|".format(str(self.weights.shape), self.padding, self.stride))
+        # super().show("│{:^17s}│{:^9d}│{:^9d}│".format(str(self.weights.shape), self.padding, self.stride))
 
     def forward(self, prev_a):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
@@ -197,6 +207,7 @@ class Conv2D(Layer):
         self.db = prev_dx.sum(axis=(0,2,3))
         return dx
 
+
 class Pool2D(Layer):
 
     def __init__(self, pool_shape=(2,2), func='max', padding=0, stride=1):
@@ -218,7 +229,8 @@ class Pool2D(Layer):
         self.n = np.prod(self.shape)
 
     def show(self):
-        super().show("│{:^17s}│{:^9d}│{:^9d}│".format("", self.padding, self.stride))
+        super().show("|{:^17s}|{:^9d}|{:^9d}|".format("", self.padding, self.stride))
+        # super().show("│{:^17s}│{:^9d}│{:^9d}│".format("", self.padding, self.stride))
 
     def forward(self, prev_a):
         prev_a_ = prev_a.reshape(prev_a.shape[0] * self.ci, 1, self.hi, self.wi)
@@ -241,6 +253,7 @@ class Pool2D(Layer):
         dx = dx.reshape(prev_dx.shape[0], self.ci, self.hi, self.wi)
         return dx
 
+
 class Dropout(Layer):
 
     def __init__(self, prob=0.5):
@@ -257,6 +270,7 @@ class Dropout(Layer):
     def backward(self, prev_dx):
         return prev_dx * self.mask
  
+
 # Flatten layers are not needed anymore!
 # class Flatten(Layer):
 # 
