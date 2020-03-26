@@ -159,7 +159,7 @@ $ bash run_mpi_mnist.sh
   dtype              : float32
 **** Loading mnist dataset...
 **** Evaluating on test dataset...
-Testing: 100%|█████████████████████| 10000/10000 [00:01<00:00, 30623.08 samples/s, test_acc: 10.07%, test_cro: 2.3007619]
+Testing: 100%|████████████████████| 10000/10000 [00:01<00:00, 30623.08 samples/s, test_acc: 10.07%, test_cro: 2.3007619]
 **** Training...
 Epoch  1/10: 100%|████████████████| 48000/48000 [00:01<00:00, 29545.50 samples/s, acc: 82.75%, cro: 0.5958990, val_acc: 91.65%, val_cro: 0.3004644]                                              
 Epoch  2/10: 100%|████████████████| 48000/48000 [00:01<00:00, 30469.53 samples/s, acc: 93.29%, cro: 0.2284573, val_acc: 94.69%, val_cro: 0.1804817]                                              
@@ -175,7 +175,7 @@ Epoch 10/10: 100%|████████████████| 48000/48000 
 Time: 18.34 s
 Throughput: 32712.78 samples/s
 **** Evaluating on test dataset...
-Testing: 100%|█████████████████████| 10000/10000 [00:01<00:00, 30423.38 samples/s, test_acc: 98.17%, test_cro: 0.0636805]
+Testing: 100%|████████████████████| 10000/10000 [00:01<00:00, 30423.38 samples/s, test_acc: 98.17%, test_cro: 0.0636805]
 
 ```
 
