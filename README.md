@@ -25,9 +25,8 @@ Supported datasets:
 
   * **MNIST** handwritten digit database: this dataset is included into the project.
 
-  * **ImageNet**: due to memory constraints, the PyDTNN module for this dataset requires 
-  a preprocessed ImageNet dataset split into 1,024 files in the NPZ Numpy's compressed 
-  array format containing the images/labels. Each of these files should store the images 
+  * **ImageNet**: the PyDTNN module for this dataset requires a preprocessed ImageNet 
+  dataset split into 1,024 files in the NPZ Numpy's compressed array format containing the images/labels, similar to what TensorFlow uses. Each of these files should store the images 
   in the key 'x' with the shape NCHW = (1251, 3, 227, 227) and the labels with the shape 
   NL = (1251, 1) in the key 'y'. Images shall be stored in np.uint8 data type in the 
   range [0..255] while the labels can be stored in np.int16 in the range [1..1000].
@@ -39,6 +38,9 @@ Supported datasets:
     >>> data['y'].shape
     (1251, 1)
 ```
+  PyDTNN comes with the utility ``datasets/ImageNet_converter.py`` that reads the
+  preprocessed ImageNet TensorFlow training/validation files in TFRecord format 
+  and converts it into NPZ format. 
 
 ## Installing PyDTNN
 
