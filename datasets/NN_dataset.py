@@ -249,7 +249,7 @@ class ImageNet(Dataset):
         self.test_files  = os.listdir(self.test_path)
         self.test_files.sort()
         self.images_per_test_file = 390
-        self.test_nsamples = len(self.test_files) * self.images_per_train_file
+        self.test_nsamples = len(self.test_files) * self.images_per_test_file
 
         if self.test_as_validation:
             print("  Using test as validation data - val_split parameter is ignored!")
