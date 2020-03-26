@@ -38,7 +38,7 @@ __version__ = "1.0.0"
 
 
 import numpy as np
-import importlib
+import importlib, gc
 import random, os, struct, math
 
 class Dataset:
@@ -285,10 +285,12 @@ class ImageNet(Dataset):
                     yield (X_buffer[:batch_size,...], Y_buffer[:batch_size,...])
                     X_buffer = X_buffer[batch_size:,...]
                     Y_buffer = Y_buffer[batch_size:,...]
+                    gc.collect()
     
             if X_buffer.shape[0] > 0:
                 yield (X_buffer, Y_buffer)
-
+                gc.collect()
+                
         # For batch_sizes <= 1251, complete files of 1251 samples are yield
         else:
             for f in range(len(files)):
@@ -296,6 +298,7 @@ class ImageNet(Dataset):
                 X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 yield (X_data, Y_data)
+                gc.collect()
 
     def train_data_generator(self, batch_size):
         return self.data_generator(self.train_path, self.train_files, batch_size)
