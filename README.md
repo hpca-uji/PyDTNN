@@ -2,8 +2,8 @@
 
 ## Introduction
 
-**PyDTNN** is a light-weight library for distributed Deep Learning training 
-and inference that offers an initial starting point for interaction 
+**PyDTNN** is a light-weight library developed at Universitat Jaume I (Spain)
+for distributed Deep Learning training and inference that offers an initial starting point for interaction 
 with distributed training of (and inference with) deep neural networks. 
 PyDTNN priorizes simplicity over efficiency, providing an amiable user 
 interface which enables a flat accessing curve. To perform the training and 
@@ -23,9 +23,9 @@ Supported layers:
 
 Supported datasets:
 
-  * MNIST handwritten digit database: this dataset is included into the project.
+  * **MNIST** handwritten digit database: this dataset is included into the project.
 
-  * ImageNet: due to memory constraints, the PyDTNN module for this dataset requires 
+  * **ImageNet**: due to memory constraints, the PyDTNN module for this dataset requires 
   a preprocessed ImageNet dataset split into 1,024 files in the NPZ Numpy's compressed 
   array format contaning. Each of these files should store the images in the key 'x' with
   the shape NCHW = (1251, 3, 227, 227) and the labels with the shape NL = (1251, 1) 
@@ -34,7 +34,7 @@ Supported datasets:
 
 ## Installing PyDTNN
 
-The requirements of PyDTNN include the following packages:
+**PyDTNN** requires Python3 with the following packages:
 ```
     mpi4py==3.0.2
     tqdm==4.43.0
@@ -44,14 +44,15 @@ The requirements of PyDTNN include the following packages:
     pycuda==2019.1.2
 ```
 
-To run run the im2col/col2im transforms for Convolutional layers, it is necessary to compile
-the correponding Cython module.
+You will also need a MPI library installed, such as OpenMPI, MPICH or MVAPICH2.
+
+To realize the im2col/col2im transforms for Convolutional layers in parallel, 
+it is necessary to compile the correponding Cython module (see ``compile_im2col.sh`` script).
 ```
 LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
 ```
 
-Note that the ``-fopenmp`` compilation flat is needed in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
-
+Note the ``-fopenmp`` compilation flat in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
 
 ## PyDTNN launcher options
 
@@ -87,9 +88,9 @@ supports the following options:
     * ``--dtype``: Dataype to use: `float32`, `float64`.
 
 
-## Example: Training MNIST
+## Example: distributed training of a CNN for MNIST dataset
 
-In this example, we train a simple CNN with the MNIST dataset using data
+In this example, we train a simple CNN for the MNIST dataset using data
 parallelism and 12 MPI ranks each using 2 OpenMP threads.
 
 ```
@@ -181,7 +182,7 @@ Testing: 100%|█████████████████████| 1
 
 ## References
 
-Publications describing PyDTNN
+Publications describing PyDTNN:
 
 * Not yet available.
 
