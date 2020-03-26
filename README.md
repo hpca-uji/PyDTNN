@@ -2,8 +2,8 @@
 
 ## Introduction
 
-**PyDTNN** is a light-weight library for distributed Deep Learning training 
-and inference that offers an initial starting point for interaction 
+**PyDTNN** is a light-weight library developed at Universitat Jaume I (Spain)
+for distributed Deep Learning training and inference that offers an initial starting point for interaction 
 with distributed training of (and inference with) deep neural networks. 
 PyDTNN priorizes simplicity over efficiency, providing an amiable user 
 interface which enables a flat accessing curve. To perform the training and 
