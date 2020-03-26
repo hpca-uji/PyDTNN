@@ -265,9 +265,11 @@ class ImageNet(Dataset):
         Y_one_hot[np.arange(Y.shape[0]), Y] = 1
         return Y_one_hot
 
-    def data_generator(self, path, files, batch_size):
+    def data_generator(self, path, files, batch_size, op="train"):
         # For batch sizes > 1251 it is needed to concatenate more than one file of 1251 samples
         # In this case we yield bigger chunks of size batch_size
+        images_per_file = {"train": self.images_per_train_file, \
+                           "test":  self.images_per_test_file}[op]
         if batch_size > self.images_per_train_file:
             X_buffer, Y_buffer = np.array([]), np.array([])
             
@@ -290,7 +292,7 @@ class ImageNet(Dataset):
             if X_buffer.shape[0] > 0:
                 yield (X_buffer, Y_buffer)
                 gc.collect()
-                
+
         # For batch_sizes <= 1251, complete files of 1251 samples are yield
         else:
             for f in range(len(files)):
@@ -301,13 +303,13 @@ class ImageNet(Dataset):
                 gc.collect()
 
     def train_data_generator(self, batch_size):
-        return self.data_generator(self.train_path, self.train_files, batch_size)
+        return self.data_generator(self.train_path, self.train_files, batch_size, op="train")
 
     def val_data_generator(self, batch_size):
-        return self.data_generator(self.val_path, self.val_files, batch_size)
+        return self.data_generator(self.val_path, self.val_files, batch_size, op="train")
 
     def test_data_generator(self, batch_size):
-        return self.data_generator(self.test_path, self.test_files, batch_size)
+        return self.data_generator(self.test_path, self.test_files, batch_size, op="test")
 
     def make_train_val_partitions(self, val_split=0.2):
         assert 0 <= val_split < 1        
