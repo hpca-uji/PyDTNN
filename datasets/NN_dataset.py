@@ -348,8 +348,8 @@ class ImageNet(Dataset):
                 yield (X_buffer, Y_buffer)
         # For batch_sizes <= 1251, full files of 1251 samples are yield
         else:
-            for f in range(len(self.val_files)):
-                values = np.load("%s/%s" % (self.val_path, self.val_files[f]))
+            for f in range(len(self.train_files)):
+                values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
                 X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 yield (X_data, Y_data)
