@@ -47,12 +47,12 @@ Supported datasets:
 You will also need a MPI library installed, such as OpenMPI, MPICH or MVAPICH2.
 
 To realize the im2col/col2im transforms for Convolutional layers in parallel, 
-it is necessary to compile the correponding Cython module (see ``compile_im2col.sh`` script).
+it is necessary to compile ``NN_im2col_cython.pyx`` Cython module (see ``compile_im2col.sh`` script).
 ```
 LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
 ```
 
-Note the ``-fopenmp`` compilation flat in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
+Note the ``-fopenmp`` compilation flag in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
 
 ## PyDTNN launcher options
 
