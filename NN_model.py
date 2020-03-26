@@ -137,7 +137,7 @@ class Model:
         return total_loss, loss_req
 
     def get_metric_results(self, curr, loss):
-        total, count, string = 
+        total, count, string = \
             self.__update_running_average(curr, np.zeros(len(loss)), 0, loss, prefix="test_")
         return string
 
