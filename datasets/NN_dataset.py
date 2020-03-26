@@ -78,7 +78,7 @@ class Dataset:
 
     def train_batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1):
         batch_size = local_batch_size * nprocs
-        
+
         for X_data, Y_data in generator:
             nsamples = X_data.shape[0]
             s = np.arange(nsamples)
@@ -296,15 +296,73 @@ class ImageNet(Dataset):
         if X_buffer.shape[0] > 0:
             yield (X_buffer, Y_buffer)
 
-    def val_data_generator(self):
+    def train_data_generator(self, batch_size):
+        X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
+        Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
+        
+        count = 0
+        files_per_batch = math.ceil(batch_size / float(self.images_per_train_file))
+        
         for f in range(len(self.train_files)):
+            values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
+            X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+            Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
+            count += 1
+            if count == files_per_batch:
+                if X_buffer.size == 0:
+                    X_buffer, Y_buffer = X_data, Y_data
+                yield (X_buffer, Y_buffer)
+                X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
+                Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
+                count = 0
+            elif X_buffer.size == 0:
+                X_buffer, Y_buffer = X_data, Y_data
+            else:
+                X_buffer = np.concatenate((X_buffer, X_data), axis=0)
+                Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
+
+        if X_buffer.shape[0] > 0:
+            yield (X_buffer, Y_buffer)
+
+
+    def train_data_generator(self, batch_size):
+        # For batch sizes > 1251 it is needed to concatenate more than one file
+        # In this case we yield chunks of batch_size
+        if batch_size > self.images_per_train_file:
+            X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
+            Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
+            
+            for f in range(len(self.train_files)):
+                values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
+                X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+                Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
+                X_buffer = np.concatenate((X_buffer, X_data), axis=0)
+                Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
+    
+                if X_buffer.data[0] >= batch_size:
+                    yield (X_buffer[:batch_size,...], Y_buffer[:batch_size,...])
+                    X_buffer = X_buffer[batch_size:,...]
+                    Y_buffer = Y_buffer[batch_size:,...]
+    
+            if X_buffer.shape[0] > 0:
+                yield (X_buffer, Y_buffer)
+        # For batch_sizes <= 1251, full files of 1251 samples are yield
+        else:
+            for f in range(len(self.val_files)):
+                values = np.load("%s/%s" % (self.val_path, self.val_files[f]))
+                X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+                Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
+                yield (X_data, Y_data)
+
+    def val_data_generator(self):
+        for f in range(len(self.val_files)):
             values = np.load("%s/%s" % (self.val_path, self.val_files[f]))
             X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
             Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
             yield (X_data, Y_data)
 
     def test_data_generator(self):
-        for f in range(len(self.train_files)):
+        for f in range(len(self.test_files)):
             values = np.load("%s/%s" % (self.test_path, self.test_files[f]))
             X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
             Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)

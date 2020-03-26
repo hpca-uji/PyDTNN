@@ -133,7 +133,7 @@ if __name__ == "__main__":
     if params.steps_per_epoch > 0:
         dataset.adjust_steps_per_epoch(params.steps_per_epoch, params.batch_size, nprocs)
 
-    if params.evaluate and dataset.X_test.shape[0] > 0:
+    if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')        
         test_loss = model.evaluate_dataset(dataset, loss_metrics)
