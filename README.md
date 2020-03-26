@@ -184,7 +184,6 @@ Time: 18.34 s
 Throughput: 32712.78 samples/s
 **** Evaluating on test dataset...
 Testing: 100%|████████████████████| 10000/10000 [00:01<00:00, 30423.38 samples/s, test_acc: 98.17%, test_cro: 0.0636805]
-
 ```
 
 ## References
