@@ -342,7 +342,7 @@ class ImageNet(Dataset):
                     X_buffer = np.concatenate((X_buffer, X_data), axis=0)
                     Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
     
-                if X_buffer.data[0] >= batch_size:
+                if X_buffer.shape[0] >= batch_size:
                     yield (X_buffer[:batch_size,...], Y_buffer[:batch_size,...])
                     X_buffer = X_buffer[batch_size:,...]
                     Y_buffer = Y_buffer[batch_size:,...]
