@@ -301,7 +301,7 @@ class ImageNet(Dataset):
         # For batch sizes > 1251 it is needed to concatenate more than one file
         # In this case we yield chunks of batch_size
         if batch_size > self.images_per_train_file:
-            X_buffer, Y_buffer = np.ndarray([]), np.ndarray([])
+            X_buffer, Y_buffer = np.array([]), np.array([])
             
             for f in range(len(files)):
                 values = np.load("%s/%s" % (path, files[f]))
