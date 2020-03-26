@@ -112,7 +112,6 @@ class Dataset:
             Y_local_batch = Y_data[indices,...]
             yield (X_local_batch, Y_local_batch, last_batch_size)
 
-
     def val_test_batch_generator(self, generator, rank=0, nprocs=1):
         for X_data, Y_data in generator:
             nsamples = X_data.shape[0]
@@ -329,8 +328,7 @@ class ImageNet(Dataset):
         # For batch sizes > 1251 it is needed to concatenate more than one file
         # In this case we yield chunks of batch_size
         if batch_size > self.images_per_train_file:
-            X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
-            Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
+            X_buffer, Y_buffer = np.ndarray([]), np.ndarray([])
             
             for f in range(len(self.train_files)):
                 values = np.load("%s/%s" % (self.train_path, self.train_files[f]))

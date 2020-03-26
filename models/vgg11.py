@@ -51,6 +51,8 @@ def create_vgg11(model):
         model.add( Pool2D(pool_shape=(2,2), func='max', stride=2) )
     
     model.add( FC(shape=(4096,), activation=Relu()) )
+    model.add( Dropout(prob=0.5) )
     model.add( FC(shape=(4096,), activation=Relu()) )
+    model.add( Dropout(prob=0.5) )
     model.add( FC(shape=(1000,), activation=Softmax()) )
     return model
