@@ -137,7 +137,8 @@ class Model:
         return total_loss, loss_req
 
     def get_metric_results(self, curr, loss):
-        total, count, string = self.__update_running_average(curr, np.zeros(len(loss)), 0, loss, prefix="test_")
+        total, count, string = 
+            self.__update_running_average(curr, np.zeros(len(loss)), 0, loss, prefix="test_")
         return string
 
     def __update_running_average(self, curr, total, count, loss_metrics, prefix=""):
@@ -194,7 +195,9 @@ class Model:
     
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.layers[l].id * PYDL_NUM_EVTS + 4, self.layers[l].id * PYDL_OPS_NUM_EVTS + 6])
+                self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                        [self.layers[l].id * PYDL_NUM_EVTS + 4, 
+                                         self.layers[l].id * PYDL_OPS_NUM_EVTS + 6])
                 self.layers[l].wait_allreduce_async(self.comm)
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
     
@@ -214,7 +217,8 @@ class Model:
                     loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
                     optimizer="SGD", bar_width=110):
 
-        dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train, X_val=X_val, Y_val=Y_val)
+        dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train, 
+                                              X_val=X_val, Y_val=Y_val)
         self.train_dataset(dataset, nepochs, local_batch_size, 0, False,
                            loss_metrics, optimizer, bar_width)
 

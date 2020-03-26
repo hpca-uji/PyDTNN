@@ -88,7 +88,9 @@ class Layer():
         if comm and self.weights.size > 0:
             self.dwb = np.append(self.dw.reshape(-1), self.db.reshape(-1))
             self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [self.id * PYDL_NUM_EVTS + 3, self.id * PYDL_OPS_NUM_EVTS + 6])
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                    [self.id * PYDL_NUM_EVTS + 3, 
+                                     self.id * PYDL_OPS_NUM_EVTS + 6])
             comm.Allreduce( self.dwb, self.red_dwb, op = MPI.SUM )
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
             self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
@@ -112,7 +114,8 @@ class FC(Layer):
         self.bias_initializer = getattr(NN_util, bias_initializer)
         
     def initialize(self):
-        self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), np.prod(self.shape[0])), self)
+        self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
+                                                 np.prod(self.shape[0])), self)
         self.bias = self.bias_initializer((np.prod(self.shape),), self)
         self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
         
