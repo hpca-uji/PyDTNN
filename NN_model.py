@@ -289,7 +289,7 @@ class Model:
             test_total_loss, test_batch_count = np.zeros(len(loss_funcs)), 0
             pbar = tqdm(total=dataset.test_nsamples, ncols=bar_width, 
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
-                        desc="Testing ", unit=" samples")
+                        desc="Testing", unit=" samples")
 
         for X_batch, Y_batch, batch_size in test_batch_generator:
             test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
