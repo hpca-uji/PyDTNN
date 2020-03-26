@@ -74,7 +74,7 @@ class Layer():
 
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
-            self.dwb = np.append(self.dw.reshape(-1), self.db.reshape(-1))
+            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
             self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
             self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op = MPI.SUM )
      
@@ -86,7 +86,7 @@ class Layer():
      
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
-            self.dwb = np.append(self.dw.reshape(-1), self.db.reshape(-1))
+            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
             self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
                                     [self.id * PYDL_NUM_EVTS + 3, 
