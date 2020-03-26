@@ -74,6 +74,7 @@ class Dataset:
                  self.val_test_batch_generator(self.val_data_generator(batch_size), rank, nprocs) )
 
     def get_test_generator(self, rank=0, nprocs=1):
+        # Fixed batch size for testing
         local_batch_size = 64
         batch_size = local_batch_size * nprocs
         return self.val_test_batch_generator(self.test_data_generator(batch_size), rank, nprocs)
