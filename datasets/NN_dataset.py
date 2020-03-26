@@ -71,10 +71,12 @@ class Dataset:
             self.make_train_val_partitions(val_split)
         return ( self.train_batch_generator(self.train_data_generator(batch_size), 
                                             local_batch_size, rank, nprocs),
-                 self.val_test_batch_generator(self.val_data_generator(), rank, nprocs) )
+                 self.val_test_batch_generator(self.val_data_generator(batch_size), rank, nprocs) )
 
     def get_test_generator(self, rank=0, nprocs=1):
-        return self.val_test_batch_generator(self.test_data_generator(), rank, nprocs)
+        local_batch_size = 64
+        batch_size = local_batch_size * nprocs
+        return self.val_test_batch_generator(self.test_data_generator(batch_size), rank, nprocs)
 
     def train_batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1):
         batch_size = local_batch_size * nprocs
@@ -114,20 +116,23 @@ class Dataset:
 
     def val_test_batch_generator(self, generator, rank=0, nprocs=1):
         for X_data, Y_data in generator:
-            nsamples = X_data.shape[0]
-            batch_size = nsamples // nprocs
-            remaining  = nsamples % nprocs
+            if X_data.shape[0] < nprocs:
 
-            if rank < remaining:
-               start =  rank    * (batch_size+1)
-               end   = (rank+1) * (batch_size+1)
             else:
-               start = remaining * (batch_size+1) + (rank-remaining) * batch_size
-               end   = remaining * (batch_size+1) + (rank-remaining+1) * batch_size
-
-            X_local_batch = X_data[start:end,...]
-            Y_local_batch = Y_data[start:end,...]
-            yield (X_local_batch, Y_local_batch, nsamples)
+                nsamples = X_data.shape[0]
+                batch_size = nsamples // nprocs
+                remaining  = nsamples % nprocs
+    
+                if rank < remaining:
+                   start =  rank    * (batch_size+1)
+                   end   = (rank+1) * (batch_size+1)
+                else:
+                   start = remaining * (batch_size+1) + (rank-remaining) * batch_size
+                   end   = remaining * (batch_size+1) + (rank-remaining+1) * batch_size
+    
+                X_local_batch = X_data[start:end,...]
+                Y_local_batch = Y_data[start:end,...]
+                yield (X_local_batch, Y_local_batch, nsamples)
 
 
 class MNIST(Dataset):
@@ -295,43 +300,14 @@ class ImageNet(Dataset):
         if X_buffer.shape[0] > 0:
             yield (X_buffer, Y_buffer)
 
-    def train_data_generator(self, batch_size):
-        X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
-        Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
-        
-        count = 0
-        files_per_batch = math.ceil(batch_size / float(self.images_per_train_file))
-        
-        for f in range(len(self.train_files)):
-            values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
-            X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-            count += 1
-            if count == files_per_batch:
-                if X_buffer.size == 0:
-                    X_buffer, Y_buffer = X_data, Y_data
-                yield (X_buffer, Y_buffer)
-                X_buffer = np.ndarray(shape=(0,0,0,0), dtype=self.dtype) 
-                Y_buffer = np.ndarray(shape=(0), dtype=self.dtype)
-                count = 0
-            elif X_buffer.size == 0:
-                X_buffer, Y_buffer = X_data, Y_data
-            else:
-                X_buffer = np.concatenate((X_buffer, X_data), axis=0)
-                Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
-
-        if X_buffer.shape[0] > 0:
-            yield (X_buffer, Y_buffer)
-
-
-    def train_data_generator(self, batch_size):
+    def data_generator(self, path, files, batch_size):
         # For batch sizes > 1251 it is needed to concatenate more than one file
         # In this case we yield chunks of batch_size
         if batch_size > self.images_per_train_file:
             X_buffer, Y_buffer = np.ndarray([]), np.ndarray([])
             
-            for f in range(len(self.train_files)):
-                values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
+            for f in range(len(files)):
+                values = np.load("%s/%s" % (path, files[f]))
                 X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if X_buffer.size == 0:
@@ -347,27 +323,23 @@ class ImageNet(Dataset):
     
             if X_buffer.shape[0] > 0:
                 yield (X_buffer, Y_buffer)
+                
         # For batch_sizes <= 1251, full files of 1251 samples are yield
         else:
-            for f in range(len(self.train_files)):
-                values = np.load("%s/%s" % (self.train_path, self.train_files[f]))
+            for f in range(len(files)):
+                values = np.load("%s/%s" % (path, files[f]))
                 X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 yield (X_data, Y_data)
 
-    def val_data_generator(self):
-        for f in range(len(self.val_files)):
-            values = np.load("%s/%s" % (self.val_path, self.val_files[f]))
-            X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-            yield (X_data, Y_data)
+    def train_data_generator(self, batch_size):
+        return self.data_generator(self.train_path, self.train_files, batch_size)
 
-    def test_data_generator(self):
-        for f in range(len(self.test_files)):
-            values = np.load("%s/%s" % (self.test_path, self.test_files[f]))
-            X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
-            Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-            yield (X_data, Y_data)
+    def val_data_generator(self, batch_size):
+        return self.data_generator(self.val_path, self.val_files, batch_size)
+
+    def test_data_generator(self, batch_size):
+        return self.data_generator(self.test_path, self.test_files, batch_size)
 
     def make_train_val_partitions(self, val_split=0.2):
         assert 0 <= val_split < 1        
