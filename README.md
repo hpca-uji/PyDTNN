@@ -54,10 +54,9 @@ LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
 
 Note the ``-fopenmp`` compilation flag in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
 
-## PyDTNN launcher options
+## Launcher options
 
-PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` which
-supports the following options:
+PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supporting the following options:
 
 * Model parameters:
     * ``--model``: Neural network model: `simplemlp`, `simplecnn`, `alexnet`, `vgg11`, `vgg16`.
@@ -88,7 +87,7 @@ supports the following options:
     * ``--dtype``: Dataype to use: `float32`, `float64`.
 
 
-## Example: distributed training of a CNN for MNIST dataset
+## Example: distributed training of a CNN for the MNIST dataset
 
 In this example, we train a simple CNN for the MNIST dataset using data
 parallelism and 12 MPI ranks each using 2 OpenMP threads.
