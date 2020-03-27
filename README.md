@@ -40,7 +40,7 @@ Supported datasets:
 ```
   PyDTNN comes with the utility ``datasets/ImageNet_converter.py`` that reads the
   preprocessed ImageNet TensorFlow training/validation files in TFRecord format 
-  and converts it into NPZ format. 
+  and converts them into NPZ format. 
 
 ## Installing PyDTNN
 
