@@ -263,7 +263,9 @@ class Model:
                         self.__update_running_average(val_batch_loss, val_total_loss, 
                                                       val_batch_count, loss_metrics, 
                                                       prefix="val_")
-                    print("\033[A\033[%dC\b, %s]" % (bar_width, string))
+                        
+            if self.rank == 0:
+                print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
         self.tracer.define_event_type()
 
