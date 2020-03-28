@@ -338,6 +338,5 @@ class ImageNet(Dataset):
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.train_val_nsamples = len(self.train_val_files) * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples
-                #self.train_files = self.train_val_files
-                #self.val_files = []
+
 

@@ -46,13 +46,14 @@ Supported datasets:
 
 **PyDTNN** requires Python3 with the following packages:
 ```
-    mpi4py==3.0.2
-    tqdm==4.43.0
-    scipy==1.3.0
-    Cython==0.29.13
-    numpy==1.17.2
-    pycuda==2019.1.2
+    mpi4py>=3.0.2
+    tqdm>=4.43.0
+    scipy>=1.3.0
+    Cython>=0.29.13
+    numpy>=1.17.2
+    pycuda>=2019.1.2
 ```
+which can be install by typing ``pip install -r requirements.txt``.
 
 You will also need a MPI library installed, such as OpenMPI, MPICH or MVAPICH2.
 
