@@ -100,21 +100,22 @@ class Dataset:
             for batch_num in range(0, end_for, batch_size):
                 start = batch_num +  rank    * local_batch_size 
                 end   = batch_num + (rank+1) * local_batch_size 
-                indices = s[start:end]  
-                X_local_batch = X_data[indices,...]
-                Y_local_batch = Y_data[indices,...]
-                yield (X_local_batch, Y_local_batch, batch_size)
+                if start < end:
+                    indices = s[start:end]  
+                    X_local_batch = X_data[indices,...]
+                    Y_local_batch = Y_data[indices,...]
+                    yield (X_local_batch, Y_local_batch, batch_size)
     
             # Generate last batch
             local_batch_size = last_batch_size // nprocs
             start = end_for + local_batch_size * rank
-            end   = start + local_batch_size
-            if rank == nprocs - 1: end = nsamples
-
-            indices = s[start:end]
-            X_local_batch = X_data[indices,...]
-            Y_local_batch = Y_data[indices,...]
-            yield (X_local_batch, Y_local_batch, last_batch_size)
+            end   = nsamples if rank == nprocs - 1 else start + local_batch_size
+            
+            if start < end:
+                indices = s[start:end]
+                X_local_batch = X_data[indices,...]
+                Y_local_batch = Y_data[indices,...]
+                yield (X_local_batch, Y_local_batch, last_batch_size)
 
     def val_test_batch_generator(self, generator, rank=0, nprocs=1):
         for X_data, Y_data in generator:

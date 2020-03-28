@@ -123,7 +123,7 @@ class Model:
             layer.act.shape = layer.shape
             self.add(layer.act)
 
-    def compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
+    def __compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
         loss_req = None
         total_loss = np.zeros(len(loss_funcs), dtype=np.float32)
         partial_loss = np.array([func(Y_pred, Y_targ) for func in loss_funcs], dtype=np.float32)
@@ -136,20 +136,15 @@ class Model:
             total_loss = partial_loss
         return total_loss, loss_req
 
-    def get_metric_results(self, curr, loss):
-        total, count, string = \
-            self.__update_running_average(curr, np.zeros(len(loss)), 0, loss, prefix="test_")
-        return string
-
-    def __update_running_average(self, curr, total, count, loss_metrics, prefix=""):
+    def __update_running_average(self, curr, total, count, batch_size, loss_metrics, prefix=""):
         string = ""
-        total = (curr + (total * count)) / (count+1)
+        total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(total)):
             try:    loss_str = NN_util.loss_format[loss_metrics[c]]
             except: loss_str = loss_metrics[c]
             string += ("%s, " % (prefix+loss_str)) % total[c]
         string = string[:-2]
-        return total, count+1, string
+        return total, count+batch_size, string
 
     def __train_batch(self, X_batch, Y_batch, loss_funcs, optimizer_func):
 
@@ -163,7 +158,7 @@ class Model:
             self.tracer.emit_event(PYDL_EVT, 0)
 
         Y_pred = self.layers[-1].a
-        total_loss, loss_req = self.compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=False)
+        total_loss, loss_req = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=False)
        
         if self.blocking_mpi:
             # Blocking MPI
@@ -249,7 +244,8 @@ class Model:
                 if self.rank == 0:
                     train_total_loss, train_batch_count, string = \
                         self.__update_running_average(train_batch_loss, train_total_loss, 
-                                                      train_batch_count, loss_metrics)
+                                                      train_batch_count, batch_size,
+                                                      loss_metrics)
                     pbar.set_postfix_str(s=string, refresh=True)
                     pbar.update(batch_size)
 
@@ -258,11 +254,11 @@ class Model:
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
                 val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
-                if self.rank == 0 and X_batch.shape[0] > 0:
+                if self.rank == 0:
                     val_total_loss, val_batch_count, string = \
                         self.__update_running_average(val_batch_loss, val_total_loss, 
-                                                      val_batch_count, loss_metrics, 
-                                                      prefix="val_")
+                                                      val_batch_count, batch_size,
+                                                      loss_metrics, prefix="val_")
                     print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
         self.tracer.define_event_type()
@@ -279,7 +275,7 @@ class Model:
             self.tracer.emit_event(PYDL_EVT, 0)
 
         Y_pred = self.layers[-1].a
-        loss_res, loss_reqs = self.compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
+        loss_res, loss_reqs = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
         return loss_res
 
     def evaluate(self, X_test, Y_test, 
@@ -307,8 +303,8 @@ class Model:
             if self.rank == 0 and X_batch.shape[0] > 0:
                 val_total_loss, val_batch_count, string = \
                     self.__update_running_average(test_batch_loss, test_total_loss, 
-                                                  test_batch_count, loss_metrics, 
-                                                  prefix="test_")
+                                                  test_batch_count, batch_size,
+                                                  loss_metrics, prefix="test_")
                 pbar.set_postfix_str(s=string, refresh=True)
                 pbar.update(batch_size)
 
