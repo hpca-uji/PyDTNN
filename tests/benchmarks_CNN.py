@@ -137,9 +137,7 @@ if __name__ == "__main__":
         if rank == 0:
             print('**** Evaluating on test dataset...')        
         test_loss = model.evaluate_dataset(dataset, loss_metrics)
-        #if rank == 0:
-           # print(model.get_metric_results(test_loss, loss_metrics))
-
+  
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
 
@@ -183,9 +181,7 @@ if __name__ == "__main__":
         print(f'Time: {total_time:5.2f} s')
         print(f'Throughput: {(dataset.train_val_nsamples * params.num_epochs)/total_time:5.2f} samples/s')
 
-    if params.evaluate and dataset.X_test.shape[0] > 0:
+    if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
         test_loss = model.evaluate_dataset(dataset, loss_metrics)
-        #if rank == 0:
-           # print(model.get_metric_results(test_loss, loss_metrics))
