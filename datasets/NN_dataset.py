@@ -110,7 +110,7 @@ class Dataset:
             local_batch_size = last_batch_size // nprocs
             start = end_for + local_batch_size * rank
             end   = nsamples if rank == nprocs - 1 else start + local_batch_size
-            
+
             if start < end:
                 indices = s[start:end]
                 X_local_batch = X_data[indices,...]
@@ -130,9 +130,10 @@ class Dataset:
                start = remaining * (batch_size+1) + (rank-remaining) * batch_size
                end   = remaining * (batch_size+1) + (rank-remaining+1) * batch_size
 
-            X_local_batch = X_data[start:end,...]
-            Y_local_batch = Y_data[start:end,...]
-            yield (X_local_batch, Y_local_batch, nsamples)
+            if start < end:
+               X_local_batch = X_data[start:end,...]
+               Y_local_batch = Y_data[start:end,...]
+               yield (X_local_batch, Y_local_batch, nsamples)
 
 
 class MNIST(Dataset):

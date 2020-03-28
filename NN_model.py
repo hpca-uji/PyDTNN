@@ -300,7 +300,7 @@ class Model:
 
         for X_batch, Y_batch, batch_size in test_batch_generator:
             test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
-            if self.rank == 0 and X_batch.shape[0] > 0:
+            if self.rank == 0:
                 val_total_loss, val_batch_count, string = \
                     self.__update_running_average(test_batch_loss, test_total_loss, 
                                                   test_batch_count, batch_size,
