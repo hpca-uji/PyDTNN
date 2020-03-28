@@ -1,246 +1,260 @@
+""" Python Distributed Training of Neural Networks - PyDTNN
+
+PyDTNN is a light-weight library for distributed Deep Learning training and 
+inference that offers an initial starting point for interaction with 
+distributed training of (and inference with) deep neural networks. PyDTNN 
+priorizes simplicity over efficiency, providing an amiable user interface 
+which enables a flat accessing curve. To perform the training and inference 
+processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+for clusters and intra-process (via multi-threading) parallelism to leverage 
+the presence of multicore processors at node level.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+You should have received a copy of the GNU General Public License along with
+this program. If not, see <http://www.gnu.org/licenses/>.
+
+"""
+
+__author__ = "Manuel F. Dolz, Enrique S. Quintana, \
+              Mar Catalan, Adrian Castello"
+__contact__ = "dolzm@uji.es"
+__copyright__ = "Copyright 2020, Universitat Jaume I"
+__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
+               "Mar Catalan", "Adrian Castello"]
+__date__ = "2020/03/22"
+
+__email__ =  "dolzm@uji.es"
+__license__ = "GPLv3"
+__maintainer__ = "Manuel F. Dolz"
+__status__ = "Production"
+__version__ = "1.0.0"
+
+
 import numpy as np
-import math
-import random
-import NN_utils
-from NN_utils import printf, im2col, col2im, dilate_and_pad
+import NN_util
+
 from math import floor
+from NN_util import printf
+from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+
+try:
+    from mpi4py import MPI
+except:
+    pass
 
 class Layer():
-    """ Layer of a neural network """
 
     def __init__(self, shape=()):
+        self.id, self.params = 0, 0
         self.shape = shape
-        self.n = np.prod(shape)
-        self.prev_layer = None
-        self.next_layer = None
+        self.prev_layer, self.next_layer = None, None
+        self.weights, self.bias = np.array([]), np.array([])
+        self.act = None
 
-    def show(self):
-        print('Layer    ')
-        print('Type     ', type(self).__name__)
-        print('#Neurons ', self.n)
-        print('Shape    ', self.shape)
+    def initialize(self):
+        self.shape = self.prev_layer.shape
 
-    def backward(self, dX= []):
-        printf("\nbackward:", type(self).__name__, self.shape)
-        if dX == []: self.dx = self.next_layer.get_gradient()
-        else:        self.dx = dX
-        printf("    ", type(self).__name__, " self.dx", self.dx.shape)
+    def show(self, attrs=""):
+        if not attrs: attrs= "|{:^17s}|{:^9s}|{:^9s}|".format("","","")
+        print(f"|{self.id:^7d}|{type(self).__name__:^10s}|{self.params:^9d}|{str(self.shape):^15}" + attrs)
+        # if not attrs: attrs= "│{:^17s}│{:^9s}│{:^9s}│".format("","","")
+        # print(f"│{self.id:^7d}│{type(self).__name__:^10s}│{self.params:^9d}│{str(self.shape):^15}" + attrs)
+
+    def update_weights(self, optimizer, params):
+        if self.weights.size > 0:
+            optimizer(self, params)
+
+    def reduce_weights_async(self, comm):
+        if comm and self.weights.size > 0:
+            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
+            self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
+            self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op = MPI.SUM )
+     
+    def wait_allreduce_async(self, comm):
+        if comm and self.weights.size > 0:
+            self.req_AR.Wait()
+            self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
+            self.db = self.red_dwb[-self.bias.size:].reshape(self.bias.shape)
+     
+    def reduce_weights_sync(self, comm):
+        if comm and self.weights.size > 0:
+            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
+            self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                    [self.id * PYDL_NUM_EVTS + 3, 
+                                     self.id * PYDL_OPS_NUM_EVTS + 6])
+            comm.Allreduce( self.dwb, self.red_dwb, op = MPI.SUM )
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+            self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
+            self.db = self.red_dwb[-self.bias.size:].reshape(self.bias.shape)
+
 
 class Input(Layer):
-    """ Input layer for neural network """
 
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-class FC(Layer):
-    """ FC layer for neural network """
 
-    def __init__(self, shape=(1,), activation="sigmoid"):
+class FC(Layer):
+
+    def __init__(self, shape=(1,), activation=None, 
+                 weights_initializer="glorot_initializer",
+                 bias_initializer="zeros_initializer"):
         super().__init__(shape)
-        self.act= getattr(NN_utils, activation)
-        self.act_der= getattr(NN_utils, "%s_derivate" % activation)  
+        self.act = activation
+        self.weights_initializer = getattr(NN_util, weights_initializer)
+        self.bias_initializer = getattr(NN_util, bias_initializer)
         
     def initialize(self):
-        self.weights = np.random.uniform(-1, 1, (self.n, self.prev_layer.n))
-        self.bias = np.random.uniform(-1, 1, (self.n, 1))
-
-    def infer(self, prev_a):  
-        z = self.weights @ prev_a + self.bias
-        return self.act(z)
-
-    def forward(self, prev_a):        
-        z = self.weights @ prev_a + self.bias
-        self.a = self.act(z)
-        self.dz = self.act_der(z)
-        printf("forward:", type(self).__name__, self.shape, self.a.shape)
+        self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
+                                                 np.prod(self.shape[0])), self)
+        self.bias = self.bias_initializer((np.prod(self.shape),), self)
+        self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
         
-    def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
-        return (self.weights.T @ self.dx) * self.prev_layer.dz
+    def show(self):
+        super().show("|{:^17s}|{:^9s}|{:^9s}|".format(str(self.weights.shape),"",""))
+        # super().show("│{:^17s}│{:^9s}│{:^9s}│".format(str(self.weights.shape),"",""))
 
-    def update_weights(self, eta, b):
-        self.weights-= (eta/b) * (self.dx @ self.prev_layer.a.T)
-        self.bias-= (eta/b) * self.dx.sum(axis=1).reshape(self.bias.shape[0], 1)
+    def forward(self, prev_a):
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        res = self.matmul(prev_a.reshape(prev_a.shape[0], -1), self.weights)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.a = res + self.bias
         
+    def backward(self, prev_dx):
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+        dx = self.matmul(prev_dx, self.weights.T)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        self.dw = self.matmul(self.prev_layer.a.reshape(self.prev_layer.a.shape[0], -1).T, prev_dx)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.db = prev_dx.sum(axis=0)
+        return dx
+        
+
 class Conv2D(Layer):
-    """ Conv2D layer for neural network """
 
-    def __init__(self, nfilters=1, filter_shape=(3, 3, 1), padding=0, stride=1, activation="sigmoid"):
+    def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
+                 activation=None, weights_initializer="glorot_initializer",
+                 bias_initializer="zeros_initializer"):
         super().__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
         self.padding = padding
         self.stride = stride
-        self.act= getattr(NN_utils, activation)
-        self.act_der= getattr(NN_utils, "%s_derivate" % activation)
-        self.cached_idx_fp = self.cached_idx_gc = self.cached_idx_wu = self.b = None      
+        self.weights_initializer = getattr(NN_util, weights_initializer)
+        self.bias_initializer = getattr(NN_util, bias_initializer)
+        self.act = activation
 
     def initialize(self):
-        self.weights = np.random.uniform(-1, 1, (self.co,)+self.filter_shape)
-        self.bias = np.random.uniform(-1, 1, (self.co,))
-        self.hi, self.wi, self.ci = self.prev_layer.shape
-        self.kh, self.kw, self.ci = self.filter_shape
+        self.ci, self.hi, self.wi = self.prev_layer.shape
+        self.kh, self.kw = self.filter_shape
+
+        self.weights = self.weights_initializer(((self.co,)+(self.ci,)+self.filter_shape), self)
+        self.bias = self.bias_initializer((self.co,), self)
+
         self.ho = floor((self.hi + 2 * self.padding - self.kh) / self.stride) + 1
         self.wo = floor((self.wi + 2 * self.padding - self.kw) / self.stride) + 1
-        self.shape = (self.ho, self.wo, self.co)
-        self.n = np.prod(self.shape)
+        self.shape = (self.co, self.ho, self.wo)
+        self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
 
     def show(self):
-        super().show()
-        print('Padding  ', self.padding)
-        print('Stride   ', self.stride) 
-        print('#Filters ', self.weights.shape)
-
-    def infer(self, prev_a):
-        #z = NN_utils.convolve_scipy(prev_a, self.weights, self.bias, self.padding, self.stride)
-        #z = NN_utils.convolve(prev_a, self.weights, self.bias, self.padding, self.stride) 
-        prev_a = dilate_and_pad(prev_a.transpose(3, 2, 0, 1), self.padding)
-        patched_act, self.cached_idx_fp= im2col(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride, self.cached_idx_fp)
-        patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
-        z = (((patched_weights @ patched_act).T + self.bias).T)
-        z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
-        return self.act(z)
+        super().show("|{:^17s}|{:^9d}|{:^9d}|".format(str(self.weights.shape), self.padding, self.stride))
+        # super().show("│{:^17s}│{:^9d}│{:^9d}│".format(str(self.weights.shape), self.padding, self.stride))
 
     def forward(self, prev_a):
-        prev_a = dilate_and_pad(prev_a.transpose(3, 2, 0, 1), self.padding)
-        patched_act, self.cached_idx_fp= im2col(prev_a, self.kh, self.kw, self.ci, self.ho, self.wo, self.stride, self.cached_idx_fp)
-        patched_weights= self.weights.transpose(0, 3, 1, 2).reshape(self.co, -1)
-        z = (((patched_weights @ patched_act).T + self.bias).T)
-        z = z.reshape(self.co, self.ho, self.wo, -1).transpose(1, 2, 0, 3) # PyNN format
-        self.a  = self.act(z)
-        self.dz = self.act_der(z)        
-        printf("forward:", type(self).__name__, self.shape, self.a.shape)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.prev_a_cols = im2col_cython(prev_a, self.kh, self.kw, self.padding, self.stride)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-    def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
-        d = dilate_and_pad(self.dx.transpose(3, 2, 0, 1), self.kh-self.padding-1, self.stride)
-        patched_matrix, self.cached_idx_gc= im2col(d, self.kh, self.kw, self.co, self.hi, self.wi, 1, self.cached_idx_gc)
-        patched_weights= np.rot90(self.weights.transpose(3, 0, 1, 2), 2, axes=(2,3)).reshape(self.ci, -1)
-        dx = (patched_weights @ patched_matrix).reshape(self.ci, self.hi, self.wi, -1).transpose(1, 2, 0, 3) # PyNN format
-        dx*= self.prev_layer.dz
+        w_cols = self.weights.reshape(self.co, -1)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        res = self.matmul(w_cols, self.prev_a_cols)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        a = (res.T + self.bias).T
+        self.a = a.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        #printf("forward:", type(self).__name__, self.shape, self.a.shape)
+
+    def backward(self, prev_dx):      
+        #printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
+        dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
+        w_cols = self.weights.reshape(self.co, -1).T
+
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+        res = self.matmul(w_cols, dx_cols)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+        dx = col2im_cython(res, prev_dx.shape[0], self.ci, self.hi, self.wi, 
+                                   self.kh, self.kw, self.padding, self.stride)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        res = self.matmul(dx_cols, self.prev_a_cols.T)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        self.dw = res.reshape(self.weights.shape)
+        self.db = prev_dx.sum(axis=(0,2,3))
         return dx
-        # Old code left as reference
-        # for b_ in range(b):
-        #     for ci_ in range(ci):
-        #         for co_ in range(co):
-        #             dx[...,ci_,b_] += convolve2d(self.dx[...,co_,b_], self.weights[co_,...,ci_], mode='full')
-        #         dx[...,ci_,b_] *= self.prev_layer.dz[...,ci_,b_]    
 
-    def update_weights(self, eta, b):
-        d = dilate_and_pad(self.dx.transpose(3, 2, 0, 1), 0, self.stride)
-        act = dilate_and_pad(self.prev_layer.a.transpose(2, 3, 0, 1), self.padding)        
-        if self.b != b: self.cached_idx_wu = None
-        self.b, co, ho, wo = d.shape
-        patched_act, self.cached_idx_wu= im2col(act, ho, wo, b, self.kh, self.kw, 1, self.cached_idx_wu)
-        patched_grad= d.transpose(1, 0, 2, 3).reshape(self.co, -1)
-        dw = (patched_grad @ patched_act).reshape(self.co, self.kh, self.kw, self.ci)
-        self.weights-= (eta/b) * dw
-        self.bias   -= (eta/b) * self.dx.transpose(2, 3, 0, 1).sum(axis=(1,2,3))
-        # Old code left as reference
-        # for b_ in range(b):
-        #     for co_ in range(co):
-        #         for ci_ in range(ci):
-        #             self.weights[co_,...,ci_] -= (eta/b) * \
-        #                convolve2d(self.prev_layer.a[...,ci_,b_], self.dx[...,co_,b_], mode='valid')
-        #         self.bias[co_] -= (eta/b) * self.dx[...,co_,b_].sum(axis=-1).sum(axis=-1)        
 
 class Pool2D(Layer):
-    """ Pool2D layer for neural network """
 
-    def __init__(self, pool_shape=(2,2), func='max', stride=1):
+    def __init__(self, pool_shape=(2,2), func='max', padding=0, stride=1):
         super().__init__()
         self.pool_shape = pool_shape
         self.func_str = func
+        self.padding = padding
         self.stride = stride
-        self.cached_idx = None         
+        if func != "max":
+            raise func + "is not yet supported!"        
 
-    def initialize(self,):
-        self.hi, self.wi, self.ci = self.prev_layer.shape
+    def initialize(self):
+        self.ci, self.hi, self.wi = self.prev_layer.shape
         self.kh, self.kw = self.pool_shape
-        self.stride = self.kh
         self.ho = floor((self.hi - self.kh) / self.stride) + 1
         self.wo = floor((self.wi - self.kw) / self.stride) + 1
         self.co = self.ci
-        self.hp, self.wp = (self.hi - self.kh) % self.stride, (self.wi - self.kw) % self.stride
-        self.shape = (self.ho, self.wo, self.co)
+        self.shape = (self.co, self.ho, self.wo)
         self.n = np.prod(self.shape)
 
-    def infer(self, prev_a):
-        b = prev_a.shape[-1]
-        prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
-        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
-        patched_a, self.cached_idx= im2col(prev_a_, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
-        if   self.func_str == "max": a = patched_a.max(axis=0)
-        elif self.func_str == "avg": a = patched_a.mean(axis=0)            
-        a = a.reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-        return a
+    def show(self):
+        super().show("|{:^17s}|{:^9d}|{:^9d}|".format("", self.padding, self.stride))
+        # super().show("│{:^17s}│{:^9d}│{:^9d}│".format("", self.padding, self.stride))
 
     def forward(self, prev_a):
-        b = prev_a.shape[-1]
-        prev_a = prev_a.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
-        prev_a_ = prev_a.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
-        patched_a,  self.cached_idx= im2col(prev_a_,  self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)        
+        prev_a_ = prev_a.reshape(prev_a.shape[0] * self.ci, 1, self.hi, self.wi)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        if self.func_str == "max":
-            self.a = patched_a.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-            r = np.kron(self.a.transpose(3, 2, 0, 1), np.ones(self.pool_shape))
-            self.mask = np.equal(prev_a, r).astype(int)
-            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp] * self.mask
-            prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
-            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
-            self.dz = patched_dz.max(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
+        self.maxids = tuple([a_cols.argmax(axis=0), np.arange(a_cols.shape[1])])
+        self.a = a_cols[self.maxids].reshape(prev_a.shape[0], self.co, self.ho, self.wo)        
+        #printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
-        elif self.func_str == "avg":
-            self.a = patched_a.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-            prev_dz = self.prev_layer.dz.transpose(3, 2, 0, 1)[...,:self.hi-self.hp,:self.wi-self.wp]
-            prev_dz = prev_dz.reshape(b * self.ci, 1, self.hi-self.hp, self.wi-self.wp)
-            patched_dz, self.cached_idx= im2col(prev_dz, self.kh, self.kw, 1, self.ho, self.wo, self.stride, self.cached_idx)
-            self.dz = patched_dz.mean(axis=0).reshape(self.ho, self.wo, b, self.co).transpose(0, 1, 3, 2) # PyNN format
-
-    def get_gradient(self):     
-        if self.func_str == "max":
-            dx = np.kron(self.dx.transpose(3, 2, 0, 1), np.ones(self.pool_shape)) * self.mask
-        elif self.func_str == "avg":
-            dx = np.kron(self.dx.transpose(3, 2, 0, 1), (np.ones((self.kh, self.kw)) / (self.kh * self.kw)) )
-        dx = np.pad(dx, ((0, 0), (0, 0), (0, self.hp), (0, self.wp)), mode='constant').transpose(2, 3, 1, 0) # PyNN format
+    def backward(self, prev_dx):     
+        #printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
+        dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape))).astype(self.dtype)
+        dx_cols[self.maxids] = prev_dx.flatten()
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+        dx = col2im_cython(dx_cols, prev_dx.shape[0] * self.ci, 1, self.hi, self.wi, 
+                           self.kh, self.kw, self.padding, self.stride)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        dx = dx.reshape(prev_dx.shape[0], self.ci, self.hi, self.wi)
         return dx
 
-    def update_weights(self, eta, b):
-        pass
-
-class Flatten(Layer):
-    """ Flatten layer for neural network """
-
-    def __init__(self):
-        super().__init__()
-
-    def initialize(self):
-        self.shape = (np.prod(self.prev_layer.shape),)
-        self.n = np.prod(self.shape)
-
-    def infer(self, prev_a):
-        b = prev_a.shape[-1]
-        return prev_a.reshape(-1, b)
-
-    def forward(self, prev_a):
-        b = prev_a.shape[-1]
-        self.a = prev_a.reshape(-1, b)
-        if hasattr(self.prev_layer, 'dz'):
-            self.dz = self.prev_layer.dz.reshape(-1, b)
-        else:
-            self.dz = np.ones(self.a.shape)
-        printf("forward:", type(self).__name__, self.shape, self.a.shape)
-
-    def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
-        b = self.a.shape[-1]
-        return self.dx.reshape(self.prev_layer.shape + (b,))
-
-    def update_weights(self, eta, b):
-        pass
 
 class Dropout(Layer):
-    """ Dropout layer for neural network """
 
     def __init__(self, prob=0.5):
         super().__init__()
@@ -248,28 +262,27 @@ class Dropout(Layer):
 
     def initialize(self):
         self.shape = self.prev_layer.shape
-        self.n = np.prod(self.shape)
-
-    def show(self):
-        super().show()
-        print('Prob:    ', self.prob)
-
-    def infer(self, prev_a):
-        mask = np.random.binomial(1, self.prob, size=prev_a.shape) / self.prob
-        return prev_a * mask
-
+        
     def forward(self, prev_a):
-        self.mask = np.random.binomial(1, self.prob, size=prev_a.shape) / self.prob
-        self.a = prev_a * self.mask        
-        if hasattr(self.prev_layer, 'dz'):
-            self.dz = self.prev_layer.dz * self.mask 
-        else:
-            self.dz = np.ones(self.a.shape) * self.mask 
-        printf("forward:", type(self).__name__, self.shape, self.a.shape)
+        self.mask = np.random.binomial(1, self.prob, size=self.shape).astype(self.dtype) / self.prob
+        self.a = prev_a * self.mask
 
-    def get_gradient(self):
-        printf("  get_gradient:", type(self).__name__, self.shape)
-        return self.dx * self.mask
+    def backward(self, prev_dx):
+        return prev_dx * self.mask
+ 
 
-    def update_weights(self, eta, b):
-        pass
+# Flatten layers are not needed anymore!
+# class Flatten(Layer):
+# 
+#     def __init__(self):
+#         super().__init__()
+# 
+#     def initialize(self):
+#         self.shape = (np.prod(self.prev_layer.shape),)
+#         self.n = np.prod(self.shape)
+# 
+#     def forward(self, prev_a):
+#         self.a = prev_a.reshape(prev_a.shape[0], -1)
+# 
+#     def backward(self, prev_dx):
+#         return prev_dx.reshape((prev_dx.shape[0],) + self.prev_layer.shape)
