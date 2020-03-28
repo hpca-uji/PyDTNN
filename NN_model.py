@@ -201,10 +201,8 @@ class Model:
                 self.tracer.emit_event(PYDL_EVT, 0)
 
         if self.comm != None:
-            #if self.rank == 0: print("total: ", total_loss)
             loss_req.Wait()
             total_loss /= self.nprocs
-            #if self.rank == 0: print("total: ", total_loss)
 
         return total_loss
 
@@ -244,7 +242,7 @@ class Model:
                 if self.rank == 0:
                     train_total_loss, train_batch_count, string = \
                         self.__update_running_average(train_batch_loss, train_total_loss, 
-                                                      train_batch_count, batch_size,
+                                                      train_batch_count, batch_size, 
                                                       loss_metrics)
                     pbar.set_postfix_str(s=string, refresh=True)
                     pbar.update(batch_size)
