@@ -11,7 +11,7 @@ mpirun -np 4 \
          --validation_split=0.2 \
          --num_epochs=10 \
          --optimizer=Adam \
-         --learning_rate=0.001 \
+         --learning_rate=0.01 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --parallel=data \
          --dtype=float32 --evaluate --non_blocking_mpi

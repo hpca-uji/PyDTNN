@@ -119,21 +119,21 @@ class Dataset:
 
     def val_test_batch_generator(self, generator, rank=0, nprocs=1):
         for X_data, Y_data in generator:
-            nsamples = X_data.shape[0]
-            batch_size = nsamples // nprocs
-            remaining  = nsamples % nprocs
+            batch_size = X_data.shape[0]
+            local_batch_size = batch_size // nprocs
+            remaining  = batch_size % nprocs
 
             if rank < remaining:
-               start =  rank    * (batch_size+1)
-               end   = (rank+1) * (batch_size+1)
+               start =  rank    * (local_batch_size+1)
+               end   = (rank+1) * (local_batch_size+1)
             else:
-               start = remaining * (batch_size+1) + (rank-remaining) * batch_size
-               end   = remaining * (batch_size+1) + (rank-remaining+1) * batch_size
+               start = remaining * (local_batch_size+1) + (rank-remaining) * local_batch_size
+               end   = remaining * (local_batch_size+1) + (rank-remaining+1) * local_batch_size
 
             if start < end:
                X_local_batch = X_data[start:end,...]
                Y_local_batch = Y_data[start:end,...]
-               yield (X_local_batch, Y_local_batch, nsamples)
+               yield (X_local_batch, Y_local_batch, batch_size)
 
 
 class MNIST(Dataset):

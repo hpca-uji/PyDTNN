@@ -139,7 +139,7 @@ class Model:
     def __update_running_average(self, curr, total, count, batch_size, loss_metrics, prefix=""):
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
-        for c in range(len(total)):
+        for c in range(len(loss_metrics)):
             try:    loss_str = NN_util.loss_format[loss_metrics[c]]
             except: loss_str = loss_metrics[c]
             string += ("%s, " % (prefix+loss_str)) % total[c]
