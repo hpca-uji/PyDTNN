@@ -88,30 +88,32 @@ class Dataset:
             s = np.arange(nsamples)
             np.random.shuffle(s)
     
-            remaining = nsamples % batch_size
-            if remaining < (batch_size / 4):
-                end_for  = nsamples - batch_size - remaining
-                last_batch_size = batch_size + remaining
-            else:
-                end_for  = nsamples - remaining 
-                last_batch_size = remaining
+            last_batch_size = nsamples % batch_size
+            end_for = nsamples - last_batch_size
             
             # Generate batches
             for batch_num in range(0, end_for, batch_size):
                 start = batch_num +  rank    * local_batch_size 
                 end   = batch_num + (rank+1) * local_batch_size 
-                if start < end:
-                    indices = s[start:end]  
-                    X_local_batch = X_data[indices,...]
-                    Y_local_batch = Y_data[indices,...]
-                    yield (X_local_batch, Y_local_batch, batch_size)
+
+                indices = s[start:end]  
+                X_local_batch = X_data[indices,...]
+                Y_local_batch = Y_data[indices,...]
+                yield (X_local_batch, Y_local_batch, batch_size)
     
             # Generate last batch
-            local_batch_size = last_batch_size // nprocs
-            start = end_for + local_batch_size * rank
-            end   = nsamples if rank == nprocs - 1 else start + local_batch_size
+            if last_batch_size > 0:
+                local_batch_size = last_batch_size // nprocs
+                remaining = last_batch_size % nprocs
+                start = end = end_for
 
-            if start < end:
+                if rank < remaining:
+                    start +=  rank    * (local_batch_size+1)
+                    end   += (rank+1) * (local_batch_size+1)
+                else:
+                    start += remaining * (local_batch_size+1) + (rank-remaining) * local_batch_size
+                    end   += remaining * (local_batch_size+1) + (rank-remaining+1) * local_batch_size
+
                 indices = s[start:end]
                 X_local_batch = X_data[indices,...]
                 Y_local_batch = Y_data[indices,...]
@@ -130,10 +132,9 @@ class Dataset:
                start = remaining * (local_batch_size+1) + (rank-remaining) * local_batch_size
                end   = remaining * (local_batch_size+1) + (rank-remaining+1) * local_batch_size
 
-            if start < end:
-               X_local_batch = X_data[start:end,...]
-               Y_local_batch = Y_data[start:end,...]
-               yield (X_local_batch, Y_local_batch, batch_size)
+            X_local_batch = X_data[start:end,...]
+            Y_local_batch = Y_data[start:end,...]
+            yield (X_local_batch, Y_local_batch, batch_size)
 
 
 class MNIST(Dataset):

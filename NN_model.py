@@ -138,6 +138,7 @@ class Model:
 
     def __update_running_average(self, curr, total, count, batch_size, loss_metrics, prefix=""):
         string = ""
+        print(curr, total, count, batch_size)
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(loss_metrics)):
             try:    loss_str = NN_util.loss_format[loss_metrics[c]]
@@ -203,7 +204,7 @@ class Model:
         if self.comm != None:
             loss_req.Wait()
             total_loss /= self.nprocs
-
+            print("Test:", self.rank, total_loss)
         return total_loss
 
     def train(self, X_train, Y_train, X_val, Y_val, nepochs, local_batch_size,
