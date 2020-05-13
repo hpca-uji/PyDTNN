@@ -66,6 +66,9 @@ def ones_initializer(out_shape, layer):
 def zeros_initializer(out_shape, layer):
     return np.zeros(out_shape).astype(layer.dtype)
 
+def zeros_initializer_conv(out_shape, layer):
+    return np.random.uniform(-0.1, 0.1, out_shape).astype(layer.dtype)
+
 # Matmul operation
 
 def matmul(a, b):
