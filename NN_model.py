@@ -168,10 +168,11 @@ class Model:
         string = string[:-2]
         return total, count+batch_size, string
 
-    def __train_batch(self, X_batch, Y_batch, batch_size, loss_metrics,
+    def __train_batch(self, X_batch, Y_batch, loss_metrics,
                       loss_funcs, optimizer, lr_schedulers):
 
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
+        local_batch_size = X_batch.shape[0]
 
         for lr_sched in lr_schedulers:
             lr_sched.on_batch_begin(self, self.rank)
@@ -199,7 +200,7 @@ class Model:
             for l in range(len(self.layers)-1, 0, -1):
                 self.layers[l].reduce_weights_sync(self.comm)
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
-                self.layers[l].update_weights(optimizer, batch_size)
+                self.layers[l].update_weights(optimizer, local_batch_size)
                 self.tracer.emit_event(PYDL_EVT, 0)            
         else:
             # Non-blocking MPI
@@ -223,7 +224,7 @@ class Model:
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
     
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
-                self.layers[l].update_weights(optimizer, batch_size)
+                self.layers[l].update_weights(optimizer, local_batch_size)
                 self.tracer.emit_event(PYDL_EVT, 0)
 
         # if self.comm != None:
@@ -271,7 +272,7 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for X_batch, Y_batch, batch_size in train_batch_generator:
-                train_batch_loss = self.__train_batch(X_batch, Y_batch, batch_size, loss_metrics,
+                train_batch_loss = self.__train_batch(X_batch, Y_batch, loss_metrics,
                                                       loss_funcs, optimizer, lr_schedulers)
                 train_total_loss, train_batch_count, string = \
                     self.__update_running_average(train_batch_loss, train_total_loss, 

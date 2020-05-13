@@ -3,7 +3,6 @@
 # set -x # Debugging flag
 # export PYTHONPATH=/home/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
 # export EXTRAE_CONFIG_FILE=./extrae.xml
-# export MKL_NUM_THREADS=12
 # export EXTRAE_ON=1
 # 
 # EXTRAELIB=/home/dolzm/install/extrae-3.6.0/lib/libompitrace.so
@@ -11,6 +10,7 @@
 NUMNODES=15
 NUMPROCS=15
 PROCS_PER_NODE=$(($NUMPROCS / $NUMNODES))
+export OMP_NUM_THREADS=12
 
 NODETYPE=hexa
 LASTH=`echo $NUMNODES - 1 | bc`
@@ -29,8 +29,8 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
          --steps_per_epoch=0 \
          --num_epochs=30 \
          --evaluate=True \
-         --optimizer=SGDMomentum \
-         --learning_rate=1 \
+         --optimizer=sgd \
+         --learning_rate=0.1 \
          --momentum=0.9 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \

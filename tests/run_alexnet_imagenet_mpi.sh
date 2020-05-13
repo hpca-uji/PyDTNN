@@ -11,6 +11,7 @@
 NUMNODES=15
 NUMPROCS=15
 PROCS_PER_NODE=$(($NUMPROCS / $NUMNODES))
+export OMP_NUM_THREADS=12
 
 NODETYPE=hexa
 LASTH=`echo $NUMNODES - 1 | bc`
@@ -29,7 +30,7 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
          --steps_per_epoch=0 \
          --num_epochs=300 \
          --evaluate=False \
-         --optimizer=Adam \
+         --optimizer=adam \
          --learning_rate=0.5 \
          --momentum=0.9 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \

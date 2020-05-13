@@ -91,6 +91,7 @@ class EarlyStopping(LRScheduler):
         self.epoch_count = self.best_epoch = 0
         self.stop_training = False
         self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_metric]
+        self.best_weights_filename = None
         self.verbose = verbose
 
     def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
@@ -104,8 +105,9 @@ class EarlyStopping(LRScheduler):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
             # Save weights + bias
-            self.best_weights_filename = "./model-%s-weights-epoch-%d-%s.npz" % \
-                (model.params.model, self.epoch_count, time.strftime("%Y%m%d"))
+            if not self.best_weights_filename: 
+                self.best_weights_filename = "./model-%s-weights-%s.npz" % \
+                    (model.params.model, time.strftime("%Y%m%d"))   
             model.store_weights_and_bias(self.best_weights_filename)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True

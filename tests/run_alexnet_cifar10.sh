@@ -11,8 +11,8 @@ python3 -u benchmarks_CNN.py \
          --steps_per_epoch=0 \
          --num_epochs=30 \
          --evaluate=True \
-         --optimizer=SGDMomentum \
-         --learning_rate=1 \
+         --optimizer=sgd \
+         --learning_rate=0.01 \
          --momentum=0.9 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \
