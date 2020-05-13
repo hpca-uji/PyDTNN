@@ -146,7 +146,7 @@ class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
                  activation=None, weights_initializer="glorot_normal_initializer",
-                 bias_initializer="zeros_initializer"):
+                 bias_initializer="zeros_initializer_conv"):
         super().__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
