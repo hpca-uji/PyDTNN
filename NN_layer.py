@@ -76,7 +76,7 @@ class Layer():
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
             self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
+            self.red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
             self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op = MPI.SUM )
      
     def wait_allreduce_async(self, comm):
@@ -88,7 +88,7 @@ class Layer():
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
             self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            self.red_dwb = np.zeros_like(self.dwb).astype(self.dtype)
+            self.red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
                                     [self.id * PYDL_NUM_EVTS + 3, 
                                      self.id * PYDL_OPS_NUM_EVTS + 6])
@@ -247,7 +247,7 @@ class Pool2D(Layer):
 
     def backward(self, prev_dx):     
         #printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
-        dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape))).astype(self.dtype)
+        dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape)), dtype=self.dtype)
         dx_cols[self.maxids] = prev_dx.flatten()
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
         dx = col2im_cython(dx_cols, prev_dx.shape[0] * self.ci, 1, self.hi, self.wi, 
