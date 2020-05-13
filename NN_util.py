@@ -57,7 +57,7 @@ def glorot_uniform_initializer(out_shape, layer):
     return np.random.uniform(-lim, lim, out_shape).astype(layer.dtype)
 
 def glorot_normal_initializer(out_shape, layer):
-    stddev = np.sqrt(6.0 / float((np.prod(layer.prev_layer.shape)+np.prod(layer.shape))))
+    stddev = np.sqrt(2.0 / float((np.prod(layer.prev_layer.shape)+np.prod(layer.shape))))
     return np.random.normal(0.0, stddev, out_shape).astype(layer.dtype)
 
 def ones_initializer(out_shape, layer):
