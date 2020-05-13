@@ -34,7 +34,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 import numpy as np
@@ -64,7 +64,6 @@ except:
     pass
 
 class Model:
-    """ Neural network (NN) """
 
     def __init__(self, params, comm=None, non_blocking_mpi=False, 
                  tracing=False, enable_gpu=False, dtype=np.float32):
@@ -75,6 +74,8 @@ class Model:
         self.tracer = Tracer(tracing)
         self.enable_gpu = enable_gpu
         self.dtype = dtype
+        # In data parallel, we assume that file weights are stored in a nfs mounted directory.
+        self.params.shared_storage = True
 
         self.rank = 0
         self.nprocs = 1
@@ -123,15 +124,36 @@ class Model:
             layer.act.shape = layer.shape
             self.add(layer.act)
 
+    def load_weights_and_bias(self, filename):
+        d = np.load(filename)
+        for l, layer in enumerate(self.layers):
+            if layer.weights.size > 0:
+                base = ("%s_%s" % (str(l), type(layer).__name__))
+                key_w, key_b = (base + "_w"), (base + "_b")
+                if key_w in d.files: layer.weights = d[key_w]
+                else: print("Could not find weights for %s layer in %s file!" % (key_w, filename))
+                if key_b in d.files: layer.bias = d[key_b]
+                else: print("Could not find bias for %s layer in %s file!" % (key_b, filename))
+
+    def store_weights_and_bias(self, filename):
+        if self.params.shared_storage and self.rank == 0:
+            d = {}
+            for l, layer in enumerate(self.layers):
+                if layer.weights.size > 0:
+                    base = ("%s_%s" % (str(l), type(layer).__name__))
+                    d[base + "_w"] = layer.weights
+                    d[base + "_b"] = layer.bias
+            np.savez_compressed(filename, **d)
+
     def __compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
         loss_req = None
         total_loss = np.zeros(len(loss_funcs), dtype=np.float32)
         partial_loss = np.array([func(Y_pred, Y_targ) for func in loss_funcs], dtype=np.float32)
         if self.comm != None and blocking:
-            self.comm.Reduce(partial_loss, total_loss, op=MPI.SUM, root=0)
+            self.comm.Allreduce(partial_loss, total_loss, op=MPI.SUM)
             total_loss /= self.nprocs
         elif self.comm != None and not blocking:
-            loss_req = self.comm.Ireduce(partial_loss, total_loss, op=MPI.SUM)
+            loss_req = self.comm.Iallreduce(partial_loss, total_loss, op=MPI.SUM)
         else:
             total_loss = partial_loss
         return total_loss, loss_req
@@ -146,9 +168,13 @@ class Model:
         string = string[:-2]
         return total, count+batch_size, string
 
-    def __train_batch(self, X_batch, Y_batch, loss_funcs, optimizer_func):
+    def __train_batch(self, X_batch, Y_batch, batch_size, loss_metrics,
+                      loss_funcs, optimizer, lr_schedulers):
 
-        if X_batch.shape[0] == 0: return [0]
+        # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
+
+        for lr_sched in lr_schedulers:
+            lr_sched.on_batch_begin(self, self.rank)
 
         # Forward pass (FP)
         self.layers[0].a = X_batch
@@ -158,7 +184,7 @@ class Model:
             self.tracer.emit_event(PYDL_EVT, 0)
 
         Y_pred = self.layers[-1].a
-        total_loss, loss_req = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=False)
+        total_loss, loss_req = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
        
         if self.blocking_mpi:
             # Blocking MPI
@@ -173,7 +199,7 @@ class Model:
             for l in range(len(self.layers)-1, 0, -1):
                 self.layers[l].reduce_weights_sync(self.comm)
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
-                self.layers[l].update_weights(optimizer_func, self.params)
+                self.layers[l].update_weights(optimizer, batch_size)
                 self.tracer.emit_event(PYDL_EVT, 0)            
         else:
             # Non-blocking MPI
@@ -197,18 +223,21 @@ class Model:
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
     
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
-                self.layers[l].update_weights(optimizer_func, self.params)
+                self.layers[l].update_weights(optimizer, batch_size)
                 self.tracer.emit_event(PYDL_EVT, 0)
 
-        if self.comm != None:
-            loss_req.Wait()
-            total_loss /= self.nprocs
+        # if self.comm != None:
+        #     loss_req.Wait()
+        #     total_loss /= self.nprocs
+
+        for lr_sched in lr_schedulers:
+            lr_sched.on_batch_end(self, self.rank)
 
         return total_loss
 
     def train(self, X_train, Y_train, X_val, Y_val, nepochs, local_batch_size,
                     loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
-                    optimizer="SGD", bar_width=110):
+                    optimizer=NN_optimizer.SGD(), bar_width=110):
 
         dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train, 
                                               X_val=X_val, Y_val=Y_val)
@@ -216,34 +245,39 @@ class Model:
                            loss_metrics, optimizer, bar_width)
 
     def train_dataset(self, dataset, nepochs, local_batch_size, 
-                      val_split=0.2, use_test_as_validation=False,
-                      loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
-                      optimizer="SGD", bar_width=110):
+                      val_split=0.2, loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                      optimizer=NN_optimizer.SGD(), lr_schedulers=[], bar_width=110):
 
         loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
-        optimizer_func = getattr(NN_optimizer, optimizer)
-        
+        dataset.make_train_val_partitions(val_split)
+        terminate = False
+
         for epoch in range(nepochs):
 
             train_batch_generator, val_batch_generator = \
                 dataset.get_train_val_generator(local_batch_size, self.rank, self.nprocs, val_split)
 
+            train_total_loss, train_batch_count = np.zeros(len(loss_funcs)), 0
+            val_total_loss, val_batch_count = np.zeros(len(loss_funcs)), 0
+
             if self.rank == 0:
-                train_total_loss, train_batch_count = np.zeros(len(loss_funcs)), 0
-                val_total_loss, val_batch_count = np.zeros(len(loss_funcs)), 0
                 fmt="%%%dd" % (len(str(nepochs)))
                 epoch_string="Epoch %s/%s" % (fmt, fmt)
                 pbar = tqdm(total=dataset.train_nsamples, ncols=bar_width, 
                             ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                             desc=epoch_string % (epoch+1, nepochs), unit=" samples")
 
+            for lr_sched in lr_schedulers:
+                lr_sched.on_epoch_begin(self, self.rank)
+
             for X_batch, Y_batch, batch_size in train_batch_generator:
-                train_batch_loss = self.__train_batch(X_batch, Y_batch, loss_funcs, optimizer_func)
+                train_batch_loss = self.__train_batch(X_batch, Y_batch, batch_size, loss_metrics,
+                                                      loss_funcs, optimizer, lr_schedulers)
+                train_total_loss, train_batch_count, string = \
+                    self.__update_running_average(train_batch_loss, train_total_loss, 
+                                                  train_batch_count, batch_size, 
+                                                  loss_metrics)
                 if self.rank == 0:
-                    train_total_loss, train_batch_count, string = \
-                        self.__update_running_average(train_batch_loss, train_total_loss, 
-                                                      train_batch_count, batch_size, 
-                                                      loss_metrics)
                     pbar.set_postfix_str(s=string, refresh=True)
                     pbar.update(batch_size)
 
@@ -252,19 +286,27 @@ class Model:
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
                 val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
+                val_total_loss, val_batch_count, string = \
+                    self.__update_running_average(val_batch_loss, val_total_loss, 
+                                                  val_batch_count, batch_size,
+                                                  loss_metrics, prefix="val_")
                 if self.rank == 0:
-                    val_total_loss, val_batch_count, string = \
-                        self.__update_running_average(val_batch_loss, val_total_loss, 
-                                                      val_batch_count, batch_size,
-                                                      loss_metrics, prefix="val_")
                     print("\033[A\033[%dC\b, %s]" % (bar_width, string))
+
+            for lr_sched in lr_schedulers:
+                lr_sched.on_epoch_end(self, optimizer, loss_metrics, 
+                                      train_total_loss, val_total_loss, self.rank)
+                if getattr(lr_sched, "stop_training", False): 
+                    terminate = True
+
+            if terminate: break
 
         self.tracer.define_event_type()
 
     def __evaluate_batch(self, X_batch, Y_batch, loss_funcs):
 
         # Forward pass (FP)
-        if X_batch.shape[0] == 0: return [0]
+        # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
 
         self.layers[0].a = X_batch
         for l in range(1, len(self.layers)):

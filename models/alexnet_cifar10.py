@@ -41,21 +41,21 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_alexnet(model):
-    model.add( Input(shape=(3, 227, 227)) )
-    model.add( Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation=Relu()) )
-    model.add( Pool2D(pool_shape=(3,3), func='max', stride=2) )
-    model.add( Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation=Relu()) )
-    model.add( Pool2D(pool_shape=(3,3), func='max', stride=2) )
-    model.add( Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
+def create_alexnet_cifar10(model):
+    model.add( Input(shape=(3, 32, 32)) )
+    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, stride=2, activation=Relu()) )
+    model.add( Pool2D(pool_shape=(2, 2), func='max', stride=2) )
+    model.add( Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
+    model.add( Pool2D(pool_shape=(2, 2), func='max', stride=2) )
     model.add( Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
     model.add( Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
-    model.add( Pool2D(pool_shape=(3,3), func='max', stride=2) )
+    model.add( Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
+    model.add( Pool2D(pool_shape=(2, 2), func='max', stride=2) )
     #model.add( Flatten() )
     model.add( FC(shape=(4096,), activation=Relu()) )
     model.add( Dropout(prob=0.5) )
     model.add( FC(shape=(4096,), activation=Relu()) )
     model.add( Dropout(prob=0.5) )
-    model.add( FC(shape=(1000,), activation=Softmax()) )
+    model.add( FC(shape=(10,), activation=Softmax()) )
 
     return model

@@ -34,12 +34,48 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 import numpy as np
 import importlib, gc
 import random, os, struct, math
+
+import threading
+import sys
+
+if sys.version_info >= (3, 0):
+    import queue as Queue
+else:
+    import Queue
+
+
+class BackgroundGenerator(threading.Thread):
+    def __init__(self, generator, max_prefetch=1):
+        threading.Thread.__init__(self)
+        self.queue = Queue.Queue(max_prefetch)
+        self.generator = generator
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        for item in self.generator:
+            self.queue.put(item)
+        self.queue.put(None)
+
+    def next(self):
+        next_item = self.queue.get()
+        if next_item is None:
+            raise StopIteration
+        return next_item
+
+    # Python 3 compatibility
+    def __next__(self):
+        return self.next()
+
+    def __iter__(self):
+        return self
+
 
 class Dataset:
 
@@ -67,10 +103,10 @@ class Dataset:
 
     def get_train_val_generator(self, local_batch_size=64, rank=0, nprocs=1, val_split=0.2):
         batch_size = local_batch_size * nprocs
-        if not self.test_as_validation: self.make_train_val_partitions(val_split)
-        return ( self.train_batch_generator(self.train_data_generator(batch_size), 
-                                            local_batch_size, rank, nprocs),
-                 self.val_test_batch_generator(self.val_data_generator(batch_size), rank, nprocs) )
+        return ( self.batch_generator(self.train_data_generator(batch_size), 
+                                      local_batch_size, rank, nprocs, shuffle=True),
+                 self.batch_generator(self.val_data_generator(batch_size), 
+                                      local_batch_size, rank, nprocs, shuffle=False) )
 
     def get_test_generator(self, rank=0, nprocs=1):
         # Fixed batch size for testing:
@@ -78,27 +114,21 @@ class Dataset:
         #   val_test_batch_generator will be larger enough to feed all processes.
         local_batch_size = 64
         batch_size = local_batch_size * nprocs
-        return self.val_test_batch_generator(self.test_data_generator(batch_size), rank, nprocs)
+        return self.batch_generator(self.test_data_generator(batch_size), 
+                                      local_batch_size, rank, nprocs, shuffle=False)
 
-    def train_batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1):
+    def batch_generator(self, generator, local_batch_size=64, rank=0, nprocs=1, shuffle=True):
         batch_size = local_batch_size * nprocs
 
-        for X_data, Y_data in generator:
+        for X_data, Y_data in BackgroundGenerator(generator):
             nsamples = X_data.shape[0]
-            s = np.arange(nsamples)
-            np.random.shuffle(s)
-    
-            # remaining = nsamples % batch_size
-            # if remaining < (batch_size / 4):
-            #     end_for  = nsamples - batch_size - remaining
-            #     last_batch_size = batch_size + remaining
-            # else:
-            #     end_for  = nsamples - remaining 
-            #     last_batch_size = remaining
+            s = memoryview(np.arange(nsamples))
+            if shuffle: np.random.shuffle(s)
 
             last_batch_size = nsamples % batch_size
+            if last_batch_size < nprocs: last_batch_size += batch_size
             end_for = nsamples - last_batch_size
-            
+
             # Generate batches
             for batch_num in range(0, end_for, batch_size):
                 start = batch_num +  rank    * local_batch_size 
@@ -110,36 +140,36 @@ class Dataset:
     
             # Generate last batch
             if last_batch_size > 0:
-                local_batch_size = last_batch_size // nprocs
+                last_local_batch_size = last_batch_size // nprocs
                 remaining = last_batch_size % nprocs
                 start = end = end_for
                 if rank < remaining:
-                    start +=  rank    * (local_batch_size+1)
-                    end   += (rank+1) * (local_batch_size+1)
+                    start +=  rank    * (last_local_batch_size+1)
+                    end   += (rank+1) * (last_local_batch_size+1)
                 else:
-                    start += remaining * (local_batch_size+1) + (rank-remaining) * local_batch_size
-                    end   += remaining * (local_batch_size+1) + (rank-remaining+1) * local_batch_size
+                    start += remaining * (last_local_batch_size+1) + (rank-remaining) * last_local_batch_size
+                    end   += remaining * (last_local_batch_size+1) + (rank-remaining+1) * last_local_batch_size
                 indices = s[start:end]
                 X_local_batch = X_data[indices,...]
                 Y_local_batch = Y_data[indices,...]
                 yield (X_local_batch, Y_local_batch, last_batch_size)
 
-    def val_test_batch_generator(self, generator, rank=0, nprocs=1):
-        for X_data, Y_data in generator:
-            batch_size = X_data.shape[0]
-            local_batch_size = batch_size // nprocs
-            remaining  = batch_size % nprocs
-
-            if rank < remaining:
-               start =  rank    * (local_batch_size+1)
-               end   = (rank+1) * (local_batch_size+1)
-            else:
-               start = remaining * (local_batch_size+1) + (rank-remaining) * local_batch_size
-               end   = remaining * (local_batch_size+1) + (rank-remaining+1) * local_batch_size
-
-            X_local_batch = X_data[start:end,...]
-            Y_local_batch = Y_data[start:end,...]
-            yield (X_local_batch, Y_local_batch, batch_size)
+    #def val_test_batch_generator(self, generator, rank=0, nprocs=1):
+    #    for X_data, Y_data in generator:
+    #        batch_size = X_data.shape[0]
+    #        local_batch_size = batch_size // nprocs
+    #        remaining  = batch_size % nprocs
+    #
+    #        if rank < remaining:
+    #           start =  rank    * (local_batch_size+1)
+    #           end   = (rank+1) * (local_batch_size+1)
+    #        else:
+    #           start = remaining * (local_batch_size+1) + (rank-remaining) * local_batch_size
+    #           end   = remaining * (local_batch_size+1) + (rank-remaining+1) * local_batch_size
+    #
+    #        X_local_batch = X_data[start:end,...]
+    #        Y_local_batch = Y_data[start:end,...]
+    #        yield (X_local_batch, Y_local_batch, batch_size)
 
 
 class MNIST(Dataset):
@@ -152,10 +182,12 @@ class MNIST(Dataset):
         self.test_as_validation = test_as_validation
         self.dtype = dtype
         self.nclasses = 10
-        self.val_start = 0
+        #self.val_start = 0
 
         self.train_val_nsamples = 60000
         self.test_nsamples  = 10000
+
+        self.val_start = np.random.randint(0, high=self.train_val_nsamples)
 
         mnist = None 
         #importlib.import_module("mnist")
@@ -199,6 +231,7 @@ class MNIST(Dataset):
         return Y_one_hot
 
     def make_train_val_partitions(self, val_split=0.2):
+        if self.test_as_validation: return
         assert 0 <= val_split < 1
         self.val_size = int(self.train_val_nsamples * val_split)
 
@@ -206,6 +239,93 @@ class MNIST(Dataset):
         if end > self.X_train_val.shape[0]:
             val_indices = np.arange(self.val_start, self.X_train_val.shape[0])
             self.val_start = self.val_size - val_indices.shape[0]
+            val_indices = np.concatenate((val_indices, np.arange(0, self.val_start)))
+        else:
+            val_indices = np.arange(self.val_start, end)
+            self.val_start = end
+
+        train_indices = np.setdiff1d(np.arange(self.train_val_nsamples), val_indices)
+
+        self.X_train = self.X_train_val[train_indices,...]
+        self.Y_train = self.Y_train_val[train_indices,...]
+        self.X_val = self.X_train_val[val_indices,...]
+        self.Y_val = self.Y_train_val[val_indices,...]
+        self.train_nsamples = self.X_train.shape[0]
+
+    def adjust_steps_per_epoch(self, steps_per_epoch, local_batch_size, nprocs):
+        if steps_per_epoch > 0:
+            subset_size = local_batch_size * nprocs * steps_per_epoch
+            if subset_size > self.X_train_val.shape[0]:
+                scale = math.ceil(subset_size/float(self.X_train_val.shape[0]))
+                self.X_train_val = np.tile(self.X_train_val, scale)[:subset_size,...]
+                self.Y_train_val = np.tile(self.Y_train_val, scale)[:subset_size,...]
+            else:
+                self.X_train_val = self.X_train_val[:subset_size,...]
+                self.Y_train_val = self.Y_train_val[:subset_size,...]
+            self.train_val_nsamples = self.X_train_val.shape[0]
+            self.train_nsamples = self.train_val_nsamples
+
+
+class CIFAR10(Dataset):
+
+    def __init__(self, train_path, test_path, model="", 
+                 test_as_validation=False, dtype=np.float32):                 
+        self.train_path = train_path
+        self.test_path = test_path
+        self.model = model
+        self.test_as_validation = test_as_validation
+        self.dtype = dtype
+        self.nclasses = 10
+        self.val_start = 0
+
+        self.train_val_nsamples = 50000
+        self.test_nsamples  = 10000
+
+        XY_train_fname = "data_batch_%d"
+        XY_test_fname  = "test_batch"
+
+        for b in range(1, 6):
+            self.X_train_val_aux, self.Y_train_val_aux = \
+                self.__read_file("%s/%s" % (self.train_path, (XY_train_fname % (b))))
+            if b == 1:
+                self.X_train_val, self.Y_train_val = self.X_train_val_aux, self.Y_train_val_aux
+            else:
+                self.X_train_val = np.concatenate((self.X_train_val, self.X_train_val_aux), axis=0)
+                self.Y_train_val = np.concatenate((self.Y_train_val, self.Y_train_val_aux), axis=0)
+
+        self.X_test, self.Y_test = self.__read_file("%s/%s" % (self.test_path, XY_test_fname))
+
+        self.X_train_val = self.X_train_val.reshape(self.train_val_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
+        self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
+        self.X_test = self.X_test.reshape(self.test_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
+        self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
+
+        if self.test_as_validation:
+            print("  Using test as validation data - val_split parameter is ignored!")
+            self.X_val, self.Y_val = self.X_test, self.Y_test
+            self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
+            self.train_nsamples = self.X_train.shape[0]
+
+    def __read_file(self, fname):
+        import pickle
+        with open(fname, 'rb') as f:
+            d = pickle.load(f, encoding='bytes')
+            X, Y = d[b"data"], np.array(d[b"labels"])
+            return X, Y
+
+    def __one_hot_encoder(self, Y):
+        Y_one_hot = np.zeros((Y.shape[0], self.nclasses), dtype=self.dtype, order="C")
+        Y_one_hot[np.arange(Y.shape[0]), Y] = 1
+        return Y_one_hot
+
+    def make_train_val_partitions(self, val_split=0.2):
+        assert 0 <= val_split < 1
+        val_size = int(self.train_val_nsamples * val_split)
+
+        end = self.val_start + val_size
+        if end > self.X_train_val.shape[0]:
+            val_indices = np.arange(self.val_start, self.X_train_val.shape[0])
+            self.val_start = val_size - val_indices.shape[0]
             val_indices = np.concatenate((val_indices, np.arange(0, self.val_start)))
         else:
             val_indices = np.arange(self.val_start, end)
@@ -263,10 +383,14 @@ class ImageNet(Dataset):
             self.train_files = self.train_val_files
             self.train_nsamples = self.train_val_nsamples
 
-    def __trim_image(self, X):
+    def __normalize_image(self, X):
         if "vgg" in self.model: # for VGG models input shape must be (3,224,224)
             return X[...,1:225,1:225]
-        else: return X
+        mean = np.array([0.485, 0.456, 0.406])
+        std  = np.array([0.229, 0.224, 0.225])
+        for c in range(3):
+            X[:,c,...] = ((X[:,c,...] / 255.0) - mean[c]) / std[c]
+        return X
 
     def __one_hot_encoder(self, Y):
         Y_one_hot = np.zeros((Y.shape[0], self.nclasses), dtype=self.dtype, order="C")
@@ -278,12 +402,15 @@ class ImageNet(Dataset):
         # In this case we yield bigger chunks of size batch_size
         images_per_file = {"train": self.images_per_train_file, \
                            "test":  self.images_per_test_file}[op]
+        in_files = files.copy()
+        np.random.shuffle(in_files)
+
         if batch_size > self.images_per_train_file:
             X_buffer, Y_buffer = np.array([]), np.array([])
             
-            for f in range(len(files)):
-                values = np.load("%s/%s" % (path, files[f]))
-                X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+            for f in in_files:
+                values = np.load("%s/%s" % (path, f))
+                X_data = self.__normalize_image(values['x'].astype(self.dtype))
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if X_buffer.size == 0:
                     X_buffer, Y_buffer = X_data, Y_data
@@ -303,9 +430,9 @@ class ImageNet(Dataset):
 
         # For batch_sizes <= 1251, complete files of 1251 samples are yield
         else:
-            for f in range(len(files)):
-                values = np.load("%s/%s" % (path, files[f]))
-                X_data = self.__trim_image(values['x'].astype(self.dtype)) / 255.0
+            for f in in_files:
+                values = np.load("%s/%s" % (path, f))
+                X_data = self.__normalize_image(values['x'].astype(self.dtype))
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 yield (X_data, Y_data)
                 gc.collect()
@@ -346,5 +473,3 @@ class ImageNet(Dataset):
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.train_val_nsamples = len(self.train_val_files) * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples
-
-
