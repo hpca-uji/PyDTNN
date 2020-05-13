@@ -2,7 +2,7 @@ import importlib, sys, numpy as np
 
 def get_dataset(params):
     try:
-        dataset_name = {"mnist": "MNIST", "imagenet": "ImageNet"}
+        dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet"}
         dtype = getattr(np, params.dtype)
         dataset_mod = importlib.import_module("datasets.NN_dataset")
         dataset_obj = getattr(dataset_mod, dataset_name[params.dataset])

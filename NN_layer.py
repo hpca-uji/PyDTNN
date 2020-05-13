@@ -34,7 +34,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 import numpy as np
@@ -43,6 +43,7 @@ import NN_util
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_argmax_cython import argmax_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
 try:
@@ -68,9 +69,9 @@ class Layer():
         # if not attrs: attrs= "│{:^17s}│{:^9s}│{:^9s}│".format("","","")
         # print(f"│{self.id:^7d}│{type(self).__name__:^10s}│{self.params:^9d}│{str(self.shape):^15}" + attrs)
 
-    def update_weights(self, optimizer, params):
+    def update_weights(self, optimizer, batch_size):
         if self.weights.size > 0:
-            optimizer(self, params)
+            optimizer.update(self, batch_size)
 
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
@@ -238,7 +239,9 @@ class Pool2D(Layer):
         a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        self.maxids = tuple([a_cols.argmax(axis=0), np.arange(a_cols.shape[1])])
+        self.maxids = tuple([argmax_cython(a_cols, axis=0), np.arange(a_cols.shape[1])])
+        #self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
+        #self.maxids = tuple([a_cols.argmax(axis=0), np.arange(a_cols.shape[1])])
         self.a = a_cols[self.maxids].reshape(prev_a.shape[0], self.co, self.ho, self.wo)        
         #printf("forward:", type(self).__name__, self.shape, self.a.shape)
 

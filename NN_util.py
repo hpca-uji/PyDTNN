@@ -34,7 +34,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 import numpy as np
@@ -55,10 +55,15 @@ except:
 def glorot_initializer(out_shape, layer):
     lim = np.sqrt(6.0 / float((np.prod(layer.prev_layer.shape)+np.prod(layer.shape))))
     return np.random.uniform(-lim, lim, out_shape).astype(layer.dtype)
-        
+
+def gaussian_initializer(out_shape, layer):
+    return np.random.normal(0, 0.01, out_shape).astype(layer.dtype)
+
+def ones_initializer(out_shape, layer):
+    return np.ones(out_shape).astype(layer.dtype)
+
 def zeros_initializer(out_shape, layer):
     return np.zeros(out_shape).astype(layer.dtype)
-
 
 # Matmul operation
 
