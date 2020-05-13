@@ -107,7 +107,7 @@ class Input(Layer):
 class FC(Layer):
 
     def __init__(self, shape=(1,), activation=None, 
-                 weights_initializer="glorot_initializer",
+                 weights_initializer="glorot_normal_initializer",
                  bias_initializer="zeros_initializer"):
         super().__init__(shape)
         self.act = activation
@@ -145,7 +145,7 @@ class FC(Layer):
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
-                 activation=None, weights_initializer="glorot_initializer",
+                 activation=None, weights_initializer="glorot_normal_initializer",
                  bias_initializer="zeros_initializer"):
         super().__init__()
         self.co = nfilters
