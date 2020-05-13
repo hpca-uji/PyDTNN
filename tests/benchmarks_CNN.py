@@ -77,16 +77,17 @@ def parse_options():
     parser.add_argument('--num_epochs', type=int, default=1)
     parser.add_argument('--evaluate', default=False, type=bool_lambda)
     parser.add_argument('--weights_and_bias_filename',  type=str, default=None)
-    parser.add_argument('--shared_storage', default=False, type=bool_lambda)    
+    parser.add_argument('--shared_storage', default=False, type=bool_lambda)
     # Optimizer
-    parser.add_argument('--optimizer', type=str, default="SGDMomentum")
+    parser.add_argument('--optimizer', type=str, default="sgd")
     parser.add_argument('--learning_rate', type=float, default=1e-2)
-    parser.add_argument('--effective_learning_rate', type=float, default=-1)
     parser.add_argument('--momentum', type=float, default=0.9)    
-    parser.add_argument('--decay_rate', type=float, default=0.9)
+    parser.add_argument('--decay', type=float, default=0.0)
+    parser.add_argument('--nesterov', default=False, type=bool_lambda)
     parser.add_argument('--beta1', type=float, default=0.99)
     parser.add_argument('--beta2', type=float, default=0.999)    
     parser.add_argument('--epsilon', type=float, default=1e-7)
+    parser.add_argument('--rho', type=float, default=0.9)
     parser.add_argument('--loss_func', type=str, default="accuracy,categorical_cross_entropy")
     # Learning rate schedulers
     parser.add_argument('--lr_schedulers', type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
@@ -118,25 +119,28 @@ def show_options(params):
             #print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
 
 def get_optimizer(params):
-    if params.optimizer == "SGD":
-        opt = SGD(learning_rate = params.learning_rate)
-    elif params.optimizer == "SGDMomentum":
-        opt = SGDMomentum(learning_rate = params.learning_rate, 
-                  momentum = params.momentum)
-    elif params.optimizer == "RMSProp":
+    if params.optimizer == "sgd":
+        opt = SGD(learning_rate = params.learning_rate,
+                  momentum = params.momentum,
+                  nesterov = params.nesterov,
+                  decay = params.decay)
+    elif params.optimizer == "rmsprop":
         opt = RMSProp(learning_rate = params.learning_rate, 
-                  decay_rate = params.decay_rate,
-                  epsilon = params.epsilon)
-    elif params.optimizer == "Adam":
+                  rho = params.rho,
+                  epsilon = params.epsilon,
+                  decay = params.decay)
+    elif params.optimizer == "adam":
         opt = Adam(learning_rate = params.learning_rate, 
                   beta1 = params.beta1,
                   beta2 = params.beta2, 
-                  epsilon = params.epsilon)
-    elif params.optimizer == "Nadam":
+                  epsilon = params.epsilon,
+                  decay = params.decay)
+    elif params.optimizer == "nadam":
         opt = Nadam(learning_rate = params.learning_rate, 
                   beta1 = params.beta1,
                   beta2 = params.beta2,
-                  epsilon = params.epsilon)
+                  epsilon = params.epsilon,
+                  decay = params.decay)
     return opt
 
 def get_lr_schedulers(params):
@@ -148,7 +152,7 @@ def get_lr_schedulers(params):
     for lr_sched in params.lr_schedulers.split(","):
         if sched_format[lr_sched] == "WarmUpLRScheduler":
             lrs = WarmUpLRScheduler(params.warm_up_batches, 
-                  params.effective_learning_rate)
+                  params.learning_rate)
         if sched_format[lr_sched] == "EarlyStopping":
             lrs = EarlyStopping(params.early_stopping_metric, 
                   params.early_stopping_patience)
@@ -197,13 +201,6 @@ if __name__ == "__main__":
         model.load_weights_and_bias(params.weights_and_bias_filename)
 
     loss_metrics = [f for f in params.loss_func.replace(" ","").split(",")]
-
-    if params.effective_learning_rate == -1:
-        params.effective_learning_rate = params.learning_rate / \
-                  (params.mpi_processes * params.batch_size)
-    else:
-        params.learning_rate = params.effective_learning_rate * \
-                  (params.mpi_processes * params.batch_size)
 
     dataset = get_dataset(params)
     if params.steps_per_epoch > 0:

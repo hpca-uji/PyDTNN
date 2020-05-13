@@ -86,11 +86,14 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
     * ``--shared_storage``: If true only rank 0 can dump weights and bias onto a file. Default: True.
 
 * Optimizer parameters:
-    * ``--optimizer``: Optimizers: `SGD`, `SGDMomentum`, `RMSProp`, `Adam`, `Nadam`. Default: `SGDMomentum`.
+    * ``--optimizer``: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`. Default: `sgd`.
     * ``--learning_rate``: Learning rate. Default: 0.01.
-    * ``--decay_rate``: Decay rate for `RMSProp` and `Adam` optimizers. Default: 0.99.
-    * ``--epsilon``: Decay rate for `RMSProp` and `Adam` optimizers. Default: 1e-8.
-    * ``--momentum``: Decay rate for `SGDMomentum` optimizer. Default: 0.9.
+    * ``--momentum``: Decay rate for `sgd` optimizer. Default: 0.9.
+    * ``--rho``: Variable for `rmsprop` optimizers. Default: 0.99.
+    * ``--epsilon``: Variable for `rmsprop`, `adam`, `nadam` optimizers. Default: 1e-8.
+    * ``--beta1``: Variable for `adam`, `nadam` optimizers. Default: 0.99.
+    * ``--beta2``: Variable for `adam`, `nadam` optimizers. Default: 0.999.
+    * ``--nesterov``:  Whether to apply Nesterov momentum. Default: False.
     * ``--loss_func``: List of comma-separated loss functions that are evaluated on each trained batch: `categorical_accuracy`,`categorical_cross_entropy`,`categorical_hinge`,`categorical_mse`,`categorical_mae`,`regression_mse`,`regression_mae`.
 
 * Learning rate schedulers parameters:

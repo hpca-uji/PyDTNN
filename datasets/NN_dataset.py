@@ -319,6 +319,7 @@ class CIFAR10(Dataset):
         return Y_one_hot
 
     def make_train_val_partitions(self, val_split=0.2):
+        if self.test_as_validation: return
         assert 0 <= val_split < 1
         val_size = int(self.train_val_nsamples * val_split)
 
@@ -447,6 +448,7 @@ class ImageNet(Dataset):
         return self.data_generator(self.test_path, self.test_files, batch_size, op="test")
 
     def make_train_val_partitions(self, val_split=0.2):
+        if self.test_as_validation: return
         assert 0 <= val_split < 1        
         self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_train_file)
 
