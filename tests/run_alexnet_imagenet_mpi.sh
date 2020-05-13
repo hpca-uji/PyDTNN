@@ -13,11 +13,11 @@ NUMPROCS=15
 PROCS_PER_NODE=$(($NUMPROCS / $NUMNODES))
 
 NODETYPE=hexa
-LASTH=`echo $NUMPR - 1 | bc`
+LASTH=`echo $NUMNODES - 1 | bc`
 HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
 
-mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 \
-       -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
+# -genv LD_PRELOAD $EXTRAELIB
+mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
        python3 -u benchmarks_CNN.py \
          --model=alexnet \
          --dataset=imagenet \
