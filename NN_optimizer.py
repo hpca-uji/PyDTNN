@@ -65,7 +65,7 @@ class SGD(Optimizer):
             lr = lr * (1. / (1. + self.decay * it))
         setattr(layer, "it", it+1)
 
-        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+        for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity = getattr(layer, "velocity_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
 
@@ -95,7 +95,7 @@ class RMSProp(Optimizer):
             lr = lr * (1. / (1. + self.decay * it))
         setattr(layer, "it", it+1)
 
-        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+        for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = getattr(layer, "cache_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
 
@@ -123,7 +123,7 @@ class Adam(Optimizer):
             lr = lr * (1. / (1. + self.decay * it))
         setattr(layer, "it", it+1)
 
-        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+        for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = getattr(layer, "m_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
             v = getattr(layer, "v_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
@@ -158,7 +158,7 @@ class Nadam(Optimizer):
             lr = lr * (1. / (1. + self.decay * it))
         setattr(layer, "it", it+1)
 
-        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+        for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = getattr(layer, "m_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
             v = getattr(layer, "v_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))

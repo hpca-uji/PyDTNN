@@ -111,7 +111,7 @@ class FC(Layer):
         self.act = getattr(NN_activation, activation)
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
         self.bias_initializer = getattr(NN_initializer, bias_initializer)
-        self.train_vars, self.grad_vars = ["weights", "bias"], ["dw", "db"]
+        self.grad_vars = {"weights": "dw", "bias": "db"}
         
     def initialize(self):
         self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
@@ -153,7 +153,7 @@ class Conv2D(Layer):
         self.act = getattr(NN_activation, activation)
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
         self.bias_initializer = getattr(NN_initializer, bias_initializer)
-        self.train_vars, self.grad_vars = ["weights", "bias"], ["dw", "db"]
+        self.grad_vars = {"weights": "dw", "bias": "db"}
 
     def initialize(self):
         self.ci, self.hi, self.wi = self.prev_layer.shape
@@ -297,7 +297,7 @@ class BatchNormalization(Layer):
         self.epsilon = epsilon
         self.moving_mean_initializer = getattr(NN_initializer, moving_mean_initializer)
         self.moving_variance_initializer = getattr(NN_initializer, moving_variance_initializer)
-        self.train_vars, self.grad_vars = ["beta", "gamma"], ["dbeta", "dgamma"]
+        self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
 
     def initialize(self):
         self.shape = self.prev_layer.shape
