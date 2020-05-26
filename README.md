@@ -18,14 +18,16 @@ Supported layers:
 
   * Fully-connected
   * Convolutional 2D
-  * Max pooling
+  * Max pooling 2D
   * Dropout
+  * Flatten
+  * Batch normalization
 
 Supported datasets:
 
   * **MNIST** handwritten digit database. This dataset is included into the project.
 
-  * **CIFAR10** database of the 80 million tiny images dataset. This dataset is not included into the project. Please, download the Python version from: https://www.cs.toronto.edu/~kriz/cifar.html
+  * **CIFAR10** database of the 80 million tiny images dataset. This dataset is not included into the project. Please, download the binary version from: https://www.cs.toronto.edu/~kriz/cifar.html
 
   * **ImageNet**: the PyDTNN module for this dataset requires a preprocessed ImageNet 
   dataset split into 1,024 files in the NPZ Numpy's compressed array format containing the images/labels, similar to what TensorFlow uses. Each of these files should store the images 
@@ -60,7 +62,7 @@ which can be install by typing ``pip install -r requirements.txt``.
 You will also need a MPI library installed, such as OpenMPI, MPICH or MVAPICH2.
 
 To realize the im2col/col2im transforms for Convolutional layers in parallel, 
-it is necessary to compile ``NN_im2col_cython.pyx`` Cython module (see ``compile_im2col.sh`` script).
+it is necessary to compile Cython pyx modules (see ``compile_cython_modules.sh`` script).
 ```
 LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
 ```
@@ -148,29 +150,29 @@ $ mpirun -np 4 \
          --dtype=float32
 
 **** Creating simplecnn model...
-┌───────┬──────────┬─────────┬───────────────┬─────────────────┬─────────┬─────────┐
-│ Layer │   Type   │ #Params │ Output shape  │  Weights shape  │ Padding │ Stride  │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   0   │  Input   │    0    │  (1, 28, 28)  │                 │         │         │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   1   │  Conv2D  │   40    │  (4, 26, 26)  │  (4, 1, 3, 3)   │    0    │    1    │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   2   │   Relu   │    0    │  (4, 26, 26)  │                 │         │         │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   3   │  Conv2D  │   296   │  (8, 24, 24)  │  (8, 4, 3, 3)   │    0    │    1    │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   4   │   Relu   │    0    │  (8, 24, 24)  │                 │         │         │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   5   │  Pool2D  │    0    │  (8, 12, 12)  │                 │    0    │    2    │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   6   │    FC    │ 147584  │    (128,)     │   (1152, 128)   │         │         │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   7   │   Relu   │    0    │    (128,)     │                 │         │         │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   8   │    FC    │  1290   │     (10,)     │    (128, 10)    │         │         │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤
-│   9   │ Softmax  │    0    │     (10,)     │                 │         │         │
-└───────┴──────────┴─────────┴───────────────┴─────────────────┴─────────┴─────────┘
+┌───────┬──────────┬─────────┬───────────────┬─────────────────┬─────────────────────┐
+│ Layer │   Type   │ #Params │ Output shape  │  Weights shape  │     Parameters      │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   0   │  Input   │    0    │  (1, 28, 28)  │                 │                     │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   1   │  Conv2D  │   40    │  (4, 26, 26)  │  (4, 1, 3, 3)   │ stride=0, padding=1 │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   2   │   Relu   │    0    │  (4, 26, 26)  │                 │                     │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   3   │  Conv2D  │   296   │  (8, 24, 24)  │  (8, 4, 3, 3)   │ stride=0, padding=1 │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   4   │   Relu   │    0    │  (8, 24, 24)  │                 │                     │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   5   │  Pool2D  │    0    │  (8, 12, 12)  │                 │ stride=0, padding=2 │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   6   │    FC    │ 147584  │    (128,)     │   (1152, 128)   │                     │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   7   │   Relu   │    0    │    (128,)     │                 │                     │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   8   │    FC    │  1290   │     (10,)     │    (128, 10)    │                     │
+├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
+│   9   │ Softmax  │    0    │     (10,)     │                 │                     │
+└───────┴──────────┴─────────┴───────────────┴─────────────────┴─────────────────────┘
 **** Loading mnist dataset...
 **** Parameters:
   model                         : simplecnn

@@ -43,10 +43,9 @@ from NN_activation import *
 
 def create_simplemlp(model):
     model.add( Input(shape=(1, 28, 28)) )
-    #model.add( Flatten() )
-    model.add( FC(shape=(512,), activation=Relu()) )
-    model.add( FC(shape=(512,), activation=Relu()) )
-    model.add( FC(shape=(512,), activation=Relu()) )
-    model.add( FC(shape=(10,),  activation=Softmax()) )
-
+    model.add( Flatten() )
+    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(10,),  activation="softmax") )
     return model

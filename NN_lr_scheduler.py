@@ -190,4 +190,8 @@ class ModelCheckpoint(LRScheduler):
                 if self.last_filename: os.remove(self.last_filename)
                 self.last_filename = self.filename
 
-            
+# Compatibility aliases
+warm_up = WarmUpLRScheduler
+early_stopping = EarlyStopping
+reduce_lr_on_plateau = ReduceLROnPlateau
+model_checkpoint = ModelCheckpoint            

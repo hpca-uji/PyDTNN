@@ -47,12 +47,12 @@ def create_vgg11(model):
     conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=Relu()) )
-        model.add( Pool2D(pool_shape=(2,2), func='max', stride=2) )
-    
-    model.add( FC(shape=(4096,), activation=Relu()) )
-    model.add( Dropout(prob=0.5) )
-    model.add( FC(shape=(4096,), activation=Relu()) )
-    model.add( Dropout(prob=0.5) )
-    model.add( FC(shape=(1000,), activation=Softmax()) )
+            model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation="relu") )
+        model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
+    model.add( Flatten() )
+    model.add( FC(shape=(4096,), activation="relu") )
+    model.add( Dropout(rate=0.5) )
+    model.add( FC(shape=(4096,), activation="relu") )
+    model.add( Dropout(rate=0.5) )
+    model.add( FC(shape=(1000,), activation="softmax") )
     return model

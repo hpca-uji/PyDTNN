@@ -43,13 +43,11 @@ from NN_activation import *
 
 def create_simplecnn(model):
     model.add( Input(shape=(1, 28, 28)) )
-    model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=0, stride=1, activation=Relu()) )
-    model.add( Conv2D(nfilters=8, filter_shape=(3, 3), padding=0, stride=1, activation=Relu()) )
-    model.add( Pool2D(pool_shape=(2,2), func='max', stride=2) )
-    #model.add( Flatten() )
-    model.add( FC(shape=(128,), activation=Relu()) )
-    #model.add( Dropout(prob=0.5) )
-    #model.add( FC(shape=(36,), activation=Sigmoid()) )
-    model.add( FC(shape=(10,), activation=Softmax()) )
-
+    model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu") )
+    model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu") )
+    model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
+    model.add( Flatten() )
+    model.add( FC(shape=(128,), activation="relu") )
+    model.add( Dropout(rate=0.5) )
+    model.add( FC(shape=(10,), activation="softmax") )
     return model

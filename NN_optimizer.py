@@ -59,24 +59,24 @@ class SGD(Optimizer):
         self.decay = decay
 
     def update(self, layer, batch_size):
-        layer.velocity_w = getattr(layer, "velocity_w", np.zeros_like(layer.weights, dtype=layer.dtype))
-        layer.velocity_b = getattr(layer, "velocity_b", np.zeros_like(layer.bias, dtype=layer.dtype))
-        layer.iter       = getattr(layer, "iter", 0)
-
+        it = getattr(layer, "it", 0)
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * layer.iter))
-        layer.iter+= 1
+            lr = lr * (1. / (1. + self.decay * it))
+        setattr(layer, "it", it+1)
 
-        layer.velocity_w = self.momentum * layer.velocity_w - lr * layer.dw
-        layer.velocity_b = self.momentum * layer.velocity_b - lr * layer.db
-    
-        if self.nesterov:
-            layer.weights += self.momentum * layer.velocity_w - lr * layer.dw
-            layer.bias    += self.momentum * layer.velocity_b - lr * layer.db
-        else:
-            layer.weights += layer.velocity_w
-            layer.bias    += layer.velocity_b
+        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+            w, dw = getattr(layer, w_), getattr(layer, dw_)
+            velocity = getattr(layer, "velocity_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
+
+            velocity = self.momentum * velocity - lr * dw
+            if self.nesterov:
+                w += self.momentum * velocity - lr * dw
+            else:
+                w += velocity
+
+            setattr(layer, w_, w)
+            setattr(layer, "velocity_%s" % (w_), velocity)
 
 
 class RMSProp(Optimizer):
@@ -89,20 +89,21 @@ class RMSProp(Optimizer):
         self.decay = decay        
 
     def update(self, layer, batch_size):
-        layer.cache_w = getattr(layer, "cache_w", np.zeros_like(layer.weights, dtype=layer.dtype))
-        layer.cache_b = getattr(layer, "cache_b", np.zeros_like(layer.bias, dtype=layer.dtype))
-        layer.iter    = getattr(layer, "iter", 0)
-
+        it = getattr(layer, "it", 0)
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * layer.iter))
-        layer.iter+= 1
+            lr = lr * (1. / (1. + self.decay * it))
+        setattr(layer, "it", it+1)
 
-        layer.cache_w = self.rho * layer.cache_w + (1 - self.rho) * np.power(layer.dw, 2)
-        layer.cache_b = self.rho * layer.cache_b + (1 - self.rho) * np.power(layer.db, 2)
+        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+            w, dw = getattr(layer, w_), getattr(layer, dw_)
+            cache = getattr(layer, "cache_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
 
-        layer.weights -= lr * layer.dw / np.sqrt(layer.cache_w + self.epsilon)
-        layer.bias    -= lr * layer.db / np.sqrt(layer.cache_b + self.epsilon)
+            cache = self.rho * cache + (1 - self.rho) * dw**2
+            w -= lr * dw / np.sqrt(cache + self.epsilon)
+
+            setattr(layer, w_, w)
+            setattr(layer, "cache_%s" % (w_), cache)
 
 
 class Adam(Optimizer):
@@ -116,29 +117,28 @@ class Adam(Optimizer):
         self.decay = decay
 
     def update(self, layer, batch_size):
-        layer.m_w  = getattr(layer, "m_w", np.zeros_like(layer.weights, dtype=layer.dtype))
-        layer.v_w  = getattr(layer, "v_w", np.zeros_like(layer.weights, dtype=layer.dtype))
-        layer.m_b  = getattr(layer, "m_b", np.zeros_like(layer.bias, dtype=layer.dtype))
-        layer.v_b  = getattr(layer, "v_b", np.zeros_like(layer.bias, dtype=layer.dtype))
-        layer.iter = getattr(layer, "iter", 0)
-
+        it = getattr(layer, "it", 0)
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * layer.iter))
-        layer.iter+= 1    
+            lr = lr * (1. / (1. + self.decay * it))
+        setattr(layer, "it", it+1)
 
-        layer.m_w = self.beta1 * layer.m_w + (1 - self.beta1) * layer.dw
-        layer.v_w = self.beta2 * layer.v_w + (1 - self.beta2) * np.power(layer.dw, 2)
-        layer.m_b = self.beta1 * layer.m_b + (1 - self.beta1) * layer.db
-        layer.v_b = self.beta2 * layer.v_b + (1 - self.beta2) * np.power(layer.db, 2)
+        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+            w, dw = getattr(layer, w_), getattr(layer, dw_)
+            m = getattr(layer, "m_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
+            v = getattr(layer, "v_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
+
+            m = self.beta1 * m + (1 - self.beta1) * dw
+            v = self.beta2 * v + (1 - self.beta2) * dw**2
+
+            mt = m / (1 - self.beta1**it)
+            vt = v / (1 - self.beta2**it)
     
-        mt_w = layer.m_w / (1 - np.power(self.beta1, layer.iter))
-        vt_w = layer.v_w / (1 - np.power(self.beta2, layer.iter))
-        mt_b = layer.m_b / (1 - np.power(self.beta1, layer.iter))
-        vt_b = layer.v_b / (1 - np.power(self.beta2, layer.iter))
-    
-        layer.weights -= lr * mt_w / (np.sqrt(vt_w + self.epsilon))
-        layer.bias    -= lr * mt_b / (np.sqrt(vt_b + self.epsilon))
+            w -= lr * mt / np.sqrt(vt + self.epsilon)
+
+            setattr(layer, w_, w)
+            setattr(layer, "m_%s" % (w_), m)
+            setattr(layer, "v_%s" % (w_), v)
 
 
 class Nadam(Optimizer):
@@ -152,27 +152,25 @@ class Nadam(Optimizer):
         self.decay = decay
 
     def update(self, layer, batch_size):
-        effective_learning_rate = self.learning_rate / float(batch_size)
-        layer.m_w  = getattr(layer, "m_w", np.zeros_like(layer.weights, dtype=layer.dtype))
-        layer.v_w  = getattr(layer, "v_w", np.zeros_like(layer.weights, dtype=layer.dtype))
-        layer.m_b  = getattr(layer, "m_b", np.zeros_like(layer.bias, dtype=layer.dtype))
-        layer.v_b  = getattr(layer, "v_b", np.zeros_like(layer.bias, dtype=layer.dtype))
-        layer.iter = getattr(layer, "iter", 0)
-
+        it = getattr(layer, "it", 0)
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * layer.iter))
-        layer.iter+= 1 
+            lr = lr * (1. / (1. + self.decay * it))
+        setattr(layer, "it", it+1)
 
-        layer.m_w = self.beta1 * layer.m_w + (1 - self.beta1) * layer.dw
-        layer.v_w = self.beta2 * layer.v_w + (1 - self.beta2) * np.power(layer.dw, 2)
-        layer.m_b = self.beta1 * layer.m_b + (1 - self.beta1) * layer.db
-        layer.v_b = self.beta2 * layer.v_b + (1 - self.beta2) * np.power(layer.db, 2)
+        for w_, dw_ in zip(layer.train_vars, layer.grad_vars):
+            w, dw = getattr(layer, w_), getattr(layer, dw_)
+            m = getattr(layer, "m_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
+            v = getattr(layer, "v_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
+
+            m = self.beta1 * m + (1 - self.beta1) * dw
+            v = self.beta2 * v + (1 - self.beta2) * dw**2
+
+            mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1**it)
+            vt = v / (1 - self.beta2**it)
     
-        mt_w = (layer.m_w / (1 - np.power(self.beta1, layer.iter))) + ((1 - self.beta1) * layer.dw / (1 - np.power(self.beta1, layer.iter)))
-        vt_w = layer.v_w  / (1 - np.power(self.beta2, layer.iter))
-        mt_b = (layer.m_b / (1 - np.power(self.beta1, layer.iter))) + ((1 - self.beta1) * layer.db / (1 - np.power(self.beta1, layer.iter)))
-        vt_b = layer.v_b  / (1 - np.power(self.beta2, layer.iter))
+            w -= lr * mt / np.sqrt(vt + self.epsilon)
 
-        layer.weights -= lr * mt_w / (np.sqrt(vt_w + self.epsilon))
-        layer.bias    -= lr * mt_b / (np.sqrt(vt_b + self.epsilon))
+            setattr(layer, w_, w)
+            setattr(layer, "m_%s" % (w_), m)
+            setattr(layer, "v_%s" % (w_), v)
