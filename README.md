@@ -189,7 +189,6 @@ $ mpirun -np 4 \
   shared_storage                : True
   optimizer                     : Adam
   learning_rate                 : 0.1
-  effective_learning_rate       : 0.000390625
   momentum                      : 0.9
   decay_rate                    : 0.9
   beta1                         : 0.99
