@@ -70,9 +70,7 @@ def generate_distribution(shape, scale, mode, distribution, dtype):
     return x
 
 def glorot_uniform(shape, layer):
-    dist = generate_distribution(shape, 1.0, "fan_avg", "uniform", layer.dtype)
-    print("----", np.min(dist), np.max(dist), np.mean(dist), np.histogram(dist)[0])
-    return dist
+    return generate_distribution(shape, 1.0, "fan_avg", "uniform", layer.dtype)
 
 def glorot_normal(shape, layer):
     return generate_distribution(shape, 1.0, "fan_avg", "normal", layer.dtype)
