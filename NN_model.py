@@ -278,14 +278,14 @@ class Model:
             if self.rank == 0:
                 pbar.close()
 
-            # for X_batch, Y_batch, batch_size in val_batch_generator:
-            #     val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
-            #     val_total_loss, val_batch_count, string = \
-            #         self.__update_running_average(val_batch_loss, val_total_loss, 
-            #                                       val_batch_count, batch_size,
-            #                                       loss_metrics, prefix="val_")
-            #     if self.rank == 0:
-            #         print("\033[A\033[%dC\b, %s]" % (bar_width, string))
+            for X_batch, Y_batch, batch_size in val_batch_generator:
+                val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
+                val_total_loss, val_batch_count, string = \
+                    self.__update_running_average(val_batch_loss, val_total_loss, 
+                                                  val_batch_count, batch_size,
+                                                  loss_metrics, prefix="val_")
+                if self.rank == 0:
+                    print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
             for lr_sched in lr_schedulers:
                 lr_sched.on_epoch_end(self, optimizer, loss_metrics, 
