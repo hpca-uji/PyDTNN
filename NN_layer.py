@@ -300,16 +300,14 @@ class BatchNormalization(Layer):
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
 
     def initialize(self):
-        self.shape = self.prev_layer.shape
+        self.shape = shape_ = self.prev_layer.shape
         self.spatial = len(self.shape) > 2
         if self.spatial:
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
-            self.running_mean = np.zeros((self.co), dtype=self.dtype)
-            self.running_var = np.zeros((self.co), dtype=self.dtype)
-        else:
-            self.running_mean = np.zeros((self.shape), dtype=self.dtype)
-            self.running_var = np.zeros((self.shape), dtype=self.dtype)
+            shape_ = (self.ci)
+        self.running_mean = np.zeros(shape_, dtype=self.dtype)
+        self.running_var = np.zeros(shape_, dtype=self.dtype)
 
     def forward(self, prev_a, comm=None):
         if self.spatial:
