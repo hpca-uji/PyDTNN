@@ -313,7 +313,6 @@ class BatchNormalization(Layer):
 
     def forward(self, prev_a, comm=None):
         if self.spatial:
-            N, C, H, W = prev_a.shape
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
         if self.model.mode == "train":
@@ -343,21 +342,21 @@ class BatchNormalization(Layer):
             self.a = self.gamma * self.xn + self.beta
 
         if self.spatial:
-            self.a = self.a.reshape(N, H, W, C).transpose(0, 3, 1, 2)
+            self.a = self.a.reshape(N, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
 
     def backward(self, prev_dx):
         N = prev_dx.shape[0]
         if self.spatial:          
             prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
-        self.dgamma = (prev_dx * self.xn).sum(axis=0)
-        self.dbeta = prev_dx.sum(axis=0)
+        self.dgamma = np.sum((prev_dx * self.xn), axis=0)
+        self.dbeta = np.sum(prev_dx, axis=0)
         dxn = prev_dx * self.gamma
 
         if self.model.mode == "train":
             dx = 1/N / self.std * (N * dxn - 
-                                   dxn.sum(axis=0) - 
-                                   self.xn * (dxn * self.xn).sum(axis=0))
+                                   np.sum(dxn, axis=0) - 
+                                   self.xn * np.sum((dxn * self.xn), axis=0))
 
         elif self.model.mode == "evaluate":
             dx = dxn / self.std
