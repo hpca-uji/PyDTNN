@@ -310,6 +310,7 @@ class BatchNormalization(Layer):
         self.running_var = np.zeros(shape_, dtype=self.dtype)
 
     def forward(self, prev_a, comm=None):
+        N = prev_a.shape[0]
         if self.spatial:
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 

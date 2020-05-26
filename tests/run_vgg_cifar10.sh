@@ -16,7 +16,7 @@ HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
 # -genv LD_PRELOAD $EXTRAELIB
 #mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
    python3 -u benchmarks_CNN.py \
-         --model=vgg1 \
+         --model=vgg3dobn \
          --dataset=cifar10 \
          --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
          --dataset_test_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
