@@ -34,7 +34,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 
 from NN_model import *
@@ -43,10 +43,9 @@ from NN_activation import *
 
 def create_simplemlp(model):
     model.add( Input(shape=(1, 28, 28)) )
-    #model.add( Flatten() )
-    model.add( FC(shape=(512,), activation=Relu()) )
-    model.add( FC(shape=(512,), activation=Relu()) )
-    model.add( FC(shape=(512,), activation=Relu()) )
-    model.add( FC(shape=(10,),  activation=Softmax()) )
-
+    model.add( Flatten() )
+    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(10,),  activation="softmax") )
     return model

@@ -45,7 +45,7 @@ class Sigmoid(Layer):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         self.a  = 1 / (1 + np.exp(-prev_a))
         self.dx = (self.a * (1 - self.a))
 
@@ -57,7 +57,7 @@ class Relu(Layer):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         self.prev_a = prev_a 
         self.a = np.maximum(0, prev_a)
 
@@ -71,7 +71,7 @@ class Tanh(Layer):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         self.a = np.tanh(prev_a)
 
     def backward(self, prev_dx):
@@ -82,7 +82,7 @@ class Arctanh(Layer):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         return np.arctan(prev_a)
 
     def backward(self, prev_dx):
@@ -93,7 +93,7 @@ class Log(Layer):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         return 1 / (1 + np.exp(-1 * prev_a))
 
     def backward(self, prev_dx):
@@ -104,10 +104,18 @@ class Softmax(Layer):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         self.a = np.exp(prev_a - np.max(prev_a, axis=1, keepdims=True))
         self.a /= np.sum(self.a, axis=1, keepdims=True)
        
     def backward(self, prev_dx):
-        return prev_dx / prev_dx.shape[0]
+        return prev_dx
 
+# Compatibility aliases
+
+sigmoid = Sigmoid
+relu = Relu
+tanh = Tanh
+arctanh = Arctanh
+log = Log
+softmax = Softmax

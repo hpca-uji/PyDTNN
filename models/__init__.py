@@ -1,18 +1,19 @@
-import importlib, sys, numpy as np
+import importlib, sys
+from NN_model import *
 
-def get_dataset(params):
+def get_model(params):
     try:
-        dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet"}
-        dtype = getattr(np, params.dtype)
-        dataset_mod = importlib.import_module("datasets.NN_dataset")
-        dataset_obj = getattr(dataset_mod, dataset_name[params.dataset])
-        dataset = dataset_obj(train_path         = params.dataset_train_path, 
-                              test_path          = params.dataset_test_path,
-                              model              = params.model,
-                              test_as_validation = params.test_as_validation, 
-                              dtype              = params.dtype)
+        model_mod = importlib.import_module("models." + params.model)
+        model = Model(params, comm=params.comm, 
+                              non_blocking_mpi=params.non_blocking_mpi,
+                              tracing=params.tracing,
+                              enable_gpu=params.enable_gpu, 
+                              dtype=params.dtype)
+        model = getattr(model_mod, "create_" + params.model)(model)
+       
     except Exception as e:
         import traceback
         print(traceback.format_exc())
         sys.exit(-1)
-    return dataset
+    return model
+

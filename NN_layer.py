@@ -38,7 +38,7 @@ __version__ = "1.0.1"
 
 
 import numpy as np
-import NN_util
+import NN_util, NN_activation, NN_initializer
 
 from math import floor
 from NN_util import printf
@@ -59,43 +59,41 @@ class Layer():
         self.prev_layer, self.next_layer = None, None
         self.weights, self.bias = np.array([]), np.array([])
         self.act = None
+        self.train_vars, self.grad_vars = [], []
 
     def initialize(self):
         self.shape = self.prev_layer.shape
 
     def show(self, attrs=""):
-        if not attrs: attrs= "|{:^17s}|{:^9s}|{:^9s}|".format("","","")
-        print(f"|{self.id:^7d}|{type(self).__name__:^10s}|{self.params:^9d}|{str(self.shape):^15}" + attrs)
-        # if not attrs: attrs= "│{:^17s}│{:^9s}│{:^9s}│".format("","","")
-        # print(f"│{self.id:^7d}│{type(self).__name__:^10s}│{self.params:^9d}│{str(self.shape):^15}" + attrs)
+        if not attrs: attrs= "|{:^17s}|{:^21s}|".format("","")
+        print(f"|{self.id:^7d}|{type(self).__name__:^20s}|{self.params:^9d}|{str(self.shape):^15}" + attrs)
 
     def update_weights(self, optimizer, batch_size):
-        if self.weights.size > 0:
-            optimizer.update(self, batch_size)
+        optimizer.update(self, batch_size)
 
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
             self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
             self.red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
-            self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op = MPI.SUM )
+            self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op=MPI.SUM)
      
     def wait_allreduce_async(self, comm):
         if comm and self.weights.size > 0:
             self.req_AR.Wait()
             self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = self.red_dwb[-self.bias.size:].reshape(self.bias.shape)
+            self.db = self.red_dwb[self.weights.size:].reshape(self.bias.shape)
      
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
-            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            self.red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
+            dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
+            red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
                                     [self.id * PYDL_NUM_EVTS + 3, 
                                      self.id * PYDL_OPS_NUM_EVTS + 6])
-            comm.Allreduce( self.dwb, self.red_dwb, op = MPI.SUM )
+            comm.Allreduce(dwb, red_dwb, op=MPI.SUM)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
             self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = self.red_dwb[-self.bias.size:].reshape(self.bias.shape)
+            self.db = self.red_dwb[self.weights.size:].reshape(self.bias.shape)
 
 
 class Input(Layer):
@@ -106,13 +104,14 @@ class Input(Layer):
 
 class FC(Layer):
 
-    def __init__(self, shape=(1,), activation=None, 
-                 weights_initializer="glorot_normal_initializer",
-                 bias_initializer="zeros_initializer"):
+    def __init__(self, shape=(1,), activation="relu", 
+                 weights_initializer="glorot_uniform",
+                 bias_initializer="zeros"):
         super().__init__(shape)
-        self.act = activation
-        self.weights_initializer = getattr(NN_util, weights_initializer)
-        self.bias_initializer = getattr(NN_util, bias_initializer)
+        self.act = getattr(NN_activation, activation)
+        self.weights_initializer = getattr(NN_initializer, weights_initializer)
+        self.bias_initializer = getattr(NN_initializer, bias_initializer)
+        self.train_vars, self.grad_vars = ["weights", "bias"], ["dw", "db"]
         
     def initialize(self):
         self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
@@ -121,12 +120,11 @@ class FC(Layer):
         self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
         
     def show(self):
-        super().show("|{:^17s}|{:^9s}|{:^9s}|".format(str(self.weights.shape),"",""))
-        # super().show("│{:^17s}│{:^9s}│{:^9s}│".format(str(self.weights.shape),"",""))
+        super().show("|{:^17s}|{:^21s}|".format(str(self.weights.shape),""))
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
-        res = self.matmul(prev_a.reshape(prev_a.shape[0], -1), self.weights)
+        res = self.matmul(prev_a, self.weights)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         self.a = res + self.bias
         
@@ -136,7 +134,7 @@ class FC(Layer):
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
-        self.dw = self.matmul(self.prev_layer.a.reshape(self.prev_layer.a.shape[0], -1).T, prev_dx)
+        self.dw = self.matmul(self.prev_layer.a.T, prev_dx)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         self.db = prev_dx.sum(axis=0)
         return dx
@@ -145,16 +143,17 @@ class FC(Layer):
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
-                 activation=None, weights_initializer="glorot_normal_initializer",
-                 bias_initializer="zeros_initializer_conv"):
+                 activation="relu", weights_initializer="glorot_uniform",
+                 bias_initializer="zeros"):
         super().__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
         self.padding = padding
         self.stride = stride
-        self.weights_initializer = getattr(NN_util, weights_initializer)
-        self.bias_initializer = getattr(NN_util, bias_initializer)
-        self.act = activation
+        self.act = getattr(NN_activation, activation)
+        self.weights_initializer = getattr(NN_initializer, weights_initializer)
+        self.bias_initializer = getattr(NN_initializer, bias_initializer)
+        self.train_vars, self.grad_vars = ["weights", "bias"], ["dw", "db"]
 
     def initialize(self):
         self.ci, self.hi, self.wi = self.prev_layer.shape
@@ -169,10 +168,10 @@ class Conv2D(Layer):
         self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
 
     def show(self):
-        super().show("|{:^17s}|{:^9d}|{:^9d}|".format(str(self.weights.shape), self.padding, self.stride))
-        # super().show("│{:^17s}│{:^9d}│{:^9d}│".format(str(self.weights.shape), self.padding, self.stride))
+        super().show("|{:^17s}|{:^21s}|".format(str(self.weights.shape), \
+            "padding=%d, stride=%d" % (self.padding, self.stride)))
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
         self.prev_a_cols = im2col_cython(prev_a, self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
@@ -184,10 +183,8 @@ class Conv2D(Layer):
 
         a = (res.T + self.bias).T
         self.a = a.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
-        #printf("forward:", type(self).__name__, self.shape, self.a.shape)
 
-    def backward(self, prev_dx):      
-        #printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
+    def backward(self, prev_dx):
         dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
 
@@ -209,16 +206,13 @@ class Conv2D(Layer):
         return dx
 
 
-class Pool2D(Layer):
+class MaxPool2D(Layer):
 
-    def __init__(self, pool_shape=(2,2), func='max', padding=0, stride=1):
+    def __init__(self, pool_shape=(2,2), padding=0, stride=1):
         super().__init__()
         self.pool_shape = pool_shape
-        self.func_str = func
         self.padding = padding
-        self.stride = stride
-        if func != "max":
-            raise func + "is not yet supported!"        
+        self.stride = stride     
 
     def initialize(self):
         self.ci, self.hi, self.wi = self.prev_layer.shape
@@ -230,10 +224,10 @@ class Pool2D(Layer):
         self.n = np.prod(self.shape)
 
     def show(self):
-        super().show("|{:^17s}|{:^9d}|{:^9d}|".format("", self.padding, self.stride))
-        # super().show("│{:^17s}│{:^9d}│{:^9d}│".format("", self.padding, self.stride))
+        super().show("|{:^17s}|{:^21s}|".format(str(self.pool_shape), \
+            "padding=%d, stride=%d" % (self.padding, self.stride)))
 
-    def forward(self, prev_a):
+    def forward(self, prev_a, comm=None):
         prev_a_ = prev_a.reshape(prev_a.shape[0] * self.ci, 1, self.hi, self.wi)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
         a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
@@ -241,12 +235,9 @@ class Pool2D(Layer):
 
         self.maxids = tuple([argmax_cython(a_cols, axis=0), np.arange(a_cols.shape[1])])
         #self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        #self.maxids = tuple([a_cols.argmax(axis=0), np.arange(a_cols.shape[1])])
-        self.a = a_cols[self.maxids].reshape(prev_a.shape[0], self.co, self.ho, self.wo)        
-        #printf("forward:", type(self).__name__, self.shape, self.a.shape)
+        self.a = a_cols[self.maxids].reshape(prev_a.shape[0], self.co, self.ho, self.wo)
 
-    def backward(self, prev_dx):     
-        #printf(" _%d_%s_get_gradient:" % (self.id, type(self).__name__), self.shape)
+    def backward(self, prev_dx):
         dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape)), dtype=self.dtype)
         dx_cols[self.maxids] = prev_dx.flatten()
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
@@ -259,33 +250,118 @@ class Pool2D(Layer):
 
 class Dropout(Layer):
 
-    def __init__(self, prob=0.5):
+    def __init__(self, rate=0.5):
         super().__init__()
-        self.prob = prob
+        self.rate = min(1., max(0., rate))
 
     def initialize(self):
         self.shape = self.prev_layer.shape
+
+    def show(self):
+        super().show("|{:^17s}|{:^21s}|".format("", "rate=%.1f" % (self.rate)))
         
-    def forward(self, prev_a):
-        self.mask = np.random.binomial(1, self.prob, size=self.shape).astype(self.dtype) / self.prob
+    def forward(self, prev_a, comm=None):
+        self.mask = np.random.binomial(1, (1-self.rate), size=self.shape).astype(self.dtype) / (1-self.rate)
         self.a = prev_a * self.mask
 
     def backward(self, prev_dx):
         return prev_dx * self.mask
  
 
-# Flatten layers are not needed anymore!
-# class Flatten(Layer):
-# 
-#     def __init__(self):
-#         super().__init__()
-# 
-#     def initialize(self):
-#         self.shape = (np.prod(self.prev_layer.shape),)
-#         self.n = np.prod(self.shape)
-# 
-#     def forward(self, prev_a):
-#         self.a = prev_a.reshape(prev_a.shape[0], -1)
-# 
-#     def backward(self, prev_dx):
-#         return prev_dx.reshape((prev_dx.shape[0],) + self.prev_layer.shape)
+class Flatten(Layer):
+
+    def __init__(self):
+        super().__init__()
+
+    def initialize(self):
+        self.shape = (np.prod(self.prev_layer.shape),)
+        self.n = np.prod(self.shape)
+
+    def forward(self, prev_a, comm=None):
+        self.a = prev_a.reshape(prev_a.shape[0], -1)
+
+    def backward(self, prev_dx):
+        return prev_dx.reshape((prev_dx.shape[0],) + self.prev_layer.shape)
+
+
+class BatchNormalization(Layer):
+
+    def __init__(self, beta=1.0, gamma=0.0, 
+                 momentum=0.99, epsilon=0.001,
+                 moving_mean_initializer="zeros",
+                 moving_variance_initializer="ones"):
+        super().__init__()
+        self.beta = beta        
+        self.gamma = gamma
+        self.momentum = momentum
+        self.epsilon = epsilon
+        self.moving_mean_initializer = getattr(NN_initializer, moving_mean_initializer)
+        self.moving_variance_initializer = getattr(NN_initializer, moving_variance_initializer)
+        self.train_vars, self.grad_vars = ["beta", "gamma"], ["dbeta", "dgamma"]
+
+    def initialize(self):
+        self.shape = self.prev_layer.shape
+        self.spatial = len(self.shape) > 2
+        if self.spatial:
+            self.co = self.ci = self.shape[0]
+            self.hi, self.wi = self.shape[1], self.shape[2]
+            self.running_mean = np.zeros((self.co), dtype=self.dtype)
+            self.running_var = np.zeros((self.co), dtype=self.dtype)
+        else:
+            self.running_mean = np.zeros((self.shape), dtype=self.dtype)
+            self.running_var = np.zeros((self.shape), dtype=self.dtype)
+
+    def forward(self, prev_a, comm=None):
+        if self.spatial:
+            N, C, H, W = prev_a.shape
+            prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+
+        if self.model.mode == "train":
+            mu = prev_a.mean(axis=0)
+            if comm != None:
+                red_mu = np.zeros_like(mu, dtype=self.dtype)
+                comm.Allreduce(mu, red_mu, op = MPI.SUM)
+                mu = red_mu / comm.Get_size()
+
+            xc = (prev_a - mu)
+            var = np.mean(xc**2, axis=0)
+            if comm != None:
+                red_var = np.zeros_like(var, dtype=self.dtype)
+                comm.Allreduce(var, red_var, op = MPI.SUM)
+                var = red_var / comm.Get_size()
+
+            self.std = np.sqrt(var + self.epsilon)
+            self.xn = xc / self.std
+            self.a = self.gamma * self.xn + self.beta
+  
+            self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
+            self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
+
+        elif self.model.mode == "evaluate":
+            self.std = np.sqrt(self.running_var + self.epsilon)
+            self.xn = (prev_a - self.running_mean) / self.std
+            self.a = self.gamma * self.xn + self.beta
+
+        if self.spatial:
+            self.a = self.a.reshape(N, H, W, C).transpose(0, 3, 1, 2)
+
+    def backward(self, prev_dx):
+        N = prev_dx.shape[0]
+        if self.spatial:          
+            prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+
+        self.dgamma = (prev_dx * self.xn).sum(axis=0)
+        self.dbeta = prev_dx.sum(axis=0)
+        dxn = prev_dx * self.gamma
+
+        if self.model.mode == "train":
+            dx = 1/N / self.std * (N * dxn - 
+                                   dxn.sum(axis=0) - 
+                                   self.xn * (dxn * self.xn).sum(axis=0))
+
+        elif self.model.mode == "evaluate":
+            dx = dxn / self.std
+
+        if self.spatial:
+            dx = dx.reshape(N, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+        return dx

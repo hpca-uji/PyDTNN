@@ -94,24 +94,18 @@ class Model:
             sys.exit(-1)
 
     def show(self):
-        print("+-------+----------+---------+---------------+-----------------+---------+---------+")
-        print("| Layer |   Type   | #Params | Output shape  |  Weights shape  | Padding | Stride  |")
+        print("+-------+--------------------+---------+---------------+-----------------+---------------------+")
+        print("| Layer |        Type        | #Params | Output shape  |  Weights shape  |      Parameters     |")
         for l in self.layers:
-            print('+-------+----------+---------+---------------+-----------------+---------+---------+')
+            print('+-------+--------------------+---------+---------------+-----------------+---------------------+')
             l.show()
-        print('+-------+----------+---------+---------------+-----------------+---------+---------+')
-
-        # print("┌───────┬──────────┬─────────┬───────────────┬─────────────────┬─────────┬─────────┐")
-        # print("│ Layer │   Type   │ #Params │ Output shape  │  Weights shape  │ Padding │ Stride  │")
-        # for l in self.layers:
-        #     print('├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────┼─────────┤')
-        #     l.show()
-        # print('└───────┴──────────┴─────────┴───────────────┴─────────────────┴─────────┴─────────┘')
+        print('+-------+--------------------+---------+---------------+-----------------+---------------------+')
 
     def add(self, layer):
         layer.id = len(self.layers)
         layer.tracer = self.tracer
         layer.dtype = self.dtype
+        layer.model = self
         layer.matmul = getattr(NN_util, {False: "matmul", True: "matmul_gpu"}[self.enable_gpu])
 
         if len(self.layers) > 0:          
@@ -122,7 +116,7 @@ class Model:
         self.layers.append(layer)
         if layer.act:
             layer.act.shape = layer.shape
-            self.add(layer.act)
+            self.add(layer.act())
 
     def load_weights_and_bias(self, filename):
         d = np.load(filename)
@@ -172,6 +166,7 @@ class Model:
                       loss_funcs, optimizer, lr_schedulers):
 
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
+        self.mode = "train"
         local_batch_size = X_batch.shape[0]
 
         for lr_sched in lr_schedulers:
@@ -181,7 +176,7 @@ class Model:
         self.layers[0].a = X_batch
         for l in range(1, len(self.layers)):
             self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 1)
-            self.layers[l].forward(self.layers[l-1].a)
+            self.layers[l].forward(self.layers[l-1].a, self.comm)
             self.tracer.emit_event(PYDL_EVT, 0)
 
         Y_pred = self.layers[-1].a
@@ -285,14 +280,14 @@ class Model:
             if self.rank == 0:
                 pbar.close()
 
-            for X_batch, Y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
-                val_total_loss, val_batch_count, string = \
-                    self.__update_running_average(val_batch_loss, val_total_loss, 
-                                                  val_batch_count, batch_size,
-                                                  loss_metrics, prefix="val_")
-                if self.rank == 0:
-                    print("\033[A\033[%dC\b, %s]" % (bar_width, string))
+            # for X_batch, Y_batch, batch_size in val_batch_generator:
+            #     val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
+            #     val_total_loss, val_batch_count, string = \
+            #         self.__update_running_average(val_batch_loss, val_total_loss, 
+            #                                       val_batch_count, batch_size,
+            #                                       loss_metrics, prefix="val_")
+            #     if self.rank == 0:
+            #         print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
             for lr_sched in lr_schedulers:
                 lr_sched.on_epoch_end(self, optimizer, loss_metrics, 
@@ -308,7 +303,7 @@ class Model:
 
         # Forward pass (FP)
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
-
+        self.mode = "evaluate"
         self.layers[0].a = X_batch
         for l in range(1, len(self.layers)):
             self.tracer.emit_event(PYDL_EVT, self.layers[l].id * 7 + 2)

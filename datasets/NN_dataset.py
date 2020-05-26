@@ -264,7 +264,8 @@ class MNIST(Dataset):
                 self.Y_train_val = self.Y_train_val[:subset_size,...]
             self.train_val_nsamples = self.X_train_val.shape[0]
             self.train_nsamples = self.train_val_nsamples
-
+            if self.test_as_validation:
+                self.X_train, self.Y_train = self.X_train_val, self.Y_train_val  
 
 class CIFAR10(Dataset):
 
@@ -281,8 +282,8 @@ class CIFAR10(Dataset):
         self.train_val_nsamples = 50000
         self.test_nsamples  = 10000
 
-        XY_train_fname = "data_batch_%d"
-        XY_test_fname  = "test_batch"
+        XY_train_fname = "data_batch_%d.bin"
+        XY_test_fname  = "test_batch.bin"
 
         for b in range(1, 6):
             self.X_train_val_aux, self.Y_train_val_aux = \
@@ -307,10 +308,9 @@ class CIFAR10(Dataset):
             self.train_nsamples = self.X_train.shape[0]
 
     def __read_file(self, fname):
-        import pickle
         with open(fname, 'rb') as f:
-            d = pickle.load(f, encoding='bytes')
-            X, Y = d[b"data"], np.array(d[b"labels"])
+            im = np.frombuffer(f.read(), dtype=np.uint8).reshape(10000, 3*32*32+1)
+            Y, X = im[:,0].flatten(), im[:,1:].flatten()
             return X, Y
 
     def __one_hot_encoder(self, Y):
@@ -352,6 +352,8 @@ class CIFAR10(Dataset):
                 self.Y_train_val = self.Y_train_val[:subset_size,...]
             self.train_val_nsamples = self.X_train_val.shape[0]
             self.train_nsamples = self.train_val_nsamples
+            if self.test_as_validation:
+                self.X_train, self.Y_train = self.X_train_val, self.Y_train_val            
 
  
 class ImageNet(Dataset):

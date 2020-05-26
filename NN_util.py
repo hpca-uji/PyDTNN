@@ -40,6 +40,7 @@ __version__ = "1.0.1"
 import numpy as np
 from scipy.signal import convolve2d
 import scipy.linalg.blas as slb
+import scipy.stats as stats
 
 try:
     import pycuda.autoinit
@@ -49,25 +50,6 @@ try:
     import skcuda.misc as cumisc
 except:
     pass
-
-# Initializers
-
-def glorot_uniform_initializer(out_shape, layer):
-    lim = np.sqrt(6.0 / float((np.prod(layer.prev_layer.shape)+np.prod(layer.shape))))
-    return np.random.uniform(-lim, lim, out_shape).astype(layer.dtype)
-
-def glorot_normal_initializer(out_shape, layer):
-    stddev = np.sqrt(2.0 / float((np.prod(layer.prev_layer.shape)+np.prod(layer.shape))))
-    return np.random.normal(0.0, stddev, out_shape).astype(layer.dtype)
-
-def ones_initializer(out_shape, layer):
-    return np.ones(out_shape).astype(layer.dtype)
-
-def zeros_initializer(out_shape, layer):
-    return np.zeros(out_shape).astype(layer.dtype)
-
-def zeros_initializer_conv(out_shape, layer):
-    return np.random.uniform(-0.1, 0.1, out_shape).astype(layer.dtype)
 
 # Matmul operation
 
