@@ -59,7 +59,7 @@ class Layer():
         self.prev_layer, self.next_layer = None, None
         self.weights, self.bias = np.array([]), np.array([])
         self.act = None
-        self.train_vars, self.grad_vars = [], []
+        self.grad_vars = {}
 
     def initialize(self):
         self.shape = self.prev_layer.shape
