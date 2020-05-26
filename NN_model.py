@@ -121,22 +121,20 @@ class Model:
     def load_weights_and_bias(self, filename):
         d = np.load(filename)
         for l, layer in enumerate(self.layers):
-            if layer.weights.size > 0:
-                base = ("%s_%s" % (str(l), type(layer).__name__))
-                key_w, key_b = (base + "_w"), (base + "_b")
-                if key_w in d.files: layer.weights = d[key_w]
-                else: print("Could not find weights for %s layer in %s file!" % (key_w, filename))
-                if key_b in d.files: layer.bias = d[key_b]
-                else: print("Could not find bias for %s layer in %s file!" % (key_b, filename))
-
+            base = ("%s_%s" % (str(l), type(layer).__name__))
+            for p in layer.grad_vars:
+                key = ("%s_%s" % (base, p))
+                if key in d.files: setattr(layer, p, d[key])
+                else: print("Could not find %s for layer %s in %s file!" % (p, base, filename))
+                
     def store_weights_and_bias(self, filename):
         if self.params.shared_storage and self.rank == 0:
-            d = {}
+            d = {}            
             for l, layer in enumerate(self.layers):
-                if layer.weights.size > 0:
-                    base = ("%s_%s" % (str(l), type(layer).__name__))
-                    d[base + "_w"] = layer.weights
-                    d[base + "_b"] = layer.bias
+                base = ("%s_%s" % (str(l), type(layer).__name__))
+                for p in layer.grad_vars:
+                    key = ("%s_%s" % (base, p))
+                    d[key] = getattr(layer, p)
             np.savez_compressed(filename, **d)
 
     def __compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
