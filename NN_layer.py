@@ -104,11 +104,11 @@ class Input(Layer):
 
 class FC(Layer):
 
-    def __init__(self, shape=(1,), activation="relu", 
+    def __init__(self, shape=(1,), activation="", 
                  weights_initializer="glorot_uniform",
                  bias_initializer="zeros"):
         super().__init__(shape)
-        self.act = getattr(NN_activation, activation)
+        self.act = getattr(NN_activation, activation, None)
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
         self.bias_initializer = getattr(NN_initializer, bias_initializer)
         self.grad_vars = {"weights": "dw", "bias": "db"}
@@ -143,14 +143,14 @@ class FC(Layer):
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
-                 activation="relu", weights_initializer="glorot_uniform",
+                 activation="", weights_initializer="glorot_uniform",
                  bias_initializer="zeros"):
         super().__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
         self.padding = padding
         self.stride = stride
-        self.act = getattr(NN_activation, activation)
+        self.act = getattr(NN_activation, activation, None)
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
         self.bias_initializer = getattr(NN_initializer, bias_initializer)
         self.grad_vars = {"weights": "dw", "bias": "db"}
