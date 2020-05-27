@@ -63,7 +63,8 @@ class SGD(Optimizer):
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
-        setattr(layer, "it", it+1)
+        it += 1    
+        setattr(layer, "it", it)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -93,7 +94,8 @@ class RMSProp(Optimizer):
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
-        setattr(layer, "it", it+1)
+        it += 1    
+        setattr(layer, "it", it)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -121,7 +123,8 @@ class Adam(Optimizer):
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
-        setattr(layer, "it", it+1)
+        it += 1    
+        setattr(layer, "it", it)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -156,7 +159,8 @@ class Nadam(Optimizer):
         lr = self.learning_rate / batch_size
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
-        setattr(layer, "it", it+1)
+        it += 1    
+        setattr(layer, "it", it)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
