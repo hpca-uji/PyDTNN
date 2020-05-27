@@ -286,7 +286,7 @@ class Flatten(Layer):
 
 class BatchNormalization(Layer):
 
-    def __init__(self, beta=1.0, gamma=0.0, 
+    def __init__(self, beta=0.0, gamma=1.0, 
                  momentum=0.99, epsilon=0.001,
                  moving_mean_initializer="zeros",
                  moving_variance_initializer="ones"):
