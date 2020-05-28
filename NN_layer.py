@@ -86,7 +86,7 @@ class Layer():
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
             dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
+            red_dwb = np.zeros_like(dwb, dtype=self.dtype)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
                                     [self.id * PYDL_NUM_EVTS + 3, 
                                      self.id * PYDL_OPS_NUM_EVTS + 6])
