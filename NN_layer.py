@@ -315,7 +315,7 @@ class BatchNormalization(Layer):
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
         if self.model.mode == "train":
-            mu = prev_a.mean(axis=0)
+            mu = np.mean(prev_a, axis=0)
             if comm != None:
                 red_mu = np.zeros_like(mu, dtype=self.dtype)
                 comm.Allreduce(mu, red_mu, op = MPI.SUM)
