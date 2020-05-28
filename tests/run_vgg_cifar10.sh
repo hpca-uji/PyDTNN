@@ -7,7 +7,7 @@
 NUMNODES=1
 NUMPROCS=1
 PROCS_PER_NODE=$(($NUMPROCS / $NUMNODES))
-export OMP_NUM_THREADS=12
+export OMP_NUM_THREADS=4
 
 NODETYPE=hexa
 LASTH=`echo $NUMNODES - 1 | bc`
@@ -27,7 +27,7 @@ HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
          --num_epochs=100 \
          --evaluate=False \
          --optimizer=sgd \
-         --learning_rate=0.01 \
+         --learning_rate=0.001 \
          --momentum=0.9 \
          --decay=0 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
