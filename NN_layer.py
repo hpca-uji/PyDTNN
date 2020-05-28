@@ -92,8 +92,8 @@ class Layer():
                                      self.id * PYDL_OPS_NUM_EVTS + 6])
             comm.Allreduce(dwb, red_dwb, op=MPI.SUM)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
-            self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = self.red_dwb[self.weights.size:].reshape(self.bias.shape)
+            self.dw = red_dwb[:self.weights.size].reshape(self.weights.shape)
+            self.db = red_dwb[self.weights.size:].reshape(self.bias.shape)
 
 
 class Input(Layer):
@@ -315,7 +315,7 @@ class BatchNormalization(Layer):
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
         if self.model.mode == "train":
-            mu = prev_a.mean(axis=0)
+            mu = np.mean(prev_a, axis=0)
             if comm != None:
                 red_mu = np.zeros_like(mu, dtype=self.dtype)
                 comm.Allreduce(mu, red_mu, op = MPI.SUM)
