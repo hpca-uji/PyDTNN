@@ -119,12 +119,7 @@ def show_options(params):
             #print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
 
 def get_optimizer(params):
-    if params.optimizer == "sgd":
-        opt = SGD(learning_rate = params.learning_rate,
-                  momentum = params.momentum,
-                  nesterov = params.nesterov,
-                  decay = params.decay)
-    elif params.optimizer == "rmsprop":
+    if params.optimizer == "rmsprop":
         opt = RMSProp(learning_rate = params.learning_rate, 
                   rho = params.rho,
                   epsilon = params.epsilon,
@@ -141,30 +136,32 @@ def get_optimizer(params):
                   beta2 = params.beta2,
                   epsilon = params.epsilon,
                   decay = params.decay)
+    else: # "sgd":
+        opt = SGD(learning_rate = params.learning_rate,
+                  momentum = params.momentum,
+                  nesterov = params.nesterov,
+                  decay = params.decay)        
     return opt
 
 def get_lr_schedulers(params):
     lr_schedulers = []
-    sched_format = {"warm_up"              : "WarmUpLRScheduler", 
-                    "early_stopping"       : "EarlyStopping",
-                    "reduce_lr_on_plateau" : "ReduceLROnPlateau",
-                    "model_checkpoint"     : "ModelCheckpoint"}
     for lr_sched in params.lr_schedulers.split(","):
-        if sched_format[lr_sched] == "WarmUpLRScheduler":
+        if lr_sched == "warm_up":
             lrs = WarmUpLRScheduler(params.warm_up_batches, 
                   params.learning_rate)
-        if sched_format[lr_sched] == "EarlyStopping":
+        elif lr_sched == "early_stopping":
             lrs = EarlyStopping(params.early_stopping_metric, 
                   params.early_stopping_patience)
-        if sched_format[lr_sched] == "ReduceLROnPlateau":
+        elif lr_sched == "reduce_lr_on_plateau":
             lrs = ReduceLROnPlateau(params.reduce_lr_on_plateau_metric, 
                   params.reduce_lr_on_plateau_factor,
                   params.reduce_lr_on_plateau_patience,
                   params.reduce_lr_on_plateau_min_lr)
-        if sched_format[lr_sched] == "ModelCheckpoint":
+        elif lr_sched == "model_checkpoint":
             lrs = ModelCheckpoint(params.model_checkpoint_metric, 
                   params.model_checkpoint_save_freq)
-        lr_schedulers.append(lrs)
+        else: lrs = None
+        if lrs: lr_schedulers.append(lrs)
     return lr_schedulers
 
 if __name__ == "__main__":
@@ -204,7 +201,8 @@ if __name__ == "__main__":
 
     dataset = get_dataset(params)
     if params.steps_per_epoch > 0:
-        dataset.adjust_steps_per_epoch(params.steps_per_epoch, params.batch_size, params.mpi_processes)
+        dataset.adjust_steps_per_epoch(params.steps_per_epoch, 
+                                       params.batch_size, params.mpi_processes)
 
     optimizer = get_optimizer(params)
     lr_schedulers = get_lr_schedulers(params)
