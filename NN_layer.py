@@ -115,8 +115,8 @@ class FC(Layer):
         
     def initialize(self):
         self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
-                                                 np.prod(self.shape[0])), self)
-        self.bias = self.bias_initializer((np.prod(self.shape),), self)
+                                                 np.prod(self.shape[0])), self.dtype)
+        self.bias = self.bias_initializer((np.prod(self.shape),), self.dtype)
         self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
         
     def show(self):
@@ -159,8 +159,8 @@ class Conv2D(Layer):
         self.ci, self.hi, self.wi = self.prev_layer.shape
         self.kh, self.kw = self.filter_shape
 
-        self.weights = self.weights_initializer(((self.co,)+(self.ci,)+self.filter_shape), self)
-        self.bias = self.bias_initializer((self.co,), self)
+        self.weights = self.weights_initializer(((self.co,)+(self.ci,)+self.filter_shape), self.dtype)
+        self.bias = self.bias_initializer((self.co,), self.dtype)
 
         self.ho = floor((self.hi + 2 * self.padding - self.kh) / self.stride) + 1
         self.wo = floor((self.wi + 2 * self.padding - self.kw) / self.stride) + 1
@@ -308,8 +308,8 @@ class BatchNormalization(Layer):
             shape_ = (self.ci)
         self.gamma = np.full(shape_, self.gamma_init_val)
         self.beta = np.full(shape_, self.beta_init_val)
-        self.running_mean = self.moving_mean_initializer(shape_, self)
-        self.running_var = self.moving_variance_initializer(shape_, self)
+        self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
+        self.running_var = self.moving_variance_initializer(shape_, self.dtype)
 
     def forward(self, prev_a, comm=None):
         N = prev_a.shape[0]

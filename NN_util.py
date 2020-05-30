@@ -83,9 +83,9 @@ loss_format = {"categorical_accuracy":      "acc: %5.2f%%",
                "regression_mse":            "mse: %.7f",
                "regression_mae":            "mae: %.7f"}
 
-def categorical_cross_entropy(Y_pred, Y_targ):
+def categorical_cross_entropy(Y_pred, Y_targ, eps=1e-7):
     b = Y_targ.shape[0]
-    return -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)])) / b
+    return -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)] + eps)) / b
 
 def categorical_accuracy(Y_pred, Y_targ):
     b = Y_targ.shape[0]
