@@ -316,8 +316,8 @@ class CIFAR10(Dataset):
             return X, Y
 
     def __normalize_image(self, X):
-        mean = np.mean(X, axis=(0, 1))
-        std  = np.std(X, axis=(0, 1))
+        mean = np.mean(X, axis=(0, 2, 3))
+        std  = np.std(X, axis=(0, 2, 3))
         for c in range(3):
             X[:,c,...] = ((X[:,c,...] / 255.0) - mean[c]) / std[c]
         return X
