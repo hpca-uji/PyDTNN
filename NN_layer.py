@@ -355,7 +355,7 @@ class BatchNormalization(Layer):
         dxn = prev_dx * self.gamma
 
         if self.model.mode == "train":
-            dx = 1/N / self.std * (N * dxn - 
+            dx = 1./N / self.std * (N * dxn - 
                                    np.sum(dxn, axis=0) - 
                                    self.xn * np.sum((dxn * self.xn), axis=0))
 
