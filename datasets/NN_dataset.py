@@ -297,8 +297,10 @@ class CIFAR10(Dataset):
         self.X_test, self.Y_test = self.__read_file("%s/%s" % (self.test_path, XY_test_fname))
 
         self.X_train_val = self.X_train_val.reshape(self.train_val_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
+        self.X_train_val = self.__normalize_image(self.X_train_val)
         self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
         self.X_test = self.X_test.reshape(self.test_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
+        self.X_test = self.__normalize_image(self.X_test)
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
 
         if self.test_as_validation:
@@ -312,6 +314,13 @@ class CIFAR10(Dataset):
             im = np.frombuffer(f.read(), dtype=np.uint8).reshape(10000, 3*32*32+1)
             Y, X = im[:,0].flatten(), im[:,1:].flatten()
             return X, Y
+
+    def __normalize_image(self, X):
+        mean = np.mean(X, axis=(0, 1))
+        std  = np.std(X, axis=(0, 1))
+        for c in range(3):
+            X[:,c,...] = ((X[:,c,...] / 255.0) - mean[c]) / std[c]
+        return X
 
     def __one_hot_encoder(self, Y):
         Y_one_hot = np.zeros((Y.shape[0], self.nclasses), dtype=self.dtype, order="C")
