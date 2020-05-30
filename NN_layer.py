@@ -306,8 +306,8 @@ class BatchNormalization(Layer):
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
             shape_ = (self.ci)
-        self.gamma = np.full(shape_, self.gamma_init_val)
-        self.beta = np.full(shape_, self.beta_init_val)
+        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)
+        self.beta = np.full(shape_, self.beta_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
 
