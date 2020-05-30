@@ -319,16 +319,18 @@ class BatchNormalization(Layer):
         if self.model.mode == "train":
             mu = np.mean(prev_a, axis=0)
             if comm != None:
+                mu /= comm.Get_size()
                 red_mu = np.zeros_like(mu, dtype=self.dtype)
                 comm.Allreduce(mu, red_mu, op = MPI.SUM)
-                mu = red_mu / comm.Get_size()
+                mu = red_mu
 
             xc = (prev_a - mu)
             var = np.mean(xc**2, axis=0)
             if comm != None:
+                var /= comm.Get_size()
                 red_var = np.zeros_like(var, dtype=self.dtype)
                 comm.Allreduce(var, red_var, op = MPI.SUM)
-                var = red_var / comm.Get_size()
+                var = red_var
 
             self.std = np.sqrt(var + self.epsilon)
             self.xn = xc / self.std
