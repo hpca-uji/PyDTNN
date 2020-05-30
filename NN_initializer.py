@@ -69,28 +69,28 @@ def generate_distribution(shape, scale, mode, distribution, dtype):
         x = np.random.uniform(-limit, limit, shape).astype(dtype)
     return x
 
-def glorot_uniform(shape, layer):
-    return generate_distribution(shape, 1.0, "fan_avg", "uniform", layer.dtype)
+def glorot_uniform(shape, dtype):
+    return generate_distribution(shape, 1.0, "fan_avg", "uniform", dtype)
 
-def glorot_normal(shape, layer):
-    return generate_distribution(shape, 1.0, "fan_avg", "normal", layer.dtype)
+def glorot_normal(shape, dtype):
+    return generate_distribution(shape, 1.0, "fan_avg", "normal", dtype)
 
-def he_uniform(shape, layer):
-    return generate_distribution(shape, 2.0, "fan_in", "uniform", layer.dtype)
+def he_uniform(shape, dtype):
+    return generate_distribution(shape, 2.0, "fan_in", "uniform", dtype)
 
-def he_normal(shape, layer):
-    return generate_distribution(shape, 2.0, "fan_in", "normal", layer.dtype)
+def he_normal(shape, dtype):
+    return generate_distribution(shape, 2.0, "fan_in", "normal", dtype)
 
-def lecun_uniform(shape, layer):
-    return generate_distribution(shape, 1.0, "fan_in", "uniform", layer.dtype)
+def lecun_uniform(shape, dtype):
+    return generate_distribution(shape, 1.0, "fan_in", "uniform", dtype)
 
-def lecun_normal(shape, layer):
-    return generate_distribution(shape, 1.0, "fan_in", "normal", layer.dtype)
+def lecun_normal(shape, dtype):
+    return generate_distribution(shape, 1.0, "fan_in", "normal", dtype)
 
-def ones(shape, layer):
-    return np.ones(shape).astype(layer.dtype)
+def ones(shape, dtype):
+    return np.ones(shape).astype(dtype)
 
-def zeros(shape, layer):
-    return np.zeros(shape).astype(layer.dtype)
+def zeros(shape, dtype):
+    return np.zeros(shape).astype(dtype)
 
 
