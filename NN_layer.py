@@ -287,12 +287,12 @@ class Flatten(Layer):
 class BatchNormalization(Layer):
 
     def __init__(self, beta=0.0, gamma=1.0, 
-                 momentum=0.99, epsilon=0.001,
+                 momentum=0.9, epsilon=1e-5,
                  moving_mean_initializer="zeros",
                  moving_variance_initializer="ones"):
         super().__init__()
-        self.beta = beta        
-        self.gamma = gamma
+        self.gamma_init_val = gamma
+        self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
         self.moving_mean_initializer = getattr(NN_initializer, moving_mean_initializer)
@@ -306,8 +306,10 @@ class BatchNormalization(Layer):
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
             shape_ = (self.ci)
-        self.running_mean = np.zeros(shape_, dtype=self.dtype)
-        self.running_var = np.zeros(shape_, dtype=self.dtype)
+        self.gamma = np.full(shape_, self.gamma_init_val)
+        self.beta = np.full(shape_, self.beta_init_val)
+        self.running_mean = self.moving_mean_initializer(shape_, self)
+        self.running_var = self.moving_variance_initializer(shape_, self)
 
     def forward(self, prev_a, comm=None):
         N = prev_a.shape[0]
