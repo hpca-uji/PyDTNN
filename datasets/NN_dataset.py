@@ -296,10 +296,10 @@ class CIFAR10(Dataset):
 
         self.X_test, self.Y_test = self.__read_file("%s/%s" % (self.test_path, XY_test_fname))
 
-        self.X_train_val = self.X_train_val.reshape(self.train_val_nsamples, 3, 32, 32).astype(self.dtype)
+        self.X_train_val = self.X_train_val.reshape(self.train_val_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
         self.X_train_val = self.__normalize_image(self.X_train_val)
         self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
-        self.X_test = self.X_test.reshape(self.test_nsamples, 3, 32, 32).astype(self.dtype)
+        self.X_test = self.X_test.reshape(self.test_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
         self.X_test = self.__normalize_image(self.X_test)
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
 
@@ -319,7 +319,7 @@ class CIFAR10(Dataset):
         mean = np.mean(X, axis=(0, 2, 3))
         std  = np.std(X, axis=(0, 2, 3))
         for c in range(3):
-            X[:,c,...] = ((X[:,c,...] / 255.0) - mean[c]) / std[c]
+            X[:,c,...] = (X[:,c,...] - mean[c]) / std[c]
         return X
 
     def __one_hot_encoder(self, Y):
