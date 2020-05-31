@@ -39,11 +39,12 @@ __version__ = "1.0.1"
 
 import numpy as np
 import NN_util, NN_activation, NN_initializer
-
+import time
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
+from NN_add_cython import add_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
 try:
@@ -181,7 +182,8 @@ class Conv2D(Layer):
         res = self.matmul(w_cols, self.prev_a_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        a = (res.T + self.bias).T
+        # a = res + self.bias.reshape(-1,1)
+        a = add_cython(res, self.bias)
         self.a = a.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
 
     def backward(self, prev_dx):
@@ -233,9 +235,9 @@ class MaxPool2D(Layer):
         a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        self.maxids = tuple([argmax_cython(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        #self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        self.a = a_cols[self.maxids].reshape(prev_a.shape[0], self.co, self.ho, self.wo)
+        # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
+        self.a, self.maxids = argmax_cython(a_cols, axis=0)        
+        self.a = self.a.reshape(prev_a.shape[0], self.co, self.ho, self.wo)
 
     def backward(self, prev_dx):
         dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape)), dtype=self.dtype)
@@ -306,8 +308,8 @@ class BatchNormalization(Layer):
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
             shape_ = (self.ci)
-        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.dtype)
+        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
 
