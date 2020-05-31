@@ -43,73 +43,51 @@ cimport cython
 from cython.parallel import prange
 from math import floor
 
-def argmax_cython(x, axis=0):
-    if axis == 0: x = x.T
+def relu_cython(x):
     #if not x.flags['C_CONTIGUOUS']:
     #    np.ascontiguousarray(x, dtype=np.float32)
-    cdef np.ndarray max = np.zeros((x.shape[0]), dtype=x.dtype)   
-    cdef np.ndarray amax = np.zeros((x.shape[0]), dtype=np.int32)
-    cdef np.ndarray rng = np.zeros((x.shape[0]), dtype=np.int32)
+    shape = x.shape
+    cdef np.ndarray max = np.zeros((np.prod(shape)), dtype=x.dtype)
+    cdef np.ndarray mask = np.zeros((np.prod(shape)), dtype=np.int8)
 
     if (x.dtype == np.int8):
-        argmax_cython_inner_int8(x, max, amax, rng)
+        relu_cython_inner_int8(x.reshape(-1), max, mask)
     elif (x.dtype == np.float32):
-        argmax_cython_inner_float32(x, max, amax, rng)
+        relu_cython_inner_float32(x.reshape(-1), max, mask)
     elif (x.dtype == np.float64):
-        argmax_cython_inner_float64(x, max, amax, rng)
+        relu_cython_inner_float64(x.reshape(-1), max, mask)
     else:
-        print("Type %s not supported for argmax_cython!" % (str(x.dtype)))
+        print("Type %s not supported for relu_cython!" % (str(x.dtype)))
         raise
 
-    return max, tuple([amax, rng])
+    return max.reshape(shape), mask.reshape(shape)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef argmax_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x, 
+cdef relu_cython_inner_int8(np.ndarray[np.int8_t, ndim=1] x, 
                               np.ndarray[np.int8_t, ndim=1] max,
-                              np.ndarray[np.int32_t, ndim=1] amax,
-                              np.ndarray[np.int32_t, ndim=1] rng):
-    cdef int i, j, idx_maxval
-    cdef np.int8_t maxval, minval
-    minval = np.finfo(np.int8).min
-
+                              np.ndarray[np.int8_t, ndim=1] mask):
+    cdef int i, j=0
     for i in prange(x.shape[0], nogil=True):
-        maxval, idx_maxval = minval, 0
-        for j in range(x.shape[1]):
-            if x[i,j] > maxval:
-                maxval, idx_maxval = x[i,j], j
-        amax[i], max[i], rng[i] = idx_maxval, maxval, i
+        if x[i] > 0:
+            max[i], mask[i] = x[i], 1
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef argmax_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x, 
+cdef relu_cython_inner_float32(np.ndarray[np.float32_t, ndim=1] x, 
                               np.ndarray[np.float32_t, ndim=1] max,
-                              np.ndarray[np.int32_t, ndim=1] amax,
-                              np.ndarray[np.int32_t, ndim=1] rng):
-    cdef int i, j, idx_maxval
-    cdef np.float32_t maxval, minval
-    minval = np.finfo(np.float32).min
-
+                              np.ndarray[np.int8_t, ndim=1] mask):
+    cdef int i
     for i in prange(x.shape[0], nogil=True):
-        maxval, idx_maxval = minval, 0
-        for j in range(x.shape[1]):
-            if x[i,j] > maxval:
-                maxval, idx_maxval = x[i,j], j
-        amax[i], max[i], rng[i] = idx_maxval, maxval, i
+        if x[i] > 0:
+            max[i], mask[i] = x[i], 1
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef argmax_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x, 
+cdef relu_cython_inner_float64(np.ndarray[np.float64_t, ndim=1] x, 
                               np.ndarray[np.float64_t, ndim=1] max,
-                              np.ndarray[np.int32_t, ndim=1] amax,
-                              np.ndarray[np.int32_t, ndim=1] rng):
-    cdef int i, j, idx_maxval
-    cdef np.float64_t maxval, minval
-    minval = np.finfo(np.float64).min
-    
+                              np.ndarray[np.int8_t, ndim=1] mask):
+    cdef int i
     for i in prange(x.shape[0], nogil=True):
-        maxval, idx_maxval = minval, 0
-        for j in range(x.shape[1]):
-            if x[i,j] > maxval:
-                maxval, idx_maxval = x[i,j], j
-        amax[i], max[i], rng[i] = idx_maxval, maxval, i
+        if x[i] > 0:
+            max[i], mask[i] = x[i], 1
