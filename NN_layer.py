@@ -39,7 +39,7 @@ __version__ = "1.0.1"
 
 import numpy as np
 import NN_util, NN_activation, NN_initializer
-import time
+
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
