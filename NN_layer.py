@@ -358,7 +358,7 @@ class BatchNormalization(Layer):
             prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
         N = prev_dx.shape[0]
-        self.dgamma = np.sum((prev_dx * self.xn), axis=0)
+        self.dgamma = np.sum(prev_dx * self.xn, axis=0)
         self.dbeta = np.sum(prev_dx, axis=0)
         dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
         
