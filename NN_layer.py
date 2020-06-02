@@ -39,13 +39,12 @@ __version__ = "1.0.1"
 
 import numpy as np
 import NN_util, NN_activation, NN_initializer
-import time
+
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
 from NN_add_cython import add_cython
-from NN_sum_cython import sum_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
 try:
@@ -359,15 +358,8 @@ class BatchNormalization(Layer):
             prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
         N = prev_dx.shape[0]
-        s=time.time()
         self.dgamma = np.sum((prev_dx * self.xn), axis=0)
-        e=time.time()
-        self.dgamma2 = sum_cython((prev_dx * self.xn), axis=0)
-        e2=time.time()
-        print(e-s, e2-e)
-        print(np.allclose(self.dgamma, self.dgamma2))
         self.dbeta = np.sum(prev_dx, axis=0)
-
         dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
         
         if self.spatial:
