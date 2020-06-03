@@ -46,14 +46,14 @@ def create_vgg16bn_cifar10(model):
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1) )
+            model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer="he_uniform") )
             model.add( BatchNormalization() )
             model.add( Relu() )
-        model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
+        model.add( MaxPool2D(pool_shape=(2,2), stride=2, weights_initializer="he_uniform") )
     model.add( Flatten() )
-    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(512,), activation="relu", weights_initializer="he_uniform") )
     model.add( Dropout(rate=0.5) )
-    model.add( FC(shape=(512,), activation="relu") )
+    model.add( FC(shape=(512,), activation="relu", weights_initializer="he_uniform") )
     model.add( Dropout(rate=0.5) )
-    model.add( FC(shape=(10,), activation="softmax") )
+    model.add( FC(shape=(10,), activation="softmax", weights_initializer="he_uniform") )
     return model
