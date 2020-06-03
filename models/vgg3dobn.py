@@ -42,6 +42,22 @@ from NN_layer import *
 from NN_activation import *
 
 def create_vgg3dobn(model):
+#    model.add( Input(shape=(3, 32, 32)) )
+#    for nfilt in [32, 64, 128]:
+#       for i in range(2):
+#          model.add( Conv2D(nfilters=nfilt, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform") )                                                                    
+#          model.add( BatchNormalization() )
+#          model.add( Relu() )
+#          model.add( Dropout(rate=0.1) )
+#       model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
+#    model.add( Flatten() )
+#    model.add( FC(shape=(128,), activation="relu", weights_initializer="he_uniform") )
+#    model.add( BatchNormalization() )
+#    model.add( Relu() )
+#    model.add( Dropout(rate=0.3) )
+#    model.add( FC(shape=(10,), activation="softmax") )
+#    return model
+
     model.add( Input(shape=(3, 32, 32)) )
     model.add( Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
     model.add( BatchNormalization() )
