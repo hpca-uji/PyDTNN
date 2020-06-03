@@ -189,7 +189,7 @@ class Conv2D(Layer):
     def backward(self, prev_dx):
         dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
-
+        
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
         res = self.matmul(w_cols, dx_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
@@ -205,6 +205,7 @@ class Conv2D(Layer):
 
         self.dw = res.reshape(self.weights.shape)
         self.db = prev_dx.sum(axis=(0,2,3))
+
         return dx
 
 
@@ -318,23 +319,30 @@ class BatchNormalization(Layer):
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
 
     def forward(self, prev_a, comm=None):
+
+        def mean(data, N, comm):
+            if comm != None:
+                suml = np.sum(data, axis=0)
+                sumg = np.zeros_like(suml, dtype=self.dtype)
+                comm.Allreduce(suml, sumg, op=MPI.SUM)
+                mean = sumg / N
+            else:
+                mean = np.mean(data, axis=0)
+            return mean
+
         if self.spatial:
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
-
-        N = prev_a.shape[0]
+        
         if self.model.mode == "train":
-            mu = np.mean(prev_a, axis=0)
+            self.N = np.array([prev_a.shape[0]], dtype=self.dtype)
             if comm != None:
-                red_mu = np.zeros_like(mu, dtype=self.dtype)
-                comm.Allreduce(mu, red_mu, op = MPI.SUM)
-                mu = red_mu / comm.Get_size()
+                Ng = np.zeros_like(self.N, dtype=self.dtype)
+                comm.Allreduce(self.N, Ng, op=MPI.SUM)
+                self.N = Ng
 
+            mu = mean(prev_a, self.N, comm)
             xc = (prev_a - mu)
-            var = np.mean(xc**2, axis=0)
-            if comm != None:
-                red_var = np.zeros_like(var, dtype=self.dtype)
-                comm.Allreduce(var, red_var, op = MPI.SUM)
-                var = red_var / comm.Get_size()
+            var = mean(xc**2, self.N, comm)
 
             self.std = np.sqrt(var + self.epsilon)
             self.xn = xc / self.std
@@ -355,11 +363,12 @@ class BatchNormalization(Layer):
         if self.spatial:          
             prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
-        N = prev_dx.shape[0]
         self.dgamma = np.sum(prev_dx * self.xn, axis=0)
         self.dbeta = np.sum(prev_dx, axis=0)
-        dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
-        
+        dx = (self.gamma / (self.std * self.N)) * (self.N * prev_dx - self.xn * self.dgamma - self.dbeta)
+        dx = dx.astype(self.dtype)
+
         if self.spatial:
             dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+
         return dx
