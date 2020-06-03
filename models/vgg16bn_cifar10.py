@@ -41,7 +41,7 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_vgg16_cifar10(model):
+def create_vgg16bn_cifar10(model):
     model.add( Input(shape=(3, 32, 32)) )
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
