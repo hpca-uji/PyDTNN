@@ -39,6 +39,9 @@ __version__ = "1.0.1"
 
 import numpy as np
 from NN_layer import Layer
+from NN_relu_cython import relu_cython
+import time
+
 
 class Sigmoid(Layer):
 
@@ -50,7 +53,7 @@ class Sigmoid(Layer):
         self.dx = (self.a * (1 - self.a))
 
     def backward(self, prev_dx):
-        return self.dx * prev_dx
+        return (self.a * (1 - self.a)) * prev_dx
 
 class Relu(Layer):
 
@@ -58,13 +61,10 @@ class Relu(Layer):
         super().__init__(shape)
 
     def forward(self, prev_a, comm=None):
-        self.prev_a = prev_a 
-        self.a = np.maximum(0, prev_a)
+        self.a, self.mask = relu_cython(prev_a)
 
     def backward(self, prev_dx):
-        self.dx = np.array(prev_dx, copy=True)
-        self.dx[self.prev_a <= 0] = 0
-        return self.dx
+        return prev_dx * self.mask
 
 class Tanh(Layer):
 

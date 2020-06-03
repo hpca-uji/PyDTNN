@@ -39,11 +39,12 @@ __version__ = "1.0.1"
 
 import numpy as np
 import NN_util, NN_activation, NN_initializer
-
+import time
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
+from NN_add_cython import add_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
 try:
@@ -181,8 +182,10 @@ class Conv2D(Layer):
         res = self.matmul(w_cols, self.prev_a_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        a = (res.T + self.bias).T
-        self.a = a.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        # a = res + self.bias.reshape(-1, 1)
+        a = add_cython(res, self.bias)
+        self.a = a.reshape(self.co, -1, self.ho, self.wo)
+        self.a = self.a.transpose(1, 0, 2, 3)
 
     def backward(self, prev_dx):
         dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
@@ -233,9 +236,9 @@ class MaxPool2D(Layer):
         a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        self.maxids = tuple([argmax_cython(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        #self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        self.a = a_cols[self.maxids].reshape(prev_a.shape[0], self.co, self.ho, self.wo)
+        # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
+        self.a, self.maxids = argmax_cython(a_cols, axis=0)
+        self.a = self.a.reshape(prev_a.shape[0], self.co, self.ho, self.wo)
 
     def backward(self, prev_dx):
         dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape)), dtype=self.dtype)
@@ -259,10 +262,14 @@ class Dropout(Layer):
 
     def show(self):
         super().show("|{:^17s}|{:^21s}|".format("", "rate=%.1f" % (self.rate)))
-        
+
     def forward(self, prev_a, comm=None):
-        self.mask = np.random.binomial(1, (1-self.rate), size=self.shape).astype(self.dtype) / (1-self.rate)
-        self.a = prev_a * self.mask
+        if self.model.mode == "train":
+            self.mask = np.random.binomial(1, (1-self.rate), size=self.shape).astype(self.dtype) / (1-self.rate)
+            self.a = prev_a * self.mask
+
+        elif self.model.mode == "evaluate":
+            self.a = prev_a
 
     def backward(self, prev_dx):
         return prev_dx * self.mask
@@ -312,9 +319,10 @@ class BatchNormalization(Layer):
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
 
     def forward(self, prev_a, comm=None):
-        N = prev_a.shape[0]
-        if self.spatial:
+        B = prev_a.shape[0]
+        if self.spatial: 
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+        N = prev_a.shape[0]
 
         if self.model.mode == "train":
             mu = np.mean(prev_a, axis=0)
@@ -327,7 +335,7 @@ class BatchNormalization(Layer):
             xc = (prev_a - mu)
             var = np.mean(xc**2, axis=0)
             if comm != None:
-                var *= (float(N) / comm.Get_size())
+                self.var *= (float(N) / comm.Get_size())
                 red_var = np.zeros_like(var, dtype=self.dtype)
                 comm.Allreduce(var, red_var, op = MPI.SUM)
                 var = red_var
@@ -345,25 +353,19 @@ class BatchNormalization(Layer):
             self.a = self.gamma * self.xn + self.beta
 
         if self.spatial:
-            self.a = self.a.reshape(N, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            self.a = self.a.reshape(B, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
 
     def backward(self, prev_dx):
-        N = prev_dx.shape[0]
+        B = prev_dx.shape[0]
         if self.spatial:          
             prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+        N = prev_dx.shape[0]
 
-        self.dgamma = np.sum((prev_dx * self.xn), axis=0)
+        self.dgamma = np.sum(self.xn * prev_dx, axis=0)
         self.dbeta = np.sum(prev_dx, axis=0)
-        dxn = prev_dx * self.gamma
 
-        if self.model.mode == "train":
-            dx = 1./N / self.std * (N * dxn - 
-                                   np.sum(dxn, axis=0) - 
-                                   self.xn * np.sum((dxn * self.xn), axis=0))
-
-        elif self.model.mode == "evaluate":
-            dx = dxn / self.std
+        dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
 
         if self.spatial:
-            dx = dx.reshape(N, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            dx = dx.reshape(B, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
         return dx

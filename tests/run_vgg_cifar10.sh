@@ -7,7 +7,7 @@
 NUMNODES=1
 NUMPROCS=1
 PROCS_PER_NODE=$(($NUMPROCS / $NUMNODES))
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=8
 
 NODETYPE=hexa
 LASTH=`echo $NUMNODES - 1 | bc`
@@ -18,13 +18,13 @@ HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
    python3 -u benchmarks_CNN.py \
          --model=vgg3dobn \
          --dataset=cifar10 \
-         --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
-         --dataset_test_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
+         --dataset_train_path=/scratch/cifar-10/cifar-10-batches-bin/ \
+         --dataset_test_path=/scratch/cifar-10/cifar-10-batches-bin/ \
          --test_as_validation=True \
          --batch_size=64 \
          --validation_split=0.2 \
          --steps_per_epoch=0 \
-         --num_epochs=100 \
+         --num_epochs=400 \
          --evaluate=False \
          --optimizer=sgd \
          --learning_rate=0.001 \
@@ -42,6 +42,6 @@ HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
          --parallel=sequential \
          --non_blocking_mpi=False \
          --tracing=False \
-         --profile=True \
+         --profile=False \
          --enable_gpu=False \
          --dtype=float32
