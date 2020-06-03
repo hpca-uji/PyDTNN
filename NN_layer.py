@@ -370,5 +370,4 @@ class BatchNormalization(Layer):
 
         if self.spatial:
             dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
-
         return dx
