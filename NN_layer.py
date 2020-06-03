@@ -322,10 +322,9 @@ class BatchNormalization(Layer):
 
         def mean(data, N, comm):
             if comm != None:
-                suml = np.sum(data, axis=0)
-                sumg = np.zeros_like(suml, dtype=self.dtype)
-                comm.Allreduce(suml, sumg, op=MPI.SUM)
-                mean = sumg / N
+                suml = np.sum(data, axis=0) / N
+                mean = np.zeros_like(suml, dtype=self.dtype)
+                comm.Allreduce(suml, mean, op=MPI.SUM)
             else:
                 mean = np.mean(data, axis=0)
             return mean
@@ -334,15 +333,15 @@ class BatchNormalization(Layer):
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
         
         if self.model.mode == "train":
-            self.N = np.array([prev_a.shape[0]], dtype=self.dtype)
+            N = np.array([prev_a.shape[0]], dtype=self.dtype)
             if comm != None:
-                Ng = np.zeros_like(self.N, dtype=self.dtype)
-                comm.Allreduce(self.N, Ng, op=MPI.SUM)
-                self.N = Ng
+                Ng = np.zeros_like(N, dtype=self.dtype)
+                comm.Allreduce(N, Ng, op=MPI.SUM)
+                N = Ng
 
-            mu = mean(prev_a, self.N, comm)
+            mu = mean(prev_a, N, comm)
             xc = (prev_a - mu)
-            var = mean(xc**2, self.N, comm)
+            var = mean(xc**2, N, comm)
 
             self.std = np.sqrt(var + self.epsilon)
             self.xn = xc / self.std
@@ -363,9 +362,10 @@ class BatchNormalization(Layer):
         if self.spatial:          
             prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
+        N = prev_dx.shape[0]
         self.dgamma = np.sum(prev_dx * self.xn, axis=0)
         self.dbeta = np.sum(prev_dx, axis=0)
-        dx = (self.gamma / (self.std * self.N)) * (self.N * prev_dx - self.xn * self.dgamma - self.dbeta)
+        dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
         dx = dx.astype(self.dtype)
 
         if self.spatial:
