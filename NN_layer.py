@@ -39,7 +39,7 @@ __version__ = "1.0.1"
 
 import numpy as np
 import NN_util, NN_activation, NN_initializer
-
+import time
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
@@ -182,14 +182,14 @@ class Conv2D(Layer):
         res = self.matmul(w_cols, self.prev_a_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        # a = res + self.bias.reshape(-1,1)
+        # a = res + self.bias.reshape(-1, 1)
         a = add_cython(res, self.bias)
         self.a = a.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
 
     def backward(self, prev_dx):
         dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
-
+        
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
         res = self.matmul(w_cols, dx_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
@@ -205,6 +205,7 @@ class Conv2D(Layer):
 
         self.dw = res.reshape(self.weights.shape)
         self.db = prev_dx.sum(axis=(0,2,3))
+
         return dx
 
 
@@ -261,7 +262,7 @@ class Dropout(Layer):
 
     def show(self):
         super().show("|{:^17s}|{:^21s}|".format("", "rate=%.1f" % (self.rate)))
-        
+
     def forward(self, prev_a, comm=None):
         if self.model.mode == "train":
             self.mask = np.random.binomial(1, (1-self.rate), size=self.shape).astype(self.dtype) / (1-self.rate)
@@ -318,25 +319,29 @@ class BatchNormalization(Layer):
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
 
     def forward(self, prev_a, comm=None):
+
+        def mean(data, N, comm):
+            if comm != None:
+                suml = np.sum(data, axis=0) / N
+                mean = np.zeros_like(suml, dtype=self.dtype)
+                comm.Allreduce(suml, mean, op=MPI.SUM)
+            else:
+                mean = np.mean(data, axis=0)
+            return mean
+
         if self.spatial:
             prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
-
-        N = prev_a.shape[0]
+        
         if self.model.mode == "train":
-            mu = np.mean(prev_a, axis=0)
+            N = np.array([prev_a.shape[0]], dtype=self.dtype)
             if comm != None:
-                mu *= (float(N) / comm.Get_size())
-                red_mu = np.zeros_like(mu, dtype=self.dtype)
-                comm.Allreduce(mu, red_mu, op = MPI.SUM)
-                mu = red_mu
+                Ng = np.zeros_like(N, dtype=self.dtype)
+                comm.Allreduce(N, Ng, op=MPI.SUM)
+                N = Ng
 
+            mu = mean(prev_a, N, comm)
             xc = (prev_a - mu)
-            var = np.mean(xc**2, axis=0)
-            if comm != None:
-                var *= (float(N) / comm.Get_size())
-                red_var = np.zeros_like(var, dtype=self.dtype)
-                comm.Allreduce(var, red_var, op = MPI.SUM)
-                var = red_var
+            var = mean(xc**2, N, comm)
 
             self.std = np.sqrt(var + self.epsilon)
             self.xn = xc / self.std
@@ -361,7 +366,8 @@ class BatchNormalization(Layer):
         self.dgamma = np.sum(prev_dx * self.xn, axis=0)
         self.dbeta = np.sum(prev_dx, axis=0)
         dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
-        
+        dx = dx.astype(self.dtype)
+
         if self.spatial:
             dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
         return dx
