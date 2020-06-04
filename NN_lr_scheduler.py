@@ -61,21 +61,22 @@ class LRScheduler():
 
 class WarmUpLRScheduler(LRScheduler):
 
-    def __init__(self, warmup_batches=100, init_lr=1e-3, verbose=True):
+    def __init__(self, warmup_epochs=None, init_lr=1e-3, verbose=True):
         super().__init__()
-        self.warmup_batches = warmup_batches
+        self.warmup_epochs = warmup_epochs
         self.init_lr = init_lr
         self.verbose = verbose
         self.batch_count = 0
 
     def on_batch_begin(self, model, optimizer, rank):
-        if self.batch_count <= self.warmup_batches:
+        warmup_batches = model.steps_per_epoch * self.warmup_epoch
+        if self.batch_count <= warmup_batches:
             optimizer.learning_rate = \
-                self.batch_count * self.init_lr / self.warmup_batches
+                self.batch_count * self.init_lr / warmup_batches
             self.batch_count += 1
-            if self.verbose and rank == 0:
-                print("LRScheduler %s: setting learning rate to %.8f" % \
-                    (type(self).__name__, optimizer.learning_rate))
+            # if self.verbose and rank == 0:
+            #     print("LRScheduler %s: setting learning rate to %.8f" % \
+            #         (type(self).__name__, optimizer.learning_rate))
 
 
 class EarlyStopping(LRScheduler):
@@ -152,6 +153,56 @@ class ReduceLROnPlateau(LRScheduler):
                 print("LRScheduler %s: metric %s did not improve for %d epochs, setting learning rate to %.8f" % \
                      (type(self).__name__, self.loss_metric, 
                         self.patience, optimizer.learning_rate))
+
+
+class ReduceLREveryNEpochs(LRScheduler):
+
+    def __init__(self, factor=0.1, nepochs=5, min_lr=0, verbose=True):
+        super().__init__()
+        self.factor = factor
+        self.nepochs = nepochs
+        self.min_lr = min_lr
+        self.epoch_count = 0        
+        self.verbose = verbose
+
+    def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
+        try:    idx = loss_metrics.index(self.loss_metric_)
+        except: idx = 0
+        self.epoch_count += 1
+        
+        if (self.epoch_count // self.nepochs) == 1:
+            optimizer.learning_rate *= self.factor
+            if self.verbose and rank == 0:
+                print("LRScheduler %s: setting learning rate to %.8f" % \
+                     (type(self).__name__, self.loss_metric, optimizer.learning_rate))
+
+
+class StopOnLoss(LRScheduler):
+
+    def __init__(self, loss_metric="", threshold_value=0, verbose=True):
+        super().__init__()
+        self.loss_metric = loss_metric
+        self.is_val_metric = "val_" in self.loss_metric
+        check_val = self.loss_metric.split("_")
+        if "val" == check_val[0]:
+            self.loss_metric_ = "_".join(check_val[1:])
+        self.threshold_value = threshold_value
+        self.stop_training = False
+        self.epoch_count = 0        
+        self.verbose = verbose
+
+    def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
+        try:    idx = loss_metrics.index(self.loss_metric_)
+        except: idx = 0
+        self.epoch_count += 1
+
+        loss = {True: val_loss, False: train_loss}[self.is_val_metric]
+        if ("accuracy" in self.loss_metric and loss[idx] > self.threshold_value) or \
+           ("accuracy" not in self.loss_metric and loss[idx] < self.threshold_value):
+            self.stop_training = True
+            if self.verbose and rank == 0:
+                print("LRScheduler %s: metric %s reached threshold value %f, stop training!" % \
+                     (type(self).__name__, self.loss_metric, self.threshold_value))
 
 
 class ModelCheckpoint(LRScheduler):
