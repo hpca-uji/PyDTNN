@@ -168,7 +168,7 @@ class Model:
         local_batch_size = X_batch.shape[0]
 
         for lr_sched in lr_schedulers:
-            lr_sched.on_batch_begin(self, self.rank)
+            lr_sched.on_batch_begin(self, optimizer, self.rank)
 
         # Forward pass (FP)
         self.layers[0].a = X_batch
@@ -225,7 +225,7 @@ class Model:
         #     total_loss /= self.nprocs
 
         for lr_sched in lr_schedulers:
-            lr_sched.on_batch_end(self, self.rank)
+            lr_sched.on_batch_end(self, optimizer, self.rank)
 
         return total_loss
 
