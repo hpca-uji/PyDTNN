@@ -18,7 +18,7 @@ mpirun -np 4 \
          --momentum=0.9 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \
-         --warm_up_batches=500 \
+         --warm_up_epochs=5 \
          --early_stopping_metric=val_categorical_cross_entropy \
          --early_stopping_patience=10 \
          --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \
