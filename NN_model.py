@@ -160,7 +160,7 @@ class Model:
         string = string[:-2]
         return total, count+batch_size, string
 
-    def __train_batch(self, X_batch, Y_batch, loss_metrics,
+    def __train_batch(self, X_batch, Y_batch, global_batch_size, loss_metrics,
                       loss_funcs, optimizer, lr_schedulers):
 
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
@@ -244,6 +244,7 @@ class Model:
 
         loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
         dataset.make_train_val_partitions(val_split)
+        self.steps_per_epoch = dataset.train_nsamples / (local_batch_size * self.nprocs)
         terminate = False
 
         for epoch in range(nepochs):
@@ -265,7 +266,7 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for X_batch, Y_batch, batch_size in train_batch_generator:
-                train_batch_loss = self.__train_batch(X_batch, Y_batch, loss_metrics,
+                train_batch_loss = self.__train_batch(X_batch, Y_batch, batch_size, loss_metrics,
                                                       loss_funcs, optimizer, lr_schedulers)
                 train_total_loss, train_batch_count, string = \
                     self.__update_running_average(train_batch_loss, train_total_loss, 

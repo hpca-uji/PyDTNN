@@ -214,7 +214,7 @@ class MNIST(Dataset):
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
 
         if self.test_as_validation:
-            print("  Using test as validation data - val_split parameter is ignored!")
+            # print("  Using test as validation data - val_split parameter is ignored!")
             self.X_val, self.Y_val = self.X_test, self.Y_test
             self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
             self.train_nsamples = self.X_train.shape[0]
@@ -304,7 +304,7 @@ class CIFAR10(Dataset):
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
 
         if self.test_as_validation:
-            print("  Using test as validation data - val_split parameter is ignored!")
+            # print("  Using test as validation data - val_split parameter is ignored!")
             self.X_val, self.Y_val = self.X_test, self.Y_test
             self.X_train, self.Y_train = self.X_train_val, self.Y_train_val
             self.train_nsamples = self.X_train.shape[0]
@@ -390,7 +390,7 @@ class ImageNet(Dataset):
         self.test_nsamples = len(self.test_files) * self.images_per_test_file
 
         if self.test_as_validation:
-            print("  Using test as validation data - val_split parameter is ignored!")
+            # print("  Using test as validation data - val_split parameter is ignored!")
             self.val_path, self.val_files = self.test_path, self.test_files
             self.train_files = self.train_val_files
             self.train_nsamples = self.train_val_nsamples
