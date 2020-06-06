@@ -139,16 +139,12 @@ class Model:
 
     def __compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
         loss_req = None
-        total_loss = np.zeros(len(loss_funcs), dtype=np.float32)
-        partial_loss = np.array([func(Y_pred, Y_targ) for func in loss_funcs], dtype=np.float32)
+        loss = np.array([func(Y_pred, Y_targ) for func in loss_funcs], dtype=np.float32) / self.nprocs
         if self.comm != None and blocking:
-            self.comm.Allreduce(partial_loss, total_loss, op=MPI.SUM)
-            total_loss /= self.nprocs
+            self.comm.Allreduce(MPI.IN_PLACE, loss, op=MPI.SUM)
         elif self.comm != None and not blocking:
-            loss_req = self.comm.Iallreduce(partial_loss, total_loss, op=MPI.SUM)
-        else:
-            total_loss = partial_loss
-        return total_loss, loss_req
+            loss_req = self.comm.Iallreduce(MPI.IN_PLACE, loss, op=MPI.SUM)
+        return loss, loss_req
 
     def __update_running_average(self, curr, total, count, batch_size, loss_metrics, prefix=""):
         string = ""
@@ -179,11 +175,11 @@ class Model:
 
         Y_pred = self.layers[-1].a
         total_loss, loss_req = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
-       
+        dx = (Y_pred - Y_batch) / global_batch_size
+
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            dx = (Y_pred - Y_batch)
             for l in range(len(self.layers)-1, 0, -1):
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
                 dx = self.layers[l].backward(dx)
@@ -193,12 +189,11 @@ class Model:
             for l in range(len(self.layers)-1, 0, -1):
                 self.layers[l].reduce_weights_sync(self.comm)
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
-                self.layers[l].update_weights(optimizer, local_batch_size)
+                self.layers[l].update_weights(optimizer)
                 self.tracer.emit_event(PYDL_EVT, 0)            
         else:
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            dx = (self.layers[-1].a - Y_batch)
             for l in range(len(self.layers)-1, 0, -1):
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
                 dx = self.layers[l].backward(dx)
@@ -217,12 +212,8 @@ class Model:
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
     
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
-                self.layers[l].update_weights(optimizer, local_batch_size)
+                self.layers[l].update_weights(optimizer)
                 self.tracer.emit_event(PYDL_EVT, 0)
-
-        # if self.comm != None:
-        #     loss_req.Wait()
-        #     total_loss /= self.nprocs
 
         for lr_sched in lr_schedulers:
             lr_sched.on_batch_end(self, optimizer, self.rank)

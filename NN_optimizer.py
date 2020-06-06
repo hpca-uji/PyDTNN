@@ -58,9 +58,9 @@ class SGD(Optimizer):
         self.nesterov = nesterov
         self.decay = decay
 
-    def update(self, layer, batch_size):
+    def update(self, layer):
         it = getattr(layer, "it", 0)
-        lr = self.learning_rate / batch_size
+        lr = self.learning_rate
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
         it += 1    
@@ -70,11 +70,11 @@ class SGD(Optimizer):
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity = getattr(layer, "velocity_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
 
-            velocity = self.momentum * velocity - lr * dw
+            velocity = self.momentum * velocity + dw
             if self.nesterov:
-                w += self.momentum * velocity - lr * dw
+                w -= lr * (dw - self.momentum * velocity)
             else:
-                w += velocity
+                w -= lr * velocity
 
             setattr(layer, w_, w)
             setattr(layer, "velocity_%s" % (w_), velocity)
@@ -89,9 +89,9 @@ class RMSProp(Optimizer):
         self.epsilon = epsilon
         self.decay = decay        
 
-    def update(self, layer, batch_size):
+    def update(self, layer):
         it = getattr(layer, "it", 0)
-        lr = self.learning_rate / batch_size
+        lr = self.learning_rate
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
         it += 1    
@@ -118,9 +118,9 @@ class Adam(Optimizer):
         self.epsilon = epsilon
         self.decay = decay
 
-    def update(self, layer, batch_size):
+    def update(self, layer):
         it = getattr(layer, "it", 0)
-        lr = self.learning_rate / batch_size
+        lr = self.learning_rate
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
         it += 1    
@@ -154,9 +154,9 @@ class Nadam(Optimizer):
         self.epsilon = epsilon
         self.decay = decay
 
-    def update(self, layer, batch_size):
+    def update(self, layer):
         it = getattr(layer, "it", 0)
-        lr = self.learning_rate / batch_size
+        lr = self.learning_rate
         if self.decay > 0: 
             lr = lr * (1. / (1. + self.decay * it))
         it += 1    

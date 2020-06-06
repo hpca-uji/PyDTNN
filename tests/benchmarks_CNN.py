@@ -72,6 +72,7 @@ def parse_options():
     parser.add_argument('--dataset_test_path', type=str, default="../datasets/mnist")
     parser.add_argument('--test_as_validation', default=False, type=bool_lambda)
     parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--global_batch_size', type=int, default=None)
     parser.add_argument('--validation_split', type=float, default=0.0)
     parser.add_argument('--steps_per_epoch', type=int, default=0)
     parser.add_argument('--num_epochs', type=int, default=1)
@@ -81,6 +82,7 @@ def parse_options():
     # Optimizer
     parser.add_argument('--optimizer', type=str, default="sgd")
     parser.add_argument('--learning_rate', type=float, default=1e-2)
+    parser.add_argument('--learning_rate_scaling', default=True, type=bool_lambda)
     parser.add_argument('--momentum', type=float, default=0.9)    
     parser.add_argument('--decay', type=float, default=0.0)
     parser.add_argument('--nesterov', default=False, type=bool_lambda)
@@ -91,23 +93,28 @@ def parse_options():
     parser.add_argument('--loss_func', type=str, default="accuracy,categorical_cross_entropy")
     # Learning rate schedulers
     parser.add_argument('--lr_schedulers', type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
-    parser.add_argument('--warm_up_batches', type=int, default=500)
+    parser.add_argument('--warm_up_epochs', type=int, default=5)
     parser.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
     parser.add_argument('--early_stopping_patience', type=int, default=10)
     parser.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy")
     parser.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1)
     parser.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5)
-    parser.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0)    
+    parser.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0)
+    parser.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1)
+    parser.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5)
+    parser.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0)  
+    parser.add_argument('--stop_on_loss_metric', type=str, default="val_categorical_cross_entropy")
+    parser.add_argument('--stop_on_loss_patience', type=float, default=0)      
     parser.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy")
     parser.add_argument('--model_checkpoint_save_freq', type=int, default=2)
     # Parallelization + tracing
     parser.add_argument('--mpi_processes', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--threads_per_process', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--parallel', type=str, default="sequential")
-    parser.add_argument('--non_blocking_mpi', default=False, type=bool_lambda)
-    parser.add_argument('--tracing', default=False, type=bool_lambda)
-    parser.add_argument('--profile', default=False, type=bool_lambda)
-    parser.add_argument('--enable_gpu', default=False, type=bool_lambda)
+    parser.add_argument('--non_blocking_mpi', type=bool_lambda,  default=False)
+    parser.add_argument('--tracing', type=bool_lambda, default=False)
+    parser.add_argument('--profile', type=bool_lambda, default=False)
+    parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
     parser.add_argument('--dtype', type=str, default="float32")
 
     return parser.parse_args()
@@ -120,18 +127,18 @@ def show_options(params):
 
 def get_optimizer(params):
     if params.optimizer == "rmsprop":
-        opt = RMSProp(learning_rate = params.learning_rate, 
+        opt = RMSProp(learning_rate = params.learning_rate,
                   rho = params.rho,
                   epsilon = params.epsilon,
                   decay = params.decay)
     elif params.optimizer == "adam":
-        opt = Adam(learning_rate = params.learning_rate, 
+        opt = Adam(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2, 
                   epsilon = params.epsilon,
                   decay = params.decay)
     elif params.optimizer == "nadam":
-        opt = Nadam(learning_rate = params.learning_rate, 
+        opt = Nadam(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2,
                   epsilon = params.epsilon,
@@ -147,7 +154,7 @@ def get_lr_schedulers(params):
     lr_schedulers = []
     for lr_sched in params.lr_schedulers.split(","):
         if lr_sched == "warm_up":
-            lrs = WarmUpLRScheduler(params.warm_up_batches, 
+            lrs = WarmUpLRScheduler(params.warm_up_epochs, 
                   params.learning_rate)
         elif lr_sched == "early_stopping":
             lrs = EarlyStopping(params.early_stopping_metric, 
@@ -157,9 +164,16 @@ def get_lr_schedulers(params):
                   params.reduce_lr_on_plateau_factor,
                   params.reduce_lr_on_plateau_patience,
                   params.reduce_lr_on_plateau_min_lr)
+        elif lr_sched == "lr_decay_every_nepochs":
+            lrs = ReduceLREveryNEpochs(decay_after_nepochs_factor,
+                  decay_after_nepochs_nepochs,
+                  decay_after_nepochs_min_lr)
+        elif lr_sched == "stop_on_loss":
+            lrs = StopOnLoss(early_stopping_metric,
+                  early_stopping_threshold)
         elif lr_sched == "model_checkpoint":
             lrs = ModelCheckpoint(params.model_checkpoint_metric, 
-                  params.model_checkpoint_save_freq)
+                  params.model_checkpoint_save_freq)            
         else: lrs = None
         if lrs: lr_schedulers.append(lrs)
     return lr_schedulers
@@ -172,6 +186,9 @@ if __name__ == "__main__":
         params.comm = MPI.COMM_WORLD
         params.mpi_processes = params.comm.Get_size()
         rank = params.comm.Get_rank()
+        params.global_batch_size = params.batch_size * params.mpi_processes
+        if params.optimizer == "sgd" and params.learning_rate_scaling:
+            params.learning_rate *= params.mpi_processes
 
     elif params.parallel == "sequential":
         params.comm = None
