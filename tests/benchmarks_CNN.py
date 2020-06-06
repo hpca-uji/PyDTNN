@@ -72,6 +72,7 @@ def parse_options():
     parser.add_argument('--dataset_test_path', type=str, default="../datasets/mnist")
     parser.add_argument('--test_as_validation', default=False, type=bool_lambda)
     parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--global_batch_size', type=int, default=None)
     parser.add_argument('--validation_split', type=float, default=0.0)
     parser.add_argument('--steps_per_epoch', type=int, default=0)
     parser.add_argument('--num_epochs', type=int, default=1)
@@ -81,6 +82,7 @@ def parse_options():
     # Optimizer
     parser.add_argument('--optimizer', type=str, default="sgd")
     parser.add_argument('--learning_rate', type=float, default=1e-2)
+    parser.add_argument('--learning_rate_scaling', default=True, type=bool_lambda)
     parser.add_argument('--momentum', type=float, default=0.9)    
     parser.add_argument('--decay', type=float, default=0.0)
     parser.add_argument('--nesterov', default=False, type=bool_lambda)
@@ -109,10 +111,10 @@ def parse_options():
     parser.add_argument('--mpi_processes', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--threads_per_process', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--parallel', type=str, default="sequential")
-    parser.add_argument('--non_blocking_mpi', default=False, type=bool_lambda)
-    parser.add_argument('--tracing', default=False, type=bool_lambda)
-    parser.add_argument('--profile', default=False, type=bool_lambda)
-    parser.add_argument('--enable_gpu', default=False, type=bool_lambda)
+    parser.add_argument('--non_blocking_mpi', type=bool_lambda,  default=False)
+    parser.add_argument('--tracing', type=bool_lambda, default=False)
+    parser.add_argument('--profile', type=bool_lambda, default=False)
+    parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
     parser.add_argument('--dtype', type=str, default="float32")
 
     return parser.parse_args()
@@ -125,18 +127,18 @@ def show_options(params):
 
 def get_optimizer(params):
     if params.optimizer == "rmsprop":
-        opt = RMSProp(learning_rate = params.learning_rate, 
+        opt = RMSProp(learning_rate = params.learning_rate,
                   rho = params.rho,
                   epsilon = params.epsilon,
                   decay = params.decay)
     elif params.optimizer == "adam":
-        opt = Adam(learning_rate = params.learning_rate, 
+        opt = Adam(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2, 
                   epsilon = params.epsilon,
                   decay = params.decay)
     elif params.optimizer == "nadam":
-        opt = Nadam(learning_rate = params.learning_rate, 
+        opt = Nadam(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2,
                   epsilon = params.epsilon,
@@ -184,6 +186,9 @@ if __name__ == "__main__":
         params.comm = MPI.COMM_WORLD
         params.mpi_processes = params.comm.Get_size()
         rank = params.comm.Get_rank()
+        params.global_batch_size = params.batch_size * params.mpi_processes
+        if params.optimizer == "sgd" and params.learning_rate_scaling:
+            params.learning_rate *= params.mpi_processes
 
     elif params.parallel == "sequential":
         params.comm = None

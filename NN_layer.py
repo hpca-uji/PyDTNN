@@ -39,7 +39,7 @@ __version__ = "1.0.1"
 
 import numpy as np
 import NN_util, NN_activation, NN_initializer
-import time
+
 from math import floor
 from NN_util import printf
 from NN_im2col_cython import im2col_cython, col2im_cython
@@ -69,32 +69,30 @@ class Layer():
         if not attrs: attrs= "|{:^17s}|{:^21s}|".format("","")
         print(f"|{self.id:^7d}|{type(self).__name__:^20s}|{self.params:^9d}|{str(self.shape):^15}" + attrs)
 
-    def update_weights(self, optimizer, batch_size):
-        optimizer.update(self, batch_size)
+    def update_weights(self, optimizer):
+        optimizer.update(self)
 
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
             self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            self.red_dwb = np.zeros_like(self.dwb, dtype=self.dtype)
-            self.req_AR = comm.Iallreduce(self.dwb, self.red_dwb, op=MPI.SUM)
+            self.req_AR = comm.Iallreduce(MPI.IN_PLACE, self.dwb, op=MPI.SUM)
      
     def wait_allreduce_async(self, comm):
         if comm and self.weights.size > 0:
             self.req_AR.Wait()
-            self.dw = self.red_dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = self.red_dwb[self.weights.size:].reshape(self.bias.shape)
+            self.dw = self.dwb[:self.weights.size].reshape(self.weights.shape)
+            self.db = self.dwb[self.weights.size:].reshape(self.bias.shape)
      
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
             dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            red_dwb = np.zeros_like(dwb, dtype=self.dtype)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
                                     [self.id * PYDL_NUM_EVTS + 3, 
                                      self.id * PYDL_OPS_NUM_EVTS + 6])
-            comm.Allreduce(dwb, red_dwb, op=MPI.SUM)
+            comm.Allreduce(MPI.IN_PLACE, dwb, op=MPI.SUM)
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
-            self.dw = red_dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = red_dwb[self.weights.size:].reshape(self.bias.shape)
+            self.dw = dwb[:self.weights.size].reshape(self.weights.shape)
+            self.db = dwb[self.weights.size:].reshape(self.bias.shape)
 
 
 class Input(Layer):
@@ -296,7 +294,8 @@ class BatchNormalization(Layer):
     def __init__(self, beta=0.0, gamma=1.0, 
                  momentum=0.9, epsilon=1e-5,
                  moving_mean_initializer="zeros",
-                 moving_variance_initializer="ones"):
+                 moving_variance_initializer="ones",
+                 sync_stats=False):
         super().__init__()
         self.gamma_init_val = gamma
         self.beta_init_val = beta
@@ -305,6 +304,7 @@ class BatchNormalization(Layer):
         self.moving_mean_initializer = getattr(NN_initializer, moving_mean_initializer)
         self.moving_variance_initializer = getattr(NN_initializer, moving_variance_initializer)
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
+        self.sync_stats = sync_stats
 
     def initialize(self):
         self.shape = shape_ = self.prev_layer.shape
@@ -321,10 +321,9 @@ class BatchNormalization(Layer):
     def forward(self, prev_a, comm=None):
 
         def mean(data, N, comm):
-            if comm != None:
-                suml = np.sum(data, axis=0) / N
-                mean = np.zeros_like(suml, dtype=self.dtype)
-                comm.Allreduce(suml, mean, op=MPI.SUM)
+            if self.sync_stats and comm != None:
+                mean = np.sum(data, axis=0) / N
+                comm.Allreduce(MPI.IN_PLACE, mean, op=MPI.SUM)
             else:
                 mean = np.mean(data, axis=0)
             return mean
@@ -334,10 +333,8 @@ class BatchNormalization(Layer):
         
         if self.model.mode == "train":
             N = np.array([prev_a.shape[0]], dtype=self.dtype)
-            if comm != None:
-                Ng = np.zeros_like(N, dtype=self.dtype)
-                comm.Allreduce(N, Ng, op=MPI.SUM)
-                N = Ng
+            if self.sync_stats and comm != None:
+                comm.Allreduce(MPI.IN_PLACE, N, op=MPI.SUM)
 
             mu = mean(prev_a, N, comm)
             xc = (prev_a - mu)
