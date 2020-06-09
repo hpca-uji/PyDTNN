@@ -103,8 +103,8 @@ def parse_options():
     parser.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1)
     parser.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5)
     parser.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0)  
-    parser.add_argument('--stop_on_loss_metric', type=str, default="val_categorical_cross_entropy")
-    parser.add_argument('--stop_on_loss_patience', type=float, default=0)      
+    parser.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy")
+    parser.add_argument('--stop_at_loss_threshold', type=float, default=0)      
     parser.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy")
     parser.add_argument('--model_checkpoint_save_freq', type=int, default=2)
     # Parallelization + tracing
@@ -155,6 +155,7 @@ def get_lr_schedulers(params):
     for lr_sched in params.lr_schedulers.split(","):
         if lr_sched == "warm_up":
             lrs = WarmUpLRScheduler(params.warm_up_epochs, 
+                  params.learning_rate / params.mpi_processes)
                   params.learning_rate)
         elif lr_sched == "early_stopping":
             lrs = EarlyStopping(params.early_stopping_metric, 
@@ -165,12 +166,12 @@ def get_lr_schedulers(params):
                   params.reduce_lr_on_plateau_patience,
                   params.reduce_lr_on_plateau_min_lr)
         elif lr_sched == "lr_decay_every_nepochs":
-            lrs = ReduceLREveryNEpochs(decay_after_nepochs_factor,
-                  decay_after_nepochs_nepochs,
-                  decay_after_nepochs_min_lr)
-        elif lr_sched == "stop_on_loss":
-            lrs = StopOnLoss(early_stopping_metric,
-                  early_stopping_threshold)
+            lrs = ReduceLREveryNEpochs(params.decay_after_nepochs_factor,
+                  params.decay_after_nepochs_nepochs,
+                  params.decay_after_nepochs_min_lr)
+        elif lr_sched == "stop_at_loss":
+            lrs = StopAtLoss(params.stop_at_loss_metric,
+                  stop_at_loss_threshold)
         elif lr_sched == "model_checkpoint":
             lrs = ModelCheckpoint(params.model_checkpoint_metric, 
                   params.model_checkpoint_save_freq)            
