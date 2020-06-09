@@ -155,7 +155,7 @@ def get_lr_schedulers(params):
     for lr_sched in params.lr_schedulers.split(","):
         if lr_sched == "warm_up":
             lrs = WarmUpLRScheduler(params.warm_up_epochs, 
-                  params.learning_rate / params.mpi_processes)
+                  params.learning_rate / params.mpi_processes,
                   params.learning_rate)
         elif lr_sched == "early_stopping":
             lrs = EarlyStopping(params.early_stopping_metric, 
