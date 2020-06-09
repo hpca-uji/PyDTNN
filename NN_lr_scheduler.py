@@ -74,7 +74,6 @@ class WarmUpLRScheduler(LRScheduler):
         if self.batch_count <= warmup_batches:
             optimizer.learning_rate = \
                 self.base_lr + self.batch_count * ((self.init_lr - self.base_lr) / warmup_batches)
-                self.batch_count * self.init_lr / warmup_batches
             self.batch_count += 1
             # if self.verbose and rank == 0:
             #     print("LRScheduler %s: setting learning rate to %.8f" % \
