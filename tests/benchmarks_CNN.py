@@ -171,7 +171,7 @@ def get_lr_schedulers(params):
                   params.decay_after_nepochs_min_lr)
         elif lr_sched == "stop_at_loss":
             lrs = StopAtLoss(params.stop_at_loss_metric,
-                  stop_at_loss_threshold)
+                  params.stop_at_loss_threshold)
         elif lr_sched == "model_checkpoint":
             lrs = ModelCheckpoint(params.model_checkpoint_metric, 
                   params.model_checkpoint_save_freq)            
