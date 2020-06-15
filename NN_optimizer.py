@@ -59,22 +59,16 @@ class SGD(Optimizer):
         self.decay = decay
 
     def update(self, layer):
-        it = getattr(layer, "it", 0)
         lr = self.learning_rate
-        if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * it))
-        it += 1    
-        setattr(layer, "it", it)
-
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity = getattr(layer, "velocity_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
 
             velocity = self.momentum * velocity + dw
             if self.nesterov:
-                w -= lr * (dw - self.momentum * velocity)
+                w -= lr * (self.decay + dw + self.momentum * velocity)
             else:
-                w -= lr * velocity
+                w -= lr * (self.decay + velocity)
 
             setattr(layer, w_, w)
             setattr(layer, "velocity_%s" % (w_), velocity)
@@ -90,19 +84,13 @@ class RMSProp(Optimizer):
         self.decay = decay        
 
     def update(self, layer):
-        it = getattr(layer, "it", 0)
         lr = self.learning_rate
-        if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * it))
-        it += 1    
-        setattr(layer, "it", it)
-
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = getattr(layer, "cache_%s" % (w_), np.zeros_like(w, dtype=layer.dtype))
 
             cache = self.rho * cache + (1 - self.rho) * dw**2
-            w -= lr * dw / np.sqrt(cache + self.epsilon)
+            w -= lr * (self.decay + (dw / np.sqrt(cache + self.epsilon)))
 
             setattr(layer, w_, w)
             setattr(layer, "cache_%s" % (w_), cache)
@@ -119,11 +107,8 @@ class Adam(Optimizer):
         self.decay = decay
 
     def update(self, layer):
-        it = getattr(layer, "it", 0)
         lr = self.learning_rate
-        if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * it))
-        it += 1    
+        it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)
 
         for w_, dw_ in layer.grad_vars.items():
@@ -137,7 +122,7 @@ class Adam(Optimizer):
             mt = m / (1 - self.beta1**it)
             vt = v / (1 - self.beta2**it)
     
-            w -= lr * mt / np.sqrt(vt + self.epsilon)
+            w -= lr * (self.decay + (mt / np.sqrt(vt + self.epsilon)))
 
             setattr(layer, w_, w)
             setattr(layer, "m_%s" % (w_), m)
@@ -155,11 +140,8 @@ class Nadam(Optimizer):
         self.decay = decay
 
     def update(self, layer):
-        it = getattr(layer, "it", 0)
         lr = self.learning_rate
-        if self.decay > 0: 
-            lr = lr * (1. / (1. + self.decay * it))
-        it += 1    
+        it = getattr(layer, "it", 0) + 1   
         setattr(layer, "it", it)
 
         for w_, dw_ in layer.grad_vars.items():
@@ -173,7 +155,7 @@ class Nadam(Optimizer):
             mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1**it)
             vt = v / (1 - self.beta2**it)
     
-            w -= lr * mt / np.sqrt(vt + self.epsilon)
+            w -= lr * (self.decay + (mt / np.sqrt(vt + self.epsilon)))
 
             setattr(layer, w_, w)
             setattr(layer, "m_%s" % (w_), m)

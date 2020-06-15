@@ -158,7 +158,6 @@ class Model:
 
     def __train_batch(self, X_batch, Y_batch, global_batch_size, loss_metrics,
                       loss_funcs, optimizer, lr_schedulers):
-
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
         self.mode = "train"
         local_batch_size = X_batch.shape[0]
@@ -226,14 +225,17 @@ class Model:
 
         dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train, 
                                               X_val=X_val, Y_val=Y_val)
-        self.train_dataset(dataset, nepochs, local_batch_size, 0, False,
+        history = self.train_dataset(dataset, nepochs, local_batch_size, 0, False,
                            loss_metrics, optimizer, bar_width)
+        return history
 
     def train_dataset(self, dataset, nepochs, local_batch_size, 
                       val_split=0.2, loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
                       optimizer=NN_optimizer.SGD(), lr_schedulers=[], bar_width=110):
 
         loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
+        self.history = {l: [] for l in (loss_metrics + ["val_%s" % m for m in loss_metrics])}
+
         dataset.make_train_val_partitions(val_split)
         self.steps_per_epoch = dataset.train_nsamples / (local_batch_size * self.nprocs)
         terminate = False
@@ -268,7 +270,9 @@ class Model:
                     pbar.update(batch_size)
 
             if self.rank == 0:
-                pbar.close()
+                pbar.close()                
+                for c in range(len(loss_metrics)):
+                    self.history[loss_metrics[c]].append(train_total_loss[c])
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
                 val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
@@ -279,6 +283,10 @@ class Model:
                 if self.rank == 0:
                     print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
+            if self.rank == 0:
+                for c in range(len(loss_metrics)):
+                    self.history["val_" + loss_metrics[c]].append(val_total_loss[c])
+
             for lr_sched in lr_schedulers:
                 lr_sched.on_epoch_end(self, optimizer, loss_metrics, 
                                       train_total_loss, val_total_loss, self.rank)
@@ -288,6 +296,7 @@ class Model:
             if terminate: break
 
         self.tracer.define_event_type()
+        return self.history
 
     def __evaluate_batch(self, X_batch, Y_batch, loss_funcs):
 

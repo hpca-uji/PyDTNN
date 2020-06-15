@@ -79,6 +79,7 @@ def parse_options():
     parser.add_argument('--evaluate', default=False, type=bool_lambda)
     parser.add_argument('--weights_and_bias_filename',  type=str, default=None)
     parser.add_argument('--shared_storage', default=False, type=bool_lambda)
+    parser.add_argument('--history_file', type=str, default=None)
     # Optimizer
     parser.add_argument('--optimizer', type=str, default="sgd")
     parser.add_argument('--learning_rate', type=float, default=1e-2)
@@ -247,7 +248,7 @@ if __name__ == "__main__":
 
 
     # Training a model directly from a dataset
-    model.train_dataset(dataset,
+    history = model.train_dataset(dataset,
                         nepochs          = params.num_epochs, 
                         local_batch_size = params.batch_size,
                         val_split        = params.validation_split,  
@@ -256,7 +257,7 @@ if __name__ == "__main__":
                         lr_schedulers    = lr_schedulers)
 
     # Alternatively, the model can be trained on any specific data
-    # model.train(X_train = dataset.X_train_val, Y_train = dataset.Y_train_val,
+    # history = model.train(X_train = dataset.X_train_val, Y_train = dataset.Y_train_val,
     #             X_val   = dataset.X_test,      Y_val   = dataset.Y_test,
     #             nepochs          = params.num_epochs, 
     #             local_batch_size = params.batch_size,
@@ -276,8 +277,14 @@ if __name__ == "__main__":
         t2 = time.time()
         print('**** Done...')
         total_time = (t2-t1)
-        print(f'Time: {total_time:5.2f} s')
-        print(f'Throughput: {(dataset.train_val_nsamples * params.num_epochs)/total_time:5.2f} samples/s')
+        print(f'Time: {total_time:5.4f} s')
+        print(f'Throughput: {(dataset.train_val_nsamples * params.num_epochs)/total_time:5.4f} samples/s')
+
+        if params.history_file:
+            with open(params.history_file, "w") as f:
+                keys = [k for k in history]
+                for v in range(len(history[keys[0]])):
+                    f.write(' '.join(["%3d" % v] + [('%20.4f' % history[k][v]) for k in keys]) + '\n')
 
     if params.evaluate:
         if rank == 0:

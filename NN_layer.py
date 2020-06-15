@@ -203,7 +203,6 @@ class Conv2D(Layer):
 
         self.dw = res.reshape(self.weights.shape)
         self.db = prev_dx.sum(axis=(0,2,3))
-
         return dx
 
 
