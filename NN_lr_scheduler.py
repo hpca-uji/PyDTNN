@@ -61,9 +61,10 @@ class LRScheduler():
 
 class WarmUpLRScheduler(LRScheduler):
 
-    def __init__(self, warmup_epochs=5, init_lr=1e-3, verbose=True):
+    def __init__(self, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=True):
         super().__init__()
         self.warmup_epochs = warmup_epochs
+        self.base_lr = base_lr
         self.init_lr = init_lr
         self.verbose = verbose
         self.batch_count = 0
@@ -72,7 +73,7 @@ class WarmUpLRScheduler(LRScheduler):
         warmup_batches = int(model.steps_per_epoch) * self.warmup_epochs
         if self.batch_count <= warmup_batches:
             optimizer.learning_rate = \
-                self.batch_count * self.init_lr / warmup_batches
+                self.base_lr + self.batch_count * ((self.init_lr - self.base_lr) / warmup_batches)
             self.batch_count += 1
             # if self.verbose and rank == 0:
             #     print("LRScheduler %s: setting learning rate to %.8f" % \
@@ -177,7 +178,7 @@ class ReduceLREveryNEpochs(LRScheduler):
                      (type(self).__name__, self.loss_metric, optimizer.learning_rate))
 
 
-class StopOnLoss(LRScheduler):
+class StopAtLoss(LRScheduler):
 
     def __init__(self, loss_metric="", threshold_value=0, verbose=True):
         super().__init__()
