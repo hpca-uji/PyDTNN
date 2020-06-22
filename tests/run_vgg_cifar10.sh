@@ -1,47 +1,48 @@
-# export PYTHONPATH=/home/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
-# export EXTRAE_CONFIG_FILE=./extrae.xml
-# export EXTRAE_ON=1
-#
-# EXTRAELIB=/home/dolzm/install/extrae-3.6.0/lib/libompitrace.so
+set -x
 
-NUMNODES=1
-NUMPROCS=1
-PROCS_PER_NODE=$(($NUMPROCS / $NUMNODES))
-export OMP_NUM_THREADS=8
+altecnodes=(2 3 4 5 7 8 10)
+#for procs in 1 2 4 8; do
+#for thrds in 24 18 12 6 4 2; do
+for procs in 6 4 2 1; do
+  for thrds in 24 12 6 2; do
 
-NODETYPE=hexa
-LASTH=`echo $NUMNODES - 1 | bc`
-HOSTS=$(for i in `seq 0 $LASTH`; do printf "%s%02d," ${NODETYPE} ${i}; done)
+    hosts=`for ((i=0;i<procs;i++)); do printf altec%d, ${altecnodes[$i]}; done`
 
-# -genv LD_PRELOAD $EXTRAELIB
-#mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
-   python3 -u benchmarks_CNN.py \
-         --model=vgg3dobn \
-         --dataset=cifar10 \
-         --dataset_train_path=/scratch/cifar-10/cifar-10-batches-bin/ \
-         --dataset_test_path=/scratch/cifar-10/cifar-10-batches-bin/ \
-         --test_as_validation=True \
-         --batch_size=64 \
-         --validation_split=0.2 \
-         --steps_per_epoch=0 \
-         --num_epochs=400 \
-         --evaluate=False \
-         --optimizer=sgd \
-         --learning_rate=0.001 \
-         --momentum=0.9 \
-         --decay=0 \
-         --loss_func=categorical_accuracy,categorical_cross_entropy \
-         --lr_schedulers="" \
-         --warm_up_epochs=5 \
-         --early_stopping_metric=val_categorical_cross_entropy \
-         --early_stopping_patience=20 \
-         --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \
-         --reduce_lr_on_plateau_factor=0.1 \
-         --reduce_lr_on_plateau_patience=5 \
-         --reduce_lr_on_plateau_min_lr=0 \
-         --parallel=sequential \
-         --non_blocking_mpi=False \
-         --tracing=False \
-         --profile=False \
-         --enable_gpu=False \
-         --dtype=float32
+    export OMP_NUM_THREADS=$thrds
+
+    mpirun -iface ib0 -ppn 1 -np $procs -host $hosts \
+       python3 -u benchmarks_CNN.py \
+             --model=vgg11bn_cifar10 \
+             --dataset=cifar10 \
+             --dataset_train_path=/mnt/beegfs/users/dolzm/datasets/cifar-10-batches-bin \
+             --dataset_test_path=/mnt/beegfs/users/dolzm/datasets/cifar-10-batches-bin \
+             --test_as_validation=True \
+             --batch_size=64 \
+             --validation_split=0.2 \
+             --steps_per_epoch=0 \
+             --num_epochs=200 \
+             --evaluate=False \
+             --optimizer=sgd \
+             --learning_rate=0.001 \
+             --momentum=0.9 \
+             --decay=0 \
+             --loss_func=categorical_accuracy,categorical_cross_entropy \
+             --lr_schedulers=warm_up,stop_at_loss \
+             --warm_up_epochs=5 \
+             --early_stopping_metric=val_categorical_cross_entropy \
+             --early_stopping_patience=20 \
+             --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \
+             --reduce_lr_on_plateau_factor=0.1 \
+             --reduce_lr_on_plateau_patience=5 \
+             --reduce_lr_on_plateau_min_lr=0 \
+             --stop_at_loss_metric=val_categorical_accuracy \
+             --stop_at_loss_threshold=70.0 \
+             --parallel=data \
+             --non_blocking_mpi=False \
+             --tracing=False \
+             --profile=False \
+             --enable_gpu=False \
+             --history_file="results/result_vgg9_${procs}p_${thrds}t.history" \
+             --dtype=float32  | tee results/result_vgg9_${procs}p_${thrds}t.dat
+  done
+done

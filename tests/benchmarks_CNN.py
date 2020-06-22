@@ -42,10 +42,10 @@ __version__ = "1.0.1"
 import os
 
 Extrae_tracing = False
-if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == 1:
+if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == "1":
   TracingLibrary = "libptmpitrace.so"
   import ctypes
-  ctypes.CDLL("/home/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
+  ctypes.CDLL("/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
 
   import pyextrae.common.extrae as pyextrae
   pyextrae.startTracing( TracingLibrary )

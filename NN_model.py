@@ -295,7 +295,7 @@ class Model:
 
             if terminate: break
 
-        self.tracer.define_event_type()
+        self.tracer.define_event_type(self)
         return self.history
 
     def __evaluate_batch(self, X_batch, Y_batch, loss_funcs):
