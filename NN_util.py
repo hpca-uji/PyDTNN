@@ -59,7 +59,7 @@ def matmul(a, b):
     #elif a.dtype == np.float64:
     #    c = slb.dgemm(1.0, a, b)
     #else:
-    # Naive matmul gets more performance than scipy blas!
+    # Native numpy matmul gets more performance than scipy blas!
     c = a @ b
     return c
 
@@ -75,17 +75,29 @@ def matmul_gpu(a, b):
 
 # Loss functions for classification CNNs
 
-loss_format = {"categorical_accuracy":      "acc: %5.2f%%", 
-               "categorical_cross_entropy": "cro: %.7f",
+metric_format = {"categorical_accuracy":    "acc: %5.2f%%", 
+               "categorical_cross_entropy": "cce: %.7f",
+               "binary_cross_entropy":      "bce: %.7f",
                "categorical_hinge":         "hin: %.7f",
                "categorical_mse":           "mse: %.7f",
                "categorical_mae":           "mae: %.7f",
                "regression_mse":            "mse: %.7f",
                "regression_mae":            "mae: %.7f"}
 
-def categorical_cross_entropy(Y_pred, Y_targ, eps=1e-7):
+def categorical_cross_entropy(Y_pred, Y_targ, eps=1e-8):
     b = Y_targ.shape[0]
-    return -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)] + eps)) / b
+    Y_pred = np.clip(Y_pred, a_min=eps, a_max=(1-eps))    
+    cost = -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)])) / b
+    dx = np.copy(Y_targ)
+    dx[np.arange(b), np.argmax(dx, axis=1)] /= ( -Y_pred[np.arange(b), np.argmax(dx, axis=1)] * b )
+    return cost, dx
+
+def binary_cross_entropy(Y_pred, Y_targ, eps=1e-7):
+    b = Y_targ.shape[0]
+    cost = -np.sum(np.log(np.maximum((1-Y_targ) - Y_pred, eps)))  / b
+    Y_pred = np.clip(Y_pred, a_min=eps, a_max=(1-eps))
+    dx = (-(Y_targ / Y_pred) + ( (1-Y_targ) / (1-Y_pred))) / b
+    return cost, dx
 
 def categorical_accuracy(Y_pred, Y_targ):
     b = Y_targ.shape[0]

@@ -177,7 +177,6 @@ cdef int col2im_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                         for yy in range(padding, WW-padding):
                             col = n * HH * WW + xx * WW + yy
                             x_padded[n, c, stride * xx + ii, stride * yy + jj] += cols[row, col]
-                            
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

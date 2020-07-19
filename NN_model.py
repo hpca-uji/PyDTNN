@@ -137,27 +137,27 @@ class Model:
                     d[key] = getattr(layer, p)
             np.savez_compressed(filename, **d)
 
-    def __compute_loss_funcs(self, Y_pred, Y_targ, loss_funcs, blocking=True):
+    def __compute_metrics_funcs(self, Y_pred, Y_targ, loss, metrics_funcs, blocking=True):
         loss_req = None
-        loss = np.array([func(Y_pred, Y_targ) for func in loss_funcs], dtype=np.float32) / self.nprocs
+        losses = np.array([loss] + [func(Y_pred, Y_targ) for func in metrics_funcs], dtype=np.float32) / self.nprocs
         if self.comm != None and blocking:
-            self.comm.Allreduce(MPI.IN_PLACE, loss, op=MPI.SUM)
+            self.comm.Allreduce(MPI.IN_PLACE, losses, op=MPI.SUM)
         elif self.comm != None and not blocking:
-            loss_req = self.comm.Iallreduce(MPI.IN_PLACE, loss, op=MPI.SUM)
-        return loss, loss_req
+            loss_req = self.comm.Iallreduce(MPI.IN_PLACE, losses, op=MPI.SUM)
+        return losses, loss_req
 
     def __update_running_average(self, curr, total, count, batch_size, loss_metrics, prefix=""):
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(loss_metrics)):
-            try:    loss_str = NN_util.loss_format[loss_metrics[c]]
+            try:    loss_str = NN_util.metric_format[loss_metrics[c]]
             except: loss_str = loss_metrics[c]
             string += ("%s, " % (prefix+loss_str)) % total[c]
         string = string[:-2]
         return total, count+batch_size, string
 
-    def __train_batch(self, X_batch, Y_batch, global_batch_size, loss_metrics,
-                      loss_funcs, optimizer, lr_schedulers):
+    def __train_batch(self, X_batch, Y_batch, global_batch_size, loss_func, 
+                      metrics_funcs, optimizer, lr_schedulers):
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
         self.mode = "train"
         local_batch_size = X_batch.shape[0]
@@ -173,8 +173,8 @@ class Model:
             self.tracer.emit_event(PYDL_EVT, 0)
 
         Y_pred = self.layers[-1].a
-        total_loss, loss_req = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
-        dx = (Y_pred - Y_batch) / global_batch_size
+        loss, dx = loss_func(Y_pred, Y_batch)
+        total_metrics, _ = self.__compute_metrics_funcs(Y_pred, Y_batch, loss, metrics_funcs)
 
         if self.blocking_mpi:
             # Blocking MPI
@@ -217,10 +217,10 @@ class Model:
         for lr_sched in lr_schedulers:
             lr_sched.on_batch_end(self, optimizer, self.rank)
 
-        return total_loss
+        return total_metrics
 
     def train(self, X_train, Y_train, X_val, Y_val, nepochs, local_batch_size,
-                    loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                    loss="categorical_cross_entropy", metrics=["categorical_accuracy"], 
                     optimizer=NN_optimizer.SGD(), bar_width=110):
 
         dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train, 
@@ -230,10 +230,12 @@ class Model:
         return history
 
     def train_dataset(self, dataset, nepochs, local_batch_size, 
-                      val_split=0.2, loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                      val_split=0.2, loss="categorical_cross_entropy", metrics=["categorical_accuracy"], 
                       optimizer=NN_optimizer.SGD(), lr_schedulers=[], bar_width=110):
 
-        loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
+        loss_func = getattr(NN_util, loss)
+        metrics_funcs = [getattr(NN_util, l) for l in metrics]
+        loss_metrics = [loss] + metrics
         self.history = {l: [] for l in (loss_metrics + ["val_%s" % m for m in loss_metrics])}
 
         dataset.make_train_val_partitions(val_split)
@@ -245,8 +247,8 @@ class Model:
             train_batch_generator, val_batch_generator = \
                 dataset.get_train_val_generator(local_batch_size, self.rank, self.nprocs, val_split)
 
-            train_total_loss, train_batch_count = np.zeros(len(loss_funcs)), 0
-            val_total_loss, val_batch_count = np.zeros(len(loss_funcs)), 0
+            train_total_loss, train_batch_count = np.zeros(len(loss_metrics)), 0
+            val_total_loss, val_batch_count = np.zeros(len(loss_metrics)), 0
 
             if self.rank == 0:
                 fmt="%%%dd" % (len(str(nepochs)))
@@ -259,8 +261,8 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for X_batch, Y_batch, batch_size in train_batch_generator:
-                train_batch_loss = self.__train_batch(X_batch, Y_batch, batch_size, loss_metrics,
-                                                      loss_funcs, optimizer, lr_schedulers)
+                train_batch_loss = self.__train_batch(X_batch, Y_batch, batch_size, loss_func,
+                                                      metrics_funcs, optimizer, lr_schedulers)
                 train_total_loss, train_batch_count, string = \
                     self.__update_running_average(train_batch_loss, train_total_loss, 
                                                   train_batch_count, batch_size, 
@@ -275,7 +277,7 @@ class Model:
                     self.history[loss_metrics[c]].append(train_total_loss[c])
 
             for X_batch, Y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
+                val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_func, metrics_funcs)
                 val_total_loss, val_batch_count, string = \
                     self.__update_running_average(val_batch_loss, val_total_loss, 
                                                   val_batch_count, batch_size,
@@ -298,7 +300,7 @@ class Model:
         self.tracer.define_event_type(self)
         return self.history
 
-    def __evaluate_batch(self, X_batch, Y_batch, loss_funcs):
+    def __evaluate_batch(self, X_batch, Y_batch, loss_func, metrics_funcs):
 
         # Forward pass (FP)
         # if X_batch.shape[0] == 0: return [0] * len(loss_funcs)
@@ -310,31 +312,34 @@ class Model:
             self.tracer.emit_event(PYDL_EVT, 0)
 
         Y_pred = self.layers[-1].a
-        loss_res, loss_reqs = self.__compute_loss_funcs(Y_pred, Y_batch, loss_funcs, blocking=True)
+        loss, _ = loss_func(Y_pred, Y_batch)
+        loss_res, loss_reqs = self.__compute_metrics_funcs(Y_pred, Y_batch, loss, metrics_funcs, blocking=True)
         return loss_res
 
     def evaluate(self, X_test, Y_test, 
-                 loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                 loss="categorical_cross_entropy", metrics=["categorical_accuracy"], 
                  bar_width=110):
 
         dataset = datasets.NN_dataset.Dataset(X_test=X_test, Y_test=Y_test)
         self.evaluate_dataset(dataset, loss_metrics, bar_width)
 
     def evaluate_dataset(self, dataset, 
-                         loss_metrics=["categorical_accuracy", "categorical_cross_entropy"], 
+                         loss="categorical_cross_entropy", metrics=["categorical_accuracy"], 
                          bar_width=120):
 
-        loss_funcs = [getattr(NN_util, l) for l in loss_metrics]
+        loss_func = getattr(NN_util, loss)
+        metrics_funcs = [getattr(NN_util, l) for l in metrics]
+        loss_metrics = [loss] + metrics
         test_batch_generator = dataset.get_test_generator(self.rank, self.nprocs)
 
         if self.rank == 0:
-            test_total_loss, test_batch_count = np.zeros(len(loss_funcs)), 0
+            test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
             pbar = tqdm(total=dataset.test_nsamples, ncols=bar_width, 
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
         for X_batch, Y_batch, batch_size in test_batch_generator:
-            test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_funcs)
+            test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, loss_func, metrics_funcs)
             if self.rank == 0:
                 val_total_loss, val_batch_count, string = \
                     self.__update_running_average(test_batch_loss, test_total_loss, 

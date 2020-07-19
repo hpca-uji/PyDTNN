@@ -64,7 +64,6 @@ def add_cython(x, b):
 cdef add_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x, 
                            np.ndarray[np.int8_t, ndim=1] b):
     cdef int i, j
-
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i,j] += b[i]
@@ -74,7 +73,6 @@ cdef add_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
 cdef add_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x, 
                               np.ndarray[np.float32_t, ndim=1] b):
     cdef int i, j
-
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i,j] += b[i]
@@ -84,7 +82,6 @@ cdef add_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
 cdef add_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x, 
                               np.ndarray[np.float64_t, ndim=1] b):
     cdef int i, j
-
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i,j] += b[i]

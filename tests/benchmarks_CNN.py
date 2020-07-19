@@ -91,7 +91,8 @@ def parse_options():
     parser.add_argument('--beta2', type=float, default=0.999)    
     parser.add_argument('--epsilon', type=float, default=1e-7)
     parser.add_argument('--rho', type=float, default=0.9)
-    parser.add_argument('--loss_func', type=str, default="accuracy,categorical_cross_entropy")
+    parser.add_argument('--loss_func', type=str, default="categorical_cross_entropy")
+    parser.add_argument('--metrics', type=str, default="categorical_accuracy")
     # Learning rate schedulers
     parser.add_argument('--lr_schedulers', type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
     parser.add_argument('--warm_up_epochs', type=int, default=5)
@@ -216,7 +217,7 @@ if __name__ == "__main__":
     if params.weights_and_bias_filename:
         model.load_weights_and_bias(params.weights_and_bias_filename)
 
-    loss_metrics = [f for f in params.loss_func.replace(" ","").split(",")]
+    metrics = [f for f in params.metrics.replace(" ","").split(",")]
 
     dataset = get_dataset(params)
     if params.steps_per_epoch > 0:
@@ -233,7 +234,7 @@ if __name__ == "__main__":
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')        
-        test_loss = model.evaluate_dataset(dataset, loss_metrics)
+        test_loss = model.evaluate_dataset(dataset, params.loss_func, metrics)
   
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
@@ -253,7 +254,8 @@ if __name__ == "__main__":
                         nepochs          = params.num_epochs, 
                         local_batch_size = params.batch_size,
                         val_split        = params.validation_split,  
-                        loss_metrics     = loss_metrics, 
+                        loss             = params.loss_func,
+                        metrics          = metrics,
                         optimizer        = optimizer,
                         lr_schedulers    = lr_schedulers)
 
@@ -290,4 +292,4 @@ if __name__ == "__main__":
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-        test_loss = model.evaluate_dataset(dataset, loss_metrics)
+        test_loss = model.evaluate_dataset(dataset, params.loss_func, metrics)

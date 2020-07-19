@@ -111,8 +111,7 @@ class Softmax(Layer):
         self.a /= np.sum(self.a, axis=1, keepdims=True)
        
     def backward(self, prev_dx):
-        return prev_dx
-
+        return self.a * (prev_dx - (prev_dx * self.a).sum(axis=1, keepdims=True))
 
 # Compatibility aliases
 

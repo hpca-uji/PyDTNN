@@ -34,7 +34,8 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
          --optimizer=sgd \
          --learning_rate=0.001 \
          --momentum=0.9 \
-         --loss_func=categorical_accuracy,categorical_cross_entropy \
+         --loss=categorical_cross_entropy \
+         --metrics=categorical_accuracy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \
          --warm_up_epochs=5 \
          --early_stopping_metric=val_categorical_cross_entropy \
