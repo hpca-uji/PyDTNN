@@ -8,7 +8,7 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
 the presence of multicore processors and GPUs at node level. For that, PyDTNN 
 uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
@@ -39,7 +39,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 import os
 
