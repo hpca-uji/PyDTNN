@@ -43,15 +43,34 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_vgg2(model):
+def create_resnet32_cifar10(model):
     model.add( Input(shape=(3, 32, 32)) )
-    model.add( Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
-    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
+    model.add( Conv2D(nfilters=16, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform") )
+    model.add( BatchNormalization() )
+
+    layout = [ [16, 5, 1], [32, 5, 2], [64, 5, 2] ] # Resnet-32
+    for n_filt, res_blocks, stride in layout:
+    	for r in range(res_blocks):
+            if r > 0: stride = 1
+            model.add( 
+                AdditionBlock( 
+                    [
+                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer="he_uniform"),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"),
+                        BatchNormalization() 
+                    ],
+                    [
+                        Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer="he_uniform"),
+                        BatchNormalization() 
+                    ] if stride != 1 else [] ) )
+            model.add( Relu() )    
+
+    model.add( AveragePool2D(pool_shape=(0,0)) ) # Global average pooling 2D
     model.add( Flatten() )
-    model.add( FC(shape=(128,), activation="relu", weights_initializer="he_uniform") )
+    model.add( FC(shape=(64,)) )
+    model.add( BatchNormalization() )
+    model.add( Relu() )    
     model.add( FC(shape=(10,), activation="softmax") )
     return model

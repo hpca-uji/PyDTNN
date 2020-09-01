@@ -38,20 +38,48 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-
+import math
 from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_vgg2(model):
+def create_densenet_cifar10(model):
     model.add( Input(shape=(3, 32, 32)) )
-    model.add( Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
-    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform") )
-    model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
-    model.add( Flatten() )
-    model.add( FC(shape=(128,), activation="relu", weights_initializer="he_uniform") )
+    
+    blocks, growth_rate = [6,12,24,16], 12
+
+    reduction = 0.5
+    num_planes = 2*growth_rate
+
+    model.add( Conv2D(nfilters=num_planes, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer="he_uniform") )
+
+    layers = []
+    for i, nblocks in enumerate(blocks):
+        for j in range(nblocks):
+            model.add( 
+                ConcatenationBlock( 
+                    [
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=4*growth_rate, filter_shape=(1,1), use_bias=False, weights_initializer="he_uniform"),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=growth_rate, filter_shape=(3,3), padding=1, use_bias=False, weights_initializer="he_uniform")
+                    ], [] ) )
+
+        num_planes += nblocks * growth_rate
+
+        if i < len(blocks)-1:
+            num_planes = int(math.floor(num_planes * reduction))
+            model.add( BatchNormalization() )
+            model.add( Relu() )
+            model.add( Conv2D(nfilters=num_planes, filter_shape=(1,1), use_bias=False, weights_initializer="he_uniform") )
+            model.add( AveragePool2D(pool_shape=(2,2), stride=2) )
+    
+    model.add( BatchNormalization() )
+    model.add( Relu() )
+    model.add( AveragePool2D(pool_shape=(4,4)) )               
+    model.add( Flatten() )   
     model.add( FC(shape=(10,), activation="softmax") )
     return model
+    

@@ -5,9 +5,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -40,6 +42,7 @@ __version__ = "1.0.1"
 import numpy as np
 import importlib, gc
 import random, os, struct, math
+from skimage.transform import resize
 
 import threading
 import sys
@@ -76,12 +79,39 @@ class BackgroundGenerator(threading.Thread):
     def __iter__(self):
         return self
 
+def flip_images(data, prob=0.5):
+    n, c, h, w = data.shape
+    limit = min(n, int(n * prob))
+    s = np.arange(n)
+    np.random.shuffle(s)
+    s = s[:limit]
+    data[s,...] = np.flip(data[s,...], axis=-1)
+    return data
+
+def crop_images(data, crop_size, prob=0.5):
+    n, c, h, w = data.shape
+    crop_size = min(crop_size, h, w)
+    limit = min(n, int(n * prob))
+    s = np.arange(n)
+    np.random.shuffle(s)
+    s = s[:limit]
+    t = np.random.randint(0, h - crop_size, (limit,))
+    l = np.random.randint(0, w - crop_size, (limit,))
+    for i, ri in enumerate(s):
+        b, r = t[i]+crop_size, l[i]+crop_size
+        # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
+        data[ri,:,:t[i],:l[i]] = 0.0
+        data[ri,:,b:,r:] = 0.0
+        data[ri,...] = np.roll(data[ri,...], np.random.randint(-t[i],(h-b)), axis=1) 
+        data[ri,...] = np.roll(data[ri,...], np.random.randint(-l[i],(w-r)), axis=2) 
+    return data
+
 
 class Dataset:
 
     def __init__(self, X_train=np.array([]), Y_train=np.array([]),
                        X_val=np.array([]),   Y_val=np.array([]),
-                       X_test=np.array([]),  Y_test=np.array([]) ):
+                       X_test=np.array([]),  Y_test=np.array([])):
         self.X_train, self.Y_train = X_train, Y_train
         self.X_val, self.Y_val = X_val, Y_val
         self.X_test, self.Y_test = X_test, Y_test
@@ -93,7 +123,15 @@ class Dataset:
         pass
 
     def train_data_generator(self, batch_size):
-        yield (self.X_train, self.Y_train)
+        X_data, Y_data = self.X_train, self.Y_train
+        # Use data augmentation, if used we preserve original data
+        if self.flip_images or self.crop_images:
+            X_data = X_data.copy()
+        if self.flip_images:
+            X_data = flip_images(X_data, self.flip_images_prob)
+        if self.crop_images:
+            X_data = crop_images(X_data, self.crop_images_size, self.crop_images_prob)
+        yield X_data, Y_data
 
     def val_data_generator(self, batch_size):
         yield (self.X_val, self.Y_val)
@@ -124,7 +162,7 @@ class Dataset:
             nsamples = X_data.shape[0]
             s = memoryview(np.arange(nsamples))
             if shuffle: np.random.shuffle(s)
-
+            
             last_batch_size = nsamples % batch_size
             if last_batch_size < nprocs: last_batch_size += batch_size
             end_for = nsamples - last_batch_size
@@ -174,12 +212,19 @@ class Dataset:
 
 class MNIST(Dataset):
 
-    def __init__(self, train_path, test_path, model="", 
-                 test_as_validation=False, dtype=np.float32):
+    def __init__(self, train_path, test_path, model="", test_as_validation=False,
+                 flip_images=False, flip_images_prob=0.5, 
+                 crop_images=False, crop_images_size=14, crop_images_prob=0.5, 
+                 dtype=np.float32):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
         self.test_as_validation = test_as_validation
+        self.flip_images = flip_images
+        self.flip_images_prob = flip_images_prob
+        self.crop_images = crop_images
+        self.crop_images_size = crop_images_size
+        self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.nclasses = 10
         #self.val_start = 0
@@ -269,12 +314,19 @@ class MNIST(Dataset):
 
 class CIFAR10(Dataset):
 
-    def __init__(self, train_path, test_path, model="", 
-                 test_as_validation=False, dtype=np.float32):                 
+    def __init__(self, train_path, test_path, model="", test_as_validation=False, 
+                 flip_images=False, flip_images_prob=0.5, 
+                 crop_images=False, crop_images_size=16, crop_images_prob=0.5, 
+                 dtype=np.float32):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
         self.test_as_validation = test_as_validation
+        self.flip_images = flip_images
+        self.flip_images_prob = flip_images_prob
+        self.crop_images = crop_images
+        self.crop_images_size = crop_images_size
+        self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.nclasses = 10
         self.val_start = 0
@@ -367,11 +419,18 @@ class CIFAR10(Dataset):
  
 class ImageNet(Dataset):
         
-    def __init__(self, train_path, test_path, model="", 
-                 test_as_validation=False, dtype=np.float32):
+    def __init__(self, train_path, test_path, model="", test_as_validation=False, 
+                 flip_images=False, flip_images_prob=0.5, 
+                 crop_images=False, crop_images_size=112, crop_images_prob=0.5, 
+                 dtype=np.float32):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
         self.model = model
+        self.flip_images = flip_images
+        self.flip_images_prob = flip_images_prob
+        self.crop_images = crop_images
+        self.crop_images_size = crop_images_size
+        self.crop_images_prob = crop_images_prob
         self.test_as_validation = test_as_validation
         self.dtype = dtype
         self.nclasses = 1000
@@ -431,6 +490,10 @@ class ImageNet(Dataset):
                     Y_buffer = np.concatenate((Y_buffer, Y_data), axis=0)
     
                 if X_buffer.shape[0] >= batch_size:
+                    if self.flip_images:
+                        X_buffer = flip_images(X_buffer, self.flip_images_prob)
+                    if self.crop_images:
+                        X_buffer = crop_images(X_buffer, self.crop_images_size, self.crop_images_prob)
                     yield (X_buffer[:batch_size,...], Y_buffer[:batch_size,...])
                     X_buffer = X_buffer[batch_size:,...]
                     Y_buffer = Y_buffer[batch_size:,...]
@@ -446,6 +509,10 @@ class ImageNet(Dataset):
                 values = np.load("%s/%s" % (path, f))
                 X_data = self.__normalize_image(values['x'].astype(self.dtype))
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
+                if self.flip_images:
+                    X_data = flip_images(X_data, self.flip_images_prob)
+                if self.crop_images:
+                    X_data = crop_images(X_data, self.crop_images_size, self.crop_images_prob)
                 yield (X_data, Y_data)
                 gc.collect()
 
