@@ -76,7 +76,7 @@ Note the ``-fopenmp`` compilation flag in the ``setup.py`` file to exploit intra
 PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supporting the following options:
 
 * Model parameters:
-    * ``--model``: Neural network model: `simplemlp`, `simplecnn`, `alexnet`, `vgg11`, `vgg16`.
+    * ``--model``: Neural network model: `simplemlp`, `simplecnn`, `alexnet`, `vgg11`, `vgg16`, etc.
     * ``--dataset``: Dataset to train: `mnist`, `cifar10`, `imagenet`.
     * ``--dataset_train_path``: Path to the training dataset.
     * ``--dataset_test_path``: Path to the training dataset.
