@@ -9,19 +9,21 @@ PyDTNN priorizes simplicity over efficiency, providing an amiable user
 interface which enables a flat accessing curve. To perform the training and 
 inference processes, PyDTNN exploits distributed inter-process parallelism 
 (via MPI) for clusters and intra-process (via multi-threading) parallelism 
-to leverage the presence of multicore processors at node level. For that, 
-PyDTNN uses MPI4Py for message-passing and im2col transforms to cast the 
-convolutions in terms of dense matrix-matrix multiplications, 
-which are realized BLAS calls via NumPy.
+to leverage the presence of multicore processors and GPUs at node level. For that, 
+PyDTNN uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 Supported layers:
 
   * Fully-connected
   * Convolutional 2D
   * Max pooling 2D
+  * Average pooling 2D
   * Dropout
   * Flatten
   * Batch normalization
+  * Addition block (for residual nets, e.g., ResNet)
+  * Concatenation block (for channel concatenation-based nets, e.g., Inception, GoogleNet, DenseNet, etc.)
 
 Supported datasets:
 
@@ -79,6 +81,10 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
     * ``--dataset_train_path``: Path to the training dataset.
     * ``--dataset_test_path``: Path to the training dataset.
     * ``--test_as_validation``: Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.
+    * ``--flip_images``: Enable horizontal flip of images in the dataset. Default: False
+    * ``--flip_images_prob``: Probability of horizontal flip of images in the dataset. Default: 0.5
+    * ``--crop_images``: Enable random cropping of images in the dataset. Default: False
+    * ``--crop_images_prob``: Probability of random cropping of images in the dataset. Default: 0.5
     * ``--batch_size``: Batch size per MPI rank.
     * ``--validation_split``: Split between training and validation data.
     * ``--steps_per_epoch``: Trims the training data depending on the given number of steps per epoch. Default: 0, i.e., do not trim.
@@ -90,16 +96,18 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
 * Optimizer parameters:
     * ``--optimizer``: Optimizers: `sgd`, `rmsprop`, `adam`, `nadam`. Default: `sgd`.
     * ``--learning_rate``: Learning rate. Default: 0.01.
+    * ``--learning_rate_scaling``: Scale learning rate in data parallelism: new_lr = lr * num_procs.
     * ``--momentum``: Decay rate for `sgd` optimizer. Default: 0.9.
     * ``--rho``: Variable for `rmsprop` optimizers. Default: 0.99.
     * ``--epsilon``: Variable for `rmsprop`, `adam`, `nadam` optimizers. Default: 1e-8.
     * ``--beta1``: Variable for `adam`, `nadam` optimizers. Default: 0.99.
     * ``--beta2``: Variable for `adam`, `nadam` optimizers. Default: 0.999.
     * ``--nesterov``:  Whether to apply Nesterov momentum. Default: False.
-    * ``--loss_func``: List of comma-separated loss functions that are evaluated on each trained batch: `categorical_accuracy`,`categorical_cross_entropy`,`categorical_hinge`,`categorical_mse`,`categorical_mae`,`regression_mse`,`regression_mae`.
+    * ``--loss_func``: Loss functions that is evaluated on each trained batch: `categorical_cross_entropy`, `binary_cross_entropy`.
+    * ``--metrics``: List of comma-separated metrics that are evaluated on each trained batch: `categorical_accuracy`,`categorical_hinge`,`categorical_mse`,`categorical_mae`,`regression_mse`,`regression_mae`.
 
 * Learning rate schedulers parameters:
-    * ``--lr_schedulers``: List of comma-separated LR schedulers: `warm_up`, `early_stopping`, `reduce_lr_on_plateau`, `model_checkpoint`
+    * ``--lr_schedulers``: List of comma-separated LR schedulers: `warm_up`, `early_stopping`, `reduce_lr_on_plateau`, `reduce_lr_every_nepochs`, `model_checkpoint`
     * ``--warm_up_batches``: Number of batches (ramp up) that the LR is scaled up from 0 until LR.
     * ``--early_stopping_metric``: Loss metric monitored by early_stopping LR scheduler.
     * ``--early_stopping_patience``: Number of epochs with no improvement after which training will be stopped.
@@ -107,6 +115,9 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
     * ``--reduce_lr_on_plateau_factor``: Factor by which the learning rate will be reduced. new_lr = lr * factor.
     * ``--reduce_lr_on_plateau_patience``: Number of epochs with no improvement after which LR will be reduced.
     * ``--reduce_lr_on_plateau_min_lr``: Lower bound on the learning rate.
+    * ``--reduce_lr_every_nepochs_factor``: Factor by which the learning rate will be reduced. new_lr = lr * factor.
+    * ``--reduce_lr_every_nepochs_nepochs``: Number of epochs after which LR will be periodically reduced.
+    * ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning rate.
     * ``--model_checkpoint_metric``: Loss metric monitored by model_checkpoint LR scheduler.
     * ``--model_checkpoint_save_freq``: Frequency (in epochs) at which the model weights and bias will be saved by the model_checkpoint LR scheduler.
 
@@ -115,8 +126,10 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
     * ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
     * ``--tracing``: Obtain Extrae traces.
     * ``--profile``: Obtain cProfile profiles.
-    * ``--enable_gpu``: Enable GPU for matmul operations.
+    * ``--enable_gpu``: Enable GPU, use cuDNN library.
+    * ``--enable_gpudirect``: Enable GPU pinned memory for gradients when using a CUDA-aware MPI version.
     * ``--dtype``: Dataype to use: `float32`, `float64`.
+
 
 ## Example: distributed training of a CNN for the MNIST dataset
 
@@ -136,7 +149,7 @@ $ mpirun -np 4 \
          --validation_split=0.2 \
          --num_epochs=50 \
          --evaluate=True \
-         --optimizer=Adam \
+         --optimizer=adam \
          --learning_rate=0.1 \
          --loss_func=categorical_accuracy,categorical_cross_entropy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \
@@ -175,44 +188,59 @@ $ mpirun -np 4 \
 └───────┴──────────┴─────────┴───────────────┴─────────────────┴─────────────────────┘
 **** Loading mnist dataset...
 **** Parameters:
-  model                         : simplecnn
-  dataset                       : mnist
-  dataset_train_path            : ../datasets/mnist
-  dataset_test_path             : ../datasets/mnist
-  test_as_validation            : False
-  batch_size                    : 64
-  validation_split              : 0.2
-  steps_per_epoch               : 0
-  num_epochs                    : 50
-  evaluate                      : True
-  weights_and_bias_filename     : None
-  shared_storage                : True
-  optimizer                     : Adam
-  learning_rate                 : 0.1
-  momentum                      : 0.9
-  decay_rate                    : 0.9
-  beta1                         : 0.99
-  beta2                         : 0.999
-  epsilon                       : 1e-07
-  loss_func                     : categorical_accuracy,categorical_cross_entropy
-  lr_schedulers                 : early_stopping,reduce_lr_on_plateau
-  warm_up_batches               : 500
-  early_stopping_metric         : val_categorical_cross_entropy
-  early_stopping_patience       : 10
-  reduce_lr_on_plateau_metric   : val_categorical_cross_entropy
-  reduce_lr_on_plateau_factor   : 0.1
-  reduce_lr_on_plateau_patience : 5
-  reduce_lr_on_plateau_min_lr   : 0.0
-  model_checkpoint_metric       : val_categorical_cross_entropy
-  model_checkpoint_save_freq    : 2
-  mpi_processes                 : 4
-  threads_per_process           : 1
-  parallel                      : data
-  non_blocking_mpi              : False
-  tracing                       : False
-  profile                       : False
-  enable_gpu                    : False
-  dtype                         : float32
+  model                          : simplecnn
+  dataset                        : mnist
+  dataset_train_path             : ../datasets/mnist
+  dataset_test_path              : ../datasets/mnist
+  test_as_validation             : False
+  flip_images                    : True
+  flip_images_prob               : 0.5
+  crop_images                    : False
+  crop_images_size               : 16
+  crop_images_prob               : 0.5  
+  batch_size                     : 64
+  global_batch_size              : 64  
+  validation_split               : 0.2
+  steps_per_epoch                : 0
+  num_epochs                     : 50
+  evaluate                       : True
+  weights_and_bias_filename      : None
+  shared_storage                 : True
+  optimizer                      : adam
+  learning_rate                  : 0.1
+  learning_rate_scaling          : True
+  momentum                       : 0.9
+  decay                          : 0.0
+  nesterov                       : False
+  beta1                          : 0.99
+  beta2                          : 0.999
+  epsilon                        : 1e-07
+  rho                            : 0.9
+  loss_func                      : categorical_cross_entropy
+  metrics                        : categorical_accuracy
+  lr_schedulers                  : warm_up,reduce_lr_every_nepochs
+  warm_up_epochs                 : 5
+  early_stopping_metric          : val_categorical_cross_entropy
+  early_stopping_patience        : 20
+  reduce_lr_on_plateau_metric    : val_categorical_cross_entropy
+  reduce_lr_on_plateau_factor    : 0.1
+  reduce_lr_on_plateau_patience  : 5
+  reduce_lr_on_plateau_min_lr    : 0.0
+  reduce_lr_every_nepochs_factor : 0.5
+  reduce_lr_every_nepochs_nepochs: 30
+  reduce_lr_every_nepochs_min_lr : 0.001
+  model_checkpoint_metric        : val_categorical_cross_entropy
+  model_checkpoint_save_freq     : 2
+  mpi_processes                  : 1
+  threads_per_process            : 16
+  parallel                       : data
+  non_blocking_mpi               : False
+  tracing                        : False
+  profile                        : False
+  gpus_per_node                  : 0
+  enable_gpu                     : False
+  enable_gpudirect               : True
+  dtype                          : float32
 **** Evaluating on test dataset...
 Testing: 100%|████████████████████| 10000/10000 [00:00<00:00, 29732.29 samples/s, test_acc: 12.50%, test_cro: 2.3008704]
 **** Training...

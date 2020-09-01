@@ -5,9 +5,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +36,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 
 from NN_model import *
@@ -44,24 +46,24 @@ from NN_activation import *
 def create_vgg11bn_cifar10(model):
     model.add( Input(shape=(3, 32, 32)) )
     # conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
-    #conv_pattern = [[1, 64, 0.2], [1, 128, 0.3], [2, 256, 0.3], [2, 512, 0.4], [2, 512, 0.4]]
-    conv_pattern = [[2, 64, 0.2], [2, 128, 0.3], [3, 256, 0.4]]
-    #conv_pattern = [[2, 64, 0.2], [2, 128, 0.3], [2, 256, 0.3], [2, 512, 0.4], [2, 512, 0.4]]
+    conv_pattern = [[1, 64, 0.2], [1, 128, 0.3], [2, 256, 0.3], [2, 512, 0.4], [2, 512, 0.4]]
+    #conv_pattern = [[2, 64, 0.2], [2, 128, 0.3], [3, 256, 0.4]]
+    conv_pattern = [[2, 64, 0.2], [2, 128, 0.3], [3, 256, 0.3], [3, 512, 0.4], [3, 512, 0.4]]
     for nlayers, nfilters, drop_rate in conv_pattern:
         for layer in range(nlayers):
             model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer="he_uniform") )
             model.add( Relu() )
-            #model.add( BatchNormalization() )
+            model.add( BatchNormalization() )
         model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
-       #model.add( Dropout(rate=drop_rate) )
+        model.add( Dropout(rate=drop_rate) )
     model.add( Flatten() )
     model.add( FC(shape=(256,), weights_initializer="he_uniform") )
-    model.add( BatchNormalization() )
     model.add( Relu() )
+    model.add( BatchNormalization() )
     model.add( Dropout(rate=0.5) )
-   # model.add( FC(shape=(512,), weights_initializer="he_uniform") )
-   # model.add( Relu() )
-   # model.add( BatchNormalization() )
-   # model.add( Dropout(rate=0.5) )
+    model.add( FC(shape=(256,), weights_initializer="he_uniform") )
+    model.add( Relu() )
+    model.add( BatchNormalization() )
+    model.add( Dropout(rate=0.5) )
     model.add( FC(shape=(10,), activation="softmax", weights_initializer="he_uniform") )
     return model

@@ -5,9 +5,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +36,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 
 import time, os
@@ -167,15 +169,14 @@ class ReduceLREveryNEpochs(LRScheduler):
         self.verbose = verbose
 
     def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
-        try:    idx = loss_metrics.index(self.loss_metric_)
-        except: idx = 0
         self.epoch_count += 1
         
-        if (self.epoch_count // self.nepochs) == 1:
+        if (self.epoch_count % self.nepochs) == 0 and \
+           optimizer.learning_rate * self.factor >= self.min_lr:
             optimizer.learning_rate *= self.factor
             if self.verbose and rank == 0:
                 print("LRScheduler %s: setting learning rate to %.8f" % \
-                     (type(self).__name__, self.loss_metric, optimizer.learning_rate))
+                     (type(self).__name__, optimizer.learning_rate))
 
 
 class StopAtLoss(LRScheduler):
@@ -246,4 +247,5 @@ class ModelCheckpoint(LRScheduler):
 warm_up = WarmUpLRScheduler
 early_stopping = EarlyStopping
 reduce_lr_on_plateau = ReduceLROnPlateau
+reduce_lr_every_nepochs = ReduceLREveryNEpochs
 model_checkpoint = ModelCheckpoint            

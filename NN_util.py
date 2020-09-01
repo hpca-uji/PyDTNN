@@ -5,9 +5,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,25 +36,41 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 
+import math
 import numpy as np
+#import NN_model
 from scipy.signal import convolve2d
 import scipy.linalg.blas as slb
 import scipy.stats as stats
 
 try:
-    import pycuda.autoinit
+    #import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as drv
     import skcuda.linalg as culinalg
     import skcuda.misc as cumisc
+    from skcuda import cublas
+    from pycuda.compiler import SourceModule
+    import libcudnn.libcudnn as cudnn
+    import ctypes
+    
 except:
     pass
 
-# Matmul operation
 
+def convert_size(size_bytes):
+   if size_bytes == 0:
+       return "0B"
+   size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+   i = int(math.floor(math.log(size_bytes, 1024)))
+   p = math.pow(1024, i)
+   s = round(size_bytes / p, 2)
+   return "%s %sytes" % (s, size_name[i])
+
+# Matmul operation
 def matmul(a, b):
     #if a.dtype == np.float32: 
     #    c = slb.sgemm(1.0, a, b)
@@ -63,68 +81,305 @@ def matmul(a, b):
     c = a @ b
     return c
 
-def matmul_gpu(a, b):
-    if not a.flags["C_CONTIGUOUS"]: 
-        a = np.ascontiguousarray(a)
-    if not b.flags["C_CONTIGUOUS"]: 
-        b = np.ascontiguousarray(b)
-    a_gpu = gpuarray.to_gpu(a)
-    b_gpu = gpuarray.to_gpu(b)
-    c_gpu = culinalg.dot(a_gpu, b_gpu) 
-    return c_gpu.get()
+def matmul_gpu(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
+    try: 
+        gemm = {"float32": cublas.cublasSgemm,
+                "float64": cublas.cublasDgemm}[dtype]
+    except:
+        print("I cannot handle %s type!\n" % dtype.__name__)
+    gemm(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+        
+def matvec_gpu(handle, transA, m, n, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
+    try: 
+        gemv = {"float32": cublas.cublasSgemv,
+                "float64": cublas.cublasDgemv}[dtype]
+    except:
+        print("I cannot handle %s type!\n" % dtype.__name__)
+    gemv(handle, transA, m, n, alpha, a, lda, b, ldb, beta, c, ldc)   
+
+class TensorGPU():
+    def __init__(self, gpuarr, tensor_format, cudnn_dtype, tensor_type="tensor", desc=None, gpudirect=False, cublas=False):
+        if len(gpuarr.shape) == 2: self.shape = (*gpuarr.shape, 1, 1)
+        else: self.shape = gpuarr.shape
+        self.size = gpuarr.size
+        self.ary = gpuarr
+        if gpudirect:
+            self.ptr_intp = np.intp(self.ary.base.get_device_pointer())
+            self.ptr = ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
+        else:
+            self.ptr = ctypes.c_void_p(int(gpuarr.gpudata))
+        if desc: self.desc = desc
+        if tensor_type == "tensor":
+            self.desc = cudnn.cudnnCreateTensorDescriptor()
+            cudnn.cudnnSetTensor4dDescriptor(self.desc, tensor_format, 
+                                             cudnn_dtype, *self.shape)
+        elif tensor_type == "filter":
+            self.desc = cudnn.cudnnCreateFilterDescriptor()
+            cudnn.cudnnSetFilter4dDescriptor(self.desc, cudnn_dtype, 
+                                             tensor_format, *self.shape)
 
 # Loss functions for classification CNNs
 
-metric_format = {"categorical_accuracy":    "acc: %5.2f%%", 
-               "categorical_cross_entropy": "cce: %.7f",
-               "binary_cross_entropy":      "bce: %.7f",
-               "categorical_hinge":         "hin: %.7f",
-               "categorical_mse":           "mse: %.7f",
-               "categorical_mae":           "mae: %.7f",
-               "regression_mse":            "mse: %.7f",
-               "regression_mae":            "mae: %.7f"}
+metric_format = {"categorical_accuracy":      "acc: %5.2f%%", 
+                 "categorical_cross_entropy": "cce: %.7f",
+                 "binary_cross_entropy":      "bce: %.7f",
+                 "categorical_hinge":         "hin: %.7f",
+                 "categorical_mse":           "mse: %.7f",
+                 "categorical_mae":           "mae: %.7f",
+                 "regression_mse":            "mse: %.7f",
+                 "regression_mae":            "mae: %.7f"}
 
-def categorical_cross_entropy(Y_pred, Y_targ, eps=1e-8):
-    b = Y_targ.shape[0]
-    Y_pred = np.clip(Y_pred, a_min=eps, a_max=(1-eps))    
-    cost = -np.sum(np.log(Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)])) / b
-    dx = np.copy(Y_targ)
-    dx[np.arange(b), np.argmax(dx, axis=1)] /= ( -Y_pred[np.arange(b), np.argmax(dx, axis=1)] * b )
-    return cost, dx
+class Loss():
+    pass
 
-def binary_cross_entropy(Y_pred, Y_targ, eps=1e-7):
-    b = Y_targ.shape[0]
-    cost = -np.sum(np.log(np.maximum((1-Y_targ) - Y_pred, eps)))  / b
-    Y_pred = np.clip(Y_pred, a_min=eps, a_max=(1-eps))
-    dx = (-(Y_targ / Y_pred) + ( (1-Y_targ) / (1-Y_pred))) / b
-    return cost, dx
+class CategoricalCrossEntropy(Loss):
 
-def categorical_accuracy(Y_pred, Y_targ):
-    b = Y_targ.shape[0]
-    return np.sum(Y_targ[np.arange(b), np.argmax(Y_pred, axis=1)])*100 / b
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.eps = eps
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
 
-def categorical_hinge(Y_targ, Y_pred):
-    pos = K.sum(Y_targ * Y_pred, axis=-1)
-    neg = K.max((1.0 - Y_targ) * Y_pred, axis=-1)
-    return K.mean(K.maximum(0.0, neg - pos + 1), axis=-1)
+        if self.enable_gpu:
+            module = SourceModule("""
+            __global__ void categorical_cross_entropy(T *Y_targ, T *Y_pred, T *res,
+                                                      T *dx, int b, int bs, int n, float eps)
+            {
+                int idx = threadIdx.x;
+                if (idx < b){
+                    int i = 0, max = 0;
+                    T max_value = Y_targ[idx * n];
+                    dx[idx * n] = Y_targ[idx * n];
+                    for ( i = 1; i < n; i++ ) {
+                        dx[idx * n + i] = Y_targ[idx * n + i];
+                        if ( Y_targ[idx * n + i] > max_value ){
+                            max = i;
+                            max_value = Y_targ[idx * n + i];
+                        }
+                    }
+                    T pred = Y_pred[idx * n + max];
+                    if ( pred < eps )          pred = eps;
+                    else if ( pred > (1-eps) ) pred = (1-eps);
+                    res[idx] = logf(pred);
+                    dx[idx * n + max] /= -(pred * bs);
+                }
+                return; 
+            }
+            """.replace("T", {"float32": "float", "float64": "double"}[self.dtype]))
 
-def categorical_mse(Y_pred, Y_targ):
-    b = Y_targ.shape[0]
-    return np.square(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]).mean()
+            self.categorical_cross_entropy_kern = module.get_function("categorical_cross_entropy")
+            # self.loss_cpu = np.empty((self.b,), self.dtype)
+            self.loss = gpuarray.empty((self.b,), self.dtype)
+            dx_gpu = gpuarray.empty(shape, self.dtype)
+            self.stream = model.stream
+            self.dx = TensorGPU(dx_gpu, model.tensor_fmt, model.cudnn_dtype)
 
-def categorical_mae(Y_pred, Y_targ):
-    b = Y_targ.shape[0]
-    targ = np.argmax(Y_targ, axis=1)
-    return np.sum(np.absolute(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]))
+    def __call__(self, Y_pred, Y_targ, global_batch_size):
+        if self.enable_gpu:
+            self.categorical_cross_entropy_kern(Y_targ.ary, Y_pred.ary, self.loss, self.dx.ary,
+                                                np.int32(self.b), np.int32(global_batch_size), 
+                                                np.int32(self.n), np.float32(self.eps), 
+                                                block=(self.b, 1, 1), stream=self.stream)
+            loss = -gpuarray.sum(self.loss).get() / self.b
+            return loss, self.dx
+        else:
+            Y_pred = np.clip(Y_pred, a_min=self.eps, a_max=(1-self.eps))
+            b_range = np.arange(Y_pred.shape[0])  
+            loss = -np.sum(np.log(Y_pred[b_range, np.argmax(Y_targ, axis=1)])) / Y_pred.shape[0]
+            dx = np.copy(Y_targ)
+            dx_amax = np.argmax(dx, axis=1)
+            dx[b_range, dx_amax] /= ( -Y_pred[b_range, dx_amax] * global_batch_size )
+            return loss, dx
 
-def regression_mse(Y_pred, Y_targ):
-    return np.square(Y_targ - Y_pred).mean()
 
-def regression_mae(Y_pred, Y_targ):
-    return np.sum(np.absolute(Y_targ - Y_pred))
+class BinaryCrossEntropy(Loss):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.eps = eps
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            module = SourceModule("""
+            __global__ void binary_cross_entropy(T *Y_targ, T *Y_pred, T *res,
+                                                 T *dx, int b, int bs, int n, T eps)
+            {
+                int idx = threadIdx.x;
+                if (idx < b){
+                    int i = 0, max = 0;
+                    T pred;
+                    res[idx] = 0;
+                    for ( i = 0; i < n; i++ ) {
+                        res[idx]+= logf(fmaxf((1 - Y_targ[idx * n + i] ) - 
+                                                   Y_pred[idx * n + i], eps));
+                        pred = Y_pred[idx * n + max];
+                        if ( pred < eps )          pred = eps;
+                        else if ( pred > (1-eps) ) pred = (1-eps);
+                        dx[idx * n + i] = (-(Y_targ[idx * n + i]  / pred) + 
+                                       ((1 - Y_targ[idx * n + i]) / pred) ) / bs;
+                    }
+                }
+                return; 
+            }
+            """.replace("T", {"float32": "float", "float64": "double"}[self.dtype]))
+
+            self.binary_cross_entropy_kern = module.get_function("binary_cross_entropy")
+            self.loss = gpuarray.empty((self.b,), self.dtype)
+            dx_gpu = gpuarray.empty(shape, self.dtype)
+            self.dx = TensorGPU(dx_gpu, model.tensor_fmt, model.cudnn_dtype)
+
+    def __call__(self, Y_pred, Y_targ, global_batch_size):
+        assert len(Y_targ.shape) == 2
+        if self.enable_gpu:
+            self.binary_cross_entropy_kern(Y_targ, Y_pred, self.loss, self.dx.ary, 
+                                           self.b, global_batch_size, self.n, self.eps, 
+                                           block=(self.b, 1, 1))
+            loss = -gpuarray.sum(self.loss) / self.b
+            return loss, self.dx
+        else:
+            b = Y_targ.shape[0]
+            loss = -np.sum(np.log(np.maximum((1-Y_targ) - Y_pred, eps)))  / b
+            Y_pred = np.clip(Y_pred, a_min=eps, a_max=(1-eps))
+            dx = (-(Y_targ / Y_pred) + ((1-Y_targ) / (1-Y_pred))) / global_batch_size
+            return loss, dx
+
+class Metric():
+    pass
+
+class CategoricalAccuracy(Metric):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            module = SourceModule("""
+            __global__ void categorical_accuracy(T *Y_targ, T *Y_pred, T *res, int b, int n)
+            {
+                int idx = threadIdx.x;
+                if (idx < b){
+                    int i = 0, max = 0;
+                    T max_value = Y_pred[idx * n];
+                    for ( i = 1; i < n; i++ ) {
+                        if ( Y_pred[idx * n + i] > max_value ){
+                            max = i;
+                            max_value = Y_pred[idx * n + i];
+                        }
+                    }
+                    res[idx] = Y_targ[idx * n + max];
+                }
+                return; 
+            }
+            """.replace("T", {"float32": "float", "float64": "double"}[self.dtype]))
+            self.categorical_accuracy_kern = module.get_function("categorical_accuracy")
+            self.cost = gpuarray.empty((self.b,), self.dtype)
+
+    def __call__(self, Y_pred, Y_targ):
+        if self.enable_gpu:
+            self.categorical_accuracy_kern(Y_targ, Y_pred, self.cost,
+                                           np.int32(self.b), np.int32(self.n), block=(self.b, 1, 1))
+            return gpuarray.sum(self.cost).get() * 100 / self.b
+        else:
+            b = Y_targ.shape[0]
+            return np.sum(Y_targ[np.arange(b), np.argmax(Y_pred, axis=1)]) * 100 / b
+
+
+class CategoricalHinge(Metric):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            pass
+
+    def __call__(self, Y_pred, Y_targ):
+        pos = np.sum(Y_targ * Y_pred, axis=-1)
+        neg = np.max((1.0 - Y_targ) * Y_pred, axis=-1)
+        return np.mean(np.maximum(0.0, neg - pos + 1), axis=-1)
+
+
+class CategoricalMSE(Metric):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            pass
+
+    def __call__(self, Y_pred, Y_targ):
+        b = Y_targ.shape[0]
+        return np.square(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]).mean()
+
+
+class CategoricalMAE(Metric):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            pass
+
+    def __call__(self, Y_pred, Y_targ):
+        b = Y_targ.shape[0]
+        targ = np.argmax(Y_targ, axis=1)
+        return np.sum(np.absolute(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]))
+
+
+class RegressionMSE(Metric):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            pass
+
+    def __call__(self, Y_pred, Y_targ):
+        return np.square(Y_targ - Y_pred).mean()
+
+
+class RegressionMAE(Metric):
+
+    def __init__(self, shape, model, eps=1e-8, enable_gpu=False, dtype=np.float32):
+        self.enable_gpu = enable_gpu
+        self.dtype = dtype
+        self.b, self.n = shape
+
+        if self.enable_gpu:
+            pass
+
+    def __call__(self, Y_pred, Y_targ):
+        return np.sum(np.absolute(Y_targ - Y_pred))
+
+
+# Compatibility aliases
+
+categorical_cross_entropy = CategoricalCrossEntropy
+binary_cross_entropy      = BinaryCrossEntropy
+categorical_accuracy      = CategoricalAccuracy
+categorical_accuracy      = CategoricalAccuracy
+categorical_accuracy      = CategoricalAccuracy
+categorical_accuracy      = CategoricalAccuracy
+categorical_accuracy      = CategoricalAccuracy
+categorical_accuracy      = CategoricalAccuracy
+categorical_hinge         = CategoricalHinge
+categorical_mse           = CategoricalMSE
+categorical_mae           = CategoricalMAE
+regression_mse            = RegressionMSE
+regression_mae            = RegressionMAE
 
 
 # Some utility functions for debugging
+
 def printf_trace(*args):
     pass
     #print(*args)
@@ -132,6 +387,7 @@ def printf_trace(*args):
 def printf(*args):
     pass
     #print(*args)
+
 
 # All these functions below have been deprecated - use them with care!
 
@@ -188,7 +444,7 @@ def dilate_and_pad(input, p=0, s=1):
     return input 
 
 # Only for fancy im2col/col2im indexing!
-def convolve(input, weights, bias, p=0, s=1):
+def convolve(input, weights, biases, p=0, s=1):
     h, w, ci, b    = input.shape
     co, kh, kw, ci = weights.shape
     ho = int((h + 2 * p - kh) / s + 1)
@@ -196,13 +452,13 @@ def convolve(input, weights, bias, p=0, s=1):
     input = input.transpose(3, 2, 0, 1) # b, c, h, w, this is needed for padding
     patched_matrix= im2col_indices(input, kh, kw, ci, ho, wo, p, s)
     patched_weights= weights.transpose(0, 3, 1, 2).reshape(co, -1)
-    out = ((patched_weights @ patched_matrix).T + bias).T
+    out = ((patched_weights @ patched_matrix).T + biases).T
     out = out.reshape(co, ho, wo, b)
     out = out.transpose(1, 2, 0, 3) # PyNN format
     return out
 
 # Only for fancy im2col/col2im indexing!
-def convolve_scipy(input, weights, bias):
+def convolve_scipy(input, weights, biases):
     """ Does not support padding nor stride!! """
     h, w, ci, b  = input.shape  
     co, kh, kw, ci = weights.shape    
@@ -213,7 +469,7 @@ def convolve_scipy(input, weights, bias):
         for co_ in range(co):         
             for ci_ in range(ci):
                 z[...,co_,b_] += convolve2d(input[...,ci_,b_], np.rot90(weights[co_,...,ci_], 2), mode='valid')
-            z[...,co_,b_] += bias[co_]
+            z[...,co_,b_] += biases[co_]
     return z
 
 
