@@ -5,9 +5,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,11 +36,12 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 
 import numpy as np
-import NN_util, NN_activation, NN_initializer
+import importlib
+import NN_util, NN_activation, NN_initializer, NN_model
 
 from math import floor
 from NN_util import printf
@@ -46,246 +49,427 @@ from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
 from NN_add_cython import add_cython
 from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_sim import *
 
 try:
     from mpi4py import MPI
+    #import pycuda.autoinit
+    import pycuda.gpuarray as gpuarray
+    import pycuda.driver as drv
+    import skcuda.linalg as culinalg
+    import skcuda.misc as cumisc
+
 except:
     pass
 
 class Layer():
 
+    def __new__(cls, *args, **kwargs):
+        # If GPU is requested we return a GPU-related object instead
+        if not NN_model.enable_cudnn:
+            new_cls = cls 
+        else: 
+            module_name = "NN_activation" if cls.__name__ in \
+                ["Sigmoid", "Relu", "Tanh", "Log", "Softmax"] else "NN_layer"
+            module = importlib.import_module("%s_gpu" % module_name)
+            new_cls = getattr(module, "%sGPU" % (cls.__name__))
+        instance = super(Layer, new_cls).__new__(new_cls)
+        if new_cls != cls: instance.__init__(*args, **kwargs)
+        return instance
+
     def __init__(self, shape=()):
-        self.id, self.params = 0, 0
+        self.id, self.nparams = 0, 0
         self.shape = shape
-        self.prev_layer, self.next_layer = None, None
-        self.weights, self.bias = np.array([]), np.array([])
+        self.weights, self.biases = np.array([]), np.array([])
         self.act = None
         self.grad_vars = {}
+        self.fwd_time, self.bwd_time = np.zeros((4,), dtype=np.float32), np.zeros((4,), dtype=np.float32)
 
-    def initialize(self):
-        self.shape = self.prev_layer.shape
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        if prev_shape: self.shape = prev_shape
 
     def show(self, attrs=""):
-        if not attrs: attrs= "|{:^17s}|{:^21s}|".format("","")
-        print(f"|{self.id:^7d}|{type(self).__name__:^20s}|{self.params:^9d}|{str(self.shape):^15}" + attrs)
+        if not attrs: attrs= "|{:19s}|{:^24s}|".format("","")
+        print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
 
     def update_weights(self, optimizer):
         optimizer.update(self)
 
     def reduce_weights_async(self, comm):
         if comm and self.weights.size > 0:
-            self.dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            self.req_AR = comm.Iallreduce(MPI.IN_PLACE, self.dwb, op=MPI.SUM)
-     
+            self.reqs_allred = []
+            if self.model.enable_cudnn:
+                if not self.gpudirect:
+                    self.stream_2.synchronize()                  
+                for w_, dw_ in self.grad_vars.items():
+                    dw_cpu = getattr(self, "%s_cpu" % dw_)
+                    req = comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                    self.reqs_allred.append(req)
+            else:
+                for w_, dw_ in self.grad_vars.items():
+                    dw = getattr(self, dw_)
+                    req = comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+                    self.reqs_allred.append(req)
+
     def wait_allreduce_async(self, comm):
         if comm and self.weights.size > 0:
-            self.req_AR.Wait()
-            self.dw = self.dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = self.dwb[self.weights.size:].reshape(self.bias.shape)
-     
+            MPI.Request.Waitall(self.reqs_allred)
+            if self.model.enable_cudnn:
+                if not self.gpudirect:
+                    # If there is not CUDA-aware MPI, we need yo copy data back to GPU
+                    for w_, dw_ in self.grad_vars.items():
+                        dw = getattr(self, dw_)
+                        dw_cpu = getattr(self, "%s_cpu" % dw_)
+                        dw.ary.set_async(dw_cpu, self.stream_2)
+
     def reduce_weights_sync(self, comm):
         if comm and self.weights.size > 0:
-            dwb = np.concatenate((self.dw.flatten(), self.db.flatten()))
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
-                                    [self.id * PYDL_NUM_EVTS + 3, 
-                                     self.id * PYDL_OPS_NUM_EVTS + 6])
-            comm.Allreduce(MPI.IN_PLACE, dwb, op=MPI.SUM)
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
-            self.dw = dwb[:self.weights.size].reshape(self.weights.shape)
-            self.db = dwb[self.weights.size:].reshape(self.bias.shape)
+            if self.model.enable_cudnn:
+                if self.gpudirect:
+                    for w_, dw_ in self.grad_vars.items():
+                        dw_cpu = getattr(self, "%s_cpu" % dw_)
+                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                                [self.id * PYDL_NUM_EVTS + 3, 
+                                                 self.id * PYDL_OPS_NUM_EVTS + 6])
+                        comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+                else:
+                    # We have copied the dw and db to dw_cpu and db_cpu
+                    # Using a CUDA-aware MPI implementation would avoid that copy
+                    self.stream_2.synchronize()
+                    for w_, dw_ in self.grad_vars.items():
+                        dw = getattr(self, dw_)
+                        dw_cpu = getattr(self, "%s_cpu" % dw_)
+                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                                [self.id * PYDL_NUM_EVTS + 3, 
+                                                 self.id * PYDL_OPS_NUM_EVTS + 6])
+                        comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                        dw.ary.set_async(dw_cpu, self.stream_2)
+                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+            else:
+                for w_, dw_ in self.grad_vars.items():
+                    dw = getattr(self, dw_)
+                    self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                            [self.id * PYDL_NUM_EVTS + 3, 
+                                             self.id * PYDL_OPS_NUM_EVTS + 6])
+                    comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+                    self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
 
 
 class Input(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Input, self).__init__(shape)
 
 
 class FC(Layer):
 
-    def __init__(self, shape=(1,), activation="", 
+    def __init__(self, shape=(1,), activation="", use_bias=True,
                  weights_initializer="glorot_uniform",
-                 bias_initializer="zeros"):
-        super().__init__(shape)
+                 biases_initializer="zeros"):
+        super(FC, self).__init__(shape)
         self.act = getattr(NN_activation, activation, None)
+        self.use_bias = use_bias
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
-        self.bias_initializer = getattr(NN_initializer, bias_initializer)
-        self.grad_vars = {"weights": "dw", "bias": "db"}
+        self.biases_initializer = getattr(NN_initializer, biases_initializer)
+        self.grad_vars = {"weights": "dw"}
+        if self.use_bias: self.grad_vars["biases"] = "db"
         
-    def initialize(self):
-        self.weights = self.weights_initializer((np.prod(self.prev_layer.shape), 
-                                                 np.prod(self.shape[0])), self.dtype)
-        self.bias = self.bias_initializer((np.prod(self.shape),), self.dtype)
-        self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.weights = self.weights_initializer((*prev_shape, *self.shape), self.dtype)
+        if self.use_bias: self.biases = self.biases_initializer(self.shape, self.dtype)
+        self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+
+        self.fwd_time = \
+            matmul_time(m=self.batch_size, n=self.weights.shape[1], k=self.weights.shape[0], 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype)
+        self.bwd_time = \
+            matmul_time(m=self.weights.shape[0], n=self.weights.shape[1], k=self.batch_size, 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) + \
+            matmul_time(m=self.batch_size, n=self.weights.shape[0], k=self.weights.shape[1], 
+                       cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                       dtype=self.dtype) if need_dx else 0
         
     def show(self):
-        super().show("|{:^17s}|{:^21s}|".format(str(self.weights.shape),""))
+        super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape),""))
 
-    def forward(self, prev_a, comm=None):
+    def forward(self, x):
+        self.x = x
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
-        res = self.matmul(prev_a, self.weights)
+        res = self.matmul(x, self.weights)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
-        self.a = res + self.bias
+        return res + self.biases if self.use_bias else 0
         
-    def backward(self, prev_dx):
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
-        dx = self.matmul(prev_dx, self.weights.T)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
-
+    def backward(self, dy):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
-        self.dw = self.matmul(self.prev_layer.a.T, prev_dx)
+        self.dw = self.matmul(self.x.T, dy)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
-        self.db = prev_dx.sum(axis=0)
-        return dx
+        if self.use_bias: 
+            self.db = np.sum(dy, axis=0)
+
+        if self.need_dx:
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            dx = self.matmul(dy, self.weights.T)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            return dx
         
 
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
-                 activation="", weights_initializer="glorot_uniform",
-                 bias_initializer="zeros"):
-        super().__init__()
+                 activation="", use_bias=True, weights_initializer="glorot_uniform",
+                 biases_initializer="zeros"):
+        super(Conv2D, self).__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
         self.padding = padding
         self.stride = stride
+        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
+        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
         self.act = getattr(NN_activation, activation, None)
+        self.use_bias = use_bias
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
-        self.bias_initializer = getattr(NN_initializer, bias_initializer)
-        self.grad_vars = {"weights": "dw", "bias": "db"}
+        self.biases_initializer = getattr(NN_initializer, biases_initializer)
+        self.grad_vars = {"weights": "dw"}
+        if self.use_bias: self.grad_vars["biases"] = "db"
 
-    def initialize(self):
-        self.ci, self.hi, self.wi = self.prev_layer.shape
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.ci, self.hi, self.wi = prev_shape
         self.kh, self.kw = self.filter_shape
 
         self.weights = self.weights_initializer(((self.co,)+(self.ci,)+self.filter_shape), self.dtype)
-        self.bias = self.bias_initializer((self.co,), self.dtype)
+        if self.use_bias: self.biases = self.biases_initializer((self.co,), self.dtype)
 
-        self.ho = floor((self.hi + 2 * self.padding - self.kh) / self.stride) + 1
-        self.wo = floor((self.wi + 2 * self.padding - self.kw) / self.stride) + 1
+        self.ho = floor((self.hi + 2 * self.vpadding - self.kh) / self.vstride) + 1
+        self.wo = floor((self.wi + 2 * self.hpadding - self.kw) / self.hstride) + 1
         self.shape = (self.co, self.ho, self.wo)
-        self.params = np.prod(self.weights.shape) + np.prod(self.bias.shape)
+        self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+
+        self.fwd_time = \
+            im2col_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) + \
+            matmul_time(m=self.co, n=(self.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) 
+        self.bwd_time = \
+            matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.batch_size * self.ho * self.wo),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) + \
+            matmul_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo), k=self.co, 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) if need_dx else 0 + \
+            col2im_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo), 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) if need_dx else 0
 
     def show(self):
-        super().show("|{:^17s}|{:^21s}|".format(str(self.weights.shape), \
-            "padding=%d, stride=%d" % (self.padding, self.stride)))
+        super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape), \
+            "padd=(%d,%d), stride=(%d,%d)" % (self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
-    def forward(self, prev_a, comm=None):
+    def forward(self, x):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        self.prev_a_cols = im2col_cython(prev_a, self.kh, self.kw, self.padding, self.stride)
+        self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding, 
+                                    self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         w_cols = self.weights.reshape(self.co, -1)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
-        res = self.matmul(w_cols, self.prev_a_cols)
+        res = self.matmul(w_cols, self.x_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        # a = res + self.bias.reshape(-1, 1)
-        a = add_cython(res, self.bias)
-        self.a = a.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        # y = res + self.biases.reshape(-1, 1)
+        y = add_cython(res, self.biases) if self.use_bias else res
+        return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
 
-    def backward(self, prev_dx):
-        dx_cols = prev_dx.transpose(1, 0, 2, 3).reshape(self.co, -1)
+    def backward(self, dy):
+        dy_cols = dy.transpose(1, 0, 2, 3).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
-        
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
-        res = self.matmul(w_cols, dx_cols)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
-
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-        dx = col2im_cython(res, prev_dx.shape[0], self.ci, self.hi, self.wi, 
-                                   self.kh, self.kw, self.padding, self.stride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
-        res = self.matmul(dx_cols, self.prev_a_cols.T)
+        res = self.matmul(dy_cols, self.x_cols.T)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.dw = res.reshape(self.weights.shape)
-        self.db = prev_dx.sum(axis=(0,2,3))
-        return dx
+        if self.use_bias:
+            self.db = np.sum(dy, axis=(0,2,3))
+
+        if self.need_dx:
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            res = self.matmul(w_cols, dy_cols)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+    
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi, 
+                               self.kh, self.kw, self.vpadding, self.hpadding, 
+                               self.vstride, self.hstride)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            return dx
 
 
 class MaxPool2D(Layer):
 
     def __init__(self, pool_shape=(2,2), padding=0, stride=1):
-        super().__init__()
+        super(MaxPool2D, self).__init__()
         self.pool_shape = pool_shape
         self.padding = padding
-        self.stride = stride     
+        self.stride = stride
+        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding 
+        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride 
 
-    def initialize(self):
-        self.ci, self.hi, self.wi = self.prev_layer.shape
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.ci, self.hi, self.wi = prev_shape
+        if self.pool_shape[0] == 0: self.pool_shape = (self.hi, self.pool_shape[1])
+        if self.pool_shape[1] == 0: self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
-        self.ho = floor((self.hi - self.kh) / self.stride) + 1
-        self.wo = floor((self.wi - self.kw) / self.stride) + 1
+        self.ho = floor((self.hi + 2 * self.vpadding - self.kh) / self.vstride) + 1
+        self.wo = floor((self.wi + 2 * self.hpadding - self.kw) / self.hstride) + 1
         self.co = self.ci
         self.shape = (self.co, self.ho, self.wo)
         self.n = np.prod(self.shape)
 
-    def show(self):
-        super().show("|{:^17s}|{:^21s}|".format(str(self.pool_shape), \
-            "padding=%d, stride=%d" % (self.padding, self.stride)))
+        self.fwd_time = \
+            im2col_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype)
+        self.bwd_time = \
+            col2im_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci), 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) if need_dx else 0
 
-    def forward(self, prev_a, comm=None):
-        prev_a_ = prev_a.reshape(prev_a.shape[0] * self.ci, 1, self.hi, self.wi)
+    def show(self):
+        super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
+            "padd=(%d,%d), stride=(%d,%d)" % (self.vpadding, self.hpadding, self.vstride, self.hstride)))
+
+    def forward(self, x):
+        x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        a_cols = im2col_cython(prev_a_, self.kh, self.kw, self.padding, self.stride)
+        x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding, 
+                               self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        self.a, self.maxids = argmax_cython(a_cols, axis=0)        
-        self.a = self.a.reshape(prev_a.shape[0], self.co, self.ho, self.wo)
+        y, self.maxids = argmax_cython(x_cols, axis=0)        
+        return y.reshape(x.shape[0], *self.shape)
+ 
+    def backward(self, dy):
+        if self.need_dx:
+            dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
+            dy_cols[self.maxids] = dy.flatten()
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi, 
+                               self.kh, self.kw, self.vpadding, self.hpadding, 
+                               self.vstride, self.hstride)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
+            return dx
 
-    def backward(self, prev_dx):
-        dx_cols = np.zeros((self.kh * self.kw, np.prod(prev_dx.shape)), dtype=self.dtype)
-        dx_cols[self.maxids] = prev_dx.flatten()
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-        dx = col2im_cython(dx_cols, prev_dx.shape[0] * self.ci, 1, self.hi, self.wi, 
-                           self.kh, self.kw, self.padding, self.stride)
+
+class AveragePool2D(Layer):
+
+    def __init__(self, pool_shape=(2,2), padding=0, stride=1):
+        super(AveragePool2D, self).__init__()
+        self.pool_shape = pool_shape
+        self.padding = padding
+        self.stride = stride
+        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
+        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride 
+
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.ci, self.hi, self.wi = prev_shape
+        if self.pool_shape[0] == 0: self.pool_shape = (self.hi, self.pool_shape[1])
+        if self.pool_shape[1] == 0: self.pool_shape = (self.pool_shape[0], self.wi)
+        self.kh, self.kw = self.pool_shape
+        self.ho = floor((self.hi + 2 * self.vpadding - self.kh) / self.vstride) + 1
+        self.wo = floor((self.wi + 2 * self.hpadding - self.kw) / self.hstride) + 1
+        self.co = self.ci
+        self.shape = (self.co, self.ho, self.wo)
+        self.n = np.prod(self.shape)
+
+        self.fwd_time = \
+            im2col_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype)
+        self.bwd_time = \
+            col2im_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci), 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        dtype=self.dtype) if need_dx else 0
+
+    def show(self):
+        super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
+            "padd=(%d,%d), stride=(%d,%d)" % (self.vpadding, self.hpadding, self.vstride, self.hstride)))
+
+    def forward(self, x):
+        x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding, 
+                               self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
-        dx = dx.reshape(prev_dx.shape[0], self.ci, self.hi, self.wi)
-        return dx
+
+        y = np.mean(x_cols, axis=0)        
+        return y.reshape(x.shape[0], *self.shape)
+ 
+    def backward(self, dy):
+        if self.need_dx:
+            pool_size = np.prod(self.pool_shape)
+            dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi, 
+                               self.kh, self.kw, self.vpadding, self.hpadding, 
+                               self.vstride, self.hstride)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
+            return dx
 
 
 class Dropout(Layer):
 
     def __init__(self, rate=0.5):
-        super().__init__()
+        super(Dropout, self).__init__()
         self.rate = min(1., max(0., rate))
 
-    def initialize(self):
-        self.shape = self.prev_layer.shape
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.shape = prev_shape
 
     def show(self):
-        super().show("|{:^17s}|{:^21s}|".format("", "rate=%.1f" % (self.rate)))
+        super().show("|{:^19s}|{:^24s}|".format("", "rate=%.2f" % (self.rate)))
 
-    def forward(self, prev_a, comm=None):
+    def forward(self, x):
         if self.model.mode == "train":
             self.mask = np.random.binomial(1, (1-self.rate), size=self.shape).astype(self.dtype) / (1-self.rate)
-            self.a = prev_a * self.mask
-
+            return x * self.mask
         elif self.model.mode == "evaluate":
-            self.a = prev_a
+            return x
 
-    def backward(self, prev_dx):
-        return prev_dx * self.mask
+    def backward(self, dy):
+        if self.need_dx:
+            return dy * self.mask
  
 
 class Flatten(Layer):
 
     def __init__(self):
-        super().__init__()
+        super(Flatten, self).__init__()
 
-    def initialize(self):
-        self.shape = (np.prod(self.prev_layer.shape),)
-        self.n = np.prod(self.shape)
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.shape = (np.prod(prev_shape),)
+        self.prev_shape = prev_shape
 
-    def forward(self, prev_a, comm=None):
-        self.a = prev_a.reshape(prev_a.shape[0], -1)
+    def forward(self, x):
+        return x.reshape(x.shape[0], *self.shape)
 
-    def backward(self, prev_dx):
-        return prev_dx.reshape((prev_dx.shape[0],) + self.prev_layer.shape)
+    def backward(self, dy):
+        if self.need_dx:
+            return dy.reshape(dy.shape[0], *self.prev_shape)
 
 
 class BatchNormalization(Layer):
@@ -295,7 +479,7 @@ class BatchNormalization(Layer):
                  moving_mean_initializer="zeros",
                  moving_variance_initializer="ones",
                  sync_stats=False):
-        super().__init__()
+        super(BatchNormalization, self).__init__()
         self.gamma_init_val = gamma
         self.beta_init_val = beta
         self.momentum = momentum
@@ -305,19 +489,21 @@ class BatchNormalization(Layer):
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
 
-    def initialize(self):
-        self.shape = shape_ = self.prev_layer.shape
+    def initialize(self, prev_shape, need_dx=True):
+        self.need_dx = need_dx
+        self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2
         if self.spatial:
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
             shape_ = (self.ci)
+        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)    
         self.beta = np.full(shape_, self.beta_init_val, self.dtype)
-        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
+        self.nparams = self.gamma.size + self.beta.size
 
-    def forward(self, prev_a, comm=None):
+    def forward(self, x):
 
         def mean(data, N, comm):
             if self.sync_stats and comm != None:
@@ -328,42 +514,188 @@ class BatchNormalization(Layer):
             return mean
 
         if self.spatial:
-            prev_a = prev_a.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+            x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
         
         if self.model.mode == "train":
-            N = np.array([prev_a.shape[0]], dtype=self.dtype)
-            if self.sync_stats and comm != None:
-                comm.Allreduce(MPI.IN_PLACE, N, op=MPI.SUM)
+            N = np.array([x.shape[0]], dtype=self.dtype)
+            if self.sync_stats and self.model.comm != None:
+                self.model.comm.Allreduce(MPI.IN_PLACE, N, op=MPI.SUM)
 
-            mu = mean(prev_a, N, comm)
-            xc = (prev_a - mu)
-            var = mean(xc**2, N, comm)
+            mu = mean(x, N, self.model.comm)
+            xc = (x - mu)
+            var = mean(xc**2, N, self.model.comm)
 
             self.std = np.sqrt(var + self.epsilon)
             self.xn = xc / self.std
-            self.a = self.gamma * self.xn + self.beta
+            y = self.gamma * self.xn + self.beta
   
             self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
             self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
 
         elif self.model.mode == "evaluate":
             std = np.sqrt(self.running_var + self.epsilon)
-            xn = (prev_a - self.running_mean) / std
-            self.a = self.gamma * xn + self.beta
+            xn = (x - self.running_mean) / std
+            y = self.gamma * xn + self.beta
 
         if self.spatial:
-            self.a = self.a.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+        return y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         if self.spatial:          
-            prev_dx = prev_dx.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+            dy = dy.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
-        N = prev_dx.shape[0]
-        self.dgamma = np.sum(prev_dx * self.xn, axis=0)
-        self.dbeta = np.sum(prev_dx, axis=0)
-        dx = (self.gamma / (self.std * N)) * (N * prev_dx - self.xn * self.dgamma - self.dbeta)
-        dx = dx.astype(self.dtype)
+        N = dy.shape[0]
+        self.dgamma = np.sum(dy * self.xn, axis=0)
+        self.dbeta = np.sum(dy, axis=0)
 
-        if self.spatial:
-            dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
-        return dx
+        if self.need_dx:
+            dx = (self.gamma / (self.std * N)) * (N * dy - self.xn * self.dgamma - self.dbeta)
+            dx = dx.astype(self.dtype)
+    
+            if self.spatial:
+                dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            return dx
+
+
+class AdditionBlock(Layer):
+
+    def __init__(self, *args):
+        super(AdditionBlock, self).__init__()
+        self.paths = []
+        for p in args:
+            self.paths.append(p)
+
+    def initialize(self, prev_shape, need_dx=True):
+        need_dx = True
+        self.out_shapes = []
+        self.prev_shape = prev_shape
+        for p in self.paths:
+            for i, l in enumerate(p):
+                l.tracer = self.tracer
+                l.dtype = self.dtype
+                l.model = self.model
+                l.batch_size = self.batch_size
+                l.id = self.model.id + i
+                l.matmul = self.matmul
+                l.initialize(prev_shape, need_dx)
+                prev_shape = l.shape
+                self.fwd_time += l.fwd_time
+                self.bwd_time += l.bwd_time
+                self.nparams += l.nparams
+
+            self.out_shapes.append(prev_shape)
+            prev_shape = self.prev_shape
+            self.model.id += len(p)
+
+        self.model.id -= 1
+        assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
+        self.shape = prev_shape
+
+    def show(self):
+        print(f"|{'':^7s}|{(type(self).__name__+' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
+        for i, p in enumerate(self.paths):
+            print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
+            for l in p: l.show()
+
+    def update_weights(self, optimizer):
+        for p in self.paths:
+            for l in p: l.update_weights(optimizer)
+
+    def reduce_weights_async(self, comm):
+        for p in self.paths:
+            for l in p: l.reduce_weights_async(comm)
+     
+    def wait_allreduce_async(self, comm):
+        for p in self.paths:
+            for l in p: l.wait_allreduce_async(comm)
+
+    def reduce_weights_sync(self, comm):
+        for p in self.paths:
+            for l in p: l.reduce_weights_sync(comm)
+
+    def forward(self, x):
+        x = [x] * len(self.paths)
+        for i, p in enumerate(self.paths):
+            for l in p: x[i] = l.forward(x[i])
+            if i > 0: x[0] += x[i]
+        return x[0]
+
+    def backward(self, dy):
+        dx = [dy] * len(self.paths)
+        for i, p in enumerate(self.paths):
+            for l in reversed(p): dx[i] = l.backward(dx[i])
+            if i > 0: dx[0] += dx[i]
+        return dx[0]
+
+
+class ConcatenationBlock(Layer):
+
+    def __init__(self, *args):
+        super(ConcatenationBlock, self).__init__()
+        self.paths = []
+        for p in args:
+            self.paths.append(p)
+
+    def initialize(self, prev_shape, need_dx=True):
+        need_dx = True
+        self.out_shapes = []
+        self.prev_shape = prev_shape
+        for p in self.paths:
+            for i, l in enumerate(p):
+                l.tracer = self.tracer
+                l.dtype = self.dtype
+                l.model = self.model
+                l.batch_size = self.batch_size
+                l.id = self.model.id + i
+                l.matmul = self.matmul
+                l.initialize(prev_shape, need_dx)
+                prev_shape = l.shape
+                self.fwd_time += l.fwd_time
+                self.bwd_time += l.bwd_time
+                self.nparams += l.nparams
+
+            self.out_shapes.append(prev_shape)
+            prev_shape = self.prev_shape
+            self.model.id += len(p)
+
+        self.model.id -= 1
+        assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
+        self.out_co = [s[0] for s in self.out_shapes]
+        self.idx_co = np.cumsum(self.out_co, axis=0)
+        self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
+
+    def show(self):
+        print(f"|{'':^7s}|{(type(self).__name__.replace('Concatenation', 'Concat')+' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
+        for i, p in enumerate(self.paths):
+            print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
+            for l in p: l.show()
+
+    def update_weights(self, optimizer):
+        for p in self.paths:
+            for l in p: l.update_weights(optimizer)
+
+    def reduce_weights_async(self, comm):
+        for p in self.paths:
+            for l in p: l.reduce_weights_async(comm)
+     
+    def wait_allreduce_async(self, comm):
+        for p in self.paths:
+            for l in p: l.wait_allreduce_async(comm)
+
+    def reduce_weights_sync(self, comm):
+        for p in self.paths:
+            for l in p: l.reduce_weights_sync(comm)
+
+    def forward(self, x):
+        x = [x] * len(self.paths)
+        for i, p in enumerate(self.paths):
+            for l in p: x[i] = l.forward(x[i])
+        return np.concatenate(x, axis=1)
+        
+    def backward(self, dy):
+        dx = np.split(dy, self.idx_co[:-1], axis=1)
+        for i, p in enumerate(self.paths):
+            for l in reversed(p): dx[i] = l.backward(dx[i])
+            if i > 0: dx[0] += dx[i]
+        return dx[0]

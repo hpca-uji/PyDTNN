@@ -8,9 +8,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -51,16 +53,9 @@ if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == "1":
   pyextrae.startTracing( TracingLibrary )
   Extrae_tracing = True
   
-import numpy, os, sys, math, time, argparse
+import numpy, os, sys, math, time, argparse, subprocess
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from NN_model import *
-from NN_layer import *
-from NN_optimizer import *
-from NN_lr_scheduler import *
-from models import *
-from datasets import *
 
 def parse_options():
     bool_lambda = lambda x: (str(x).lower() in ['true','1', 'yes'])
@@ -71,6 +66,11 @@ def parse_options():
     parser.add_argument('--dataset_train_path', type=str, default="../datasets/mnist")
     parser.add_argument('--dataset_test_path', type=str, default="../datasets/mnist")
     parser.add_argument('--test_as_validation', default=False, type=bool_lambda)
+    parser.add_argument('--flip_images', default=False, type=bool_lambda)
+    parser.add_argument('--flip_images_prob', type=float, default=0.5)
+    parser.add_argument('--crop_images', default=False, type=bool_lambda)
+    parser.add_argument('--crop_images_size', type=int, default=16)
+    parser.add_argument('--crop_images_prob', type=float, default=0.5)
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--global_batch_size', type=int, default=None)
     parser.add_argument('--validation_split', type=float, default=0.0)
@@ -116,40 +116,53 @@ def parse_options():
     parser.add_argument('--non_blocking_mpi', type=bool_lambda,  default=False)
     parser.add_argument('--tracing', type=bool_lambda, default=False)
     parser.add_argument('--profile', type=bool_lambda, default=False)
+    parser.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
+    parser.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
     parser.add_argument('--dtype', type=str, default="float32")
-
+    parser.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
+    parser.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)
+    parser.add_argument('--network_bw', type=float, default=1e9, help=argparse.SUPPRESS)
+    parser.add_argument('--network_lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
+    parser.add_argument('--network_alg', type=str, default="vdg", help=argparse.SUPPRESS)
     return parser.parse_args()
 
 def show_options(params):
     for arg in vars(params):
         if arg != "comm":
-            print(f'  {arg:30s}: {str(getattr(params, arg)):s}')
+            print(f'  {arg:31s}: {str(getattr(params, arg)):s}')
             #print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
 
 def get_optimizer(params):
+    opt_mod = importlib.import_module("NN_optimizer%s" % ("","_gpu")[params.enable_gpu])
+    opt_ref = getattr(opt_mod, "%s%s" % (params.optimizer, ("","_gpu")[params.enable_gpu]))
+    dtype = {"float32": np.float32, "float64": np.float64}[params.dtype]
     if params.optimizer == "rmsprop":
-        opt = RMSProp(learning_rate = params.learning_rate,
+        opt = opt_ref(learning_rate = params.learning_rate,
                   rho = params.rho,
                   epsilon = params.epsilon,
-                  decay = params.decay)
+                  decay = params.decay,
+                  dtype = dtype)
     elif params.optimizer == "adam":
-        opt = Adam(learning_rate = params.learning_rate,
+        opt = opt_ref(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2, 
                   epsilon = params.epsilon,
-                  decay = params.decay)
+                  decay = params.decay,
+                  dtype = dtype)
     elif params.optimizer == "nadam":
-        opt = Nadam(learning_rate = params.learning_rate,
+        opt = opt_ref(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2,
                   epsilon = params.epsilon,
-                  decay = params.decay)
+                  decay = params.decay,
+                  dtype = dtype)
     else: # "sgd":
-        opt = SGD(learning_rate = params.learning_rate,
+        opt = opt_ref(learning_rate = params.learning_rate,
                   momentum = params.momentum,
                   nesterov = params.nesterov,
-                  decay = params.decay)        
+                  decay = params.decay,        
+                  dtype = dtype)
     return opt
 
 def get_lr_schedulers(params):
@@ -167,10 +180,10 @@ def get_lr_schedulers(params):
                   params.reduce_lr_on_plateau_factor,
                   params.reduce_lr_on_plateau_patience,
                   params.reduce_lr_on_plateau_min_lr)
-        elif lr_sched == "lr_decay_every_nepochs":
-            lrs = ReduceLREveryNEpochs(params.decay_after_nepochs_factor,
-                  params.decay_after_nepochs_nepochs,
-                  params.decay_after_nepochs_min_lr)
+        elif lr_sched == "reduce_lr_every_nepochs":
+            lrs = ReduceLREveryNEpochs(params.reduce_lr_every_nepochs_factor,
+                  params.reduce_lr_every_nepochs_nepochs,
+                  params.reduce_lr_every_nepochs_min_lr)
         elif lr_sched == "stop_at_loss":
             lrs = StopAtLoss(params.stop_at_loss_metric,
                   params.stop_at_loss_threshold)
@@ -203,6 +216,21 @@ if __name__ == "__main__":
     else:
         params.threads_per_process = 1
 
+    try:
+        params.gpus_per_node = str(subprocess.check_output(["nvidia-smi", "-L"])).count('UUID')
+    except:
+        params.gpus_per_node = 0
+
+    if params.enable_gpu and params.parallel == "data":
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
+
+    from NN_model import *
+    from NN_layer import *
+    from NN_optimizer import *
+    from NN_lr_scheduler import *
+    from models import *
+    from datasets import *
+
     # A couple of details...
     random.seed(0)
     numpy.random.seed(0)
@@ -234,12 +262,14 @@ if __name__ == "__main__":
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')        
-        test_loss = model.evaluate_dataset(dataset, params.loss_func, metrics)
+        test_loss = model.evaluate_dataset(dataset, params.batch_size, \
+                                           params.loss_func, metrics)
   
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
 
     if rank == 0:
+        # print('**** Model time: ', model.calculate_time())
         print('**** Training...')
         t1 = time.time()
 
@@ -247,7 +277,6 @@ if __name__ == "__main__":
             import cProfile, pstats
             from io import StringIO
             pr = cProfile.Profile(); pr.enable()
-
 
     # Training a model directly from a dataset
     history = model.train_dataset(dataset,
@@ -281,15 +310,18 @@ if __name__ == "__main__":
         print('**** Done...')
         total_time = (t2-t1)
         print(f'Time: {total_time:5.4f} s')
+        print(f'Time per epoch: {total_time / params.num_epochs:5.4f} s')
         print(f'Throughput: {(dataset.train_val_nsamples * params.num_epochs)/total_time:5.4f} samples/s')
 
         if params.history_file:
             with open(params.history_file, "w") as f:
                 keys = [k for k in history]
                 for v in range(len(history[keys[0]])):
-                    f.write(' '.join(["%3d" % v] + [('%20.4f' % history[k][v]) for k in keys]) + '\n')
+                    f.write(' '.join(["%3d" % v] + \
+                        [('%20.4f' % history[k][v]) for k in keys]) + '\n')
 
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-        test_loss = model.evaluate_dataset(dataset, params.loss_func, metrics)
+        test_loss = model.evaluate_dataset(dataset, params.batch_size, \
+                                           params.loss_func, metrics)

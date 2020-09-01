@@ -5,9 +5,11 @@ inference that offers an initial starting point for interaction with
 distributed training of (and inference with) deep neural networks. PyDTNN 
 priorizes simplicity over efficiency, providing an amiable user interface 
 which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
+çprocesses, PyDTNN exploits distributed inter-process parallelism (via MPI) 
 for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors at node level.
+the presence of multicore processors and GPUs at node level. For that, PyDTNN 
+uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
+and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -34,7 +36,7 @@ __email__ =  "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 
 
 import numpy as np
@@ -44,74 +46,84 @@ from NN_relu_cython import relu_cython
 class Sigmoid(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Sigmoid, self).__init__(shape)
 
-    def forward(self, prev_a, comm=None):
-        self.a  = 1 / (1 + np.exp(-prev_a))
+    def forward(self, x):
+        self.y  = 1 / (1 + np.exp(-x))
+        return self.y
 
-    def backward(self, prev_dx):
-        return prev_dx * (self.a * (1 - self.a))
+    def backward(self, dy):
+        if self.need_dx:
+            return dy * (self.y * (1 - self.y))
 
 
 class Relu(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Relu, self).__init__(shape)
 
-    def forward(self, prev_a, comm=None):
-        self.a, self.mask = relu_cython(prev_a)
+    def forward(self, x):
+        y, self.mask = relu_cython(x)
+        return y
 
-    def backward(self, prev_dx):
-        return prev_dx * self.mask
+    def backward(self, dy):
+        if self.need_dx:
+            return dy * self.mask
 
 
 class Tanh(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Tanh, self).__init__(shape)
 
-    def forward(self, prev_a, comm=None):
-        self.a = np.tanh(prev_a)
+    def forward(self, x):
+        return np.tanh(x)
 
-    def backward(self, prev_dx):
-        return 1 - np.tanh(prev_dx) ** 2
+    def backward(self, dy):
+        if self.need_dx:
+            return 1 - np.tanh(dy) ** 2
 
 
 class Arctanh(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Arctanh, self).__init__(shape)
 
-    def forward(self, prev_a, comm=None):
-        return np.arctan(prev_a)
+    def forward(self, x):
+        return np.arctan(x)
 
-    def backward(self, prev_dx):
-        return 1 / ( 1 + prev_dx ** 2)
+    def backward(self, dy):
+        if self.need_dx:
+            return 1 / (1 + dy ** 2)
 
 
 class Log(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Log, self).__init__(shape)
 
-    def forward(self, prev_a, comm=None):
-        return 1 / (1 + np.exp(-1 * prev_a))
+    def forward(self, x):
+        return log(1 / (1 + np.exp(-x)))
 
-    def backward(self, prev_dx):
-        return log(prev_dx) * ( 1 - log(prev_dx))
+    def backward(self, dy):
+        if self.need_dx:
+            return 1 / (np.exp(dy) + 1)
 
     
 class Softmax(Layer):
 
     def __init__(self, shape=(1,)):
-        super().__init__(shape)
+        super(Softmax, self).__init__(shape)
 
-    def forward(self, prev_a, comm=None):
-        self.a = np.exp(prev_a - np.max(prev_a, axis=1, keepdims=True))
-        self.a /= np.sum(self.a, axis=1, keepdims=True)
-       
-    def backward(self, prev_dx):
-        return self.a * (prev_dx - (prev_dx * self.a).sum(axis=1, keepdims=True))
+    def forward(self, x):
+        self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
+        self.y /= np.sum(self.y, axis=1, keepdims=True)
+        return self.y
+
+    def backward(self, dy):
+        if self.need_dx:
+            return self.y * (dy - (dy * self.y).sum(axis=1, keepdims=True))
+
 
 # Compatibility aliases
 
