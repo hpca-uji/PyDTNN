@@ -176,7 +176,6 @@ class FCGPU(NN_layer.FC):
 
         # DtoH dw when data parallelism and no GPU direct is used
         if self.model.comm and not self.gpudirect:
-            self.stream.synchronize()
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
         
         if self.use_bias:
@@ -192,7 +191,6 @@ class FCGPU(NN_layer.FC):
     
             # DtoH db when data parallelism and no GPU direct is used
             if self.model.comm and not self.gpudirect:
-                self.stream.synchronize()
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
             
         if self.need_dx:

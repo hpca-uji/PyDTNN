@@ -64,7 +64,7 @@ class SGDGPU(NN_optimizer.SGD):
                                "SGD_kernel")
 
         self.update_gpudirect = SourceModule(("""
-            __global__ void SGD_kernel(float *w, float *dw, float *v, 
+            __global__ void SGD_kernel(T *w, T *dw, T *v, 
                                float lr, float decay, float momentum, int N) {
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
                 if (i < N) {

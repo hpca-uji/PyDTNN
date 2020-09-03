@@ -106,7 +106,7 @@ class Model:
             self.cublas_handle = cublas.cublasCreate()
             self.stream = drv.Stream()
             cublas.cublasSetStream(self.cublas_handle, self.stream.handle)
-            cublas.cublasSetStream(self.cudnn_handle, self.stream.handle)
+            cudnn.cudnnSetStream(self.cudnn_handle, self.stream.handle)
 
             types = {np.float64: "CUDNN_DATA_DOUBLE",
                      np.float32: "CUDNN_DATA_FLOAT",
@@ -268,9 +268,8 @@ class Model:
             x = self.layers[l].forward(x)
             self.tracer.emit_event(PYDL_EVT, 0)
 
-        Y_pred = self.layers[-1].y
-        loss, dx = loss_func(Y_pred, Y_targ, global_batch_size)
-        self.total_metrics, _ = self.__compute_metrics_funcs(Y_pred, Y_targ, loss, metrics_funcs)
+        loss, dx = loss_func(x, Y_targ, global_batch_size)
+        self.total_metrics, _ = self.__compute_metrics_funcs(x, Y_targ, loss, metrics_funcs)
 
         if self.blocking_mpi:
             # Blocking MPI
