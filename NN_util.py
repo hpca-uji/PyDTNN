@@ -145,7 +145,7 @@ class CategoricalCrossEntropy(Loss):
             __global__ void categorical_cross_entropy(T *Y_targ, T *Y_pred, T *res,
                                                       T *dx, int b, int bs, int n, float eps)
             {
-                int idx = threadIdx.x;
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
                 if (idx < b){
                     int i = 0, max = 0;
                     T max_value = Y_targ[idx * n];
@@ -168,18 +168,20 @@ class CategoricalCrossEntropy(Loss):
             """.replace("T", {"float32": "float", "float64": "double"}[self.dtype]))
 
             self.categorical_cross_entropy_kern = module.get_function("categorical_cross_entropy")
-            # self.loss_cpu = np.empty((self.b,), self.dtype)
             self.loss = gpuarray.empty((self.b,), self.dtype)
             dx_gpu = gpuarray.empty(shape, self.dtype)
-            self.stream = model.stream
             self.dx = TensorGPU(dx_gpu, model.tensor_fmt, model.cudnn_dtype)
+            self.stream = model.stream
 
     def __call__(self, Y_pred, Y_targ, global_batch_size):
         if self.enable_gpu:
+            threads = min(self.b, 1024)
+            blocks = max(self.b, 1024) // threads + 1
             self.categorical_cross_entropy_kern(Y_targ.ary, Y_pred.ary, self.loss, self.dx.ary,
                                                 np.int32(self.b), np.int32(global_batch_size), 
                                                 np.int32(self.n), np.float32(self.eps), 
-                                                block=(self.b, 1, 1), stream=self.stream)
+                                                grid=(blocks, 1, 1), block=(threads, 1, 1),
+                                                stream=self.stream)
             loss = -gpuarray.sum(self.loss).get() / self.b
             return loss, self.dx
         else:
@@ -205,7 +207,7 @@ class BinaryCrossEntropy(Loss):
             __global__ void binary_cross_entropy(T *Y_targ, T *Y_pred, T *res,
                                                  T *dx, int b, int bs, int n, T eps)
             {
-                int idx = threadIdx.x;
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
                 if (idx < b){
                     int i = 0, max = 0;
                     T pred;
@@ -228,13 +230,17 @@ class BinaryCrossEntropy(Loss):
             self.loss = gpuarray.empty((self.b,), self.dtype)
             dx_gpu = gpuarray.empty(shape, self.dtype)
             self.dx = TensorGPU(dx_gpu, model.tensor_fmt, model.cudnn_dtype)
+            self.stream = model.stream
 
     def __call__(self, Y_pred, Y_targ, global_batch_size):
         assert len(Y_targ.shape) == 2
         if self.enable_gpu:
+            threads = min(self.b, 1024)
+            blocks = max(self.b, 1024) // threads + 1
             self.binary_cross_entropy_kern(Y_targ, Y_pred, self.loss, self.dx.ary, 
                                            self.b, global_batch_size, self.n, self.eps, 
-                                           block=(self.b, 1, 1))
+                                           grid=(blocks, 1, 1), block=(threads, 1, 1),
+                                           stream=self.stream)
             loss = -gpuarray.sum(self.loss) / self.b
             return loss, self.dx
         else:
@@ -258,7 +264,7 @@ class CategoricalAccuracy(Metric):
             module = SourceModule("""
             __global__ void categorical_accuracy(T *Y_targ, T *Y_pred, T *res, int b, int n)
             {
-                int idx = threadIdx.x;
+                int idx = blockIdx.x * blockDim.x + threadIdx.x;
                 if (idx < b){
                     int i = 0, max = 0;
                     T max_value = Y_pred[idx * n];
@@ -275,11 +281,16 @@ class CategoricalAccuracy(Metric):
             """.replace("T", {"float32": "float", "float64": "double"}[self.dtype]))
             self.categorical_accuracy_kern = module.get_function("categorical_accuracy")
             self.cost = gpuarray.empty((self.b,), self.dtype)
+            self.stream = model.stream
 
     def __call__(self, Y_pred, Y_targ):
         if self.enable_gpu:
+            threads = min(self.b, 1024)
+            blocks = max(self.b, 1024) // threads + 1
             self.categorical_accuracy_kern(Y_targ, Y_pred, self.cost,
-                                           np.int32(self.b), np.int32(self.n), block=(self.b, 1, 1))
+                                           np.int32(self.b), np.int32(self.n), 
+                                           grid=(blocks, 1, 1), block=(threads, 1, 1),
+                                           stream=self.stream)
             return gpuarray.sum(self.cost).get() * 100 / self.b
         else:
             b = Y_targ.shape[0]
