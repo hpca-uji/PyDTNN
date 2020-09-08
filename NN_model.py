@@ -139,7 +139,7 @@ class Model:
 
             hostname = MPI.Get_processor_name()
 
-            hosts_data = comm.allgather([rank, hostname])
+            hosts_data = comm.allgather([self.rank, hostname])
             # Build a dictionary hostname : [ranks_in_host]
             #   { "host1" : [0, 1], "host2" : [2, 3] }
             hosts = {}
@@ -165,7 +165,7 @@ class Model:
                self.inter_comm = comm.Create(inter_group)
             
             # Get an id once per master process and distribute it to all intra ranks
-            if rank in self.inter_ranks:
+            if self.rank in self.inter_ranks:
                id = nccl.ncclGetUniqueId()
             
             id = intra_comm.bcast(id)
