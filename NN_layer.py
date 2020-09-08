@@ -188,29 +188,32 @@ class Layer():
 
             if self.model.enable_cudnn:
                 if self.model.enable_nccl:
-                    if len(self.model.inter_ranks) == 1:
-                        # Only one node involved, perform ncclAllreduce across intra-node GPUs
-                        nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                           nccl.RedOp.Sum, comm=self.model.nccl_comm, 
-                                           stream=self.stream_2.handle)
-                    else:
-                        # Hierarchical allreduce: ncclReduce + Allreduce + ncclBroadcast
-                        nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                        nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
-                                        stream=self.stream_2.handle)
-
-                        self.stream_2.synchronize()
-                        if self.model.rank in self.model.inter_ranks:
-                            if self.model.gpudirect: 
-                                self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
-                            else:
-                                dw_cpu = dw.ary.get()
-                                self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                                dw.ary.set_async(dw_cpu, self.stream_2)
-
-                        nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                           root=0, comm=self.model.nccl_comm, 
-                                           stream=self.stream_2.handle)
+                    nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                       nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                                       stream=self.stream_2.handle)
+                    # if len(self.model.inter_ranks) == 1:
+                    #     # Only one node involved, perform ncclAllreduce across intra-node GPUs
+                    #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                    #                        nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                    #                        stream=self.stream_2.handle)
+                    # else:
+                    #     # Hierarchical allreduce: ncclReduce + Allreduce + ncclBroadcast
+                    #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                    #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
+                    #                     stream=self.stream_2.handle)
+                    # 
+                    #     self.stream_2.synchronize()
+                    #     if self.model.rank in self.model.inter_ranks:
+                    #         if self.model.gpudirect: 
+                    #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
+                    #         else:
+                    #             dw_cpu = dw.ary.get()
+                    #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                    #             dw.ary.set_async(dw_cpu, self.stream_2)
+                    # 
+                    #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                    #                        root=0, comm=self.model.nccl_comm, 
+                    #                        stream=self.stream_2.handle)
                 else:
                     if self.model.gpudirect:
                         self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
