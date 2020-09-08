@@ -103,7 +103,13 @@ class Model:
             sys.exit(-1)
 
         if self.enable_cudnn and supported_cudnn:
-            import pycuda.autoinit
+            # import pycuda.autoinit
+            device_id = rank % drv.Device.count()
+            drv.init()
+            context = drv.Device(device_id).make_context()
+            import atexit
+            atexit.register(context.pop)
+
             self.cudnn_handle = cudnn.cudnnCreate()
             self.cublas_handle = cublas.cublasCreate()
             self.stream = drv.Stream()
@@ -165,9 +171,7 @@ class Model:
                self.inter_comm = comm.Create(inter_group)
             
             # Get an id once per master process and distribute it to all intra ranks
-            id = nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None
-            
-            id = intra_comm.bcast(id)
+            id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
             self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())            
 
         elif self.enable_nccl:
