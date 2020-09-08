@@ -127,7 +127,7 @@ class Model:
             print("or you must install pycuda+skcuda to allow GPU GEMMs executions!")
             sys.exit(-1)
 
-        if self.enable_nccl and self.model and self.comm and self.enable_cudnn:
+        if self.enable_nccl and self.comm and self.enable_cudnn:
 
             types = {np.float64: nccl.DataType.Float64,
                      np.float32: nccl.DataType.Float32,
