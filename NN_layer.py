@@ -138,7 +138,11 @@ class Layer():
     def wait_allreduce_async(self):
         if not self.model.comm: return
 
+        # MPI.Request.Waitall([r for i, r in self.reqs_allred.items()])
         for w_, dw_ in self.grad_vars.items():
+            dw = getattr(self, dw_)
+            dw_cpu = getattr(self, "%s_cpu" % dw_)
+
             if self.model.enable_cudnn:
                 if self.model.enable_nccl:
                     if len(self.model.inter_ranks) == 1: 
@@ -157,10 +161,7 @@ class Layer():
                 elif not self.model.gpudirect:
                     self.reqs_allred[dw_].wait()
                     # If there is not CUDA-aware MPI, copy data back to GPU
-                    for w_, dw_ in self.grad_vars.items():
-                        dw = getattr(self, dw_)
-                        dw_cpu = getattr(self, "%s_cpu" % dw_)
-                        dw.ary.set_async(dw_cpu, self.stream_2)
+                    dw.ary.set_async(dw_cpu, self.stream_2)
 
     def reduce_weights_sync(self):
         if not self.model.comm: return
