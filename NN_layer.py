@@ -141,7 +141,7 @@ class Layer():
             self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self):
-        if not self.model.comm: return
+        if not self.model.comm or self.model.enable_nccl: return
 
         # MPI.Request.Waitall([r for i, r in self.reqs_allred.items()])
         for w_, dw_ in self.grad_vars.items():
@@ -149,23 +149,21 @@ class Layer():
             dw_cpu = getattr(self, "%s_cpu" % dw_)
 
             if self.model.enable_cudnn:
-                if self.model.enable_nccl:
-                    pass
-                    # if len(self.model.inter_ranks) == 1: 
-                    #     # Do nothing, Allreduce was already completed in phase 1
-                    #     pass
-                    # else:
-                    #     # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
-                    #     if self.model.rank in self.model.inter_ranks:
-                    #         self.reqs_allred[dw_].wait()
-                    #         if not self.model.gpudirect: 
-                    #             dw.ary.set_async(dw_cpu, self.stream_2)
-                    # 
-                    #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                    #                        root=0, comm=self.model.nccl_comm, 
-                    #                        stream=self.stream_2.handle)
-        
-                elif not self.model.gpudirect:
+                # if self.model.enable_nccl:  
+                #     if len(self.model.inter_ranks) == 1: 
+                #         # Do nothing, Allreduce was already completed in phase 1
+                #         pass
+                #     else:
+                #         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
+                #         if self.model.rank in self.model.inter_ranks:
+                #             self.reqs_allred[dw_].wait()
+                #             if not self.model.gpudirect: 
+                #                 dw.ary.set_async(dw_cpu, self.stream_2)
+                #     
+                #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                #                            root=0, comm=self.model.nccl_comm, 
+                #                            stream=self.stream_2.handle)
+                if not self.model.gpudirect:
                     self.reqs_allred[dw_].wait()
                     # If there is not CUDA-aware MPI, copy data back to GPU
                     dw.ary.set_async(dw_cpu, self.stream_2)
