@@ -58,7 +58,7 @@ try:
     import pycuda.driver as drv
     import skcuda.linalg as culinalg
     import skcuda.misc as cumisc
-
+    import libnccl.libnccl as nccl
 except:
     pass
 
@@ -96,65 +96,125 @@ class Layer():
     def update_weights(self, optimizer):
         optimizer.update(self)
 
-    def reduce_weights_async(self, comm):
-        if comm and self.weights.size > 0:
-            self.reqs_allred = []
-            if self.model.enable_cudnn:
-                if not self.gpudirect:
-                    self.stream_2.synchronize()                  
-                for w_, dw_ in self.grad_vars.items():
-                    dw_cpu = getattr(self, "%s_cpu" % dw_)
-                    req = comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                    self.reqs_allred.append(req)
-            else:
-                for w_, dw_ in self.grad_vars.items():
-                    dw = getattr(self, dw_)
-                    req = comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-                    self.reqs_allred.append(req)
+    def reduce_weights_async(self):
+        if not self.model.comm: return
 
-    def wait_allreduce_async(self, comm):
-        if comm and self.weights.size > 0:
+        if self.model.enable_cudnn and \
+            not self.model.gpudirect and \
+            not self.model.enable_nccl: 
+            self.stream_2.synchronize()
+
+        self.reqs_allred = {}
+        for w_, dw_ in self.grad_vars.items():
+            dw = getattr(self, dw_)
+            dw_cpu = getattr(self, "%s_cpu" % dw_)  
+
+            if self.model.enable_cudnn:
+                if self.model.enable_nccl:
+                    if len(self.model.inter_ranks) == 1:
+                        nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                           nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                                           stream=self.stream_2.handle)
+                        req = None
+                    else:
+                        # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
+                        nccl.ncclReduce(dw.ptr, dw.ptr, dw.selfiize, self.model.nccl_type, 
+                                        nccl.RedOp.Sum, root=0, comm=nccl_comm, 
+                                        stream=self.stream_2.handle)
+
+                        if self.model.rank in self.model.inter_ranks:
+                            if not self.model.gpudirect:
+                                self.stream_2.synchronize()
+                                dw_cpu = dw.ary.get()
+                            req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
+
+                else: # Without NCCL, synchronization of stream_2 is already performed 
+                    req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+
+            else: # Without GPUs, only MPI
+                req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+
+            self.reqs_allred[dw_] = req
+
+    def wait_allreduce_async(self):
+        if not self.model.comm: return
+
+        for w_, dw_ in self.grad_vars.items():
             MPI.Request.Waitall(self.reqs_allred)
             if self.model.enable_cudnn:
-                if not self.gpudirect:
-                    # If there is not CUDA-aware MPI, we need yo copy data back to GPU
+                if self.model.enable_nccl:
+                    if len(self.model.inter_ranks) == 1: 
+                        # Do nothing, Allreduce was already completed in phase 1
+                        pass
+                    else:
+                        # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
+                        self.reqs_allred[dw_].wait()
+                        if not self.model.gpudirect: 
+                            dw.ary.set_async(dw_cpu, self.stream_2)
+
+                        nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                           root=0, comm=self.model.nccl_comm, 
+                                           stream=self.stream_2.handle)
+        
+                elif not self.model.gpudirect:
+                    # If there is not CUDA-aware MPI, copy data back to GPU
                     for w_, dw_ in self.grad_vars.items():
                         dw = getattr(self, dw_)
                         dw_cpu = getattr(self, "%s_cpu" % dw_)
                         dw.ary.set_async(dw_cpu, self.stream_2)
 
-    def reduce_weights_sync(self, comm):
-        if comm and self.weights.size > 0:
+    def reduce_weights_sync(self):
+        if not self.model.comm: return
+
+        # We have copied the dw and db to dw_cpu and db_cpu
+        # Using a CUDA-aware MPI implementation would avoid that copy
+        if self.model.enable_cudnn and \
+            not self.model.gpudirect and \
+            not self.model.enable_nccl: 
+            self.stream_2.synchronize()
+
+        for w_, dw_ in self.grad_vars.items():
+            dw = getattr(self, dw_)
+            dw_cpu = getattr(self, "%s_cpu" % dw_)
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
+                                    [self.id * PYDL_NUM_EVTS + 3, 
+                                     self.id * PYDL_OPS_NUM_EVTS + 6])
+
             if self.model.enable_cudnn:
-                if self.gpudirect:
-                    for w_, dw_ in self.grad_vars.items():
-                        dw_cpu = getattr(self, "%s_cpu" % dw_)
-                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
-                                                [self.id * PYDL_NUM_EVTS + 3, 
-                                                 self.id * PYDL_OPS_NUM_EVTS + 6])
-                        comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+                if self.model.enable_nccl:
+                    if len(self.model.inter_ranks) == 1:
+                        # Only one node involved, perform ncclAllreduce across intra-node GPUs
+                        nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                           nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                                           stream=self.stream_2.handle)
+                    else:
+                        # Hierarchical allreduce: ncclReduce + Allreduce + ncclBroadcast
+                        nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                        nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
+                                        stream=self.stream_2.handle)
+
+                        self.stream_2.synchronize()
+                        if self.model.rank in self.model.inter_ranks:
+                            if self.model.gpudirect: 
+                                self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
+                            else:
+                                dw_cpu = dw.ary.get()
+                                self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                                dw.ary.set_async(dw_cpu, self.stream_2)
+
+                        nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                           root=0, comm=self.model.nccl_comm, 
+                                           stream=self.stream_2.handle)
                 else:
-                    # We have copied the dw and db to dw_cpu and db_cpu
-                    # Using a CUDA-aware MPI implementation would avoid that copy
-                    self.stream_2.synchronize()
-                    for w_, dw_ in self.grad_vars.items():
-                        dw = getattr(self, dw_)
-                        dw_cpu = getattr(self, "%s_cpu" % dw_)
-                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
-                                                [self.id * PYDL_NUM_EVTS + 3, 
-                                                 self.id * PYDL_OPS_NUM_EVTS + 6])
+                    if self.model.gpudirect:
+                        comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                    else:
                         comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                         dw.ary.set_async(dw_cpu, self.stream_2)
-                        self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
             else:
-                for w_, dw_ in self.grad_vars.items():
-                    dw = getattr(self, dw_)
-                    self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
-                                            [self.id * PYDL_NUM_EVTS + 3, 
-                                             self.id * PYDL_OPS_NUM_EVTS + 6])
-                    comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-                    self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+                comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            
+            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
 
 
 class Input(Layer):

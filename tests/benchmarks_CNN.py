@@ -119,6 +119,7 @@ def parse_options():
     parser.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
     parser.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
+    parser.add_argument('--enable_nccl', type=bool_lambda, default=False)
     parser.add_argument('--dtype', type=str, default="float32")
     parser.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
     parser.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)

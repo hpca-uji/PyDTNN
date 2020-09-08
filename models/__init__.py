@@ -9,6 +9,7 @@ def get_model(params):
                               tracing=params.tracing,
                               enable_gpu=params.enable_gpu,
                               enable_gpudirect=params.enable_gpudirect, 
+                              enable_nccl=params.enable_nccl,
                               dtype=params.dtype)
         model = getattr(model_mod, "create_" + params.model)(model)
        

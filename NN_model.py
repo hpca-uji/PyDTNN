@@ -59,6 +59,7 @@ try:
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as drv
     import libcudnn.libcudnn as cudnn
+    import libnccl.libnccl as nccl
     from skcuda import cublas
     supported_cudnn = True
 except Exception as e:
@@ -74,7 +75,7 @@ class Model:
 
     def __init__(self, params, comm=None, non_blocking_mpi=False, 
                  tracing=False, enable_gpu=False, enable_gpudirect=False,
-                 dtype=np.float32):
+                 enable_nccl=False, dtype=np.float32):
         self.layers = []
         self.params = params
         self.comm = comm
@@ -84,7 +85,8 @@ class Model:
         self.enable_cudnn = enable_gpu
         global enable_cudnn
         enable_cudnn = self.enable_cudnn
-        self.gpudirect = enable_gpudirect        
+        self.gpudirect = enable_gpudirect
+        self.enable_nccl = enable_nccl
         self.dtype = dtype
         # In data parallel, we assume that file weights are stored in a nfs mounted directory.
         self.params.shared_storage = True
@@ -93,10 +95,10 @@ class Model:
         self.rank = 0
         self.nprocs = 1
 
-        if self.comm != None and supported_mpi4py:
+        if self.comm and supported_mpi4py:
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
-        elif self.comm != None:
+        elif self.comm:
             print("You must install mpi4py to allow parallel MPI execution!")
             sys.exit(-1)
 
@@ -121,10 +123,58 @@ class Model:
 
         elif self.enable_cudnn:
             self.enable_cudnn = False
-            print("You must install pycuda+skcuda+cudnn to allow nVIDIA cuDNN!")
+            print("You must install pycuda+skcuda+cudnn to allow NVIDIA cuDNN!")
             print("or you must install pycuda+skcuda to allow GPU GEMMs executions!")
             sys.exit(-1)
-        # drv.start_profiler()            
+
+        if self.enable_nccl and self.model and self.comm and self.enable_cudnn:
+
+            types = {np.float64: nccl.DataType.Float64,
+                     np.float32: nccl.DataType.Float32,
+                     np.int8:    nccl.DataType.Int8,
+                     np.int32:   nccl.DataType.Int32}   
+    
+            try:    self.nccl_type = types[self.type]
+            except: self.nccl_type = nccl.DataType.Float32
+
+            hostname = MPI.Get_processor_name()
+
+            hosts_data = comm.allgather([rank, hostname])
+            # Build a dictionary hostname : [ranks_in_host]
+            #   { "host1" : [0, 1], "host2" : [2, 3] }
+            hosts = {}
+            for r, h in hosts_data:
+               if not h in hosts: hosts[h] = [r]
+               else: hosts[h].append(r)
+            
+            # Check that no more processes than GPUs per node are used
+            for host, ranks_in_host in hosts.items():
+               assert len(ranks_in_host) <= self.params.gpus_per_node
+            
+            self.intra_ranks = hosts[hostname]
+            # Only a master process per node is selected as inter rank
+            self.inter_ranks = [r[0] for h, r in hosts.items()]
+                
+            intra_group_ = comm.Get_group()
+            intra_group = MPI.Group.Incl(intra_group_, self.intra_ranks)
+            intra_comm = comm.Create(intra_group)
+            
+            if len(self.inter_ranks) > 1:
+               inter_group_ = comm.Get_group()
+               inter_group = MPI.Group.Incl(inter_group_, self.inter_ranks)
+               self.inter_comm = comm.Create(inter_group)
+            
+            # Get an id once per master process and distribute it to all intra ranks
+            if rank in self.inter_ranks:
+               id = nccl.ncclGetUniqueId()
+            
+            id = intra_comm.bcast(id)
+            self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())            
+
+        elif self.enable_nccl:
+            self.enable_nccl = False
+            print("You must install libnccl to allow NVIDIA NCCL!")
+            sys.exit(-1)           
 
     def show(self):
         bfp = {"float32": 4, "float64": 8}[self.dtype]
