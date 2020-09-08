@@ -331,7 +331,7 @@ class Model:
     
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                self.layers[l].reduce_weights_sync(self.comm)
+                self.layers[l].reduce_weights_sync()
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
                 self.layers[l].update_weights(optimizer)
                 self.tracer.emit_event(PYDL_EVT, 0)            
@@ -344,7 +344,7 @@ class Model:
                 self.tracer.emit_event(PYDL_EVT, 0)
 
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
-                self.layers[l].reduce_weights_async(self.comm)
+                self.layers[l].reduce_weights_async()
                 self.tracer.emit_event(PYDL_EVT, 0)
     
             # Weight update (WU)
@@ -352,7 +352,7 @@ class Model:
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
                                         [self.layers[l].id * PYDL_NUM_EVTS + 4, 
                                          self.layers[l].id * PYDL_OPS_NUM_EVTS + 6])
-                self.layers[l].wait_allreduce_async(self.comm)
+                self.layers[l].wait_allreduce_async()
                 self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
     
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
