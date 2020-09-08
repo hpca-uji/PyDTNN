@@ -127,12 +127,12 @@ class Model:
                 #   { "host1" : [0, 1], "host2" : [2, 3] }
                 hosts = {}
                 for r, h in hosts_data:
-                   if not h in hosts: hosts[h] = [r]
-                   else: hosts[h].append(r)
+                    if not h in hosts: hosts[h] = [r]
+                    else: hosts[h].append(r)
                 
                 # Check that no more processes than GPUs per node are used
                 for host, ranks_in_host in hosts.items():
-                   assert len(ranks_in_host) <= self.params.gpus_per_node
+                    assert len(ranks_in_host) <= self.params.gpus_per_node
                 
                 self.intra_ranks = hosts[hostname]
                 # Only a master process per node is selected as inter rank
@@ -143,12 +143,12 @@ class Model:
                 intra_comm = comm.Create(intra_group)
                 
                 if len(self.inter_ranks) > 1:
-                   inter_group_ = comm.Get_group()
-                   inter_group = MPI.Group.Incl(inter_group_, self.inter_ranks)
-                   self.inter_comm = comm.Create(inter_group)
-    
-                if self.rank in self.inter_ranks:
-                    assert self.inter_comm.Get_rank() == 0
+                    inter_group_ = comm.Get_group()
+                    inter_group = MPI.Group.Incl(inter_group_, self.inter_ranks)
+                    self.inter_comm = comm.Create(inter_group)
+     
+                    if self.rank in self.inter_ranks:
+                        assert self.inter_comm.Get_rank() == 0
 
                 # Get an id once per master process and distribute it to all intra ranks
                 id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
