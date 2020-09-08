@@ -155,6 +155,7 @@ class Layer():
                                            stream=self.stream_2.handle)
         
                 elif not self.model.gpudirect:
+                    self.reqs_allred[dw_].wait()
                     # If there is not CUDA-aware MPI, copy data back to GPU
                     for w_, dw_ in self.grad_vars.items():
                         dw = getattr(self, dw_)
