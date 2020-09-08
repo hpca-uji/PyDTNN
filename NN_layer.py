@@ -99,8 +99,7 @@ class Layer():
     def reduce_weights_async(self):
         if not self.model.comm: return
 
-        if self.grad_vars and self.model.enable_cudnn and \
-            and not self.model.enable_nccl: 
+        if self.grad_vars and self.model.enable_cudnn and not self.model.enable_nccl: 
             self.stream_2.synchronize()
 
         self.reqs_allred = {}
