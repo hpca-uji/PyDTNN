@@ -139,7 +139,6 @@ class Layer():
         if not self.model.comm: return
 
         for w_, dw_ in self.grad_vars.items():
-            MPI.Request.Waitall(self.reqs_allred)
             if self.model.enable_cudnn:
                 if self.model.enable_nccl:
                     if len(self.model.inter_ranks) == 1: 
