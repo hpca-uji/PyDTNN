@@ -111,7 +111,7 @@ class Model:
             # import atexit
             # atexit.register(context.pop)
 
-            if self.enable_nccl and self.comm and self.enable_cudnn:
+            if self.enable_nccl and self.comm:
                 types = {np.float64: nccl.DataType.Float64,
                          np.float32: nccl.DataType.Float32,
                          np.int8:    nccl.DataType.Int8,
@@ -151,6 +151,10 @@ class Model:
                 id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
                 self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())            
 
+            elif self.enable_nccl:
+                self.enable_nccl = False
+                print("You must install libnccl to allow NVIDIA NCCL!")
+                sys.exit(-1)   
 
             self.cudnn_handle = cudnn.cudnnCreate()
             self.cublas_handle = cublas.cublasCreate()
@@ -174,12 +178,6 @@ class Model:
             print("You must install pycuda+skcuda+cudnn to allow NVIDIA cuDNN!")
             print("or you must install pycuda+skcuda to allow GPU GEMMs executions!")
             sys.exit(-1)
-
-
-        elif self.enable_nccl:
-            self.enable_nccl = False
-            print("You must install libnccl to allow NVIDIA NCCL!")
-            sys.exit(-1)           
 
     def show(self):
         bfp = {"float32": 4, "float64": 8}[self.dtype]
