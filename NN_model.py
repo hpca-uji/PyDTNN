@@ -146,9 +146,6 @@ class Model:
                     inter_group_ = comm.Get_group()
                     inter_group = MPI.Group.Incl(inter_group_, self.inter_ranks)
                     self.inter_comm = comm.Create(inter_group)
-     
-                    if self.rank in self.inter_ranks:
-                        assert self.inter_comm.Get_rank() == 0
 
                 # Get an id once per master process and distribute it to all intra ranks
                 id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
