@@ -137,7 +137,7 @@ class Model:
                 self.intra_ranks = hosts[hostname]
                 # Only a master process per node is selected as inter rank
                 self.inter_ranks = [r[0] for h, r in hosts.items()]
-                    
+                
                 intra_group_ = comm.Get_group()
                 intra_group = MPI.Group.Incl(intra_group_, self.intra_ranks)
                 intra_comm = comm.Create(intra_group)
@@ -146,7 +146,10 @@ class Model:
                    inter_group_ = comm.Get_group()
                    inter_group = MPI.Group.Incl(inter_group_, self.inter_ranks)
                    self.inter_comm = comm.Create(inter_group)
-                
+    
+                if self.model.rank in self.model.inter_ranks:
+                    assert intra_comm.Get_rank() == 0
+                    
                 # Get an id once per master process and distribute it to all intra ranks
                 id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
                 self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())            

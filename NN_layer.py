@@ -150,9 +150,10 @@ class Layer():
                         pass
                     else:
                         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
-                        self.reqs_allred[dw_].wait()
-                        if not self.model.gpudirect: 
-                            dw.ary.set_async(dw_cpu, self.stream_2)
+                        if self.model.rank in self.model.inter_ranks:
+                            self.reqs_allred[dw_].wait()
+                            if not self.model.gpudirect: 
+                                dw.ary.set_async(dw_cpu, self.stream_2)
 
                         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
                                            root=0, comm=self.model.nccl_comm, 
