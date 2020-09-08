@@ -207,12 +207,12 @@ class Layer():
                                            stream=self.stream_2.handle)
                 else:
                     if self.model.gpudirect:
-                        comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                        self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                     else:
-                        comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                        self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                         dw.ary.set_async(dw_cpu, self.stream_2)
             else:
-                comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+                self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             
             self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
 
