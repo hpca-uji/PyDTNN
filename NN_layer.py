@@ -173,8 +173,7 @@ class Layer():
 
         # We have copied the dw and db to dw_cpu and db_cpu
         # Using a CUDA-aware MPI implementation would avoid that copy
-        if self.grad_vars and self.model.enable_cudnn and \
-            not self.model.gpudirect and not self.model.enable_nccl: 
+        if self.grad_vars and self.model.enable_cudnn and not self.model.enable_nccl: 
             self.stream_2.synchronize()
 
         for w_, dw_ in self.grad_vars.items():
