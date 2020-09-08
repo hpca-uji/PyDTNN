@@ -118,7 +118,7 @@ class Layer():
                     else:
                         # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
                         nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                        nccl.RedOp.Sum, root=0, comm=nccl_comm, 
+                                        nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm, 
                                         stream=self.stream_2.handle)
 
                         if self.model.rank in self.model.inter_ranks:
