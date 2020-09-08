@@ -107,25 +107,30 @@ class Layer():
             dw = getattr(self, dw_)
             dw_cpu = getattr(self, "%s_cpu" % dw_)  
 
+            req = None
             if self.model.enable_cudnn:
                 if self.model.enable_nccl:
-                    if len(self.model.inter_ranks) == 1:
-                        nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                           nccl.RedOp.Sum, comm=self.model.nccl_comm, 
-                                           stream=self.stream_2.handle)
-                        req = None
-                    else:
-                        # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
-                        nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                        nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm, 
-                                        stream=self.stream_2.handle)
-
-                        if self.model.rank in self.model.inter_ranks:
-                            if not self.model.gpudirect:
-                                dw.ary.get_async(self.stream_2, dw_cpu)
-
-                            self.stream_2.synchronize()
-                            req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
+                    nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                                       nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                                       stream=self.stream_2.handle)
+                    # Hierarchical mode NCCL + MPI
+                    # if len(self.model.inter_ranks) == 1:
+                    #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                    #                        nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                    #                        stream=self.stream_2.handle)
+                    #
+                    # else:
+                    #     # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
+                    #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                    #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm, 
+                    #                     stream=self.stream_2.handle)
+                    #
+                    #     if self.model.rank in self.model.inter_ranks:
+                    #         if not self.model.gpudirect:
+                    #             dw.ary.get_async(self.stream_2, dw_cpu)
+                    #
+                    #         self.stream_2.synchronize()
+                    #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
 
                 else: # Without NCCL, synchronization of stream_2 is already performed 
                     req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
@@ -145,19 +150,20 @@ class Layer():
 
             if self.model.enable_cudnn:
                 if self.model.enable_nccl:
-                    if len(self.model.inter_ranks) == 1: 
-                        # Do nothing, Allreduce was already completed in phase 1
-                        pass
-                    else:
-                        # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
-                        if self.model.rank in self.model.inter_ranks:
-                            self.reqs_allred[dw_].wait()
-                            if not self.model.gpudirect: 
-                                dw.ary.set_async(dw_cpu, self.stream_2)
-
-                        nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                           root=0, comm=self.model.nccl_comm, 
-                                           stream=self.stream_2.handle)
+                    pass
+                    # if len(self.model.inter_ranks) == 1: 
+                    #     # Do nothing, Allreduce was already completed in phase 1
+                    #     pass
+                    # else:
+                    #     # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
+                    #     if self.model.rank in self.model.inter_ranks:
+                    #         self.reqs_allred[dw_].wait()
+                    #         if not self.model.gpudirect: 
+                    #             dw.ary.set_async(dw_cpu, self.stream_2)
+                    # 
+                    #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                    #                        root=0, comm=self.model.nccl_comm, 
+                    #                        stream=self.stream_2.handle)
         
                 elif not self.model.gpudirect:
                     self.reqs_allred[dw_].wait()
