@@ -100,7 +100,7 @@ class Layer():
         if not self.model.comm: return
 
         if self.grad_vars and self.model.enable_cudnn and \
-            not self.model.gpudirect and not self.model.enable_nccl: 
+            and not self.model.enable_nccl: 
             self.stream_2.synchronize()
 
         self.reqs_allred = {}
@@ -123,8 +123,9 @@ class Layer():
 
                         if self.model.rank in self.model.inter_ranks:
                             if not self.model.gpudirect:
-                                self.stream_2.synchronize()
-                                dw_cpu = dw.ary.get()
+                                dw.ary.get_async(self.stream_2, dw_cpu)
+
+                            self.stream_2.synchronize()
                             req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
 
                 else: # Without NCCL, synchronization of stream_2 is already performed 
@@ -662,17 +663,17 @@ class AdditionBlock(Layer):
         for p in self.paths:
             for l in p: l.update_weights(optimizer)
 
-    def reduce_weights_async(self, comm):
+    def reduce_weights_async(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_async(comm)
+            for l in p: l.reduce_weights_async()
      
-    def wait_allreduce_async(self, comm):
+    def wait_allreduce_async(self):
         for p in self.paths:
-            for l in p: l.wait_allreduce_async(comm)
+            for l in p: l.wait_allreduce_async()
 
-    def reduce_weights_sync(self, comm):
+    def reduce_weights_sync(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_sync(comm)
+            for l in p: l.reduce_weights_sync()
 
     def forward(self, x):
         x = [x] * len(self.paths)
@@ -735,17 +736,17 @@ class ConcatenationBlock(Layer):
         for p in self.paths:
             for l in p: l.update_weights(optimizer)
 
-    def reduce_weights_async(self, comm):
+    def reduce_weights_async(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_async(comm)
+            for l in p: l.reduce_weights_async()
      
-    def wait_allreduce_async(self, comm):
+    def wait_allreduce_async(self):
         for p in self.paths:
-            for l in p: l.wait_allreduce_async(comm)
+            for l in p: l.wait_allreduce_async()
 
-    def reduce_weights_sync(self, comm):
+    def reduce_weights_sync(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_sync(comm)
+            for l in p: l.reduce_weights_sync()
 
     def forward(self, x):
         x = [x] * len(self.paths)
