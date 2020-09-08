@@ -165,8 +165,7 @@ class Model:
                self.inter_comm = comm.Create(inter_group)
             
             # Get an id once per master process and distribute it to all intra ranks
-            if self.rank in self.inter_ranks:
-               id = nccl.ncclGetUniqueId()
+            id = nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None
             
             id = intra_comm.bcast(id)
             self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())            
