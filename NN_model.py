@@ -134,7 +134,7 @@ class Model:
                 for host, ranks_in_host in hosts.items():
                     assert len(ranks_in_host) <= self.params.gpus_per_node
 
-                id = intra_comm.bcast(nccl.ncclGetUniqueId())
+                id = comm.bcast(nccl.ncclGetUniqueId())
                 self.nccl_comm = nccl.ncclCommInitRank(self.nprocs, id, self.rank)
                 
                 # if self.enable_nccl_hierarchical:
