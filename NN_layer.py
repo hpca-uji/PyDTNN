@@ -141,7 +141,7 @@ class Layer():
             self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self):
-        if not self.model.comm or self.model.enable_nccl: return
+        if not self.model.comm or not (self.model.enable_cudnn and not self.model.enable_nccl): return
 
         # MPI.Request.Waitall([r for i, r in self.reqs_allred.items()])
         for w_, dw_ in self.grad_vars.items():
