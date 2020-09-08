@@ -77,7 +77,7 @@ class SGDGPU(NN_optimizer.SGD):
              ).get_function("SGD_kernel")
 
     def update(self, layer):
-        layer.stream_2.synchronize()      
+        if layer.grad_vars: layer.stream_2.synchronize()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -133,7 +133,7 @@ class RMSPropGPU(NN_optimizer.RMSProp):
         ).get_function("RMSProp_kernel")
 
     def update(self, layer):
-        layer.stream_2.synchronize()
+        if layer.grad_vars: layer.stream_2.synchronize()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -197,7 +197,7 @@ class AdamGPU(NN_optimizer.Adam):
     def update(self, layer):
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)
-        layer.stream_2.synchronize()
+        if layer.grad_vars: layer.stream_2.synchronize()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -267,7 +267,7 @@ class NadamGPU(NN_optimizer.Nadam):
     def update(self, layer):
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)
-        layer.stream_2.synchronize()
+        if layer.grad_vars: layer.stream_2.synchronize()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
