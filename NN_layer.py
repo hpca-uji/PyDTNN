@@ -117,7 +117,7 @@ class Layer():
                         req = None
                     else:
                         # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
-                        nccl.ncclReduce(dw.ptr, dw.ptr, dw.selfiize, self.model.nccl_type, 
+                        nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
                                         nccl.RedOp.Sum, root=0, comm=nccl_comm, 
                                         stream=self.stream_2.handle)
 
