@@ -155,11 +155,6 @@ class Model:
                 #     id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
                 #     self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())
 
-            elif self.enable_nccl:
-                self.enable_nccl = False
-                print("You must install libnccl to allow NVIDIA NCCL!")
-                sys.exit(-1)   
-
             self.cudnn_handle = cudnn.cudnnCreate()
             self.cublas_handle = cublas.cublasCreate()
             self.stream = drv.Stream()
@@ -179,8 +174,7 @@ class Model:
 
         elif self.enable_cudnn:
             self.enable_cudnn = False
-            print("You must install pycuda+skcuda+cudnn to allow NVIDIA cuDNN!")
-            print("or you must install pycuda+skcuda to allow GPU GEMMs executions!")
+            print("You must install pycuda, skcuda, cudnn, nccl (optional) to permit the use of GPUs!")
             sys.exit(-1)
 
     def show(self):
@@ -335,7 +329,9 @@ class Model:
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
                 dx = self.layers[l].backward(dx)
                 self.tracer.emit_event(PYDL_EVT, 0)
-    
+          
+            if self.enable_cudnn: self.stream.synchronize()
+          
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
                 self.layers[l].reduce_weights_sync()
@@ -365,6 +361,11 @@ class Model:
                 self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
                 self.layers[l].update_weights(optimizer)
                 self.tracer.emit_event(PYDL_EVT, 0)
+
+        if self.enable_cudnn:
+            for l in range(len(self.layers)-1, 0, -1):
+                if self.layers[l].grad_vars: 
+                   self.layers[l].stream_2.synchronize()
 
         for lr_sched in lr_schedulers:
             lr_sched.on_batch_end(self, optimizer, self.rank)

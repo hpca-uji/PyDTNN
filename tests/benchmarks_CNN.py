@@ -222,8 +222,8 @@ if __name__ == "__main__":
     except:
         params.gpus_per_node = 0
 
-    # if params.enable_gpu and params.parallel == "data":
-    #     os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
+    if params.enable_gpu and params.parallel == "data":
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
 
     from NN_model import *
     from NN_layer import *

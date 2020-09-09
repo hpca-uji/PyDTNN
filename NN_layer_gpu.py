@@ -174,8 +174,9 @@ class FCGPU(NN_layer.FC):
                     prev_dx.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta, 
                     self.dw.ptr_intp if self.gpudirect else self.dw.ary.gpudata, ldc, self.dtype)
 
-        # DtoH dw when data parallelism and no GPU direct is used
-        if self.model.comm and not self.gpudirect:
+        # DtoH dw when data parallelism and no GPU direct/NCCL is used
+        if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
+            self.model.stream.synchronize()
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
         
         if self.use_bias:
@@ -189,8 +190,9 @@ class FCGPU(NN_layer.FC):
                         self.db.ptr_intp if self.gpudirect else self.db.ary.gpudata, 
                         incy, self.dtype)
     
-            # DtoH db when data parallelism and no GPU direct is used
-            if self.model.comm and not self.gpudirect:
+            # DtoH db when data parallelism and no GPU direct/NCCL is used
+            if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
+                self.model.stream.synchronize()
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
             
         if self.need_dx:
@@ -325,7 +327,9 @@ class Conv2DGPU(NN_layer.Conv2D):
                                       self.bwd_dw_algo, ws_ptr, ws_size, beta,
                                       self.dw.desc, self.dw.ptr)
 
-        if self.model.comm and not self.gpudirect:
+        # DtoH dw when data parallelism and no GPU direct/NCCL is used
+        if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
+            self.model.stream.synchronize()
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
@@ -334,7 +338,9 @@ class Conv2DGPU(NN_layer.Conv2D):
                                       prev_dx.desc, prev_dx.ptr, beta, 
                                       self.db.desc, self.db.ptr)
             
-            if self.model.comm != None and not self.gpudirect:
+            # DtoH db when data parallelism and no GPU direct/NCCL is used
+            if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
+                self.model.stream.synchronize()
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
         
         if self.need_dx:
@@ -635,7 +641,9 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
             self.gamma.ptr, self.dgamma.ptr, self.dbeta.ptr, self.epsilon,
             self.save_mean.ptr, self.save_inv_var.ptr)
 
-        if self.model.comm and not self.gpudirect:
+        # DtoH dw when data parallelism and no GPU direct/NCCL is used
+        if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
+            self.model.stream.synchronize()
             self.dgamma.ary.get_async(self.stream_2, self.dgamma_cpu)
             self.dbeta.ary.get_async(self.stream_2, self.dbeta_cpu)
         return self.dx
