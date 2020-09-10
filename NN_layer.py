@@ -100,6 +100,12 @@ class Layer():
         if not self.model.comm: return
         self.reqs_allred = {}
 
+        # if self.model.enable_cudnn:
+        #     if self.model.enable_nccl or self.model.gpudirect:
+        #        self.model.stream.synchronize()
+        #     else:
+        #        self.stream_2.synchronize()
+
         for w_, dw_ in self.grad_vars.items():
             dw = getattr(self, dw_)
 
@@ -136,9 +142,11 @@ class Layer():
                     # so we need to synchronize stream_2 before performing Allreduce.
                     # In GPU direct we have to synchronize the main stream to ensure dw and db are ready.
 
-                    if not self.model.gpudirect: self.stream_2.synchronize()
-                    else:                        self.stream.synchronize()
-
+                    if not self.model.gpudirect: 
+                        self.stream_2.synchronize()
+                    else:
+                        self.model.stream.synchronize()
+                
                     dw_cpu = getattr(self, "%s_cpu" % dw_)  
                     req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 

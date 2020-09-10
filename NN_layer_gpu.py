@@ -113,16 +113,21 @@ class FCGPU(NN_layer.FC):
         if self.need_dx:
             dx_gpu = gpuarray.empty(self.x.ary.shape, self.dtype)
             self.dx = TensorGPU(dx_gpu, self.tensor_fmt, self.cudnn_dtype)
-        
-        self.dw_cpu = np.zeros(self.weights.ary.shape, self.dtype)
-        if self.use_bias: self.db_cpu = np.zeros(self.biases.ary.shape, self.dtype)
 
         if self.gpudirect:
-            dw_gpu = drv.register_host_memory(self.dw_cpu)
-            if self.use_bias: db_gpu = drv.register_host_memory(self.db_cpu)
+            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.dtype)
+            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
+                                               flags=drv.mem_host_register_flags.DEVICEMAP)
+            if self.use_bias: 
+                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.dtype)
+                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
+                                               flags=drv.mem_host_register_flags.DEVICEMAP)
         else:
+            self.dw_cpu = np.zeros(self.weights.ary.shape, self.dtype)
             dw_gpu = gpuarray.empty(self.dw_cpu.shape, self.dtype)
-            if self.use_bias: db_gpu = gpuarray.empty(self.db_cpu.shape, self.dtype)
+            if self.use_bias: 
+                self.db_cpu = np.zeros(self.biases.ary.shape, self.dtype)
+                db_gpu = gpuarray.empty(self.db_cpu.shape, self.dtype)
 
         self.dw = TensorGPU(dw_gpu, self.tensor_fmt, self.cudnn_dtype, gpudirect=self.gpudirect)
         if self.use_bias: 
@@ -260,15 +265,20 @@ class Conv2DGPU(NN_layer.Conv2D):
             dx_gpu = gpuarray.empty(self.x.ary.shape, self.dtype)
             self.dx = TensorGPU(dx_gpu, self.tensor_fmt, self.cudnn_dtype)
 
-        self.dw_cpu = np.zeros(self.weights.ary.shape, self.dtype)
-        if self.use_bias: self.db_cpu = np.zeros(self.biases.ary.shape, self.dtype)
-
         if self.gpudirect:
-            dw_gpu = drv.register_host_memory(self.dw_cpu)
-            if self.use_bias: db_gpu = drv.register_host_memory(self.db_cpu)
+            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.dtype)
+            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
+                                               flags=drv.mem_host_register_flags.DEVICEMAP)
+            if self.use_bias: 
+                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.dtype)
+                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
+                                               flags=drv.mem_host_register_flags.DEVICEMAP)
         else:
+            self.dw_cpu = np.zeros(self.weights.ary.shape, self.dtype)
             dw_gpu = gpuarray.empty(self.weights.ary.shape, self.dtype)
-            if self.use_bias: db_gpu = gpuarray.empty(self.biases.ary.shape, self.dtype)
+            if self.use_bias: 
+                self.db_cpu = np.zeros(self.biases.ary.shape, self.dtype)
+                db_gpu = gpuarray.empty(self.biases.ary.shape, self.dtype)
 
         self.dw = TensorGPU(dw_gpu, self.tensor_fmt, self.cudnn_dtype, 
                             tensor_type="filter", gpudirect=self.gpudirect)
@@ -588,14 +598,17 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
 
         self.nparams = self.gamma.size + self.beta.size
 
-        self.dgamma_cpu = np.zeros(self.gamma.ary.shape, self.dtype)
-        self.dbeta_cpu = np.zeros(self.beta.ary.shape, self.dtype)
-
         if self.gpudirect:
-            dgamma_gpu = drv.register_host_memory(self.dgamma_cpu)
-            dbeta_gpu = drv.register_host_memory(self.dbeta_cpu)
+            self.dgamma_cpu = drv.aligned_zeros(self.gamma.ary.shape, self.dtype)
+            self.dgamma_cpu = dgamma_gpu = drv.register_host_memory(self.dgamma_cpu, 
+                                               flags=drv.mem_host_register_flags.DEVICEMAP)
+            self.dbeta_cpu = drv.aligned_zeros(self.beta.ary.shape, self.dtype)
+            self.dbeta_cpu = dbeta_gpu = drv.register_host_memory(self.dbeta_cpu,
+                                               flags=drv.mem_host_register_flags.DEVICEMAP)
         else:
+            self.dgamma_cpu = np.zeros(self.gamma.ary.shape, self.dtype)
             dgamma_gpu = gpuarray.empty(self.gamma.ary.shape, self.dtype)
+            self.dbeta_cpu = np.zeros(self.beta.ary.shape, self.dtype)
             dbeta_gpu = gpuarray.empty(self.beta.ary.shape, self.dtype)
 
         self.dgamma = TensorGPU(dgamma_gpu, self.tensor_fmt, self.cudnn_dtype, gpudirect=self.gpudirect)
