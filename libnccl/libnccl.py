@@ -475,8 +475,8 @@ def ncclSend(sendbuff, count, datatype, peer, comm, stream):
 
 # ncclResult_t  ncclRecv(void* recvbuff, size_t count, ncclDataType_t datatype, int peer,
 #    ncclComm_t comm, cudaStream_t stream);
-_libnccl.ncclSend.restype = int
-_libnccl.ncclSend.argtypes = [ctypes.c_void_p,
+_libnccl.ncclRecv.restype = int
+_libnccl.ncclRecv.argtypes = [ctypes.c_void_p,
                               ctypes.c_int, ctypes.c_int, ctypes.c_int,
                               ncclComm_t, ctypes.c_void_p]
 def ncclRecv(recvbuff, count, datatype, peer, comm, stream):
