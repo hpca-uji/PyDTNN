@@ -241,39 +241,40 @@ class Model:
             np.savez_compressed(filename, **d)
 
     def calculate_time(self):
-        time = np.zeros((4,), dtype=np.float32) # Total time, Comp time, Memo time, Net time
+        total_time = np.zeros((4,), dtype=np.float32) # Total time, Comp time, Memo time, Net time
 
         # Forward pass (FP)
         for l in range(1, len(self.layers)):
-            time += self.layers[l].fwd_time
+            total_time += self.layers[l].fwd_time
 
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                time += self.layers[l].bwd_time
+                total_time += self.layers[l].bwd_time
     
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
                 if self.comm and self.layers[l].weights.size > 0:
-                    time += allreduce_time(self.layers[l].weights.size + self.layers[l].biases.size, 
+                    total_time += allreduce_time(self.layers[l].weights.size + self.layers[l].biases.size, 
                         self.params.cpu_speed, self.params.network_bw, self.params.network_lat, 
                         self.params.network_alg, self.nprocs, self.dtype)
         else:
-            time_iar = np.zeros((len(self.layers)-1, 4,), dtype=np.float32)
+            total_time_iar = 0
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                time += self.layers[l].bwd_time
+                total_time += self.layers[l].bwd_time
                 if self.comm and self.layers[l].weights.size > 0:
-                    time_iar[l] = (time_iar[l-1] if time_iar[l-1][0] > time[0] else time) if l > 0 else time + \
-                        allreduce_time(self.layers[l].weights.size + self.layers[l].biases.size, 
-                            self.params.cpu_speed, self.params.network_bw, self.params.network_lat, 
-                            self.params.network_alg, self.nprocs, self.dtype)
+                    time_iar = allreduce_time(self.layers[l].weights.size + self.layers[l].biases.size, 
+                                   self.params.cpu_speed, self.params.network_bw, self.params.network_lat, 
+                                   self.params.network_alg, self.nprocs, self.dtype)
+                    total_time[3] += time_iar[3]
+                    total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 
-            time = time_iar if time_iar[l][0] > time[0] else time
+            total_time[0] = max(total_time[0], total_time_iar)
 
-        return time
+        return total_time
 
     def __compute_metrics_funcs(self, Y_pred, Y_targ, loss, metrics_funcs, blocking=True):
         loss_req = None
