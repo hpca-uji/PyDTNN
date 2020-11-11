@@ -1,0 +1,12 @@
+build/
+.idea
+NN_add_cython.c
+NN_add_cython.cpython-37m-x86_64-linux-gnu.so
+NN_argmax_cython.c
+NN_argmax_cython.cpython-37m-x86_64-linux-gnu.so
+NN_im2col_cython.c
+NN_im2col_cython.cpython-37m-x86_64-linux-gnu.so
+NN_relu_cython.c
+NN_relu_cython.cpython-37m-x86_64-linux-gnu.so
+*.npz
+__pycache__
