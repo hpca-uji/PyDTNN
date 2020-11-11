@@ -3,15 +3,16 @@
 ## Introduction
 
 **PyDTNN** is a light-weight library developed at Universitat Jaume I (Spain)
-for distributed Deep Learning training and inference that offers an initial starting point for interaction 
-with distributed training of (and inference with) deep neural networks. 
-PyDTNN priorizes simplicity over efficiency, providing an amiable user 
-interface which enables a flat accessing curve. To perform the training and 
-inference processes, PyDTNN exploits distributed inter-process parallelism 
-(via MPI) for clusters and intra-process (via multi-threading) parallelism 
-to leverage the presence of multicore processors and GPUs at node level. For that, 
-PyDTNN uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
-and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
+for distributed Deep Learning training and inference that offers an initial
+starting point for interaction with distributed training of (and inference
+with) deep neural networks. PyDTNN prioritizes simplicity over efficiency,
+providing an amiable user interface which enables a flat accessing curve. To
+perform the training and inference processes, PyDTNN exploits distributed
+inter-process parallelism (via MPI) for clusters and intra-process (via
+multi-threading) parallelism to leverage the presence of multicore processors
+and GPUs at node level. For that, PyDTNN uses MPI4Py for message-passing, BLAS
+calls via NumPy for multicore processors and PyCUDA+cuDNN+cuBLAS for NVIDIA
+GPUs.
 
 Supported layers:
 
@@ -23,19 +24,25 @@ Supported layers:
   * Flatten
   * Batch normalization
   * Addition block (for residual nets, e.g., ResNet)
-  * Concatenation block (for channel concatenation-based nets, e.g., Inception, GoogleNet, DenseNet, etc.)
+  * Concatenation block (for channel concatenation-based nets, e.g., Inception,
+    GoogleNet, DenseNet, etc.)
 
 Supported datasets:
 
   * **MNIST** handwritten digit database. This dataset is included into the project.
 
-  * **CIFAR10** database of the 80 million tiny images dataset. This dataset is not included into the project. Please, download the binary version from: https://www.cs.toronto.edu/~kriz/cifar.html
+  * **CIFAR10** database of the 80 million tiny images dataset. This dataset is
+    not included into the project. Its binary version can be downloaded from:
+    https://www.cs.toronto.edu/~kriz/cifar.html
 
-  * **ImageNet**: the PyDTNN module for this dataset requires a preprocessed ImageNet 
-  dataset split into 1,024 files in the NPZ Numpy's compressed array format containing the images/labels, similar to what TensorFlow uses. Each of these files should store the images 
-  in the key 'x' with the shape NCHW = (1251, 3, 227, 227) and the labels with the shape 
-  NL = (1251, 1) in the key 'y'. Images shall be stored in np.uint8 data type in the 
-  range [0..255] while the labels can be stored in np.int16 in the range [1..1000].
+  * **ImageNet**: the PyDTNN module for this dataset requires a preprocessed
+    ImageNet dataset split into 1,024 files in the NPZ Numpy's compressed array
+    format containing the images/labels, similar to what TensorFlow uses. Each
+    of these files should store the images in the key 'x' with the shape NCHW =
+    (1251, 3, 227, 227), and the labels in the key 'y' with the shape NL =
+    (1251, 1). Images shall be stored in np.uint8 data type in the range
+    [0..255] while the labels can be stored in np.int16 in the range [1..1000].
+
 ```
     >>> import numpy as np
     >>> data = np.load("/scratch/imagenet/train/train-00000-of-01024.npz")
@@ -44,13 +51,15 @@ Supported datasets:
     >>> data['y'].shape
     (1251, 1)
 ```
-  PyDTNN comes with the utility ``datasets/ImageNet_converter.py`` that reads the
-  preprocessed ImageNet TensorFlow training/validation files in TFRecord format 
-  and converts them into NPZ format. 
+
+  PyDTNN comes with the utility ``datasets/ImageNet_converter.py`` that reads
+  the preprocessed ImageNet TensorFlow training/validation files in TFRecord
+  format and converts them into NPZ format.
 
 ## Installing PyDTNN
 
-**PyDTNN** requires Python3 with the following packages:
+**PyDTNN** requires Python3 and the following packages:
+
 ```
     mpi4py>=3.0.2
     tqdm>=4.43.0
@@ -58,18 +67,24 @@ Supported datasets:
     Cython>=0.29.13
     numpy>=1.17.2
     pycuda>=2019.1.2
+    scikit-image>=0.17.2
 ```
-which can be install by typing ``pip install -r requirements.txt``.
+
+These packages can be installed by typing ``pip install -r requirements.txt``.
 
 You will also need a MPI library installed, such as OpenMPI, MPICH or MVAPICH2.
 
-To realize the im2col/col2im transforms for Convolutional layers in parallel, 
-it is necessary to compile Cython pyx modules (see ``compile_cython_modules.sh`` script).
+To realize the im2col/col2im transforms for Convolutional layers in parallel, it
+is necessary to compile the Cython pyx modules. For doing this, execute the
+``compile_cython_modules.sh`` script or the next line:
+
 ```
 LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
 ```
 
-Note the ``-fopenmp`` compilation flag in the ``setup.py`` file to exploit intra-process parallelism via OpenMP threads.
+To exploit the intra-process parallelism via OpenMP threads, the ``-fopenmp``
+compilation flag has been used in the ``setup.py`` file.
+
 
 ## Launcher options
 
@@ -134,16 +149,16 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
 ## Example: distributed training of a CNN for the MNIST dataset
 
 In this example, we train a simple CNN for the MNIST dataset using data
-parallelism and 12 MPI ranks each using 2 OpenMP threads.
+parallelism and 12 MPI ranks each using 4 OpenMP threads.
 
 ```
-$ export OMP_NUM_THREADS=1
-$ mpirun -np 4 \
-   python3 -u benchmarks_CNN.py \
+$ export OMP_NUM_THREADS=4
+$ mpirun -np 12 \
+   python3 -u tests/benchmarks_CNN.py \
          --model=simplecnn \
          --dataset=mnist \
-         --dataset_train_path=../datasets/mnist \
-         --dataset_test_path=../datasets/mnist \
+         --dataset_train_path=datasets/mnist \
+         --dataset_test_path=datasets/mnist \
          --test_as_validation=False \
          --batch_size=64 \
          --validation_split=0.2 \
@@ -151,7 +166,7 @@ $ mpirun -np 4 \
          --evaluate=True \
          --optimizer=adam \
          --learning_rate=0.1 \
-         --loss_func=categorical_accuracy,categorical_cross_entropy \
+         --loss_func=categorical_cross_entropy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \
          --early_stopping_metric=val_categorical_cross_entropy \
          --early_stopping_patience=10 \
@@ -190,8 +205,8 @@ $ mpirun -np 4 \
 **** Parameters:
   model                          : simplecnn
   dataset                        : mnist
-  dataset_train_path             : ../datasets/mnist
-  dataset_test_path              : ../datasets/mnist
+  dataset_train_path             : datasets/mnist
+  dataset_test_path              : datasets/mnist
   test_as_validation             : False
   flip_images                    : True
   flip_images_prob               : 0.5
@@ -231,8 +246,8 @@ $ mpirun -np 4 \
   reduce_lr_every_nepochs_min_lr : 0.001
   model_checkpoint_metric        : val_categorical_cross_entropy
   model_checkpoint_save_freq     : 2
-  mpi_processes                  : 1
-  threads_per_process            : 16
+  mpi_processes                  : 12
+  threads_per_process            : 4
   parallel                       : data
   non_blocking_mpi               : False
   tracing                        : False
