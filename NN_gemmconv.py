@@ -118,7 +118,7 @@ class GemmConv:
 
         # offset matrix
         if offset is None:
-            offset = np.zeros((kn, b*ho*wo)).astype(filters.dtype, order='F')
+            offset = np.zeros((kn, b * ho * wo)).astype(filters.dtype, order='F')
 
         assert filters.dtype == layers.dtype and filters.dtype == offset.dtype, \
             "All the matrices must have the same type of data!"
@@ -195,8 +195,8 @@ def __usage_example__():
     print("Using gemm_conv to compute alpha * filters * layers + beta * offset...")
     gemm_conv = GemmConv()
     gemm_conv_result = gemm_conv.gemm_conv(filters, layers,
-                                 vpadding=padding, hpadding=padding,
-                                 vstride=stride, hstride=stride)
+                                           vpadding=padding, hpadding=padding,
+                                           vstride=stride, hstride=stride)
     print(gemm_conv_result)
     print("Sum: ", gemm_conv_result.sum())
     sgemm_conv_t = timeit(lambda: gemm_conv.gemm_conv(filters, layers,
