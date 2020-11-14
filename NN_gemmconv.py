@@ -50,12 +50,12 @@ from ctypes.util import find_library
 def ctypes_aligned_alloc(alignment, size):
     buf_size = size + (alignment - 1)
     raw_memory = bytearray(buf_size)
-    ctypes_raw_type = (ctypes.c_char * buf_size)
+    ctypes_raw_type = (ctypes.c_byte * buf_size)
     ctypes_raw_memory = ctypes_raw_type.from_buffer(raw_memory)
     raw_address = ctypes.addressof(ctypes_raw_memory)
     offset = raw_address % alignment
     offset_to_aligned = (alignment - offset) % alignment
-    ctypes_aligned_type = (ctypes.c_char * (buf_size - offset_to_aligned))
+    ctypes_aligned_type = (ctypes.c_byte * size)
     ctypes_aligned_memory = ctypes_aligned_type.from_buffer(raw_memory, offset_to_aligned)
     return ctypes_aligned_memory
 
@@ -89,9 +89,9 @@ class GemmConv:
                               "application.")
         self.lib = ctypes.cdll.LoadLibrary(path)
         self.dtype = dtype
-        dtype_bits = dtype(1).nbytes << 3  # * 8
-        self.ac_pack = ctypes_aligned_alloc(alignment, block_mc * block_kc * dtype_bits)
-        self.bc_pack = ctypes_aligned_alloc(alignment, block_kc * block_nc * dtype_bits)
+        dtype_bytes = dtype(1).nbytes
+        self.ac_pack = ctypes_aligned_alloc(alignment, block_mc * block_kc * dtype_bytes)
+        self.bc_pack = ctypes_aligned_alloc(alignment, block_kc * block_nc * dtype_bytes)
 
     def gemm_conv(self, filters, layers, offset=None, alpha=1.0, beta=0.0,
                   vpadding=0, hpadding=0, vstride=1, hstride=1):
@@ -121,7 +121,11 @@ class GemmConv:
             offset = np.zeros((kn, b*ho*wo)).astype(filters.dtype, order='F')
 
         assert filters.dtype == layers.dtype and filters.dtype == offset.dtype, \
-            "All the matrices must use the same data type!"
+            "All the matrices must have the same type of data!"
+
+        assert filters.dtype == self.dtype, \
+            "The matrices must have the same type of data as the one specified when " \
+            "the class was instantiated!"
 
         # gemmConv.c
         # ----------
@@ -165,8 +169,7 @@ class GemmConv:
                    ctypes.c_uint(b), ctypes.c_uint(stride),
                    ctypes.c_void_p(layers.ctypes.data), ctypes.c_float(beta),
                    ctypes.c_void_p(offset.ctypes.data),
-                   self.ac_pack, self.bc_pack)
-
+                   ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
         return offset
 
 
@@ -184,17 +187,18 @@ def __usage_example__():
     kw = 16  # Filters width
     padding = 0  # Padding
     stride = 1  # Stride
-    layers = np.ones((b, c, h, w)).astype(np.float32, )  # Layers
-    filters = np.zeros((kn, c, kh, kw)).astype(np.float32, order='F')  # pesos
-    filters[0][0][0][0] = 2.0
+    layers = np.ones((b, c, h, w)).astype(np.float32, order='F')
+    filters = np.zeros((kn, c, kh, kw)).astype(np.float32, order='F')
+    filters[0][0][0][0] = 1.89
     filters[1][1][1][1] = 3.0
+    filters[2][2][2][2] = 4.0
     print("Using gemm_conv to compute alpha * filters * layers + beta * offset...")
     gemm_conv = GemmConv()
-    result = gemm_conv.gemm_conv(filters, layers,
+    gemm_conv_result = gemm_conv.gemm_conv(filters, layers,
                                  vpadding=padding, hpadding=padding,
                                  vstride=stride, hstride=stride)
-    print(result)
-    print("Sum: ", result.sum())
+    print(gemm_conv_result)
+    print("Sum: ", gemm_conv_result.sum())
     sgemm_conv_t = timeit(lambda: gemm_conv.gemm_conv(filters, layers,
                                                       vpadding=padding, hpadding=padding,
                                                       vstride=stride, hstride=stride),
@@ -205,9 +209,10 @@ def __usage_example__():
     print("Using im2col and mm...")
     a_t = im2col_cython(layers, kh, kw, padding, padding, stride, stride)
     w_c = filters.reshape(kn, -1)
-    res = w_c @ a_t
-    print(res)
-    print("Sum: ", res.sum())
+    im2col_mm_result = w_c @ a_t
+    print(im2col_mm_result)
+    print("Sum: ", im2col_mm_result.sum())
+    print("np.allclose: ", np.allclose(gemm_conv_result, im2col_mm_result))
     im2col_t = timeit(lambda: im2col_cython(layers, kh, kw, padding, padding, stride, stride), number=5)
     print("im2col time: {:.2f}".format(im2col_t))
     mm_t = timeit(lambda: w_c @ a_t, number=5)
