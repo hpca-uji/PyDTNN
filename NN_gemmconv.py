@@ -121,7 +121,7 @@ class GemmConv:
         if offset is None:
             offset = np.zeros((kn, b * ho * wo)).astype(filters.dtype, order='F')
 
-        assert filters.dtype == layers.dtype and filters.dtype == offset.dtype, \
+        assert filters.dtype == layers.dtype == offset.dtype, \
             "All the matrices must have the same type of data!"
 
         assert filters.dtype == self.dtype, \
@@ -159,7 +159,7 @@ class GemmConv:
         elif filters.dtype == np.float32:
             xgemm_conv = self.lib.sgemm_conv
         else:
-            raise ValueError("Type {} not supported for gemm_conv!".format(str(filters.dtype)))
+            raise ValueError("Type {} not supported by gemm_conv!".format(str(filters.dtype)))
 
         # layers_1d = filters.reshape(-1)
 
