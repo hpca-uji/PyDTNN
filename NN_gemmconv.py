@@ -47,6 +47,7 @@ from ctypes.util import find_library
 
 # Credits of this function go to 'rotglug' stackoverflow user
 # https://stackoverflow.com/questions/8658813/control-memory-alignment-in-python-ctypes
+# Some changes have been done to the original code
 def ctypes_aligned_alloc(alignment, size):
     buf_size = size + (alignment - 1)
     raw_memory = bytearray(buf_size)
@@ -54,7 +55,7 @@ def ctypes_aligned_alloc(alignment, size):
     ctypes_raw_memory = ctypes_raw_type.from_buffer(raw_memory)
     raw_address = ctypes.addressof(ctypes_raw_memory)
     offset = raw_address % alignment
-    offset_to_aligned = (alignment - offset) % alignment
+    offset_to_aligned = alignment - offset
     ctypes_aligned_type = (ctypes.c_byte * size)
     ctypes_aligned_memory = ctypes_aligned_type.from_buffer(raw_memory, offset_to_aligned)
     return ctypes_aligned_memory
