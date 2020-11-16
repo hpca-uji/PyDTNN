@@ -94,7 +94,7 @@ class GemmConv:
         self.ac_pack = ctypes_aligned_alloc(alignment, block_mc * block_kc * dtype_bytes)
         self.bc_pack = ctypes_aligned_alloc(alignment, block_kc * block_nc * dtype_bytes)
 
-    def gemm_conv(self, filters, layers, offset=None, alpha=1.0, beta=0.0,
+    def gemm_conv(self, filters, layers, biases=None, alpha=1.0, beta=1.0,
                   vpadding=0, hpadding=0, vstride=1, hstride=1):
         """
         Calls a libgemmConv function to perform a matrix matrix multiplication with an implicit im2col.
@@ -102,7 +102,7 @@ class GemmConv:
         The matrix matrix product is in the form C = alpha * AB + beta * C, where:
             + A is the filters matrix
             + B is the im2col(layers) matrix
-            + C is the offset matrix
+            + C is the biases matrix
         """
         if vpadding != hpadding:
             raise ValueError("gemmConv does not support different vertical and horizontal paddings")
@@ -118,10 +118,10 @@ class GemmConv:
         wo = floor((w + 2 * hpadding - kw) / hstride) + 1
 
         # offset matrix
-        if offset is None:
-            offset = np.zeros((kn, b * ho * wo)).astype(filters.dtype, order='F')
+        if biases is None:
+            biases = np.zeros((kn, b * ho * wo)).astype(filters.dtype, order='F')
 
-        assert filters.dtype == layers.dtype == offset.dtype, \
+        assert filters.dtype == layers.dtype == biases.dtype, \
             "All the matrices must have the same type of data!"
 
         assert filters.dtype == self.dtype, \
@@ -161,17 +161,17 @@ class GemmConv:
         else:
             raise ValueError("Type {} not supported by gemm_conv!".format(str(filters.dtype)))
 
-        # layers_1d = filters.reshape(-1)
+        layers_1d = layers.flatten()
 
         xgemm_conv(ctypes.c_uint(kh), ctypes.c_uint(kw),
                    ctypes.c_uint(c), ctypes.c_uint(kn),
                    ctypes.c_float(alpha), ctypes.c_void_p(filters.ctypes.data),
                    ctypes.c_uint(ho), ctypes.c_uint(wo),
                    ctypes.c_uint(b), ctypes.c_uint(stride),
-                   ctypes.c_void_p(layers.ctypes.data), ctypes.c_float(beta),
-                   ctypes.c_void_p(offset.ctypes.data),
+                   ctypes.c_void_p(layers_1d.ctypes.data), ctypes.c_float(beta),
+                   ctypes.c_void_p(biases.ctypes.data),
                    ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
-        return offset
+        return biases
 
 
 def __usage_example__():
