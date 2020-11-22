@@ -46,7 +46,7 @@ import numpy as np
 
 # Credits of this function go to 'rotglug' stackoverflow user
 # https://stackoverflow.com/questions/8658813/control-memory-alignment-in-python-ctypes
-# Some changes have been done to the original code
+# Some changes have been done to the original code to correct some bugs
 def ctypes_aligned_alloc(alignment, size):
     buf_size = size + alignment
     raw_memory = bytearray(buf_size)
@@ -69,6 +69,18 @@ class GemmConv:
     gemm_conv(filters, layers, biases, alpha, beta, vpadding, hpadding, vstride, hstride)
         Calls sgemm_conv or hgemm_conv (from libgemmConv.so) to perform a matrix
         matrix multiplication with an implicit im2col.
+
+    Examples
+    --------
+    See __usage_example__() method for an example of use. This example can be
+    run with: 'python NN_gemm_conv.py'
+
+    Test
+    ----
+    From the current directory execute:
+        python -m unittest unittests.TestGemmConv
+
+    (see unittests/test_NN_gemm_conv.py for more instructions on testing)
     """
 
     # References
