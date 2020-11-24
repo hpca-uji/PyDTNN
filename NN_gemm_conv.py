@@ -216,7 +216,7 @@ class GemmConv:
         # Call custom added function to libgemmConv.so to print the received parameters
         if self.debug:
             try:
-                self.lib.expose_sgemm_conv(ctypes.c_uint(kw), ctypes.c_uint(kh),
+                self.lib.expose_sgemm_conv(ctypes.c_uint(kh), ctypes.c_uint(kw),
                                            ctypes.c_uint(c), ctypes.c_uint(kn),
                                            ctypes.c_float(alpha), ctypes.c_void_p(filters_gc.ctypes.data),
                                            ctypes.c_uint(h), ctypes.c_uint(w),
@@ -237,7 +237,7 @@ class GemmConv:
             raise ValueError("Type {} not supported by gemm_conv!".format(str(filters.dtype)))
 
         # Call sgemm_conv or hgemm_conv
-        xgemm_conv(ctypes.c_uint(kw), ctypes.c_uint(kh),
+        xgemm_conv(ctypes.c_uint(kh), ctypes.c_uint(kw),
                    ctypes.c_uint(c), ctypes.c_uint(kn),
                    ctypes.c_float(alpha), ctypes.c_void_p(filters_gc.ctypes.data),
                    ctypes.c_uint(h), ctypes.c_uint(w),
@@ -247,7 +247,7 @@ class GemmConv:
                    ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
 
         # Change output matrix axes to the PyDTNN expected order:
-        biases = biases_gc.reshape((kn, b, ho, wo,)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
+        biases = biases_gc.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
         return biases
 
 
@@ -259,14 +259,14 @@ def __usage_example__():
     b = 32  # Batch size
     c = 3  # Channels per layer
     h = 128  # Layers height
-    w = 128  # Layers width
-    kn = 16  # Number of filters
+    w = 100  # Layers width
+    kn = 8  # Number of filters
     kh = 16  # Filters height
-    kw = 16  # Filters width
+    kw = 10  # Filters width
     vpadding = 1  # Vertical padding
     hpadding = 2  # Horizontal padding
     vstride = 1  # Vertical stride
-    hstride = 1  # Horizontal stride
+    hstride = vstride  # Horizontal stride (gemmConv does not support different vertical and horizontal strides)
     # Create filters, layers, and biases matrices from previous parameters. If
     # no biases matrix is provided, a proper one filled with zeros will be
     # automatically created.

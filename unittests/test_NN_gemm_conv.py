@@ -37,14 +37,14 @@ class D:
     b = 1  # Batch size
     c = 1  # Channels per layer
     h = 128  # Layers height
-    w = 128  # Layers width
+    w = 100  # Layers width
     kn = 1  # Number of filters
     kh = 16  # Filters height
-    kw = 16  # Filters width
-    vpadding = 0  # Vertical padding
-    hpadding = 0  # Horizontal padding
+    kw = 10  # Filters width
+    vpadding = 1  # Vertical padding
+    hpadding = 2  # Horizontal padding
     vstride = 1  # Vertical stride
-    hstride = 1  # Horizontal stride
+    hstride = vstride  # Horizontal stride (gemmConv does not support different horizontal and vertical strides)
 
 
 def _print_with_header(header, to_be_printed):
