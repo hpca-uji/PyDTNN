@@ -24,7 +24,7 @@ try:
     from NN_gemm_conv import GemmConv
     from NN_im2col_cython import im2col_cython
 except ModuleNotFoundError:
-    print("Please, execute as 'python -m unittest tests/test_NN_gemm_conv.py'")
+    print("Please, execute as 'python -m unittest unittests.TestGemmConv'")
 
 
 def verbose():
