@@ -247,7 +247,7 @@ class GemmConv:
                    ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
 
         # Change output matrix axes to the PyDTNN expected order:
-        biases = biases_gc.reshape((kn, ho, wo, b)).transpose((0, 3, 2, 1)).reshape(kn, -1, order="C")
+        biases = biases_gc.reshape((kn, b, ho, wo,)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
         return biases
 
 

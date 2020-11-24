@@ -34,11 +34,11 @@ def verbose():
 
 class D:
     """Default parameters"""
-    b = 1  # 32  # Batch size
-    c = 3  # Channels per layer
+    b = 1  # Batch size
+    c = 1  # Channels per layer
     h = 128  # Layers height
     w = 128  # Layers width
-    kn = 16  # Number of filters
+    kn = 1  # Number of filters
     kh = 16  # Filters height
     kw = 16  # Filters width
     vpadding = 0  # Vertical padding

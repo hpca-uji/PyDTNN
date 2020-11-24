@@ -24,12 +24,16 @@ class Spinner:
     spinner.stop()
     """
 
-    def __init__(self, spinner_type='dots'):
+    def __init__(self, spinner_type='bounce'):
         self.started = False
         self.current_frame = 0
         # Spinner data got from https://github.com/manrajgrover/py-spinners/blob/master/spinners/spinners.py
         self.spinners = \
             {
+                "bounce": {
+                    "interval": 120,
+                    "frames": ["⠁", "⠂", "⠄", "⠂"]
+                },
                 "dots": {
                     "interval": 80,
                     "frames": ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
@@ -54,6 +58,7 @@ class Spinner:
 
 if __name__ == "__main__":
     import time
+
     print("Testing the spinner: ", sep='', end='')
     spinner = Spinner()
     for i in range(10):
