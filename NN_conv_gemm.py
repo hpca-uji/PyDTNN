@@ -38,66 +38,39 @@ __version__ = "1.1.0"
 
 import ctypes
 import os
+import platform
 from ctypes.util import find_library
 from math import floor
 
 import numpy as np
 
 
-# Credits of this function go to 'rotglug' stackoverflow user
-# https://stackoverflow.com/questions/8658813/control-memory-alignment-in-python-ctypes
-# Some changes have been done to the original code to correct some bugs
-def ctypes_aligned_alloc(alignment, size):
-    buf_size = size + alignment
-    raw_memory = bytearray(buf_size)
-    ctypes_raw_type = (ctypes.c_byte * buf_size)
-    ctypes_raw_memory = ctypes_raw_type.from_buffer(raw_memory)
-    raw_address = ctypes.addressof(ctypes_raw_memory)
-    offset = raw_address % alignment
-    offset_to_aligned = alignment - offset
-    ctypes_aligned_type = (ctypes.c_byte * size)
-    ctypes_aligned_memory = ctypes_aligned_type.from_buffer(raw_memory, offset_to_aligned)
-    return ctypes_aligned_memory
-
-
-class GemmConv:
+class ConvGemm:
     """
-    Exposes the libgemmConv functions following the PyDTNN conventions.
+    Exposes the libconvGemm functions following the PyDTNN conventions.
 
     Methods
     -------
-    gemm_conv(filters, layers, biases, alpha, beta, vpadding, hpadding, vstride, hstride)
-        Calls sgemm_conv or hgemm_conv (from libgemmConv.so) to perform a matrix
+    conv_gemm(filters, layers, biases, alpha, beta, vpadding, hpadding, vstride, hstride)
+        Calls sconvGemm or hconvGemm (from libconvGemm.so) to perform a matrix
         matrix multiplication with an implicit im2col.
 
     Examples
     --------
     See __usage_example__() method for an example of use. This example can be
-    run with: 'python NN_gemm_conv.py'
+    run with: 'python NN_conv_gemm.py'
 
     Test
     ----
     From the current directory execute:
-        python -m unittest unittests.TestGemmConv
+        python -m unittest unittests.TestConvGemm
 
-    (see unittests/test_NN_gemm_conv.py for more instructions on testing)
+    (see unittests/test_NN_conv_gemm.py for more instructions on testing)
     """
 
-    # References
-    # ==========
-    # gemmConv.h
-    # ----------
-    # #define BLOCK_MC 560  // 120
-    # #define BLOCK_KC 368  // 640
-    # #define BLOCK_NC 3072
-    # convEval.c
-    # ----------
-    # Ac_pack = (float*) aligned_alloc(4096,BLOCK_MC*BLOCK_KC*sizeof(float));
-    # Bc_pack = (float*) aligned_alloc(4096,BLOCK_KC*BLOCK_NC*sizeof(float));
-
-    def __init__(self, dtype=np.float32, debug=False, alignment=4096, block_mc=560, block_kc=368, block_nc=3072):
+    def __init__(self, dtype=np.float32, debug=False):
         """
-        Loads the libgemmConv.so library and creates the required auxiliary matrices ac_pack and bc_pack.
+        Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
         Parameters
         ----------
@@ -105,36 +78,67 @@ class GemmConv:
             The element data type being used on all the matrices.
         debug : boolean
             Whether to print debug information or not.
-        alignment : int
-            The alignment used when allocating memory for the auxiliary matrices ac_pack and bc_pack.
-        block_mc : int
-            The mc dimension of ac_pack.
-        block_kc : int
-            The kc dimension of ac_pack and bc_pack.
-        block_nc : int
-            The nc dimension of bc_pack.
         """
-        path = find_library('gemmConv')
+        path = find_library('convGemm')
         if not path:
             for current_path in os.environ['LD_LIBRARY_PATH'].split(':'):
-                if os.path.exists(os.path.join(current_path, 'libgemmConv.so')):
-                    path = os.path.join(current_path, 'libgemmConv.so')
+                if os.path.exists(os.path.join(current_path, 'libconvGemm.so')):
+                    path = os.path.join(current_path, 'libconvGemm.so')
                     break
         if not path:
-            raise ImportError("Library 'libgemmConv.so' could not be found. Please add its path to LD_LIBRARY_PATH "
-                              "using 'export LD_LIBRARY_PATH=libgemmConv_path:$LD_LIBRARY_PATH' before calling this "
+            raise ImportError("Library 'libconvGemm.so' could not be found. Please add its path to LD_LIBRARY_PATH "
+                              "using 'export LD_LIBRARY_PATH=libconvGemm_path:$LD_LIBRARY_PATH' before calling this "
                               "application.")
         self.lib = ctypes.cdll.LoadLibrary(path)
         self.dtype = dtype
-        dtype_bytes = dtype(1).nbytes
-        self.ac_pack = ctypes_aligned_alloc(alignment, block_mc * block_kc * dtype_bytes)
-        self.bc_pack = ctypes_aligned_alloc(alignment, block_kc * block_nc * dtype_bytes)
+        self.ac_pack = ctypes.POINTER(ctypes.c_float)()
+        self.bc_pack = ctypes.POINTER(ctypes.c_float)()
+        self.lib.alloc_pack_buffs.restype = ctypes.c_int
+        result = self.lib.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
+        if result == 1:
+            raise MemoryError("Could not allocate space for ac_pack or bc_pack")
         self.debug = debug
+        # Choose appropriate convGemm function depending on the architecture and the data type being used
+        if platform.machine() == 'aarch64':
+            if self.dtype == np.float16:
+                self.xconv_gemm = self.lib.sconvGemm
+            elif self.dtype == np.float32:
+                self.xconv_gemm = self.lib.hconvGemm
+            else:
+                raise ValueError("Type {} not supported by libconvGemm!".format(str(self.dtype)))
+        elif platform.machine() == 'x86_64':
+            if self.dtype == np.float32:
+                self.xconv_gemm = self.lib.sconvGemm
+            else:
+                raise ValueError("Type {} not supported by libconvGemm!".format(str(self.dtype)))
+        else:
+            raise ValueError("Platform '{}' not yet supported")
 
-    def gemm_conv(self, filters, layers, biases=None, alpha=1.0, beta=1.0,
+    def __del__(self):
+        """Free the allocated matrices"""
+
+        def find_msvcr():
+            import re
+            import sys
+            exec_bytes = open(sys.executable, "rb").read()
+            match = re.search("msvcr([0-9]+|t).dll", str(exec_bytes), re.IGNORECASE)
+            return match.group(0)
+
+        if platform.system() == 'Windows':
+            libc = ctypes.cdll.LoadLibrary(find_msvcr())
+        elif platform.system() == 'Linux':
+            libc = ctypes.cdll.LoadLibrary('libc.so.6')
+        elif platform.system == 'Darwin':
+            libc = ctypes.cdll.LoadLibrary('libc.dylib')
+        else:
+            raise AssertionError("Don't know how to get to libc for a '{}' system".format(platform.system()))
+        libc.free(self.ac_pack)
+        libc.free(self.bc_pack)
+
+    def conv_gemm(self, filters, layers, biases=None, alpha=1.0, beta=1.0,
                   vpadding=0, hpadding=0, vstride=1, hstride=1):
         """
-        Calls sgemm_conv or hgemm_conv (from libgemmConv.so) to perform a matrix
+        Calls sconvGemm or hconvGemm (from libconvGemm.so) to perform a matrix
         matrix multiplication with an implicit im2col.
 
         The matrix matrix product is in the form C = alpha * AB + beta * C, where:
@@ -170,7 +174,7 @@ class GemmConv:
         """
         # Check stride parameters
         assert vstride == hstride, \
-            "gemmConv does not support different vertical and horizontal strides"
+            "convGemm does not support different vertical and horizontal strides"
         stride = vstride
 
         # Pad layers matrix and set vpadding and hpadding to 0
@@ -205,49 +209,40 @@ class GemmConv:
             "The input matrices must have the same type of data as the one specified when " \
             "this class was instantiated!"
 
-        # Change matrices axes to the gemmConv expected order:
+        # Change matrices axes to the convGemm expected order:
         #   Where I→hi×wi×ci×b corresponds to the input tensor,
         #   F→kn×kh×kw×ci denotes the filters,
         #   and O→kn×ho×wo×b is the output tensor
-        filters_gc = filters.transpose((0, 2, 3, 1)).reshape(kn, -1, order="F")
-        layers_padded_gc = layers_padded.transpose((2, 3, 1, 0)).flatten(order="F")
-        biases_gc = biases.astype(filters.dtype, order="F")
+        filters_cg = filters.transpose((0, 2, 3, 1)).reshape(kn, -1, order="F")
+        layers_padded_cg = layers_padded.transpose((2, 3, 1, 0)).flatten(order="F")
+        biases_cg = biases.astype(filters.dtype, order="F")
 
-        # Call custom added function to libgemmConv.so to print the received parameters
+        # Call custom added function to libconvGemm.so to print the received parameters
         if self.debug:
             try:
-                self.lib.expose_sgemm_conv(ctypes.c_uint(kh), ctypes.c_uint(kw),
-                                           ctypes.c_uint(c), ctypes.c_uint(kn),
-                                           ctypes.c_float(alpha), ctypes.c_void_p(filters_gc.ctypes.data),
-                                           ctypes.c_uint(h), ctypes.c_uint(w),
-                                           ctypes.c_uint(b), ctypes.c_uint(stride),
-                                           ctypes.c_void_p(layers_padded_gc.ctypes.data), ctypes.c_float(beta),
-                                           ctypes.c_void_p(biases_gc.ctypes.data),
-                                           ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
+                self.lib.expose_sconvGemm(ctypes.c_uint(kh), ctypes.c_uint(kw),
+                                          ctypes.c_uint(c), ctypes.c_uint(kn),
+                                          ctypes.c_float(alpha), ctypes.c_void_p(filters_cg.ctypes.data),
+                                          ctypes.c_uint(h), ctypes.c_uint(w),
+                                          ctypes.c_uint(b), ctypes.c_uint(stride),
+                                          ctypes.c_void_p(layers_padded_cg.ctypes.data), ctypes.c_float(beta),
+                                          ctypes.c_void_p(biases_cg.ctypes.data),
+                                          self.ac_pack, self.bc_pack)
             except AttributeError:
-                print("Warning: Custom 'expose_sgemm_conv' function is not present in 'libgemmConv.so'. "
-                      "You can safely ignore this message.")
+                print("Warning: Custom 'expose_sconvGemm' function is not present in 'libconvGemm.so'. "
+                      "You can safely ignore this warning.")
 
-        # Choose sgemm_conv or hgemm_conv function depending on the data type being used
-        if filters.dtype == np.float16:
-            xgemm_conv = self.lib.hgemm_conv
-        elif filters.dtype == np.float32:
-            xgemm_conv = self.lib.sgemm_conv
-        else:
-            raise ValueError("Type {} not supported by gemm_conv!".format(str(filters.dtype)))
-
-        # Call sgemm_conv or hgemm_conv
-        xgemm_conv(ctypes.c_uint(kh), ctypes.c_uint(kw),
-                   ctypes.c_uint(c), ctypes.c_uint(kn),
-                   ctypes.c_float(alpha), ctypes.c_void_p(filters_gc.ctypes.data),
-                   ctypes.c_uint(h), ctypes.c_uint(w),
-                   ctypes.c_uint(b), ctypes.c_uint(stride),
-                   ctypes.c_void_p(layers_padded_gc.ctypes.data), ctypes.c_float(beta),
-                   ctypes.c_void_p(biases_gc.ctypes.data),
-                   ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
-
+        # Call appropriate convGemm function from libconvGemm
+        self.xconv_gemm(ctypes.c_uint(kh), ctypes.c_uint(kw),
+                        ctypes.c_uint(c), ctypes.c_uint(kn),
+                        ctypes.c_float(alpha), ctypes.c_void_p(filters_cg.ctypes.data),
+                        ctypes.c_uint(h), ctypes.c_uint(w),
+                        ctypes.c_uint(b), ctypes.c_uint(stride),
+                        ctypes.c_void_p(layers_padded_cg.ctypes.data), ctypes.c_float(beta),
+                        ctypes.c_void_p(biases_cg.ctypes.data),
+                        self.ac_pack, self.bc_pack)
         # Change output matrix axes to the PyDTNN expected order:
-        biases = biases_gc.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
+        biases = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
         return biases
 
 
@@ -266,7 +261,7 @@ def __usage_example__():
     vpadding = 1  # Vertical padding
     hpadding = 2  # Horizontal padding
     vstride = 1  # Vertical stride
-    hstride = vstride  # Horizontal stride (gemmConv does not support different vertical and horizontal strides)
+    hstride = vstride  # Horizontal stride (convGemm does not support different vertical and horizontal strides)
     # Create filters, layers, and biases matrices from previous parameters. If
     # no biases matrix is provided, a proper one filled with zeros will be
     # automatically created.
@@ -278,19 +273,19 @@ def __usage_example__():
     ho = int(floor((h + 2 * vpadding - kh) / vstride + 1))
     wo = int(floor((w + 2 * hpadding - kw) / hstride + 1))
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
-    print("Using gemm_conv to compute alpha * filters * layers + beta * biases...")
-    gemm_conv = GemmConv()
-    gemm_conv_result = gemm_conv.gemm_conv(filters, layers, biases=biases,
+    print("Using conv_gemm to compute alpha * filters * layers + beta * biases...")
+    conv_gemm = ConvGemm(debug=False)
+    conv_gemm_result = conv_gemm.conv_gemm(filters, layers, biases=biases,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
-    print(gemm_conv_result)
-    print("Sum: ", gemm_conv_result.sum())
-    sgemm_conv_t = timeit(lambda: gemm_conv.gemm_conv(filters, layers,
+    print(conv_gemm_result)
+    print("Sum: ", conv_gemm_result.sum())
+    sconv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(filters, layers,
                                                       vpadding=vpadding, hpadding=hpadding,
                                                       vstride=vstride, hstride=hstride),
                           number=5) / 5
 
-    print("gemm_conv time: {:.2f}".format(sgemm_conv_t))
+    print("conv_gemm time: {:.2f}".format(sconv_gemm_t))
     print()
     print("Using im2col and mm...")
     a_t = im2col_cython(layers, kh, kw, vpadding, hpadding, vstride, hstride)
@@ -298,7 +293,7 @@ def __usage_example__():
     im2col_mm_result = w_c @ a_t + biases
     print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
-    print("np.allclose: ", np.allclose(gemm_conv_result, im2col_mm_result))
+    print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
     im2col_t = timeit(lambda: im2col_cython(layers, kh, kw, vpadding, hpadding, vstride, hstride), number=5) / 5
     print("im2col time: {:.2f}".format(im2col_t))
     mm_t = timeit(lambda: w_c @ a_t + biases, number=5) / 5
