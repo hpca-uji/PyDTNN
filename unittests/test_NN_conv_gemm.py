@@ -39,8 +39,8 @@ class D:
     h = 128  # Layers height
     w = 100  # Layers width
     kn = 1  # Number of filters
-    kh = 16  # Filters height
-    kw = 10  # Filters width
+    kh = 16  # Filters weights height
+    kw = 10  # Filters weights width
     vpadding = 1  # Vertical padding
     hpadding = 2  # Horizontal padding
     vstride = 1  # Vertical stride
@@ -55,17 +55,17 @@ def _print_with_header(header, to_be_printed):
         print(to_be_printed)
 
 
-def _conv_gemm_and_im2col_mm(filters, layers, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1):
+def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1):
     if verbose():
         print()
-    kn, ck, kh, kw = filters.shape
-    # b, c, h, w = layers.shape
+    kn, ck, kh, kw = weights.shape
+    # b, c, h, w = x.shape
     conv_gemm = ConvGemm(debug=verbose())
-    conv_gemm_result = conv_gemm.conv_gemm(filters, layers, biases=biases,
+    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=biases,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
-    a_t = im2col_cython(layers, kh, kw, vpadding, hpadding, vstride, hstride)
-    w_c = filters.reshape(kn, -1)
+    a_t = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
+    w_c = weights.reshape(kn, -1)
     if biases is None:
         im2col_mm_result = w_c @ a_t
     else:
@@ -91,23 +91,23 @@ def _conv_gemm_and_im2col_mm(filters, layers, biases=None, vpadding=0, hpadding=
 class TestConvGemm(unittest.TestCase):
 
     def test_raise_on_different_strides(self):
-        layers = np.ones((D.b, D.c, D.h, D.w)).astype(np.float32, order='C')
-        filters = np.ones((D.kn, D.c, D.kh, D.kw)).astype(np.float32, order='C')
+        x = np.ones((D.b, D.c, D.h, D.w)).astype(np.float32, order='C')
+        weights = np.ones((D.kn, D.c, D.kh, D.kw)).astype(np.float32, order='C')
         conv_gemm = ConvGemm(debug=verbose())
         with self.assertRaises(AssertionError):
-            conv_gemm.conv_gemm(filters, layers, vstride=1, hstride=2)
+            conv_gemm.conv_gemm(weights, x, vstride=1, hstride=2)
 
     def test_hand_made_array(self):
         """
         Test that manual matrices lead to the same solution
         """
-        layers = np.array([[[[1, 2, 4, 8],
-                             [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        filters = np.array([[[[1, 1],
+        x = np.array([[[[1, 2, 4, 8],
+                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
+        weights = np.array([[[[1, 1],
                               [1, 1]]]]).astype(np.float32, order='C')
         padding = 0
         stride = 1
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers,
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=padding, hpadding=padding,
                                                                       vstride=stride, hstride=stride)
         if verbose():
@@ -117,16 +117,16 @@ class TestConvGemm(unittest.TestCase):
 
     def test_hand_made_array_with_biases(self):
         """
-        Test that manual matrices including biases lead to the same solution
+        Test that manual matrices including b lead to the same solution
         """
-        layers = np.array([[[[1, 2, 4, 8],
-                             [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        filters = np.array([[[[1, 1],
+        x = np.array([[[[1, 2, 4, 8],
+                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
+        weights = np.array([[[[1, 1],
                               [1, 1]]]]).astype(np.float32, order='C')
         biases = np.array([[1024, 2048, 4196]]).astype(np.float32, order='C')
         padding = 0
         stride = 1
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers, biases=biases,
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x, biases=biases,
                                                                       vpadding=padding, hpadding=padding,
                                                                       vstride=stride, hstride=stride)
         if verbose():
@@ -138,18 +138,18 @@ class TestConvGemm(unittest.TestCase):
         """
         Test that larger manual matrices lead to the same solution
         """
-        layers = np.array([[[[1, 2, 4, 8],
-                             [16, 32, 64, 128]],
-                            [[128, 256, 512, 1024],
-                             [2048, 4096, 8192, 16384]]]]).astype(np.float32, order='C')
-        filters = np.array([[[[1, 2],
+        x = np.array([[[[1, 2, 4, 8],
+                        [16, 32, 64, 128]],
+                       [[128, 256, 512, 1024],
+                        [2048, 4096, 8192, 16384]]]]).astype(np.float32, order='C')
+        weights = np.array([[[[1, 2],
                               [3, 4]],
                              [[4, 5],
                               [6, 7]],
                              ]]).astype(np.float32, order='C')
         padding = 0
         stride = 1
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers,
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=padding, hpadding=padding,
                                                                       vstride=stride, hstride=stride)
         if verbose():
@@ -161,22 +161,22 @@ class TestConvGemm(unittest.TestCase):
         """
         Test that even larger manual matrices lead to the same solution
         """
-        layers = np.array([[[[1, 2, 4, 8],
-                             [16, 32, 64, 128]],
-                            [[128, 256, 512, 1024],
-                             [2048, 4096, 8192, 16384]]],
-                           [[[1, 2, 4, 8],
-                             [16, 32, 64, 128]],
-                            [[128, 256, 512, 1024],
-                             [2048, 4096, 8192, 16384]]],
-                           ]).astype(np.float32, order='C')
-        filters = np.array([[[[1, 1],
+        x = np.array([[[[1, 2, 4, 8],
+                        [16, 32, 64, 128]],
+                       [[128, 256, 512, 1024],
+                        [2048, 4096, 8192, 16384]]],
+                      [[[1, 2, 4, 8],
+                        [16, 32, 64, 128]],
+                       [[128, 256, 512, 1024],
+                        [2048, 4096, 8192, 16384]]],
+                      ]).astype(np.float32, order='C')
+        weights = np.array([[[[1, 1],
                               [1, 1]],
                              [[4, 4],
                               [4, 4]]]]).astype(np.float32, order='C')
         padding = 0
         stride = 1
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers,
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=padding, hpadding=padding,
                                                                       vstride=stride, hstride=stride)
         if verbose():
@@ -188,9 +188,9 @@ class TestConvGemm(unittest.TestCase):
         """
         Test that the default parameters on ones matrices lead to the same solution
         """
-        layers = np.ones((D.b, D.c, D.h, D.w)).astype(np.float32, order='C')
-        filters = np.ones((D.kn, D.c, D.kh, D.kw)).astype(np.float32, order='C')
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers,
+        weights = np.ones((D.kn, D.c, D.kh, D.kw)).astype(np.float32, order='C')
+        x = np.ones((D.b, D.c, D.h, D.w)).astype(np.float32, order='C')
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=D.vpadding, hpadding=D.hpadding,
                                                                       vstride=D.vstride, hstride=D.hstride)
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
@@ -199,34 +199,34 @@ class TestConvGemm(unittest.TestCase):
         """
         Test that the default parameters on random matrices lead to the same solution
         """
-        layers = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
-        filters = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers,
+        weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=D.vpadding, hpadding=D.hpadding,
                                                                       vstride=D.vstride, hstride=D.hstride)
         # if verbose():
         #     print("Result[0, 0, 0, 1]=")
-        #     partial_l = layers[0, 0, 0:D.kh, 1:D.kw+1].flatten()
-        #     print(filters.flatten() @ partial_l)
+        #     partial_l = x[0, 0, 0:D.kh, 1:D.kw+1].flatten()
+        #     print(w.flatten() @ partial_l)
         #     print("Result[0, 0, 0, 2]=")
-        #     partial_l = layers[0, 0, 0:D.kh, 2:D.kw+2].flatten()
-        #     print(filters.flatten() @ partial_l)
+        #     partial_l = x[0, 0, 0:D.kh, 2:D.kw+2].flatten()
+        #     print(w.flatten() @ partial_l)
         #     print("Result[0, 0, 1, 0]=")
-        #     partial_l = layers[0, 0, 1:D.kh+1, 0:D.kw].flatten()
-        #     print(filters.flatten() @ partial_l)
+        #     partial_l = x[0, 0, 1:D.kh+1, 0:D.kw].flatten()
+        #     print(w.flatten() @ partial_l)
 
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result, rtol=0, atol=20))
 
     def test_defaults_including_biases_with_random(self):
         """
-        Test that the default parameters on random matrices, including biases, lead to the same solution
+        Test that the default parameters on random matrices, including b, lead to the same solution
         """
-        layers = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
-        filters = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
         ho = int(math.floor((D.h + 2 * D.vpadding - D.kh) / D.vstride + 1))
         wo = int(math.floor((D.w + 2 * D.hpadding - D.kw) / D.hstride + 1))
         biases = np.random.rand(D.kn, D.b * ho * wo).astype(np.float32, order='C')
-        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(filters, layers, biases=biases,
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x, biases=biases,
                                                                       vpadding=D.vpadding, hpadding=D.hpadding,
                                                                       vstride=D.vstride, hstride=D.hstride)
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result, rtol=0, atol=20))
@@ -239,17 +239,17 @@ class TestConvGemm(unittest.TestCase):
         else:
             spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
-        layers = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
+        x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for kn in range(1, 32):
             if not verbose():
                 spinner.render()
-            filters = np.random.rand(kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
-            conv_gemm_result = conv_gemm.conv_gemm(filters, layers,
+            weights = np.random.rand(kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+            conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=D.vpadding, hpadding=D.hpadding,
                                                    vstride=D.vstride, hstride=D.hstride)
-            a_t = im2col_cython(layers, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
-            w_c = filters.reshape(kn, -1)
+            a_t = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
+            w_c = weights.reshape(kn, -1)
             im2col_mm_result = w_c @ a_t
             if verbose():
                 print("{:3}   {:9.5f}".format(kn,
@@ -268,17 +268,17 @@ class TestConvGemm(unittest.TestCase):
         else:
             spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
-        filters = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for b in range(1, 32):
             if not verbose():
                 spinner.render()
-            layers = np.random.rand(b, D.c, D.h, D.w).astype(np.float32, order='C')
-            conv_gemm_result = conv_gemm.conv_gemm(filters, layers,
+            x = np.random.rand(b, D.c, D.h, D.w).astype(np.float32, order='C')
+            conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=D.vpadding, hpadding=D.hpadding,
                                                    vstride=D.vstride, hstride=D.hstride)
-            a_t = im2col_cython(layers, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
-            w_c = filters.reshape(D.kn, -1)
+            a_t = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
+            w_c = weights.reshape(D.kn, -1)
             im2col_mm_result = w_c @ a_t
             if verbose():
                 print("{:3}   {:9.5f}".format(b,
@@ -297,17 +297,17 @@ class TestConvGemm(unittest.TestCase):
         else:
             spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
-        filters = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
-        layers = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
+        weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for padding in range(0, 5):
             if not verbose():
                 spinner.render()
-            conv_gemm_result = conv_gemm.conv_gemm(filters, layers,
+            conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=padding, hpadding=padding,
                                                    vstride=D.vstride, hstride=D.hstride)
-            a_t = im2col_cython(layers, D.kh, D.kw, padding, padding, D.vstride, D.hstride)
-            w_c = filters.reshape(D.kn, -1)
+            a_t = im2col_cython(x, D.kh, D.kw, padding, padding, D.vstride, D.hstride)
+            w_c = weights.reshape(D.kn, -1)
             im2col_mm_result = w_c @ a_t
             if verbose():
                 print("{:3}   {:9.5f}".format(padding,
@@ -326,17 +326,17 @@ class TestConvGemm(unittest.TestCase):
         else:
             spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
-        filters = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
-        layers = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
+        weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for stride in range(1, 6):
             if not verbose():
                 spinner.render()
-            conv_gemm_result = conv_gemm.conv_gemm(filters, layers,
+            conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=D.vpadding, hpadding=D.hpadding,
                                                    vstride=stride, hstride=stride)
-            a_t = im2col_cython(layers, D.kh, D.kw, D.vpadding, D.hpadding, stride, stride)
-            w_c = filters.reshape(D.kn, -1)
+            a_t = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, stride, stride)
+            w_c = weights.reshape(D.kn, -1)
             im2col_mm_result = w_c @ a_t
             if verbose():
                 print("{:3}   {:9.5f}".format(stride,
@@ -346,28 +346,6 @@ class TestConvGemm(unittest.TestCase):
         if not verbose():
             spinner.stop()
         self.assertTrue(np_all_close_for_all_cases)
-
-    # def test_im2col(self):
-    #     """
-    #     Test that the gemmConv im2col implementation is ok
-    #     """
-    #     # layers = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
-    #     # filters = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
-    #     layers = np.array([[[[1, 2, 4, 8, 16],
-    #                          [32, 64, 128, 256, 512]]]]).astype(np.float32, order='C')
-    #     filters = np.array([[[[1, 1],
-    #                           [1, 1]]]]).astype(np.float32, order='C')
-    #     kn, ck, kh, kw = filters.shape
-    #     conv_gemm = ConvGemm(debug=DEBUG)
-    #     a_g = conv_gemm.sbm_im2col(filters, layers)
-    #     a_t = im2col_cython(layers, kh, kw, 0, 0, 1, 1)
-    #     print("****************")
-    #     print("a_g:")
-    #     print(a_g)
-    #     print("a_t:")
-    #     print(a_t)
-    #     print("****************")
-    #     self.assertTrue(np.allclose(a_g, a_t))
 
 
 if __name__ == '__main__':
