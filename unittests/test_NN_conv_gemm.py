@@ -232,12 +232,11 @@ class TestConvGemm(unittest.TestCase):
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result, rtol=0, atol=20))
 
     def test_with_different_kn(self):
+        spinner = Spinner()
         if verbose():
             _print_with_header("{}".format(inspect.stack()[1][3]), None)
             print(" kn   Maximum difference")
             print("----+--------------------")
-        else:
-            spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
         x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
@@ -261,12 +260,11 @@ class TestConvGemm(unittest.TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_b(self):
+        spinner = Spinner()
         if verbose():
             _print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  b   Maximum difference")
             print("----+--------------------")
-        else:
-            spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
         weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
@@ -290,12 +288,11 @@ class TestConvGemm(unittest.TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_padding(self):
+        spinner = Spinner()
         if verbose():
             _print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  p   Maximum difference")
             print("----+--------------------")
-        else:
-            spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
         weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
         x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
@@ -319,12 +316,11 @@ class TestConvGemm(unittest.TestCase):
         self.assertTrue(np_all_close_for_all_cases)
 
     def test_with_different_stride(self):
+        spinner = Spinner()
         if verbose():
             _print_with_header("{}".format(inspect.stack()[1][3]), None)
             print("  s   Maximum difference")
             print("----+--------------------")
-        else:
-            spinner = Spinner()
         conv_gemm = ConvGemm(debug=False)
         weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
         x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
