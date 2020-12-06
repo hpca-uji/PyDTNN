@@ -448,10 +448,12 @@ class MaxPool2D(Layer):
  
     def backward(self, dy):
         if self.need_dx:
-            dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
-            dy_cols[self.maxids] = dy.flatten()
+            if not hasattr(self, "dy_cols") or self.dy_cols.shape[1] != np.prod(dy.shape):
+                self.dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
+            self.dy_cols[...] = 0
+            self.dy_cols[self.maxids] = dy.flatten()
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-            dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi, 
+            dx = col2im_cython(self.dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi, 
                                self.kh, self.kw, self.vpadding, self.hpadding, 
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
