@@ -185,14 +185,14 @@ class ArctanhGPU(NN_activation.Arctanh):
         self.need_dx = need_dx
 
         self.atanh  = ElementwiseKernel("T *in, T *out".replace("T",
-                            {"float32": "float", "float64": "double"}[self.dtype]),
+                            {np.float32: "float", np.float64: "double"}[self.dtype]),
                             "out[i] = %s(in[i]);" % \
-                            {"float32": "atanhf", "float64": "atanh"}[self.dtype], "atanh")
+                            {np.float32: "atanhf", np.float64: "atanh"}[self.dtype], "atanh")
 
         self.datanh = ElementwiseKernel("T *in, T *out".replace("T",
-                            {"float32": "float", "float64": "double"}[self.dtype]),
+                            {np.float32: "float", np.float64: "double"}[self.dtype]),
                             "out[i] = 1.0 / (1.0 + %s(in[i], 2));" % \
-                            {"float32": "powf", "float64": "pow"}[self.dtype], "datanh")
+                            {np.float32: "powf", np.float64: "pow"}[self.dtype], "datanh")
 
         # Activations a
         y_gpu = gpuarray.empty(x.ary.shape, self.dtype)
@@ -221,15 +221,15 @@ class LogGPU(NN_activation.Log):
         self.need_dx = need_dx
 
         self.log  = ElementwiseKernel("T *in, T *out".replace("T",
-                            {"float32": "float", "float64": "double"}[self.dtype]),
+                            {np.float32: "float", np.float64: "double"}[self.dtype]),
                             "out[i] = %s(1.0 / (1.0 + %s(-in[i])));" % \
-                            ({"float32": "logf", "float64": "log"}[self.dtype],
-                             {"float32": "expf", "float64": "exp"}[self.dtype]), "log")
+                            ({np.float32: "logf", np.float64: "log"}[self.dtype],
+                             {np.float32: "expf", np.float64: "exp"}[self.dtype]), "log")
 
         self.dlog = ElementwiseKernel("T *in, T *out".replace("T",
-                            {"float32": "float", "float64": "double"}[self.dtype]),
+                            {np.float32: "float", np.float64: "double"}[self.dtype]),
                             "out[i] = 1.0 / (1.0 + %s(in[i]));" % \
-                            {"float32": "expf", "float64": "exp"}[self.dtype], "log")
+                            {np.float32: "expf", np.float64: "exp"}[self.dtype], "log")
 
         # Activations a
         y_gpu = gpuarray.empty(x.ary.shape, self.dtype)

@@ -47,7 +47,7 @@ def roofline(intensity, cpu_speed, memory_bw):
     return min(cpu_speed, memory_bw * intensity)
 
 def flops2time(flops, memops, cpu_speed, memory_bw, dtype):
-    bfp = {"float32": 4, "float64": 8}[dtype]
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     speed = roofline(flops / ( bfp * memops ), cpu_speed, memory_bw)
     time = flops / (speed + 1e-8)
     comp_time = flops / (cpu_speed + 1e-8)
@@ -66,7 +66,7 @@ def matmul_time(m, n, k, cpu_speed, memory_bw, dtype):
     return flops2time(flops, memops, cpu_speed, memory_bw, dtype)
 
 def allreduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {"float32": 4, "float64": 8}[dtype]
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time = 0
     if network_alg == "bta":
         time = 2.0 * log( nprocs, 2 ) * network_lat + \
@@ -82,7 +82,7 @@ def allreduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nproc
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {"float32": 4, "float64": 8}[dtype] 
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time = 0
     if network_alg == "bta":
         time = ceil( log( nprocs, 2 ) ) * network_lat + \
@@ -94,7 +94,7 @@ def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs,
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 def reduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {"float32": 4, "float64": 8}[dtype] 
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time, comp_time = 0, 0
     if network_alg == "bta":
         comp_time = ceil( log( nprocs, 2 ) ) * ( elems / cpu_speed )

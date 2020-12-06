@@ -535,7 +535,7 @@ class FlattenGPU(NN_layer.Flatten):
         self.need_dx = need_dx
         self.shape = (np.prod(prev_shape),)
         self.copy = ElementwiseKernel("T *dst, T *src".replace("T", 
-                            {"float32": "float", "float64": "double"}[self.dtype]),
+                            {np.float32: "float", np.float64: "double"}[self.dtype]),
                             "dst[i] = src[i];", "copy")
  
         # Activations y
@@ -767,7 +767,7 @@ class ConcatenationBlockGPU(NN_layer.ConcatenationBlock):
 
         self.concat = ElementwiseKernel(
             "T *dst, T *src, int N, int C, int H, int W, int first_c, int last_c".replace("T", 
-                {"float32": "float", "float64": "double"}[self.dtype]),
+                {np.float32: "float", np.float64: "double"}[self.dtype]),
             """int c_ = i / (H*W) % C;
                if (first_c <= c_ && c_ < last_c) {
                    int w_ = i % W;
@@ -781,7 +781,7 @@ class ConcatenationBlockGPU(NN_layer.ConcatenationBlock):
 
         self.split = ElementwiseKernel(
             "T *src, T *dst, int N, int C, int H, int W, int first_c, int last_c".replace("T", 
-                {"float32": "float", "float64": "double"}[self.dtype]),
+                {np.float32: "float", np.float64: "double"}[self.dtype]),
             """int c_ = i / (H*W) % C;
                if (first_c <= c_ && c_ < last_c) {
                    int w_ = i % W;

@@ -83,8 +83,8 @@ def matmul(a, b):
 
 def matmul_gpu(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
     try:
-        gemm = {"float32": cublas.cublasSgemm,
-                "float64": cublas.cublasDgemm}[dtype.__name__]
+        gemm = {np.float32: cublas.cublasSgemm,
+                np.float64: cublas.cublasDgemm}[dtype]
     except KeyError:
         print("I cannot handle %s type!\n" % dtype.__name__)
     else:
@@ -93,8 +93,8 @@ def matmul_gpu(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, 
 
 def matvec_gpu(handle, transA, m, n, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
     try:
-        gemv = {"float32": cublas.cublasSgemv,
-                "float64": cublas.cublasDgemv}[dtype.__name__]
+        gemv = {np.float32: cublas.cublasSgemv,
+                np.float64: cublas.cublasDgemv}[dtype]
     except KeyError:
         print("I cannot handle %s type!\n" % dtype.__name__)
     else:
@@ -182,7 +182,7 @@ class CategoricalCrossEntropy(Loss):
             }
             return;
         }
-        """.replace("T", {"float32": "float", "float64": "double"}[self.dtype.__name__]))
+        """.replace("T", {np.float32: "float", np.float64: "double"}[self.dtype]))
 
         self.categorical_cross_entropy_kern = module.get_function("categorical_cross_entropy")
         self.loss = gpuarray.empty((self.b,), self.dtype)
@@ -235,7 +235,7 @@ class BinaryCrossEntropy(Loss):
             }
             return;
         }
-        """.replace("T", {"float32": "float", "float64": "double"}[self.dtype.__name__]))
+        """.replace("T", {np.float32: "float", np.float64: "double"}[self.dtype]))
 
         self.binary_cross_entropy_kern = module.get_function("binary_cross_entropy")
         self.loss = gpuarray.empty((self.b,), self.dtype)
@@ -298,7 +298,7 @@ class CategoricalAccuracy(Metric):
             }
             return;
         }
-        """.replace("T", {"float32": "float", "float64": "double"}[self.dtype.__name__]))
+        """.replace("T", {np.float32: "float", np.float64: "double"}[self.dtype]))
         self.categorical_accuracy_kern = module.get_function("categorical_accuracy")
         self.cost = gpuarray.empty((self.b,), self.dtype)
         self.stream = self.model.stream

@@ -178,7 +178,7 @@ class Model:
             sys.exit(-1)
 
     def show(self):
-        bfp = {"float32": 4, "float64": 8}[self.dtype]
+        bfp = {np.float32: 4, np.float64: 8}[self.dtype]
         print("+-------+--------------------------+---------+---------------+-------------------+------------------------+")
         print("| Layer |           Type           | #Params | Output shape  |   Weights shape   |       Parameters       |")
         for l in self.layers:

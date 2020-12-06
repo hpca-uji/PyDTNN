@@ -53,7 +53,7 @@ if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == "1":
   pyextrae.startTracing( TracingLibrary )
   Extrae_tracing = True
   
-import numpy, os, sys, math, time, argparse, subprocess
+import numpy, os, sys, math, time, argparse, subprocess, numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -137,33 +137,32 @@ def show_options(params):
 def get_optimizer(params):
     opt_mod = importlib.import_module("NN_optimizer%s" % ("","_gpu")[params.enable_gpu])
     opt_ref = getattr(opt_mod, "%s%s" % (params.optimizer, ("","_gpu")[params.enable_gpu]))
-    dtype = {"float32": np.float32, "float64": np.float64}[params.dtype]
     if params.optimizer == "rmsprop":
         opt = opt_ref(learning_rate = params.learning_rate,
                   rho = params.rho,
                   epsilon = params.epsilon,
                   decay = params.decay,
-                  dtype = dtype)
+                  dtype = params.dtype)
     elif params.optimizer == "adam":
         opt = opt_ref(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2, 
                   epsilon = params.epsilon,
                   decay = params.decay,
-                  dtype = dtype)
+                  dtype = params.dtype)
     elif params.optimizer == "nadam":
         opt = opt_ref(learning_rate = params.learning_rate,
                   beta1 = params.beta1,
                   beta2 = params.beta2,
                   epsilon = params.epsilon,
                   decay = params.decay,
-                  dtype = dtype)
+                  dtype = params.dtype)
     else: # "sgd":
         opt = opt_ref(learning_rate = params.learning_rate,
                   momentum = params.momentum,
                   nesterov = params.nesterov,
                   decay = params.decay,        
-                  dtype = dtype)
+                  dtype = params.dtype)
     return opt
 
 def get_lr_schedulers(params):
@@ -197,6 +196,7 @@ def get_lr_schedulers(params):
 
 if __name__ == "__main__":
     params = parse_options()
+    params.dtype = getattr(np, params.dtype)
 
     if params.parallel in ["data", "hybrid"]:
         from mpi4py import MPI
