@@ -657,8 +657,8 @@ class AdditionBlock(Layer):
             self.paths.append(p)
 
     def initialize(self, prev_shape, need_dx=True):
-        need_dx = True
         self.out_shapes = []
+        need_dx = True
         self.prev_shape = prev_shape
         for p in self.paths:
             for i, l in enumerate(p):
@@ -668,8 +668,10 @@ class AdditionBlock(Layer):
                 l.batch_size = self.batch_size
                 l.id = self.model.id + i
                 l.matmul = self.matmul
+
                 l.initialize(prev_shape, need_dx)
                 prev_shape = l.shape
+
                 self.fwd_time += l.fwd_time
                 self.bwd_time += l.bwd_time
                 self.nparams += l.nparams
@@ -679,8 +681,8 @@ class AdditionBlock(Layer):
             self.model.id += len(p)
 
         self.model.id -= 1
-        assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
-        self.shape = prev_shape
+        assert all([o == self.out_shapes[0] for o in self.out_shapes])
+        self.shape = self.out_shapes[0]
 
     def show(self):
         print(f"|{'':^7s}|{(type(self).__name__+' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
