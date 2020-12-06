@@ -168,15 +168,15 @@ class FCGPU(NN_layer.FC):
                                  self.biases.ptr, beta, self.y.desc, self.y.ptr)
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         # Compute dw
         m = lda = self.x.ary.shape[1]
-        n = ldb = ldc = prev_dx.ary.shape[1]
-        k = prev_dx.ary.shape[0]
+        n = ldb = ldc = dy.ary.shape[1]
+        k = dy.ary.shape[0]
         transA, transB, alpha, beta = 'T', 'N', 1.0, 0.0
 
         self.matmul(self.cublas_handle, transB, transA, n, m, k, alpha,
-                    prev_dx.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta, 
+                    dy.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta, 
                     self.dw.ptr_intp if self.gpudirect else self.dw.ary.gpudata, ldc, self.dtype)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
@@ -186,12 +186,12 @@ class FCGPU(NN_layer.FC):
         
         if self.use_bias:
             # Compute db
-            m = prev_dx.ary.shape[0]
-            n = lda = prev_dx.ary.shape[1]
+            m = dy.ary.shape[0]
+            n = lda = dy.ary.shape[1]
             transA, alpha, beta, incx, incy = 'N', 1.0, 0.0, 1, 1
     
             self.matvec(self.cublas_handle, transA, n, m, alpha, 
-                        prev_dx.ary.gpudata, lda, self.onevec_gpu.gpudata, incx, beta, 
+                        dy.ary.gpudata, lda, self.onevec_gpu.gpudata, incx, beta, 
                         self.db.ptr_intp if self.gpudirect else self.db.ary.gpudata, 
                         incy, self.dtype)
     
@@ -202,14 +202,14 @@ class FCGPU(NN_layer.FC):
             
         if self.need_dx:
             # Compute dx
-            m = prev_dx.ary.shape[0]
+            m = dy.ary.shape[0]
             n = ldc = self.weights.ary.shape[0]
-            k = lda = ldb = prev_dx.ary.shape[1]
+            k = lda = ldb = dy.ary.shape[1]
             transA, transB, alpha, beta = 'N', 'T', 1.0, 0.0
 
             self.matmul(self.cublas_handle, transB, transA, n, m, k, alpha,
                         self.weights.ary.gpudata, ldb, 
-                        prev_dx.ary.gpudata, lda, beta, 
+                        dy.ary.gpudata, lda, beta, 
                         self.dx.ary.gpudata, ldc, self.dtype)
             return self.dx
         
@@ -328,12 +328,12 @@ class Conv2DGPU(NN_layer.Conv2D):
                                       beta, self.y.desc, self.y.ptr)
         return self.y
        
-    def backward(self, prev_dx):
+    def backward(self, dy):
         alpha, beta = 1.0, 0.0
         # Compute dw    
         cudnn.cudnnConvolutionBackwardFilter(self.cudnn_handle, alpha, 
                                       self.x.desc, self.x.ptr, 
-                                      prev_dx.desc, prev_dx.ptr, self.conv_desc, 
+                                      dy.desc, dy.ptr, self.conv_desc, 
                                       self.bwd_dw_algo, ws_ptr, ws_size, beta,
                                       self.dw.desc, self.dw.ptr)
 
@@ -345,7 +345,7 @@ class Conv2DGPU(NN_layer.Conv2D):
         if self.use_bias:
             # Compute db
             cudnn.cudnnConvolutionBackwardBias(self.cudnn_handle, alpha, 
-                                      prev_dx.desc, prev_dx.ptr, beta, 
+                                      dy.desc, dy.ptr, beta, 
                                       self.db.desc, self.db.ptr)
             
             # DtoH db when data parallelism and no GPU direct/NCCL is used
@@ -357,7 +357,7 @@ class Conv2DGPU(NN_layer.Conv2D):
             # Compute dx
             cudnn.cudnnConvolutionBackwardData(self.cudnn_handle, alpha, 
                                       self.weights.desc, self.weights.ptr, 
-                                      prev_dx.desc, prev_dx.ptr,
+                                      dy.desc, dy.ptr,
                                       self.conv_desc, self.bwd_dx_algo, ws_ptr, ws_size, 
                                       beta, self.dx.desc, self.dx.ptr)
             return self.dx
@@ -411,13 +411,13 @@ class MaxPool2DGPU(NN_layer.MaxPool2D):
                                   self.y.desc, self.y.ptr) 
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         if self.need_dx:
             alpha, beta = 1.0, 0.0
             # Compute dx
             cudnn.cudnnPoolingBackward(self.cudnn_handle, self.pool_desc, alpha, 
                                        self.y.desc, self.y.ptr, 
-                                       prev_dx.desc, prev_dx.ptr, 
+                                       dy.desc, dy.ptr, 
                                        self.x.desc, self.x.ptr, 
                                        beta, self.dx.desc, self.dx.ptr)
             return self.dx
@@ -471,13 +471,13 @@ class AveragePool2DGPU(NN_layer.AveragePool2D):
                                   self.y.desc, self.y.ptr) 
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         if self.need_dx:
             alpha, beta = 1.0, 0.0
             # Compute dx
             cudnn.cudnnPoolingBackward(self.cudnn_handle, self.pool_desc, alpha, 
                                        self.y.desc, self.y.ptr, 
-                                       prev_dx.desc, prev_dx.ptr, 
+                                       dy.desc, dy.ptr, 
                                        self.x.desc, self.x.ptr, 
                                        beta, self.dx.desc, self.dx.ptr)
             return self.dx
@@ -519,11 +519,11 @@ class DropoutGPU(NN_layer.Dropout):
                                   self.space.ptr, self.space_size.value)
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         if self.need_dx:
             # Compute dx
             cudnn.cudnnDropoutBackward(self.cudnn_handle, self.drop_desc, 
-                                       prev_dx.desc, prev_dx.ptr, 
+                                       dy.desc, dy.ptr, 
                                        self.dx.desc, self.dx.ptr,
                                        self.space.ptr, self.space_size.value)
             return self.dx
@@ -551,10 +551,10 @@ class FlattenGPU(NN_layer.Flatten):
         self.copy(self.y.ary, x.ary, stream=self.stream)
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         if self.need_dx:
             # Compute dx
-            self.copy(self.dx.ary, prev_dx.ary, stream=self.stream)
+            self.copy(self.dx.ary, dy.ary, stream=self.stream)
             return self.dx
 
 
@@ -644,12 +644,12 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
                 self.beta.ptr, self.running_mean.ptr, self.running_var.ptr, self.epsilon)
         return self.y
 
-    def backward(self, prev_dx):
+    def backward(self, dy):
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
         # Compute dx, dgamma, dbeta
         cudnn.cudnnBatchNormalizationBackward(self.cudnn_handle, self.mode, 
             alpha_dx, beta_dx, alpha_dgb, beta_dgb,
-            self.x.desc, self.x.ptr, prev_dx.desc, prev_dx.ptr,
+            self.x.desc, self.x.ptr, dy.desc, dy.ptr,
             self.dx.desc, self.dx.ptr, self.gamma_beta_mean_var_desc, 
             self.gamma.ptr, self.dgamma.ptr, self.dbeta.ptr, self.epsilon,
             self.save_mean.ptr, self.save_inv_var.ptr)
