@@ -64,12 +64,12 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=biases,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
-    a_t = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
+    x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
     w_c = weights.reshape(kn, -1)
     if biases is None:
-        im2col_mm_result = w_c @ a_t
+        im2col_mm_result = w_c @ x_c
     else:
-        im2col_mm_result = w_c @ a_t + biases
+        im2col_mm_result = w_c @ x_c + biases
     if verbose():
         _print_with_header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
         print("Shape: ", conv_gemm_result.shape,
@@ -247,9 +247,9 @@ class TestConvGemm(unittest.TestCase):
             conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=D.vpadding, hpadding=D.hpadding,
                                                    vstride=D.vstride, hstride=D.hstride)
-            a_t = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
+            x_c = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
             w_c = weights.reshape(kn, -1)
-            im2col_mm_result = w_c @ a_t
+            im2col_mm_result = w_c @ x_c
             if verbose():
                 print("{:3}   {:9.5f}".format(kn,
                                               max([abs(x - y) for x, y
@@ -275,9 +275,9 @@ class TestConvGemm(unittest.TestCase):
             conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=D.vpadding, hpadding=D.hpadding,
                                                    vstride=D.vstride, hstride=D.hstride)
-            a_t = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
+            x_c = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, D.vstride, D.hstride)
             w_c = weights.reshape(D.kn, -1)
-            im2col_mm_result = w_c @ a_t
+            im2col_mm_result = w_c @ x_c
             if verbose():
                 print("{:3}   {:9.5f}".format(b,
                                               max([abs(x - y) for x, y
@@ -303,9 +303,9 @@ class TestConvGemm(unittest.TestCase):
             conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=padding, hpadding=padding,
                                                    vstride=D.vstride, hstride=D.hstride)
-            a_t = im2col_cython(x, D.kh, D.kw, padding, padding, D.vstride, D.hstride)
+            x_c = im2col_cython(x, D.kh, D.kw, padding, padding, D.vstride, D.hstride)
             w_c = weights.reshape(D.kn, -1)
-            im2col_mm_result = w_c @ a_t
+            im2col_mm_result = w_c @ x_c
             if verbose():
                 print("{:3}   {:9.5f}".format(padding,
                                               max([abs(x - y) for x, y
@@ -331,9 +331,9 @@ class TestConvGemm(unittest.TestCase):
             conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                    vpadding=D.vpadding, hpadding=D.hpadding,
                                                    vstride=stride, hstride=stride)
-            a_t = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, stride, stride)
+            x_c = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, stride, stride)
             w_c = weights.reshape(D.kn, -1)
-            im2col_mm_result = w_c @ a_t
+            im2col_mm_result = w_c @ x_c
             if verbose():
                 print("{:3}   {:9.5f}".format(stride,
                                               max([abs(x - y) for x, y
