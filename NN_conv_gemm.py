@@ -1,4 +1,5 @@
-""" Python Distributed Training of Neural Networks - PyDTNN
+"""
+convGemm module for Python Distributed Training of Neural Networks (PyDTNN)
 
 PyDTNN is a light-weight library for distributed Deep Learning training and
 inference that offers an initial starting point for interaction with distributed
@@ -11,17 +12,18 @@ multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
 message-passing, BLAS calls via NumPy for multicore processors and
 PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
+Copyright 2020 Universitat Jaume I
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
+This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
+
+PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
 WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
 PARTICULAR PURPOSE. See the GNU General Public License for more details. You
 should have received a copy of the GNU General Public License along with this
 program. If not, see <http://www.gnu.org/licenses/>.
-
 """
 
 __author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalan, Adrian Castello"
@@ -80,7 +82,7 @@ class ConvGemm:
         """
         path = find_library('convGemm')
         if not path:
-            for current_path in os.environ['LD_LIBRARY_PATH'].split(':'):
+            for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
                 if os.path.exists(os.path.join(current_path, 'libconvGemm.so')):
                     path = os.path.join(current_path, 'libconvGemm.so')
                     break
@@ -89,14 +91,21 @@ class ConvGemm:
                               "using 'export LD_LIBRARY_PATH=libconvGemm_path:$LD_LIBRARY_PATH' before calling this "
                               "application.")
         self.lib = ctypes.cdll.LoadLibrary(path)
-        self.dtype = dtype
+        if isinstance(dtype, type):
+            self.dtype = dtype
+        else:
+            try:
+                self.dtype = {'float32': np.float32, 'float64': np.float64}[dtype]
+            except KeyError:
+                raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
         # Declare ac_pack and bc_pack and allocate space for them
+        # @todo: The next fragment of code should be dependant on the architecture and the dtype
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
         self.lib.alloc_pack_buffs.restype = ctypes.c_int
         result = self.lib.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
         if result == 1:
-            raise MemoryError("Could not allocate space for ac_pack or bc_pack")
+            raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         self.debug = debug
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
@@ -105,12 +114,12 @@ class ConvGemm:
             elif self.dtype == np.float32:
                 self.xconv_gemm = self.lib.hconvGemm
             else:
-                raise ValueError("Type {} not supported by libconvGemm!".format(str(self.dtype)))
+                raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
             if self.dtype == np.float32:
                 self.xconv_gemm = self.lib.sconvGemm
             else:
-                raise ValueError("Type {} not supported by libconvGemm!".format(str(self.dtype)))
+                raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         else:
             raise ValueError("Platform '{}' not yet supported")
 
@@ -132,8 +141,11 @@ class ConvGemm:
             libc = ctypes.cdll.LoadLibrary('libc.dylib')
         else:
             raise AssertionError("Don't know how to get to libc for a '{}' system".format(platform.system()))
-        libc.free(self.ac_pack)
-        libc.free(self.bc_pack)
+        try:
+            libc.free(self.ac_pack)
+            libc.free(self.bc_pack)
+        except AttributeError:
+            pass
 
     def conv_gemm(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1):
         """
@@ -171,10 +183,6 @@ class ConvGemm:
         array_like
             The result of alpha * weights * im2col(x_padded) + beta * biases.
         """
-        # Check stride parameters
-        assert vstride == hstride, \
-            "convGemm does not support different vertical and horizontal strides"
-        stride = vstride
 
         # Pad x matrix and set vpadding and hpadding to 0
         x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant') \
@@ -194,11 +202,12 @@ class ConvGemm:
 
         # Create zero biases matrix if none provided. Otherwise, test its dimensions
         if biases is None:
+            beta = 0.0
             biases = np.zeros((kn, b * ho * wo)).astype(weights.dtype, order='C')
         else:
             biases = biases.copy()  # To avoid overriding the original biases matrix
             assert (kn, b * ho * wo) == biases.shape, \
-                "Biases matrix should be {}x{}".format(kn, b * ho * wo)
+                "Biases matrix should be ({}, {}), instead it is {}".format(kn, b * ho * wo, biases.shape)
 
         # Check that dtype is the same on all the matrices
         assert weights.dtype == x.dtype == biases.dtype, \
@@ -211,7 +220,7 @@ class ConvGemm:
         #   Where I→hi×wi×ci×b corresponds to the input tensor,
         #   F→kn×kh×kw×ci denotes the filters,
         #   and O→kn×ho×wo×b is the output tensor
-        weights_cg = weights.transpose((0, 2, 3, 1)).reshape(kn, -1, order="F")
+        weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
         x_padded_cg = x_padded.transpose((2, 3, 1, 0)).flatten(order="F")
         biases_cg = biases.astype(weights.dtype, order="F")
 
@@ -222,7 +231,7 @@ class ConvGemm:
                                           ctypes.c_uint(c), ctypes.c_uint(kn),
                                           ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
                                           ctypes.c_uint(h), ctypes.c_uint(w),
-                                          ctypes.c_uint(b), ctypes.c_uint(stride),
+                                          ctypes.c_uint(b), ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                                           ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
                                           ctypes.c_void_p(biases_cg.ctypes.data),
                                           self.ac_pack, self.bc_pack)
@@ -235,7 +244,7 @@ class ConvGemm:
                         ctypes.c_uint(c), ctypes.c_uint(kn),
                         ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
                         ctypes.c_uint(h), ctypes.c_uint(w),
-                        ctypes.c_uint(b), ctypes.c_uint(stride),
+                        ctypes.c_uint(b),  ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                         ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
                         ctypes.c_void_p(biases_cg.ctypes.data),
                         self.ac_pack, self.bc_pack)
@@ -287,15 +296,15 @@ def __usage_example__():
     print("conv_gemm time: {:.2f}".format(sconv_gemm_t))
     print()
     print("Using im2col and mm...")
-    a_t = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
+    x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
     w_c = weights.reshape(kn, -1)
-    im2col_mm_result = w_c @ a_t + biases
+    im2col_mm_result = w_c @ x_c + biases
     print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
     print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
     im2col_t = timeit(lambda: im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride), number=5) / 5
     print("im2col time: {:.2f}".format(im2col_t))
-    mm_t = timeit(lambda: w_c @ a_t + biases, number=5) / 5
+    mm_t = timeit(lambda: w_c @ x_c + biases, number=5) / 5
     print("mm time: {:.2f}".format(mm_t))
 
 

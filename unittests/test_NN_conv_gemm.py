@@ -44,7 +44,7 @@ class D:
     vpadding = 1  # Vertical padding
     hpadding = 2  # Horizontal padding
     vstride = 1  # Vertical stride
-    hstride = vstride  # Horizontal stride (gemmConv does not support different horizontal and vertical strides)
+    hstride = 1  # Horizontal stride
 
 
 def _print_with_header(header, to_be_printed):
@@ -90,14 +90,15 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
 
 class TestConvGemm(unittest.TestCase):
 
-    def test_raise_on_different_strides(self):
-        x = np.ones((D.b, D.c, D.h, D.w)).astype(np.float32, order='C')
-        weights = np.ones((D.kn, D.c, D.kh, D.kw)).astype(np.float32, order='C')
-        conv_gemm = ConvGemm(debug=verbose())
-        with self.assertRaises(AssertionError):
-            conv_gemm.conv_gemm(weights, x, vstride=1, hstride=2)
+    # @delete: different strides are now supported
+    # def test_raise_on_different_strides(self):
+    #     x = np.ones((D.b, D.c, D.h, D.w)).astype(np.float32, order='C')
+    #     weights = np.ones((D.kn, D.c, D.kh, D.kw)).astype(np.float32, order='C')
+    #     conv_gemm = ConvGemm(debug=verbose())
+    #     with self.assertRaises(AssertionError):
+    #         conv_gemm.conv_gemm(weights, x, vstride=1, hstride=2)
 
-    def test_hand_made_array(self):
+    def test_handmade_array(self):
         """
         Test that manual matrices lead to the same solution
         """
@@ -115,7 +116,7 @@ class TestConvGemm(unittest.TestCase):
             print(["{:b}  ".format(int(x)) for x in im2col_mm_result.ravel()])
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
-    def test_hand_made_array_with_biases(self):
+    def test_handmade_array_with_biases(self):
         """
         Test that manual matrices including b lead to the same solution
         """
@@ -134,7 +135,7 @@ class TestConvGemm(unittest.TestCase):
             print(["{:b}  ".format(int(x)) for x in im2col_mm_result.ravel()])
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
-    def test_larger_hand_made_array(self):
+    def test_larger_handmade_array(self):
         """
         Test that larger manual matrices lead to the same solution
         """
@@ -157,7 +158,7 @@ class TestConvGemm(unittest.TestCase):
             print(["{:b}  ".format(int(x)) for x in im2col_mm_result.ravel()])
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
-    def test_even_larger_hand_made_array(self):
+    def test_even_larger_handmade_array(self):
         """
         Test that even larger manual matrices lead to the same solution
         """
@@ -251,9 +252,9 @@ class TestConvGemm(unittest.TestCase):
             w_c = weights.reshape(kn, -1)
             im2col_mm_result = w_c @ x_c
             if verbose():
-                print("{:3}   {:9.5f}".format(kn,
-                                              max([abs(x - y) for x, y
-                                                   in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
+                print("{:3}    {:9.7f}".format(kn,
+                                               max([abs(x - y) for x, y
+                                                    in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result, im2col_mm_result)
         if not verbose():
             spinner.stop()
@@ -279,9 +280,9 @@ class TestConvGemm(unittest.TestCase):
             w_c = weights.reshape(D.kn, -1)
             im2col_mm_result = w_c @ x_c
             if verbose():
-                print("{:3}   {:9.5f}".format(b,
-                                              max([abs(x - y) for x, y
-                                                   in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
+                print("{:3}    {:9.7f}".format(b,
+                                               max([abs(x - y) for x, y
+                                                    in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result, im2col_mm_result)
         if not verbose():
             spinner.stop()
@@ -307,9 +308,9 @@ class TestConvGemm(unittest.TestCase):
             w_c = weights.reshape(D.kn, -1)
             im2col_mm_result = w_c @ x_c
             if verbose():
-                print("{:3}   {:9.5f}".format(padding,
-                                              max([abs(x - y) for x, y
-                                                   in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
+                print("{:3}    {:9.7f}".format(padding,
+                                               max([abs(x - y) for x, y
+                                                    in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result, im2col_mm_result)
         if not verbose():
             spinner.stop()
@@ -335,13 +336,45 @@ class TestConvGemm(unittest.TestCase):
             w_c = weights.reshape(D.kn, -1)
             im2col_mm_result = w_c @ x_c
             if verbose():
-                print("{:3}   {:9.5f}".format(stride,
-                                              max([abs(x - y) for x, y
-                                                   in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
+                print("{:3}    {:9.7f}".format(stride,
+                                               max([abs(x - y) for x, y
+                                                    in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result, im2col_mm_result)
         if not verbose():
             spinner.stop()
         self.assertTrue(np_all_close_for_all_cases)
+
+    def test_with_different_strides(self):
+        spinner = Spinner()
+        if verbose():
+            _print_with_header("{}".format(inspect.stack()[1][3]), None)
+            print(" vs  hs   Maximum difference")
+            print("--------+--------------------")
+        conv_gemm = ConvGemm(debug=False)
+        weights = np.random.rand(D.kn, D.c, D.kh, D.kw).astype(np.float32, order='C')
+        x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
+        for vstride in range(1, 5):
+            for hstride in range(1, 5):
+                if vstride == hstride:
+                    continue
+                if not verbose():
+                    spinner.render()
+                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                                                       vpadding=D.vpadding, hpadding=D.hpadding,
+                                                       vstride=vstride, hstride=hstride)
+                x_c = im2col_cython(x, D.kh, D.kw, D.vpadding, D.hpadding, vstride, hstride)
+                w_c = weights.reshape(D.kn, -1)
+                im2col_mm_result = w_c @ x_c
+                if verbose():
+                    print("{:3} {:3}    {:9.7f}".format(vstride, hstride,
+                                                        max([abs(x - y) for x, y
+                                                             in
+                                                             zip(conv_gemm_result.flatten(),
+                                                                 im2col_mm_result.flatten())])))
+                self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result),
+                                f"Results differ with vstride {vstride} and hstride {hstride}")
+        if not verbose():
+            spinner.stop()
 
 
 if __name__ == '__main__':
