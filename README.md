@@ -143,7 +143,8 @@ PyDTNN framework comes with a utility NN launcher `tests/benchmarks_CNN.py` supp
     * ``--profile``: Obtain cProfile profiles.
     * ``--enable_gpu``: Enable GPU, use cuDNN library.
     * ``--enable_gpudirect``: Enable GPU pinned memory for gradients when using a CUDA-aware MPI version.
-    * ``--dtype``: Dataype to use: `float32`, `float64`.
+    * ``--enable_conv_gemm``: Enables the use of libconvGemm to replace im2col and gemm operations.
+    * ``--dtype``: Datatype to use: `float32`, `float64`.
 
 
 ## Example: distributed training of a CNN for the MNIST dataset
@@ -154,53 +155,59 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads.
 ```
 $ export OMP_NUM_THREADS=4
 $ mpirun -np 12 \
-   python3 -u tests/benchmarks_CNN.py \
-         --model=simplecnn \
-         --dataset=mnist \
-         --dataset_train_path=datasets/mnist \
-         --dataset_test_path=datasets/mnist \
-         --test_as_validation=False \
-         --batch_size=64 \
-         --validation_split=0.2 \
-         --num_epochs=50 \
-         --evaluate=True \
-         --optimizer=adam \
-         --learning_rate=0.1 \
-         --loss_func=categorical_cross_entropy \
-         --lr_schedulers=early_stopping,reduce_lr_on_plateau \
-         --early_stopping_metric=val_categorical_cross_entropy \
-         --early_stopping_patience=10 \
-         --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \
-         --reduce_lr_on_plateau_factor=0.1 \
-         --reduce_lr_on_plateau_patience=5 \
-         --reduce_lr_on_plateau_min_lr=0 \
-         --parallel=data \
-         --dtype=float32
+    python3 -u tests/benchmarks_CNN.py \
+      --model=simplecnn \
+      --dataset=mnist \
+      --dataset_train_path=datasets/mnist \
+      --dataset_test_path=datasets/mnist \
+      --test_as_validation=False \
+      --flip_images=True \
+      --batch_size=64 \
+      --validation_split=0.2 \
+      --num_epochs=50 \
+      --evaluate=True \
+      --optimizer=adam \
+      --learning_rate=0.01 \
+      --loss_func=categorical_cross_entropy \
+      --lr_schedulers=warm_up,reduce_lr_every_nepochs \
+      --reduce_lr_every_nepochs_factor=0.5 \
+      --reduce_lr_every_nepochs_nepochs=30 \
+      --reduce_lr_every_nepochs_min_lr=0.001 \
+      --early_stopping_metric=val_categorical_cross_entropy \
+      --early_stopping_patience=20 \
+      --parallel=sequential \
+      --tracing=False \
+      --profile=False \
+      --enable_gpu=True \
+      --dtype=float32
 
-**** Creating simplecnn model...
-┌───────┬──────────┬─────────┬───────────────┬─────────────────┬─────────────────────┐
-│ Layer │   Type   │ #Params │ Output shape  │  Weights shape  │     Parameters      │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   0   │  Input   │    0    │  (1, 28, 28)  │                 │                     │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   1   │  Conv2D  │   40    │  (4, 26, 26)  │  (4, 1, 3, 3)   │ stride=0, padding=1 │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   2   │   Relu   │    0    │  (4, 26, 26)  │                 │                     │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   3   │  Conv2D  │   296   │  (8, 24, 24)  │  (8, 4, 3, 3)   │ stride=0, padding=1 │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   4   │   Relu   │    0    │  (8, 24, 24)  │                 │                     │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   5   │  Pool2D  │    0    │  (8, 12, 12)  │                 │ stride=0, padding=2 │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   6   │    FC    │ 147584  │    (128,)     │   (1152, 128)   │                     │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   7   │   Relu   │    0    │    (128,)     │                 │                     │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   8   │    FC    │  1290   │     (10,)     │    (128, 10)    │                     │
-├───────┼──────────┼─────────┼───────────────┼─────────────────┼─────────────────────┤
-│   9   │ Softmax  │    0    │     (10,)     │                 │                     │
-└───────┴──────────┴─────────┴───────────────┴─────────────────┴─────────────────────┘
+
+**** simplecnn model...
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+| Layer |           Type           | #Params | Output shape  |   Weights shape   |       Parameters       |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   0   |          Input           |    0    |  (1, 28, 28)  |                   |                        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   1   |          Conv2D          |   40    |  (4, 28, 28)  |   (4, 1, 3, 3)    |padd=(1,1), stride=(1,1)|
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   2   |          Conv2D          |   148   |  (4, 28, 28)  |   (4, 4, 3, 3)    |padd=(1,1), stride=(1,1)|
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   3   |        MaxPool2D         |    0    |  (4, 14, 14)  |      (2, 2)       |padd=(0,0), stride=(2,2)|
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   4   |         Flatten          |    0    |    (784,)     |                   |                        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   5   |            FC            | 100480  |    (128,)     |    (784, 128)     |                        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   6   |           Relu           |    0    |    (128,)     |                   |                        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   7   |         Dropout          |    0    |    (128,)     |                   |       rate=0.50        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   8   |            FC            |  1290   |     (10,)     |     (128, 10)     |                        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|   9   |         Softmax          |    0    |     (10,)     |                   |                        |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
+|             Total parameters       101958    398.27 KBytes                                              |
++-------+--------------------------+---------+---------------+-------------------+------------------------+
 **** Loading mnist dataset...
 **** Parameters:
   model                          : simplecnn
@@ -212,17 +219,18 @@ $ mpirun -np 12 \
   flip_images_prob               : 0.5
   crop_images                    : False
   crop_images_size               : 16
-  crop_images_prob               : 0.5  
+  crop_images_prob               : 0.5
   batch_size                     : 64
-  global_batch_size              : 64  
+  global_batch_size              : None
   validation_split               : 0.2
   steps_per_epoch                : 0
   num_epochs                     : 50
   evaluate                       : True
   weights_and_bias_filename      : None
   shared_storage                 : True
+  history_file                   : None
   optimizer                      : adam
-  learning_rate                  : 0.1
+  learning_rate                  : 0.01
   learning_rate_scaling          : True
   momentum                       : 0.9
   decay                          : 0.0
@@ -240,10 +248,12 @@ $ mpirun -np 12 \
   reduce_lr_on_plateau_metric    : val_categorical_cross_entropy
   reduce_lr_on_plateau_factor    : 0.1
   reduce_lr_on_plateau_patience  : 5
-  reduce_lr_on_plateau_min_lr    : 0.0
+  reduce_lr_on_plateau_min_lr    : 0
   reduce_lr_every_nepochs_factor : 0.5
   reduce_lr_every_nepochs_nepochs: 30
   reduce_lr_every_nepochs_min_lr : 0.001
+  stop_at_loss_metric            : val_accuracy
+  stop_at_loss_threshold         : 0
   model_checkpoint_metric        : val_categorical_cross_entropy
   model_checkpoint_save_freq     : 2
   mpi_processes                  : 12
@@ -253,8 +263,10 @@ $ mpirun -np 12 \
   tracing                        : False
   profile                        : False
   gpus_per_node                  : 0
+  enable_conv_gemm               : False
   enable_gpu                     : False
-  enable_gpudirect               : True
+  enable_gpudirect               : False
+  enable_nccl                    : False
   dtype                          : float32
 **** Evaluating on test dataset...
 Testing: 100%|████████████████████| 10000/10000 [00:00<00:00, 29732.29 samples/s, test_acc: 12.50%, test_cro: 2.3008704]
