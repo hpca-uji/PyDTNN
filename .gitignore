@@ -10,3 +10,4 @@ NN_relu_cython.c
 NN_relu_cython.cpython-*-linux-gnu.so
 *.npz
 __pycache__
+TODO_sbm.rst
