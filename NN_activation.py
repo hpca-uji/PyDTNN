@@ -40,7 +40,7 @@ __version__ = "1.1.0"
 
 
 import numpy as np
-from NN_layer import Layer
+from NN_base_layer import Layer
 from NN_relu_cython import relu_cython
 
 class Sigmoid(Layer):

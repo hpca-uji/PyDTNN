@@ -1,27 +1,29 @@
-""" Python Distributed Training of Neural Networks - PyDTNN
+"""
+Layer definitions for Python Distributed Training of Neural Networks (PyDTNN)
 
-PyDTNN is a light-weight library for distributed Deep Learning training and 
-inference that offers an initial starting point for interaction with 
-distributed training of (and inference with) deep neural networks. PyDTNN 
-priorizes simplicity over efficiency, providing an amiable user interface 
-which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
-for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors and GPUs at node level. For that, PyDTNN 
-uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
-and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
+PyDTNN is a light-weight library for distributed Deep Learning training and
+inference that offers an initial starting point for interaction with distributed
+training of (and inference with) deep neural networks. PyDTNN prioritizes
+simplicity over efficiency, providing an amiable user interface which enables a
+flat accessing curve. To perform the training and inference processes, PyDTNN
+exploits distributed inter-process parallelism (via MPI) for clusters and
+intra-process (via multi-threading) parallelism to leverage the presence of
+multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
+message-passing, BLAS calls via NumPy for multicore processors and
+PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
+Copyright 2020 Universitat Jaume I
 
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with
-this program. If not, see <http://www.gnu.org/licenses/>.
+This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
 
+PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details. You
+should have received a copy of the GNU General Public License along with this
+program. If not, see <http://www.gnu.org/licenses/>.
 """
 
 __author__ = "Manuel F. Dolz, Enrique S. Quintana, \
@@ -32,217 +34,36 @@ __credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
                "Mar Catalan", "Adrian Castello"]
 __date__ = "2020/03/22"
 
-__email__ =  "dolzm@uji.es"
+__email__ = "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-
-import numpy as np
 import importlib
-import NN_util, NN_activation, NN_initializer, NN_model
-
 from math import floor
-from NN_util import printf
-from NN_im2col_cython import im2col_cython, col2im_cython
-from NN_argmax_cython import argmax_cython
+
+import NN_activation
+import NN_initializer
+import NN_model
+from NN_base_layer import Layer
+from NN_conv_gemm import ConvGemm
 from NN_add_cython import add_cython
-from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_argmax_cython import argmax_cython
+from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
+from NN_tracer import PYDL_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
 try:
     from mpi4py import MPI
-    #import pycuda.autoinit
+    # import pycuda.autoinit
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as drv
     import skcuda.linalg as culinalg
     import skcuda.misc as cumisc
     import libnccl.libnccl as nccl
-except:
+except ModuleNotFoundError:
     pass
-
-class Layer():
-
-    def __new__(cls, *args, **kwargs):
-        # If GPU is requested we return a GPU-related object instead
-        if not NN_model.enable_cudnn:
-            new_cls = cls 
-        else: 
-            module_name = "NN_activation" if cls.__name__ in \
-                ["Sigmoid", "Relu", "Tanh", "Log", "Softmax"] else "NN_layer"
-            module = importlib.import_module("%s_gpu" % module_name)
-            new_cls = getattr(module, "%sGPU" % (cls.__name__))
-        instance = super(Layer, new_cls).__new__(new_cls)
-        if new_cls != cls: instance.__init__(*args, **kwargs)
-        return instance
-
-    def __init__(self, shape=()):
-        self.id, self.nparams = 0, 0
-        self.shape = shape
-        self.weights, self.biases = np.array([]), np.array([])
-        self.act = None
-        self.grad_vars = {}
-        self.fwd_time, self.bwd_time = np.zeros((4,), dtype=np.float32), np.zeros((4,), dtype=np.float32)
-
-    def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
-        if prev_shape: self.shape = prev_shape
-
-    def show(self, attrs=""):
-        if not attrs: attrs= "|{:19s}|{:^24s}|".format("","")
-        print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
-
-    def update_weights(self, optimizer):
-        optimizer.update(self)
-
-    def reduce_weights_async(self):
-        if not self.model.comm: return
-        self.reqs_allred = {}
-
-        # if self.model.enable_cudnn:
-        #     if self.model.enable_nccl or self.model.gpudirect:
-        #        self.model.stream.synchronize()
-        #     else:
-        #        self.stream_2.synchronize()
-
-        for w_, dw_ in self.grad_vars.items():
-            dw = getattr(self, dw_)
-
-            if self.model.enable_cudnn:
-                if self.model.enable_nccl:
-                    self.model.stream.synchronize()
-                    nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                       nccl.RedOp.Sum, comm=self.model.nccl_comm, 
-                                       stream=self.stream_2.handle)
-                    req = None
-
-                    # # Hierarchical mode NCCL + MPI
-                    # if len(self.model.inter_ranks) == 1:
-                    #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                    #                        nccl.RedOp.Sum, comm=self.model.nccl_comm, 
-                    #                        stream=self.stream_2.handle)
-                    #
-                    # else:
-                    #     # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
-                    #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                    #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm, 
-                    #                     stream=self.stream_2.handle)
-                    #
-                    #     if self.model.rank in self.model.inter_ranks:
-                    #         if not self.model.gpudirect:
-                    #             dw.ary.get_async(self.stream_2, dw_cpu)
-                    #
-                    #         self.stream_2.synchronize()
-                    #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
-
-                else: # Without NCCL
-
-                    # We have asynchronusly moved the dw and db to dw_cpu and db_cpu in stream_2
-                    # so we need to synchronize stream_2 before performing Allreduce.
-                    # In GPU direct we have to synchronize the main stream to ensure dw and db are ready.
-
-                    if not self.model.gpudirect: 
-                        self.stream_2.synchronize()
-                    else:
-                        self.model.stream.synchronize()
-                
-                    dw_cpu = getattr(self, "%s_cpu" % dw_)  
-                    req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-
-            else: # Without GPUs, only MPI
-                req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-
-            self.reqs_allred[dw_] = req
-
-    def wait_allreduce_async(self):
-        if not self.model.comm or self.model.enable_nccl: return
-
-        for w_, dw_ in self.grad_vars.items():
-            self.reqs_allred[dw_].wait()
-
-            # # Hierarchical mode NCCL + MPI
-            # if self.model.enable_nccl:  
-            #     if len(self.model.inter_ranks) == 1: 
-            #         # Do nothing, Allreduce was already completed in phase 1
-            #         pass
-            #     else:
-            #         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
-            #         if self.model.rank in self.model.inter_ranks:
-            #             self.reqs_allred[dw_].wait()
-            #             if not self.model.gpudirect: 
-            #                 dw.ary.set_async(dw_cpu, self.stream_2)
-            #     
-            #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-            #                            root=0, comm=self.model.nccl_comm, 
-            #                            stream=self.stream_2.handle)
-
-            if self.model.enable_cudnn and not self.model.gpudirect:
-                dw = getattr(self, dw_)
-                dw_cpu = getattr(self, "%s_cpu" % dw_)
-
-                # If there is no CUDA-aware MPI, copy data back to GPU
-                dw.ary.set_async(dw_cpu, self.stream_2)
-
-    def reduce_weights_sync(self):
-        if not self.model.comm: return
-
-        for w_, dw_ in self.grad_vars.items():
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
-                                    [self.id * PYDL_NUM_EVTS + 3, 
-                                     self.id * PYDL_OPS_NUM_EVTS + 6])
-            dw = getattr(self, dw_)
-
-            if self.model.enable_cudnn:
-
-                if self.model.enable_nccl:
-                    nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                                       nccl.RedOp.Sum, comm=self.model.nccl_comm, 
-                                       stream=self.stream_2.handle)
-
-                    # # Hierarchical mode NCCL + MPI
-                    # if len(self.model.inter_ranks) == 1:
-                    #     # Only one node involved, perform ncclAllreduce across intra-node GPUs
-                    #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                    #                        nccl.RedOp.Sum, comm=self.model.nccl_comm, 
-                    #                        stream=self.stream_2.handle)
-                    # else:
-                    #     # Hierarchical allreduce: ncclReduce + Allreduce + ncclBroadcast
-                    #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                    #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
-                    #                     stream=self.stream_2.handle)
-                    # 
-                    #     self.stream_2.synchronize()
-                    #     if self.model.rank in self.model.inter_ranks:
-                    #         if self.model.gpudirect: 
-                    #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
-                    #         else:
-                    #             dw_cpu = dw.ary.get()
-                    #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                    #             dw.ary.set_async(dw_cpu, self.stream_2)
-                    # 
-                    #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                    #                        root=0, comm=self.model.nccl_comm, 
-                    #                        stream=self.stream_2.handle)
-
-                else: # Without NCCL
-
-                    # We have asynchronusly moved the dw and db to dw_cpu and db_cpu in stream_2
-                    # so we need to synchronize stream_2 before performing Allreduce.
-                    # In GPU direct, the main stream is already synchronized.
-
-                    if not self.model.gpudirect: 
-                        self.stream_2.synchronize()
-
-                    dw_cpu = getattr(self, "%s_cpu" % dw_)
-                    self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-
-                    if not self.model.gpudirect:
-                        dw.ary.set_async(dw_cpu, self.stream_2)
-            else:
-                self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-            
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
 
 
 class Input(Layer):
@@ -262,8 +83,9 @@ class FC(Layer):
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
         self.biases_initializer = getattr(NN_initializer, biases_initializer)
         self.grad_vars = {"weights": "dw"}
-        if self.use_bias: self.grad_vars["biases"] = "db"
-        
+        if self.use_bias:
+            self.grad_vars["biases"] = "db"
+
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
         self.weights = self.weights_initializer((*prev_shape, *self.shape), self.dtype)
@@ -271,19 +93,19 @@ class FC(Layer):
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
         self.fwd_time = \
-            matmul_time(m=self.batch_size, n=self.weights.shape[1], k=self.weights.shape[0], 
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+            matmul_time(m=self.batch_size, n=self.weights.shape[1], k=self.weights.shape[0],
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype)
         self.bwd_time = \
-            matmul_time(m=self.weights.shape[0], n=self.weights.shape[1], k=self.batch_size, 
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+            matmul_time(m=self.weights.shape[0], n=self.weights.shape[1], k=self.batch_size,
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) + \
-            matmul_time(m=self.batch_size, n=self.weights.shape[0], k=self.weights.shape[1], 
-                       cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
-                       dtype=self.dtype) if need_dx else 0
-        
+            matmul_time(m=self.batch_size, n=self.weights.shape[0], k=self.weights.shape[1],
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
+                        dtype=self.dtype) if need_dx else 0
+
     def show(self):
-        super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape),""))
+        super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape), ""))
 
     def forward(self, x):
         self.x = x
@@ -291,12 +113,12 @@ class FC(Layer):
         res = self.matmul(x, self.weights)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
         return res + self.biases if self.use_bias else 0
-        
+
     def backward(self, dy):
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
         self.dw = self.matmul(self.x.T, dy)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
-        if self.use_bias: 
+        if self.use_bias:
             self.db = np.sum(dy, axis=0)
 
         if self.need_dx:
@@ -304,11 +126,11 @@ class FC(Layer):
             dx = self.matmul(dy, self.weights.T)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
             return dx
-        
+
 
 class Conv2D(Layer):
 
-    def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1, 
+    def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
                  activation="", use_bias=True, weights_initializer="glorot_uniform",
                  biases_initializer="zeros"):
         super(Conv2D, self).__init__()
@@ -323,46 +145,64 @@ class Conv2D(Layer):
         self.weights_initializer = getattr(NN_initializer, weights_initializer)
         self.biases_initializer = getattr(NN_initializer, biases_initializer)
         self.grad_vars = {"weights": "dw"}
-        if self.use_bias: self.grad_vars["biases"] = "db"
+        if self.use_bias:
+            self.grad_vars["biases"] = "db"
+        self.cg = None
+        self.forward = self._forward_i2c
+        self.backward = self._backward_i2c
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
         self.ci, self.hi, self.wi = prev_shape
         self.kh, self.kw = self.filter_shape
 
-        self.weights = self.weights_initializer(((self.co,)+(self.ci,)+self.filter_shape), self.dtype)
-        if self.use_bias: self.biases = self.biases_initializer((self.co,), self.dtype)
+        self.weights = self.weights_initializer(((self.co,) + (self.ci,) + self.filter_shape), self.dtype)
+        if self.use_bias:
+            self.biases = self.biases_initializer((self.co,), self.dtype)
 
         self.ho = floor((self.hi + 2 * self.vpadding - self.kh) / self.vstride) + 1
         self.wo = floor((self.wi + 2 * self.hpadding - self.kw) / self.hstride) + 1
         self.shape = (self.co, self.ho, self.wo)
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
+        if self.model.params.enable_conv_gemm:
+            self.cg = ConvGemm(dtype=self.dtype)
+            self.forward = self._forward_gc
+            self.backward = self._backward_gc
+
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) + \
             matmul_time(m=self.co, n=(self.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
-                        dtype=self.dtype) 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
+                        dtype=self.dtype)
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) + \
-            matmul_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo), k=self.co, 
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+            matmul_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo), k=self.co,
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) if need_dx else 0 + \
-            col2im_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo), 
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
-                        dtype=self.dtype) if need_dx else 0
+                                                          col2im_time(m=(self.ci * self.kh * self.kw),
+                                                                      n=(self.batch_size * self.ho * self.wo),
+                                                                      cpu_speed=self.model.params.cpu_speed,
+                                                                      memory_bw=self.model.params.memory_bw,
+                                                                      dtype=self.dtype) if need_dx else 0
 
     def show(self):
         super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape), \
-            "padd=(%d,%d), stride=(%d,%d)" % (self.vpadding, self.hpadding, self.vstride, self.hstride)))
+                                                "padd=(%d,%d), stride=(%d,%d)" % (
+                                                    self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
     def forward(self, x):
+        """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
+        pass
+
+    def _forward_i2c(self, x):
+        """Version of the forward function that uses im2col and matmul"""
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding, 
+        self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
@@ -375,8 +215,26 @@ class Conv2D(Layer):
         y = add_cython(res, self.biases) if self.use_bias else res
         return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
 
+    def _forward_gc(self, x):
+        """Version of the forward function that uses the convGemm library"""
+        self.cg_x = x
+        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        res = self.cg.conv_gemm(self.weights, x, biases=None,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride)
+        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        # y = res + self.biases.reshape(-1, 1)
+        y = add_cython(res, self.biases) if self.use_bias else res
+        return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+
     def backward(self, dy):
-        dy_cols = dy.transpose(1, 0, 2, 3).reshape(self.co, -1)
+        """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
+        pass
+
+    def _backward_i2c(self, dy):
+        """Version of the backward function that uses im2col and matmul"""
+        dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
 
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
@@ -384,17 +242,51 @@ class Conv2D(Layer):
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         self.dw = res.reshape(self.weights.shape)
+
         if self.use_bias:
-            self.db = np.sum(dy, axis=(0,2,3))
+            self.db = np.sum(dy, axis=(0, 2, 3))
 
         if self.need_dx:
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
             res = self.matmul(w_cols, dy_cols)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
-    
+
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-            dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi, 
-                               self.kh, self.kw, self.vpadding, self.hpadding, 
+            dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                               self.kh, self.kw, self.vpadding, self.hpadding,
+                               self.vstride, self.hstride)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            return dx
+
+    def _backward_gc(self, dy):
+        """Version of the backward function that uses the convGemm library"""
+        dy_cols = dy.transpose(1, 0, 2, 3).reshape(self.co, -1)
+        if self.vstride == self.hstride == 1:
+            #                       # Should be:  kn c  kw kh                        b  c  w  h
+            res = self.cg.conv_gemm(dy.transpose((1, 0, 2, 3)), self.cg_x.transpose((1, 0, 2, 3)),
+                                    #        Is:  kn b  wo ho                        c  b  w  h
+                                    biases=None,
+                                    vpadding=self.vpadding, hpadding=self.hpadding,
+                                    vstride=self.vstride, hstride=self.hstride)
+        else:
+            self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                        self.vstride, self.hstride)
+            res = self.matmul(dy_cols, self.x_cols.T)
+
+        self.dw = res.reshape(self.weights.shape)
+
+        if self.use_bias:
+            self.db = np.sum(dy, axis=(0, 2, 3))
+
+        if self.need_dx:
+            w_cols = self.weights.reshape(self.co, -1).T
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            res = self.matmul(w_cols, dy_cols)
+            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                               self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
             return dx
@@ -402,13 +294,13 @@ class Conv2D(Layer):
 
 class MaxPool2D(Layer):
 
-    def __init__(self, pool_shape=(2,2), padding=0, stride=1):
+    def __init__(self, pool_shape=(2, 2), padding=0, stride=1):
         super(MaxPool2D, self).__init__()
         self.pool_shape = pool_shape
         self.padding = padding
         self.stride = stride
-        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding 
-        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride 
+        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
+        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -424,28 +316,33 @@ class MaxPool2D(Layer):
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci),
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype)
         self.bwd_time = \
-            col2im_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci), 
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+            col2im_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) if need_dx else 0
 
     def show(self):
         super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
-            "padd=(%d,%d), stride=(%d,%d)" % (self.vpadding, self.hpadding, self.vstride, self.hstride)))
+                                                "padd=(%d,%d), stride=(%d,%d)" % (
+                                                    self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding, 
+        x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        y, self.maxids = argmax_cython(x_cols, axis=0)        
+        y, self.maxids = argmax_cython(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
- 
+
+    # @todo: SBM
+    # @cache @property
+    # def dy_cols(self):
+
     def backward(self, dy):
         if self.need_dx:
             if not hasattr(self, "dy_cols") or self.dy_cols.shape[1] != np.prod(dy.shape):
@@ -453,7 +350,7 @@ class MaxPool2D(Layer):
             self.dy_cols[...] = 0
             self.dy_cols[self.maxids] = dy.flatten()
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-            dx = col2im_cython(self.dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi, 
+            dx = col2im_cython(self.dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding, 
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
@@ -463,13 +360,13 @@ class MaxPool2D(Layer):
 
 class AveragePool2D(Layer):
 
-    def __init__(self, pool_shape=(2,2), padding=0, stride=1):
+    def __init__(self, pool_shape=(2, 2), padding=0, stride=1):
         super(AveragePool2D, self).__init__()
         self.pool_shape = pool_shape
         self.padding = padding
         self.stride = stride
         self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
-        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride 
+        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -485,34 +382,35 @@ class AveragePool2D(Layer):
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci),
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype)
         self.bwd_time = \
-            col2im_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci), 
-                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
+            col2im_time(m=(self.kh * self.kw), n=(self.batch_size * self.ho * self.wo * self.ci),
+                        cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) if need_dx else 0
 
     def show(self):
         super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
-            "padd=(%d,%d), stride=(%d,%d)" % (self.vpadding, self.hpadding, self.vstride, self.hstride)))
+                                                "padd=(%d,%d), stride=(%d,%d)" % (
+                                                    self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
-        x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding, 
+        x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
-        y = np.mean(x_cols, axis=0)        
+        y = np.mean(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
- 
+
     def backward(self, dy):
         if self.need_dx:
             pool_size = np.prod(self.pool_shape)
             dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-            dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi, 
-                               self.kh, self.kw, self.vpadding, self.hpadding, 
+            dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
+                               self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
             dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
@@ -534,7 +432,7 @@ class Dropout(Layer):
 
     def forward(self, x):
         if self.model.mode == "train":
-            self.mask = np.random.binomial(1, (1-self.rate), size=self.shape).astype(self.dtype) / (1-self.rate)
+            self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.dtype) / (1 - self.rate)
             return x * self.mask
         elif self.model.mode == "evaluate":
             return x
@@ -542,7 +440,7 @@ class Dropout(Layer):
     def backward(self, dy):
         if self.need_dx:
             return dy * self.mask
- 
+
 
 class Flatten(Layer):
 
@@ -564,7 +462,7 @@ class Flatten(Layer):
 
 class BatchNormalization(Layer):
 
-    def __init__(self, beta=0.0, gamma=1.0, 
+    def __init__(self, beta=0.0, gamma=1.0,
                  momentum=0.9, epsilon=1e-5,
                  moving_mean_initializer="zeros",
                  moving_variance_initializer="ones",
@@ -587,7 +485,7 @@ class BatchNormalization(Layer):
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
             shape_ = (self.ci)
-        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)    
+        self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
@@ -605,7 +503,7 @@ class BatchNormalization(Layer):
 
         if self.spatial:
             x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
-        
+
         if self.model.mode == "train":
             N = np.array([x.shape[0]], dtype=self.dtype)
             if self.sync_stats and self.model.comm != None:
@@ -613,12 +511,12 @@ class BatchNormalization(Layer):
 
             mu = mean(x, N, self.model.comm)
             xc = (x - mu)
-            var = mean(xc**2, N, self.model.comm)
+            var = mean(xc ** 2, N, self.model.comm)
 
             self.std = np.sqrt(var + self.epsilon)
             self.xn = xc / self.std
             y = self.gamma * self.xn + self.beta
-  
+
             self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
             self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
 
@@ -632,7 +530,7 @@ class BatchNormalization(Layer):
         return y
 
     def backward(self, dy):
-        if self.spatial:          
+        if self.spatial:
             dy = dy.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
         N = dy.shape[0]
@@ -642,7 +540,7 @@ class BatchNormalization(Layer):
         if self.need_dx:
             dx = (self.gamma / (self.std * N)) * (N * dy - self.xn * self.dgamma - self.dbeta)
             dx = dx.astype(self.dtype)
-    
+
             if self.spatial:
                 dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
             return dx
@@ -685,7 +583,8 @@ class AdditionBlock(Layer):
         self.shape = self.out_shapes[0]
 
     def show(self):
-        print(f"|{'':^7s}|{(type(self).__name__+' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
+        print(
+            f"|{'':^7s}|{(type(self).__name__ + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
         for i, p in enumerate(self.paths):
             print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
             for l in p: l.show()
@@ -697,7 +596,7 @@ class AdditionBlock(Layer):
     def reduce_weights_async(self):
         for p in self.paths:
             for l in p: l.reduce_weights_async()
-     
+
     def wait_allreduce_async(self):
         for p in self.paths:
             for l in p: l.wait_allreduce_async()
@@ -758,7 +657,8 @@ class ConcatenationBlock(Layer):
         self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
 
     def show(self):
-        print(f"|{'':^7s}|{(type(self).__name__.replace('Concatenation', 'Concat')+' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
+        print(
+            f"|{'':^7s}|{(type(self).__name__.replace('Concatenation', 'Concat') + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
         for i, p in enumerate(self.paths):
             print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
             for l in p: l.show()
@@ -770,7 +670,7 @@ class ConcatenationBlock(Layer):
     def reduce_weights_async(self):
         for p in self.paths:
             for l in p: l.reduce_weights_async()
-     
+
     def wait_allreduce_async(self):
         for p in self.paths:
             for l in p: l.wait_allreduce_async()
@@ -784,7 +684,7 @@ class ConcatenationBlock(Layer):
         for i, p in enumerate(self.paths):
             for l in p: x[i] = l.forward(x[i])
         return np.concatenate(x, axis=1)
-        
+
     def backward(self, dy):
         dx = np.split(dy, self.idx_co[:-1], axis=1)
         for i, p in enumerate(self.paths):

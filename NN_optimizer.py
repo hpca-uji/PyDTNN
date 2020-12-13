@@ -40,7 +40,8 @@ __version__ = "1.1.0"
 
 
 import numpy as np
-from NN_layer import Layer
+# from NN_base_layer import Layer
+
 
 class Optimizer():
 
