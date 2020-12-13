@@ -24,5 +24,6 @@ python3 -u tests/benchmarks_CNN.py \
   --parallel=sequential \
   --tracing=False \
   --profile=False \
-  --enable_gpu=True \
-  --dtype=float32
+  --enable_gpu=False \
+  --dtype=float32 \
+  --enable_conv_gemm=True
