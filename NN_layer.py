@@ -40,19 +40,17 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-import importlib
 from math import floor
 
 import NN_activation
 import NN_initializer
-import NN_model
-from NN_base_layer import Layer
-from NN_conv_gemm import ConvGemm
 from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
+from NN_base_layer import Layer
+from NN_conv_gemm import ConvGemm
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
-from NN_tracer import PYDL_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_tracer import PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
 
 try:
     from mpi4py import MPI
@@ -128,6 +126,17 @@ class FC(Layer):
             return dx
 
 
+def _get_x_reorder(kx, xo, s):
+    """
+    Returns x_reorder based on kx (kh or kw), xo (ho or wo), and s (hstride or
+    vstride)
+    """
+    x_reorder = []
+    for i in range(kx):
+        x_reorder += [i + j * s for j in range(xo)]
+    return x_reorder
+
+
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
@@ -167,8 +176,8 @@ class Conv2D(Layer):
 
         if self.model.params.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.dtype)
-            self.forward = self._forward_gc
-            self.backward = self._backward_gc
+            self.forward = self._forward_cg
+            self.backward = self._backward_cg
 
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo),
@@ -215,7 +224,7 @@ class Conv2D(Layer):
         y = add_cython(res, self.biases) if self.use_bias else res
         return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
 
-    def _forward_gc(self, x):
+    def _forward_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
         self.cg_x = x
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
@@ -258,20 +267,27 @@ class Conv2D(Layer):
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
             return dx
 
-    def _backward_gc(self, dy):
+    def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
-        dy_cols = dy.transpose(1, 0, 2, 3).reshape(self.co, -1)
-        if self.vstride == self.hstride == 1:
-            #                       # Should be:  kn c  kw kh                        b  c  w  h
-            res = self.cg.conv_gemm(dy.transpose((1, 0, 2, 3)), self.cg_x.transpose((1, 0, 2, 3)),
-                                    #        Is:  kn b  wo ho                        c  b  w  h
-                                    biases=None,
-                                    vpadding=self.vpadding, hpadding=self.hpadding,
-                                    vstride=self.vstride, hstride=self.hstride)
-        else:
-            self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride)
-            res = self.matmul(dy_cols, self.x_cols.T)
+        cg_dy = dy.transpose((1, 0, 2, 3))
+        self.cg_x_reshaped = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
+                                    ((0, 0), (0, 0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
+                                    mode='constant').astype(self.dtype)
+        cg_vstride = 1
+        cg_hstride = 1
+        if self.vstride > 1:
+            cg_vstride = self.ho
+            h_reorder = _get_x_reorder(self.kh, self.ho, self.vstride)
+            self.cg_x_reshaped = self.cg_x_reshaped[:, :, h_reorder, :]
+        if self.hstride > 1:
+            cg_hstride = self.wo
+            v_reorder = _get_x_reorder(self.kw, self.wo, self.hstride)
+            self.cg_x_reshaped = self.cg_x_reshaped[:, :, :, v_reorder]
+
+        res = self.cg.conv_gemm(cg_dy, self.cg_x_reshaped,
+                                biases=None,
+                                vpadding=0, hpadding=0,
+                                vstride=cg_vstride, hstride=cg_hstride)
 
         self.dw = res.reshape(self.weights.shape)
 
@@ -279,6 +295,7 @@ class Conv2D(Layer):
             self.db = np.sum(dy, axis=(0, 2, 3))
 
         if self.need_dx:
+            dy_cols = cg_dy.reshape(self.co, -1)
             w_cols = self.weights.reshape(self.co, -1).T
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
             res = self.matmul(w_cols, dy_cols)
@@ -351,7 +368,7 @@ class MaxPool2D(Layer):
             self.dy_cols[self.maxids] = dy.flatten()
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
             dx = col2im_cython(self.dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
-                               self.kh, self.kw, self.vpadding, self.hpadding, 
+                               self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
             dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
