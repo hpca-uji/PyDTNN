@@ -89,6 +89,9 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
 
 
 class TestConvGemm(unittest.TestCase):
+    """
+    Tests that conv_gemm leads to the same results than i2c and mm.
+    """
 
     # @delete: different strides are now supported
     # def test_raise_on_different_strides(self):
