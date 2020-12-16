@@ -43,7 +43,7 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-import numpy
+import numpy as np
 import os
 import sys
 import argparse
@@ -55,11 +55,9 @@ Extrae_tracing = False
 if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == "1":
     TracingLibrary = "libptmpitrace.so"
     import ctypes
-
     ctypes.CDLL("/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
 
     import pyextrae.common.extrae as pyextrae
-
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
@@ -250,8 +248,8 @@ if __name__ == "__main__":
 
     # A couple of details...
     random.seed(0)
-    numpy.random.seed(0)
-    # numpy.set_printoptions(precision=15)
+    np.random.seed(0)
+    # np.set_printoptions(precision=15)
 
     model = get_model(params)
     if rank == 0:
