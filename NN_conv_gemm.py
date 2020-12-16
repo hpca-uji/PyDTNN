@@ -197,8 +197,8 @@ class ConvGemm:
         # Compute height and weight of the output
         # Note: h and w are obtained from x_padded (no from x) and vpadding and
         #       hpadding are set to 0 in order to use the usual formulation
-        ho = int((h + 2 * vpadding - kh) / vstride + 1)
-        wo = int((w + 2 * hpadding - kw) / hstride + 1)
+        ho = (h + 2 * vpadding - kh) // vstride + 1
+        wo = (w + 2 * hpadding - kw) // hstride + 1
 
         # Create zero biases matrix if none provided. Otherwise, test its dimensions
         if biases is None:
@@ -278,8 +278,8 @@ def __usage_example__():
     weights[1][1][1][1] = 3.0
     weights[2][2][2][2] = 4.0
     x = np.ones((b, c, h, w)).astype(np.float32, order='C')
-    ho = int((h + 2 * vpadding - kh) / vstride + 1)
-    wo = int((w + 2 * hpadding - kw) / hstride + 1)
+    ho = (h + 2 * vpadding - kh) // vstride + 1
+    wo = (w + 2 * hpadding - kw) // hstride + 1
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * biases...")
     conv_gemm = ConvGemm(debug=False)
