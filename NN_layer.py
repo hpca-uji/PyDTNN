@@ -40,6 +40,7 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
+from functools import lru_cache
 from math import floor
 
 import NN_activation
@@ -126,15 +127,19 @@ class FC(Layer):
             return dx
 
 
-def _get_x_reorder(kx, xo, s):
+@lru_cache(maxsize=4)
+def _get_x_reorder_and_xstride(kx, xo, s):
     """
-    Returns x_reorder based on kx (kh or kw), xo (ho or wo), and s (hstride or
+    Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
     vstride)
     """
+    if s == 1:
+        return None, 1
     x_reorder = []
     for i in range(kx):
         x_reorder += [i + j * s for j in range(xo)]
-    return x_reorder
+    # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
+    return np.array(x_reorder), xo
 
 
 class Conv2D(Layer):
@@ -273,15 +278,16 @@ class Conv2D(Layer):
         self.cg_x_reshaped = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
                                     ((0, 0), (0, 0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
                                     mode='constant').astype(self.dtype)
-        cg_vstride = 1
-        cg_hstride = 1
-        if self.vstride > 1:
-            cg_vstride = self.ho
-            h_reorder = _get_x_reorder(self.kh, self.ho, self.vstride)
+
+        h_reorder, cg_vstride = _get_x_reorder_and_xstride(self.kh, self.ho, self.vstride)
+        v_reorder, cg_hstride = _get_x_reorder_and_xstride(self.kw, self.wo, self.hstride)
+
+        # Indexing performance considerations:
+        #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_reorder_and_xstride).
+        #  + Indexing first rows and then columns is faster than the opposite.
+        if h_reorder is not None:
             self.cg_x_reshaped = self.cg_x_reshaped[:, :, h_reorder, :]
-        if self.hstride > 1:
-            cg_hstride = self.wo
-            v_reorder = _get_x_reorder(self.kw, self.wo, self.hstride)
+        if v_reorder is not None:
             self.cg_x_reshaped = self.cg_x_reshaped[:, :, :, v_reorder]
 
         res = self.cg.conv_gemm(cg_dy, self.cg_x_reshaped,
