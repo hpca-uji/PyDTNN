@@ -362,18 +362,16 @@ class MaxPool2D(Layer):
         y, self.maxids = argmax_cython(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
 
-    # @todo: SBM
-    # @cache @property
-    # def dy_cols(self):
+    @lru_cache(maxsize=4)
+    def _dy_cols(self, dy_shape):
+        return np.zeros((self.kh * self.kw, np.prod(dy_shape)), dtype=self.dtype)
 
     def backward(self, dy):
         if self.need_dx:
-            if not hasattr(self, "dy_cols") or self.dy_cols.shape[1] != np.prod(dy.shape):
-                self.dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
-            self.dy_cols[...] = 0
-            self.dy_cols[self.maxids] = dy.flatten()
+            dy_cols = self._dy_cols(dy.shape)
+            dy_cols[self.maxids] = dy.flatten()
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-            dx = col2im_cython(self.dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
+            dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
