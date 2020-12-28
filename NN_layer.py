@@ -128,7 +128,7 @@ class FC(Layer):
 
 
 @lru_cache(maxsize=4)
-def _get_x_reorder_and_xstride(kx, xo, s):
+def _get_x_new_indexes_and_xstride(kx, xo, s):
     """
     Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
     vstride)
@@ -275,22 +275,22 @@ class Conv2D(Layer):
     def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
         cg_dy = dy.transpose((1, 0, 2, 3))
-        self.cg_x_reshaped = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
-                                    ((0, 0), (0, 0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
-                                    mode='constant').astype(self.dtype)
+        self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
+                                   ((0, 0), (0, 0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
+                                   mode='constant').astype(self.dtype)
 
-        h_reorder, cg_vstride = _get_x_reorder_and_xstride(self.kh, self.ho, self.vstride)
-        v_reorder, cg_hstride = _get_x_reorder_and_xstride(self.kw, self.wo, self.hstride)
+        h_new_indexes, cg_vstride = _get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
+        v_new_indexes, cg_hstride = _get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
 
         # Indexing performance considerations:
-        #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_reorder_and_xstride).
+        #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_new_indexes_and_xstride).
         #  + Indexing first rows and then columns is faster than the opposite.
-        if h_reorder is not None:
-            self.cg_x_reshaped = self.cg_x_reshaped[:, :, h_reorder, :]
-        if v_reorder is not None:
-            self.cg_x_reshaped = self.cg_x_reshaped[:, :, :, v_reorder]
+        if h_new_indexes is not None:
+            self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
+        if v_new_indexes is not None:
+            self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
 
-        res = self.cg.conv_gemm(cg_dy, self.cg_x_reshaped,
+        res = self.cg.conv_gemm(cg_dy, self.cg_x_indexed,
                                 biases=None,
                                 vpadding=0, hpadding=0,
                                 vstride=cg_vstride, hstride=cg_hstride)
