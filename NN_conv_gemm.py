@@ -110,9 +110,9 @@ class ConvGemm:
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
             if self.dtype == np.float16:
-                self.xconv_gemm = self.lib.sconvGemm
-            elif self.dtype == np.float32:
                 self.xconv_gemm = self.lib.hconvGemm
+            elif self.dtype == np.float32:
+                self.xconv_gemm = self.lib.sconvGemm
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
