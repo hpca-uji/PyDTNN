@@ -161,9 +161,6 @@ class Conv2D(Layer):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
-        self.cg = None
-        self.forward = self._forward_i2c
-        self.backward = self._backward_i2c
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -183,6 +180,10 @@ class Conv2D(Layer):
             self.cg = ConvGemm(dtype=self.dtype)
             self.forward = self._forward_cg
             self.backward = self._backward_cg
+        else:
+            self.cg = None
+            self.forward = self._forward_i2c
+            self.backward = self._backward_i2c
 
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo),
