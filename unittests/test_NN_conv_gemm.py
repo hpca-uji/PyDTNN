@@ -119,6 +119,52 @@ class TestConvGemm(unittest.TestCase):
             print(["{:b}  ".format(int(x)) for x in im2col_mm_result.ravel()])
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
+    def test_handmade_array_kn_2(self):
+        """
+        Test that manual matrices with kn = 2 lead to the same solution
+        """
+        x = np.array([[[[1, 2, 4, 8],
+                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
+        weights = np.array([[[[1, 1],
+                              [1, 1]]],
+                            [[[2, 2],
+                              [2, 2]]]]).astype(np.float32, order='C')
+        padding = 0
+        stride = 1
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
+                                                                      vpadding=padding, hpadding=padding,
+                                                                      vstride=stride, hstride=stride)
+        if verbose():
+            print(["{:b}  ".format(int(x)) for x in conv_gemm_result.ravel()])
+            print(["{:b}  ".format(int(x)) for x in im2col_mm_result.ravel()])
+        self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
+
+    def test_handmade_array_kn_2_c_2(self):
+        """
+        Test that manual matrices with kn = 2 lead to the same solution
+        """
+        x = np.array([[[[1, 2, 4, 8],
+                        [16, 32, 64, 128]],
+                       [[1, 2, 4, 8],
+                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
+        weights = np.array([[[[1, 2],
+                              [4, 8]],
+                             [[2, 2],
+                              [2, 2]]],
+                            [[[4, 4],
+                              [4, 4]],
+                             [[8, 8],
+                              [8, 8]]]]).astype(np.float32, order='C')
+        padding = 0
+        stride = 1
+        conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
+                                                                      vpadding=padding, hpadding=padding,
+                                                                      vstride=stride, hstride=stride)
+        if verbose():
+            print(["{:b}  ".format(int(x)) for x in conv_gemm_result.ravel()])
+            print(["{:b}  ".format(int(x)) for x in im2col_mm_result.ravel()])
+        self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
+
     def test_handmade_array_with_biases(self):
         """
         Test that manual matrices including b lead to the same solution
