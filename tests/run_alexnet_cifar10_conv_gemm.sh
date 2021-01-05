@@ -1,16 +1,45 @@
 #!/bin/bash
 
-export OMP_NUM_THREADS=4
-python3 -u tests/benchmarks_CNN.py \
+#-------------------------
+# Configurable parameters
+#-------------------------
+DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar-10-batches-bin}
+DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
+NUM_EPOCHS=${NUM_EPOCHS:-30}
+ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
+
+#------------------
+# OpeMP parameters
+#------------------
+export OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
+export OMP_DISPLAY_ENV=${OMP_DISPLAY_ENV:-True}
+
+case $(hostname) in
+  jetson6)
+    export GOMP_CPU_AFFINITY="2 4 6 1 3 5 7 0"
+    ;;
+  nowherman)
+    export GOMP_CPU_AFFINITY="3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 1 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 0"
+    ;;
+  *)
+    export OMP_PLACES="cores"
+    export OMP_PROC_BIND="close"
+    ;;
+esac
+
+
+SCRIPT_PATH="$(cd "$(dirname "$0")" >/dev/null 2>&1 || exit 1; pwd -P)"
+
+python3 -u "${SCRIPT_PATH}"/benchmarks_CNN.py \
          --model=alexnet_cifar10 \
          --dataset=cifar10 \
-         --dataset_train_path=/home/barrachi/Descargas/data/cifar-10-batches-bin/ \
-         --dataset_test_path=/home/barrachi/Descargas/data/cifar-10-batches-bin/ \
-         --test_as_validation=False \
+         --dataset_train_path="${DATASET_TRAIN_PATH}" \
+         --dataset_test_path="${DATASET_TEST_PATH}" \
+         --test_as_validation=True \
          --batch_size=64 \
          --validation_split=0.2 \
          --steps_per_epoch=0 \
-         --num_epochs=30 \
+         --num_epochs=${NUM_EPOCHS} \
          --evaluate=True \
          --optimizer=sgd \
          --learning_rate=0.01 \
@@ -31,4 +60,4 @@ python3 -u tests/benchmarks_CNN.py \
          --profile=False \
          --enable_gpu=False \
          --dtype=float32 \
-         --enable_conv_gemm=True
+         --enable_conv_gemm="${ENABLE_CONV_GEMM}"
