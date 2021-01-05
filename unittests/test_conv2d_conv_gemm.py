@@ -169,6 +169,10 @@ class TestConv2DConvGemm(unittest.TestCase):
         if verbose():
             _print_with_header(inspect.stack()[1][3])
             print(d)
+            print("---=[ Forward results ]=---")
+            print("y_i2c:\n", y_i2c)
+            print("y_cg:\n", y_cg)
+            print()
             print("---=[ dy_cols * i2c.T ]=---")
             print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
             print("x_cols.T:\n", conv2d_i2c.x_cols.T)
