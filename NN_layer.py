@@ -40,6 +40,7 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
+import time
 from functools import lru_cache
 from math import floor
 
@@ -161,6 +162,8 @@ class Conv2D(Layer):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
+        self.cg = None
+        self.debug = False
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -177,13 +180,15 @@ class Conv2D(Layer):
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
         if self.model.params.enable_conv_gemm:
-            self.cg = ConvGemm(dtype=self.dtype)
+            self.cg = ConvGemm(dtype=self.dtype, debug=self.debug)
             self.forward = self._forward_cg
             self.backward = self._backward_cg
         else:
-            self.cg = None
             self.forward = self._forward_i2c
             self.backward = self._backward_i2c
+
+        if not self.debug:
+            time.perf_counter = lambda: 0
 
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo),
@@ -216,32 +221,75 @@ class Conv2D(Layer):
 
     def _forward_i2c(self, x):
         """Version of the forward function that uses im2col and matmul"""
+
+        tic01 = time.perf_counter()
+
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
         self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
+        tic02 = time.perf_counter()
+
         w_cols = self.weights.reshape(self.co, -1)
+
+        tic03 = time.perf_counter()
+
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
         res = self.matmul(w_cols, self.x_cols)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
+        tic04 = time.perf_counter()
+
         # y = res + self.biases.reshape(-1, 1)
         y = add_cython(res, self.biases) if self.use_bias else res
-        return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+
+        tic05 = time.perf_counter()
+
+        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+
+        tic06 = time.perf_counter()
+
+        if self.debug:
+            print(f"Ops in i2c forward:")
+            print(f"  im2col:            {tic02 - tic01:0.4f} s")
+            print(f"  reshape:           {tic03 - tic02:0.4f} s")
+            print(f"  matmul:            {tic04 - tic03:0.4f} s")
+            print(f"  add_cython:        {tic05 - tic04:0.4f} s")
+            print(f"  reshape:           {tic06 - tic05:0.4f} s")
+
+        return y
 
     def _forward_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
         self.cg_x = x
+
+        tic01 = time.perf_counter()
+
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
         res = self.cg.conv_gemm(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
+        tic02 = time.perf_counter()
+
         # y = res + self.biases.reshape(-1, 1)
         y = add_cython(res, self.biases) if self.use_bias else res
-        return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+
+        tic03 = time.perf_counter()
+
+        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+
+        tic04 = time.perf_counter()
+
+        if self.debug:
+            print(f"Ops in cg forward:")
+            print(f"  xconv_gemm:        {tic02 - tic01:0.4f} s")
+            print(f"  add_cython:        {tic03 - tic02:0.4f} s")
+            print(f"  reshape:           {tic04 - tic03:0.4f} s")
+
+        return y
 
     def backward(self, dy):
         """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
@@ -275,13 +323,49 @@ class Conv2D(Layer):
 
     def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
+
+        if self.vstride > 1 or self.hstride > 1:
+            # Disclaimer
+            # ----------
+            #
+            # Although it is is possible to reindex x so that convGemm library can be used to compute
+            # dw = dy * im2col(x).T, when any of the strides is greater than one, the cost of reindexing x is
+            # considerable high. Therefore, we fall back to compute the im2col(x) and call the original
+            # backward method.
+            #
+            # In order to use this alternative when any of the strides is greater than one:
+            #  * the reindexes should be parallelized, or
+            #  * the underlying convGemm method should directly support the dy * im2col(x).T operation,
+            #    where im2col(x) is the im2col(x) in w * im2col(x) (not in dy * im2col(x)).
+            self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                        self.vstride, self.hstride)
+            return self._backward_i2c(dy)
+
+        tic01 = time.perf_counter()
+
         cg_dy = dy.transpose((1, 0, 2, 3))
-        self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
-                                   ((0, 0), (0, 0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
-                                   mode='constant').astype(self.dtype)
+
+        tic02 = time.perf_counter()
+
+        if self.vpadding == 0 and self.hpadding == 0:
+            self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
+        else:
+            # Hand made alternative to:
+            # self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
+            #                            ((0, 0), (0, 0),
+            #                            (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
+            #                            mode='constant').astype(self.dtype)
+            b, c, h, w = self.cg_x.shape
+            self.cg_x_indexed = np.zeros((c, b, h + 2 * self.vpadding, w + 2 * self.hpadding), self.dtype)
+            self.cg_x_indexed[:, :, self.vpadding:-self.vpadding, self.hpadding:-self.hpadding] = \
+                self.cg_x.transpose((1, 0, 2, 3))
+
+        tic03 = time.perf_counter()
 
         h_new_indexes, cg_vstride = _get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
         v_new_indexes, cg_hstride = _get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+
+        tic04 = time.perf_counter()
 
         # Indexing performance considerations:
         #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_new_indexes_and_xstride).
@@ -290,16 +374,29 @@ class Conv2D(Layer):
             self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
         if v_new_indexes is not None:
             self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
+        if h_new_indexes is not None or v_new_indexes is not None:
+            # @warning: The next line is required to ensure the correct order of the underlying data of
+            #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
+            #           unexpected results
+            self.cg_x_indexed = self.cg_x_indexed.copy()
+
+        tic05 = time.perf_counter()
 
         res = self.cg.conv_gemm(cg_dy, self.cg_x_indexed,
                                 biases=None,
                                 vpadding=0, hpadding=0,
                                 vstride=cg_vstride, hstride=cg_hstride)
 
+        tic06 = time.perf_counter()
+
         self.dw = res.reshape(self.weights.shape)
+
+        tic07 = time.perf_counter()
 
         if self.use_bias:
             self.db = np.sum(dy, axis=(0, 2, 3))
+
+        tic08 = time.perf_counter()
 
         if self.need_dx:
             dy_cols = cg_dy.reshape(self.co, -1)
@@ -313,6 +410,21 @@ class Conv2D(Layer):
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDL_OPS_EVT, 0)
+
+        tic09 = time.perf_counter()
+
+        if self.debug:
+            print(f"Ops in cg backward:")
+            print(f"  transpose:         {tic02 - tic01:0.4f} s")
+            print(f"  padding:           {tic03 - tic02:0.4f} s")
+            print(f"  get indexes:       {tic04 - tic03:0.4f} s")
+            print(f"  reindex:           {tic05 - tic04:0.4f} s")
+            print(f"  xconv_gemm:        {tic06 - tic05:0.4f} s")
+            print(f"  reshape:           {tic07 - tic06:0.4f} s")
+            print(f"  np.sum:            {tic08 - tic07:0.4f} s")
+            print(f"  matmul + col2imm:  {tic09 - tic08:0.4f} s")
+
+        if self.need_dx:
             return dx
 
 
@@ -363,13 +475,9 @@ class MaxPool2D(Layer):
         y, self.maxids = argmax_cython(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
 
-    @lru_cache(maxsize=4)
-    def _dy_cols(self, dy_shape):
-        return np.zeros((self.kh * self.kw, np.prod(dy_shape)), dtype=self.dtype)
-
     def backward(self, dy):
         if self.need_dx:
-            dy_cols = self._dy_cols(dy.shape)
+            dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
             dy_cols[self.maxids] = dy.flatten()
             self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
