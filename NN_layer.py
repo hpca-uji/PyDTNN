@@ -334,9 +334,9 @@ class Conv2D(Layer):
             # backward method.
             #
             # In order to use this alternative when any of the strides is greater than one:
-            #  * the reindexes should be parallelized, or
+            #  * the matrix copy using the new indexes should be parallelized, or
             #  * the underlying convGemm method should directly support the dy * im2col(x).T operation,
-            #    where im2col(x) is the im2col(x) in w * im2col(x) (not in dy * im2col(x)).
+            #    where im2col(x) is the im2col(x) in weights * im2col(x) (not in dy * im2col(x)).
             self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride)
             return self._backward_i2c(dy)
