@@ -41,7 +41,9 @@ __version__ = "1.1.0"
 import ctypes
 import os
 import platform
+import time
 from ctypes.util import find_library
+from functools import lru_cache
 
 import numpy as np
 
@@ -107,6 +109,8 @@ class ConvGemm:
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         self.debug = debug
+        if not self.debug:
+            time.perf_counter = lambda: 0
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
             if self.dtype == np.float16:
@@ -184,10 +188,20 @@ class ConvGemm:
             The result of alpha * weights * im2col(x_padded) + beta * biases.
         """
 
+        tic01 = time.perf_counter()
+
         # Pad x matrix and set vpadding and hpadding to 0
-        x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant') \
-            .astype(x.dtype)
-        vpadding = hpadding = 0
+        if vpadding == 0 and hpadding == 0:
+            x_padded = x
+        else:
+            # Hand made alternative to:
+            #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
+            b, c, h, w = x.shape
+            x_padded = np.zeros((b, c, h + 2 * vpadding, w + 2 * hpadding), x.dtype)
+            x_padded[:, :, vpadding:-vpadding, hpadding:-hpadding] = x
+            vpadding = hpadding = 0
+
+        tic02 = time.perf_counter()
 
         # Get matrices dimensions (once x matrix has been padded)
         kn, ck, kh, kw = weights.shape
@@ -202,15 +216,23 @@ class ConvGemm:
 
         # Create zero biases matrix if none provided. Otherwise, test its dimensions
         if biases is None:
+            # If beta == 0.0 then the biases supposedly are not summed up, therefore np.empty() could be used instead
+            # of np.zeros(), as the former is marginally faster than the latter. Unfortunately, this is NOT true, then
+            # np.zeros() MUST be used.
             beta = 0.0
-            biases = np.zeros((kn, b * ho * wo)).astype(weights.dtype, order='C')
+            biases_cg = np.zeros((kn, b * ho * wo), weights.dtype, order='F')
         else:
-            biases = biases.copy()  # To avoid overriding the original biases matrix
+            # biases = biases.copy()  # To avoid overriding the original biases matrix
+            biases_cg = biases.astype(weights.dtype, order="F")
+            # biases_cg = np.empty((kn, b * ho * wo), weights.dtype, order='F')
+            # biases_cg[...] = biases
             assert (kn, b * ho * wo) == biases.shape, \
                 "Biases matrix should be ({}, {}), instead it is {}".format(kn, b * ho * wo, biases.shape)
 
+        tic03 = time.perf_counter()
+
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == biases.dtype, \
+        assert weights.dtype == x.dtype == biases_cg.dtype, \
             "All the matrices must have the same type of data!"
         assert weights.dtype == self.dtype, \
             "The input matrices must have the same type of data as the one specified when " \
@@ -218,20 +240,36 @@ class ConvGemm:
 
         # Change matrices axes to the convGemm expected order:
         #   Where I→hi×wi×ci×b corresponds to the input tensor,
-        #   F→kn×kh×kw×ci denotes the filters,
+        #   F→kn×kh×kw×ci denotes the filters,       PyDTNN <- kn * ci * kh * kw  (kw*kh*ci*kn)
         #   and O→kn×ho×wo×b is the output tensor
-        weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
-        x_padded_cg = x_padded.transpose((2, 3, 1, 0)).flatten(order="F")
-        biases_cg = biases.astype(weights.dtype, order="F")
+
+        # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
+        # NEW(wxh): 1) weights_cg = weights.transpose((0, 3, 2, 1)).flatten(order="F")
+        # NEW(wxh): 2) weights_cg = weights.transpose((1, 2, 3, 0)).flatten(order="C")
+        # NEW(wxh): 3) weights_cg = weights.transpose((1, 2, 3, 0)).ravel(order="C")
+        # NEW(wxh): 4)
+        weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
+        weights_cg[...] = weights.transpose((1, 2, 3, 0))
+        weights_cg.ravel(order="K")
+
+        tic04 = time.perf_counter()
+
+        # PREVIOUS(hxw): x_padded_cg = x_padded.transpose((2, 3, 1, 0)).flatten(order="F")
+        # NEW(wxh) 1): x_padded_cg = x_padded.transpose((3, 2, 1, 0)).flatten(order="F")
+        # NEW(wxh) 2): x_padded_cg = x_padded.ravel(order="C")
+        # NEW(wxh) 3):
+        x_padded_cg = x_padded.ravel(order="K")
+
+        tic05 = time.perf_counter()
 
         # Call custom added function to libconvGemm.so to print the received parameters
         if self.debug:
             try:
-                self.lib.expose_sconvGemm(ctypes.c_uint(kh), ctypes.c_uint(kw),
+                self.lib.expose_sconvGemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
                                           ctypes.c_uint(c), ctypes.c_uint(kn),
                                           ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
-                                          ctypes.c_uint(h), ctypes.c_uint(w),
-                                          ctypes.c_uint(b), ctypes.c_uint(vstride), ctypes.c_uint(hstride),
+                                          ctypes.c_uint(w), ctypes.c_uint(h),
+                                          ctypes.c_uint(b), ctypes.c_uint(hstride), ctypes.c_uint(vstride),
                                           ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
                                           ctypes.c_void_p(biases_cg.ctypes.data),
                                           self.ac_pack, self.bc_pack)
@@ -240,17 +278,42 @@ class ConvGemm:
                       "You can safely ignore this warning.")
 
         # Call appropriate convGemm function from libconvGemm
-        self.xconv_gemm(ctypes.c_uint(kh), ctypes.c_uint(kw),
+
+        tic = time.perf_counter()
+
+        self.xconv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
                         ctypes.c_uint(c), ctypes.c_uint(kn),
                         ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
-                        ctypes.c_uint(h), ctypes.c_uint(w),
-                        ctypes.c_uint(b),  ctypes.c_uint(vstride), ctypes.c_uint(hstride),
+                        ctypes.c_uint(w), ctypes.c_uint(h),
+                        ctypes.c_uint(b), ctypes.c_uint(hstride), ctypes.c_uint(vstride),
                         ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
                         ctypes.c_void_p(biases_cg.ctypes.data),
                         self.ac_pack, self.bc_pack)
 
+        tic06 = time.perf_counter()
+
         # Change output matrix axes to the PyDTNN expected order:
-        out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
+        # PREVIOUS(hxw): out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
+        # NEW(wxh) 1): out = biases_cg.reshape((kn, b, ho, wo)).transpose((0, 1, 2, 3)).reshape(kn, -1, order="C")
+        # NEW(wxh) 2):
+        # works:  out = biases_cg.reshape((kn, b, ho, wo)).reshape((kn, -1), order="C")
+        # slower: out = np.empty((kn, b*ho*wo), biases_cg.dtype, order="C")
+        #         out[...] = biases_cg
+        out = biases_cg.reshape((kn, -1), order="C")
+
+        tic07 = time.perf_counter()
+
+        if self.debug:
+            print(f"conv_gemm:")
+            print(f"  padding:           {tic02 - tic01:0.4f} s")
+            print(f"  biases:            {tic03 - tic02:0.4f} s")
+            print(f"  weights_cg:        {tic04 - tic03:0.4f} s     weights.shape: {weights.shape}")
+            print(f"  x_padded_cg:       {tic05 - tic04:0.4f} s     x.shape: {x.shape}")
+            print(f"  before xconv_gemm: {tic05 - tic01:0.4f} s")
+            print(f"  xconv_gemm:        {tic06 - tic05:0.4f} s")
+            print(f"  after xconv_gemm:  {tic07 - tic06:0.4f} s")
+            print(f"  total:             {tic07 - tic01:0.4f} s")
+
         return out
 
 
@@ -258,18 +321,18 @@ def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
     from NN_im2col_cython import im2col_cython
-    # Default parameters
-    b = 32  # Batch size
+    # Default parameters (1st layer AlexNet for Cifar10)
+    b = 64  # Batch size
     c = 3  # Channels per layer
-    h = 128  # Layers height
-    w = 100  # Layers width
-    kn = 8  # Number of filters
-    kh = 16  # Filters weights height
-    kw = 10  # Filters weights width
+    h = 32  # Layers height
+    w = 32  # Layers width
+    kn = 64  # Number of filters
+    kh = 3  # Filters weights height
+    kw = 3  # Filters weights width
     vpadding = 1  # Vertical padding
-    hpadding = 2  # Horizontal padding
-    vstride = 1  # Vertical stride
-    hstride = vstride  # Horizontal stride (convGemm does not support different vertical and horizontal strides)
+    hpadding = 1  # Horizontal padding
+    vstride = 2  # Vertical stride
+    hstride = 2  # Horizontal stride
     # Create weights, x, and biases matrices from previous parameters. If no biases
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
@@ -283,17 +346,20 @@ def __usage_example__():
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * biases...")
     conv_gemm = ConvGemm(debug=False)
-    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=biases,
+    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=None,
+                                           vpadding=vpadding, hpadding=hpadding,
+                                           vstride=vstride, hstride=hstride)
+    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=None,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
     print(conv_gemm_result)
     print("Sum: ", conv_gemm_result.sum())
-    sconv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(weights, x, biases=biases,
+    sconv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(weights, x, biases=None,
                                                       vpadding=vpadding, hpadding=hpadding,
                                                       vstride=vstride, hstride=hstride),
-                          number=5) / 5
+                          number=10) / 10
 
-    print("conv_gemm time: {:.2f}".format(sconv_gemm_t))
+    print("conv_gemm time: {:.4f}".format(sconv_gemm_t))
     print()
     print("Using im2col and mm...")
     x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
@@ -302,10 +368,10 @@ def __usage_example__():
     print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
     print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
-    im2col_t = timeit(lambda: im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride), number=5) / 5
-    print("im2col time: {:.2f}".format(im2col_t))
-    mm_t = timeit(lambda: w_c @ x_c + biases, number=5) / 5
-    print("mm time: {:.2f}".format(mm_t))
+    im2col_t = timeit(lambda: im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride), number=10) / 10
+    print("im2col time: {:.4f}".format(im2col_t))
+    mm_t = timeit(lambda: w_c @ x_c + biases, number=10) / 10
+    print("mm time: {:.4f}".format(mm_t))
 
 
 if __name__ == "__main__":
