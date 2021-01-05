@@ -329,8 +329,8 @@ class Conv2D(Layer):
             # ----------
             #
             # Although it is is possible to reindex x so that convGemm library can be used to compute
-            # dw = dy * im2col(x).T, when any of the strides is greater than one, the cost of reindexing x is
-            # considerable high. Therefore, we fall back to compute the im2col(x) and call the original
+            # dw = dy * im2col(x).T when any of the strides is greater than one, the cost of reindexing x is
+            # considerable high. Therefore, we fall back to compute im2col(x) and to call the original
             # backward method.
             #
             # In order to use this alternative when any of the strides is greater than one:
