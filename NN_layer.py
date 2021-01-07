@@ -162,8 +162,9 @@ class Conv2D(Layer):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
-        self.cg = None
         self.debug = False
+        self.cg = None
+        self.cg_fallback_i2c = True  # Fallback to backward I2C if any stride is greater than 1
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -266,28 +267,31 @@ class Conv2D(Layer):
 
         tic01 = time.perf_counter()
 
+        biases_vector = self.biases if self.use_bias else None
+
         self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
         res = self.cg.conv_gemm(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride)
+                                vstride=self.vstride, hstride=self.hstride,
+                                biases_vector=biases_vector)
         self.tracer.emit_event(PYDL_OPS_EVT, 0)
 
         tic02 = time.perf_counter()
 
         # y = res + self.biases.reshape(-1, 1)
-        y = add_cython(res, self.biases) if self.use_bias else res
+        # y = add_cython(res, self.biases) if self.use_bias else res
 
         tic03 = time.perf_counter()
 
-        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
 
         tic04 = time.perf_counter()
 
         if self.debug:
             print(f"Ops in cg forward:")
-            print(f"  xconv_gemm:        {tic02 - tic01:0.4f} s")
-            print(f"  add_cython:        {tic03 - tic02:0.4f} s")
-            print(f"  reshape:           {tic04 - tic03:0.4f} s")
+            print(f"  xconv_gemm:         {tic02 - tic01:0.4f} s")
+            print(f"  add_cython:         {tic03 - tic02:0.4f} s")
+            print(f"  reshape:            {tic04 - tic03:0.4f} s")
 
         return y
 
@@ -324,7 +328,7 @@ class Conv2D(Layer):
     def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
 
-        if self.vstride > 1 or self.hstride > 1:
+        if self.cg_fallback_i2c and (self.vstride > 1 or self.hstride > 1):
             # Disclaimer
             # ----------
             #
@@ -415,14 +419,14 @@ class Conv2D(Layer):
 
         if self.debug:
             print(f"Ops in cg backward:")
-            print(f"  transpose:         {tic02 - tic01:0.4f} s")
-            print(f"  padding:           {tic03 - tic02:0.4f} s")
-            print(f"  get indexes:       {tic04 - tic03:0.4f} s")
-            print(f"  reindex:           {tic05 - tic04:0.4f} s")
-            print(f"  xconv_gemm:        {tic06 - tic05:0.4f} s")
-            print(f"  reshape:           {tic07 - tic06:0.4f} s")
-            print(f"  np.sum:            {tic08 - tic07:0.4f} s")
-            print(f"  matmul + col2imm:  {tic09 - tic08:0.4f} s")
+            print(f"  transpose:          {tic02 - tic01:0.4f} s")
+            print(f"  padding:            {tic03 - tic02:0.4f} s")
+            print(f"  get indexes:        {tic04 - tic03:0.4f} s")
+            print(f"  reindex:            {tic05 - tic04:0.4f} s")
+            print(f"  xconv_gemm:         {tic06 - tic05:0.4f} s")
+            print(f"  reshape:            {tic07 - tic06:0.4f} s")
+            print(f"  np.sum:             {tic08 - tic07:0.4f} s")
+            print(f"  matmul + col2imm:   {tic09 - tic08:0.4f} s")
 
         if self.need_dx:
             return dx
