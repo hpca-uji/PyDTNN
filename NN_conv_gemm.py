@@ -43,7 +43,6 @@ import os
 import platform
 import time
 from ctypes.util import find_library
-from functools import lru_cache
 
 import numpy as np
 
