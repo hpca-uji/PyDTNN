@@ -91,10 +91,12 @@ def get_conv2d_layers(d):
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
                         use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+    conv2d_i2c.debug = True
     conv2d_i2c.model = model_i2c
     conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                        padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+    conv2d_cg.debug = True
     conv2d_cg.model = model_cg
     for layer in (conv2d_i2c, conv2d_cg):
         layer.dtype = np.float32
