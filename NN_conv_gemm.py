@@ -43,7 +43,6 @@ import os
 import platform
 import time
 from ctypes.util import find_library
-from functools import lru_cache
 
 import numpy as np
 
@@ -54,7 +53,7 @@ class ConvGemm:
 
     Methods
     -------
-    conv_gemm(weights, x, biases, alpha, beta, vpadding, hpadding, vstride, hstride)
+    conv_gemm(weights, x, biases, alpha, beta, vpadding, hpadding, vstride, hstride, biases_vector)
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
 
@@ -114,14 +113,15 @@ class ConvGemm:
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
             if self.dtype == np.float16:
-                self.xconv_gemm = self.lib.hconvGemm
+                self.x_conv_gemm = self.lib.hconvGemm
             elif self.dtype == np.float32:
-                self.xconv_gemm = self.lib.sconvGemm
+                self.x_conv_gemm = self.lib.sconvGemm
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
             if self.dtype == np.float32:
-                self.xconv_gemm = self.lib.sconvGemm
+                self.x_conv_gemm = self.lib.sconvGemm
+                self.x_apply_bias = self.lib.sapplyBias
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         else:
@@ -151,7 +151,8 @@ class ConvGemm:
         except AttributeError:
             pass
 
-    def conv_gemm(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1):
+    def conv_gemm(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+                  biases_vector=None):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -160,6 +161,9 @@ class ConvGemm:
             + A is the weights matrix,
             + B is the im2col(x) matrix, and
             + C is the biases matrix.
+
+        If the biases vector is supplied, the xapplyBias function of the libconvGemm library will be called. This
+        function sums each element of the biases vector to all the elements in the corresponding output channel.
 
         Parameters
         ----------
@@ -181,6 +185,8 @@ class ConvGemm:
             The vertical stride.
         hstride : int
             The horizontal stride.
+        biases_vector: array_like
+            The biases that have to be summed to all the elements in each output channel.
 
         Returns
         -------
@@ -216,11 +222,11 @@ class ConvGemm:
 
         # Create zero biases matrix if none provided. Otherwise, test its dimensions
         if biases is None:
-            # If beta == 0.0 then the biases supposedly are not summed up, therefore np.empty() could be used instead
-            # of np.zeros(), as the former is marginally faster than the latter. Unfortunately, this is NOT true, then
-            # np.zeros() MUST be used.
+            # @warning: np.empty() could be used instead of np.zeros() only if the underlying operation does not
+            # sum the biases when beta is 0.0. Otherwise, as the non initialized biases matrix could have nan elements,
+            # the output will also have nan elements.
             beta = 0.0
-            biases_cg = np.zeros((kn, b * ho * wo), weights.dtype, order='F')
+            biases_cg = np.empty((kn, b * ho * wo), weights.dtype, order='F')
         else:
             # biases = biases.copy()  # To avoid overriding the original biases matrix
             biases_cg = biases.astype(weights.dtype, order="F")
@@ -246,7 +252,8 @@ class ConvGemm:
         # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
         # NEW(wxh): 1) weights_cg = weights.transpose((0, 3, 2, 1)).flatten(order="F")
         # NEW(wxh): 2) weights_cg = weights.transpose((1, 2, 3, 0)).flatten(order="C")
-        # NEW(wxh): 3) weights_cg = weights.transpose((1, 2, 3, 0)).ravel(order="C")
+        # NEW(wxh): 3)
+        # weights_cg = weights.transpose((1, 2, 3, 0)).ravel(order="C")
         # NEW(wxh): 4)
         weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
         weights_cg[...] = weights.transpose((1, 2, 3, 0))
@@ -281,16 +288,23 @@ class ConvGemm:
 
         tic = time.perf_counter()
 
-        self.xconv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
-                        ctypes.c_uint(c), ctypes.c_uint(kn),
-                        ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
-                        ctypes.c_uint(w), ctypes.c_uint(h),
-                        ctypes.c_uint(b), ctypes.c_uint(hstride), ctypes.c_uint(vstride),
-                        ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
-                        ctypes.c_void_p(biases_cg.ctypes.data),
-                        self.ac_pack, self.bc_pack)
+        self.x_conv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
+                         ctypes.c_uint(c), ctypes.c_uint(kn),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
+                         ctypes.c_uint(w), ctypes.c_uint(h),
+                         ctypes.c_uint(b), ctypes.c_uint(hstride), ctypes.c_uint(vstride),
+                         ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
+                         ctypes.c_void_p(biases_cg.ctypes.data),
+                         self.ac_pack, self.bc_pack)
 
         tic06 = time.perf_counter()
+
+        if biases_vector is not None:
+            self.x_apply_bias(ctypes.c_uint(kn), ctypes.c_uint(b * ho * wo),
+                              ctypes.c_void_p(biases_vector.ctypes.data), ctypes.c_void_p(biases_cg.ctypes.data),
+                              ctypes.c_uint(kn))
+
+        tic07 = time.perf_counter()
 
         # Change output matrix axes to the PyDTNN expected order:
         # PREVIOUS(hxw): out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
@@ -301,18 +315,19 @@ class ConvGemm:
         #         out[...] = biases_cg
         out = biases_cg.reshape((kn, -1), order="C")
 
-        tic07 = time.perf_counter()
+        tic08 = time.perf_counter()
 
         if self.debug:
             print(f"conv_gemm:")
-            print(f"  padding:           {tic02 - tic01:0.4f} s")
-            print(f"  biases:            {tic03 - tic02:0.4f} s")
-            print(f"  weights_cg:        {tic04 - tic03:0.4f} s     weights.shape: {weights.shape}")
-            print(f"  x_padded_cg:       {tic05 - tic04:0.4f} s     x.shape: {x.shape}")
-            print(f"  before xconv_gemm: {tic05 - tic01:0.4f} s")
-            print(f"  xconv_gemm:        {tic06 - tic05:0.4f} s")
-            print(f"  after xconv_gemm:  {tic07 - tic06:0.4f} s")
-            print(f"  total:             {tic07 - tic01:0.4f} s")
+            print(f"  padding:            {tic02 - tic01:0.4f} s")
+            print(f"  biases:             {tic03 - tic02:0.4f} s")
+            print(f"  weights_cg:         {tic04 - tic03:0.4f} s     weights.shape: {weights.shape}")
+            print(f"  x_padded_cg:        {tic05 - tic04:0.4f} s     x.shape: {x.shape}")
+            print(f"  before x_conv_gemm: {tic05 - tic01:0.4f} s")
+            print(f"  x_conv_gemm:        {tic06 - tic05:0.4f} s")
+            print(f"  x_apply_bias:       {tic07 - tic06:0.4f} s")
+            print(f"  after x_conv_gemm:  {tic08 - tic07:0.4f} s")
+            print(f"  total:              {tic08 - tic01:0.4f} s")
 
         return out
 
