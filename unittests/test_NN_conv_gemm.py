@@ -265,7 +265,7 @@ class TestConvGemm(unittest.TestCase):
         #     partial_l = x[0, 0, 1:D.kh+1, 0:D.kw].flatten()
         #     print(w.flatten() @ partial_l)
 
-        self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result, rtol=0, atol=20))
+        self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
     def test_defaults_including_biases_with_random(self):
         """
@@ -279,14 +279,14 @@ class TestConvGemm(unittest.TestCase):
         conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x, biases=biases,
                                                                       vpadding=D.vpadding, hpadding=D.hpadding,
                                                                       vstride=D.vstride, hstride=D.hstride)
-        self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result, rtol=0, atol=20))
+        self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
     def test_with_different_kn(self):
         spinner = Spinner()
         if verbose():
             _print_with_header("{}".format(inspect.stack()[1][3]), None)
-            print(" kn   Maximum difference")
-            print("----+--------------------")
+            print(" kn   Maximum difference    sum(cg_result)")
+            print("----+--------------------+-----------------")
         conv_gemm = ConvGemm(debug=False)
         x = np.random.rand(D.b, D.c, D.h, D.w).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
@@ -301,9 +301,10 @@ class TestConvGemm(unittest.TestCase):
             w_c = weights.reshape(kn, -1)
             im2col_mm_result = w_c @ x_c
             if verbose():
-                print("{:3}    {:9.7f}".format(kn,
-                                               max([abs(x - y) for x, y
-                                                    in zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
+                print("{:3}    {:9.7f}             {:11.2f}"
+                      "".format(kn, max([abs(x - y) for x, y in zip(conv_gemm_result.flatten(),
+                                                                    im2col_mm_result.flatten())]),
+                                np.sum(conv_gemm_result)))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result, im2col_mm_result)
         if not verbose():
             spinner.stop()
