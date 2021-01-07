@@ -181,7 +181,10 @@ class TestConv2DConvGemm(unittest.TestCase):
             print("---=[ conv_gemm(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
             print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
-            print("x indexed:\n", conv2d_cg.cg_x_indexed)
+            try:
+                print("x indexed:\n", conv2d_cg.cg_x_indexed)
+            except AttributeError:
+                pass
             print("dw:\n", conv2d_cg.dw)
             print()
             print("---[ dw comparison ]---")
@@ -335,14 +338,28 @@ class TestConv2DConvGemm(unittest.TestCase):
         d.hstride = 2
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_alexnet_first_conv2d(self):
-        """Tests that the AlexNet first Conv2d lead to the same solution on i2c and on conv_gemm"""
+    def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+        """Tests that the AlexNet cifar10 first Conv2d lead to the same solution on i2c and on conv_gemm"""
         d = D()
         d.b = 64
         d.kn, d.kh, d.kw = (64, 3, 3)
         d.c, d.h, d.w = (3, 32, 32)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
+        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        self._test_forward_backward(d, x, weights, print_times=True)
+
+    def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+        """Tests that the AlexNet ImageNet first Conv2d lead to the same solution on i2c and on conv_gemm"""
+        # id;height;width;channels;kernel_height;kernel_width;kernel_num;stride;padding
+        # 2;227;227;3;11;11;96;4;0
+        d = D()
+        d.b = 64
+        d.kn, d.kh, d.kw = (96, 11, 11)
+        d.c, d.h, d.w = (3, 227, 227)
+        d.vpadding, d.hpadding = (0, 0)
+        d.vstride, d.hstride = (4, 4)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
