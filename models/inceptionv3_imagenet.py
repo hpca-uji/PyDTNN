@@ -44,7 +44,7 @@ from NN_layer import *
 from NN_activation import *
 
 def create_inceptionv3_cifar10(model):
-    model.add( Input(shape=(3, 299, 299)) )
+    model.add( Input(shape=(3, 224, 224)) )
     model.add( Conv2D(nfilters=32, filter_shape=(3, 3), stride=2, weights_initializer="he_uniform") )
     model.add( Conv2D(nfilters=32, filter_shape=(3, 3), weights_initializer="he_uniform") )
     model.add( Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform") )
@@ -159,5 +159,5 @@ def create_inceptionv3_cifar10(model):
     model.add( FC(shape=(1024,)) )
     model.add( BatchNormalization() )
     model.add( Relu() )    
-    model.add( FC(shape=(10,), activation="softmax") )
+    model.add( FC(shape=(1000,), activation="softmax") )
     return model

@@ -43,11 +43,11 @@ from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_densenet201_cifar10(model):
-    model.add( Input(shape=(3, 32, 32)) )
+def create_densenet161_imagenet(model):
+    model.add( Input(shape=(3, 224, 224)) )
     
-    blocks, growth_rate = [6,12,48,32], 32 # DenseNet201
-    
+    blocks, growth_rate = [6,12,36,24], 48 # DenseNet161
+
     reduction = 0.5
     num_planes = 2*growth_rate
 
@@ -80,6 +80,6 @@ def create_densenet201_cifar10(model):
     model.add( Relu() )
     model.add( AveragePool2D(pool_shape=(4,4)) )               
     model.add( Flatten() )   
-    model.add( FC(shape=(10,), activation="softmax") )
+    model.add( FC(shape=(1000,), activation="softmax") )
     return model
     

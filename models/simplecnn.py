@@ -45,8 +45,8 @@ from NN_activation import *
 
 def create_simplecnn(model):
     model.add( Input(shape=(1, 28, 28)) )
-    model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1) )
-    model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1) )
+    model.add( Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu") )
+    model.add( Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation="relu") )
     model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
     model.add( Flatten() )
     model.add( FC(shape=(128,), activation="relu") )

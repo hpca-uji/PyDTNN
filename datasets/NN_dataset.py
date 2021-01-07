@@ -215,7 +215,7 @@ class MNIST(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5, 
                  crop_images=False, crop_images_size=14, crop_images_prob=0.5, 
-                 dtype=np.float32):
+                 dtype=np.float32, use_synthetic_data=False):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -226,22 +226,23 @@ class MNIST(Dataset):
         self.crop_images_size = crop_images_size
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
+        self.use_synthetic_data = use_synthetic_data
         self.nclasses = 10
         #self.val_start = 0
 
         self.train_val_nsamples = 60000
         self.test_nsamples  = 10000
+        self.shape = (1, 28, 28)
 
         self.val_start = np.random.randint(0, high=self.train_val_nsamples)
 
-        mnist = None 
-        #importlib.import_module("mnist")
-        if mnist != None:
-            self.X_train_val = mnist.train_images()
-            self.Y_train_val = mnist.train_labels()
-            self.X_test = mnist.test_images()
-            self.Y_test = mnist.test_labels()
-
+        if self.use_synthetic_data:
+            self.X_train_val, self.Y_train_val = \
+                np.empty( (self.train_val_nsamples * np.prod(self.shape) ), dtype=self.dtype), \
+                np.zeros( (self.train_val_nsamples ), dtype=self.dtype)
+            self.X_test, self.Y_test = \
+                np.empty( (self.test_nsamples * np.prod(self.shape) ), dtype=self.dtype), \
+                np.zeros( (self.test_nsamples ), dtype=self.dtype)           
         else:
             X_train_fname = "train-images-idx3-ubyte"
             Y_train_fname = "train-labels-idx1-ubyte"       
@@ -253,9 +254,9 @@ class MNIST(Dataset):
             self.X_test = self.__read_file("%s/%s" % (self.test_path, X_test_fname))
             self.Y_test = self.__read_file("%s/%s" % (self.test_path, Y_test_fname))
 
-        self.X_train_val = self.X_train_val.flatten().reshape(self.train_val_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
+        self.X_train_val = self.X_train_val.flatten().reshape(self.train_val_nsamples, *self.shape).astype(self.dtype) / 255.0
         self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
-        self.X_test = self.X_test.flatten().reshape(self.test_nsamples, 1, 28, 28).astype(self.dtype) / 255.0
+        self.X_test = self.X_test.flatten().reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
 
         if self.test_as_validation:
@@ -317,7 +318,7 @@ class CIFAR10(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False, 
                  flip_images=False, flip_images_prob=0.5, 
                  crop_images=False, crop_images_size=16, crop_images_prob=0.5, 
-                 dtype=np.float32):
+                 dtype=np.float32, use_synthetic_data=False):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -328,30 +329,44 @@ class CIFAR10(Dataset):
         self.crop_images_size = crop_images_size
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
+        self.use_synthetic_data = use_synthetic_data
         self.nclasses = 10
         self.val_start = 0
 
         self.train_val_nsamples = 50000
         self.test_nsamples  = 10000
 
+        self.images_per_file = 10000
+        self.shape = (3, 32, 32)
+
         XY_train_fname = "data_batch_%d.bin"
         XY_test_fname  = "test_batch.bin"
 
         for b in range(1, 6):
-            self.X_train_val_aux, self.Y_train_val_aux = \
-                self.__read_file("%s/%s" % (self.train_path, (XY_train_fname % (b))))
+            if self.use_synthetic_data:
+                self.X_train_val_aux, self.Y_train_val_aux = \
+                    np.empty( (self.images_per_file * np.prod(self.shape) ), dtype=self.dtype), \
+                    np.zeros( (self.images_per_file ), dtype=self.dtype)
+            else:
+                self.X_train_val_aux, self.Y_train_val_aux = \
+                    self.__read_file("%s/%s" % (self.train_path, (XY_train_fname % (b))))
             if b == 1:
                 self.X_train_val, self.Y_train_val = self.X_train_val_aux, self.Y_train_val_aux
             else:
                 self.X_train_val = np.concatenate((self.X_train_val, self.X_train_val_aux), axis=0)
                 self.Y_train_val = np.concatenate((self.Y_train_val, self.Y_train_val_aux), axis=0)
 
-        self.X_test, self.Y_test = self.__read_file("%s/%s" % (self.test_path, XY_test_fname))
+        if self.use_synthetic_data:
+            self.X_test, self.Y_test = \
+                np.empty( (self.images_per_file * np.prod(self.shape) ), dtype=self.dtype), \
+                np.zeros( (self.images_per_file ), dtype=self.dtype)
+        else:
+            self.X_test, self.Y_test = self.__read_file("%s/%s" % (self.test_path, XY_test_fname))
 
-        self.X_train_val = self.X_train_val.reshape(self.train_val_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
+        self.X_train_val = self.X_train_val.reshape(self.train_val_nsamples, *self.shape).astype(self.dtype) / 255.0
         # self.X_train_val = self.__normalize_image(self.X_train_val)
         self.Y_train_val = self.__one_hot_encoder(self.Y_train_val.astype(np.int16))
-        self.X_test = self.X_test.reshape(self.test_nsamples, 3, 32, 32).astype(self.dtype) / 255.0
+        self.X_test = self.X_test.reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
         # self.X_test = self.__normalize_image(self.X_test)
         self.Y_test = self.__one_hot_encoder(self.Y_test.astype(np.int16))
 
@@ -363,7 +378,7 @@ class CIFAR10(Dataset):
 
     def __read_file(self, fname):
         with open(fname, 'rb') as f:
-            im = np.frombuffer(f.read(), dtype=np.uint8).reshape(10000, 3*32*32+1)
+            im = np.frombuffer(f.read(), dtype=np.uint8).reshape(self.images_per_file, np.prod(self.shape)+1)
             Y, X = im[:,0].flatten(), im[:,1:].flatten()
             return X, Y
 
@@ -422,7 +437,7 @@ class ImageNet(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False, 
                  flip_images=False, flip_images_prob=0.5, 
                  crop_images=False, crop_images_size=112, crop_images_prob=0.5, 
-                 dtype=np.float32):
+                 dtype=np.float32, use_synthetic_data=False):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
         self.model = model
@@ -433,20 +448,34 @@ class ImageNet(Dataset):
         self.crop_images_prob = crop_images_prob
         self.test_as_validation = test_as_validation
         self.dtype = dtype
+        self.use_synthetic_data = use_synthetic_data
         self.nclasses = 1000
         self.val_start = 0
+        
+        self.images_per_train_file, self.images_per_test_file = 1251, 390
+        self.shape = (3, 227, 227)
 
         # Variables for training + validation datasets
-        self.train_val_files = os.listdir(self.train_path)
-        self.train_val_files.sort()
-        self.images_per_train_file = 1251
-        self.train_val_nsamples = len(self.train_val_files) * self.images_per_train_file
+        if self.use_synthetic_data:
+            self.n_train_val_files = 1024            
+            self.train_val_files = [''] * self.n_train_val_files          
+        else:
+            self.train_val_files = os.listdir(self.train_path)
+            self.train_val_files.sort()
+            self.n_train_val_files = len(self.train_val_files)
+
+        self.train_val_nsamples = self.n_train_val_files * self.images_per_train_file
 
         # Variables for testing dataset
-        self.test_files  = os.listdir(self.test_path)
-        self.test_files.sort()
-        self.images_per_test_file = 390
-        self.test_nsamples = len(self.test_files) * self.images_per_test_file
+        if self.use_synthetic_data:
+            self.n_test_files = 128
+            self.test_files = [''] * self.n_test_files
+        else:
+            self.test_files  = os.listdir(self.test_path)
+            self.test_files.sort()
+            self.n_test_files = len(self.test_files)
+
+        self.test_nsamples = self.n_test_files * self.images_per_test_file
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -455,7 +484,7 @@ class ImageNet(Dataset):
             self.train_nsamples = self.train_val_nsamples
 
     def __normalize_image(self, X):
-        if "vgg" in self.model: # for VGG models input shape must be (3,224,224)
+        if "alexnet" not in self.model: # for VGG, ResNet and other models input shape must be (3,224,224)
             return X[...,1:225,1:225]
         mean = np.array([0.485, 0.456, 0.406])
         std  = np.array([0.229, 0.224, 0.225])
@@ -480,7 +509,14 @@ class ImageNet(Dataset):
             X_buffer, Y_buffer = np.array([]), np.array([])
             
             for f in in_files:
-                values = np.load("%s/%s" % (path, f))
+                if self.use_synthetic_data:
+                    images = {"train": self.images_per_train_file,
+                              "test": self.images_per_test_file}[op]
+                    values = {"x": np.empty( (images, *self.shape), dtype=self.dtype), 
+                              "y": np.zeros( (images, 1), dtype=self.dtype)}
+                else:
+                    values = np.load("%s/%s" % (path, f))
+
                 X_data = self.__normalize_image(values['x'].astype(self.dtype))
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if X_buffer.size == 0:
@@ -506,7 +542,14 @@ class ImageNet(Dataset):
         # For batch_sizes <= 1251, complete files of 1251 samples are yield
         else:
             for f in in_files:
-                values = np.load("%s/%s" % (path, f))
+                if self.use_synthetic_data:
+                    images = {"train": self.images_per_train_file,
+                              "test": self.images_per_test_file}[op]
+                    values = {"x": np.empty( (images, *self.shape), dtype=self.dtype), 
+                              "y": np.zeros( (images, 1), dtype=self.dtype)}
+                else:
+                    values = np.load("%s/%s" % (path, f))                
+
                 X_data = self.__normalize_image(values['x'].astype(self.dtype))
                 Y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if self.flip_images:
@@ -531,15 +574,15 @@ class ImageNet(Dataset):
         self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_train_file)
 
         end = self.val_start + self.val_size
-        if end > len(self.train_val_files):
-            val_idx_files = np.arange(self.val_start, len(self.train_val_files))
+        if end > self.n_train_val_files:
+            val_idx_files = np.arange(self.val_start, self.n_train_val_files)
             self.val_start = self.val_size - val_idx_files.shape[0]
             val_idx_files = np.concatenate((val_idx_files, np.arange(0, self.val_start)))
         else:
             val_idx_files = np.arange(self.val_start, end)
             self.val_start = end
 
-        train_idx_files = np.setdiff1d(np.arange(len(self.train_val_files)), val_idx_files)
+        train_idx_files = np.setdiff1d(np.arange(self.n_train_val_files), val_idx_files)
         self.train_files = [self.train_val_files[f] for f in train_idx_files]
         self.val_files = [self.train_val_files[f] for f in val_idx_files]
         self.train_nsamples = len(self.train_files) * self.images_per_train_file
@@ -551,5 +594,5 @@ class ImageNet(Dataset):
                 subset_files = subset_size // self.images_per_train_file
                 if subset_files == 0: subset_files = 1
                 self.train_val_files = self.train_val_files[:subset_files]
-                self.train_val_nsamples = len(self.train_val_files) * self.images_per_train_file
+                self.train_val_nsamples = self.n_train_val_files * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples

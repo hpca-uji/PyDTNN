@@ -38,48 +38,36 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-import math
+
 from NN_model import *
 from NN_layer import *
 from NN_activation import *
 
-def create_densenet201_cifar10(model):
-    model.add( Input(shape=(3, 32, 32)) )
-    
-    blocks, growth_rate = [6,12,48,32], 32 # DenseNet201
-    
-    reduction = 0.5
-    num_planes = 2*growth_rate
-
-    model.add( Conv2D(nfilters=num_planes, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer="he_uniform") )
-
-    layers = []
-    for i, nblocks in enumerate(blocks):
-        for j in range(nblocks):
-            model.add( 
-                ConcatenationBlock( 
-                    [
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(nfilters=4*growth_rate, filter_shape=(1,1), use_bias=False, weights_initializer="he_uniform"),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(nfilters=growth_rate, filter_shape=(3,3), padding=1, use_bias=False, weights_initializer="he_uniform")
-                    ], [] ) )
-
-        num_planes += nblocks * growth_rate
-
-        if i < len(blocks)-1:
-            num_planes = int(math.floor(num_planes * reduction))
-            model.add( BatchNormalization() )
-            model.add( Relu() )
-            model.add( Conv2D(nfilters=num_planes, filter_shape=(1,1), use_bias=False, weights_initializer="he_uniform") )
-            model.add( AveragePool2D(pool_shape=(2,2), stride=2) )
-    
+def create_resnet34_imagenet(model):
+    model.add( Input(shape=(3, 224, 224)) )
+    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform") )
     model.add( BatchNormalization() )
-    model.add( Relu() )
-    model.add( AveragePool2D(pool_shape=(4,4)) )               
-    model.add( Flatten() )   
-    model.add( FC(shape=(10,), activation="softmax") )
+
+    layout = [ [64, 3, 1], [128, 4, 2], [256, 6, 2], [512, 3, 2] ] # Resnet-34
+    for n_filt, res_blocks, stride in layout:
+    	for r in range(res_blocks):
+            if r > 0: stride = 1
+            model.add( 
+                AdditionBlock( 
+                    [
+                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer="he_uniform"),
+                        BatchNormalization(),
+                        Relu(),
+                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"),
+                        BatchNormalization() 
+                    ],
+                    [
+                        Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer="he_uniform"),
+                        BatchNormalization() 
+                    ] if stride != 1 else [] ) )
+            model.add( Relu() )    
+
+    model.add( AveragePool2D(pool_shape=(0,0)) ) # Global average pooling 2D
+    model.add( Flatten() )
+    model.add( FC(shape=(1000,), activation="softmax") )
     return model
-    

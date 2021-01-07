@@ -1,18 +1,18 @@
 #!/bin/bash
 
 export OMP_NUM_THREADS=4
-python3 -u tests/benchmarks_CNN.py \
+python3 -u benchmarks_CNN.py \
   --model=simplecnn \
   --dataset=mnist \
-  --dataset_train_path=datasets/mnist \
-  --dataset_test_path=datasets/mnist \
+  --dataset_train_path=../datasets/mnist \
+  --dataset_test_path=../datasets/mnist \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \
   --validation_split=0.2 \
   --num_epochs=50 \
   --evaluate=True \
-  --optimizer=adam \
+  --optimizer=sgd \
   --learning_rate=0.01 \
   --loss_func=categorical_cross_entropy \
   --lr_schedulers=warm_up,reduce_lr_every_nepochs \
@@ -24,5 +24,5 @@ python3 -u tests/benchmarks_CNN.py \
   --parallel=sequential \
   --tracing=False \
   --profile=False \
-  --enable_gpu=True \
+  --enable_gpu=False \
   --dtype=float32

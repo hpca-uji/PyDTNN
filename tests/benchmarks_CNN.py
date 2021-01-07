@@ -70,6 +70,7 @@ def parse_options():
     # Model
     parser.add_argument('--model', type=str, default="simplecnn")
     parser.add_argument('--dataset', type=str, default="mnist")
+    parser.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
     parser.add_argument('--dataset_train_path', type=str, default="../datasets/mnist")
     parser.add_argument('--dataset_test_path', type=str, default="../datasets/mnist")
     parser.add_argument('--test_as_validation', default=False, type=bool_lambda)

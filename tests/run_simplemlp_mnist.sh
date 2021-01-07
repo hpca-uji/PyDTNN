@@ -29,6 +29,6 @@ python3 -u benchmarks_CNN.py \
          --non_blocking_mpi=False \
          --tracing=False \
          --profile=False \
-         --enable_gpu=True \
+         --enable_gpu=False \
          --dtype=float32
 

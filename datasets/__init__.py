@@ -14,7 +14,8 @@ def get_dataset(params):
                               crop_images        = params.crop_images,
                               crop_images_size   = params.crop_images_size,
                               crop_images_prob   = params.crop_images_prob,
-                              dtype              = params.dtype)
+                              dtype              = params.dtype,
+                              use_synthetic_data = params.use_synthetic_data)
     except Exception as e:
         import traceback
         print(traceback.format_exc())
