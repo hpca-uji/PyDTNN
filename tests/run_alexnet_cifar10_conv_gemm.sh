@@ -74,4 +74,6 @@ python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
   --profile=False \
   --enable_gpu=False \
   --dtype=float32 \
-  --enable_conv_gemm="${ENABLE_CONV_GEMM}"
+  --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
+  --history="${HISTORY_FILE_NAME}" \
+  | tee "${OUTPUT_FILE_NAME}"
