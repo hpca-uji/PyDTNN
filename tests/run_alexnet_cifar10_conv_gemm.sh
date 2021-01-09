@@ -37,6 +37,9 @@ nowherman)
 lorca)
   export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-4 5 6 7 2 3 1 0}"
   ;;
+lorca)
+  export GOMP_CPU_AFFINITY="4 5 6 7 2 3 1 0"
+  ;;
 *)
   export OMP_PLACES="cores"
   export OMP_PROC_BIND="close"
