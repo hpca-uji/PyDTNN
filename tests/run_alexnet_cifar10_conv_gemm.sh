@@ -27,10 +27,22 @@ nowherman)
   ;;
 esac
 
+#---------------------------
+# Script related parameters
+#---------------------------
 SCRIPT_PATH="$(
   cd "$(dirname "$0")" >/dev/null 2>&1 || exit 1
   pwd -P
 )"
+PARENT_SCRIPT_NAME="$(basename "$(ps $PPID | tail -n 1 | awk '{print $6}')")"
+if [ -z "${PARENT_SCRIPT_NAME}" ]; then
+  SCRIPT_NAME="$(basename "$0")"
+else
+  SCRIPT_NAME="${PARENT_SCRIPT_NAME}"
+fi
+FILE_NAME="$(uname -n)_${SCRIPT_NAME%.sh}_$(printf '%02d' "${OMP_NUM_THREADS:-1}")t-$(date +"%Y%m%d%H%M")"
+HISTORY_FILE_NAME="${FILE_NAME}.history"
+OUTPUT_FILE_NAME="${FILE_NAME}.out"
 
 python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
   --model=alexnet_cifar10 \
