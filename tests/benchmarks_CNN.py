@@ -278,8 +278,14 @@ if __name__ == "__main__":
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
+            t1 = time.time()
         test_loss = model.evaluate_dataset(dataset, params.batch_size, \
                                            params.loss_func, metrics)
+        if rank == 0:
+            t2 = time.time()
+            total_time = (t2 - t1)
+            print(f'Testing time: {total_time:5.4f} s')
+            print(f'Testing throughput: {(dataset.test_nsamples) / total_time:5.4f} samples/s')
 
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
@@ -330,9 +336,9 @@ if __name__ == "__main__":
         t2 = time.time()
         print('**** Done...')
         total_time = (t2 - t1)
-        print(f'Time: {total_time:5.4f} s')
+        print(f'Training time: {total_time:5.4f} s')
         print(f'Time per epoch: {total_time / params.num_epochs:5.4f} s')
-        print(f'Throughput: {(dataset.train_val_nsamples * params.num_epochs) / total_time:5.4f} samples/s')
+        print(f'Training throughput: {(dataset.train_val_nsamples * params.num_epochs) / total_time:5.4f} samples/s')
 
         if params.history_file:
             with open(params.history_file, "w") as f:
@@ -344,5 +350,12 @@ if __name__ == "__main__":
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
+            t1 = time.time()
         test_loss = model.evaluate_dataset(dataset, params.batch_size, \
                                            params.loss_func, metrics)
+        if rank == 0:
+            t2 = time.time()
+            total_time = (t2 - t1)
+            print(f'Testing time: {total_time:5.4f} s')
+            print(f'Testing throughput: {(dataset.test_nsamples) / total_time:5.4f} samples/s')
+
