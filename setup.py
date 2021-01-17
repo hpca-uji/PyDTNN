@@ -15,7 +15,8 @@ ext_modules = [
     ) for module in ["NN_im2col_cython",
                      "NN_argmax_cython",
                      "NN_relu_cython",
-                     "NN_add_cython"]
+                     "NN_add_cython",
+                     "NN_transpose_cython"]
 ]
 
 setup(
