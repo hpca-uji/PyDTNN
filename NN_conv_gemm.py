@@ -46,6 +46,9 @@ from ctypes.util import find_library
 
 import numpy as np
 
+from NN_transpose_cython import transpose_1230_cython, transpose_2d_f2c_ij_cython, transpose_1230_2nd_cython, \
+    transpose_2d_f2c_ji_cython
+
 
 class ConvGemm:
     """
@@ -245,19 +248,31 @@ class ConvGemm:
             "this class was instantiated!"
 
         # Change matrices axes to the convGemm expected order:
-        #   Where I→hi×wi×ci×b corresponds to the input tensor,
-        #   F→kn×kh×kw×ci denotes the filters,       PyDTNN <- kn * ci * kh * kw  (kw*kh*ci*kn)
-        #   and O→kn×ho×wo×b is the output tensor
+        #   Where I→hi×wi×ci×b corresponds to the input tensor, | PyDTNN (C order): b×ci×hi×wi   (F order: wi×hi×ci×b)
+        #   F→kn×kh×kw×ci denotes the filters,                  | PyDTNN (C order): kn×ci×kh×kw  (F order: kw×kh×ci×kn)
+        #   and O→kn×(ho·wo·b) is the output tensor             | PyDTNN (C order): kn×(b·ho·wo) (F order: (wo·ho·b)×kn)
 
         # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
         # NEW(wxh): 1) weights_cg = weights.transpose((0, 3, 2, 1)).flatten(order="F")
         # NEW(wxh): 2) weights_cg = weights.transpose((1, 2, 3, 0)).flatten(order="C")
         # NEW(wxh): 3)
         # weights_cg = weights.transpose((1, 2, 3, 0)).ravel(order="C")
-        # NEW(wxh): 4)
+
+        # NEW(wxh): 4) (best until sreshapeWeights_pydtnn())
+        # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
+        # weights_cg[...] = weights.transpose((1, 2, 3, 0))
+        # weights_cg.ravel(order="K")
+
+        # NEW(wxh): 5)
+        # void sreshapeWeights_pydtnn(unsigned int kn, unsigned int c, unsigned int kh, unsigned int kw,
+        #                             float* weights_pydtnn, float* restrict weights);
         weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
-        weights_cg[...] = weights.transpose((1, 2, 3, 0))
-        weights_cg.ravel(order="K")
+        self.lib.sreshapeWeights_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(c), ctypes.c_uint(kw), ctypes.c_uint(kh),
+                                        ctypes.c_void_p(weights.ctypes.data), ctypes.c_void_p(weights_cg.ctypes.data))
+
+        # NEW(wxh): 6)
+        # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
+        # transpose_1230_2nd_cython(weights, weights_cg)
 
         tic04 = time.perf_counter()
 
@@ -306,14 +321,24 @@ class ConvGemm:
 
         tic07 = time.perf_counter()
 
-        # Change output matrix axes to the PyDTNN expected order:
-        # PREVIOUS(hxw): out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
-        # NEW(wxh) 1): out = biases_cg.reshape((kn, b, ho, wo)).transpose((0, 1, 2, 3)).reshape(kn, -1, order="C")
-        # NEW(wxh) 2):
-        # works:  out = biases_cg.reshape((kn, b, ho, wo)).reshape((kn, -1), order="C")
-        # slower: out = np.empty((kn, b*ho*wo), biases_cg.dtype, order="C")
-        #         out[...] = biases_cg
-        out = biases_cg.reshape((kn, -1), order="C")
+        # Change output matrix to the PyDTNN expected order:
+        # * PREVIOUS(hxw): out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
+        # * NEW(wxh) 1): out = biases_cg.reshape((kn, b, ho, wo)).transpose((0, 1, 2, 3)).reshape(kn, -1, order="C")
+        # * NEW(wxh) 2):
+        #     works:  out = biases_cg.reshape((kn, b, ho, wo)).reshape((kn, -1), order="C")
+        #     slower: out = np.empty((kn, b*ho*wo), biases_cg.dtype, order="C")
+        #             out[...] = biases_cg
+        #     best:
+        #             out = biases_cg.reshape((kn, -1), order="C")
+        # * NEW(wxh) 3):
+        #     void sreshapeOut_pydtnn(unsigned int kn, unsigned int b, unsigned int h, unsigned int w,
+        #                             float*  out, float* restrict reshaped);
+        out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        self.lib.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
+                                    ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
+        # * NEW(wxh) 4):
+        # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        # transpose_2d_f2c_ji_cython(biases_cg, out)
 
         tic08 = time.perf_counter()
 
