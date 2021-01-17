@@ -46,6 +46,58 @@ class D:
     vstride = 1  # Vertical stride
     hstride = 1  # Horizontal stride
 
+    @property
+    def ho(self):
+        return (self.h + 2 * self.vpadding - self.kh) // self.vstride + 1
+
+    @property
+    def wo(self):
+        return (self.w + 2 * self.hpadding - self.kw) // self.hstride + 1
+
+    def __repr__(self):
+        return f"""\
+x, weights, and y parameters:
+  (b, c, h, w)    = {self.b} {self.c} {self.h} {self.w}
+  (kn, c, kh, kw) = {self.kn} {self.c} {self.kh} {self.kw}
+  (kn, b, ho, wo) = {self.kn} {self.b} {self.ho} {self.wo}
+  padding         = {self.vpadding} {self.hpadding}
+  stride          = {self.vstride} {self.hstride}
+"""
+
+
+class L:
+
+    def __init__(self, b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride):
+        self.b = b  # Batch size
+        self.c = c  # Channels per layer
+        self.h = h  # Layers height
+        self.w = w  # Layers width
+        self.kn = kn  # Number of filters
+        self.kh = kh  # Filters weights height
+        self.kw = kw  # Filters weights width
+        self.vpadding = vpadding  # Vertical padding
+        self.hpadding = hpadding  # Horizontal padding
+        self.vstride = vstride  # Vertical stride
+        self.hstride = hstride  # Horizontal stride
+
+    @property
+    def ho(self):
+        return (self.h + 2 * self.vpadding - self.kh) // self.vstride + 1
+
+    @property
+    def wo(self):
+        return (self.w + 2 * self.hpadding - self.kw) // self.hstride + 1
+
+    def __repr__(self):
+        return f"""\
+x, weights, and y parameters:
+  (b, c, h, w)    = {self.b} {self.c} {self.h} {self.w}
+  (kn, c, kh, kw) = {self.kn} {self.c} {self.kh} {self.kw}
+  (kn, b, ho, wo) = {self.kn} {self.b} {self.ho} {self.wo}
+  padding         = {self.vpadding} {self.hpadding}
+  stride          = {self.vstride} {self.hstride}
+"""
+
 
 def _print_with_header(header, to_be_printed):
     print("-" * (len(header) + 2))
@@ -423,6 +475,52 @@ class TestConvGemm(unittest.TestCase):
                                                                  im2col_mm_result.flatten())])))
                 self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result),
                                 f"Results differ with vstride {vstride} and hstride {hstride}")
+        if not verbose():
+            spinner.stop()
+
+    def test_alexnet_layers(self):
+        spinner = Spinner()
+        if verbose():
+            _print_with_header("{}".format(inspect.stack()[1][3]), None)
+            print(" layer   Maximum difference")
+            print("-------+--------------------")
+        layers = [
+            # AlexNet Cifar
+            L(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2),
+            L(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1),
+            L(64, 192, 4, 4, 384, 3, 3, 1, 1, 1, 1),
+            L(64, 384, 4, 4, 256, 3, 3, 1, 1, 1, 1),
+            L(64, 256, 4, 4, 256, 3, 3, 1, 1, 1, 1),
+            # AlexNet ImageNet
+            L(64, 3, 227, 227, 96, 11, 11, 1, 1, 4, 4),
+            L(64, 96, 27, 27, 256, 5, 5, 1, 1, 1, 1),
+            L(64, 256, 13, 13, 384, 3, 3, 1, 1, 1, 1),
+            L(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1),
+            L(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1),
+        ]
+        conv_gemm = ConvGemm(debug=False)
+        for n, layer in enumerate(layers):
+            weights = np.random.rand(layer.kn, layer.c, layer.kh, layer.kw).astype(np.float32, order='C')
+            x = np.random.rand(layer.b, layer.c, layer.h, layer.w).astype(np.float32, order='C')
+            if not verbose():
+                spinner.render()
+            conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                                                   vpadding=layer.vpadding, hpadding=layer.hpadding,
+                                                   vstride=layer.vstride, hstride=layer.hstride)
+            x_c = im2col_cython(x, layer.kh, layer.kw, layer.vpadding, layer.hpadding, layer.vstride, layer.hstride)
+            w_c = weights.reshape(layer.kn, -1)
+            im2col_mm_result = w_c @ x_c
+            if verbose():
+                print("   {:2}      {:9.7f}".format(n,
+                                                    max([abs(x - y) for x, y
+                                                         in
+                                                         zip(conv_gemm_result.flatten(),
+                                                             im2col_mm_result.flatten())])))
+                if n == 9:
+                    print("Flags for last conv_gemm_result output:")
+                    print(conv_gemm_result.flags)
+            self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result),
+                            f"Results differ for AlexNet Cifar and ImageNet layers number {n}")
         if not verbose():
             spinner.stop()
 
