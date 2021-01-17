@@ -47,7 +47,7 @@ from NN_util import printf, TensorGPU
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
 from NN_add_cython import add_cython
-from NN_tracer import PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS
 from NN_sim import *
 
 try:

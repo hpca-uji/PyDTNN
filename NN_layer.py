@@ -52,7 +52,7 @@ from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
-from NN_tracer import PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS
 
 try:
     from mpi4py import MPI
@@ -109,22 +109,22 @@ class FC(Layer):
 
     def forward(self, x):
         self.x = x
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 1)
         res = self.matmul(x, self.weights)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return res + self.biases if self.use_bias else 0
 
     def backward(self, dy):
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 5)
         self.dw = self.matmul(self.x.T, dy)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         if self.use_bias:
             self.db = np.sum(dy, axis=0)
 
         if self.need_dx:
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 3)
             dx = self.matmul(dy, self.weights.T)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
 
@@ -225,10 +225,10 @@ class Conv2D(Layer):
 
         tic01 = time.perf_counter()
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 2)
         self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         tic02 = time.perf_counter()
 
@@ -236,9 +236,9 @@ class Conv2D(Layer):
 
         tic03 = time.perf_counter()
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 1)
         res = self.matmul(w_cols, self.x_cols)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         tic04 = time.perf_counter()
 
@@ -269,12 +269,12 @@ class Conv2D(Layer):
 
         biases_vector = self.biases if self.use_bias else None
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 1)
         res = self.cg.conv_gemm(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 biases_vector=biases_vector)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         tic02 = time.perf_counter()
 
@@ -304,9 +304,9 @@ class Conv2D(Layer):
         dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
         w_cols = self.weights.reshape(self.co, -1).T
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 5)
         res = self.matmul(dy_cols, self.x_cols.T)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.dw = res.reshape(self.weights.shape)
 
@@ -314,15 +314,15 @@ class Conv2D(Layer):
             self.db = np.sum(dy, axis=(0, 2, 3))
 
         if self.need_dx:
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 3)
             res = self.matmul(w_cols, dy_cols)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
             dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
     def _backward_cg(self, dy):
@@ -405,15 +405,15 @@ class Conv2D(Layer):
         if self.need_dx:
             dy_cols = cg_dy.reshape(self.co, -1)
             w_cols = self.weights.reshape(self.co, -1).T
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 3)
             res = self.matmul(w_cols, dy_cols)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
             dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         tic09 = time.perf_counter()
 
@@ -470,10 +470,10 @@ class MaxPool2D(Layer):
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 2)
         x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
         y, self.maxids = argmax_cython(x_cols, axis=0)
@@ -483,11 +483,11 @@ class MaxPool2D(Layer):
         if self.need_dx:
             dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
             dy_cols[self.maxids] = dy.flatten()
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
             return dx
 
@@ -530,10 +530,10 @@ class AveragePool2D(Layer):
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 2)
         x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         y = np.mean(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
@@ -542,11 +542,11 @@ class AveragePool2D(Layer):
         if self.need_dx:
             pool_size = np.prod(self.pool_shape)
             dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
             return dx
 
