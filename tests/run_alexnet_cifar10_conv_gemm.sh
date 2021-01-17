@@ -21,6 +21,16 @@ NUM_EPOCHS=${NUM_EPOCHS:-30}
 PROFILE=${PROFILE:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
 
+#--------------------------
+# Only training parameters
+#--------------------------
+if [ ! -z "${ONLY_TRAINING}" ]; then
+  EVALUATE=False
+  TEST_AS_VALIDATION=False
+  VALIDATION_SPLIT=0.2
+  STEPS_PER_EPOCH=1
+fi
+
 #------------------
 # OpeMP parameters
 #------------------
@@ -50,12 +60,6 @@ SCRIPT_PATH="$(
   cd "$(dirname "$0")" >/dev/null 2>&1 || exit 1
   pwd -P
 )"
-PARENT_SCRIPT_NAME="$(basename "$(ps $PPID | tail -n 1 | awk '{print $6}')")"
-if [ -z "${PARENT_SCRIPT_NAME}" ]; then
-  SCRIPT_NAME="$(basename "$0")"
-else
-  SCRIPT_NAME="${PARENT_SCRIPT_NAME}"
-fi
 
 #----------------------------
 # File name for output files
@@ -73,12 +77,12 @@ HISTORY_FILE_NAME="${FILE_NAME}.history"
 OUTPUT_FILE_NAME="${FILE_NAME}.out"
 
 #------------------------
-# Model related options
+# Model dependent options
 #------------------------
 if [ "${MODEL}" == "alexnet_cifar10" ]; then
-  TEST_AS_VALIDATION="True"
+  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-True}"
 elif [ "${MODEL}" == "alexnet_imagenet" ]; then
-  TEST_AS_VALIDATION="False"
+  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-False}"
 else
   echo "Model '${MODEL}' not supported"
   exit 1
@@ -96,8 +100,8 @@ python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
   --use_synthetic_data="${USE_SYNTHETIC_DATA}" \
   --test_as_validation="${TEST_AS_VALIDATION}" \
   --batch_size=64 \
-  --validation_split=0.2 \
-  --steps_per_epoch=0 \
+  --validation_split="${VALIDATION_SPLIT:-0.2}" \
+  --steps_per_epoch="${STEPS_PER_EPOCH:-0}" \
   --num_epochs="${NUM_EPOCHS}" \
   --evaluate="${EVALUATE}" \
   --optimizer=sgd \
