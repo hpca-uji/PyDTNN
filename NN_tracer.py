@@ -44,81 +44,102 @@ import ctypes
 import os
 from importlib import import_module
 
-PYDL_EVT = 60000001
-PYDL_OPS_EVT = 60000002
-PYDL_NUM_EVTS = 5
-PYDL_OPS_NUM_EVTS = 6
+# ---
+PYDTNN_MDL_EVENT = 60000001
+PYDTNN_MDL_FORWARD = 1
+PYDTNN_MDL_BACKWARD = 2
+PYDTNN_MDL_ALLREDUCE_DW = 3
+PYDTNN_MDL_WAIT_DW = 4
+PYDTNN_MDL_UPDATE_DW = 5
+PYDTNN_MDL_EVENTS = 5
+# ---
+PYDTNN_OPS_EVENT = 60000002
+PYDTNN_OPS_FORWARD_MATMUL = 1
+PYDTNN_OPS_FORWARD_IM2COL = 2
+PYDTNN_OPS_COMP_DX_MATMUL = 3
+PYDTNN_OPS_COMP_DX_COL2IM = 4
+PYDTNN_OPS_COMP_DW_MATMUL = 5
+PYDTNN_OPS_ALLREDUCE_DW = 6
+PYDTNN_OPS_EVENTS = 6
+# ---
 
 
 class Tracer:
 
     def __init__(self, tracing=False):
         self.tracing = tracing
+        self.mdl_events = {}
+        self.ops_events = {}
+        if not self.tracing:
+            self.define_event_type = self._do_nothing
+            self.emit_event = self._do_nothing
+            self.emit_nevent = self._do_nothing
+
+    def define_event_type(self, model):
+        self.mdl_events = {0: "End"}
+        self.ops_events = {0: "End"}
+        for i in range(len(model.layers)):
+            layer_name = type(model.layers[i]).__name__
+            self.mdl_events[i * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD] = f"{i}_{layer_name}_forward "
+            self.mdl_events[i * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD] = f"{i}_{layer_name}_backward "
+            self.mdl_events[i * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW] = f"{i}_{layer_name}_allreduce_dw "
+            self.mdl_events[i * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW] = f"{i}_{layer_name}_wait_dw "
+            self.mdl_events[i * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW] = f"{i}_{layer_name}_update_dw "
+            self.ops_events[i * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL] = f"{i}_{layer_name}_forward_matmul "
+            self.ops_events[i * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL] = f"{i}_{layer_name}_forward_im2col "
+            self.ops_events[i * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL] = f"{i}_{layer_name}_compute_dx_matmul "
+            self.ops_events[i * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM] = f"{i}_{layer_name}_compute_dx_col2im "
+            self.ops_events[i * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL] = f"{i}_{layer_name}_compute_dw_matmul "
+            self.ops_events[i * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW] = f"{i}_{layer_name}_allreduce_dw "
+
+    def emit_event(self, evt, val):
+        pass
+
+    def emit_nevent(self, evt, val):
+        pass
+
+    def _do_nothing(self, *args, **kwargs):
+        pass
+
+
+class ExtraeTracer(Tracer):
+
+    def __init__(self, tracing=False):
+        super().__init__(tracing)
         if self.tracing:
             self.pyextrae = import_module('pyextrae.common.extrae')
 
     def define_event_type(self, model):
-        if self.tracing:
-            nvalues = len(model.layers) * PYDL_NUM_EVTS + 1
-            description = "Model layers"
-            values = (ctypes.c_ulonglong * nvalues)()
-            description_values = (ctypes.c_char_p * nvalues)()
-            values[0] = 0
-            description_values[0] = "End".encode('utf-8')
-            for i in range(1, nvalues):
-                values[i] = i
-            for i in range(len(model.layers)):
-                description_values[i * PYDL_NUM_EVTS + 1] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_forward ").encode('utf-8')
-                description_values[i * PYDL_NUM_EVTS + 2] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_backward ").encode('utf-8')
-                description_values[i * PYDL_NUM_EVTS + 3] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_allreduce_dw ").encode('utf-8')
-                description_values[i * PYDL_NUM_EVTS + 4] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_wait_dw ").encode('utf-8')
-                description_values[i * PYDL_NUM_EVTS + 5] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_update_dw ").encode('utf-8')
-
-            self.pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
-                ctypes.pointer(ctypes.c_uint(PYDL_EVT)),
-                ctypes.c_char_p(description.encode('utf-8')),
-                ctypes.pointer(ctypes.c_uint(nvalues)),
-                ctypes.pointer(values),
-                ctypes.pointer(description_values))
-
-            nvalues = len(model.layers) * PYDL_OPS_NUM_EVTS + 1
-            description = "PYDL ops per layer"
-            values = (ctypes.c_ulonglong * nvalues)()
-            description_values = (ctypes.c_char_p * nvalues)()
-            values[0] = 0
-            description_values[0] = "End".encode('utf-8')
-            for i in range(1, nvalues):
-                values[i] = i
-            for i in range(len(model.layers)):
-                description_values[i * PYDL_OPS_NUM_EVTS + 1] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_forward_matmul ").encode('utf-8')
-                description_values[i * PYDL_OPS_NUM_EVTS + 2] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_forward_im2col ").encode('utf-8')
-                description_values[i * PYDL_OPS_NUM_EVTS + 3] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_compute_dx_matmul ").encode('utf-8')
-                description_values[i * PYDL_OPS_NUM_EVTS + 4] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_compute_dx_col2im ").encode('utf-8')
-                description_values[i * PYDL_OPS_NUM_EVTS + 5] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_compute_dw_matmul ").encode('utf-8')
-                description_values[i * PYDL_OPS_NUM_EVTS + 6] = (
-                            str(i) + "_" + type(model.layers[i]).__name__ + "_allreduce_dw ").encode('utf-8')
-
-            self.pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
-                ctypes.pointer(ctypes.c_uint(PYDL_OPS_EVT)),
-                ctypes.c_char_p(description.encode('utf-8')),
-                ctypes.pointer(ctypes.c_uint(nvalues)),
-                ctypes.pointer(values),
-                ctypes.pointer(description_values))
+        super().define_event_type(model)
+        n_values = len(model.layers) * PYDTNN_MDL_EVENTS + 1
+        description = "Model layers"
+        codes = (ctypes.c_ulonglong * n_values)()
+        descriptions = (ctypes.c_char_p * n_values)()
+        for code, description in self.mdl_events.items():
+            codes[code] = code
+            descriptions[code] = description
+        self.pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+            ctypes.pointer(ctypes.c_uint(PYDTNN_MDL_EVENT)),
+            ctypes.c_char_p(description.encode('utf-8')),
+            ctypes.pointer(ctypes.c_uint(n_values)),
+            ctypes.pointer(codes),
+            ctypes.pointer(descriptions))
+        n_values = len(model.layers) * PYDTNN_OPS_EVENTS + 1
+        description = "PyDTNN ops per layer"
+        codes = (ctypes.c_ulonglong * n_values)()
+        descriptions = (ctypes.c_char_p * n_values)()
+        for code, description in self.ops_events.items():
+            codes[code] = code
+            descriptions[code] = description
+        self.pyextrae.Extrae[os.getpid()].Extrae_define_event_type(
+            ctypes.pointer(ctypes.c_uint(PYDTNN_OPS_EVENT)),
+            ctypes.c_char_p(description.encode('utf-8')),
+            ctypes.pointer(ctypes.c_uint(n_values)),
+            ctypes.pointer(codes),
+            ctypes.pointer(descriptions))
 
     def emit_event(self, evt, val):
-        if self.tracing:
-            self.pyextrae.eventandcounters(evt, val)
+        self.pyextrae.eventandcounters(evt, val)
 
     def emit_nevent(self, evt, val):
-        if self.tracing:
-            self.pyextrae.neventandcounters(evt, val)
+        self.pyextrae.neventandcounters(evt, val)

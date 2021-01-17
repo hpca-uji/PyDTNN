@@ -46,8 +46,8 @@ import NN_activation
 import NN_util 
 import NN_optimizer
 import datasets.NN_dataset
-from NN_tracer import Tracer, PYDL_EVT, PYDL_OPS_EVT, PYDL_NUM_EVTS, \
-                              PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_tracer import Tracer, PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT, PYDTNN_MDL_EVENTS, \
+    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer
 from NN_sim import *
 from tqdm import tqdm
 
@@ -80,7 +80,7 @@ class Model:
         self.params = params
         self.comm = comm
         self.blocking_mpi = not non_blocking_mpi
-        self.tracer = Tracer(tracing)
+        self.tracer = ExtraeTracer(tracing)
         self.id = 0
         self.enable_cudnn = enable_gpu
         global enable_cudnn
@@ -316,9 +316,9 @@ class Model:
 
         # Forward pass (FP)
         for l in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 1)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + 1)
             x = self.layers[l].forward(x)
-            self.tracer.emit_event(PYDL_EVT, 0)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         loss, dx = loss_func(x, Y_targ, global_batch_size)
         self.total_metrics, _ = self.__compute_metrics_funcs(x, Y_targ, loss, metrics_funcs)
@@ -327,41 +327,41 @@ class Model:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + 2)
                 dx = self.layers[l].backward(dx)
-                self.tracer.emit_event(PYDL_EVT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
           
             if self.enable_cudnn: self.stream.synchronize()
           
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
                 self.layers[l].reduce_weights_sync()
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + 5)
                 self.layers[l].update_weights(optimizer)
-                self.tracer.emit_event(PYDL_EVT, 0)            
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
         else:
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 2)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + 2)
                 dx = self.layers[l].backward(dx)
-                self.tracer.emit_event(PYDL_EVT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 3)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + 3)
                 self.layers[l].reduce_weights_async()
-                self.tracer.emit_event(PYDL_EVT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
     
             # Weight update (WU)
             for l in range(len(self.layers)-1, 0, -1):
-                self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], 
-                                        [self.layers[l].id * PYDL_NUM_EVTS + 4, 
-                                         self.layers[l].id * PYDL_OPS_NUM_EVTS + 6])
+                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
+                                        [self.layers[l].id * PYDTNN_MDL_EVENTS + 4,
+                                         self.layers[l].id * PYDTNN_OPS_EVENTS + 6])
                 self.layers[l].wait_allreduce_async()
-                self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
     
-                self.tracer.emit_event(PYDL_EVT, self.layers[l].id * PYDL_NUM_EVTS + 5)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + 5)
                 self.layers[l].update_weights(optimizer)
-                self.tracer.emit_event(PYDL_EVT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         if self.enable_cudnn:
             for l in range(len(self.layers)-1, 0, -1):
@@ -474,9 +474,9 @@ class Model:
 
         # Forward pass (FP)
         for l in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDL_EVT, self.layers[l].id * 7 + 2)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * 7 + 2)
             x = self.layers[l].forward(x)
-            self.tracer.emit_event(PYDL_EVT, 0)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         Y_pred = self.layers[-1].y
         loss, _ = loss_func(Y_pred, Y_targ, global_batch_size)
