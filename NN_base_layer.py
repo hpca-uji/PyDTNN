@@ -51,7 +51,8 @@ from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
-from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS
+from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_ALLREDUCE_DW, \
+    PYDTNN_OPS_ALLREDUCE_DW
 
 try:
     from mpi4py import MPI
@@ -200,8 +201,8 @@ class Layer:
 
         for w_, dw_ in self.grad_vars.items():
             self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                    [self.id * PYDTNN_MDL_EVENTS + 3,
-                                     self.id * PYDTNN_OPS_EVENTS + 6])
+                                    [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
             dw = getattr(self, dw_)
 
             if self.model.enable_cudnn:
