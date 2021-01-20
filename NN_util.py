@@ -37,13 +37,14 @@ __status__ = "Production"
 __version__ = "1.1.0"
 
 import math
-# import NN_model
-# from scipy.signal import convolve2d
-# import scipy.linalg.blas as slb
-# import scipy.stats as stats
 from abc import ABC
 
 import numpy as np
+
+# import NN_model
+# import scipy.linalg.blas as slb
+# import scipy.stats as stats
+# from scipy.signal import convolve2d
 
 try:
     # import pycuda.autoinit
@@ -70,6 +71,7 @@ def convert_size(size_bytes):
 
 
 # Matmul operation
+# Warning: the output matrix can not be cached, as it will persist outside this method
 def matmul(a, b):
     # if a.dtype == np.float32:
     #    c = slb.sgemm(1.0, a, b)
@@ -77,8 +79,7 @@ def matmul(a, b):
     #    c = slb.dgemm(1.0, a, b)
     # else:
     # Native numpy matmul gets more performance than scipy blas!
-    c = a @ b
-    return c
+    return a @ b
 
 
 def matmul_gpu(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
@@ -434,7 +435,6 @@ def dilate_and_pad(input_, p=0, s=1):
         res[..., p:h_ - p:s, p:w_ - p:s] = input_
         return res
     return input_
-
 
 # @warning: im2col_indices is undefined
 # # Only for fancy im2col/col2im indexing!
