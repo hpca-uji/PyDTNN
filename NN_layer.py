@@ -353,8 +353,9 @@ class Conv2D(Layer):
             #                            (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
             #                            mode='constant').astype(self.dtype)
             b, c, h, w = self.cg_x.shape
-            self.cg_x_indexed = np.zeros((c, b, h + 2 * self.vpadding, w + 2 * self.hpadding), self.dtype)
-            self.cg_x_indexed[:, :, self.vpadding:-self.vpadding, self.hpadding:-self.hpadding] = \
+            new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
+            self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
+            self.cg_x_indexed[:, :, self.vpadding:new_h-self.vpadding, self.hpadding:new_w-self.hpadding] = \
                 self.cg_x.transpose((1, 0, 2, 3))
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
