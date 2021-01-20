@@ -86,7 +86,7 @@ class ConvGemm:
     lib_cg = None  # will link to the libconvGemm.so library
     biases_cg_cache = None
     weights_cg_cache = None
-    out_cg_cache = None
+    # out_cg_cache = None  # Warning: don't use a cached matrix for the output
 
     def __init__(self, dtype=np.float32, debug=False):
         """
@@ -120,7 +120,6 @@ class ConvGemm:
             ConvGemm.lib_cg = ctypes.cdll.LoadLibrary(path)
             ConvGemm.biases_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="F"))
             ConvGemm.weights_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
-            ConvGemm.out_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
 
         # Declare ac_pack and bc_pack and allocate space for them
         # @todo: The next fragment of code should be dependant on the architecture and the dtype
@@ -226,8 +225,9 @@ class ConvGemm:
             # Hand made alternative to:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
             b, c, h, w = x.shape
-            x_padded = np.zeros((b, c, h + 2 * vpadding, w + 2 * hpadding), x.dtype)
-            x_padded[:, :, vpadding:-vpadding, hpadding:-hpadding] = x
+            new_h , new_w = h + 2 * vpadding, w + 2 * hpadding
+            x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
+            x_padded[:, :, vpadding:new_h-vpadding, hpadding:new_w-hpadding] = x
             vpadding = hpadding = 0
 
         tic02 = time.perf_counter()
@@ -353,8 +353,8 @@ class ConvGemm:
         # * NEW(wxh) 3):
         #     void sreshapeOut_pydtnn(unsigned int kn, unsigned int b, unsigned int h, unsigned int w,
         #                             float*  out, float* restrict reshaped);
-        # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
-        out = self.out_cg_cache[(kn, b * ho * wo)]
+        # out = self.out_cg_cache[(kn, b * ho * wo)]  # out can persist outside, don't use this
+        out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
         self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
                                        ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
         # * NEW(wxh) 4):
