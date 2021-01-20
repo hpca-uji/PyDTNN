@@ -123,6 +123,7 @@ def parse_options():
     parser.add_argument('--parallel', type=str, default="sequential")
     parser.add_argument('--non_blocking_mpi', type=bool_lambda, default=False)
     parser.add_argument('--tracing', type=bool_lambda, default=False)
+    parser.add_argument('--simple_tracer_output', type=str, default="")
     parser.add_argument('--profile', type=bool_lambda, default=False)
     parser.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
