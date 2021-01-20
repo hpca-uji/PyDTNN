@@ -52,7 +52,12 @@ from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
-from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS
+from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
+    PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_FORWARD_IM2COL, \
+    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
+    PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
+    PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
+    PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW
 
 try:
     from mpi4py import MPI
@@ -109,20 +114,20 @@ class FC(Layer):
 
     def forward(self, x):
         self.x = x
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
         res = self.matmul(x, self.weights)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return res + self.biases if self.use_bias else 0
 
     def backward(self, dy):
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 5)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
         self.dw = self.matmul(self.x.T, dy)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         if self.use_bias:
             self.db = np.sum(dy, axis=0)
 
         if self.need_dx:
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
             dx = self.matmul(dy, self.weights.T)
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
@@ -223,41 +228,27 @@ class Conv2D(Layer):
     def _forward_i2c(self, x):
         """Version of the forward function that uses im2col and matmul"""
 
-        tic01 = time.perf_counter()
-
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic02 = time.perf_counter()
-
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_W)
         w_cols = self.weights.reshape(self.co, -1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic03 = time.perf_counter()
-
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
         res = self.matmul(w_cols, self.x_cols)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic04 = time.perf_counter()
-
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
         # y = res + self.biases.reshape(-1, 1)
         y = add_cython(res, self.biases) if self.use_bias else res
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic05 = time.perf_counter()
-
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
         y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
-
-        tic06 = time.perf_counter()
-
-        if self.debug:
-            print(f"Ops in i2c forward:")
-            print(f"  im2col:            {tic02 - tic01:0.4f} s")
-            print(f"  reshape:           {tic03 - tic02:0.4f} s")
-            print(f"  matmul:            {tic04 - tic03:0.4f} s")
-            print(f"  add_cython:        {tic05 - tic04:0.4f} s")
-            print(f"  reshape:           {tic06 - tic05:0.4f} s")
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
 
@@ -265,33 +256,22 @@ class Conv2D(Layer):
         """Version of the forward function that uses the convGemm library"""
         self.cg_x = x
 
-        tic01 = time.perf_counter()
-
         biases_vector = self.biases if self.use_bias else None
 
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 biases_vector=biases_vector)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic02 = time.perf_counter()
-
+        # Biases sum is now done on conv_gemm
         # y = res + self.biases.reshape(-1, 1)
         # y = add_cython(res, self.biases) if self.use_bias else res
 
-        tic03 = time.perf_counter()
-
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
         y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
-
-        tic04 = time.perf_counter()
-
-        if self.debug:
-            print(f"Ops in cg forward:")
-            print(f"  xconv_gemm:         {tic02 - tic01:0.4f} s")
-            print(f"  add_cython:         {tic03 - tic02:0.4f} s")
-            print(f"  reshape:            {tic04 - tic03:0.4f} s")
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
 
@@ -301,24 +281,33 @@ class Conv2D(Layer):
 
     def _backward_i2c(self, dy):
         """Version of the backward function that uses im2col and matmul"""
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
         dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
-        w_cols = self.weights.reshape(self.co, -1).T
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 5)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
+        w_cols = self.weights.reshape(self.co, -1).T
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
         res = self.matmul(dy_cols, self.x_cols.T)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
         self.dw = res.reshape(self.weights.shape)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
         if self.use_bias:
             self.db = np.sum(dy, axis=(0, 2, 3))
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.need_dx:
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
             res = self.matmul(w_cols, dy_cols)
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
@@ -327,6 +316,9 @@ class Conv2D(Layer):
 
     def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
+
+        # if self.id == 4:
+        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 01")
 
         if self.cg_fallback_i2c and (self.vstride > 1 or self.hstride > 1):
             # Disclaimer
@@ -341,16 +333,17 @@ class Conv2D(Layer):
             #  * the matrix copy using the new indexes should be parallelized, or
             #  * the underlying convGemm method should directly support the dy * im2col(x).T operation,
             #    where im2col(x) is the im2col(x) in weights * im2col(x) (not in dy * im2col(x)).
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
             self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self._backward_i2c(dy)
 
-        tic01 = time.perf_counter()
-
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
         cg_dy = dy.transpose((1, 0, 2, 3))
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic02 = time.perf_counter()
-
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_PADDING_X)
         if self.vpadding == 0 and self.hpadding == 0:
             self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
         else:
@@ -363,17 +356,23 @@ class Conv2D(Layer):
             self.cg_x_indexed = np.zeros((c, b, h + 2 * self.vpadding, w + 2 * self.hpadding), self.dtype)
             self.cg_x_indexed[:, :, self.vpadding:-self.vpadding, self.hpadding:-self.hpadding] = \
                 self.cg_x.transpose((1, 0, 2, 3))
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic03 = time.perf_counter()
+        # if self.id == 4:
+        #    self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 02")
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES)
         h_new_indexes, cg_vstride = _get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
         v_new_indexes, cg_hstride = _get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic04 = time.perf_counter()
+        # if self.id == 4:
+        #    self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 03")
 
         # Indexing performance considerations:
         #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_new_indexes_and_xstride).
         #  + Indexing first rows and then columns is faster than the opposite.
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_REINDEX)
         if h_new_indexes is not None:
             self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
         if v_new_indexes is not None:
@@ -383,52 +382,60 @@ class Conv2D(Layer):
             #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
             #           unexpected results
             self.cg_x_indexed = self.cg_x_indexed.copy()
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic05 = time.perf_counter()
+        # if self.id == 4:
+        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 04")
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
         res = self.cg.conv_gemm(cg_dy, self.cg_x_indexed,
                                 biases=None,
                                 vpadding=0, hpadding=0,
                                 vstride=cg_vstride, hstride=cg_hstride)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic06 = time.perf_counter()
+        # if self.id == 4:
+        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 05")
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
         self.dw = res.reshape(self.weights.shape)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic07 = time.perf_counter()
+        # if self.id == 4:
+        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 06")
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
         if self.use_bias:
             self.db = np.sum(dy, axis=(0, 2, 3))
+            # self.db = np.empty_like(self.biases)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic08 = time.perf_counter()
+        # if self.id == 4:
+        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 07")
 
         if self.need_dx:
             dy_cols = cg_dy.reshape(self.co, -1)
             w_cols = self.weights.reshape(self.co, -1).T
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 3)
+
+            # if self.id == 4:
+            #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 08")
+
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
             res = self.matmul(w_cols, dy_cols)
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
+            # if self.id == 4:
+            #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 09")
+
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        tic09 = time.perf_counter()
+            # if self.id == 4:
+            #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 10")
 
-        if self.debug:
-            print(f"Ops in cg backward:")
-            print(f"  transpose:          {tic02 - tic01:0.4f} s")
-            print(f"  padding:            {tic03 - tic02:0.4f} s")
-            print(f"  get indexes:        {tic04 - tic03:0.4f} s")
-            print(f"  reindex:            {tic05 - tic04:0.4f} s")
-            print(f"  xconv_gemm:         {tic06 - tic05:0.4f} s")
-            print(f"  reshape:            {tic07 - tic06:0.4f} s")
-            print(f"  np.sum:             {tic08 - tic07:0.4f} s")
-            print(f"  matmul + col2imm:   {tic09 - tic08:0.4f} s")
-
-        if self.need_dx:
             return dx
 
 
@@ -470,7 +477,7 @@ class MaxPool2D(Layer):
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -483,7 +490,7 @@ class MaxPool2D(Layer):
         if self.need_dx:
             dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
             dy_cols[self.maxids] = dy.flatten()
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
@@ -530,7 +537,7 @@ class AveragePool2D(Layer):
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -542,7 +549,7 @@ class AveragePool2D(Layer):
         if self.need_dx:
             pool_size = np.prod(self.pool_shape)
             dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
