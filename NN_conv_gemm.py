@@ -46,8 +46,18 @@ from ctypes.util import find_library
 
 import numpy as np
 
-from NN_transpose_cython import transpose_1230_cython, transpose_2d_f2c_ij_cython, transpose_1230_2nd_cython, \
-    transpose_2d_f2c_ji_cython
+
+class KeyDefaultDict(dict):
+    def __init__(self, default_factory=None, **kwargs):
+        super().__init__(self, **kwargs)
+        self.default_factory = default_factory
+
+    def __missing__(self, key):
+        if self.default_factory is None:
+            raise KeyError(key)
+        else:
+            ret = self[key] = self.default_factory(key)
+            return ret
 
 
 class ConvGemm:
@@ -73,6 +83,11 @@ class ConvGemm:
     (see unittests/test_NN_conv_gemm.py for more instructions on testing)
     """
 
+    lib_cg = None  # will link to the libconvGemm.so library
+    biases_cg_cache = None
+    weights_cg_cache = None
+    out_cg_cache = None
+
     def __init__(self, dtype=np.float32, debug=False):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
@@ -84,17 +99,6 @@ class ConvGemm:
         debug : boolean
             Whether to print debug information or not.
         """
-        path = find_library('convGemm')
-        if not path:
-            for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
-                if os.path.exists(os.path.join(current_path, 'libconvGemm.so')):
-                    path = os.path.join(current_path, 'libconvGemm.so')
-                    break
-        if not path:
-            raise ImportError("Library 'libconvGemm.so' could not be found. Please add its path to LD_LIBRARY_PATH "
-                              "using 'export LD_LIBRARY_PATH=libconvGemm_path:$LD_LIBRARY_PATH' before calling this "
-                              "application.")
-        self.lib = ctypes.cdll.LoadLibrary(path)
         if isinstance(dtype, type):
             self.dtype = dtype
         else:
@@ -102,12 +106,28 @@ class ConvGemm:
                 self.dtype = {'float32': np.float32, 'float64': np.float64}[dtype]
             except KeyError:
                 raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
+        if ConvGemm.lib_cg is None:
+            path = find_library('convGemm')
+            if not path:
+                for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
+                    if os.path.exists(os.path.join(current_path, 'libconvGemm.so')):
+                        path = os.path.join(current_path, 'libconvGemm.so')
+                        break
+            if not path:
+                raise ImportError("Library 'libconvGemm.so' could not be found. Please add its path to LD_LIBRARY_PATH "
+                                  "using 'export LD_LIBRARY_PATH=libconvGemm_path:$LD_LIBRARY_PATH' before calling "
+                                  "this application.")
+            ConvGemm.lib_cg = ctypes.cdll.LoadLibrary(path)
+            ConvGemm.biases_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="F"))
+            ConvGemm.weights_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.out_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
+
         # Declare ac_pack and bc_pack and allocate space for them
         # @todo: The next fragment of code should be dependant on the architecture and the dtype
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
-        self.lib.alloc_pack_buffs.restype = ctypes.c_int
-        result = self.lib.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
+        self.lib_cg.alloc_pack_buffs.restype = ctypes.c_int
+        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         self.debug = debug
@@ -116,15 +136,15 @@ class ConvGemm:
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
             if self.dtype == np.float16:
-                self.x_conv_gemm = self.lib.hconvGemm
+                self.x_conv_gemm = self.lib_cg.hconvGemm
             elif self.dtype == np.float32:
-                self.x_conv_gemm = self.lib.sconvGemm
+                self.x_conv_gemm = self.lib_cg.sconvGemm
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
             if self.dtype == np.float32:
-                self.x_conv_gemm = self.lib.sconvGemm
-                self.x_apply_bias = self.lib.sapplyBias
+                self.x_conv_gemm = self.lib_cg.sconvGemm
+                self.x_apply_bias = self.lib_cg.sapplyBias
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         else:
@@ -229,7 +249,8 @@ class ConvGemm:
             # sum the biases when beta is 0.0. Otherwise, as the non initialized biases matrix could have nan elements,
             # the output will also have nan elements.
             beta = 0.0
-            biases_cg = np.empty((kn, b * ho * wo), weights.dtype, order='F')
+            # biases_cg = np.empty((kn, b * ho * wo), weights.dtype, order='F')
+            biases_cg = self.biases_cg_cache[(kn, b * ho * wo)]
         else:
             # biases = biases.copy()  # To avoid overriding the original biases matrix
             biases_cg = biases.astype(weights.dtype, order="F")
@@ -266,9 +287,11 @@ class ConvGemm:
         # NEW(wxh): 5)
         # void sreshapeWeights_pydtnn(unsigned int kn, unsigned int c, unsigned int kh, unsigned int kw,
         #                             float* weights_pydtnn, float* restrict weights);
-        weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
-        self.lib.sreshapeWeights_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(c), ctypes.c_uint(kw), ctypes.c_uint(kh),
-                                        ctypes.c_void_p(weights.ctypes.data), ctypes.c_void_p(weights_cg.ctypes.data))
+        # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
+        weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
+        self.lib_cg.sreshapeWeights_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(c), ctypes.c_uint(kw), ctypes.c_uint(kh),
+                                           ctypes.c_void_p(weights.ctypes.data),
+                                           ctypes.c_void_p(weights_cg.ctypes.data))
 
         # NEW(wxh): 6)
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
@@ -287,22 +310,19 @@ class ConvGemm:
         # Call custom added function to libconvGemm.so to print the received parameters
         if self.debug:
             try:
-                self.lib.expose_sconvGemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
-                                          ctypes.c_uint(c), ctypes.c_uint(kn),
-                                          ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
-                                          ctypes.c_uint(w), ctypes.c_uint(h),
-                                          ctypes.c_uint(b), ctypes.c_uint(hstride), ctypes.c_uint(vstride),
-                                          ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
-                                          ctypes.c_void_p(biases_cg.ctypes.data),
-                                          self.ac_pack, self.bc_pack)
+                self.lib_cg.expose_sconvGemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
+                                             ctypes.c_uint(c), ctypes.c_uint(kn),
+                                             ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
+                                             ctypes.c_uint(w), ctypes.c_uint(h),
+                                             ctypes.c_uint(b), ctypes.c_uint(hstride), ctypes.c_uint(vstride),
+                                             ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
+                                             ctypes.c_void_p(biases_cg.ctypes.data),
+                                             self.ac_pack, self.bc_pack)
             except AttributeError:
                 print("Warning: Custom 'expose_sconvGemm' function is not present in 'libconvGemm.so'. "
                       "You can safely ignore this warning.")
 
-        # Call appropriate convGemm function from libconvGemm
-
-        tic = time.perf_counter()
-
+        # Call the appropriate convGemm function from libconvGemm
         self.x_conv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
                          ctypes.c_uint(c), ctypes.c_uint(kn),
                          ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
@@ -333,9 +353,10 @@ class ConvGemm:
         # * NEW(wxh) 3):
         #     void sreshapeOut_pydtnn(unsigned int kn, unsigned int b, unsigned int h, unsigned int w,
         #                             float*  out, float* restrict reshaped);
-        out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
-        self.lib.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
-                                    ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
+        # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        out = self.out_cg_cache[(kn, b * ho * wo)]
+        self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
+                                       ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
         # * NEW(wxh) 4):
         # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
         # transpose_2d_f2c_ji_cython(biases_cg, out)
@@ -386,20 +407,16 @@ def __usage_example__():
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * biases...")
     conv_gemm = ConvGemm(debug=False)
-    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=None,
-                                           vpadding=vpadding, hpadding=hpadding,
-                                           vstride=vstride, hstride=hstride)
-    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=None,
+    conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
     print(conv_gemm_result)
     print("Sum: ", conv_gemm_result.sum())
-    sconv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(weights, x, biases=None,
-                                                      vpadding=vpadding, hpadding=hpadding,
-                                                      vstride=vstride, hstride=hstride),
-                          number=10) / 10
-
-    print("conv_gemm time: {:.4f}".format(sconv_gemm_t))
+    conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(weights, x,
+                                                     vpadding=vpadding, hpadding=hpadding,
+                                                     vstride=vstride, hstride=hstride),
+                         number=10) / 10
+    print("conv_gemm time: {:.4f}".format(conv_gemm_t))
     print()
     print("Using im2col and mm...")
     x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
