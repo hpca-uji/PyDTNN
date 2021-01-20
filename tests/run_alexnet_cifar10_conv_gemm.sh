@@ -19,16 +19,17 @@ DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
 EVALUATE=${EVALUATE:-True}
 NUM_EPOCHS=${NUM_EPOCHS:-30}
 PROFILE=${PROFILE:-False}
+TRACING=${TRACING:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
 
 #--------------------------
 # Only training parameters
 #--------------------------
-if [ ! -z "${ONLY_TRAINING}" ]; then
+if [ -n "${ONLY_TRAINING}" ]; then
   EVALUATE=False
   TEST_AS_VALIDATION=False
   VALIDATION_SPLIT=0.2
-  STEPS_PER_EPOCH=1
+  STEPS_PER_EPOCH=12
 fi
 
 #------------------
@@ -72,9 +73,10 @@ else
 fi
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS:-1}")t"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NUM_EPOCHS:-1}")e"
-FILE_NAME="${FILE_NAME}-$(date +"%Y%m%d-%H:%M")"
-HISTORY_FILE_NAME="${FILE_NAME}.history"
-OUTPUT_FILE_NAME="${FILE_NAME}.out"
+FILE_NAME="${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
+HISTORY_FILENAME="${FILE_NAME}.history"
+OUTPUT_FILENAME="${FILE_NAME}.out"
+SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"
 
 #------------------------
 # Model dependent options
@@ -119,10 +121,11 @@ python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
   --reduce_lr_on_plateau_min_lr=0 \
   --parallel=sequential \
   --non_blocking_mpi=False \
-  --tracing=False \
   --profile="${PROFILE}" \
+  --tracing="${TRACING}" \
+  --simple_tracer_output="${SIMPLE_TRACER_OUTPUT}" \
   --enable_gpu=False \
   --dtype=float32 \
   --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
-  --history="${HISTORY_FILE_NAME}" |
-  tee "${OUTPUT_FILE_NAME}"
+  --history="${HISTORY_FILENAME}" |
+  tee "${OUTPUT_FILENAME}"
