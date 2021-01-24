@@ -29,12 +29,12 @@ should have received a copy of the GNU General Public License along with this
 program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, \
-              Mar Catalan, Adrian Castello"
+__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, " \
+             "Mar Catalán, Adrian Castelló"
 __contact__ = "dolzm@uji.es"
 __copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
-               "Mar Catalan", "Adrian Castello"]
+__credits__ = ["Manuel F. Dolz", "Enrique S. Quintana", "Sergio Barrachina",
+               "Mar Catalán", "Adrián Castello"]
 __date__ = "2020/03/22"
 
 __email__ = "dolzm@uji.es"
@@ -43,21 +43,21 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-import numpy as np
-import os
-import sys
 import argparse
+import os
+import random
 import subprocess
+import sys
+
+import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 Extrae_tracing = False
 if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == "1":
     TracingLibrary = "libptmpitrace.so"
-    import ctypes
-    ctypes.CDLL("/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/" + TracingLibrary)
-
     import pyextrae.common.extrae as pyextrae
+
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
@@ -205,7 +205,8 @@ def get_lr_schedulers(params):
                                   params.model_checkpoint_save_freq)
         else:
             lrs = None
-        if lrs: lr_schedulers.append(lrs)
+        if lrs:
+            lr_schedulers.append(lrs)
     return lr_schedulers
 
 
@@ -228,14 +229,13 @@ if __name__ == "__main__":
         params.mpi_processes = 1
         rank = 0
 
-    if "OMP_NUM_THREADS" in os.environ:
-        params.threads_per_process = os.environ["OMP_NUM_THREADS"]
-    else:
-        params.threads_per_process = 1
+    params.threads_per_process = os.environ.get("OMP_NUM_THREADS", 1)
 
     try:
-        params.gpus_per_node = str(subprocess.check_output(["nvidia-smi", "-L"])).count('UUID')
-    except:
+        params.gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
+    except FileNotFoundError:
+        params.gpus_per_node = 0
+    except subprocess.CalledProcessError:
         params.gpus_per_node = 0
 
     if params.enable_gpu and params.parallel == "data":
@@ -280,13 +280,12 @@ if __name__ == "__main__":
         if rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        test_loss = model.evaluate_dataset(dataset, params.batch_size, \
-                                           params.loss_func, metrics)
+        test_loss = model.evaluate_dataset(dataset, params.batch_size, params.loss_func, metrics)
         if rank == 0:
             t2 = time.time()
-            total_time = (t2 - t1)
+            total_time = t2 - t1
             print(f'Testing time: {total_time:5.4f} s')
-            print(f'Testing throughput: {(dataset.test_nsamples) / total_time:5.4f} samples/s')
+            print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
 
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
@@ -297,10 +296,11 @@ if __name__ == "__main__":
         t1 = time.time()
 
         if params.profile:
-            import cProfile, pstats
+            import cProfile
+            import pstats
             from io import StringIO
 
-            pr = cProfile.Profile();
+            pr = cProfile.Profile()
             pr.enable()
 
     # Training a model directly from a dataset
@@ -314,49 +314,58 @@ if __name__ == "__main__":
                                   lr_schedulers=lr_schedulers)
 
     # Alternatively, the model can be trained on any specific data
-    # history = model.train(X_train = dataset.X_train_val, Y_train = dataset.Y_train_val,
-    #             X_val   = dataset.X_test,      Y_val   = dataset.Y_test,
-    #             nepochs          = params.num_epochs, 
-    #             local_batch_size = params.batch_size,
-    #             loss_metrics     = loss_metrics, 
-    #             optimizer        = optimizer
-    #             lr_schedulers    = lr_schedulers)
+    # history = model.train(X_train=dataset.X_train_val, Y_train=dataset.Y_train_val,
+    #                       X_val=dataset.X_test, Y_val=dataset.Y_test,
+    #                       nepochs=params.num_epochs,
+    #                       local_batch_size=params.batch_size,
+    #                       loss=params.loss_func,
+    #                       metrics=metrics,
+    #                       optimizer=optimizer,
+    #                       lr_schedulers=lr_schedulers)
 
     if params.parallel in ["data", "model"]:
         params.comm.Barrier()
 
     if rank == 0:
         if params.profile:
-            pr.disable();
-            s = StringIO();
+            pr.disable()
+            s = StringIO()
             sortby = 'time'
             ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
-            ps.print_stats();
+            ps.print_stats()
             print(s.getvalue())
 
         t2 = time.time()
         print('**** Done...')
-        total_time = (t2 - t1)
+        total_time = t2 - t1
         print(f'Training time: {total_time:5.4f} s')
-        print(f'Time per epoch: {total_time / params.num_epochs:5.4f} s')
-        print(f'Training throughput: {(dataset.train_val_nsamples * params.num_epochs) / total_time:5.4f} samples/s')
+        print(f'Time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s')
+        print(f'Training throughput: '
+              f'{(dataset.train_val_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
+        print(f'Training time (from model): {model.perf_counter.training_time:5.4f} s')
+        print(f'Time per epoch (from model): {model.perf_counter.training_time / model.perf_counter.num_epochs:5.4f} s')
+        print(f'Training throughput (from model): {model.perf_counter.training_throughput:5.4f} samples/s')
+        print(f'Training time (from model, estimated from last half of each epoch): '
+              f'{model.perf_counter.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
+        print(f'Training throughput (from model, from last half of each epoch): '
+              f'{model.perf_counter.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
 
         if params.history_file:
             with open(params.history_file, "w") as f:
                 keys = [k for k in history]
                 for v in range(len(history[keys[0]])):
-                    f.write(' '.join(["%3d" % v] + \
+                    f.write(' '.join(["%3d" % v] +
                                      [('%20.4f' % history[k][v]) for k in keys]) + '\n')
 
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        test_loss = model.evaluate_dataset(dataset, params.batch_size, \
-                                           params.loss_func, metrics)
+        test_loss = model.evaluate_dataset(dataset, params.batch_size, params.loss_func, metrics)
         if rank == 0:
             t2 = time.time()
-            total_time = (t2 - t1)
+            total_time = t2 - t1
             print(f'Testing time: {total_time:5.4f} s')
-            print(f'Testing throughput: {(dataset.test_nsamples) / total_time:5.4f} samples/s')
-
+            print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
+            print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
+            print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
