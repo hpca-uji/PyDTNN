@@ -46,6 +46,8 @@ from ctypes.util import find_library
 
 import numpy as np
 
+from NN_util import load_library
+
 
 class KeyDefaultDict(dict):
     def __init__(self, default_factory=None, **kwargs):
@@ -86,7 +88,8 @@ class ConvGemm:
     lib_cg = None  # will link to the libconvGemm.so library
     biases_cg_cache = None
     weights_cg_cache = None
-    # out_cg_cache = None  # Warning: don't use a cached matrix for the output
+
+    # out_cg_cache = None  # Warning: don't use an static cached matrix for the output
 
     def __init__(self, dtype=np.float32, debug=False):
         """
@@ -107,19 +110,12 @@ class ConvGemm:
             except KeyError:
                 raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
         if ConvGemm.lib_cg is None:
-            path = find_library('convGemm')
-            if not path:
-                for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
-                    if os.path.exists(os.path.join(current_path, 'libconvGemm.so')):
-                        path = os.path.join(current_path, 'libconvGemm.so')
-                        break
-            if not path:
-                raise ImportError("Library 'libconvGemm.so' could not be found. Please add its path to LD_LIBRARY_PATH "
-                                  "using 'export LD_LIBRARY_PATH=libconvGemm_path:$LD_LIBRARY_PATH' before calling "
-                                  "this application.")
-            ConvGemm.lib_cg = ctypes.cdll.LoadLibrary(path)
+            ConvGemm.lib_cg = load_library("convGemm")
             ConvGemm.biases_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="F"))
             ConvGemm.weights_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
+        # The x_padded and output matrices are also cached, but only on the current instance
+        self.x_padded_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.out_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
 
         # Declare ac_pack and bc_pack and allocate space for them
         # @todo: The next fragment of code should be dependant on the architecture and the dtype
@@ -130,8 +126,6 @@ class ConvGemm:
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         self.debug = debug
-        if not self.debug:
-            time.perf_counter = lambda: 0
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
             if self.dtype == np.float16:
@@ -216,8 +210,6 @@ class ConvGemm:
             The result of alpha * weights * im2col(x_padded) + beta * biases.
         """
 
-        tic01 = time.perf_counter()
-
         # Pad x matrix and set vpadding and hpadding to 0
         if vpadding == 0 and hpadding == 0:
             x_padded = x
@@ -225,12 +217,11 @@ class ConvGemm:
             # Hand made alternative to:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
             b, c, h, w = x.shape
-            new_h , new_w = h + 2 * vpadding, w + 2 * hpadding
-            x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
-            x_padded[:, :, vpadding:new_h-vpadding, hpadding:new_w-hpadding] = x
+            new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
+            # x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
+            x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
+            x_padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = x
             vpadding = hpadding = 0
-
-        tic02 = time.perf_counter()
 
         # Get matrices dimensions (once x matrix has been padded)
         kn, ck, kh, kw = weights.shape
@@ -258,8 +249,6 @@ class ConvGemm:
             # biases_cg[...] = biases
             assert (kn, b * ho * wo) == biases.shape, \
                 "Biases matrix should be ({}, {}), instead it is {}".format(kn, b * ho * wo, biases.shape)
-
-        tic03 = time.perf_counter()
 
         # Check that dtype is the same on all the matrices
         assert weights.dtype == x.dtype == biases_cg.dtype, \
@@ -297,15 +286,11 @@ class ConvGemm:
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
         # transpose_1230_2nd_cython(weights, weights_cg)
 
-        tic04 = time.perf_counter()
-
         # PREVIOUS(hxw): x_padded_cg = x_padded.transpose((2, 3, 1, 0)).flatten(order="F")
         # NEW(wxh) 1): x_padded_cg = x_padded.transpose((3, 2, 1, 0)).flatten(order="F")
         # NEW(wxh) 2): x_padded_cg = x_padded.ravel(order="C")
         # NEW(wxh) 3):
         x_padded_cg = x_padded.ravel(order="K")
-
-        tic05 = time.perf_counter()
 
         # Call custom added function to libconvGemm.so to print the received parameters
         if self.debug:
@@ -332,14 +317,10 @@ class ConvGemm:
                          ctypes.c_void_p(biases_cg.ctypes.data),
                          self.ac_pack, self.bc_pack)
 
-        tic06 = time.perf_counter()
-
         if biases_vector is not None:
             self.x_apply_bias(ctypes.c_uint(kn), ctypes.c_uint(b * ho * wo),
                               ctypes.c_void_p(biases_vector.ctypes.data), ctypes.c_void_p(biases_cg.ctypes.data),
                               ctypes.c_uint(kn))
-
-        tic07 = time.perf_counter()
 
         # Change output matrix to the PyDTNN expected order:
         # * PREVIOUS(hxw): out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
@@ -353,27 +334,13 @@ class ConvGemm:
         # * NEW(wxh) 3):
         #     void sreshapeOut_pydtnn(unsigned int kn, unsigned int b, unsigned int h, unsigned int w,
         #                             float*  out, float* restrict reshaped);
-        # out = self.out_cg_cache[(kn, b * ho * wo)]  # out can persist outside, don't use this
-        out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        out = self.out_cg_cache[(kn, b * ho * wo)]  # If the out matrix will persist outside, don't use this
         self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
                                        ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
         # * NEW(wxh) 4):
         # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
         # transpose_2d_f2c_ji_cython(biases_cg, out)
-
-        tic08 = time.perf_counter()
-
-        if self.debug:
-            print(f"conv_gemm:")
-            print(f"  padding:            {tic02 - tic01:0.4f} s")
-            print(f"  biases:             {tic03 - tic02:0.4f} s")
-            print(f"  weights_cg:         {tic04 - tic03:0.4f} s     weights.shape: {weights.shape}")
-            print(f"  x_padded_cg:        {tic05 - tic04:0.4f} s     x.shape: {x.shape}")
-            print(f"  before x_conv_gemm: {tic05 - tic01:0.4f} s")
-            print(f"  x_conv_gemm:        {tic06 - tic05:0.4f} s")
-            print(f"  x_apply_bias:       {tic07 - tic06:0.4f} s")
-            print(f"  after x_conv_gemm:  {tic08 - tic07:0.4f} s")
-            print(f"  total:              {tic08 - tic01:0.4f} s")
 
         return out
 
