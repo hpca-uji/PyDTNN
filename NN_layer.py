@@ -12,7 +12,7 @@ multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
 message-passing, BLAS calls via NumPy for multicore processors and
 PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
-Copyright 2020 Universitat Jaume I
+Copyright 2021 Universitat Jaume I
 
 This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
 and/or modify it under the terms of the GNU General Public License as published
@@ -26,12 +26,10 @@ should have received a copy of the GNU General Public License along with this
 program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, \
-              Mar Catalan, Adrian Castello"
+__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalán, Adrián Castelló"
 __contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
-               "Mar Catalan", "Adrian Castello"]
+__copyright__ = "Copyright 2021, Universitat Jaume I"
+__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Sergio Barrachina", "Mar Catalán", "Adrián Castelló"]
 __date__ = "2020/03/22"
 
 __email__ = "dolzm@uji.es"
@@ -49,12 +47,12 @@ import NN_initializer
 from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
-from NN_conv_gemm import ConvGemm
+from NN_conv_gemm import ConvGemm, KeyDefaultDict
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
 from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
     PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_FORWARD_IM2COL, \
-    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
+    PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
     PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
     PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
     PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW
@@ -168,8 +166,11 @@ class Conv2D(Layer):
         if self.use_bias:
             self.grad_vars["biases"] = "db"
         self.debug = False
+        # convGemm related attributes
         self.cg = None
         self.cg_fallback_i2c = True  # Fallback to backward I2C if any stride is greater than 1
+        self.cg_x_indexed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.cg_matmul_out_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -254,6 +255,11 @@ class Conv2D(Layer):
 
     def _forward_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
+
+        if self.cg_fallback_i2c and (self.vstride > 1 or self.hstride > 1):
+            # See comment on _backward_cg()
+            return self._forward_i2c(x)
+
         self.cg_x = x
 
         biases_vector = self.biases if self.use_bias else None
@@ -333,10 +339,12 @@ class Conv2D(Layer):
             #  * the matrix copy using the new indexes should be parallelized, or
             #  * the underlying convGemm method should directly support the dy * im2col(x).T operation,
             #    where im2col(x) is the im2col(x) in weights * im2col(x) (not in dy * im2col(x)).
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
-            self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride)
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            #
+            # As _forward_cg() also reverts to _forward_i2c(), the next part is no longer necessary:
+            #   self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
+            #   self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
+            #                               self.vstride, self.hstride)
+            #   self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self._backward_i2c(dy)
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
@@ -354,8 +362,9 @@ class Conv2D(Layer):
             #                            mode='constant').astype(self.dtype)
             b, c, h, w = self.cg_x.shape
             new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
-            self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
-            self.cg_x_indexed[:, :, self.vpadding:new_h-self.vpadding, self.hpadding:new_w-self.hpadding] = \
+            # self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
+            self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+            self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
                 self.cg_x.transpose((1, 0, 2, 3))
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -415,14 +424,17 @@ class Conv2D(Layer):
         #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 07")
 
         if self.need_dx:
-            dy_cols = cg_dy.reshape(self.co, -1)
             w_cols = self.weights.reshape(self.co, -1).T
+            dy_cols = cg_dy.reshape(self.co, -1)
 
             # if self.id == 4:
             #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 08")
 
+            # Don't use this if the matrix will persist
+            res = self.cg_matmul_out_cache[(w_cols.shape[0], dy_cols.shape[1])]
+
             self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
-            res = self.matmul(w_cols, dy_cols)
+            self.matmul(w_cols, dy_cols, res)
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
             # if self.id == 4:
@@ -472,9 +484,9 @@ class MaxPool2D(Layer):
                         dtype=self.dtype) if need_dx else 0
 
     def show(self):
-        super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
-                                                "padd=(%d,%d), stride=(%d,%d)" % (
-                                                    self.vpadding, self.hpadding, self.vstride, self.hstride)))
+        super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape),
+                                                "padd=(%d,%d), stride=(%d,%d)" % \
+                                                (self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
