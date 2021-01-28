@@ -14,14 +14,14 @@ from ctypes.util import find_library
 from timeit import timeit
 
 import numpy as np
-from numba import njit, prange
 from prettytable import PrettyTable
+# from numba import njit, prange
 
 if True:
     current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parent_dir = os.path.dirname(current_dir)
     sys.path.insert(0, parent_dir)
-    from NN_transpose_cython import transpose_1230_cython, transpose_1230_2nd_cython
+    from NN_transpose_cython import transpose_1230_ij_cython, transpose_1230_ji_cython
 
 
 class D:
@@ -79,24 +79,24 @@ def numpy_transpose_1230(original, transposed):
     transposed[...] = original.transpose((1, 2, 3, 0))
 
 
-@njit(parallel=True)
-def transpose_1230_numba(original, transposed):
-    n0, n1, n2, n3 = original.shape
-    for d0 in prange(n0):
-        for d1 in range(n1):
-            for d2 in range(n2):
-                for d3 in range(n3):
-                    transposed[d1, d2, d3, d0] = original[d0, d1, d2, d3]
-
-
-@njit(parallel=True)
-def transpose_1230_2nd_numba(original, transposed):
-    n0, n1, n2, n3 = original.shape
-    for d0 in range(n0):
-        for d1 in prange(n1):
-            for d2 in range(n2):
-                for d3 in range(n3):
-                    transposed[d1, d2, d3, d0] = original[d0, d1, d2, d3]
+# @njit(parallel=True)
+# def transpose_1230_numba(original, transposed):
+#     n0, n1, n2, n3 = original.shape
+#     for d0 in prange(n0):
+#         for d1 in range(n1):
+#             for d2 in range(n2):
+#                 for d3 in range(n3):
+#                     transposed[d1, d2, d3, d0] = original[d0, d1, d2, d3]
+#
+#
+# @njit(parallel=True)
+# def transpose_1230_2nd_numba(original, transposed):
+#     n0, n1, n2, n3 = original.shape
+#     for d0 in range(n0):
+#         for d1 in prange(n1):
+#             for d2 in range(n2):
+#                 for d3 in range(n3):
+#                     transposed[d1, d2, d3, d0] = original[d0, d1, d2, d3]
 
 
 def transpose_1230_conv_gemm(original, transposed, lib):
@@ -153,11 +153,11 @@ def time_transpose_1230(shape, dtype=np.float32):
         print(np.where(numpy_transposed != conv_gemm_transposed))
     #
     print(".", sep="", end="")
-    transpose_1230_cython(original, cython_transposed)
+    transpose_1230_ij_cython(original, cython_transposed)
     assert np.allclose(numpy_transposed, cython_transposed), "numpy and cython outer differ"
     #
     print(".", sep="", end="")
-    transpose_1230_2nd_cython(original, cython_transposed)
+    transpose_1230_ji_cython(original, cython_transposed)
     assert np.allclose(numpy_transposed, cython_transposed), "numpy and cython 2nd loop differ"
     print()
     #
@@ -177,18 +177,18 @@ def time_transpose_1230(shape, dtype=np.float32):
     conv_gemm_transposed_1230_t = timeit(lambda: transpose_1230_conv_gemm(original, numpy_transposed, lib),
                                          number=10) / 10
     print(".", sep="", end="")
-    cython_transposed_1230_t = timeit(lambda: transpose_1230_cython(original, numpy_transposed),
-                                      number=10) / 10
+    cython_transposed_1230_ji_t = timeit(lambda: transpose_1230_ji_cython(original, numpy_transposed),
+                                         number=10) / 10
     print(".", sep="", end="")
-    cython_transposed_1230_2nd_t = timeit(lambda: transpose_1230_2nd_cython(original, numpy_transposed),
-                                          number=10) / 10
+    cython_transposed_1230_ij_t = timeit(lambda: transpose_1230_ij_cython(original, numpy_transposed),
+                                         number=10) / 10
     print()
     min_t = np.min([numpy_transpose_1230_t, conv_gemm_transposed_1230_t,
-                    cython_transposed_1230_t, cython_transposed_1230_2nd_t])
+                    cython_transposed_1230_ij_t, cython_transposed_1230_ji_t])
     a = "*" if conv_gemm_transposed_1230_t == min_t else ""
-    b = "*" if cython_transposed_1230_t == min_t else ""
-    c = "*" if cython_transposed_1230_2nd_t == min_t else ""
-    return [["numpy", "a", "convGemm", "b", "cython out", "c", "cython 2nd"],
+    b = "*" if cython_transposed_1230_ji_t == min_t else ""
+    c = "*" if cython_transposed_1230_ij_t == min_t else ""
+    return [["numpy", "a", "convGemm", "b", "cython ji", "c", "cython ij"],
             # ["numpy", "numba outer", "numba 2nd loop", "convGemm", "cython outer", "cython 2nd loop"],
             ["{:6.4f}".format(numpy_transpose_1230_t),
              # numba_outer_transposed_1230_t - numpy_transpose_1230_t,
@@ -196,9 +196,9 @@ def time_transpose_1230(shape, dtype=np.float32):
              a,
              "{:6.4f}".format(conv_gemm_transposed_1230_t - numpy_transpose_1230_t),
              b,
-             "{:6.4f}".format(cython_transposed_1230_t - numpy_transpose_1230_t),
+             "{:6.4f}".format(cython_transposed_1230_ji_t - numpy_transpose_1230_t),
              c,
-             "{:6.4f}".format(cython_transposed_1230_2nd_t - numpy_transpose_1230_t),
+             "{:6.4f}".format(cython_transposed_1230_ij_t - numpy_transpose_1230_t),
              ]]
 
 

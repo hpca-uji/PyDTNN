@@ -92,6 +92,7 @@ def get_conv2d_layers(d):
     model_i2c = Model(params)
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True
+    params_gc.enable_conv_gemm_fallback_i2c = False
     model_cg = Model(params_gc)
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
@@ -180,7 +181,10 @@ class TestConv2DConvGemm(unittest.TestCase):
             print()
             print("---=[ conv_gemm(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
-            print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
+            try:
+                print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
+            except AttributeError:
+                pass
             try:
                 print("x indexed:\n", conv2d_cg.cg_x_indexed)
             except AttributeError:

@@ -16,7 +16,10 @@ ext_modules = [
                      "NN_argmax_cython",
                      "NN_relu_cython",
                      "NN_add_cython",
-                     "NN_transpose_cython"]
+                     "NN_transpose_cython",
+                     "NN_reindex_cython",
+                     "NN_pad_cython"
+                     ]
 ]
 
 setup(

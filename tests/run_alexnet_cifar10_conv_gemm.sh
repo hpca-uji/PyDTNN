@@ -22,6 +22,7 @@ STEPS_PER_EPOCH=${STEPS_PER_EPOCH:-0}
 PROFILE=${PROFILE:-False}
 TRACING=${TRACING:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
+ENABLE_CONV_GEMM_FALLBACK_I2C=${ENABLE_CONV_GEMM_FALLBACK_I2C:-True}
 
 #--------------------------
 # Only training parameters
@@ -48,6 +49,9 @@ nowherman)
 lorca)
   export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-4 5 6 7 2 3 1 0}"
   ;;
+volta)
+  export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-3 5 7 9 11 13 15 17 19 21 23 1 2 4 6 8 10 12 14 16 18 20 22}"
+  ;;
 *)
   export OMP_PLACES="cores"
   export OMP_PROC_BIND="close"
@@ -68,6 +72,9 @@ SCRIPT_PATH="$(
 FILE_NAME="$(uname -n)_${MODEL}"
 if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_conv_gemm"
+  if [ "${ENABLE_CONV_GEMM_FALLBACK_I2C}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}_fb"
+  fi
 else
   FILE_NAME="${FILE_NAME}_i2c_mm"
 fi
@@ -127,5 +134,6 @@ python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
   --enable_gpu=False \
   --dtype=float32 \
   --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
+  --enable_conv_gemm_fallback_i2c="${ENABLE_CONV_GEMM_FALLBACK_I2C}" \
   --history="${HISTORY_FILENAME}" |
   tee "${OUTPUT_FILENAME}"

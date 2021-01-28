@@ -49,13 +49,16 @@ from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm, KeyDefaultDict
 from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
+from NN_reindex_cython import reindex_cython
 from NN_sim import *
 from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
     PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_FORWARD_IM2COL, \
     PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
     PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
     PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
-    PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW
+    PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
+    PYDTNN_OPS_BACKWARD_IM2COL
 
 try:
     from mpi4py import MPI
@@ -131,21 +134,6 @@ class FC(Layer):
             return dx
 
 
-@lru_cache(maxsize=4)
-def _get_x_new_indexes_and_xstride(kx, xo, s):
-    """
-    Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
-    vstride)
-    """
-    if s == 1:
-        return None, 1
-    x_reorder = []
-    for i in range(kx):
-        x_reorder += [i + j * s for j in range(xo)]
-    # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
-    return np.array(x_reorder), xo
-
-
 class Conv2D(Layer):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
@@ -190,6 +178,7 @@ class Conv2D(Layer):
             self.cg = ConvGemm(dtype=self.dtype, debug=self.debug)
             self.forward = self._forward_cg
             self.backward = self._backward_cg
+            self.cg_fallback_i2c = self.model.params.enable_conv_gemm_fallback_i2c
         else:
             self.forward = self._forward_i2c
             self.backward = self._backward_i2c
@@ -256,10 +245,6 @@ class Conv2D(Layer):
     def _forward_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
 
-        if self.cg_fallback_i2c and (self.vstride > 1 or self.hstride > 1):
-            # See comment on _backward_cg()
-            return self._forward_i2c(x)
-
         self.cg_x = x
 
         biases_vector = self.biases if self.use_bias else None
@@ -320,6 +305,21 @@ class Conv2D(Layer):
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
+    @staticmethod
+    # @lru_cache(maxsize=4)
+    def _get_x_new_indexes_and_xstride(kx, xo, s):
+        """
+        Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
+        vstride)
+        """
+        if s == 1:
+            return None, 1
+        x_reorder = []
+        for i in range(kx):
+            x_reorder += [i + j * s for j in range(xo)]
+        # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
+        return np.array(x_reorder), xo
+
     def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
 
@@ -327,53 +327,63 @@ class Conv2D(Layer):
         #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 01")
 
         if self.cg_fallback_i2c and (self.vstride > 1 or self.hstride > 1):
-            # Disclaimer
-            # ----------
             #
             # Although it is is possible to reindex x so that convGemm library can be used to compute
             # dw = dy * im2col(x).T when any of the strides is greater than one, the cost of reindexing x is
-            # considerable high. Therefore, we fall back to compute im2col(x) and to call the original
-            # backward method.
+            # considerable high. Therefore, it is possible to fall back to compute im2col(x) and to call the
+            # original backward method.
             #
-            # In order to use this alternative when any of the strides is greater than one:
-            #  * the matrix copy using the new indexes should be parallelized, or
-            #  * the underlying convGemm method should directly support the dy * im2col(x).T operation,
-            #    where im2col(x) is the im2col(x) in weights * im2col(x) (not in dy * im2col(x)).
+            # In order to use the convGemm library when any of the strides is greater than one:
+            #  1) the matrix copy using the new indexes should be parallelized, or
+            #  2) the underlying convGemm method should directly support the dy * im2col(x).T operation,
+            #     where im2col(x) is the im2col(x) in weights * im2col(x) (not in dy * im2col(x)).
             #
-            # As _forward_cg() also reverts to _forward_i2c(), the next part is no longer necessary:
-            #   self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
-            #   self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
-            #                               self.vstride, self.hstride)
-            #   self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # As the first option has been implemented, using the convGemm library in this case is now competitive.
+            #
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
+            self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                        self.vstride, self.hstride)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self._backward_i2c(dy)
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
         cg_dy = dy.transpose((1, 0, 2, 3))
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        b, c, h, w = self.cg_x.shape
+
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_PADDING_X)
+        # if self.vpadding == 0 and self.hpadding == 0:
+        #     self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
+        # else:
+        #     # Hand made alternative to:
+        #     # self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
+        #     #                            ((0, 0),
+        #     #                             (0, 0),
+        #     #                             (self.vpadding, self.vpadding),
+        #     #                             (self.hpadding, self.hpadding)),
+        #     #                            mode='constant')
+        #     b, c, h, w = self.cg_x.shape
+        #     new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
+        #     # self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
+        #     self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+        #     self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
+        #         self.cg_x.transpose((1, 0, 2, 3))
         if self.vpadding == 0 and self.hpadding == 0:
+            # @todo: cython transpose version
             self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
         else:
-            # Hand made alternative to:
-            # self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
-            #                            ((0, 0), (0, 0),
-            #                            (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
-            #                            mode='constant').astype(self.dtype)
-            b, c, h, w = self.cg_x.shape
             new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
-            # self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
             self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
-            self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
-                self.cg_x.transpose((1, 0, 2, 3))
+            transpose_1023_and_pad_cython(self.cg_x, self.cg_x_indexed)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:
         #    self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 02")
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES)
-        h_new_indexes, cg_vstride = _get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
-        v_new_indexes, cg_hstride = _get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+        h_new_indexes, cg_vstride = self._get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
+        v_new_indexes, cg_hstride = self._get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:
@@ -383,15 +393,21 @@ class Conv2D(Layer):
         #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_new_indexes_and_xstride).
         #  + Indexing first rows and then columns is faster than the opposite.
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_REINDEX)
-        if h_new_indexes is not None:
-            self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
-        if v_new_indexes is not None:
-            self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
+        # if h_new_indexes is not None:
+        #     self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
+        # if v_new_indexes is not None:
+        #     self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
+        # if h_new_indexes is not None or v_new_indexes is not None:
+        #     # @warning: The next line is required to ensure the correct order of the underlying data of
+        #     #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
+        #     #           unexpected results
+        #     self.cg_x_indexed = self.cg_x_indexed.copy()
         if h_new_indexes is not None or v_new_indexes is not None:
-            # @warning: The next line is required to ensure the correct order of the underlying data of
-            #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
-            #           unexpected results
-            self.cg_x_indexed = self.cg_x_indexed.copy()
+            cg_x_indexed_previous = self.cg_x_indexed
+            new_h = len(h_new_indexes) if h_new_indexes is not None else h
+            new_w = len(v_new_indexes) if v_new_indexes is not None else w
+            self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
+            reindex_cython(h_new_indexes, v_new_indexes, cg_x_indexed_previous, self.cg_x_indexed)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:

@@ -41,54 +41,63 @@ __version__ = "1.1.0"
 import numpy as np
 cimport numpy as np
 cimport cython
-from cython.parallel import prange, parallel
+from cython.parallel import prange
 
-def transpose_1230_cython(original, transposed):
-    """Transpose a 4D matrix from (0,1,2,3) to (1,2,3,0). The outer loop is parallelized."""
+def transpose_1230_ji_cython(original, transposed):
+    """
+    Transposes a 4D matrix from (0,1,2,3) to (1,2,3,0). This is equivalent to transpose a 2D matrix 0x1·2·3 to 1·2·3x0.
+    This variant calls transpose_2d_ji_cython_float32().
+    """
+    orig2d = original.reshape(original.shape[0], -1)
+    trans2d = transposed.reshape(-1, transposed.shape[3])
     if original.dtype == np.float32:
-        transpose_1230_cython_float32(original, transposed)
+        transpose_2d_ji_cython_float32(orig2d, trans2d)
     else:
-        raise ValueError("Type {} not supported for transpose_1230_cython") from None
+        raise ValueError("Type '{}' not supported for transpose_1230_ij_cython".format(original.dtype))
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef transpose_1230_cython_float32(np.ndarray[np.float32_t, ndim=4] original,
-                                   np.ndarray[np.float32_t, ndim=4] transposed):
-    cdef Py_ssize_t d0, d1
-
-    cdef np.ndarray[np.float32_t, ndim = 2] orig2d = original.reshape(original.shape[0], -1)
-    cdef np.ndarray[np.float32_t, ndim = 2] trans2d = transposed.reshape(-1, transposed.shape[3])
-
-    for d0 in prange(orig2d.shape[0], nogil=True, schedule="static"):
-        for d1 in range(orig2d.shape[1]):
-            trans2d[d1, d0] = orig2d[d0, d1]
-
-def transpose_1230_2nd_cython(original, transposed):
-    """Transpose a 4D matrix from (0,1,2,3) to (1,2,3,0). The second loop is parallelized."""
+def transpose_1230_ij_cython(original, transposed):
+    """
+    Transpose a 4D matrix from (0,1,2,3) to (1,2,3,0). This is equivalent to transpose a 2D matrix 0x1·2·3 to 1·2·3x0.
+    This variant calls transpose_2d_ij_cython_float32().
+    """
+    orig2d = original.reshape(original.shape[0], -1)
+    trans2d = transposed.reshape(-1, transposed.shape[3])
     if original.dtype == np.float32:
-        transpose_1230_2nd_cython_float32(original, transposed)
+        transpose_2d_ij_cython_float32(orig2d, trans2d)
     else:
-        raise ValueError("Type {} not supported for transpose_1230_cython") from None
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef transpose_1230_2nd_cython_float32(np.ndarray[np.float32_t, ndim=4] original,
-                                       np.ndarray[np.float32_t, ndim=4] transposed):
-    cdef Py_ssize_t d0, d1
-
-    cdef np.ndarray[np.float32_t, ndim = 2] orig2d = original.reshape(original.shape[0], -1)
-    cdef np.ndarray[np.float32_t, ndim = 2] trans2d = transposed.reshape(-1, transposed.shape[3])
-
-    for d0 in range(orig2d.shape[0]):
-        for d1 in prange(orig2d.shape[1], nogil=True, schedule="static"):
-            trans2d[d1, d0] = orig2d[d0, d1]
+        raise ValueError("Type '{}' not supported for transpose_1230_ij_cython".format(original.dtype))
 
 def transpose_2d_f2c_ji_cython(original, transposed):
     """Transpose a 2D matrix from column order (Fortran) to row order (C). Read for each column (j) all its rows (i)."""
     if original.dtype == np.float32:
         transpose_2d_f2c_ji_cython_float32(original, transposed)
     else:
-        raise ValueError("Type {} not supported for transpose_2d_f2c_ji_cython") from None
+        raise ValueError("Type '{}' not supported for transpose_2d_f2c_ji_cython".format(original.dtype))
+
+def transpose_2d_f2c_ij_cython(original, transposed):
+    """Transpose a 2D matrix from column order (Fortran) to row order (C). Read for each row (i) all its columns (j)."""
+    if original.dtype == np.float32:
+        transpose_2d_f2c_ij_cython_float32(original, transposed)
+    else:
+        raise ValueError("Type '{}' not supported for transpose_2d_f2c_ji_cython".format(original.dtype))
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef transpose_2d_ji_cython_float32(np.ndarray[np.float32_t, ndim=2] original,
+                                    np.ndarray[np.float32_t, ndim=2] transposed):
+    cdef Py_ssize_t d0, d1
+    for d1 in prange(original.shape[1], nogil=True, schedule="static"):
+        for d0 in range(original.shape[0]):
+            transposed[d1, d0] = original[d0, d1]
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef transpose_2d_ij_cython_float32(np.ndarray[np.float32_t, ndim=2] original,
+                                    np.ndarray[np.float32_t, ndim=2] transposed):
+    cdef Py_ssize_t d0, d1
+    for d0 in prange(original.shape[0], nogil=True, schedule="static"):
+        for d1 in range(original.shape[1]):
+            transposed[d1, d0] = original[d0, d1]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -98,13 +107,6 @@ cdef transpose_2d_f2c_ji_cython_float32(np.ndarray[np.float32_t, ndim=2] origina
     for d1 in prange(original.shape[1], nogil=True, schedule="static"):
         for d0 in range(original.shape[0]):
             transposed[d0, d1] = original[d0, d1]
-
-def transpose_2d_f2c_ij_cython(original, transposed):
-    """Transpose a 2D matrix from column order (Fortran) to row order (C). Read for each row (i) all its columns (j)."""
-    if original.dtype == np.float32:
-        transpose_2d_f2c_ij_cython_float32(original, transposed)
-    else:
-        raise ValueError("Type {} not supported for transpose_2d_f2c_ji_cython") from None
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

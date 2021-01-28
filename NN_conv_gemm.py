@@ -46,7 +46,9 @@ from ctypes.util import find_library
 
 import numpy as np
 
+from NN_transpose_cython import transpose_1230_ji_cython
 from NN_util import load_library
+from NN_pad_cython import pad_cython
 
 
 class KeyDefaultDict(dict):
@@ -89,7 +91,7 @@ class ConvGemm:
     biases_cg_cache = None
     weights_cg_cache = None
 
-    # out_cg_cache = None  # Warning: don't use an static cached matrix for the output
+    # out_cg_cache = None  # Warning: don't use an static cached matrix for the output. No, do not do it.
 
     def __init__(self, dtype=np.float32, debug=False):
         """
@@ -218,9 +220,10 @@ class ConvGemm:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
             b, c, h, w = x.shape
             new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
-            # x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
-            x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
+            x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
+            # x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
             x_padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = x
+            # pad_cython(x, x_padded)
             vpadding = hpadding = 0
 
         # Get matrices dimensions (once x matrix has been padded)
@@ -276,15 +279,18 @@ class ConvGemm:
         # NEW(wxh): 5)
         # void sreshapeWeights_pydtnn(unsigned int kn, unsigned int c, unsigned int kh, unsigned int kw,
         #                             float* weights_pydtnn, float* restrict weights);
+        # weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
-        weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
-        self.lib_cg.sreshapeWeights_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(c), ctypes.c_uint(kw), ctypes.c_uint(kh),
-                                           ctypes.c_void_p(weights.ctypes.data),
-                                           ctypes.c_void_p(weights_cg.ctypes.data))
+        # assert weights.flags["C_CONTIGUOUS"] is True, \
+        #     "sreshapeWeights_pydtnn does a bulk copy, the result will be wrong if weights is no C_CONTIGUOUS"
+        # self.lib_cg.sreshapeWeights_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(c), ctypes.c_uint(kw), ctypes.c_uint(kh),
+        #                                    ctypes.c_void_p(weights.ctypes.data),
+        #                                    ctypes.c_void_p(weights_cg.ctypes.data))
 
         # NEW(wxh): 6)
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
-        # transpose_1230_2nd_cython(weights, weights_cg)
+        weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
+        transpose_1230_ji_cython(weights, weights_cg)
 
         # PREVIOUS(hxw): x_padded_cg = x_padded.transpose((2, 3, 1, 0)).flatten(order="F")
         # NEW(wxh) 1): x_padded_cg = x_padded.transpose((3, 2, 1, 0)).flatten(order="F")
@@ -334,8 +340,9 @@ class ConvGemm:
         # * NEW(wxh) 3):
         #     void sreshapeOut_pydtnn(unsigned int kn, unsigned int b, unsigned int h, unsigned int w,
         #                             float*  out, float* restrict reshaped);
-        # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
-        out = self.out_cg_cache[(kn, b * ho * wo)]  # If the out matrix will persist outside, don't use this
+        out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        # Warning: don't use a matrix cache for out (it will be rewritten elsewhere, no matter how hard you try not to)
+        # out = self.out_cg_cache[(kn, b * ho * wo)]
         self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
                                        ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
         # * NEW(wxh) 4):
