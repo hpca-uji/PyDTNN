@@ -56,8 +56,8 @@ def im2col_cython(x,
     cdef int H = x.shape[2]
     cdef int W = x.shape[3]
 
-    cdef int HH = floor((H + 2 * vpadding - KH) / vstride) + 1
-    cdef int WW = floor((W + 2 * hpadding - KW) / hstride) + 1
+    cdef int HH = (H + 2 * vpadding - KH) // vstride + 1
+    cdef int WW = (W + 2 * hpadding - KW) // hstride + 1
 
     cdef np.ndarray x_padded = np.pad(x,
             ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant').astype(x.dtype)
