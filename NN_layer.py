@@ -382,8 +382,8 @@ class Conv2D(Layer):
         #    self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 02")
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES)
-        h_new_indexes, cg_vstride = self._get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
-        v_new_indexes, cg_hstride = self._get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+        v_new_indexes, cg_vstride = self._get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
+        h_new_indexes, cg_hstride = self._get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:
@@ -404,10 +404,10 @@ class Conv2D(Layer):
         #     self.cg_x_indexed = self.cg_x_indexed.copy()
         if h_new_indexes is not None or v_new_indexes is not None:
             cg_x_indexed_previous = self.cg_x_indexed
-            new_h = len(h_new_indexes) if h_new_indexes is not None else h
-            new_w = len(v_new_indexes) if v_new_indexes is not None else w
+            new_h = len(v_new_indexes) if v_new_indexes is not None else h
+            new_w = len(h_new_indexes) if h_new_indexes is not None else w
             self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
-            reindex_cython(h_new_indexes, v_new_indexes, cg_x_indexed_previous, self.cg_x_indexed)
+            reindex_cython(v_new_indexes, h_new_indexes, cg_x_indexed_previous, self.cg_x_indexed)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:

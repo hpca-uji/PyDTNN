@@ -43,7 +43,7 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def reindex_cython(h_new_indexes, v_new_indexes, matrix_in, matrix_out):
+def reindex_cython(v_new_indexes, h_new_indexes, matrix_in, matrix_out):
     """
     Implements a parallel version of:
         matrix_out = matrix_in[:, :, h_new_indexes, :]
@@ -51,11 +51,11 @@ def reindex_cython(h_new_indexes, v_new_indexes, matrix_in, matrix_out):
     """
     if matrix_in.dtype == np.float32:
         if v_new_indexes is not None and h_new_indexes is not None:
-            reindex_cython_float32(h_new_indexes, v_new_indexes, matrix_in, matrix_out)
-        elif h_new_indexes is not None:
-            reindex_only_rows_cython_float32(h_new_indexes, matrix_in, matrix_out)
+            reindex_cython_float32(v_new_indexes, h_new_indexes, matrix_in, matrix_out)
         elif v_new_indexes is not None:
-            reindex_only_columns_cython_float32(v_new_indexes, matrix_in, matrix_out)
+            reindex_only_rows_cython_float32(v_new_indexes, matrix_in, matrix_out)
+        elif h_new_indexes is not None:
+            reindex_only_columns_cython_float32(h_new_indexes, matrix_in, matrix_out)
         else:
             raise ValueError("reindex_cython() should not be called if there is nothing to reindex")
     else:
@@ -63,8 +63,8 @@ def reindex_cython(h_new_indexes, v_new_indexes, matrix_in, matrix_out):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef reindex_cython_float32(np.ndarray[np.int_t, ndim=1] h_new_indexes,
-                            np.ndarray[np.int_t, ndim=1] v_new_indexes,
+cdef reindex_cython_float32(np.ndarray[np.int_t, ndim=1] v_new_indexes,
+                            np.ndarray[np.int_t, ndim=1] h_new_indexes,
                             np.ndarray[np.float32_t, ndim=4] matrix_in,
                             np.ndarray[np.float32_t, ndim=4] matrix_out):
     cdef Py_ssize_t d0, d1, d2, d3
@@ -72,11 +72,11 @@ cdef reindex_cython_float32(np.ndarray[np.int_t, ndim=1] h_new_indexes,
         for d1 in range(matrix_out.shape[1]):
             for d2 in range(matrix_out.shape[2]):
                 for d3 in range(matrix_out.shape[3]):
-                    matrix_out[d0, d1, d2, d3] = matrix_in[d0, d1, h_new_indexes[d2], v_new_indexes[d3]]
+                    matrix_out[d0, d1, d2, d3] = matrix_in[d0, d1, v_new_indexes[d2], h_new_indexes[d3]]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef reindex_only_rows_cython_float32(np.ndarray[np.int_t, ndim=1] h_new_indexes,
+cdef reindex_only_rows_cython_float32(np.ndarray[np.int_t, ndim=1] v_new_indexes,
                                       np.ndarray[np.float32_t, ndim=4] matrix_in,
                                       np.ndarray[np.float32_t, ndim=4] matrix_out):
     cdef Py_ssize_t d0, d1, d2, d3
@@ -84,11 +84,11 @@ cdef reindex_only_rows_cython_float32(np.ndarray[np.int_t, ndim=1] h_new_indexes
         for d1 in range(matrix_out.shape[1]):
             for d2 in range(matrix_out.shape[2]):
                 for d3 in range(matrix_out.shape[3]):
-                    matrix_out[d0, d1, d2, d3] = matrix_in[d0, d1, h_new_indexes[d2], d3]
+                    matrix_out[d0, d1, d2, d3] = matrix_in[d0, d1, v_new_indexes[d2], d3]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef reindex_only_columns_cython_float32(np.ndarray[np.int_t, ndim=1] v_new_indexes,
+cdef reindex_only_columns_cython_float32(np.ndarray[np.int_t, ndim=1] h_new_indexes,
                                          np.ndarray[np.float32_t, ndim=4] matrix_in,
                                          np.ndarray[np.float32_t, ndim=4] matrix_out):
     cdef Py_ssize_t d0, d1, d2, d3
@@ -96,4 +96,4 @@ cdef reindex_only_columns_cython_float32(np.ndarray[np.int_t, ndim=1] v_new_inde
         for d1 in range(matrix_out.shape[1]):
             for d2 in range(matrix_out.shape[2]):
                 for d3 in range(matrix_out.shape[3]):
-                    matrix_out[d0, d1, d2, d3] = matrix_in[d0, d1, d2, v_new_indexes[d3]]
+                    matrix_out[d0, d1, d2, d3] = matrix_in[d0, d1, d2, h_new_indexes[d3]]
