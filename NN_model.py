@@ -575,7 +575,7 @@ class Model:
 
         # Forward pass (FP)
         for l in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
             x = self.layers[l].forward(x)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
