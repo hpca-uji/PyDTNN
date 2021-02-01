@@ -157,6 +157,7 @@ class Conv2D(Layer):
         # convGemm related attributes
         self.cg = None
         self.cg_fallback_i2c = True  # Fallback to backward I2C if any stride is greater than 1
+        self.cg_x_transposed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_x_indexed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_matmul_out_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
 
@@ -371,11 +372,11 @@ class Conv2D(Layer):
         #         self.cg_x.transpose((1, 0, 2, 3))
         if self.vpadding == 0 and self.hpadding == 0:
             # @todo: cython transpose version
-            self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
+            cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
         else:
             new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
-            self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
-            transpose_1023_and_pad_cython(self.cg_x, self.cg_x_indexed)
+            cg_x_transposed = self.cg_x_transposed_cache[(c, b, new_h, new_w)]
+            transpose_1023_and_pad_cython(self.cg_x, cg_x_transposed)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:
@@ -403,11 +404,13 @@ class Conv2D(Layer):
         #     #           unexpected results
         #     self.cg_x_indexed = self.cg_x_indexed.copy()
         if h_new_indexes is not None or v_new_indexes is not None:
-            cg_x_indexed_previous = self.cg_x_indexed
             new_h = len(v_new_indexes) if v_new_indexes is not None else h
             new_w = len(h_new_indexes) if h_new_indexes is not None else w
-            self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
-            reindex_cython(v_new_indexes, h_new_indexes, cg_x_indexed_previous, self.cg_x_indexed)
+            # self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
+            self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+            reindex_cython(v_new_indexes, h_new_indexes, cg_x_transposed, self.cg_x_indexed)
+        else:
+            self.cg_x_indexed = cg_x_transposed
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # if self.id == 4:
