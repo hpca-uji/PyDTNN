@@ -7,7 +7,7 @@ ext_modules = [
     Extension(
         module,
         ["%s.pyx" % module],
-        extra_compile_args=['-fopenmp'],
+        extra_compile_args=['-fopenmp', '-O3', '-march=native', '-g0'],
         extra_link_args=['-fopenmp'],
         include_dirs=[numpy.get_include()],
         # libraries=["python3.7m"],
