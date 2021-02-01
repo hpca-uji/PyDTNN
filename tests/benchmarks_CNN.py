@@ -127,7 +127,7 @@ def parse_options():
     parser.add_argument('--profile', type=bool_lambda, default=False)
     parser.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
-    parser.add_argument('--enable_conv_gemm_fallback_i2c', type=bool_lambda, default=True)
+    parser.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
     parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
     parser.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
     parser.add_argument('--enable_nccl', type=bool_lambda, default=False)

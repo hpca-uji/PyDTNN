@@ -156,7 +156,7 @@ class Conv2D(Layer):
         self.debug = False
         # convGemm related attributes
         self.cg = None
-        self.cg_fallback_i2c = True  # Fallback to backward I2C if any stride is greater than 1
+        self.cg_fallback_to_im2col = True  # Fallback to backward I2C if any stride is greater than 1
         self.cg_x_transposed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_x_indexed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_matmul_out_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
@@ -179,7 +179,7 @@ class Conv2D(Layer):
             self.cg = ConvGemm(dtype=self.dtype, debug=self.debug)
             self.forward = self._forward_cg
             self.backward = self._backward_cg
-            self.cg_fallback_i2c = self.model.params.enable_conv_gemm_fallback_i2c
+            self.cg_fallback_to_im2col = self.model.params.conv_gemm_fallback_to_im2col
         else:
             self.forward = self._forward_i2c
             self.backward = self._backward_i2c
@@ -327,7 +327,7 @@ class Conv2D(Layer):
         # if self.id == 4:
         #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 01")
 
-        if self.cg_fallback_i2c and (self.vstride > 1 or self.hstride > 1):
+        if self.cg_fallback_to_im2col and (self.vstride > 1 or self.hstride > 1):
             #
             # Although it is is possible to reindex x so that convGemm library can be used to compute
             # dw = dy * im2col(x).T when any of the strides is greater than one, the cost of reindexing x is

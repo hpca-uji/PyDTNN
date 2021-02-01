@@ -169,8 +169,8 @@ class PerfTestConv2DConvGemm:
 
         # Backward cg without fallback
         print("Backward CG (without fallback")
-        cg_fallback_i2c = conv2d_cg.cg_fallback_i2c
-        conv2d_cg.cg_fallback_i2c = False
+        cg_fallback_to_im2col = conv2d_cg.cg_fallback_to_im2col
+        conv2d_cg.cg_fallback_to_im2col = False
         dx_cg = conv2d_cg.backward(dy)  # First run
         profiler = cProfile.Profile()
         profiler.enable()
@@ -178,7 +178,7 @@ class PerfTestConv2DConvGemm:
         profiler.disable()
         profiler.print_stats()
         profiler.dump_stats("backward_cg_no_fallback.prof")
-        conv2d_cg.cg_fallback_i2c = cg_fallback_i2c
+        conv2d_cg.cg_fallback_to_im2col = cg_fallback_to_im2col
 
         # cg forward
         tic = time.perf_counter()
