@@ -353,6 +353,10 @@ if __name__ == "__main__":
               f'{model.perf_counter.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
         print(f'Training throughput (from model, from last half of each epoch): '
               f'{model.perf_counter.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
+        print(f'Training maximum memory allocated: ',
+              f'{model.perf_counter.training_maximum_memory / 1024:.2f} MiB')
+        print(f'Training mean memory allocated: ',
+              f'{model.perf_counter.training_mean_memory / 1024:.2f} MiB')
 
         if params.history_file:
             with open(params.history_file, "w") as f:
@@ -373,3 +377,7 @@ if __name__ == "__main__":
             print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
             print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
             print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
+            print(f'Testing maximum memory allocated: ',
+                  f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
+            print(f'Testing mean memory allocated: ',
+                  f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')

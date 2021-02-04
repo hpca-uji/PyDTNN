@@ -38,6 +38,7 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
+import resource
 import sys
 import time
 from collections import defaultdict
@@ -78,8 +79,10 @@ class PerformanceCounter:
     TRAINING, TESTING = range(2)
 
     def __init__(self):
+        self._in_second_testing_round = False
         self._times_record = defaultdict(lambda: defaultdict(lambda: []))
         self._batch_sizes_record = defaultdict(lambda: defaultdict(lambda: []))
+        self._memory_record = defaultdict(lambda: defaultdict(lambda: []))
 
     # -------------------------------
     #  Public methods and properties
@@ -91,9 +94,16 @@ class PerformanceCounter:
     def add_testing_time_and_batch_size(self, time, batch_size):
         self._add_time_and_batch_size(self.TESTING, 0, time, batch_size)
 
-    def clear_testing_data(self):
-        self._times_record[self.TESTING] = defaultdict(lambda: [])
-        self._batch_sizes_record[self.TESTING] = defaultdict(lambda: [])
+    def init_testing_data(self):
+        """
+        Should be called before a testing round to perform the next actions:
+          * Keep the memory consumption of the first testing round.
+          * Clear the time and size data of the first testing round.
+        """
+        if len(self._times_record[self.TESTING]):
+            self._in_second_testing_round = True
+            self._times_record[self.TESTING] = defaultdict(lambda: [])
+            self._batch_sizes_record[self.TESTING] = defaultdict(lambda: [])
 
     @property
     def training_throughput(self):
@@ -116,12 +126,28 @@ class PerformanceCounter:
         return self._time(self.TRAINING, last_half=True)
 
     @property
+    def training_maximum_memory(self):
+        return self._maximum_memory(self.TRAINING)
+
+    @property
+    def training_mean_memory(self):
+        return self._mean_memory(self.TRAINING)
+
+    @property
     def testing_throughput(self):
         return self._throughput(self.TESTING)
 
     @property
     def testing_time(self):
         return self._time(self.TESTING)
+
+    @property
+    def testing_maximum_memory(self):
+        return self._maximum_memory(self.TESTING)
+
+    @property
+    def testing_mean_memory(self):
+        return self._mean_memory(self.TESTING)
 
     # -------------------------------
     #  Private methods
@@ -130,6 +156,10 @@ class PerformanceCounter:
     def _add_time_and_batch_size(self, where, epoch, time, batch_size):
         self._times_record[where][epoch].append(time)
         self._batch_sizes_record[where][epoch].append(batch_size)
+        if where == self.TESTING and self._in_second_testing_round:
+            return
+        u = resource.getrusage(resource.RUSAGE_SELF)
+        self._memory_record[where][epoch].append(u[2])  # KiB
 
     def _time(self, where, last_half=False):
         # When last_half is True, the total time is estimated from the last half steps of each epoch time
@@ -151,6 +181,15 @@ class PerformanceCounter:
 
     def _throughput(self, where, last_half=False):
         return self._size(where, last_half) / self._time(where, last_half)
+
+    def _maximum_memory(self, where):
+        maximum_memory_per_epoch = [np.max(m_array) for m_array in self._memory_record[where].values()]
+        return np.max(maximum_memory_per_epoch)
+
+    def _mean_memory(self, where):
+        mean_memory_per_epoch = [np.mean(m_array[len(m_array) // 2:])
+                                 for m_array in self._memory_record[where].values()]
+        return np.mean(mean_memory_per_epoch)
 
 
 class Model:
@@ -610,7 +649,7 @@ class Model:
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
-        self.perf_counter.clear_testing_data()  # Only the last testing data should be kept
+        self.perf_counter.init_testing_data()  # Only the last testing data should be kept
 
         for X_batch, Y_batch, batch_size in test_batch_generator:
             tic = timer()
