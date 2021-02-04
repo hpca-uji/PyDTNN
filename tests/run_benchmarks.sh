@@ -1,43 +1,43 @@
 #!/bin/bash
 
-#-------------------------
-# Command line option
-#-------------------------
-[ -n "$1" ] && export MODEL="$1"
-[ -n "$2" ] && export DATASET="$2"
+#-----------------------
+# Command line options
+#-----------------------
+[ -n "$1" ] && MODEL="$1"
+[ -n "$2" ] && DATASET="$2"
 
 #-------------------------
 # Configurable parameters
 #-------------------------
 MODEL=${MODEL:-alexnet_cifar10}
 DATASET=${DATASET:-cifar10}
-if [ "${DATASET}" == "cifar10" ]; then
+case "${DATASET}" in
+cifar10)
   DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar-10-batches-bin}
-  USE_SYNTHETIC_DATA=${USE_SYNTHETIC_DATA:-False}
-elif [ "${DATASET}" == "imagenet" ]; then
+  ;;
+imagenet)
   DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/imagenet}
-  USE_SYNTHETIC_DATA=${USE_SYNTHETIC_DATA:-True}
-else
-  echo "Dataset '${DATASET}' not supported"
+  ;;
+*)
+  echo "Dataset '${DATASET}' not yet supported"
   exit 1
-fi
+  ;;
+esac
 DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
-EVALUATE=${EVALUATE:-True}
-NUM_EPOCHS=${NUM_EPOCHS:-30}
-STEPS_PER_EPOCH=${STEPS_PER_EPOCH:-0}
-BATCH_SIZE=${BATCH_SIZE:-64}
-PROFILE=${PROFILE:-False}
-TRACING=${TRACING:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
-CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-True}
+CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-False}
+CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-True}
 NODES=${NODES:-1}
 
 #--------------------------
 # Only training parameters
 #--------------------------
 if [ -n "${ONLY_TRAINING}" ]; then
+  # shellcheck disable=SC2034
   EVALUATE=False
+  # shellcheck disable=SC2034
   TEST_AS_VALIDATION=False
+  # shellcheck disable=SC2034
   VALIDATION_SPLIT=0.2
 fi
 
@@ -87,6 +87,9 @@ if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   if [ "${CONV_GEMM_FALLBACK_TO_IM2COL}" == "True" ]; then
     FILE_NAME="${FILE_NAME}_fb"
   fi
+  if [ "${CONV_GEMM_CACHE}" == "False" ]; then
+    FILE_NAME="${FILE_NAME}_nc"
+  fi
 else
   FILE_NAME="${FILE_NAME}_i2c_mm"
 fi
@@ -99,103 +102,65 @@ HISTORY_FILENAME="${FILE_NAME}.history"
 OUTPUT_FILENAME="${FILE_NAME}.out"
 SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"
 
-#------------------------
-# Model dependent options
-#------------------------
-if [ "${MODEL}" == "alexnet_cifar10" ]; then
-  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-True}"
-elif [ "${MODEL}" == "alexnet_imagenet" ]; then
-  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-False}"
-elif [ "${MODEL}" == "vgg16_imagenet" ]; then
-  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-False}"
-  LEARNING_RATE="${LEARNING_RATE:-0.0001}"
-  OPTIMIZER="${OPTIMIZER:-adam}"
-elif [ "${MODEL}" == "resnet101_imagenet" ]; then
-  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-False}"
-  LEARNING_RATE="${LEARNING_RATE:-0.1}"
-  LR_SCHEDULERS="${LR_SCHEDULERS:-warm_up,reduce_lr_on_plateau,early_stopping}"
-  EARLY_STOPPING_PATIENCE="${EARLY_STOPPING_PATIENCE:-40}"
-  REDUCE_LR_ON_PLATEAU_FACTOR="${REDUCE_LR_ON_PLATEAU_FACTOR:-0.5}"
-  REDUCE_LR_ON_PLATEAU_PATIENCE="${REDUCE_LR_ON_PLATEAU_PATIENCE:-15}"
-  REDUCE_LR_ON_PLATEAU_MIN_LR="${REDUCE_LR_ON_PLATEAU_MIN_LR:-0.00001}"
-  EXTRA_FLAGS=$(
-    sed -z 's/ //g;s/\n/ /g' <<-__EOF
-    --nesterov=False
-    --reduce_lr_every_nepochs_factor=0.1
-    --reduce_lr_every_nepochs_nepochs=30
-    --reduce_lr_every_nepochs_min_lr=0.00001
-    --stop_at_loss_metric=val_categorical_accuracy
-    --stop_at_loss_threshold=70.0
-__EOF
-  )
-elif [ "${MODEL}" == "densenet121_imagenet" ]; then
-  TEST_AS_VALIDATION="${TEST_AS_VALIDATION:-False}"
-  LR_SCHEDULERS="${LR_SCHEDULERS:-reduce_lr_on_plateau}"
-  EARLY_STOPPING_PATIENCE="${EARLY_STOPPING_PATIENCE:-40}"
-  REDUCE_LR_ON_PLATEAU_PATIENCE="${REDUCE_LR_ON_PLATEAU_PATIENCE:-15}"
-  REDUCE_LR_ON_PLATEAU_MIN_LR="${REDUCE_LR_ON_PLATEAU_MIN_LR:-0.00001}"
-  EXTRA_FLAGS=$(
-    sed -z 's/ //g;s/\n/ /g' <<-__EOF
-    --nesterov=False
-    --decay=1e-4
-    --reduce_lr_every_nepochs_factor=0.1
-    --reduce_lr_every_nepochs_nepochs=90
-    --reduce_lr_every_nepochs_min_lr=0.001
-    --stop_at_loss_metric=val_categorical_accuracy
-    --stop_at_loss_threshold=70.0
-__EOF
-  )
-else
-  echo "Model '${MODEL}' not yet supported"
-  exit 1
-fi
+MODEL_FLAGS=""
 
-#---------------
-# Launch PyDTNN
-#---------------
+function set_model_flags() {
+  # Model dependent parameters (extracted from run_benchmarks_data.csv)
+  # 1) Get column for model
+  # model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet
+  models_line=$(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep model)
+  for i in 2 3 4 5 6 7; do
+    if [ "$(echo "${models_line}" | cut -d ";" -f ${i})" = "${MODEL}" ]; then
+      model_column=${i}
+      break
+    fi
+  done
+  [ -n "${model_column}" ] || {
+    echo "Error: Model '${MODEL}' not found in run_benchmarks_data.csv"
+    exit 1
+  }
+  # 2) Extract parameters for model
+  while read -r line; do
+    parameter=$(echo "$line" | cut -d ";" -f 1)
+    PARAMETER=${parameter^^} # uppercase of parameter
+    value=$(echo "$line" | cut -d ";" -f ${model_column})
+    if [ -z "${value}" ]; then
+      # If parameter has no value, only add it if it has been previously defined
+      if [ -n "${!PARAMETER}" ]; then
+        MODEL_FLAGS="${MODEL_FLAGS} --${parameter}=${!PARAMETER} "
+      fi
+    else
+      # If parameter has a value, use it as default in case it has not been previously defined
+      MODEL_FLAGS="${MODEL_FLAGS} --${parameter}=${!PARAMETER:-${value}} "
+    fi
+  done < <(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep -v model)
+}
 
 function run_benchmark() {
+  # 1) set model flags and
+  set_model_flags
+  # 2) launch PyDTNN
+  # shellcheck disable=SC2086  # To allow EXTRA_FLAGS without ""
   python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
     --model="${MODEL}" \
-    --dataset="${DATASET}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \
-    --use_synthetic_data="${USE_SYNTHETIC_DATA}" \
-    --test_as_validation="${TEST_AS_VALIDATION}" \
-    --batch_size="${BATCH_SIZE}" \
-    --validation_split="${VALIDATION_SPLIT:-0.2}" \
-    --steps_per_epoch="${STEPS_PER_EPOCH:-0}" \
-    --num_epochs="${NUM_EPOCHS}" \
-    --evaluate="${EVALUATE}" \
-    --optimizer="${OPTIMIZER:-sgd}" \
-    --learning_rate="${LEARNING_RATE:-0.01}" \
-    --momentum=0.9 \
-    --loss=categorical_cross_entropy \
-    --metrics=categorical_accuracy \
-    --lr_schedulers=LR_SCHEDULERS="${LR_SCHEDULERS:-early_stopping,reduce_lr_on_plateau}" \
-    --warm_up_epochs=5 \
-    --early_stopping_metric=val_categorical_cross_entropy \
-    --early_stopping_patience="${EARLY_STOPPING_PATIENCE:-10}" \
-    --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \
-    --reduce_lr_on_plateau_factor="${REDUCE_LR_ON_PLATEAU_FACTOR:-0.1}" \
-    --reduce_lr_on_plateau_patience="${REDUCE_LR_ON_PLATEAU_PATIENCE:-5}" \
-    --reduce_lr_on_plateau_min_lr="${REDUCE_LR_ON_PLATEAU_MIN_LR:-0}" \
-    --parallel=sequential \
-    --non_blocking_mpi=False \
-    --profile="${PROFILE}" \
-    --tracing="${TRACING}" \
+    --parallel="${PARALLEL}" \
     --simple_tracer_output="${SIMPLE_TRACER_OUTPUT}" \
-    --enable_gpu=False \
-    --dtype=float32 \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --conv_gemm_fallback_to_im2col="${CONV_GEMM_FALLBACK_TO_IM2COL}" \
+    --conv_gemm_cache="${CONV_GEMM_CACHE}" \
     --history="${HISTORY_FILENAME}" \
-    ${EXTRA_FLAGS:-} | # shellcheck disable=SC2086
+    ${MODEL_FLAGS} |
     tee "${OUTPUT_FILENAME}"
 }
 
 if [ "${NODES}" == 1 ]; then
+  PARALLEL=sequential
   run_benchmark
 else
-  echo "To be implemented"
+  PARALLEL=data
+  # Example of MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts --bind-to none
+  # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
+  mpirun -np "${NODES}" -ppn "${MPI_PPN:1}" -iface "${MPI_IFACE:ib0}" ${MPI_EXTRA_FLAGS} run_benchmark
 fi

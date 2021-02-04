@@ -15,7 +15,7 @@ python3 -u benchmarks_CNN.py \
          --optimizer=sgd \
          --learning_rate=0.1 \
          --momentum=0.0 \
-         --loss=categorical_cross_entropy \
+         --loss_func=categorical_cross_entropy \
          --metrics=categorical_accuracy \
          --lr_schedulers="" \
          --warm_up_epochs=5 \
