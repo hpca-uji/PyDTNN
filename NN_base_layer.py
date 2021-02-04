@@ -64,6 +64,8 @@ try:
     import libnccl.libnccl as nccl
 except ModuleNotFoundError:
     pass
+except ImportError:
+    pass
 
 
 class Layer:
