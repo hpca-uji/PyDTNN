@@ -175,9 +175,34 @@ cdef int col2im_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                 row = c * KH * KW + ii * KW + jj
                 for n in range(N):
                     for xx in range(HH):
+                        # Throw away 1)
                         for yy in range(WW):
+                            # Throw away 2)
                             col = n * HH * WW + xx * WW + yy
                             x_padded[n, c, vstride * xx + ii, hstride * yy + jj] += cols[row, col]
+
+#                                   x_x                           x_y
+#                           x[n, c, vstride * xx + ii - vpadding, hstride * yy + jj - hpadding] += cols[]
+# Throw away 1)
+# x_x = vstride * xx + ii - vpadding
+# if x_x < 0 or x_x >= H:
+#   continue
+#
+# Throw away 2)
+# x_y = hstride * yy + jj - hpadding
+# if x_y < 0 or x_y >= W:
+#  continue
+
+# Alternative to throw away 1)
+# Range for xx: from:  / a >=0
+#                      \ vstride * xx + ii - vpadding >= 0
+#                         -> a >= (vpadding - ii) // vstride
+#                      -> xx = max(0, (vpadding - ii) // vstride))
+#
+#               to:    / xx < HH
+#                      \ vstride * xx + ii - vpadding < H
+#                         -> xx < H + (vpadding - ii) // vstride
+#                      -> xx = min(HH, H + (vpadding - ii) // vstride))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
