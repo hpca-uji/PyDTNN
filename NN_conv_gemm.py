@@ -51,7 +51,20 @@ from NN_util import load_library
 from NN_pad_cython import pad_cython
 
 
-class KeyDefaultDict(dict):
+class ConvGemmCache(dict):
+    """
+    Dictionary derived class that can use the provided factory function to
+    obtain a default value for a missing key. It differs from defaultdict in:
+
+    * The provided factory function receives key as a parameter (which allows
+      the generated value to depend on the given key).
+
+    * If disable() is called, the instances of this class will clear their
+      already stored values and will not store the next ones.
+
+    """
+    _preserve_values = True
+
     def __init__(self, default_factory=None, **kwargs):
         super().__init__(self, **kwargs)
         self.default_factory = default_factory
@@ -60,8 +73,18 @@ class KeyDefaultDict(dict):
         if self.default_factory is None:
             raise KeyError(key)
         else:
-            ret = self[key] = self.default_factory(key)
+            ret = self.default_factory(key)
+            if self._preserve_values:
+                self[key] = ret
             return ret
+
+    @classmethod
+    def disable(cls):
+        cls._preserve_values = False
+        import gc
+        for obj in gc.get_objects():
+            if isinstance(obj, cls):
+                obj.clear()
 
 
 class ConvGemm:
@@ -113,11 +136,11 @@ class ConvGemm:
                 raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
         if ConvGemm.lib_cg is None:
             ConvGemm.lib_cg = load_library("convGemm")
-            ConvGemm.biases_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="F"))
-            ConvGemm.weights_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.biases_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="F"))
+            ConvGemm.weights_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
         # The x_padded and output matrices are also cached, but only on the current instance
-        self.x_padded_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.out_cg_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
+        self.x_padded_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.out_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
 
         # Declare ac_pack and bc_pack and allocate space for them
         # @todo: The next fragment of code should be dependant on the architecture and the dtype
@@ -220,9 +243,12 @@ class ConvGemm:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
             b, c, h, w = x.shape
             new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
+            # Padding alternative 1)
             x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
-            # x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
             x_padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = x
+            # Padding alternative 2)
+            # Better for matrices greater than a given size (but is machine dependant).
+            # x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
             # pad_cython(x, x_padded)
             vpadding = hpadding = 0
 

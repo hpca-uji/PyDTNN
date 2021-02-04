@@ -47,7 +47,7 @@ import NN_initializer
 from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
-from NN_conv_gemm import ConvGemm, KeyDefaultDict
+from NN_conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
 from NN_reindex_cython import reindex_cython
@@ -69,6 +69,8 @@ try:
     import skcuda.misc as cumisc
     import libnccl.libnccl as nccl
 except ModuleNotFoundError:
+    pass
+except ImportError:
     pass
 
 
@@ -154,12 +156,13 @@ class Conv2D(Layer):
         if self.use_bias:
             self.grad_vars["biases"] = "db"
         self.debug = False
-        # convGemm related attributes
+        # convGemm related attributes (some of them will be modified in initialize())
         self.cg = None
         self.cg_fallback_to_im2col = True  # Fallback to backward I2C if any stride is greater than 1
-        self.cg_x_transposed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.cg_x_indexed_cache = KeyDefaultDict(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.cg_matmul_out_cache = KeyDefaultDict(lambda shape: np.empty(shape, self.dtype, order="C"))
+        self.cg_cache = True  # Store created matrices to allow them to be reused
+        self.cg_x_transposed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -177,6 +180,8 @@ class Conv2D(Layer):
 
         if self.model.params.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.dtype, debug=self.debug)
+            if not self.model.params.conv_gemm_cache:
+                ConvGemmCache.disable()
             self.forward = self._forward_cg
             self.backward = self._backward_cg
             self.cg_fallback_to_im2col = self.model.params.conv_gemm_fallback_to_im2col
