@@ -144,13 +144,13 @@ def col2im_cython(cols,
 
     cdef np.ndarray x_padded = np.zeros((N, C, H + 2 * vpadding, W + 2 * hpadding),
                                          dtype=cols.dtype)
-    if (cols.dtype == np.int8):
+    if cols.dtype == np.int8:
         col2im_cython_inner_int8(cols, x_padded, N, C, H, W, HH, WW, 
                                  KH, KW, vstride, hstride)
-    elif (cols.dtype == np.float32):
+    elif cols.dtype == np.float32:
         col2im_cython_inner_float32(cols, x_padded, N, C, H, W, HH, WW, 
                                  KH, KW, vstride, hstride)
-    elif (cols.dtype == np.float64):
+    elif cols.dtype == np.float64:
         col2im_cython_inner_float64(cols, x_padded, N, C, H, W, HH, WW, 
                                  KH, KW, vstride, hstride)
     else: 
@@ -158,7 +158,8 @@ def col2im_cython(cols,
         raise
 
     if vpadding > 0 or hpadding > 0:
-        return x_padded[:, :, vpadding:-vpadding, hpadding:-hpadding]
+        # @warning: padding:-padding will not work if padding is 0
+        return x_padded[:, :, vpadding:vpadding+H, hpadding:hpadding+W]
     return x_padded
 
 @cython.boundscheck(False)
