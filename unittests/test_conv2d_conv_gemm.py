@@ -81,7 +81,7 @@ class Params:
     pass
 
 
-def get_conv2d_layers(d):
+def get_conv2d_layers(d, deconv=False):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
@@ -94,6 +94,7 @@ def get_conv2d_layers(d):
     params_gc.enable_conv_gemm = True
     params_gc.conv_gemm_fallback_to_im2col = False
     params_gc.conv_gemm_cache = True
+    params_gc.conv_gemm_deconv = deconv
     model_cg = Model(params_gc)
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
@@ -153,9 +154,9 @@ class TestConv2DConvGemm(unittest.TestCase):
                         [1, 1, 1],
                         [1, 1, 1]]]]).astype(np.float32, order='C')
 
-    def _test_forward_backward(self, d, x, weights, print_times=False):
+    def _test_forward_backward(self, d, x, weights, print_times=False, deconv=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
+        conv2d_i2c, conv2d_cg = get_conv2d_layers(d, deconv)
         conv2d_i2c.weights = weights.copy()
         conv2d_cg.weights = weights.copy()
         # Forward pass
@@ -170,6 +171,7 @@ class TestConv2DConvGemm(unittest.TestCase):
         dx_allclose = np.allclose(dx_i2c, dx_cg)
         if verbose():
             _print_with_header(inspect.stack()[1][3])
+            # np.set_printoptions(threshold=50)  # default is 1000
             print(d)
             print("---=[ Forward results ]=---")
             print("y_i2c:\n", y_i2c)
@@ -363,11 +365,25 @@ class TestConv2DConvGemm(unittest.TestCase):
         d.b = 64
         d.kn, d.kh, d.kw = (96, 11, 11)
         d.c, d.h, d.w = (3, 227, 227)
-        d.vpadding, d.hpadding = (0, 0)
+        d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (4, 4)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
+
+    def test_forward_backward_alexnet_imagenet_first_conv2d_deconv(self):
+        """Tests that the AlexNet ImageNet first Conv2d lead to the same solution on i2c and on conv_gemm with deconv"""
+        # id;height;width;channels;kernel_height;kernel_width;kernel_num;stride;padding
+        # 2;227;227;3;11;11;96;4;0
+        d = D()
+        d.b = 64
+        d.kn, d.kh, d.kw = (96, 11, 11)
+        d.c, d.h, d.w = (3, 227, 227)
+        d.vpadding, d.hpadding = (1, 1)
+        d.vstride, d.hstride = (4, 4)
+        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        self._test_forward_backward(d, x, weights, print_times=True, deconv=True)
 
 
 if __name__ == '__main__':

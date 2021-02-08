@@ -27,6 +27,7 @@ DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
 CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-False}
 CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-True}
+CONV_GEMM_DECONV=${CONV_GEMM_DECONV:-False}
 NODES=${NODES:-1}
 
 #--------------------------
@@ -81,11 +82,14 @@ SCRIPT_PATH="$(
 #----------------------------
 # File name for output files
 #----------------------------
-FILE_NAME="$(uname -n)_${MODEL}"
+FILE_NAME="${MODEL}"
 if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_conv_gemm"
   if [ "${CONV_GEMM_FALLBACK_TO_IM2COL}" == "True" ]; then
     FILE_NAME="${FILE_NAME}_fb"
+  fi
+  if [ "${CONV_GEMM_DECONV}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}_dc"
   fi
   if [ "${CONV_GEMM_CACHE}" == "False" ]; then
     FILE_NAME="${FILE_NAME}_nc"
@@ -97,15 +101,33 @@ FILE_NAME="${FILE_NAME}_$(printf '%03d' "${NUM_EPOCHS:-1}")e"
 FILE_NAME="${FILE_NAME}_$(printf '%03d' "${STEPS_PER_EPOCH:-1}")s"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NODES:-1}")n"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS:-1}")t"
-FILE_NAME="${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
+FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
+FILE_NAME="$(uname -n)_${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
 HISTORY_FILENAME="${FILE_NAME}.history"
 OUTPUT_FILENAME="${FILE_NAME}.out"
 SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"
 
-MODEL_FLAGS=""
+#--------------------------------------------------------------------------------
+# Do not launch the experiment if the same experiment has already been completed
+#--------------------------------------------------------------------------------
+SEARCH_TEXT="Testing maximum memory"
+if grep -q "${SEARCH_TEXT}" ./*"${FILE_NAME_NO_MACHINE_NO_DATE}"*.out 2>/dev/null; then
+  echo "The next result files (with '${SEARCH_TEXT}') have been found:"
+  grep --files-with-matches "${SEARCH_TEXT}" ./*"${FILE_NAME_NO_MACHINE_NO_DATE}"*.out
+  echo "Refusing to relaunch the same experiment."
+  echo
+  exit
+else
+  echo "No other result files with the pattern '${FILE_NAME_NO_MACHINE_NO_DATE}' have been found."
+  echo "Proceeding..."
+fi
 
+#----------------------------
+# Set model flags
+#----------------------------
 function set_model_flags() {
   # Model dependent parameters (extracted from run_benchmarks_data.csv)
+  MODEL_FLAGS=""
   # 1) Get column for model
   # model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet
   models_line=$(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep model)
@@ -139,9 +161,21 @@ function set_model_flags() {
 function run_benchmark() {
   # 1) set model flags and
   set_model_flags
-  # 2) launch PyDTNN
-  # shellcheck disable=SC2086  # To allow EXTRA_FLAGS without ""
-  python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
+
+  # 2) Select sequential or parallel mode
+  if [ "${NODES}" == 1 ]; then
+    PARALLEL=sequential
+    CMD=""
+  else
+    PARALLEL=data
+    # Example of MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts --bind-to none
+    # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
+    CMD="mpirun -np "${NODES}" -ppn "${MPI_PPN:-1}" -iface "${MPI_IFACE:-ib0}" ${MPI_EXTRA_FLAGS}"
+  fi
+
+  # 3) Launch benchmarks_CNN
+  # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
+  ${CMD} python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
     --model="${MODEL}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \
@@ -150,17 +184,10 @@ function run_benchmark() {
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --conv_gemm_fallback_to_im2col="${CONV_GEMM_FALLBACK_TO_IM2COL}" \
     --conv_gemm_cache="${CONV_GEMM_CACHE}" \
+    --conv_gemm_deconv="${CONV_GEMM_DECONV}" \
     --history="${HISTORY_FILENAME}" \
     ${MODEL_FLAGS} |
     tee "${OUTPUT_FILENAME}"
 }
 
-if [ "${NODES}" == 1 ]; then
-  PARALLEL=sequential
-  run_benchmark
-else
-  PARALLEL=data
-  # Example of MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts --bind-to none
-  # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
-  mpirun -np "${NODES}" -ppn "${MPI_PPN:1}" -iface "${MPI_IFACE:ib0}" ${MPI_EXTRA_FLAGS} run_benchmark
-fi
+run_benchmark

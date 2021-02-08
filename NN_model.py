@@ -158,8 +158,9 @@ class PerformanceCounter:
         self._batch_sizes_record[where][epoch].append(batch_size)
         if where == self.TESTING and self._in_second_testing_round:
             return
-        u = resource.getrusage(resource.RUSAGE_SELF)
-        self._memory_record[where][epoch].append(u[2])  # KiB
+        mem = (resource.getrusage(resource.RUSAGE_SELF)[2]
+               + resource.getrusage(resource.RUSAGE_CHILDREN)[2])
+        self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
 
     def _time(self, where, last_half=False):
         # When last_half is True, the total time is estimated from the last half steps of each epoch time
@@ -205,7 +206,7 @@ class Model:
         if simple_tracer_output == "":
             self.tracer = ExtraeTracer(tracing)
         else:
-            self.tracer = SimpleTracer(tracing, simple_tracer_output)
+            self.tracer = SimpleTracer(tracing, simple_tracer_output, self.comm)
         self.perf_counter = PerformanceCounter()
         global enable_cudnn
         enable_cudnn = self.enable_cudnn = enable_gpu

@@ -133,6 +133,7 @@ def parse_options():
     parser.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
     parser.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
     parser.add_argument('--conv_gemm_cache', type=bool_lambda, default=True)
+    parser.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
     # Other parameters
     parser.add_argument('--dtype', type=str, default="float32")
     parser.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
@@ -217,10 +218,10 @@ def get_lr_schedulers(params):
 if __name__ == "__main__":
     params = parse_options()
     params.dtype = getattr(np, params.dtype)
-
+    _MPI = None
     if params.parallel in ["data", "hybrid"]:
         from mpi4py import MPI
-
+        _MPI = MPI
         params.comm = MPI.COMM_WORLD
         params.mpi_processes = params.comm.Get_size()
         rank = params.comm.Get_rank()
@@ -381,3 +382,8 @@ if __name__ == "__main__":
                   f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
             print(f'Testing mean memory allocated: ',
                   f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
+
+    if params.comm is not None and _MPI is not None:
+        params.comm.Barrier()
+        # The next line is required if running under SLURM (it seems that it is not automatically called at exit)
+        _MPI.Finalize()

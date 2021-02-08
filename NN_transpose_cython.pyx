@@ -43,6 +43,32 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
+def transpose_0231_kji_cython(original, transposed):
+    """
+    Transposes a 4D matrix from (0,1,2,3) to (0,2,3,1).
+    This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
+    This variant calls transpose_021_kji_cython_float32().
+    """
+    orig3d = original.reshape(original.shape[0], original.shape[1], -1)
+    trans3d = transposed.reshape(transposed.shape[0], -1, transposed.shape[3])
+    if original.dtype == np.float32:
+        transpose_021_kji_cython_float32(orig3d, trans3d)
+    else:
+        raise ValueError("Type '{}' not supported for transpose_0231_ij_cython".format(original.dtype))
+
+def transpose_0231_ijk_cython(original, transposed):
+    """
+    Transposes a 4D matrix from (0,1,2,3) to (0,2,3,1).
+    This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
+    This variant calls transpose_021_ijk_cython_float32().
+    """
+    orig3d = original.reshape(original.shape[0], original.shape[1], -1)
+    trans3d = transposed.reshape(transposed.shape[0], -1, transposed.shape[3])
+    if original.dtype == np.float32:
+        transpose_021_ijk_cython_float32(orig3d, trans3d)
+    else:
+        raise ValueError("Type '{}' not supported for transpose_0231_ij_cython".format(original.dtype))
+
 def transpose_1230_ji_cython(original, transposed):
     """
     Transposes a 4D matrix from (0,1,2,3) to (1,2,3,0). This is equivalent to transpose a 2D matrix 0x1·2·3 to 1·2·3x0.
@@ -80,6 +106,26 @@ def transpose_2d_f2c_ij_cython(original, transposed):
         transpose_2d_f2c_ij_cython_float32(original, transposed)
     else:
         raise ValueError("Type '{}' not supported for transpose_2d_f2c_ji_cython".format(original.dtype))
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef transpose_021_kji_cython_float32(np.ndarray[np.float32_t, ndim=3] original,
+                                      np.ndarray[np.float32_t, ndim=3] transposed):
+    cdef Py_ssize_t d0, d1, d2
+    for d0 in prange(original.shape[0], nogil=True, schedule="static"):
+        for d2 in range(original.shape[2]):
+            for d1 in range(original.shape[1]):
+                transposed[d0, d2, d1] = original[d0, d1, d2]
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef transpose_021_ijk_cython_float32(np.ndarray[np.float32_t, ndim=3] original,
+                                      np.ndarray[np.float32_t, ndim=3] transposed):
+    cdef Py_ssize_t d0, d1, d2
+    for d0 in prange(original.shape[0], nogil=True, schedule="static"):
+        for d1 in range(original.shape[1]):
+            for d2 in range(original.shape[2]):
+                transposed[d0, d2, d1] = original[d0, d1, d2]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

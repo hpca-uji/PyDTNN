@@ -42,6 +42,7 @@ import atexit
 import ctypes
 import os
 import resource
+import sys
 
 from collections import defaultdict
 from importlib import import_module
@@ -49,34 +50,37 @@ from timeit import default_timer as timer
 
 # ---
 PYDTNN_MDL_EVENT = 60000001
-PYDTNN_MDL_FORWARD = 1
-PYDTNN_MDL_BACKWARD = 2
-PYDTNN_MDL_ALLREDUCE_DW = 3
-PYDTNN_MDL_WAIT_DW = 4
-PYDTNN_MDL_UPDATE_DW = 5
 PYDTNN_MDL_EVENTS = 5
+(PYDTNN_MDL_FORWARD,
+ PYDTNN_MDL_BACKWARD,
+ PYDTNN_MDL_ALLREDUCE_DW,
+ PYDTNN_MDL_WAIT_DW,
+ PYDTNN_MDL_UPDATE_DW) = range(1, PYDTNN_MDL_EVENTS + 1)
 # ---
 PYDTNN_OPS_EVENT = 60000002
-PYDTNN_OPS_FORWARD_IM2COL = 1
-PYDTNN_OPS_FORWARD_RESHAPE_W = 2
-PYDTNN_OPS_FORWARD_MATMUL = 3
-PYDTNN_OPS_FORWARD_SUM_BIASES = 4
-PYDTNN_OPS_FORWARD_RESHAPE_Y = 5
-PYDTNN_OPS_FORWARD_CONVGEMM = 6
-PYDTNN_OPS_COMP_DX_MATMUL = 7
-PYDTNN_OPS_COMP_DX_COL2IM = 8
-PYDTNN_OPS_COMP_DW_MATMUL = 9
-PYDTNN_OPS_ALLREDUCE_DW = 10
-PYDTNN_OPS_BACKWARD_TRANSPOSE_DY = 11
-PYDTNN_OPS_BACKWARD_TRANSPOSE_W = 12
-PYDTNN_OPS_BACKWARD_IM2COL = 13
-PYDTNN_OPS_BACKWARD_PADDING_X = 14
-PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES = 15
-PYDTNN_OPS_BACKWARD_REINDEX = 16
-PYDTNN_OPS_BACKWARD_CONVGEMM = 17
-PYDTNN_OPS_BACKWARD_RESHAPE_DW = 18
-PYDTNN_OPS_BACKWARD_SUM_BIASES = 19
-PYDTNN_OPS_EVENTS = 19
+PYDTNN_OPS_EVENTS = 22
+(PYDTNN_OPS_FORWARD_IM2COL,
+ PYDTNN_OPS_FORWARD_RESHAPE_W,
+ PYDTNN_OPS_FORWARD_MATMUL,
+ PYDTNN_OPS_FORWARD_SUM_BIASES,
+ PYDTNN_OPS_FORWARD_RESHAPE_Y,
+ PYDTNN_OPS_FORWARD_CONVGEMM,
+ PYDTNN_OPS_COMP_DX_MATMUL,
+ PYDTNN_OPS_COMP_DX_COL2IM,
+ PYDTNN_OPS_COMP_DW_MATMUL,
+ PYDTNN_OPS_ALLREDUCE_DW,
+ PYDTNN_OPS_BACKWARD_DECONV_GEMM,
+ PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY,
+ PYDTNN_OPS_BACKWARD_DCG_SHRINK,
+ PYDTNN_OPS_BACKWARD_TRANSPOSE_DY,
+ PYDTNN_OPS_BACKWARD_TRANSPOSE_W,
+ PYDTNN_OPS_BACKWARD_IM2COL,
+ PYDTNN_OPS_BACKWARD_PADDING_X,
+ PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES,
+ PYDTNN_OPS_BACKWARD_REINDEX,
+ PYDTNN_OPS_BACKWARD_CONVGEMM,
+ PYDTNN_OPS_BACKWARD_RESHAPE_DW,
+ PYDTNN_OPS_BACKWARD_SUM_BIASES) = range(1, PYDTNN_OPS_EVENTS + 1)
 
 
 class EventType:
@@ -90,8 +94,9 @@ class EventType:
         try:
             description = self._events[item]
         except KeyError:
-            msg = f"There is no event associated to the value '{item}' in the event type '{self.name}'"
-            raise IndexError(msg)
+            sys.stderr.write(f"SimpleTracer warning: No event with code '{item}' "
+                             f"in the '{self.name}' type of events.\n")
+            return f"Unknown code {self.name}"
         return description
 
     def __setitem__(self, value, description):
@@ -166,12 +171,12 @@ class Tracer:
             constants.pop(name)
         mdl_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_MDL_")] == "PYDTNN_MDL_"]
         ops_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_OPS_")] == "PYDTNN_OPS_"]
-        for i in range(len(model.layers)):
-            layer_name = type(model.layers[i]).__name__
+        for layer in model.layers:
+            layer_name = type(layer).__name__
             for (name, val) in mdl_constants:
-                mdl_event[i * PYDTNN_MDL_EVENTS + val] = f"{i:03}_{layer_name}_{name[11:].lower()}"
+                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.id:03}_{layer_name}_{name[11:].lower()}"
             for (name, val) in ops_constants:
-                ops_event[i * PYDTNN_OPS_EVENTS + val] = f"{i:03}_{layer_name}_{name[11:].lower()}"
+                ops_event[layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer_name}_{name[11:].lower()}"
 
     def _emit_event(self, evt_type, evt_val):
         """This method will be called only if tracing is enabled"""
@@ -229,9 +234,12 @@ class ExtraeTracer(Tracer):
 
 class SimpleTracer(Tracer):
 
-    def __init__(self, tracing, output_filename):
+    def __init__(self, tracing, output_filename, comm):
         super().__init__(tracing)
         self.output_filename = output_filename
+        self.rank = 0
+        if comm is not None:
+            self.rank = comm.Get_rank()
         self.events = defaultdict(lambda: defaultdict(lambda: [0, 0.0]))
         self.pending_events = []
 
@@ -257,20 +265,21 @@ class SimpleTracer(Tracer):
     def _emit_nevent(self, evt_type_val_list, evt_val_list):
         """This method will be called only if tracing is enabled"""
         zipped_list = list(zip(evt_type_val_list, evt_val_list))
-        if evt_val_list[0][0] == 0:
+        if evt_val_list[0] == 0:
             zipped_list = reversed(zipped_list)
         for evt_type_val, evt_val in zipped_list:
             self.emit_event(evt_type_val, evt_val)
 
     def _write_output(self):
         """This method will be called at exit only if tracing has been enabled at any time"""
-        if len(self.pending_events):
-            print("Warning: finishing simple tracer while there are pending events to be marked as finished.")
-        print(f"Writing simple tracer output to '{self.output_filename}'...")
-        with open(self.output_filename, 'w') as f:
-            f.write("Event type;Event value;Event name;Calls;Total time;Time per call\n")
-            for event_type_key, events in self.events.items():
-                event_type = self.event_types[event_type_key]
-                event_type_name = event_type.name
-                for value, (_calls, _time) in events.items():
-                    f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{_time};{_time / _calls}\n")
+        if self.rank == 0:
+            if len(self.pending_events):
+                print("Warning: finishing simple tracer while there are pending events to be marked as finished.")
+            print(f"Writing simple tracer output to '{self.output_filename}'...")
+            with open(self.output_filename, 'w') as f:
+                f.write("Event type;Event value;Event name;Calls;Total time;Time per call\n")
+                for event_type_key, events in self.events.items():
+                    event_type = self.event_types[event_type_key]
+                    event_type_name = event_type.name
+                    for value, (_calls, _time) in events.items():
+                        f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{_time};{_time / _calls}\n")

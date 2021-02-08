@@ -524,252 +524,58 @@ class TestConvGemm(unittest.TestCase):
         if not verbose():
             spinner.stop()
 
-    def test_col2im_handmade_array(self):
-        """
-        Test that manual matrices lead to the same solution
-        """
-        w = np.array([[[[1, 2],
-                        [3, 4]]]]).astype(np.float32, order='C')
-        x = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-
-        w2 = np.array([[[[0, 1],
-                         [1, 0]]]]).astype(np.float32, order='C')
-
-        dy = np.array([[[[1, 2, 4]]]]).astype(np.float32, order='C')
-        padding = 0
-        stride = 1
-
-        x = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        padding = 1
-        stride = 1
-
-        w1 = np.array([[[[0, 1],
-                         [2, 0]]]]).astype(np.float32, order='C')
-
-        w2 = np.array([[[[0, 3],
-                         [4, 0]]]]).astype(np.float32, order='C')
-
-        # Shapes
-        kn, ci, kh, kw = w.shape
-        b, ci, hi, wi = x.shape
-        b, co, ho, wo = dy.shape
-        vpadding = hpadding = 0
-        vstride = hstride = 1
-        # Col2im part
-        dy_cols = dy.reshape(kn, -1)
-        w_cols = w.reshape(kn, -1).T
-        c2im_1 = w_cols @ dy_cols
-        c2im_2 = col2im_cython(c2im_1, dy.shape[0], ci, hi, wi,
-                               kh, kw, vpadding, hpadding,
-                               vstride, hstride)
-        conv_gemm = ConvGemm(debug=verbose())
-        cg_1 = conv_gemm.conv_gemm(w.transpose((0, 1, 2, 3)), dy.transpose((0, 1, 3, 2)),
-                                   vpadding=2, hpadding=2,
-                                   vstride=1, hstride=1)
-
-        cg_2 = conv_gemm.conv_gemm(w2, c2im_1[np.newaxis, np.newaxis, :, :],
-                                   vpadding=0, hpadding=1,
-                                   vstride=2, hstride=1)
-
-        cg_3 = conv_gemm.conv_gemm(w1, dy[:, :, [0, 0], :],
-                                   vpadding=0, hpadding=1,
-                                   vstride=1, hstride=1)
-
-        cg_4 = conv_gemm.conv_gemm(w2, dy[:, :, [0, 0], :],
-                                   vpadding=0, hpadding=1,
-                                   vstride=1, hstride=1)
-
+    def test_deconv_gemm_with_alexnet_layers(self):
+        spinner = Spinner()
         if verbose():
-            print("w_cols @ dy_cols")
-            print(c2im_1)
-            print("col2im")
-            print(c2im_2)
-            print("conv_gemm")
-            print(cg_1.shape)
-            print(cg_1)
-            # cg_1 = cg_1.reshape(b, ci, hi, wi)
-            print(cg_1)
-            print("cg_2")
-            print(cg_2)
-            print("cg_3")
-            print(cg_3)
-            print(cg_4)
-            print(w2)
-            print(dy)
-        self.assertTrue(True)
-
-    def test_col2im_handmade_array_2(self):
-        """
-        Test that manual matrices lead to the same solution
-        """
-        w = np.array([[[[1, 2, 3],
-                        [4, 5, 6]]]]).astype(np.float32, order='C')
-        x = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        dy = np.array([[[[1, 2]]]]).astype(np.float32, order='C')
-        padding = 0
-        stride = 1
-
-        w1 = np.array([[[[0, 0, 1],
-                         [0, 2, 0],
-                         [3, 0, 0]]]]).astype(np.float32, order='C')
-
-        w2 = np.array([[[[0, 0, 4],
-                         [0, 5, 0],
-                         [6, 0, 0]]]]).astype(np.float32, order='C')
-
-        # Shapes
-        kn, ci, kh, kw = w.shape
-        b, ci, hi, wi = x.shape
-        b, co, ho, wo = dy.shape
-        vpadding = hpadding = 0
-        vstride = hstride = 1
-        # Col2im part
-        dy_cols = dy.reshape(kn, -1)
-        w_cols = w.reshape(kn, -1).T
-        c2im_1 = w_cols @ dy_cols
-        c2im_2 = col2im_cython(c2im_1, dy.shape[0], ci, hi, wi,
-                               kh, kw, vpadding, hpadding,
-                               vstride, hstride)
-        conv_gemm = ConvGemm(debug=verbose())
-
-        cg_1 = conv_gemm.conv_gemm(w1, dy[:, :, [0, 0, 0], :],
-                                   vpadding=0, hpadding=2,
-                                   vstride=1, hstride=1)
-
-        cg_2 = conv_gemm.conv_gemm(w2, dy[:, :, [0, 0, 0], :],
-                                   vpadding=0, hpadding=2,
-                                   vstride=1, hstride=1)
-
-        if verbose():
-            print("w_cols @ dy_cols")
-            print(c2im_1)
-            print("col2im")
-            print(c2im_2)
-            print("conv_gemm")
-            print(cg_1)
-            print(cg_2)
-        self.assertTrue(True)
-
-    def test_col2im_handmade_array_3(self):
-        """
-        Test that manual matrices lead to the same solution
-        """
-        w = np.array([[[[1, 2],
-                        [3, 4]]]]).astype(np.float32, order='C')
-        x = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        dy = np.array([[[[1, 2, 4, 8],
-                         [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        padding = 1
-        stride = 1
-
-        w1 = np.array([[[[0, 1],
-                         [2, 0]]]]).astype(np.float32, order='C')
-
-        w2 = np.array([[[[0, 3],
-                         [4, 0]]]]).astype(np.float32, order='C')
-
-        # Shapes
-        kn, ci, kh, kw = w.shape
-        b, ci, hi, wi = x.shape
-        b, co, ho, wo = dy.shape
-        vpadding = hpadding = 0
-        vstride = hstride = 1
-        # Col2im part
-        dy_cols = dy.reshape(kn, -1)
-        w_cols = w.reshape(kn, -1).T
-        c2im_1 = w_cols @ dy_cols
-        c2im_2 = col2im_cython(c2im_1, dy.shape[0], ci, hi, wi,
-                               kh, kw, vpadding, hpadding,
-                               vstride, hstride)
-        conv_gemm = ConvGemm(debug=verbose())
-
-        cg_1 = conv_gemm.conv_gemm(w1, dy[:, :, [0, 0], 0:3],
-                                   vpadding=0, hpadding=1,
-                                   vstride=1, hstride=1)
-
-        cg_2 = conv_gemm.conv_gemm(w2, dy[:, :, [0, 0], 0:3],
-                                   vpadding=0, hpadding=1,
-                                   vstride=1, hstride=1)
-
-        cg_3 = np.concatenate((cg_1, cg_2))
-
-        if verbose():
-            print("w_cols @ dy_cols")
-            print(c2im_1)
-            print("col2im")
-            print(c2im_2)
-            print("conv_gemm")
-            print(cg_1)
-            print(cg_2)
-            print(cg_3)
-
-        self.assertTrue(True)
-
-    def test_col2im_handmade_array_kn_2(self):
-        """
-        Test that manual matrices lead to the same solution
-        """
-        w = np.array([[[[1, 1],
-                        [2, 2]]],
-                      [[[3, 3],
-                        [4, 4]]]]).astype(np.float32, order='C')
-        x = np.array([[[[1, 2, 4, 8],
-                        [16, 32, 64, 128]]]]).astype(np.float32, order='C')
-        dy = np.array([[[[1, 2, 3]]],
-                       [[[4, 5, 6]]]]).astype(np.float32, order='C')
-        padding = 0
-        stride = 1
-
-        w1 = np.array([[[[0, 1],
-                         [2, 0]]]]).astype(np.float32, order='C')
-
-        w2 = np.array([[[[0, 3],
-                         [4, 0]]]]).astype(np.float32, order='C')
-
-        # Shapes
-        kn, ci, kh, kw = w.shape
-        b, ci, hi, wi = x.shape
-        b, co, ho, wo = dy.shape
-        vpadding = hpadding = 0
-        vstride = hstride = 1
-        # Col2im part
-        w_cols = w.reshape(kn, -1).T
-        dy_cols = dy.reshape(kn, -1)
-        c2im_1 = w_cols @ dy_cols
-        c2im_2 = col2im_cython(c2im_1, dy.shape[0], ci, hi, wi,
-                               kh, kw, vpadding, hpadding,
-                               vstride, hstride)
-        conv_gemm = ConvGemm(debug=verbose())
-
-        cg_1 = conv_gemm.conv_gemm(w1, dy[:, :, [0, 0], 0:3],
-                                   vpadding=0, hpadding=1,
-                                   vstride=1, hstride=1)
-
-        cg_2 = conv_gemm.conv_gemm(w2, dy[:, :, [0, 0], 0:3],
-                                   vpadding=0, hpadding=1,
-                                   vstride=1, hstride=1)
-
-        cg_3 = np.concatenate((cg_1, cg_2))
-
-        if verbose():
-            print("w_cols")
-            print(w_cols)
-            print("dy_cols")
-            print(dy_cols)
-            print("w_cols @ dy_cols")
-            print(c2im_1)
-            print("col2im")
-            print(c2im_2)
-            print("conv_gemm")
-            print(cg_1)
-            print(cg_2)
-            print(cg_3)
-
-        self.assertTrue(True)
+            _print_with_header("{}".format(inspect.stack()[1][3]), None)
+            print(" layer   Maximum difference")
+            print("-------+--------------------")
+        layers = [
+            # D(b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride):
+            # AlexNet Cifar
+            L(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2),
+            L(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1),
+            L(64, 192, 4, 4, 384, 3, 3, 1, 1, 1, 1),
+            L(64, 384, 4, 4, 256, 3, 3, 1, 1, 1, 1),
+            L(64, 256, 4, 4, 256, 3, 3, 1, 1, 1, 1),
+            # AlexNet ImageNet
+            L(64, 3, 227, 227, 96, 11, 11, 1, 1, 4, 4),
+            L(64, 96, 27, 27, 256, 5, 5, 1, 1, 1, 1),
+            L(64, 256, 13, 13, 384, 3, 3, 1, 1, 1, 1),
+            L(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1),
+            L(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1),
+        ]
+        conv_gemm = ConvGemm(debug=False)
+        for n, layer in enumerate(layers):
+            weights = np.random.rand(layer.kn, layer.c, layer.kh, layer.kw).astype(np.float32, order='C')
+            dy = np.random.rand(layer.b, layer.kn, layer.ho, layer.wo).astype(np.float32, order='C')
+            dx = np.empty((layer.b, layer.c, layer.h, layer.w), dtype=np.float32, order='C')
+            if not verbose():
+                spinner.render()
+            # deconv_gemm
+            deconv_gemm_result = conv_gemm.deconv_gemm(weights, dy, dx,
+                                                       vpadding=layer.vpadding, hpadding=layer.hpadding,
+                                                       vstride=layer.vstride, hstride=layer.hstride)
+            # gemm + col2im
+            dy_cols = dy.transpose((1, 0, 2, 3)).reshape(layer.kn, -1)
+            w_cols = weights.reshape(layer.kn, -1).T
+            res = np.matmul(w_cols, dy_cols)
+            mm_col2im_result = col2im_cython(res, dy.shape[0], layer.c, layer.h, layer.w,
+                                             layer.kh, layer.kw, layer.vpadding, layer.hpadding,
+                                             layer.vstride, layer.hstride)
+            if verbose():
+                print("   {:2}      {:9.7f}".format(n,
+                                                    max([abs(x - y) for x, y
+                                                         in
+                                                         zip(deconv_gemm_result.flatten(),
+                                                             mm_col2im_result.flatten())])))
+                if n == 9:
+                    print("Flags for last conv_gemm_result output:")
+                    print(deconv_gemm_result.flags)
+            self.assertTrue(np.allclose(deconv_gemm_result, mm_col2im_result),
+                            f"Results differ for AlexNet Cifar and ImageNet layers number {n}")
+        if not verbose():
+            spinner.stop()
 
 
 if __name__ == '__main__':

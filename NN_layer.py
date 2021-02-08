@@ -58,7 +58,7 @@ from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CO
     PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
     PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
     PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
-    PYDTNN_OPS_BACKWARD_IM2COL
+    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM
 
 try:
     from mpi4py import MPI
@@ -160,6 +160,7 @@ class Conv2D(Layer):
         self.cg = None
         self.cg_fallback_to_im2col = True  # Fallback to backward I2C if any stride is greater than 1
         self.cg_cache = True  # Store created matrices to allow them to be reused
+        self.cg_deconv = False  # Use deconvGemm instead of matmul + col2im
         self.cg_x_transposed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
@@ -179,12 +180,13 @@ class Conv2D(Layer):
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
         if self.model.params.enable_conv_gemm:
-            self.cg = ConvGemm(dtype=self.dtype, debug=self.debug)
+            self.cg = ConvGemm(dtype=self.dtype, debug=self.debug, parent_layer=self)
             if not self.model.params.conv_gemm_cache:
                 ConvGemmCache.disable()
             self.forward = self._forward_cg
             self.backward = self._backward_cg
             self.cg_fallback_to_im2col = self.model.params.conv_gemm_fallback_to_im2col
+            self.cg_deconv = self.model.params.conv_gemm_deconv
         else:
             self.forward = self._forward_i2c
             self.backward = self._backward_i2c
@@ -448,31 +450,28 @@ class Conv2D(Layer):
         #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 07")
 
         if self.need_dx:
-            w_cols = self.weights.reshape(self.co, -1).T
-            dy_cols = cg_dy.reshape(self.co, -1)
+            if self.cg_deconv:
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
+                dx = self.cg.deconv_gemm(self.weights, dy, self.cg_x,
+                                         vpadding=self.vpadding, hpadding=self.hpadding,
+                                         vstride=self.vstride, hstride=self.hstride)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            else:
+                w_cols = self.weights.reshape(self.co, -1).T
+                dy_cols = cg_dy.reshape(self.co, -1)
 
-            # if self.id == 4:
-            #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 08")
+                # Don't use a cached version if the res matrix will persist
+                res = self.cg_matmul_out_cache[(w_cols.shape[0], dy_cols.shape[1])]
 
-            # Don't use this if the matrix will persist
-            res = self.cg_matmul_out_cache[(w_cols.shape[0], dy_cols.shape[1])]
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+                self.matmul(w_cols, dy_cols, res)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
-            self.matmul(w_cols, dy_cols, res)
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-            # if self.id == 4:
-            #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 09")
-
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
-            dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
-                               self.kh, self.kw, self.vpadding, self.hpadding,
-                               self.vstride, self.hstride)
-            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-            # if self.id == 4:
-            #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 10")
-
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+                dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                                   self.kh, self.kw, self.vpadding, self.hpadding,
+                                   self.vstride, self.hstride)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
 

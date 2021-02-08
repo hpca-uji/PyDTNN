@@ -39,16 +39,16 @@ __status__ = "Testing"
 __version__ = "1.1.0"
 
 import ctypes
-import os
 import platform
-import time
-from ctypes.util import find_library
+import weakref
+from contextlib import suppress
 
 import numpy as np
 
-from NN_transpose_cython import transpose_1230_ji_cython
+from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
+    PYDTNN_OPS_BACKWARD_DCG_SHRINK
+from NN_transpose_cython import transpose_1230_ji_cython, transpose_0231_kji_cython
 from NN_util import load_library
-from NN_pad_cython import pad_cython
 
 
 class ConvGemmCache(dict):
@@ -113,10 +113,12 @@ class ConvGemm:
     lib_cg = None  # will link to the libconvGemm.so library
     biases_cg_cache = None
     weights_cg_cache = None
+    dy_cg_cache = None
+    dx_padded_cache = None
 
     # out_cg_cache = None  # Warning: don't use an static cached matrix for the output. No, do not do it.
 
-    def __init__(self, dtype=np.float32, debug=False):
+    def __init__(self, dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
@@ -126,6 +128,8 @@ class ConvGemm:
             The element data type being used on all the matrices.
         debug : boolean
             Whether to print debug information or not.
+        parent_layer: layer
+            The layer that is using it (for tracing purposes).
         """
         if isinstance(dtype, type):
             self.dtype = dtype
@@ -138,6 +142,8 @@ class ConvGemm:
             ConvGemm.lib_cg = load_library("convGemm")
             ConvGemm.biases_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="F"))
             ConvGemm.weights_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.dy_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.dx_padded_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
         # The x_padded and output matrices are also cached, but only on the current instance
         self.x_padded_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.out_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
@@ -150,7 +156,14 @@ class ConvGemm:
         result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
+        # Declare cc_pack
+        self.cc_pack = ctypes.POINTER(ctypes.c_float)()
+        self._cc_pack_size = 0
+        # Debug
         self.debug = debug
+        # Parent layer
+        if parent_layer is not None:
+            self.get_parent_layer = weakref.ref(parent_layer)
         # Choose the appropriate convGemm function depending on the architecture and the data type being used
         if platform.machine() == 'aarch64':
             if self.dtype == np.float16:
@@ -163,32 +176,33 @@ class ConvGemm:
             if self.dtype == np.float32:
                 self.x_conv_gemm = self.lib_cg.sconvGemm
                 self.x_apply_bias = self.lib_cg.sapplyBias
+                self.x_deconv_gemm = self.lib_cg.sconvGemm_back
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         else:
             raise ValueError("Platform '{}' not yet supported")
 
+    def _alloc_cc_pack(self, kh, kw, c):
+        size = kh * kw * c
+        if self._cc_pack_size == size:  # Already allocated, nothing to be done
+            return
+        if self._cc_pack_size != 0:  # Free currently allocated memory
+            __free__(self.cc_pack)
+            self._cc_pack_size = 0
+        # int alloc_unpack_buff(unsigned int kh, unsigned int kw, unsigned int c,float** Cc_pack)
+        result = self.lib_cg.alloc_unpack_buff(ctypes.c_int(kh), ctypes.c_int(kw), ctypes.c_int(c),
+                                               ctypes.byref(self.cc_pack))
+        if result == 1:
+            raise MemoryError("Could not allocate space for cc_pack!")
+        self._cc_pack_size = size
+
     def __del__(self):
         """Free the allocated matrices"""
-
-        def find_msvcr():
-            import re
-            import sys
-            exec_bytes = open(sys.executable, "rb").read()
-            match = re.search("msvcr([0-9]+|t).dll", str(exec_bytes), re.IGNORECASE)
-            return match.group(0)
-
-        if platform.system() == 'Windows':
-            libc = ctypes.cdll.LoadLibrary(find_msvcr())
-        elif platform.system() == 'Linux':
-            libc = ctypes.cdll.LoadLibrary('libc.so.6')
-        elif platform.system == 'Darwin':
-            libc = ctypes.cdll.LoadLibrary('libc.dylib')
-        else:
-            raise AssertionError("Don't know how to get to libc for a '{}' system".format(platform.system()))
         try:
-            libc.free(self.ac_pack)
-            libc.free(self.bc_pack)
+            __free__(self.ac_pack)
+            __free__(self.bc_pack)
+            if self._cc_pack_size != 0:
+                __free__(self.cc_pack)
         except AttributeError:
             pass
 
@@ -339,7 +353,7 @@ class ConvGemm:
                 print("Warning: Custom 'expose_sconvGemm' function is not present in 'libconvGemm.so'. "
                       "You can safely ignore this warning.")
 
-        # Call the appropriate convGemm function from libconvGemm
+        # Call the appropriate convGemm function from libconvGemm (height and width swapped)
         self.x_conv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
                          ctypes.c_uint(c), ctypes.c_uint(kn),
                          ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
@@ -376,6 +390,134 @@ class ConvGemm:
         # transpose_2d_f2c_ji_cython(biases_cg, out)
 
         return out
+
+    def deconv_gemm(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1):
+        """
+        Calls the appropriate deconv_gemm function from libconvGemm.so to perform
+        an inplace matrix matrix multiplication and deconvolution:
+
+            dx = col2im(alpha * weights_2D_T * dy_2D),
+
+        where:
+          * weights_2D_T is the weights matrix reshaped to 2D and transposed (c·kh·kw x kn),
+          * dy_2D is the dy matrix transposed_1023 and reshaped to 2D (kn x b·ho·wo).
+
+        Parameters
+        ----------
+        weights : array_like
+            The weights matrix (kn x c x kh x kw).
+        dy : array_like
+            The dy matrix (b x kn x ho x wo).
+        dx : array_like
+            An empty dx matrix (b x c x h x w) that will be overwritten with col2im(alpha * weights_2D_T * dy_2D).
+        alpha : float
+            The alpha factor.
+        vpadding : int
+            The vertical padding to be applied to the x matrix.
+        hpadding : int
+            The horizontal padding to be applied to the x matrix.
+        vstride : int
+            The vertical stride.
+        hstride : int
+            The horizontal stride.
+
+        Returns
+        -------
+        array_like
+            The dx matrix.
+        """
+
+        # Get matrices dimensions
+        kn, ck, kh, kw = weights.shape
+        b, kn2, ho, wo = dy.shape
+        b, c, h, w = dx.shape
+        assert kn == kn2, "Number of filters outputs in weights and dy should be the same!"
+        assert ck == c, "Number of channels in weights and x should be the same!"
+
+        # Allocate space for self.cc_pack
+        self._alloc_cc_pack(kh, kw, c)
+
+        # Change matrices axes to the convGemm expected order:
+        #    W → kh*kw*c×kn  | PyDTNN (C order): kn×ci×kh×kw  (F order: kw×kh×ci×kn)
+        #   DY → kn×ho*wo*b  | PyDTNN (C order): b×kn×ho×wo (F order: wo×ho×kn×b)
+        #                                        0 1  2  3             3  2  1 0
+        #        1  3  2  0  ->  0231
+        dy_cg = self.dy_cg_cache[(b, ho, wo, kn)]
+        with suppress(AttributeError):
+            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                      self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                      PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY)
+        transpose_0231_kji_cython(dy, dy_cg)  # Faster than the ijk version
+        with suppress(AttributeError):
+            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        # void sconvGemm_back(unsigned int kh, unsigned int kw, unsigned int c, unsigned int kn,
+        # 		              float alpha, float * A,
+        #                     unsigned int h, unsigned int w, unsigned int b,
+        #                     unsigned int hStride, unsigned int wStride,
+        #                     unsigned int hPad, unsigned int wPad,
+        # 		              float * B, float * C,
+        #                     float * Ac_pack, float * Bc_pack, float* Cc_pack)
+
+        # ---------------------.
+        # Dx no padded version |
+        # ---------------------·
+        # # Call the appropriate deconvGemm function from libconvGemm (height and width swapped)
+        # self.x_deconv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
+        #                    ctypes.c_uint(c), ctypes.c_uint(kn),
+        #                    ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+        #                    ctypes.c_uint(w), ctypes.c_uint(h), ctypes.c_uint(b),
+        #                    ctypes.c_uint(hstride), ctypes.c_uint(vstride),
+        #                    ctypes.c_uint(hpadding), ctypes.c_uint(vpadding),
+        #                    ctypes.c_void_p(dy_cg.ctypes.data),
+        #                    ctypes.c_void_p(dx.ctypes.data),
+        #                    self.ac_pack, self.bc_pack, self.cc_pack)
+        # return dx
+
+        # ------------------.
+        # Dx padded version |
+        # ------------------·
+        # dx_padded = np.empty((b, c, h + 2 * vpadding, w + 2 * hpadding), dtype=self.dtype)
+        dx_padded = self.dx_padded_cache[(b, c, h + 2 * vpadding, w + 2 * hpadding)]
+        # Call the appropriate deconvGemm function from libconvGemm (height and width swapped)
+        self.x_deconv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
+                           ctypes.c_uint(c), ctypes.c_uint(kn),
+                           ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+                           ctypes.c_uint(w), ctypes.c_uint(h), ctypes.c_uint(b),
+                           ctypes.c_uint(hstride), ctypes.c_uint(vstride),
+                           ctypes.c_uint(hpadding), ctypes.c_uint(vpadding),
+                           ctypes.c_void_p(dy_cg.ctypes.data),
+                           ctypes.c_void_p(dx_padded.ctypes.data),
+                           self.ac_pack, self.bc_pack, self.cc_pack)
+        if vpadding or hpadding:
+            with suppress(AttributeError):
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                          self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                          PYDTNN_OPS_BACKWARD_DCG_SHRINK)
+            dx[...] = dx_padded[:, :, vpadding:vpadding + h, hpadding:hpadding + w]
+            with suppress(AttributeError):
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return dx
+
+
+def __free__(pack):
+    def find_msvcr():
+        import re
+        import sys
+        exec_bytes = open(sys.executable, "rb").read()
+        match = re.search("msvcr([0-9]+|t).dll", str(exec_bytes), re.IGNORECASE)
+        return match.group(0)
+
+    if platform.system() == 'Windows':
+        libc = ctypes.cdll.LoadLibrary(find_msvcr())
+    elif platform.system() == 'Linux':
+        libc = ctypes.cdll.LoadLibrary('libc.so.6')
+    elif platform.system == 'Darwin':
+        libc = ctypes.cdll.LoadLibrary('libc.dylib')
+    else:
+        raise AssertionError("Don't know how to get to libc for a '{}' system".format(platform.system()))
+    assert isinstance(pack, object)
+    libc.free(pack)
 
 
 def __usage_example__():
