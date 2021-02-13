@@ -160,6 +160,13 @@ class Tracer:
         """Fake method, will be replaced by lambda: None or _print_memory_usage()"""
         pass
 
+    def _get_layers_recursively(self, layers):
+        all_layers = []
+        for layer in layers:
+            all_layers.append(layer)
+            all_layers += self._get_layers_recursively(layer.children)
+        return all_layers
+
     def _define_event_types(self, model):
         """This method will be called only if tracing is enabled"""
         mdl_event = self.event_types[PYDTNN_MDL_EVENT]
@@ -171,7 +178,7 @@ class Tracer:
             constants.pop(name)
         mdl_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_MDL_")] == "PYDTNN_MDL_"]
         ops_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_OPS_")] == "PYDTNN_OPS_"]
-        for layer in model.layers:
+        for layer in self._get_layers_recursively(model.layers):
             layer_name = type(layer).__name__
             for (name, val) in mdl_constants:
                 mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.id:03}_{layer_name}_{name[11:].lower()}"

@@ -94,6 +94,7 @@ class Layer:
         self.grad_vars = {}
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
+        self.paths = []
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -104,6 +105,13 @@ class Layer:
         if not attrs:
             attrs = "|{:19s}|{:^24s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
+
+    @property
+    def children(self):
+        children = []
+        for path in self.paths:
+            children += [layer for layer in path]
+        return children
 
     def update_weights(self, optimizer):
         optimizer.update(self)
