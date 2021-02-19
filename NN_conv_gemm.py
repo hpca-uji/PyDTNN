@@ -207,7 +207,7 @@ class ConvGemm:
             pass
 
     def conv_gemm(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                  biases_vector=None):
+                  biases_vector=None, trans=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -242,6 +242,8 @@ class ConvGemm:
             The horizontal stride.
         biases_vector: array_like
             The biases that have to be summed to all the elements in each output channel.
+        trans: bool
+            Perform the im2col(x) if False, or the im2colT(x) if True.
 
         Returns
         -------
@@ -249,7 +251,15 @@ class ConvGemm:
             The result of alpha * weights * im2col(x_padded) + beta * biases.
         """
 
-        # Pad x matrix and set vpadding and hpadding to 0
+        # convGemm expected order for all matrices
+        # ----------------------------------------
+        #   Where I→hi×wi×ci×b corresponds to the input tensor, | PyDTNN (C order): b×ci×hi×wi   (F order: wi×hi×ci×b)
+        #   F→kn×kh×kw×ci denotes the filters,                  | PyDTNN (C order): kn×ci×kh×kw  (F order: kw×kh×ci×kn)
+        #   and O→kn×(ho·wo·b) is the output tensor             | PyDTNN (C order): kn×(b·ho·wo) (F order: (wo·ho·b)×kn)
+
+        # --------------------------------------------------
+        # 1) Pad x matrix and set vpadding and hpadding to 0
+        # --------------------------------------------------
         if vpadding == 0 and hpadding == 0:
             x_padded = x
         else:
@@ -266,18 +276,37 @@ class ConvGemm:
             # pad_cython(x, x_padded)
             vpadding = hpadding = 0
 
-        # Get matrices dimensions (once x matrix has been padded)
-        kn, ck, kh, kw = weights.shape
-        b, c, h, w = x_padded.shape
-        assert ck == c, "Number of channels in weights and x should be the same!"
+        # ----------------------------------------------------------
+        # 2) Get matrices dimensions (once x matrix has been padded)
+        # ----------------------------------------------------------
+        if not trans:
+            kn, ck, kh, kw = weights.shape
+            b, c, h, w = x_padded.shape
+            assert ck == c, "Number of channels in weights and x should be the same!"
+            # Compute height and weight of the output
+            # Note: h and w are obtained from x_padded (no from x) and vpadding and
+            #       hpadding were set to 0 just to use the usual formulation
+            ho = (h + 2 * vpadding - kh) // vstride + 1
+            wo = (w + 2 * hpadding - kw) // hstride + 1
+        else:
+            assert biases is not None, "If using the transposed convGemm, the biases matrix must be supplied"
+            # if trans: Filters = Output_1023 x Im2ColT(Input)
+            kn, ck, kh, kw = biases.shape  # Filters
+            b, c, h, w = x_padded.shape  # Input
+            knw, bw, ho, wo = weights.shape  # Output_1023
+            assert ck == c, "Number of channels in biases and x should be the same!"
+            assert kn == knw, "Number of filters in biases and weights must be the same!"
+            assert b == bw, "Batch size in x and weights must be the same!"
+            biases = biases.reshape(kn, -1)
 
-        # Compute height and weight of the output
-        # Note: h and w are obtained from x_padded (no from x) and vpadding and
-        #       hpadding are set to 0 in order to use the usual formulation
-        ho = (h + 2 * vpadding - kh) // vstride + 1
-        wo = (w + 2 * hpadding - kw) // hstride + 1
-
-        # Create zero biases matrix if none provided. Otherwise, test its dimensions
+        # -----------------------------------------------------------------------------
+        # 3) Create zero biases matrix if none provided. Otherwise, test its dimensions
+        # -----------------------------------------------------------------------------
+        if trans:
+            # Swap dimensions to regular usage
+            kh, ho = ho, kh
+            kw, wo = wo, kw
+            b, c = c, b
         if biases is None:
             # @warning: np.empty() could be used instead of np.zeros() only if the underlying operation does not
             # sum the biases when beta is 0.0. Otherwise, as the non initialized biases matrix could have nan elements,
@@ -293,29 +322,27 @@ class ConvGemm:
             assert (kn, b * ho * wo) == biases.shape, \
                 "Biases matrix should be ({}, {}), instead it is {}".format(kn, b * ho * wo, biases.shape)
 
-        # Check that dtype is the same on all the matrices
+        # ---------------------------------------------------
+        # 4) Check that dtype is the same on all the matrices
+        # ---------------------------------------------------
         assert weights.dtype == x.dtype == biases_cg.dtype, \
             "All the matrices must have the same type of data!"
         assert weights.dtype == self.dtype, \
             "The input matrices must have the same type of data as the one specified when " \
             "this class was instantiated!"
 
-        # Change matrices axes to the convGemm expected order:
-        #   Where I→hi×wi×ci×b corresponds to the input tensor, | PyDTNN (C order): b×ci×hi×wi   (F order: wi×hi×ci×b)
-        #   F→kn×kh×kw×ci denotes the filters,                  | PyDTNN (C order): kn×ci×kh×kw  (F order: kw×kh×ci×kn)
-        #   and O→kn×(ho·wo·b) is the output tensor             | PyDTNN (C order): kn×(b·ho·wo) (F order: (wo·ho·b)×kn)
-
+        # -------------------------
+        # 5) Transpose_1230 weights
+        # -------------------------
         # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
         # NEW(wxh): 1) weights_cg = weights.transpose((0, 3, 2, 1)).flatten(order="F")
         # NEW(wxh): 2) weights_cg = weights.transpose((1, 2, 3, 0)).flatten(order="C")
         # NEW(wxh): 3)
         # weights_cg = weights.transpose((1, 2, 3, 0)).ravel(order="C")
-
         # NEW(wxh): 4) (best until sreshapeWeights_pydtnn())
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
         # weights_cg[...] = weights.transpose((1, 2, 3, 0))
         # weights_cg.ravel(order="K")
-
         # NEW(wxh): 5)
         # void sreshapeWeights_pydtnn(unsigned int kn, unsigned int c, unsigned int kh, unsigned int kw,
         #                             float* weights_pydtnn, float* restrict weights);
@@ -326,19 +353,23 @@ class ConvGemm:
         # self.lib_cg.sreshapeWeights_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(c), ctypes.c_uint(kw), ctypes.c_uint(kh),
         #                                    ctypes.c_void_p(weights.ctypes.data),
         #                                    ctypes.c_void_p(weights_cg.ctypes.data))
-
         # NEW(wxh): 6)
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
         weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
         transpose_1230_ji_cython(weights, weights_cg)
 
+        # -------------------
+        # 6) Flatten x_padded
+        # -------------------
         # PREVIOUS(hxw): x_padded_cg = x_padded.transpose((2, 3, 1, 0)).flatten(order="F")
         # NEW(wxh) 1): x_padded_cg = x_padded.transpose((3, 2, 1, 0)).flatten(order="F")
         # NEW(wxh) 2): x_padded_cg = x_padded.ravel(order="C")
         # NEW(wxh) 3):
         x_padded_cg = x_padded.ravel(order="K")
 
-        # Call custom added function to libconvGemm.so to print the received parameters
+        # --------------------------------------------------------------------------------
+        # 7) Call custom added function to libconvGemm.so to print the received parameters
+        # --------------------------------------------------------------------------------
         if self.debug:
             try:
                 self.lib_cg.expose_sconvGemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
@@ -353,8 +384,16 @@ class ConvGemm:
                 print("Warning: Custom 'expose_sconvGemm' function is not present in 'libconvGemm.so'. "
                       "You can safely ignore this warning.")
 
-        # Call the appropriate convGemm function from libconvGemm (height and width swapped)
-        self.x_conv_gemm(ctypes.c_uint(kw), ctypes.c_uint(kh),
+        # -------------------------------------------------------------------------------------
+        # 8) Call the appropriate convGemm function from libconvGemm (height and width swapped)
+        # -------------------------------------------------------------------------------------
+        if trans:
+            # Swap dimensions back to transposed usage
+            kh, ho = ho, kh
+            kw, wo = wo, kw
+            b, c = c, b
+        self.x_conv_gemm(ctypes.c_char(b'Y' if trans else b'N'),
+                         ctypes.c_uint(kw), ctypes.c_uint(kh),
                          ctypes.c_uint(c), ctypes.c_uint(kn),
                          ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
                          ctypes.c_uint(w), ctypes.c_uint(h),
@@ -363,12 +402,23 @@ class ConvGemm:
                          ctypes.c_void_p(biases_cg.ctypes.data),
                          self.ac_pack, self.bc_pack)
 
+        if trans:
+            # Swap dimensions to regular usage
+            kh, ho = ho, kh
+            kw, wo = wo, kw
+            b, c = c, b
+
+        # ----------------------
+        # 9) Apply biases vector
+        # ----------------------
         if biases_vector is not None:
             self.x_apply_bias(ctypes.c_uint(kn), ctypes.c_uint(b * ho * wo),
                               ctypes.c_void_p(biases_vector.ctypes.data), ctypes.c_void_p(biases_cg.ctypes.data),
                               ctypes.c_uint(kn))
 
-        # Change output matrix to the PyDTNN expected order:
+        # -----------------------------------------------------
+        # 10) Change output matrix to the PyDTNN expected order
+        # -----------------------------------------------------
         # * PREVIOUS(hxw): out = biases_cg.reshape((kn, b, wo, ho)).transpose((0, 1, 3, 2)).reshape(kn, -1, order="C")
         # * NEW(wxh) 1): out = biases_cg.reshape((kn, b, ho, wo)).transpose((0, 1, 2, 3)).reshape(kn, -1, order="C")
         # * NEW(wxh) 2):
@@ -497,6 +547,8 @@ class ConvGemm:
             dx[...] = dx_padded[:, :, vpadding:vpadding + h, hpadding:hpadding + w]
             with suppress(AttributeError):
                 self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        else:
+            dx = dx_padded
         return dx
 
 

@@ -134,6 +134,7 @@ def parse_options():
     parser.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
     parser.add_argument('--conv_gemm_cache', type=bool_lambda, default=True)
     parser.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
+    parser.add_argument('--conv_gemm_trans', type=bool_lambda, default=False)
     # Other parameters
     parser.add_argument('--dtype', type=str, default="float32")
     parser.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)

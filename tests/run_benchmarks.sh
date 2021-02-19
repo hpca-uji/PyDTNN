@@ -28,6 +28,7 @@ ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
 CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-False}
 CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-True}
 CONV_GEMM_DECONV=${CONV_GEMM_DECONV:-False}
+CONV_GEMM_TRANS=${CONV_GEMM_TRANS:-False}
 NODES=${NODES:-1}
 
 #--------------------------
@@ -90,6 +91,9 @@ if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   fi
   if [ "${CONV_GEMM_DECONV}" == "True" ]; then
     FILE_NAME="${FILE_NAME}_dc"
+  fi
+  if [ "${CONV_GEMM_TRANS}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}_tr"
   fi
   if [ "${CONV_GEMM_CACHE}" == "False" ]; then
     FILE_NAME="${FILE_NAME}_nc"
@@ -185,6 +189,7 @@ function run_benchmark() {
     --conv_gemm_fallback_to_im2col="${CONV_GEMM_FALLBACK_TO_IM2COL}" \
     --conv_gemm_cache="${CONV_GEMM_CACHE}" \
     --conv_gemm_deconv="${CONV_GEMM_DECONV}" \
+    --conv_gemm_trans="${CONV_GEMM_TRANS}" \
     --history="${HISTORY_FILENAME}" \
     ${MODEL_FLAGS} |
     tee "${OUTPUT_FILENAME}"

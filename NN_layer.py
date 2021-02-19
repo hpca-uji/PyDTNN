@@ -161,8 +161,10 @@ class Conv2D(Layer):
         self.cg_fallback_to_im2col = True  # Fallback to backward I2C if any stride is greater than 1
         self.cg_cache = True  # Store created matrices to allow them to be reused
         self.cg_deconv = False  # Use deconvGemm instead of matmul + col2im
+        self.cg_trans = False  # Use the convGemm function to operate with im2colT
         self.cg_x_transposed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.cg_biases_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="F"))  # order F!
         self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
 
     def initialize(self, prev_shape, need_dx=True):
@@ -187,6 +189,7 @@ class Conv2D(Layer):
             self.backward = self._backward_cg
             self.cg_fallback_to_im2col = self.model.params.conv_gemm_fallback_to_im2col
             self.cg_deconv = self.model.params.conv_gemm_deconv
+            self.cg_trans = self.model.params.conv_gemm_trans
         else:
             self.forward = self._forward_i2c
             self.backward = self._backward_i2c
@@ -354,100 +357,106 @@ class Conv2D(Layer):
             self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self._backward_i2c(dy)
 
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-        cg_dy = dy.transpose((1, 0, 2, 3))
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        b, c, h, w = self.cg_x.shape
-
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_PADDING_X)
-        # if self.vpadding == 0 and self.hpadding == 0:
-        #     self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
-        # else:
-        #     # Hand made alternative to:
-        #     # self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
-        #     #                            ((0, 0),
-        #     #                             (0, 0),
-        #     #                             (self.vpadding, self.vpadding),
-        #     #                             (self.hpadding, self.hpadding)),
-        #     #                            mode='constant')
-        #     b, c, h, w = self.cg_x.shape
-        #     new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
-        #     # self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
-        #     self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
-        #     self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
-        #         self.cg_x.transpose((1, 0, 2, 3))
-        if self.vpadding == 0 and self.hpadding == 0:
-            # @todo: cython transpose version
-            cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
+        if not self.cg_trans:
+            # 1) cg_dy
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+            cg_dy = dy.transpose((1, 0, 2, 3))
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 2) cg_x_transposed
+            b, c, h, w = self.cg_x.shape
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_PADDING_X)
+            # if self.vpadding == 0 and self.hpadding == 0:
+            #     self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
+            # else:
+            #     # Hand made alternative to:
+            #     # self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
+            #     #                            ((0, 0),
+            #     #                             (0, 0),
+            #     #                             (self.vpadding, self.vpadding),
+            #     #                             (self.hpadding, self.hpadding)),
+            #     #                            mode='constant')
+            #     b, c, h, w = self.cg_x.shape
+            #     new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
+            #     # self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
+            #     self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+            #     self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
+            #         self.cg_x.transpose((1, 0, 2, 3))
+            if self.vpadding == 0 and self.hpadding == 0:
+                # @todo: cython transpose version
+                cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
+            else:
+                new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
+                cg_x_transposed = self.cg_x_transposed_cache[(c, b, new_h, new_w)]
+                transpose_1023_and_pad_cython(self.cg_x, cg_x_transposed)
+            cg_vpadding = 0
+            cg_hpadding = 0
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 3) new indexes and strides
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES)
+            v_new_indexes, cg_vstride = self._get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
+            h_new_indexes, cg_hstride = self._get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 4) cg_x_indexed
+            # Indexing performance considerations:
+            #  + Using numpy.array to select the indexes is faster than using a list
+            #    (check _get_x_new_indexes_and_xstride).
+            #  + Indexing first rows and then columns is faster than the opposite.
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_REINDEX)
+            # if h_new_indexes is not None:
+            #     self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
+            # if v_new_indexes is not None:
+            #     self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
+            # if h_new_indexes is not None or v_new_indexes is not None:
+            #     # @warning: The next line is required to ensure the correct order of the underlying data of
+            #     #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
+            #     #           unexpected results
+            #     self.cg_x_indexed = self.cg_x_indexed.copy()
+            if h_new_indexes is not None or v_new_indexes is not None:
+                new_h = len(v_new_indexes) if v_new_indexes is not None else h
+                new_w = len(h_new_indexes) if h_new_indexes is not None else w
+                # self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
+                cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+                reindex_cython(v_new_indexes, h_new_indexes, cg_x_transposed, cg_x_indexed)
+            else:
+                cg_x_indexed = cg_x_transposed
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 5) cg_biases
+            cg_biases = None
         else:
-            new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
-            cg_x_transposed = self.cg_x_transposed_cache[(c, b, new_h, new_w)]
-            transpose_1023_and_pad_cython(self.cg_x, cg_x_transposed)
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # if self.cg_trans:
+            # 1) cg_dy
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+            cg_dy = dy.transpose((1, 0, 2, 3))
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 2) cg_x_indexed
+            cg_x_indexed = self.cg_x
+            # 3) cg_biases
+            cg_biases = self.cg_biases_cache[self.weights.shape]
+            # 4) rest of parameters
+            cg_vpadding = self.vpadding
+            cg_hpadding = self.hpadding
+            cg_vstride = self.vstride
+            cg_hstride = self.hstride
 
-        # if self.id == 4:
-        #    self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 02")
-
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES)
-        v_new_indexes, cg_vstride = self._get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
-        h_new_indexes, cg_hstride = self._get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # if self.id == 4:
-        #    self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 03")
-
-        # Indexing performance considerations:
-        #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_new_indexes_and_xstride).
-        #  + Indexing first rows and then columns is faster than the opposite.
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_REINDEX)
-        # if h_new_indexes is not None:
-        #     self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
-        # if v_new_indexes is not None:
-        #     self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
-        # if h_new_indexes is not None or v_new_indexes is not None:
-        #     # @warning: The next line is required to ensure the correct order of the underlying data of
-        #     #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
-        #     #           unexpected results
-        #     self.cg_x_indexed = self.cg_x_indexed.copy()
-        if h_new_indexes is not None or v_new_indexes is not None:
-            new_h = len(v_new_indexes) if v_new_indexes is not None else h
-            new_w = len(h_new_indexes) if h_new_indexes is not None else w
-            # self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
-            self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
-            reindex_cython(v_new_indexes, h_new_indexes, cg_x_transposed, self.cg_x_indexed)
-        else:
-            self.cg_x_indexed = cg_x_transposed
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # if self.id == 4:
-        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 04")
+        if self.debug:
+            # Expose cg_x_indexed
+            self.cg_x_indexed = cg_x_indexed
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
-        res = self.cg.conv_gemm(cg_dy, self.cg_x_indexed,
-                                biases=None,
-                                vpadding=0, hpadding=0,
-                                vstride=cg_vstride, hstride=cg_hstride)
+        res = self.cg.conv_gemm(cg_dy, cg_x_indexed,
+                                biases=cg_biases, beta=0.0,
+                                vpadding=cg_vpadding, hpadding=cg_hpadding,
+                                vstride=cg_vstride, hstride=cg_hstride, trans=self.cg_trans)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # if self.id == 4:
-        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 05")
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
         self.dw = res.reshape(self.weights.shape)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        # if self.id == 4:
-        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 06")
-
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
         if self.use_bias:
             self.db = np.sum(dy, axis=(0, 2, 3))
-            # self.db = np.empty_like(self.biases)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # if self.id == 4:
-        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 07")
 
         if self.need_dx:
             if self.cg_deconv:
