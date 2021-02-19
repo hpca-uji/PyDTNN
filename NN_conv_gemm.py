@@ -46,7 +46,8 @@ from contextlib import suppress
 import numpy as np
 
 from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
-    PYDTNN_OPS_BACKWARD_DCG_SHRINK
+    PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, \
+    PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, PYDTNN_OPS_CONVGEMM_TRANS_BIASES
 from NN_transpose_cython import transpose_1230_ji_cython, transpose_0231_kji_cython
 from NN_util import load_library
 
@@ -227,7 +228,7 @@ class ConvGemm:
         x : array_like
             The layers matrix (b x c x h x w).
         biases : array_like
-            An optional biases matrix (kn x b*ho*wo).
+            An optional biases matrix (kn x b*ho*wo). If provided, can be overwritten.
         alpha : float
             The alpha factor.
         beta : float
@@ -263,6 +264,15 @@ class ConvGemm:
         if vpadding == 0 and hpadding == 0:
             x_padded = x
         else:
+            with suppress(AttributeError):
+                if not trans:
+                    self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                              self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                              PYDTNN_OPS_CONVGEMM_X_PAD)
+                else:
+                    self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                              self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                              PYDTNN_OPS_CONVGEMM_TRANS_X_PAD)
             # Hand made alternative to:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
             b, c, h, w = x.shape
@@ -275,6 +285,8 @@ class ConvGemm:
             # x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
             # pad_cython(x, x_padded)
             vpadding = hpadding = 0
+            with suppress(AttributeError):
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # ----------------------------------------------------------
         # 2) Get matrices dimensions (once x matrix has been padded)
@@ -297,7 +309,7 @@ class ConvGemm:
             assert ck == c, "Number of channels in biases and x should be the same!"
             assert kn == knw, "Number of filters in biases and weights must be the same!"
             assert b == bw, "Batch size in x and weights must be the same!"
-            biases = biases.reshape(kn, -1)
+            biases = biases.reshape((kn, -1), order="F")
 
         # -----------------------------------------------------------------------------
         # 3) Create zero biases matrix if none provided. Otherwise, test its dimensions
@@ -307,6 +319,9 @@ class ConvGemm:
             kh, ho = ho, kh
             kw, wo = wo, kw
             b, c = c, b
+            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                      self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                      PYDTNN_OPS_CONVGEMM_TRANS_BIASES)
         if biases is None:
             # @warning: np.empty() could be used instead of np.zeros() only if the underlying operation does not
             # sum the biases when beta is 0.0. Otherwise, as the non initialized biases matrix could have nan elements,
@@ -316,11 +331,21 @@ class ConvGemm:
             biases_cg = self.biases_cg_cache[(kn, b * ho * wo)]
         else:
             # biases = biases.copy()  # To avoid overriding the original biases matrix
-            biases_cg = biases.astype(weights.dtype, order="F")
-            # biases_cg = np.empty((kn, b * ho * wo), weights.dtype, order='F')
-            # biases_cg[...] = biases
+            # Option 1) slow, even if same type and order
+            #   biases_cg = biases.astype(weights.dtype, order="F")
+            # Option 2) should be slower than the next one
+            #   biases_cg = np.empty((kn, b * ho * wo), weights.dtype, order='F')
+            #   biases_cg[...] = biases
+            # Option 3)
+            if biases.flags["F_CONTIGUOUS"]:
+                biases_cg = biases
+            else:
+                biases_cg = biases.ravel(order="F").reshape(biases.shape, order="F")
             assert (kn, b * ho * wo) == biases.shape, \
                 "Biases matrix should be ({}, {}), instead it is {}".format(kn, b * ho * wo, biases.shape)
+        if trans:
+            with suppress(AttributeError):
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # ---------------------------------------------------
         # 4) Check that dtype is the same on all the matrices
@@ -334,6 +359,10 @@ class ConvGemm:
         # -------------------------
         # 5) Transpose_1230 weights
         # -------------------------
+        if trans:
+            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                      self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                      PYDTNN_OPS_CONVGEMM_TRANS_TR1230)
         # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
         # NEW(wxh): 1) weights_cg = weights.transpose((0, 3, 2, 1)).flatten(order="F")
         # NEW(wxh): 2) weights_cg = weights.transpose((1, 2, 3, 0)).flatten(order="C")
@@ -357,6 +386,9 @@ class ConvGemm:
         # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
         weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
         transpose_1230_ji_cython(weights, weights_cg)
+        if trans:
+            with suppress(AttributeError):
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # -------------------
         # 6) Flatten x_padded
@@ -392,6 +424,15 @@ class ConvGemm:
             kh, ho = ho, kh
             kw, wo = wo, kw
             b, c = c, b
+        with suppress(AttributeError):
+            if not trans:
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                          self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                          PYDTNN_OPS_CONVGEMM_CG)
+            else:
+                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                          self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                          PYDTNN_OPS_CONVGEMM_TRANS_CG)
         self.x_conv_gemm(ctypes.c_char(b'Y' if trans else b'N'),
                          ctypes.c_uint(kw), ctypes.c_uint(kh),
                          ctypes.c_uint(c), ctypes.c_uint(kn),
@@ -401,6 +442,8 @@ class ConvGemm:
                          ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
                          ctypes.c_void_p(biases_cg.ctypes.data),
                          self.ac_pack, self.bc_pack)
+        with suppress(AttributeError):
+            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if trans:
             # Swap dimensions to regular usage

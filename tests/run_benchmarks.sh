@@ -85,28 +85,32 @@ SCRIPT_PATH="$(
 #----------------------------
 FILE_NAME="${MODEL}"
 if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
-  FILE_NAME="${FILE_NAME}_conv_gemm"
+  FILE_NAME="${FILE_NAME}_cg"
   if [ "${CONV_GEMM_FALLBACK_TO_IM2COL}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}_fb"
-  fi
-  if [ "${CONV_GEMM_DECONV}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}_dc"
+    FILE_NAME="${FILE_NAME}-fb"
   fi
   if [ "${CONV_GEMM_TRANS}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}_tr"
+    FILE_NAME="${FILE_NAME}-cgt"
   fi
-  if [ "${CONV_GEMM_CACHE}" == "False" ]; then
-    FILE_NAME="${FILE_NAME}_nc"
+  if [ "${CONV_GEMM_DECONV}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}-dg"
+  fi
+  if [ "${CONV_GEMM_CACHE}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}-pm"
   fi
 else
-  FILE_NAME="${FILE_NAME}_i2c_mm"
+  FILE_NAME="${FILE_NAME}_i2c-mm"
 fi
 FILE_NAME="${FILE_NAME}_$(printf '%03d' "${NUM_EPOCHS:-1}")e"
 FILE_NAME="${FILE_NAME}_$(printf '%03d' "${STEPS_PER_EPOCH:-1}")s"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NODES:-1}")n"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS:-1}")t"
 FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
-FILE_NAME="$(uname -n)_${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
+MACHINE="$(uname -n)"
+if [[ "${MACHINE}" == "altec"* ]]; then
+  MACHINE="altec"
+fi
+FILE_NAME="${MACHINE}_${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
 HISTORY_FILENAME="${FILE_NAME}.history"
 OUTPUT_FILENAME="${FILE_NAME}.out"
 SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"

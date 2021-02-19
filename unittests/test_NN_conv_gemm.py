@@ -113,7 +113,8 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     kn, ck, kh, kw = weights.shape
     # b, c, h, w = x.shape
     conv_gemm = ConvGemm(debug=verbose())
-    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=biases,
+    cg_biases = biases.copy() if biases is not None else None
+    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=cg_biases,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
     x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
