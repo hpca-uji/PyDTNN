@@ -319,9 +319,9 @@ Testing: 100%|███████████████████| 10000/1
 
 ## References
 
-Publications describing PyDTNN:
+Please cite this publication in any work using our framework:
 
-* Not yet available.
+* **PyDTNN: A user-friendly and extensible framework for distributed deep learning**. Sergio Barrachina, Adrián Castelló, Mar Catalán, Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing*. ISSN: 1573-0484. DOI: [10.1007/s11227-021-03673-z](http://dx.doi.org/10.1007/s11227-021-03673-z).
 
 ## Acknowledgments
 
