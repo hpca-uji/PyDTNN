@@ -1,7 +1,7 @@
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Build import cythonize
-import numpy 
+import numpy
 
 ext_modules = [
     Extension(
@@ -23,5 +23,5 @@ ext_modules = [
 ]
 
 setup(
-    ext_modules=cythonize(ext_modules),
+    ext_modules=cythonize(ext_modules, language_level=3),
 )
