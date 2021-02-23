@@ -11,3 +11,6 @@ NN_relu_cython.cpython-*-linux-gnu.so
 *.npz
 __pycache__
 sbm_PyDTNN
+NN_pad_cython.c
+NN_reindex_cython.c
+NN_transpose_cython.c
