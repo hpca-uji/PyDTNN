@@ -45,25 +45,21 @@ from NN_activation import *
 
 def create_vgg11bn_cifar10(model):
     model.add( Input(shape=(3, 32, 32)) )
-    # conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
-    conv_pattern = [[1, 64, 0.2], [1, 128, 0.3], [2, 256, 0.3], [2, 512, 0.4], [2, 512, 0.4]]
-    #conv_pattern = [[2, 64, 0.2], [2, 128, 0.3], [3, 256, 0.4]]
-    conv_pattern = [[2, 64, 0.2], [2, 128, 0.3], [3, 256, 0.3], [3, 512, 0.4], [3, 512, 0.4]]
-    for nlayers, nfilters, drop_rate in conv_pattern:
+    conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
+    for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
             model.add( Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer="he_uniform") )
-            model.add( Relu() )
             model.add( BatchNormalization() )
+            model.add( Relu() )
         model.add( MaxPool2D(pool_shape=(2,2), stride=2) )
-        model.add( Dropout(rate=drop_rate) )
     model.add( Flatten() )
-    model.add( FC(shape=(256,), weights_initializer="he_uniform") )
-    model.add( Relu() )
-    model.add( BatchNormalization() )
     model.add( Dropout(rate=0.5) )
-    model.add( FC(shape=(256,), weights_initializer="he_uniform") )
-    model.add( Relu() )
+    model.add( FC(shape=(512,), weights_initializer="he_uniform") )
     model.add( BatchNormalization() )
+    model.add( Relu() )
     model.add( Dropout(rate=0.5) )
+    model.add( FC(shape=(512,), weights_initializer="he_uniform") )
+    model.add( BatchNormalization() )
+    model.add( Relu() )
     model.add( FC(shape=(10,), activation="softmax", weights_initializer="he_uniform") )
     return model

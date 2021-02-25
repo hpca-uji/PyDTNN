@@ -146,11 +146,11 @@ class Dataset:
                  self.batch_generator(self.val_data_generator(batch_size), 
                                       local_batch_size, rank, nprocs, shuffle=False) )
 
-    def get_test_generator(self, rank=0, nprocs=1):
+    def get_test_generator(self, local_batch_size=64, rank=0, nprocs=1):
         # Fixed batch size for testing:
         #   This is done to ensure that the returned X_data, Y_data to the
         #   val_test_batch_generator will be larger enough to feed all processes.
-        local_batch_size = 64
+        # local_batch_size = 64
         batch_size = local_batch_size * nprocs
         return self.batch_generator(self.test_data_generator(batch_size), 
                                       local_batch_size, rank, nprocs, shuffle=False)

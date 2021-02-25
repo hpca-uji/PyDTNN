@@ -1046,50 +1046,50 @@ def cudnnFindConvolutionForwardAlgorithm(handle, xDesc, wDesc, convDesc, yDesc, 
     return perfResults[0:returnedAlgoCount.value]
 
 
-_libcudnn.cudnnGetConvolutionForwardAlgorithm.restype = int
-_libcudnn.cudnnGetConvolutionForwardAlgorithm.argtypes = [ctypes.c_void_p,
-                                                          ctypes.c_void_p, ctypes.c_void_p,
-                                                          ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int,
-                                                          ctypes.c_size_t, ctypes.c_void_p]
-def cudnnGetConvolutionForwardAlgorithm(handle, srcDesc, wDesc,
-                                        convDesc, destDesc, preference, memoryLimitInbytes):
-    """"
-    This function returns the best algorithm to choose for the forward convolution
-    depending on the critera expressed in the cudnnConvolutionFwdPreference_t enumerant.
-    Parameters
-    ----------
-    handle : cudnnHandle
-        Handle to a previously created cuDNN context.
-    srcDesc : cudnnTensorDescriptor
-        Handle to a previously initialized tensor descriptor.
-    wDesc : cudnnFilterDescriptor
-        Handle to a previously initialized filter descriptor.
-    convDesc : cudnnConvolutionDescriptor
-        Previously initialized convolution descriptor.
-    destDesc : cudnnTensorDescriptor
-        Handle to a previously initialized tensor descriptor.
-    preference : cudnnConvolutionFwdPreference
-        Enumerant to express the preference criteria in terms of memory
-        requirement and speed.
-    memoryLimitInbytes: size_t
-        The maximum amount of GPU memory the user is willing to use as a workspace
-        when preference is CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT.
-    Returns
-    -------
-    algo: cudnnConvolutionFwdAlgo
-        Enumerant that specifies which convolution algorithm should be used to
-        compute the results according to the specified preference.
-    """
-    algo = ctypes.c_int()
-
-    status = _libcudnn.cudnnGetConvolutionForwardAlgorithm(handle, srcDesc, wDesc,
-                                               convDesc, destDesc, preference,
-                                               ctypes.c_size_t(memoryLimitInbytes),
-                                               ctypes.byref(algo))
-    cudnnCheckStatus(status)
-
-    return algo
-
+#_libcudnn.cudnnGetConvolutionForwardAlgorithm.restype = int
+#_libcudnn.cudnnGetConvolutionForwardAlgorithm.argtypes = [ctypes.c_void_p,
+#                                                          ctypes.c_void_p, ctypes.c_void_p,
+#                                                          ctypes.c_void_p, ctypes.c_void_p, ctypes.c_int,
+#                                                          ctypes.c_size_t, ctypes.c_void_p]
+#def cudnnGetConvolutionForwardAlgorithm(handle, srcDesc, wDesc,
+#                                        convDesc, destDesc, preference, memoryLimitInbytes):
+#    """"
+#    This function returns the best algorithm to choose for the forward convolution
+#    depending on the critera expressed in the cudnnConvolutionFwdPreference_t enumerant.
+#    Parameters
+#    ----------
+#    handle : cudnnHandle
+#        Handle to a previously created cuDNN context.
+#    srcDesc : cudnnTensorDescriptor
+#        Handle to a previously initialized tensor descriptor.
+#    wDesc : cudnnFilterDescriptor
+#        Handle to a previously initialized filter descriptor.
+#    convDesc : cudnnConvolutionDescriptor
+#        Previously initialized convolution descriptor.
+#    destDesc : cudnnTensorDescriptor
+#        Handle to a previously initialized tensor descriptor.
+#    preference : cudnnConvolutionFwdPreference
+#        Enumerant to express the preference criteria in terms of memory
+#        requirement and speed.
+#    memoryLimitInbytes: size_t
+#        The maximum amount of GPU memory the user is willing to use as a workspace
+#        when preference is CUDNN_CONVOLUTION_FWD_SPECIFY_WORKSPACE_LIMIT.
+#    Returns
+#    -------
+#    algo: cudnnConvolutionFwdAlgo
+#        Enumerant that specifies which convolution algorithm should be used to
+#        compute the results according to the specified preference.
+#    """
+#    algo = ctypes.c_int()
+#
+#    status = _libcudnn.cudnnGetConvolutionForwardAlgorithm(handle, srcDesc, wDesc,
+#                                               convDesc, destDesc, preference,
+#                                               ctypes.c_size_t(memoryLimitInbytes),
+#                                               ctypes.byref(algo))
+#    cudnnCheckStatus(status)
+#
+#    return algo
+#
 _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.restype = int
 _libcudnn.cudnnGetConvolutionForwardWorkspaceSize.argtypes = [ctypes.c_void_p,
                                                               ctypes.c_void_p,
@@ -1282,29 +1282,29 @@ def cudnnFindConvolutionBackwardDataAlgorithm(handle, wDesc, dyDesc,
     cudnnCheckStatus(status)
     return perfResults[0:returnedAlgoCount.value]
 
-_libcudnn.cudnnGetConvolutionBackwardDataAlgorithm.restype = int
-_libcudnn.cudnnGetConvolutionBackwardDataAlgorithm.argtypes = [ctypes.c_void_p,
-                                                               ctypes.c_void_p,
-                                                               ctypes.c_void_p,
-                                                               ctypes.c_void_p,
-                                                               ctypes.c_void_p,
-                                                               ctypes.c_int,
-                                                               ctypes.c_size_t,
-                                                               ctypes.c_void_p]
-def cudnnGetConvolutionBackwardDataAlgorithm(handle, wDesc, dyDesc, convDesc,
-                                             dxDesc, preference, memoryLimitInbytes):
-    algo = ctypes.c_int()
-    status = _libcudnn.cudnnGetConvolutionBackwardDataAlgorithm(handle,
-                                                                wDesc,
-                                                                dyDesc,
-                                                                convDesc,
-                                                                dxDesc,
-                                                                preference,
-                                                                ctypes.c_size_t(memoryLimitInbytes),
-                                                                ctypes.byref(algo))
-    cudnnCheckStatus(status)
-    return algo
-
+# _libcudnn.cudnnGetConvolutionBackwardDataAlgorithm.restype = int
+# _libcudnn.cudnnGetConvolutionBackwardDataAlgorithm.argtypes = [ctypes.c_void_p,
+#                                                                ctypes.c_void_p,
+#                                                                ctypes.c_void_p,
+#                                                                ctypes.c_void_p,
+#                                                                ctypes.c_void_p,
+#                                                                ctypes.c_int,
+#                                                                ctypes.c_size_t,
+#                                                                ctypes.c_void_p]
+# def cudnnGetConvolutionBackwardDataAlgorithm(handle, wDesc, dyDesc, convDesc,
+#                                              dxDesc, preference, memoryLimitInbytes):
+#     algo = ctypes.c_int()
+#     status = _libcudnn.cudnnGetConvolutionBackwardDataAlgorithm(handle,
+#                                                                 wDesc,
+#                                                                 dyDesc,
+#                                                                 convDesc,
+#                                                                 dxDesc,
+#                                                                 preference,
+#                                                                 ctypes.c_size_t(memoryLimitInbytes),
+#                                                                 ctypes.byref(algo))
+#     cudnnCheckStatus(status)
+#     return algo
+# 
 _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.restype = int
 _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.argtypes = [ctypes.c_void_p,
                                                                    ctypes.c_void_p,
@@ -1404,30 +1404,30 @@ def cudnnFindConvolutionBackwardFilterAlgorithm(handle, xDesc, dyDesc,
     cudnnCheckStatus(status)
     return perfResults[0:returnedAlgoCount.value]
 
-_libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.restype = int
-_libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.argtypes = [ctypes.c_void_p,
-                                                                 ctypes.c_void_p,
-                                                                 ctypes.c_void_p,
-                                                                 ctypes.c_void_p,
-                                                                 ctypes.c_void_p,
-                                                                 ctypes.c_int,
-                                                                 ctypes.c_size_t,
-                                                                 ctypes.c_void_p]
-def cudnnGetConvolutionBackwardFilterAlgorithm(handle, xDesc, dyDesc, convDesc,
-                                               dwDesc, preference, memoryLimitInbytes):
-    algo = ctypes.c_int()
-    status = _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm(handle,
-                                                                  xDesc,
-                                                                  dyDesc,
-                                                                  convDesc,
-                                                                  dwDesc,
-                                                                  preference,
-                                                                  ctypes.c_size_t(memoryLimitInbytes),
-                                                                  ctypes.byref(algo))
-    cudnnCheckStatus(status)
-    return algo
-
-
+#_libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.restype = int
+#_libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm.argtypes = [ctypes.c_void_p,
+#                                                                 ctypes.c_void_p,
+#                                                                 ctypes.c_void_p,
+#                                                                 ctypes.c_void_p,
+#                                                                 ctypes.c_void_p,
+#                                                                 ctypes.c_int,
+#                                                                 ctypes.c_size_t,
+#                                                                 ctypes.c_void_p]
+#def cudnnGetConvolutionBackwardFilterAlgorithm(handle, xDesc, dyDesc, convDesc,
+#                                               dwDesc, preference, memoryLimitInbytes):
+#    algo = ctypes.c_int()
+#    status = _libcudnn.cudnnGetConvolutionBackwardFilterAlgorithm(handle,
+#                                                                  xDesc,
+#                                                                  dyDesc,
+#                                                                  convDesc,
+#                                                                  dwDesc,
+#                                                                  preference,
+#                                                                  ctypes.c_size_t(memoryLimitInbytes),
+#                                                                  ctypes.byref(algo))
+#    cudnnCheckStatus(status)
+#    return algo
+#
+#
 _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize.restype = int
 _libcudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize.argtypes = [ctypes.c_void_p,
                                                                      ctypes.c_void_p,

@@ -501,7 +501,7 @@ class Model:
         metrics_funcs = [getattr(NN_util, l)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
                                              enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
         loss_metrics = [loss] + metrics
-        test_batch_generator = dataset.get_test_generator(self.rank, self.nprocs)
+        test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
         if self.rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
