@@ -26,7 +26,7 @@ esac
 DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
 CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-False}
-CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-True}
+CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-False}
 CONV_GEMM_DECONV=${CONV_GEMM_DECONV:-False}
 CONV_GEMM_TRANS=${CONV_GEMM_TRANS:-False}
 NODES=${NODES:-1}
@@ -49,12 +49,21 @@ fi
 export OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
 export OMP_DISPLAY_ENV=${OMP_DISPLAY_ENV:-True}
 
+#-----------------
+# Preload options
+#-----------------
+export PRELOAD=${PRELOAD:-}
+
+#---------------------
+# Per machine options
+#---------------------
 case $(hostname) in
 jetson6)
   export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-2 4 6 1 3 5 7 0}"
   ;;
 nowherman)
   export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-3 5 7 9 11 13 15 17 19 21 23 25 27 29 31 33 35 37 39 1 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32 34 36 38 0}"
+  export PRELOAD=${PRELOAD:-"/usr/lib/libtcmalloc.so.4"}
   ;;
 lorca)
   export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-4 5 6 7 2 3 1 0}"
@@ -65,6 +74,7 @@ volta)
 *)
   if hostname | grep -q altec; then
     export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-14 15 16 17 18 19 20 21 22 23 24 25 26 27 2 3 4 5 6 7 8 9 10 11 12 13 1 0}"
+    export PRELOAD=${PRELOAD:-"/usr/lib64/libtcmalloc.so.4"}
   else
     export OMP_PLACES="cores"
     export OMP_PROC_BIND="close"
@@ -183,7 +193,7 @@ function run_benchmark() {
 
   # 3) Launch benchmarks_CNN
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
-  ${CMD} python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
+  LD_PRELOAD="${PRELOAD}" ${CMD} python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
     --model="${MODEL}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \
