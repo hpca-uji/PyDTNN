@@ -171,6 +171,8 @@ class ConvGemm:
                 self.x_conv_gemm = self.lib_cg.hconvGemm
             elif self.dtype == np.float32:
                 self.x_conv_gemm = self.lib_cg.sconvGemm
+                self.x_apply_bias = self.lib_cg.sapplyBias
+                self.x_deconv_gemm = self.lib_cg.sconvGemm_back
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
