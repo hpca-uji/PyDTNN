@@ -35,19 +35,18 @@ def verbose():
 
 
 class D:
-    def __init__(self):
-        """Default parameters"""
-        self.b = 1  # Batch size
-        self.c = 1  # Channels per layer
-        self.h = 128  # Layers height
-        self.w = 100  # Layers width
-        self.kn = 1  # Number of filters
-        self.kh = 16  # Filters weights height
-        self.kw = 10  # Filters weights width
-        self.vpadding = 1  # Vertical padding
-        self.hpadding = 1  # Horizontal padding
-        self.vstride = 1  # Vertical stride
-        self.hstride = 1  # Horizontal stride
+    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1):
+        self.b = b  # Batch size
+        self.c = c  # Channels per layer
+        self.h = h  # Layers height
+        self.w = w  # Layers width
+        self.kn = kn  # Number of filters
+        self.kh = kh  # Filters weights height
+        self.kw = kw  # Filters weights width
+        self.vpadding = vpadding  # Vertical padding
+        self.hpadding = hpadding  # Horizontal padding
+        self.vstride = vstride  # Vertical stride
+        self.hstride = hstride  # Horizontal stride
 
     @property
     def ho(self):
@@ -81,7 +80,7 @@ class Params:
     pass
 
 
-def get_conv2d_layers(d):
+def get_conv2d_layers(d, deconv=False, trans=False):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
@@ -92,6 +91,10 @@ def get_conv2d_layers(d):
     model_i2c = Model(params)
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True
+    params_gc.conv_gemm_fallback_to_im2col = False
+    params_gc.conv_gemm_cache = True
+    params_gc.conv_gemm_deconv = deconv
+    params_gc.conv_gemm_trans = trans
     model_cg = Model(params_gc)
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
@@ -152,8 +155,14 @@ class TestConv2DConvGemm(unittest.TestCase):
                         [1, 1, 1]]]]).astype(np.float32, order='C')
 
     def _test_forward_backward(self, d, x, weights, print_times=False):
+        self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=False, trans=False)
+        self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=True, trans=False)
+        self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=False, trans=True)
+        self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=True, trans=True)
+
+    def _test_forward_backward_inner(self, d, x, weights, print_times=False, deconv=False, trans=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
+        conv2d_i2c, conv2d_cg = get_conv2d_layers(d, deconv, trans)
         conv2d_i2c.weights = weights.copy()
         conv2d_cg.weights = weights.copy()
         # Forward pass
@@ -168,7 +177,12 @@ class TestConv2DConvGemm(unittest.TestCase):
         dx_allclose = np.allclose(dx_i2c, dx_cg)
         if verbose():
             _print_with_header(inspect.stack()[1][3])
+            # np.set_printoptions(threshold=50)  # default is 1000
             print(d)
+            print("---=[ Forward results ]=---")
+            print("y_i2c:\n", y_i2c)
+            print("y_cg:\n", y_cg)
+            print()
             print("---=[ dy_cols * i2c.T ]=---")
             print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
             print("x_cols.T:\n", conv2d_i2c.x_cols.T)
@@ -176,8 +190,14 @@ class TestConv2DConvGemm(unittest.TestCase):
             print()
             print("---=[ conv_gemm(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
-            print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
-            print("x indexed:\n", conv2d_cg.cg_x_indexed)
+            try:
+                print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
+            except AttributeError:
+                pass
+            try:
+                print("x indexed:\n", conv2d_cg.cg_x_indexed)
+            except AttributeError:
+                pass
             print("dw:\n", conv2d_cg.dw)
             print()
             print("---[ dw comparison ]---")
@@ -187,7 +207,11 @@ class TestConv2DConvGemm(unittest.TestCase):
             print()
             print("---[ dx comparison ]---")
             print("dx_i2c.shape:", dx_i2c.shape)
+            if dx_i2c.size < 30:
+                print(dx_i2c)
             print("dx_cg.shape: ", dx_cg.shape)
+            if dx_cg.size < 30:
+                print(dx_cg)
             print("dx allclose: ", dx_allclose)
             if print_times:
                 forward_i2c_t = timeit(lambda: conv2d_i2c.forward(x), number=10) / 10
@@ -204,9 +228,11 @@ class TestConv2DConvGemm(unittest.TestCase):
                 print("         +-------+--------+")
                 print("           {:.3f}   {:.3f}  ".format(forward_i2c_t + backward_i2c_t,
                                                             forward_cg_t + backward_cg_t))
-        self.assertTrue(np.allclose(y_i2c, y_cg, rtol=1e-5, atol=1e-6))
-        self.assertTrue(dw_allclose, "dw matrices differ")
-        self.assertTrue(dx_allclose, "dx return matrices differ")
+        # self.assertTrue(np.allclose(y_i2c, y_cg, rtol=1e-5, atol=1e-6),
+        #                 f"y matrices differ (deconv={deconv}, trans={trans})")
+        self.assertTrue(np.allclose(y_i2c, y_cg), f"y matrices differ (deconv={deconv}, trans={trans})")
+        self.assertTrue(dw_allclose, f"dw matrices differ (deconv={deconv}, trans={trans})")
+        self.assertTrue(dx_allclose, f"dx return matrices differ (deconv={deconv}, trans={trans})")
 
     def test_forward_defaults(self):
         """
@@ -331,14 +357,28 @@ class TestConv2DConvGemm(unittest.TestCase):
         d.hstride = 2
         self._test_forward_backward(d, x, weights)
 
-    def test_forward_backward_alexnet_first_conv2d(self):
-        """Tests that the AlexNet first Conv2d lead to the same solution on i2c and on conv_gemm"""
+    def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+        """Tests that the AlexNet cifar10 first Conv2d lead to the same solution on i2c and on conv_gemm"""
         d = D()
         d.b = 64
         d.kn, d.kh, d.kw = (64, 3, 3)
         d.c, d.h, d.w = (3, 32, 32)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
+        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        self._test_forward_backward(d, x, weights, print_times=True)
+
+    def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+        """Tests that the AlexNet ImageNet first Conv2d lead to the same solution on i2c and on conv_gemm"""
+        # id;height;width;channels;kernel_height;kernel_width;kernel_num;stride;padding
+        # 2;227;227;3;11;11;96;4;0
+        d = D()
+        d.b = 64
+        d.kn, d.kh, d.kw = (96, 11, 11)
+        d.c, d.h, d.w = (3, 227, 227)
+        d.vpadding, d.hpadding = (1, 1)
+        d.vstride, d.hstride = (4, 4)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)

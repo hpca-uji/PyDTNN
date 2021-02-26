@@ -12,7 +12,7 @@ multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
 message-passing, BLAS calls via NumPy for multicore processors and
 PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
-Copyright 2020 Universitat Jaume I
+Copyright 2021 Universitat Jaume I
 
 This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
 and/or modify it under the terms of the GNU General Public License as published
@@ -26,12 +26,10 @@ should have received a copy of the GNU General Public License along with this
 program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, \
-              Mar Catalan, Adrian Castello"
+__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalán, Adrián Castelló"
 __contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
-               "Mar Catalan", "Adrian Castello"]
+__copyright__ = "Copyright 2021, Universitat Jaume I"
+__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Sergio Barrachina", "Mar Catalán", "Adrián Castelló"]
 __date__ = "2020/03/22"
 
 __email__ = "dolzm@uji.es"
@@ -40,6 +38,7 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
+import time
 from functools import lru_cache
 from math import floor
 
@@ -48,10 +47,18 @@ import NN_initializer
 from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
-from NN_conv_gemm import ConvGemm
+from NN_conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
+from NN_reindex_cython import reindex_cython
 from NN_sim import *
-from NN_tracer import PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
+    PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_FORWARD_IM2COL, \
+    PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
+    PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
+    PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
+    PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
+    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM
 
 try:
     from mpi4py import MPI
@@ -62,6 +69,8 @@ try:
     import skcuda.misc as cumisc
     import libnccl.libnccl as nccl
 except ModuleNotFoundError:
+    pass
+except ImportError:
     pass
 
 
@@ -108,38 +117,23 @@ class FC(Layer):
 
     def forward(self, x):
         self.x = x
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
         res = self.matmul(x, self.weights)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return res + self.biases if self.use_bias else 0
 
     def backward(self, dy):
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
         self.dw = self.matmul(self.x.T, dy)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         if self.use_bias:
             self.db = np.sum(dy, axis=0)
 
         if self.need_dx:
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
             dx = self.matmul(dy, self.weights.T)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
-
-
-@lru_cache(maxsize=4)
-def _get_x_new_indexes_and_xstride(kx, xo, s):
-    """
-    Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
-    vstride)
-    """
-    if s == 1:
-        return None, 1
-    x_reorder = []
-    for i in range(kx):
-        x_reorder += [i + j * s for j in range(xo)]
-    # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
-    return np.array(x_reorder), xo
 
 
 class Conv2D(Layer):
@@ -161,6 +155,17 @@ class Conv2D(Layer):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
+        self.debug = False
+        # convGemm related attributes (some of them will be modified in initialize())
+        self.cg = None
+        self.cg_fallback_to_im2col = True  # Fallback to backward I2C if any stride is greater than 1
+        self.cg_cache = True  # Store created matrices to allow them to be reused
+        self.cg_deconv = False  # Use deconvGemm instead of matmul + col2im
+        self.cg_trans = False  # Use the convGemm function to operate with im2colT
+        self.cg_x_transposed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.cg_biases_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="F"))  # order F!
+        self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -177,13 +182,20 @@ class Conv2D(Layer):
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
         if self.model.params.enable_conv_gemm:
-            self.cg = ConvGemm(dtype=self.dtype)
+            self.cg = ConvGemm(dtype=self.dtype, debug=self.debug, parent_layer=self)
+            if not self.model.params.conv_gemm_cache:
+                ConvGemmCache.disable()
             self.forward = self._forward_cg
             self.backward = self._backward_cg
+            self.cg_fallback_to_im2col = self.model.params.conv_gemm_fallback_to_im2col
+            self.cg_deconv = self.model.params.conv_gemm_deconv
+            self.cg_trans = self.model.params.conv_gemm_trans
         else:
-            self.cg = None
             self.forward = self._forward_i2c
             self.backward = self._backward_i2c
+
+        if not self.debug:
+            time.perf_counter = lambda: 0
 
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.batch_size * self.ho * self.wo),
@@ -216,32 +228,54 @@ class Conv2D(Layer):
 
     def _forward_i2c(self, x):
         """Version of the forward function that uses im2col and matmul"""
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_W)
         w_cols = self.weights.reshape(self.co, -1)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
-        res = self.matmul(w_cols, self.x_cols)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
+        res = self.matmul(w_cols, self.x_cols)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
         # y = res + self.biases.reshape(-1, 1)
         y = add_cython(res, self.biases) if self.use_bias else res
-        return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        return y
 
     def _forward_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
+
         self.cg_x = x
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 1)
+
+        biases_vector = self.biases if self.use_bias else None
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+                                vstride=self.vstride, hstride=self.hstride,
+                                biases_vector=biases_vector)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        # Biases sum is now done on conv_gemm
         # y = res + self.biases.reshape(-1, 1)
-        y = add_cython(res, self.biases) if self.use_bias else res
-        return y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        # y = add_cython(res, self.biases) if self.use_bias else res
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        return y
 
     def backward(self, dy):
         """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
@@ -249,70 +283,204 @@ class Conv2D(Layer):
 
     def _backward_i2c(self, dy):
         """Version of the backward function that uses im2col and matmul"""
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
         dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
         w_cols = self.weights.reshape(self.co, -1).T
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 5)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
         res = self.matmul(dy_cols, self.x_cols.T)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
         self.dw = res.reshape(self.weights.shape)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
         if self.use_bias:
             self.db = np.sum(dy, axis=(0, 2, 3))
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.need_dx:
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
             res = self.matmul(w_cols, dy_cols)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
+
+    @staticmethod
+    # @lru_cache(maxsize=4)
+    def _get_x_new_indexes_and_xstride(kx, xo, s):
+        """
+        Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
+        vstride)
+        """
+        if s == 1:
+            return None, 1
+        x_reorder = []
+        for i in range(kx):
+            x_reorder += [i + j * s for j in range(xo)]
+        # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
+        return np.array(x_reorder), xo
 
     def _backward_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
-        cg_dy = dy.transpose((1, 0, 2, 3))
-        self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
-                                   ((0, 0), (0, 0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)),
-                                   mode='constant').astype(self.dtype)
 
-        h_new_indexes, cg_vstride = _get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
-        v_new_indexes, cg_hstride = _get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+        # if self.id == 4:
+        #     self.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 01")
 
-        # Indexing performance considerations:
-        #  + Using numpy.array to select the indexes is faster than using a list (check _get_x_new_indexes_and_xstride).
-        #  + Indexing first rows and then columns is faster than the opposite.
-        if h_new_indexes is not None:
-            self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
-        if v_new_indexes is not None:
-            self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
+        if self.cg_fallback_to_im2col and (self.vstride > 1 or self.hstride > 1):
+            #
+            # Although it is is possible to reindex x so that convGemm library can be used to compute
+            # dw = dy * im2col(x).T when any of the strides is greater than one, the cost of reindexing x is
+            # considerable high. Therefore, it is possible to fall back to compute im2col(x) and to call the
+            # original backward method.
+            #
+            # In order to use the convGemm library when any of the strides is greater than one:
+            #  1) the matrix copy using the new indexes should be parallelized, or
+            #  2) the underlying convGemm method should directly support the dy * im2col(x).T operation,
+            #     where im2col(x) is the im2col(x) in weights * im2col(x) (not in dy * im2col(x)).
+            #
+            # As the first option has been implemented, using the convGemm library in this case is now competitive.
+            #
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
+            self.x_cols = im2col_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                        self.vstride, self.hstride)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            return self._backward_i2c(dy)
 
-        res = self.cg.conv_gemm(cg_dy, self.cg_x_indexed,
-                                biases=None,
-                                vpadding=0, hpadding=0,
-                                vstride=cg_vstride, hstride=cg_hstride)
+        if not self.cg_trans:
+            # 1) cg_dy
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+            cg_dy = dy.transpose((1, 0, 2, 3))
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 2) cg_x_transposed
+            b, c, h, w = self.cg_x.shape
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_PADDING_X)
+            # if self.vpadding == 0 and self.hpadding == 0:
+            #     self.cg_x_indexed = self.cg_x.transpose((1, 0, 2, 3))
+            # else:
+            #     # Hand made alternative to:
+            #     # self.cg_x_indexed = np.pad(self.cg_x.transpose((1, 0, 2, 3)),
+            #     #                            ((0, 0),
+            #     #                             (0, 0),
+            #     #                             (self.vpadding, self.vpadding),
+            #     #                             (self.hpadding, self.hpadding)),
+            #     #                            mode='constant')
+            #     b, c, h, w = self.cg_x.shape
+            #     new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
+            #     # self.cg_x_indexed = np.zeros((c, b, new_h, new_w), self.dtype)
+            #     self.cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+            #     self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
+            #         self.cg_x.transpose((1, 0, 2, 3))
+            if self.vpadding == 0 and self.hpadding == 0:
+                # @todo: cython transpose version
+                cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
+            else:
+                new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
+                cg_x_transposed = self.cg_x_transposed_cache[(c, b, new_h, new_w)]
+                transpose_1023_and_pad_cython(self.cg_x, cg_x_transposed)
+            cg_vpadding = 0
+            cg_hpadding = 0
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 3) new indexes and strides
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES)
+            v_new_indexes, cg_vstride = self._get_x_new_indexes_and_xstride(self.kh, self.ho, self.vstride)
+            h_new_indexes, cg_hstride = self._get_x_new_indexes_and_xstride(self.kw, self.wo, self.hstride)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 4) cg_x_indexed
+            # Indexing performance considerations:
+            #  + Using numpy.array to select the indexes is faster than using a list
+            #    (check _get_x_new_indexes_and_xstride).
+            #  + Indexing first rows and then columns is faster than the opposite.
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_REINDEX)
+            # if h_new_indexes is not None:
+            #     self.cg_x_indexed = self.cg_x_indexed[:, :, h_new_indexes, :]
+            # if v_new_indexes is not None:
+            #     self.cg_x_indexed = self.cg_x_indexed[:, :, :, v_new_indexes]
+            # if h_new_indexes is not None or v_new_indexes is not None:
+            #     # @warning: The next line is required to ensure the correct order of the underlying data of
+            #     #           self.cg_x_indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
+            #     #           unexpected results
+            #     self.cg_x_indexed = self.cg_x_indexed.copy()
+            if h_new_indexes is not None or v_new_indexes is not None:
+                new_h = len(v_new_indexes) if v_new_indexes is not None else h
+                new_w = len(h_new_indexes) if h_new_indexes is not None else w
+                # self.cg_x_indexed = np.empty((c, b, new_h, new_w), dtype=self.dtype)
+                cg_x_indexed = self.cg_x_indexed_cache[(c, b, new_h, new_w)]
+                reindex_cython(v_new_indexes, h_new_indexes, cg_x_transposed, cg_x_indexed)
+            else:
+                cg_x_indexed = cg_x_transposed
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 5) cg_biases
+            cg_biases = None
+        else:
+            # if self.cg_trans:
+            # 1) cg_dy
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+            cg_dy = dy.transpose((1, 0, 2, 3))
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            # 2) cg_x_indexed
+            cg_x_indexed = self.cg_x
+            # 3) cg_biases
+            cg_biases = self.cg_biases_cache[self.weights.shape]
+            # 4) rest of parameters
+            cg_vpadding = self.vpadding
+            cg_hpadding = self.hpadding
+            cg_vstride = self.vstride
+            cg_hstride = self.hstride
 
+        if self.debug:
+            # Expose cg_x_indexed
+            self.cg_x_indexed = cg_x_indexed
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
+        res = self.cg.conv_gemm(cg_dy, cg_x_indexed,
+                                biases=cg_biases, beta=0.0,
+                                vpadding=cg_vpadding, hpadding=cg_hpadding,
+                                vstride=cg_vstride, hstride=cg_hstride, trans=self.cg_trans)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
         self.dw = res.reshape(self.weights.shape)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
         if self.use_bias:
             self.db = np.sum(dy, axis=(0, 2, 3))
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.need_dx:
-            dy_cols = cg_dy.reshape(self.co, -1)
-            w_cols = self.weights.reshape(self.co, -1).T
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 3)
-            res = self.matmul(w_cols, dy_cols)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            if self.cg_deconv:
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
+                dx = self.cg.deconv_gemm(self.weights, dy, self.cg_x,
+                                         vpadding=self.vpadding, hpadding=self.hpadding,
+                                         vstride=self.vstride, hstride=self.hstride)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            else:
+                w_cols = self.weights.reshape(self.co, -1).T
+                dy_cols = cg_dy.reshape(self.co, -1)
 
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
-            dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
-                               self.kh, self.kw, self.vpadding, self.hpadding,
-                               self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+                # Don't use a cached version if the res matrix will persist
+                res = self.cg_matmul_out_cache[(w_cols.shape[0], dy_cols.shape[1])]
+
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+                self.matmul(w_cols, dy_cols, res)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+                dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                                   self.kh, self.kw, self.vpadding, self.hpadding,
+                                   self.vstride, self.hstride)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
 
@@ -348,34 +516,30 @@ class MaxPool2D(Layer):
                         dtype=self.dtype) if need_dx else 0
 
     def show(self):
-        super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
-                                                "padd=(%d,%d), stride=(%d,%d)" % (
-                                                    self.vpadding, self.hpadding, self.vstride, self.hstride)))
+        super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape),
+                                                "padd=(%d,%d), stride=(%d,%d)" % \
+                                                (self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
         y, self.maxids = argmax_cython(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
 
-    @lru_cache(maxsize=4)
-    def _dy_cols(self, dy_shape):
-        return np.zeros((self.kh * self.kw, np.prod(dy_shape)), dtype=self.dtype)
-
     def backward(self, dy):
         if self.need_dx:
-            dy_cols = self._dy_cols(dy.shape)
+            dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.dtype)
             dy_cols[self.maxids] = dy.flatten()
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
             return dx
 
@@ -418,10 +582,10 @@ class AveragePool2D(Layer):
 
     def forward(self, x):
         x_ = x.reshape(x.shape[0] * self.ci, 1, self.hi, self.wi)
-        self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 2)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_cols = im2col_cython(x_, self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-        self.tracer.emit_event(PYDL_OPS_EVT, 0)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         y = np.mean(x_cols, axis=0)
         return y.reshape(x.shape[0], *self.shape)
@@ -430,11 +594,11 @@ class AveragePool2D(Layer):
         if self.need_dx:
             pool_size = np.prod(self.pool_shape)
             dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
-            self.tracer.emit_event(PYDL_OPS_EVT, self.id * PYDL_OPS_NUM_EVTS + 4)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = col2im_cython(dy_cols, dy.shape[0] * self.ci, 1, self.hi, self.wi,
                                self.kh, self.kw, self.vpadding, self.hpadding,
                                self.vstride, self.hstride)
-            self.tracer.emit_event(PYDL_OPS_EVT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             dx = dx.reshape(dy.shape[0], self.ci, self.hi, self.wi)
             return dx
 

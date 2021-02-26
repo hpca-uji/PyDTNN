@@ -471,7 +471,7 @@ class ImageNet(Dataset):
             self.n_test_files = 128
             self.test_files = [''] * self.n_test_files
         else:
-            self.test_files  = os.listdir(self.test_path)
+            self.test_files = os.listdir(self.test_path)
             self.test_files.sort()
             self.n_test_files = len(self.test_files)
 
@@ -569,7 +569,8 @@ class ImageNet(Dataset):
         return self.data_generator(self.test_path, self.test_files, batch_size, op="test")
 
     def make_train_val_partitions(self, val_split=0.2):
-        if self.test_as_validation: return
+        if self.test_as_validation:
+            return
         assert 0 <= val_split < 1        
         self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_train_file)
 
@@ -591,9 +592,12 @@ class ImageNet(Dataset):
         if steps_per_epoch > 0:
             subset_size = local_batch_size * nprocs * steps_per_epoch
             if subset_size < self.train_val_nsamples:
-                subset_files = subset_size // self.images_per_train_file
-                if subset_files == 0: subset_files = 1
+                subset_files = max(1, subset_size // self.images_per_train_file)
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.n_train_val_files = len(self.train_val_files)
                 self.train_val_nsamples = self.n_train_val_files * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples
+                subset_test_files = max(1, subset_size // self.images_per_test_file)
+                self.test_files = self.test_files[:subset_test_files]
+                self.n_test_files = len(self.test_files)
+                self.test_nsamples = self.n_test_files * self.images_per_test_file

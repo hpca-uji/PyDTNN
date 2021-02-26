@@ -5,7 +5,7 @@ python3 -u benchmarks_CNN.py \
          --dataset=cifar10 \
          --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
          --dataset_test_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
-         --test_as_validation=False \
+         --test_as_validation=True \
          --batch_size=64 \
          --validation_split=0.2 \
          --steps_per_epoch=0 \
@@ -14,7 +14,7 @@ python3 -u benchmarks_CNN.py \
          --optimizer=sgd \
          --learning_rate=0.01 \
          --momentum=0.9 \
-         --loss=categorical_cross_entropy \
+         --loss_func=categorical_cross_entropy \
          --metrics=categorical_accuracy \
          --lr_schedulers=early_stopping,reduce_lr_on_plateau \
          --warm_up_epochs=5 \

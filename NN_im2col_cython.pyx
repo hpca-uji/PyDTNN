@@ -56,8 +56,8 @@ def im2col_cython(x,
     cdef int H = x.shape[2]
     cdef int W = x.shape[3]
 
-    cdef int HH = floor((H + 2 * vpadding - KH) / vstride) + 1
-    cdef int WW = floor((W + 2 * hpadding - KW) / hstride) + 1
+    cdef int HH = (H + 2 * vpadding - KH) // vstride + 1
+    cdef int WW = (W + 2 * hpadding - KW) // hstride + 1
 
     cdef np.ndarray x_padded = np.pad(x,
             ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant').astype(x.dtype)
@@ -144,13 +144,13 @@ def col2im_cython(cols,
 
     cdef np.ndarray x_padded = np.zeros((N, C, H + 2 * vpadding, W + 2 * hpadding),
                                          dtype=cols.dtype)
-    if (cols.dtype == np.int8):
+    if cols.dtype == np.int8:
         col2im_cython_inner_int8(cols, x_padded, N, C, H, W, HH, WW, 
                                  KH, KW, vstride, hstride)
-    elif (cols.dtype == np.float32):
+    elif cols.dtype == np.float32:
         col2im_cython_inner_float32(cols, x_padded, N, C, H, W, HH, WW, 
                                  KH, KW, vstride, hstride)
-    elif (cols.dtype == np.float64):
+    elif cols.dtype == np.float64:
         col2im_cython_inner_float64(cols, x_padded, N, C, H, W, HH, WW, 
                                  KH, KW, vstride, hstride)
     else: 
@@ -158,7 +158,8 @@ def col2im_cython(cols,
         raise
 
     if vpadding > 0 or hpadding > 0:
-        return x_padded[:, :, vpadding:-vpadding, hpadding:-hpadding]
+        # @warning: padding:-padding will not work if padding is 0
+        return x_padded[:, :, vpadding:vpadding+H, hpadding:hpadding+W]
     return x_padded
 
 @cython.boundscheck(False)
@@ -175,9 +176,34 @@ cdef int col2im_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                 row = c * KH * KW + ii * KW + jj
                 for n in range(N):
                     for xx in range(HH):
+                        # Throw away 1)
                         for yy in range(WW):
+                            # Throw away 2)
                             col = n * HH * WW + xx * WW + yy
                             x_padded[n, c, vstride * xx + ii, hstride * yy + jj] += cols[row, col]
+
+#                                   x_x                           x_y
+#                           x[n, c, vstride * xx + ii - vpadding, hstride * yy + jj - hpadding] += cols[]
+# Throw away 1)
+# x_x = vstride * xx + ii - vpadding
+# if x_x < 0 or x_x >= H:
+#   continue
+#
+# Throw away 2)
+# x_y = hstride * yy + jj - hpadding
+# if x_y < 0 or x_y >= W:
+#  continue
+
+# Alternative to throw away 1)
+# Range for xx: from:  / a >=0
+#                      \ vstride * xx + ii - vpadding >= 0
+#                         -> a >= (vpadding - ii) // vstride
+#                      -> xx = max(0, (vpadding - ii) // vstride))
+#
+#               to:    / xx < HH
+#                      \ vstride * xx + ii - vpadding < H
+#                         -> xx < H + (vpadding - ii) // vstride
+#                      -> xx = min(HH, H + (vpadding - ii) // vstride))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

@@ -51,7 +51,8 @@ from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_sim import *
-from NN_tracer import PYDL_EVT, PYDL_NUM_EVTS, PYDL_OPS_EVT, PYDL_OPS_NUM_EVTS
+from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_ALLREDUCE_DW, \
+    PYDTNN_OPS_ALLREDUCE_DW
 
 try:
     from mpi4py import MPI
@@ -62,6 +63,8 @@ try:
     import skcuda.misc as cumisc
     import libnccl.libnccl as nccl
 except ModuleNotFoundError:
+    pass
+except ImportError:
     pass
 
 
@@ -91,6 +94,7 @@ class Layer:
         self.grad_vars = {}
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
+        self.paths = []
 
     def initialize(self, prev_shape, need_dx=True):
         self.need_dx = need_dx
@@ -101,6 +105,13 @@ class Layer:
         if not attrs:
             attrs = "|{:19s}|{:^24s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
+
+    @property
+    def children(self):
+        children = []
+        for path in self.paths:
+            children += [layer for layer in path]
+        return children
 
     def update_weights(self, optimizer):
         optimizer.update(self)
@@ -199,9 +210,9 @@ class Layer:
         if not self.model.comm: return
 
         for w_, dw_ in self.grad_vars.items():
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT],
-                                    [self.id * PYDL_NUM_EVTS + 3,
-                                     self.id * PYDL_OPS_NUM_EVTS + 6])
+            self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
+                                    [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
             dw = getattr(self, dw_)
 
             if self.model.enable_cudnn:
@@ -253,4 +264,4 @@ class Layer:
             else:
                 self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
 
-            self.tracer.emit_nevent([PYDL_EVT, PYDL_OPS_EVT], [0, 0])
+            self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])

@@ -1,33 +1,35 @@
-""" Python Distributed Training of Neural Networks - PyDTNN
+"""
+Utils definitions for Python Distributed Training of Neural Networks (PyDTNN)
 
 PyDTNN is a light-weight library for distributed Deep Learning training and
-inference that offers an initial starting point for interaction with
-distributed training of (and inference with) deep neural networks. PyDTNN
-priorizes simplicity over efficiency, providing an amiable user interface
-which enables a flat accessing curve. To perform the training and inference
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI)
-for clusters and intra-process (via multi-threading) parallelism to leverage
-the presence of multicore processors and GPUs at node level. For that, PyDTNN
-uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
-and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
+inference that offers an initial starting point for interaction with distributed
+training of (and inference with) deep neural networks. PyDTNN prioritizes
+simplicity over efficiency, providing an amiable user interface which enables a
+flat accessing curve. To perform the training and inference processes, PyDTNN
+exploits distributed inter-process parallelism (via MPI) for clusters and
+intra-process (via multi-threading) parallelism to leverage the presence of
+multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
+message-passing, BLAS calls via NumPy for multicore processors and
+PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
+Copyright 2021 Universitat Jaume I
 
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with
-this program. If not, see <http://www.gnu.org/licenses/>.
+This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
+and/or modify it under the terms of the GNU General Public License as published
+by the Free Software Foundation, either version 3 of the License, or (at your
+option) any later version.
 
+PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details. You
+should have received a copy of the GNU General Public License along with this
+program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, Mar Catalan, Adrian Castello"
+__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalán, Adrián Castelló"
 __contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Mar Catalan", "Adrian Castello"]
+__copyright__ = "Copyright 2021, Universitat Jaume I"
+__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Sergio Barrachina", "Mar Catalán", "Adrián Castelló"]
 __date__ = "2020/03/22"
 
 __email__ = "dolzm@uji.es"
@@ -36,14 +38,18 @@ __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
+import ctypes
 import math
-# import NN_model
-# from scipy.signal import convolve2d
-# import scipy.linalg.blas as slb
-# import scipy.stats as stats
+import os
 from abc import ABC
+from ctypes.util import find_library
 
 import numpy as np
+
+# import NN_model
+# import scipy.linalg.blas as slb
+# import scipy.stats as stats
+# from scipy.signal import convolve2d
 
 try:
     # import pycuda.autoinit
@@ -54,9 +60,53 @@ try:
     from skcuda import cublas
     from pycuda.compiler import SourceModule
     import libcudnn.libcudnn as cudnn
-    import ctypes
 except ModuleNotFoundError:
     pass
+
+
+def load_library(name):
+    """
+    Loads an external library using ctypes.CDLL.
+
+    It searches the library using ctypes.util.find_library(). If the library is
+    not found, it traverses the LD_LIBRARY_PATH until it founds it. If is not in
+    any of the LD_LIBRARY_PATH paths, an ImportError exception is raised.
+
+    Parameters
+    ----------
+    name : str
+        The library name without any prefix like lib, suffix like .so, .dylib or
+        version number (this is the form used for the posix linker option -l).
+
+    Returns
+    -------
+    The loaded library.
+    """
+    path = find_library(name)
+    if path is None:
+        full_name = f"lib{name}.so"
+        for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
+            if os.path.exists(os.path.join(current_path, full_name)):
+                path = os.path.join(current_path, full_name)
+                break
+        else:
+            # Didn't find the library
+            raise ImportError(f"Library '{full_name}' could not be found. Please add its path to LD_LIBRARY_PATH "
+                              f"using 'export LD_LIBRARY_PATH={name.upper()}_LIB_PATH:$LD_LIBRARY_PATH' and "
+                              f"then call this application again.")
+    return ctypes.CDLL(path)
+
+
+def blis():
+    if not hasattr(blis, "lib"):
+        blis.lib = load_library("blis")
+    return blis.lib
+
+
+def mkl():
+    if not hasattr(mkl, "lib"):
+        mkl.lib = load_library("mkl_rt")
+    return mkl.lib
 
 
 def convert_size(size_bytes):
@@ -70,15 +120,72 @@ def convert_size(size_bytes):
 
 
 # Matmul operation
-def matmul(a, b):
+# Warning: the output matrix can not be cached, as it will persist outside this method
+def matmul(a, b, c=None):
     # if a.dtype == np.float32:
     #    c = slb.sgemm(1.0, a, b)
     # elif a.dtype == np.float64:
     #    c = slb.dgemm(1.0, a, b)
     # else:
     # Native numpy matmul gets more performance than scipy blas!
-    c = a @ b
+    if c is None:
+        return a @ b
+    else:
+        return np.matmul(a, b, c)
+
+
+def _matmul_xgemm(called_from, lib, a, b, c=None):
+    order = 101  # 101 for row-major, 102 for column major data structures
+    m = a.shape[0]
+    n = b.shape[1]
+    k = a.shape[1]
+    if c is None:
+        c = np.ones((m, n), a.dtype, order="C")
+    # trans_{a,b} = 111 for no transpose, 112 for transpose, and 113 for conjugate transpose
+    if a.flags["C_CONTIGUOUS"]:
+        trans_a = 111
+        lda = k
+    elif a.flags["F_CONTIGUOUS"]:
+        trans_a = 112
+        lda = m
+    else:
+        raise ValueError(f"Matrix a data layout not supported by {called_from}().")
+    if b.flags["C_CONTIGUOUS"]:
+        trans_b = 111
+        ldb = n
+    elif b.flags["F_CONTIGUOUS"]:
+        trans_b = 112
+        ldb = k
+    else:
+        raise ValueError(f"Matrix b data layout not supported by {called_from}().")
+    ldc = n
+    alpha = 1.0
+    beta = 0.0
+    if a.dtype == np.float32:
+        lib.cblas_sgemm(ctypes.c_int(order), ctypes.c_int(trans_a), ctypes.c_int(trans_b),
+                        ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k), ctypes.c_float(alpha),
+                        ctypes.c_void_p(a.ctypes.data), ctypes.c_int(lda),
+                        ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
+                        ctypes.c_float(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
+    elif a.dtype == np.float64:
+        lib.cblas_dgemm(ctypes.c_int(order), ctypes.c_int(trans_a), ctypes.c_int(trans_b),
+                        ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k), ctypes.c_double(alpha),
+                        ctypes.c_void_p(a.ctypes.data), ctypes.c_int(lda),
+                        ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
+                        ctypes.c_double(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
+    else:
+        raise ValueError(f"Type '{a.dtype}' not supported by {called_from}().")
     return c
+
+
+def matmul_mkl(a, b, c=None):
+    # os.environ['GOMP_CPU_AFFINITY'] = ""
+    # os.environ['OMP_PLACES'] = ""
+    return _matmul_xgemm("matmul_mkl", mkl(), a, b, c)
+
+
+def matmul_blis(a, b, c=None):
+    return _matmul_xgemm("matmul_blis", blis(), a, b, c)
 
 
 def matmul_gpu(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
@@ -420,7 +527,7 @@ def im2col_fancy(x, kh, kw, c, h, w, s=1, idx=None):
 
 # Only for fancy im2col/col2im indexing!
 def col2im_fancy(cols, x_shape, kh, kw, ho, wo, s=1, idx=None):
-    b, c, h, w = x_shape
+    # b, c, h, w = x_shape
     cols, idx = col2im_fancy_previous(cols, x_shape, kh, kw, ho, wo, s, idx)
     return cols, idx
 
@@ -434,7 +541,6 @@ def dilate_and_pad(input_, p=0, s=1):
         res[..., p:h_ - p:s, p:w_ - p:s] = input_
         return res
     return input_
-
 
 # @warning: im2col_indices is undefined
 # # Only for fancy im2col/col2im indexing!
