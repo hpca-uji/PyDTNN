@@ -245,7 +245,7 @@ class Model:
                          np.int8: nccl.DataType.Int8,
                          np.int32: nccl.DataType.Int32}
 
-                self.nccl_type = types.get(self.type, nccl.DataType.Float32)
+                self.nccl_type = types.get(self.dtype, nccl.DataType.Float32)
 
                 hostname = MPI.Get_processor_name()
 
@@ -292,7 +292,7 @@ class Model:
                      np.int8: "CUDNN_DATA_INT8",
                      np.int32: "CUDNN_DATA_INT32"}
 
-            cudnn_type = types.get(self.type, "CUDNN_DATA_FLOAT")
+            cudnn_type = types.get(self.dtype, "CUDNN_DATA_FLOAT")
 
             self.cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
             self.tensor_fmt = cudnn.cudnnTensorFormat['CUDNN_TENSOR_NCHW']

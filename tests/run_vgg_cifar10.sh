@@ -2,7 +2,7 @@
 
 export OMP_NUM_THREADS=16
 #mpirun -np 2 \
-python3 -u benchmarks_CNN.py \
+python3.8 -u benchmarks_CNN.py \
          --model=vgg3dobn \
          --dataset=cifar10 \
          --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin \
@@ -39,7 +39,7 @@ python3 -u benchmarks_CNN.py \
          --non_blocking_mpi=False \
          --tracing=False \
          --profile=False \
-         --enable_gpu=False \
+         --enable_gpu=True \
          --enable_gpudirect=False \
          --history_file="results/result_vgg3dobn.history" \
          --dtype=float32
