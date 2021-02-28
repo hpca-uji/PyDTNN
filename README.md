@@ -1,4 +1,4 @@
-# Python Distributed Training of Neural Networks - PyDTNN
+# PyDTNN - Python Distributed Training of Neural Networks
 
 ## Introduction
 
