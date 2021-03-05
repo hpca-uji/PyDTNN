@@ -75,6 +75,9 @@ except Exception as e:
     print(e)
 
 
+EVALUATE_MODE, TRAIN_MODE = (0, 1)
+
+
 class PerformanceCounter:
     TRAINING, TESTING = range(2)
 
@@ -225,6 +228,7 @@ class Model:
         self.nparams = 0
         self.rank = 0
         self.nprocs = 1
+        self.mode = TRAIN_MODE
 
         if self.comm and supported_mpi4py:
             self.rank = self.comm.Get_rank()
@@ -439,7 +443,7 @@ class Model:
     def __train_batch(self, X_batch, Y_batch, local_batch_size, global_batch_size,
                       loss_func, metrics_funcs, optimizer, lr_schedulers):
 
-        self.mode = "train"
+        self.mode = TRAIN_MODE
         for lr_sched in lr_schedulers:
             lr_sched.on_batch_begin(self, optimizer, self.rank)
 
@@ -608,7 +612,7 @@ class Model:
         return self.history
 
     def __evaluate_batch(self, X_batch, Y_batch, local_batch_size, global_batch_size, loss_func, metrics_funcs):
-        self.mode = "evaluate"
+        self.mode = EVALUATE_MODE
 
         if self.enable_cudnn:
             if X_batch.shape[0] != local_batch_size:

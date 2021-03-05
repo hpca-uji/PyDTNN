@@ -43,6 +43,8 @@ import numpy as np
 import NN_util, NN_activation, NN_initializer, NN_layer
 
 from math import floor
+
+from NN_model import EVALUATE_MODE, TRAIN_MODE
 from NN_util import printf, TensorGPU
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
@@ -630,14 +632,14 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
-        if self.model.mode == "train":
+        if self.model.mode == TRAIN_MODE:
             cudnn.cudnnBatchNormalizationForwardTraining(self.cudnn_handle, self.mode, 
                 alpha, beta, x.desc, x.ptr, 
                 self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc, self.gamma.ptr, 
                 self.beta.ptr, self.factor, self.running_mean.ptr, self.running_var.ptr, 
                 self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
 
-        elif self.model.mode == "evaluate":
+        elif self.model.mode == EVALUATE_MODE:
             cudnn.cudnnBatchNormalizationForwardInference(self.cudnn_handle, self.mode, 
                 alpha, beta, x.desc, x.ptr, 
                 self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc, self.gamma.ptr, 

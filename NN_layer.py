@@ -49,6 +49,7 @@ from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_model import EVALUATE_MODE, TRAIN_MODE
 from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
 from NN_reindex_cython import reindex_cython
 from NN_sim import *
@@ -74,6 +75,34 @@ except ImportError:
     pass
 
 
+# @todo: will be used when layer.initialize includes model: initialize(model, id, ...)
+class ForwardToBackward:
+    """
+    Class used to store those items from the forward pass that are required on the backward pass. When the model
+    is in evaluate mode, the passed items are not stored.
+    """
+
+    def __init__(self):
+        self._model = None
+        self._storage = {}
+
+    def set_model(self, model):
+        self._model = model
+
+    def __setattr__(self, key, value):
+        if self._model.mode == TRAIN_MODE:
+            self._storage[key] = value
+        else:
+            if self._storage:
+                self._storage.clear()
+
+    def __getattr__(self, item):
+        try:
+            return self._storage[item]
+        except KeyError:
+            raise AttributeError from None
+
+
 class Input(Layer):
 
     def __init__(self, shape=(1,)):
@@ -93,11 +122,14 @@ class FC(Layer):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
+        # The next attributes will be initialized later
+        self.x = None
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
         self.weights = self.weights_initializer((*prev_shape, *self.shape), self.dtype)
-        if self.use_bias: self.biases = self.biases_initializer(self.shape, self.dtype)
+        if self.use_bias:
+            self.biases = self.biases_initializer(self.shape, self.dtype)
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
         self.fwd_time = \
@@ -112,11 +144,12 @@ class FC(Layer):
                         cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) if need_dx else 0
 
-    def show(self):
+    def show(self, attrs=""):
         super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape), ""))
 
     def forward(self, x):
-        self.x = x
+        if self.model.mode == TRAIN_MODE:
+            self.x = x
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
         res = self.matmul(x, self.weights)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -126,6 +159,7 @@ class FC(Layer):
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
         self.dw = self.matmul(self.x.T, dy)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
         if self.use_bias:
             self.db = np.sum(dy, axis=0)
 
@@ -166,9 +200,13 @@ class Conv2D(Layer):
         self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.cg_biases_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="F"))  # order F!
         self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+        # The next attributes will be initialized later
+        self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
+        self.forward = self.backward = None
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
+
         self.ci, self.hi, self.wi = prev_shape
         self.kh, self.kw = self.filter_shape
 
@@ -217,7 +255,7 @@ class Conv2D(Layer):
                                                                       memory_bw=self.model.params.memory_bw,
                                                                       dtype=self.dtype) if need_dx else 0
 
-    def show(self):
+    def show(self, attrs=""):
         super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape), \
                                                 "padd=(%d,%d), stride=(%d,%d)" % (
                                                     self.vpadding, self.hpadding, self.vstride, self.hstride)))
@@ -230,16 +268,19 @@ class Conv2D(Layer):
         """Version of the forward function that uses im2col and matmul"""
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
-        self.x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride)
+        x_cols = im2col_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
+                               self.vstride, self.hstride)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.model.mode == TRAIN_MODE:
+            self.x_cols = x_cols
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_W)
         w_cols = self.weights.reshape(self.co, -1)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
-        res = self.matmul(w_cols, self.x_cols)
+        res = self.matmul(w_cols, x_cols)
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
@@ -256,7 +297,8 @@ class Conv2D(Layer):
     def _forward_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
 
-        self.cg_x = x
+        if self.model.mode == TRAIN_MODE:
+            self.cg_x = x
 
         biases_vector = self.biases if self.use_bias else None
 
@@ -493,15 +535,20 @@ class MaxPool2D(Layer):
         self.stride = stride
         self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
         self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
+        # The next attributes will be initialized later
+        self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
+        self.maxids = None
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
         self.ci, self.hi, self.wi = prev_shape
-        if self.pool_shape[0] == 0: self.pool_shape = (self.hi, self.pool_shape[1])
-        if self.pool_shape[1] == 0: self.pool_shape = (self.pool_shape[0], self.wi)
+        if self.pool_shape[0] == 0:
+            self.pool_shape = (self.hi, self.pool_shape[1])
+        if self.pool_shape[1] == 0:
+            self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
-        self.ho = floor((self.hi + 2 * self.vpadding - self.kh) / self.vstride) + 1
-        self.wo = floor((self.wi + 2 * self.hpadding - self.kw) / self.hstride) + 1
+        self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
+        self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
         self.co = self.ci
         self.shape = (self.co, self.ho, self.wo)
         self.n = np.prod(self.shape)
@@ -515,9 +562,9 @@ class MaxPool2D(Layer):
                         cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) if need_dx else 0
 
-    def show(self):
+    def show(self, attrs=""):
         super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape),
-                                                "padd=(%d,%d), stride=(%d,%d)" % \
+                                                "padd=(%d,%d), stride=(%d,%d)" %
                                                 (self.vpadding, self.hpadding, self.vstride, self.hstride)))
 
     def forward(self, x):
@@ -528,7 +575,11 @@ class MaxPool2D(Layer):
         self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # self.maxids = tuple([np.argmax(a_cols, axis=0), np.arange(a_cols.shape[1])])
-        y, self.maxids = argmax_cython(x_cols, axis=0)
+        y, maxids = argmax_cython(x_cols, axis=0)
+
+        if self.model.mode == TRAIN_MODE:
+            self.maxids = maxids
+
         return y.reshape(x.shape[0], *self.shape)
 
     def backward(self, dy):
@@ -553,15 +604,19 @@ class AveragePool2D(Layer):
         self.stride = stride
         self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
         self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
+        # The next attributes will be initialized later
+        self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
         self.ci, self.hi, self.wi = prev_shape
-        if self.pool_shape[0] == 0: self.pool_shape = (self.hi, self.pool_shape[1])
-        if self.pool_shape[1] == 0: self.pool_shape = (self.pool_shape[0], self.wi)
+        if self.pool_shape[0] == 0:
+            self.pool_shape = (self.hi, self.pool_shape[1])
+        if self.pool_shape[1] == 0:
+            self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
-        self.ho = floor((self.hi + 2 * self.vpadding - self.kh) / self.vstride) + 1
-        self.wo = floor((self.wi + 2 * self.hpadding - self.kw) / self.hstride) + 1
+        self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
+        self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
         self.co = self.ci
         self.shape = (self.co, self.ho, self.wo)
         self.n = np.prod(self.shape)
@@ -575,7 +630,7 @@ class AveragePool2D(Layer):
                         cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw,
                         dtype=self.dtype) if need_dx else 0
 
-    def show(self):
+    def show(self, attrs=""):
         super().show("|{:^19s}|{:^24s}|".format(str(self.pool_shape), \
                                                 "padd=(%d,%d), stride=(%d,%d)" % (
                                                     self.vpadding, self.hpadding, self.vstride, self.hstride)))
@@ -608,19 +663,21 @@ class Dropout(Layer):
     def __init__(self, rate=0.5):
         super(Dropout, self).__init__()
         self.rate = min(1., max(0., rate))
+        # The next attributes will be initialized later
+        self.mask = None
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
         self.shape = prev_shape
 
-    def show(self):
-        super().show("|{:^19s}|{:^24s}|".format("", "rate=%.2f" % (self.rate)))
+    def show(self, attrs=""):
+        super().show("|{:^19s}|{:^24s}|".format("", "rate=%.2f" % self.rate))
 
     def forward(self, x):
-        if self.model.mode == "train":
+        if self.model.mode == TRAIN_MODE:
             self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.dtype) / (1 - self.rate)
             return x * self.mask
-        elif self.model.mode == "evaluate":
+        else:  # EVALUATE_MODE:
             return x
 
     def backward(self, dy):
@@ -634,9 +691,8 @@ class Flatten(Layer):
         super(Flatten, self).__init__()
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
         self.shape = (np.prod(prev_shape),)
-        self.prev_shape = prev_shape
 
     def forward(self, x):
         return x.reshape(x.shape[0], *self.shape)
@@ -662,15 +718,20 @@ class BatchNormalization(Layer):
         self.moving_variance_initializer = getattr(NN_initializer, moving_variance_initializer)
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
+        # The next attributes will be initialized later
+        self.spatial = self.co = self.ci = self.hi = self.wi = 0
+        self.gamma = self.beta = self.running_mean = self.running_var = None
+        self.std = self.xn = None
+        self.dgamma = self.dbeta = None
 
     def initialize(self, prev_shape, need_dx=True):
-        self.need_dx = need_dx
+        super().initialize(prev_shape, need_dx)
         self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2
         if self.spatial:
             self.co = self.ci = self.shape[0]
             self.hi, self.wi = self.shape[1], self.shape[2]
-            shape_ = (self.ci)
+            shape_ = (self.ci, )
         self.gamma = np.full(shape_, self.gamma_init_val, self.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
@@ -680,7 +741,7 @@ class BatchNormalization(Layer):
     def forward(self, x):
 
         def mean(data, N, comm):
-            if self.sync_stats and comm != None:
+            if self.sync_stats and comm is not None:
                 mean = np.sum(data, axis=0) / N
                 comm.Allreduce(MPI.IN_PLACE, mean, op=MPI.SUM)
             else:
@@ -690,9 +751,9 @@ class BatchNormalization(Layer):
         if self.spatial:
             x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
-        if self.model.mode == "train":
+        if self.model.mode == TRAIN_MODE:
             N = np.array([x.shape[0]], dtype=self.dtype)
-            if self.sync_stats and self.model.comm != None:
+            if self.sync_stats and self.model.comm is not None:
                 self.model.comm.Allreduce(MPI.IN_PLACE, N, op=MPI.SUM)
 
             mu = mean(x, N, self.model.comm)
@@ -706,13 +767,14 @@ class BatchNormalization(Layer):
             self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
             self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
 
-        elif self.model.mode == "evaluate":
+        else:  # EVALUATE_MODE
             std = np.sqrt(self.running_var + self.epsilon)
             xn = (x - self.running_mean) / std
             y = self.gamma * xn + self.beta
 
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+
         return y
 
     def backward(self, dy):
@@ -739,11 +801,10 @@ class AdditionBlock(Layer):
         self.paths = []
         for p in args:
             self.paths.append(p)
+        self.out_shapes = []
 
     def initialize(self, prev_shape, need_dx=True):
-        self.out_shapes = []
-        need_dx = True
-        self.prev_shape = prev_shape
+        super().initialize(prev_shape, need_dx)
         for p in self.paths:
             for i, l in enumerate(p):
                 l.tracer = self.tracer
@@ -768,7 +829,7 @@ class AdditionBlock(Layer):
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 
-    def show(self):
+    def show(self, attrs=""):
         print(
             f"|{'':^7s}|{(type(self).__name__ + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
         for i, p in enumerate(self.paths):
@@ -777,32 +838,40 @@ class AdditionBlock(Layer):
 
     def update_weights(self, optimizer):
         for p in self.paths:
-            for l in p: l.update_weights(optimizer)
+            for l in p:
+                l.update_weights(optimizer)
 
     def reduce_weights_async(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_async()
+            for l in p:
+                l.reduce_weights_async()
 
     def wait_allreduce_async(self):
         for p in self.paths:
-            for l in p: l.wait_allreduce_async()
+            for l in p:
+                l.wait_allreduce_async()
 
     def reduce_weights_sync(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_sync()
+            for l in p:
+                l.reduce_weights_sync()
 
     def forward(self, x):
         x = [x] * len(self.paths)
         for i, p in enumerate(self.paths):
-            for l in p: x[i] = l.forward(x[i])
-            if i > 0: x[0] += x[i]
+            for l in p:
+                x[i] = l.forward(x[i])
+            if i > 0:
+                x[0] += x[i]
         return x[0]
 
     def backward(self, dy):
         dx = [dy] * len(self.paths)
         for i, p in enumerate(self.paths):
-            for l in reversed(p): dx[i] = l.backward(dx[i])
-            if i > 0: dx[0] += dx[i]
+            for l in reversed(p):
+                dx[i] = l.backward(dx[i])
+            if i > 0:
+                dx[0] += dx[i]
         return dx[0]
 
 
@@ -813,11 +882,12 @@ class ConcatenationBlock(Layer):
         self.paths = []
         for p in args:
             self.paths.append(p)
+        self.out_shapes = []
+        # The next attributes will be initialized later
+        self.out_co = self.idx_co = None
 
     def initialize(self, prev_shape, need_dx=True):
-        need_dx = True
-        self.out_shapes = []
-        self.prev_shape = prev_shape
+        super().initialize(prev_shape, need_dx)
         for p in self.paths:
             for i, l in enumerate(p):
                 l.tracer = self.tracer
@@ -842,38 +912,46 @@ class ConcatenationBlock(Layer):
         self.idx_co = np.cumsum(self.out_co, axis=0)
         self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
 
-    def show(self):
+    def show(self, attrs=""):
         print(
             f"|{'':^7s}|{(type(self).__name__.replace('Concatenation', 'Concat') + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
         for i, p in enumerate(self.paths):
             print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
-            for l in p: l.show()
+            for l in p:
+                l.show()
 
     def update_weights(self, optimizer):
         for p in self.paths:
-            for l in p: l.update_weights(optimizer)
+            for l in p:
+                l.update_weights(optimizer)
 
     def reduce_weights_async(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_async()
+            for l in p:
+                l.reduce_weights_async()
 
     def wait_allreduce_async(self):
         for p in self.paths:
-            for l in p: l.wait_allreduce_async()
+            for l in p:
+                l.wait_allreduce_async()
 
     def reduce_weights_sync(self):
         for p in self.paths:
-            for l in p: l.reduce_weights_sync()
+            for l in p:
+                l.reduce_weights_sync()
 
     def forward(self, x):
         x = [x] * len(self.paths)
         for i, p in enumerate(self.paths):
-            for l in p: x[i] = l.forward(x[i])
+            for l in p:
+                x[i] = l.forward(x[i])
         return np.concatenate(x, axis=1)
 
     def backward(self, dy):
         dx = np.split(dy, self.idx_co[:-1], axis=1)
         for i, p in enumerate(self.paths):
-            for l in reversed(p): dx[i] = l.backward(dx[i])
-            if i > 0: dx[0] += dx[i]
+            for l in reversed(p):
+                dx[i] = l.backward(dx[i])
+            if i > 0:
+                dx[0] += dx[i]
         return dx[0]

@@ -95,11 +95,14 @@ class Layer:
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
         self.paths = []
+        # The next attributes will be initialized later
+        self.model = None
+        self.prev_shape = None
+        self.need_dx = True
 
     def initialize(self, prev_shape, need_dx=True):
+        self.prev_shape = prev_shape
         self.need_dx = need_dx
-        if prev_shape:
-            self.shape = prev_shape
 
     def show(self, attrs=""):
         if not attrs:
