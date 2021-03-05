@@ -32,24 +32,34 @@ __credits__ = ["Manuel F. Dolz, Enrique S. Quintana", \
                "Mar Catalan", "Adrian Castello"]
 __date__ = "2020/03/22"
 
-__email__ =  "dolzm@uji.es"
+__email__ = "dolzm@uji.es"
 __license__ = "GPLv3"
 __maintainer__ = "Manuel F. Dolz"
 __status__ = "Production"
 __version__ = "1.1.0"
 
-
 import numpy as np
 from NN_base_layer import Layer
+from NN_model import TRAIN_MODE
 from NN_relu_cython import relu_cython
 
-class Sigmoid(Layer):
+
+class ActivationLayer(Layer):
+
+    def initialize(self, prev_shape, need_dx=True):
+        super().initialize(prev_shape, need_dx)
+        self.shape = prev_shape
+
+
+class Sigmoid(ActivationLayer):
 
     def __init__(self, shape=(1,)):
         super(Sigmoid, self).__init__(shape)
+        # The next attributes will be initialized later
+        self.y = None
 
     def forward(self, x):
-        self.y  = 1 / (1 + np.exp(-x))
+        self.y = 1 / (1 + np.exp(-x))
         return self.y
 
     def backward(self, dy):
@@ -57,13 +67,17 @@ class Sigmoid(Layer):
             return dy * (self.y * (1 - self.y))
 
 
-class Relu(Layer):
+class Relu(ActivationLayer):
 
     def __init__(self, shape=(1,)):
         super(Relu, self).__init__(shape)
+        # The next attributes will be initialized later
+        self.mask = None
 
     def forward(self, x):
-        y, self.mask = relu_cython(x)
+        y, mask = relu_cython(x)
+        if self.model.mode == TRAIN_MODE:
+            self.mask = mask
         return y
 
     def backward(self, dy):
@@ -71,7 +85,7 @@ class Relu(Layer):
             return dy * self.mask
 
 
-class Tanh(Layer):
+class Tanh(ActivationLayer):
 
     def __init__(self, shape=(1,)):
         super(Tanh, self).__init__(shape)
@@ -84,7 +98,7 @@ class Tanh(Layer):
             return 1 - np.tanh(dy) ** 2
 
 
-class Arctanh(Layer):
+class Arctanh(ActivationLayer):
 
     def __init__(self, shape=(1,)):
         super(Arctanh, self).__init__(shape)
@@ -97,7 +111,7 @@ class Arctanh(Layer):
             return 1 / (1 + dy ** 2)
 
 
-class Log(Layer):
+class Log(ActivationLayer):
 
     def __init__(self, shape=(1,)):
         super(Log, self).__init__(shape)
@@ -109,11 +123,13 @@ class Log(Layer):
         if self.need_dx:
             return 1 / (np.exp(dy) + 1)
 
-    
-class Softmax(Layer):
+
+class Softmax(ActivationLayer):
 
     def __init__(self, shape=(1,)):
         super(Softmax, self).__init__(shape)
+        # The next attributes will be initialized later
+        self.y = None
 
     def forward(self, x):
         self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
