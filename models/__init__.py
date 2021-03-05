@@ -12,7 +12,7 @@ def get_model(params):
                       enable_nccl=params.enable_nccl,
                       dtype=params.dtype,
                       tracing=params.tracing,
-                      simple_tracer_output=params.simple_tracer_output
+                      tracer_output=params.tracer_output
                       )
         model = getattr(model_mod, "create_" + params.model)(model)
 

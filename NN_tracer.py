@@ -44,9 +44,14 @@ import os
 import resource
 import sys
 
-from collections import defaultdict
 from importlib import import_module
 from timeit import default_timer as timer
+from collections import defaultdict
+
+try:
+    import pycuda.driver as drv
+except Exception as e:
+    print(e)
 
 # ---
 PYDTNN_MDL_EVENT = 60000001
@@ -58,7 +63,7 @@ PYDTNN_MDL_EVENTS = 5
  PYDTNN_MDL_UPDATE_DW) = range(1, PYDTNN_MDL_EVENTS + 1)
 # ---
 PYDTNN_OPS_EVENT = 60000002
-PYDTNN_OPS_EVENTS = 28
+PYDTNN_OPS_EVENTS = 44
 (PYDTNN_OPS_FORWARD_IM2COL,
  PYDTNN_OPS_FORWARD_RESHAPE_W,
  PYDTNN_OPS_FORWARD_MATMUL,
@@ -86,7 +91,23 @@ PYDTNN_OPS_EVENTS = 28
  PYDTNN_OPS_CONVGEMM_TRANS_BIASES,
  PYDTNN_OPS_CONVGEMM_TRANS_TR1230,
  PYDTNN_OPS_BACKWARD_RESHAPE_DW,
- PYDTNN_OPS_BACKWARD_SUM_BIASES) = range(1, PYDTNN_OPS_EVENTS + 1)
+ PYDTNN_OPS_BACKWARD_SUM_BIASES,
+ PYDTNN_OPS_FORWARD_ELTW_SUM,
+ PYDTNN_OPS_BACKWARD_ELTW_SUM,
+ PYDTNN_OPS_BACKWARD_SPLIT,
+ PYDTNN_OPS_FORWARD_REPLICATE,
+ PYDTNN_OPS_FORWARD_CONCAT,
+ PYDTNN_OPS_FORWARD_CUBLAS_MATMUL,
+ PYDTNN_OPS_FORWARD_CUDNN,
+ PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES,
+ PYDTNN_OPS_FORWARD_COPY,
+ PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW,
+ PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB,
+ PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX,
+ PYDTNN_OPS_BACKWARD_CUDNN_DW,
+ PYDTNN_OPS_BACKWARD_CUDNN_DB,
+ PYDTNN_OPS_BACKWARD_CUDNN_DX,
+ PYDTNN_OPS_BACKWARD_COPY) = range(1, PYDTNN_OPS_EVENTS + 1)
 
 
 class EventType:
@@ -296,3 +317,102 @@ class SimpleTracer(Tracer):
                     event_type_name = event_type.name
                     for value, (_calls, _time) in events.items():
                         f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{_time};{_time / _calls}\n")
+
+
+class SimpleTracer(Tracer):
+
+    def __init__(self, tracing, output_filename, comm):
+        super().__init__(tracing)
+        self.output_filename = output_filename
+        self.rank = 0
+        if comm is not None:
+            self.rank = comm.Get_rank()
+        self.events = defaultdict(lambda: defaultdict(lambda: [0, 0.0]))
+        self.pending_events = []
+
+    def enable_tracing(self):
+        super().enable_tracing()
+        # If tracing is enabled at least once, register self.write_output to be executed at exit
+        atexit.register(self._write_output)
+
+    def _emit_event(self, evt_type_val, evt_val):
+        """This method will be called only if tracing is enabled"""
+        if evt_val != 0:
+            self.pending_events.append((evt_type_val, evt_val, timer()))
+        else:
+            toc = timer()
+            if len(self.pending_events) == 0:
+                raise ValueError("Received an 'End' event but there are no pending events!")
+            if self.pending_events[-1][0] != evt_type_val:
+                raise ValueError("Received an 'End' event for a different event type than expected!")
+            _evt_type_val, _evt_val, tic = self.pending_events.pop()
+            previous_calls, previous_time = self.events[_evt_type_val][_evt_val]
+            self.events[_evt_type_val][_evt_val] = [previous_calls + 1, previous_time + toc - tic]
+
+    def _emit_nevent(self, evt_type_val_list, evt_val_list):
+        """This method will be called only if tracing is enabled"""
+        zipped_list = list(zip(evt_type_val_list, evt_val_list))
+        if evt_val_list[0] == 0:
+            zipped_list = reversed(zipped_list)
+        for evt_type_val, evt_val in zipped_list:
+            self.emit_event(evt_type_val, evt_val)
+
+    def _write_output(self):
+        """This method will be called at exit only if tracing has been enabled at any time"""
+        if self.rank == 0:
+            if len(self.pending_events):
+                print("Warning: finishing simple tracer while there are pending events to be marked as finished.")
+            print(f"Writing simple tracer output to '{self.output_filename}'...")
+            with open(self.output_filename, 'w') as f:
+                f.write("Event type;Event value;Event name;Calls;Total time;Time per call\n")
+                for event_type_key, events in self.events.items():
+                    event_type = self.event_types[event_type_key]
+                    event_type_name = event_type.name
+                    for value, (_calls, _time) in events.items():
+                        f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{_time};{_time / _calls}\n")
+
+
+class SimpleTracerGPU(SimpleTracer):
+
+    def __init__(self, tracing, output_filename, comm):
+        super().__init__(tracing, output_filename, comm)
+        self.event_vars = []
+
+    def _get_start_end_event(self):
+        if len(self.event_vars) == 0:
+            self.event_vars.append((drv.Event(), drv.Event()))
+        return self.event_vars.pop()
+
+    def _release_start_end_event(self, s, e):
+        self.event_vars.append((s, e))
+
+    def _emit_event(self, evt_type_val, evt_val, stream = None):
+        """This method will be called only if tracing is enabled"""
+        if not stream: stream = self.stream
+        if evt_val != 0:
+            start, end = self._get_start_end_event()
+            self.pending_events.append((evt_type_val, evt_val, start, end))
+            start.record(stream = stream)
+        else:
+            if len(self.pending_events) == 0:
+                raise ValueError("Received an 'End' event but there are no pending events!")
+            if self.pending_events[-1][0] != evt_type_val:
+                raise ValueError("Received an 'End' event for a different event type than expected!")
+            _evt_type_val, _evt_val, start, end = self.pending_events.pop()
+            end.record(stream = stream)
+            end.synchronize()
+            evt_time = start.time_till(end) * 1e-3
+            self._release_start_end_event(start, end)
+            previous_calls, previous_time = self.events[_evt_type_val][_evt_val]
+            self.events[_evt_type_val][_evt_val] = [previous_calls + 1, previous_time + evt_time]
+
+    def _emit_nevent(self, evt_type_val_list, evt_val_list, stream):
+        """This method will be called only if tracing is enabled"""
+        zipped_list = list(zip(evt_type_val_list, evt_val_list))
+        if evt_val_list[0] == 0:
+            zipped_list = reversed(zipped_list)
+        for evt_type_val, evt_val in zipped_list:
+            self.emit_event(evt_type_val, evt_val, stream)
+
+    def set_default_stream(self, stream):
+        self.stream = stream

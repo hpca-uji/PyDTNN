@@ -123,7 +123,7 @@ def parse_options():
     parser.add_argument('--parallel', type=str, default="sequential")
     parser.add_argument('--non_blocking_mpi', type=bool_lambda, default=False)
     parser.add_argument('--tracing', type=bool_lambda, default=False)
-    parser.add_argument('--simple_tracer_output', type=str, default="")
+    parser.add_argument('--tracer_output', type=str, default="")
     parser.add_argument('--profile', type=bool_lambda, default=False)
     parser.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
     parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
@@ -345,22 +345,20 @@ if __name__ == "__main__":
         print('**** Done...')
         total_time = t2 - t1
         print(f'Training time: {total_time:5.4f} s')
-        if model.perf_counter.num_epochs > 0:
-            print(f'Time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s')
-            print(f'Training throughput: '
-                  f'{(dataset.train_val_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
-            print(f'Training time (from model): {model.perf_counter.training_time:5.4f} s')
-            print(f'Training time per epoch (from model): '
-                  f'{model.perf_counter.training_time / model.perf_counter.num_epochs:5.4f} s')
-            print(f'Training throughput (from model): {model.perf_counter.training_throughput:5.4f} samples/s')
-            print(f'Training time (from model, estimated from last half of each epoch): '
-                  f'{model.perf_counter.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
-            print(f'Training throughput (from model, from last half of each epoch): '
-                  f'{model.perf_counter.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
-            print(f'Training maximum memory allocated: '
-                  f'{model.perf_counter.training_maximum_memory / 1024:.2f} MiB')
-            print(f'Training mean memory allocated: '
-                  f'{model.perf_counter.training_mean_memory / 1024:.2f} MiB')
+        print(f'Time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s')
+        print(f'Training throughput: '
+              f'{(dataset.train_val_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
+        print(f'Training time (from model): {model.perf_counter.training_time:5.4f} s')
+        print(f'Time per epoch (from model): {model.perf_counter.training_time / model.perf_counter.num_epochs:5.4f} s')
+        print(f'Training throughput (from model): {model.perf_counter.training_throughput:5.4f} samples/s')
+        print(f'Training time (from model, estimated from last half of each epoch): '
+              f'{model.perf_counter.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
+        print(f'Training throughput (from model, from last half of each epoch): '
+              f'{model.perf_counter.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
+        print(f'Training maximum memory allocated: ',
+              f'{model.perf_counter.training_maximum_memory / 1024:.2f} MiB')
+        print(f'Training mean memory allocated: ',
+              f'{model.perf_counter.training_mean_memory / 1024:.2f} MiB')
 
         if params.history_file:
             with open(params.history_file, "w") as f:

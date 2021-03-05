@@ -58,7 +58,9 @@ from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CO
     PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
     PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
     PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
-    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM
+    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM, \
+    PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_BACKWARD_ELTW_SUM, \
+    PYDTNN_OPS_BACKWARD_SPLIT, PYDTNN_OPS_FORWARD_CONCAT, PYDTNN_OPS_FORWARD_ELTW_SUM, PYDTNN_OPS_FORWARD_REPLICATE
 
 try:
     from mpi4py import MPI
@@ -750,7 +752,7 @@ class AdditionBlock(Layer):
                 l.dtype = self.dtype
                 l.model = self.model
                 l.batch_size = self.batch_size
-                l.id = self.model.id + i
+                l.id = self.model.id + i + 1
                 l.matmul = self.matmul
 
                 l.initialize(prev_shape, need_dx)
@@ -764,13 +766,13 @@ class AdditionBlock(Layer):
             prev_shape = self.prev_shape
             self.model.id += len(p)
 
-        self.model.id -= 1
+        self.id = -1
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 
     def show(self):
         print(
-            f"|{'':^7s}|{(type(self).__name__ + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
+            f"|{self.id:^7d}|{(type(self).__name__ + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
         for i, p in enumerate(self.paths):
             print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
             for l in p: l.show()
@@ -794,15 +796,27 @@ class AdditionBlock(Layer):
     def forward(self, x):
         x = [x] * len(self.paths)
         for i, p in enumerate(self.paths):
-            for l in p: x[i] = l.forward(x[i])
-            if i > 0: x[0] += x[i]
+            for l in p:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                x[i] = l.forward(x[i])
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+            if i > 0:
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
+                x[0] += x[i]
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return x[0]
 
     def backward(self, dy):
         dx = [dy] * len(self.paths)
         for i, p in enumerate(self.paths):
-            for l in reversed(p): dx[i] = l.backward(dx[i])
-            if i > 0: dx[0] += dx[i]
+            for l in reversed(p):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                dx[i] = l.backward(dx[i])
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+            if i > 0:
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
+                dx[0] += dx[i]
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return dx[0]
 
 
@@ -824,7 +838,7 @@ class ConcatenationBlock(Layer):
                 l.dtype = self.dtype
                 l.model = self.model
                 l.batch_size = self.batch_size
-                l.id = self.model.id + i
+                l.id = self.model.id + i + 1
                 l.matmul = self.matmul
                 l.initialize(prev_shape, need_dx)
                 prev_shape = l.shape
@@ -836,7 +850,6 @@ class ConcatenationBlock(Layer):
             prev_shape = self.prev_shape
             self.model.id += len(p)
 
-        self.model.id -= 1
         assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
         self.out_co = [s[0] for s in self.out_shapes]
         self.idx_co = np.cumsum(self.out_co, axis=0)
@@ -844,7 +857,7 @@ class ConcatenationBlock(Layer):
 
     def show(self):
         print(
-            f"|{'':^7s}|{(type(self).__name__.replace('Concatenation', 'Concat') + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
+            f"|{self.id:^7d}|{(type(self).__name__.replace('Concatenation', 'Concat') + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}|{str(self.shape):^15s}|{'':19s}|{'':24s}|")
         for i, p in enumerate(self.paths):
             print(f"|{('Path %d' % i):^7s}|{'':^26s}|{'':9s}|{'':15s}|{'':19s}|{'':24s}|")
             for l in p: l.show()
@@ -866,14 +879,34 @@ class ConcatenationBlock(Layer):
             for l in p: l.reduce_weights_sync()
 
     def forward(self, x):
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_REPLICATE)
         x = [x] * len(self.paths)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
         for i, p in enumerate(self.paths):
-            for l in p: x[i] = l.forward(x[i])
+            for l in p:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                x[i] = l.forward(x[i])
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONCAT)
+        y = np.concatenate(x, axis=1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return np.concatenate(x, axis=1)
 
     def backward(self, dy):
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SPLIT)
         dx = np.split(dy, self.idx_co[:-1], axis=1)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
         for i, p in enumerate(self.paths):
-            for l in reversed(p): dx[i] = l.backward(dx[i])
-            if i > 0: dx[0] += dx[i]
+            for l in reversed(p):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                dx[i] = l.backward(dx[i])
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+            if i > 0:
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
+                dx[0] += dx[i]
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
         return dx[0]

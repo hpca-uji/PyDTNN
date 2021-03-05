@@ -51,7 +51,7 @@ import NN_util
 import datasets.NN_dataset
 from NN_sim import *
 from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, \
-    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, \
+    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, SimpleTracer, SimpleTracerGPU, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, \
     PYDTNN_MDL_WAIT_DW, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
 
 supported_gpu = False
@@ -203,16 +203,18 @@ class Model:
 
     def __init__(self, params, comm=None, non_blocking_mpi=False,
                  enable_gpu=False, enable_gpudirect=False, enable_nccl=False, dtype=np.float32,
-                 tracing=False, simple_tracer_output=""):
+                 tracing=False, tracer_output=""):
         self.id = 0
         self.layers = []
         self.params = params
         self.comm = comm
         self.blocking_mpi = not non_blocking_mpi
-        if simple_tracer_output == "":
+        if tracer_output == "":
             self.tracer = ExtraeTracer(tracing)
+        elif enable_gpu:
+            self.tracer = SimpleTracerGPU(tracing, tracer_output, self.comm)
         else:
-            self.tracer = SimpleTracer(tracing, simple_tracer_output, self.comm)
+            self.tracer = SimpleTracer(tracing, tracer_output, self.comm)
         self.perf_counter = PerformanceCounter()
         global enable_cudnn
         enable_cudnn = self.enable_cudnn = enable_gpu
@@ -238,7 +240,7 @@ class Model:
                 print("You must install pycuda, skcuda, cudnn, and, optionally, nccl, to be able to use the GPUs!")
                 sys.exit(-1)
             import pycuda.autoinit
-            # # Uncomment the next code if pycuda.autoinit is not available
+            # Uncomment the next code if pycuda.autoinit is not available
             # device_id = self.rank % drv.Device.count()
             # drv.init()
             # context = drv.Device(device_id).make_context()
@@ -251,7 +253,7 @@ class Model:
                          np.int8: nccl.DataType.Int8,
                          np.int32: nccl.DataType.Int32}
 
-                self.nccl_type = types.get(self.type, nccl.DataType.Float32)
+                self.nccl_type = types.get(self.dtype, nccl.DataType.Float32)
 
                 hostname = MPI.Get_processor_name()
 
@@ -298,10 +300,11 @@ class Model:
                      np.int8: "CUDNN_DATA_INT8",
                      np.int32: "CUDNN_DATA_INT32"}
 
-            cudnn_type = types.get(self.type, "CUDNN_DATA_FLOAT")
+            cudnn_type = types.get(self.dtype, "CUDNN_DATA_FLOAT")
 
             self.cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
             self.tensor_fmt = cudnn.cudnnTensorFormat['CUDNN_TENSOR_NCHW']
+            self.tracer.set_default_stream(self.stream)
 
     def show(self):
         bfp = {np.float32: 4, np.float64: 8}[self.dtype]

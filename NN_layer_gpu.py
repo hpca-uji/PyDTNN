@@ -47,8 +47,29 @@ from NN_util import printf, TensorGPU
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
 from NN_add_cython import add_cython
-from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS
 from NN_sim import *
+from NN_tracer import PYDTNN_MDL_EVENT, \
+                      PYDTNN_MDL_EVENTS, \
+                      PYDTNN_MDL_FORWARD, \
+                      PYDTNN_MDL_BACKWARD, \
+                      PYDTNN_OPS_EVENT, \
+                      PYDTNN_OPS_EVENTS, \
+                      PYDTNN_OPS_FORWARD_CUBLAS_MATMUL, \
+                      PYDTNN_OPS_FORWARD_CUDNN, \
+                      PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES, \
+                      PYDTNN_OPS_FORWARD_COPY, \
+                      PYDTNN_OPS_FORWARD_CONCAT, \
+                      PYDTNN_OPS_FORWARD_ELTW_SUM, \
+                      PYDTNN_OPS_FORWARD_REPLICATE, \
+                      PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW, \
+                      PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB, \
+                      PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX, \
+                      PYDTNN_OPS_BACKWARD_CUDNN_DW, \
+                      PYDTNN_OPS_BACKWARD_CUDNN_DB, \
+                      PYDTNN_OPS_BACKWARD_CUDNN_DX, \
+                      PYDTNN_OPS_BACKWARD_COPY, \
+                      PYDTNN_OPS_BACKWARD_ELTW_SUM, \
+                      PYDTNN_OPS_BACKWARD_SPLIT
 
 try:
     from mpi4py import MPI
@@ -155,17 +176,21 @@ class FCGPU(NN_layer.FC):
         k = lda = x.ary.shape[1]
         transA, transB, alpha, beta = 'N', 'N', 1.0, 0.0
         
-        # Compute a' = x @ weights 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUBLAS_MATMUL)
+        # Compute a' = x @ weights
         self.matmul(self.cublas_handle, transB, transA, n, m, k, alpha, 
                     self.weights.ary.gpudata, ldb, 
                     x.ary.gpudata, lda, beta, 
                     self.y.ary.gpudata, ldc, self.dtype)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.use_bias:
             alpha, beta = 1.0, 1.0
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.cudnn_handle, alpha, self.biases.desc, 
                                  self.biases.ptr, beta, self.y.desc, self.y.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
@@ -175,9 +200,11 @@ class FCGPU(NN_layer.FC):
         k = dy.ary.shape[0]
         transA, transB, alpha, beta = 'T', 'N', 1.0, 0.0
 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW)
         self.matmul(self.cublas_handle, transB, transA, n, m, k, alpha,
                     dy.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta, 
                     self.dw.ptr_intp if self.gpudirect else self.dw.ary.gpudata, ldc, self.dtype)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
@@ -190,10 +217,12 @@ class FCGPU(NN_layer.FC):
             n = lda = dy.ary.shape[1]
             transA, alpha, beta, incx, incy = 'N', 1.0, 0.0, 1, 1
     
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB)
             self.matvec(self.cublas_handle, transA, n, m, alpha, 
                         dy.ary.gpudata, lda, self.onevec_gpu.gpudata, incx, beta, 
                         self.db.ptr_intp if self.gpudirect else self.db.ary.gpudata, 
                         incy, self.dtype)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
     
             # DtoH db when data parallelism and no GPU direct/NCCL is used
             if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
@@ -207,10 +236,12 @@ class FCGPU(NN_layer.FC):
             k = lda = ldb = dy.ary.shape[1]
             transA, transB, alpha, beta = 'N', 'T', 1.0, 0.0
 
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX)
             self.matmul(self.cublas_handle, transB, transA, n, m, k, alpha,
                         self.weights.ary.gpudata, ldb, 
                         dy.ary.gpudata, lda, beta, 
                         self.dx.ary.gpudata, ldc, self.dtype)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
         
 
@@ -316,26 +347,33 @@ class Conv2DGPU(NN_layer.Conv2D):
     def forward(self, x):
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
         cudnn.cudnnConvolutionForward(self.cudnn_handle, alpha, 
                                       x.desc, x.ptr, 
                                       self.weights.desc, self.weights.ptr, 
                                       self.conv_desc, self.fwd_algo, ws_ptr, ws_size, beta, 
                                       self.y.desc, self.y.ptr)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
         if self.use_bias:
             alpha, beta = 1.0, 1.0
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.cudnn_handle, alpha, self.biases.desc, self.biases.ptr, 
                                       beta, self.y.desc, self.y.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
        
     def backward(self, dy):
         alpha, beta = 1.0, 0.0
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DW)
         # Compute dw    
         cudnn.cudnnConvolutionBackwardFilter(self.cudnn_handle, alpha, 
                                       self.x.desc, self.x.ptr, 
                                       dy.desc, dy.ptr, self.conv_desc, 
                                       self.bwd_dw_algo, ws_ptr, ws_size, beta,
                                       self.dw.desc, self.dw.ptr)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
@@ -343,10 +381,12 @@ class Conv2DGPU(NN_layer.Conv2D):
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DB)
             # Compute db
             cudnn.cudnnConvolutionBackwardBias(self.cudnn_handle, alpha, 
                                       dy.desc, dy.ptr, beta, 
                                       self.db.desc, self.db.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             
             # DtoH db when data parallelism and no GPU direct/NCCL is used
             if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
@@ -354,12 +394,14 @@ class Conv2DGPU(NN_layer.Conv2D):
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
         
         if self.need_dx:
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnConvolutionBackwardData(self.cudnn_handle, alpha, 
                                       self.weights.desc, self.weights.ptr, 
                                       dy.desc, dy.ptr,
                                       self.conv_desc, self.bwd_dx_algo, ws_ptr, ws_size, 
                                       beta, self.dx.desc, self.dx.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
 
 
@@ -406,20 +448,24 @@ class MaxPool2DGPU(NN_layer.MaxPool2D):
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.cudnn_handle, self.pool_desc, alpha, 
                                   x.desc, x.ptr, beta, 
                                   self.y.desc, self.y.ptr) 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
         if self.need_dx:
             alpha, beta = 1.0, 0.0
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnPoolingBackward(self.cudnn_handle, self.pool_desc, alpha, 
                                        self.y.desc, self.y.ptr, 
                                        dy.desc, dy.ptr, 
                                        self.x.desc, self.x.ptr, 
                                        beta, self.dx.desc, self.dx.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
 
 
@@ -466,20 +512,24 @@ class AveragePool2DGPU(NN_layer.AveragePool2D):
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.cudnn_handle, self.pool_desc, alpha, 
                                   x.desc, x.ptr, beta, 
                                   self.y.desc, self.y.ptr) 
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
         if self.need_dx:
             alpha, beta = 1.0, 0.0
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnPoolingBackward(self.cudnn_handle, self.pool_desc, alpha, 
                                        self.y.desc, self.y.ptr, 
                                        dy.desc, dy.ptr, 
                                        self.x.desc, self.x.ptr, 
                                        beta, self.dx.desc, self.dx.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
 
 
@@ -513,19 +563,23 @@ class DropoutGPU(NN_layer.Dropout):
                                         self.states.ptr, self.states_size.value, seed=0)
 
     def forward(self, x):
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
         cudnn.cudnnDropoutForward(self.cudnn_handle, self.drop_desc, 
                                   x.desc, x.ptr, 
                                   self.y.desc, self.y.ptr, 
                                   self.space.ptr, self.space_size.value)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
         if self.need_dx:
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnDropoutBackward(self.cudnn_handle, self.drop_desc, 
                                        dy.desc, dy.ptr, 
                                        self.dx.desc, self.dx.ptr,
                                        self.space.ptr, self.space_size.value)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
 
 
@@ -548,13 +602,17 @@ class FlattenGPU(NN_layer.Flatten):
             self.dx = TensorGPU(dx_gpu, self.tensor_fmt, self.cudnn_dtype)
 
     def forward(self, x):
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_COPY)
         self.copy(self.y.ary, x.ary, stream=self.stream)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
         if self.need_dx:
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COPY)
             # Compute dx
             self.copy(self.dx.ary, dy.ary, stream=self.stream)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
 
 
@@ -631,21 +689,26 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
     def forward(self, x):
         alpha, beta = 1.0, 0.0
         if self.model.mode == "train":
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
             cudnn.cudnnBatchNormalizationForwardTraining(self.cudnn_handle, self.mode, 
                 alpha, beta, x.desc, x.ptr, 
                 self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc, self.gamma.ptr, 
                 self.beta.ptr, self.factor, self.running_mean.ptr, self.running_var.ptr, 
                 self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         elif self.model.mode == "evaluate":
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
             cudnn.cudnnBatchNormalizationForwardInference(self.cudnn_handle, self.mode, 
                 alpha, beta, x.desc, x.ptr, 
                 self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc, self.gamma.ptr, 
                 self.beta.ptr, self.running_mean.ptr, self.running_var.ptr, self.epsilon)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
         # Compute dx, dgamma, dbeta
         cudnn.cudnnBatchNormalizationBackward(self.cudnn_handle, self.mode, 
             alpha_dx, beta_dx, alpha_dgb, beta_dgb,
@@ -653,6 +716,7 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
             self.dx.desc, self.dx.ptr, self.gamma_beta_mean_var_desc, 
             self.gamma.ptr, self.dgamma.ptr, self.dbeta.ptr, self.epsilon,
             self.save_mean.ptr, self.save_inv_var.ptr)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.gpudirect and not self.model.enable_nccl:
@@ -675,7 +739,7 @@ class AdditionBlockGPU(NN_layer.AdditionBlock):
                 l.dtype = self.dtype
                 l.model = self.model
                 l.batch_size = self.batch_size
-                l.id = self.model.id + i
+                l.id = self.model.id + i + 1
     
                 l.cudnn_handle = self.cudnn_handle
                 l.cublas_handle = self.cublas_handle
@@ -698,30 +762,39 @@ class AdditionBlockGPU(NN_layer.AdditionBlock):
             x = self.x
             self.model.id += len(p)
         
-        self.model.id -= 1
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 
     def forward(self, x):
         for i, p in enumerate(self.paths):
             y_i = x
-            for l in p: y_i = l.forward(y_i)
+            for l in p:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                y_i = l.forward(y_i)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i == 0: y = y_i
             else:
                 alpha, beta = 1.0, 1.0
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
                 cudnn.cudnnAddTensor(self.cudnn_handle, alpha, y_i.desc, 
                                      y_i.ptr, beta, y.desc, y.ptr)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
     def backward(self, dy):
         for i, p in enumerate(self.paths):
             dx_i = dy
-            for l in reversed(p): dx_i = l.backward(dx_i)
+            for l in reversed(p):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                dx_i = l.backward(dx_i)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i == 0: dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
                 cudnn.cudnnAddTensor(self.cudnn_handle, alpha, dx_i.desc, 
                                      dx_i.ptr, beta, dx.desc, dx.ptr)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return dx
 
 
@@ -738,7 +811,7 @@ class ConcatenationBlockGPU(NN_layer.ConcatenationBlock):
                 l.dtype = self.dtype
                 l.model = self.model
                 l.batch_size = self.batch_size
-                l.id = self.model.id + i
+                l.id = self.model.id + i + 1
     
                 l.cudnn_handle = self.cudnn_handle
                 l.cublas_handle = self.cublas_handle
@@ -759,7 +832,6 @@ class ConcatenationBlockGPU(NN_layer.ConcatenationBlock):
             x = self.x
             self.model.id += len(p)
 
-        self.model.id -= 1
         assert all([o[1:] == self.out_shapes[0][1:] for o in self.out_shapes])
         self.out_co = [s[0] for s in self.out_shapes]
         self.idx_co = np.cumsum(self.out_co, axis=0)
@@ -806,20 +878,33 @@ class ConcatenationBlockGPU(NN_layer.ConcatenationBlock):
     def forward(self, x):
         for i, p in enumerate(self.paths):
             x_i = x
-            for l in p: x_i = l.forward(x_i)
+            for l in p:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                x_i = l.forward(x_i)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONCAT)
             self.concat(self.y.ary, x_i.ary, self.batch_size, *self.shape, 
                         0 if i == 0 else self.idx_co[i-1], self.idx_co[i])
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
     def backward(self, dy):
         for i, p in enumerate(self.paths):
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SPLIT)
             self.split(dy.ary, self.dy[i].ary, self.batch_size, *self.shape, 
                         0 if i == 0 else self.idx_co[i-1], self.idx_co[i])
+            self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
             dx_i = self.dy[i]
-            for l in reversed(p): dx_i = l.backward(dx_i)
+            for l in reversed(p):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, l.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                dx_i = l.backward(dx_i)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i == 0: dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
                 cudnn.cudnnAddTensor(self.cudnn_handle, alpha, dx_i.desc, 
                                      dx_i.ptr, beta, dx.desc, dx.ptr)
+                self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return dx

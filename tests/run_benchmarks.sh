@@ -198,7 +198,7 @@ function run_benchmark() {
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \
-    --simple_tracer_output="${SIMPLE_TRACER_OUTPUT}" \
+    --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --conv_gemm_fallback_to_im2col="${CONV_GEMM_FALLBACK_TO_IM2COL}" \
     --conv_gemm_cache="${CONV_GEMM_CACHE}" \
