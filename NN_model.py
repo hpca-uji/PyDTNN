@@ -167,8 +167,11 @@ class PerformanceCounter:
         if not last_half:
             times_per_epoch = [np.sum(t_array) for t_array in self._times_record[where].values()]
         else:
-            times_per_epoch = [np.sum(t_array[len(t_array) // 2:]) * len(t_array) / (len(t_array) // 2)
-                               for t_array in self._times_record[where].values()]
+            times_per_epoch = []
+            for t_array in self._times_record[where].values():
+                t_array_last_half = t_array[len(t_array) // 2:]
+                if len(t_array_last_half) > 0:
+                    times_per_epoch.append(np.sum(t_array_last_half) * len(t_array) / len(t_array_last_half))
         return np.sum(times_per_epoch)
 
     def _size(self, where, last_half=False):
@@ -176,8 +179,11 @@ class PerformanceCounter:
         if not last_half:
             batch_sizes_per_epoch = [np.sum(s_array) for s_array in self._batch_sizes_record[where].values()]
         else:
-            batch_sizes_per_epoch = [np.sum(s_array[len(s_array) // 2:]) * len(s_array) / (len(s_array) // 2)
-                                     for s_array in self._batch_sizes_record[where].values()]
+            batch_sizes_per_epoch = []
+            for s_array in self._batch_sizes_record[where].values():
+                s_array_last_half = s_array[len(s_array) // 2:]
+                if len(s_array_last_half) > 0:
+                    batch_sizes_per_epoch.append(np.sum(s_array_last_half) * len(s_array) / len(s_array_last_half))
         return np.sum(batch_sizes_per_epoch)
 
     def _throughput(self, where, last_half=False):
