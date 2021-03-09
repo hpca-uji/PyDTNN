@@ -44,9 +44,14 @@ from NN_layer import *
 from NN_activation import *
 
 def create_resnet50_imagenet(model):
+    """
+    This is the v1.5 because in the blocks where downsampling is required, the 3x3 convolution uses stride=2
+    """
     model.add( Input(shape=(3, 224, 224)) )
-    model.add( Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform") )
-    model.add( BatchNormalization() )
+    #model.add( Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform") )
+    #model.add( BatchNormalization() )
+    model.add( Conv2D(nfilters=64, filter_shape=(7, 7), stride=2, padding=3, weights_initializer="he_uniform") )
+    model.add( MaxPool2D(pool_shape=(3,3),stride=2, padding=1) )
 
     expansion = 4
     layout = [ [64, 3, 1], [128, 4, 2], [256, 6, 2], [512, 3, 2] ] # Resnet-50
