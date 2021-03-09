@@ -1,1 +1,1 @@
-LDSHARED="icc -shared" CC=icc python3.8 setup.py build_ext --inplace
+LDSHARED="gcc-10 -shared" CC=gcc-10 python3 setup.py build_ext --inplace
