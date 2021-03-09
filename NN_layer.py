@@ -827,7 +827,6 @@ class AdditionBlock(Layer):
             prev_shape = self.prev_shape
             self.model.id += len(p)
 
-        self.id = -1
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 
