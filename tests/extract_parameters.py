@@ -99,7 +99,7 @@ def extract_parameters():
                     'vgg16_cifar10': 'run_vgg_cifar10.sh',
                     'vgg16_imagenet': 'run_vgg_imagenet.sh',
                     'resnet34_cifar10': 'run_resnet_cifar10.sh',
-                    'resnet34_imagenet': 'run_resnet_imagenet.sh'
+                    'resnet50_imagenet': 'run_resnet50_imagenet.sh'
                     }
     parameters_with_short_values = defaultdict(lambda: defaultdict(lambda: ""))
     parameters_with_long_values = defaultdict(lambda: defaultdict(lambda: ""))
