@@ -170,22 +170,20 @@ class FCGPU(NN_layer.FC):
                         dtype=self.dtype) + \
             matmul_time(m=self.batch_size, n=self.weights_cpu.shape[0], k=self.weights_cpu.shape[1], 
                         cpu_speed=self.model.params.cpu_speed, memory_bw=self.model.params.memory_bw, 
-                        dtype=self.dtype) if need_dx else 0
-
+                        dtype=self.dtype) if need_dx else 0      
+ 
     def forward(self, x):
         m = x.ary.shape[0]
         n = ldb = ldc = self.weights.ary.shape[1]
         k = lda = x.ary.shape[1]
         transA, transB, alpha, beta = 'N', 'N', 1.0, 0.0
         
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUBLAS_MATMUL)
         # Compute a' = x @ weights
         self.matmul(self.cublas_handle, transB, transA, n, m, k, alpha, 
                     self.weights.ary.gpudata, ldb, 
                     x.ary.gpudata, lda, beta, 
                     self.y.ary.gpudata, ldc, self.dtype)
-        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
+        
         if self.use_bias:
             alpha, beta = 1.0, 1.0
             self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES)
