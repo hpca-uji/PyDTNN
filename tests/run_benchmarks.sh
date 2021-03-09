@@ -43,6 +43,13 @@ if [ -n "${ONLY_TRAINING}" ]; then
   VALIDATION_SPLIT=0.2
 fi
 
+if [ -n "${ONLY_INFERENCE}" ]; then
+	  # shellcheck disable=SC2034
+    EVALUATE=True
+    NUM_EPOCHS=0
+    STEPS_EPOCH=10
+    TEST_AS_VALIDATION=False
+fi
 #-------------------
 # OpenMP parameters
 #-------------------
@@ -59,6 +66,9 @@ export PRELOAD=${PRELOAD:-}
 #---------------------
 case $(hostname) in
 jetson6)
+  export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-2 4 6 1 3 5 7 0}"
+  ;;
+XavierDSIC)
   export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-2 4 6 1 3 5 7 0}"
   ;;
 nowherman)
@@ -115,6 +125,7 @@ FILE_NAME="${FILE_NAME}_$(printf '%03d' "${NUM_EPOCHS:-1}")e"
 FILE_NAME="${FILE_NAME}_$(printf '%03d' "${STEPS_PER_EPOCH:-1}")s"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NODES:-1}")n"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS:-1}")t"
+FILE_NAME="${FILE_NAME}_$(printf '%02d' "${BATCH_SIZE:-1}")bs"
 FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
 MACHINE="$(uname -n)"
 if [[ "${MACHINE}" == "altec"* ]]; then
