@@ -21,7 +21,7 @@ import numpy as np
 from .tools import Spinner
 
 try:
-    from NN_conv_gemm import ConvGemm
+    from conv_gemm import ConvGemm
     from NN_im2col_cython import im2col_cython, col2im_cython
 except ModuleNotFoundError:
     print("Please, execute as 'python -m unittest unittests.TestConvGemm'")

@@ -40,17 +40,17 @@ __version__ = "1.1.0"
 
 
 import numpy as np
-import NN_util, NN_activation, NN_initializer, NN_layer
+import util, activation, initializer, layer
 
 from math import floor
 
-from NN_model import EVALUATE_MODE, TRAIN_MODE
-from NN_util import printf, TensorGPU
+from model import EVALUATE_MODE, TRAIN_MODE
+from util import printf, TensorGPU
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_argmax_cython import argmax_cython
 from NN_add_cython import add_cython
-from NN_sim import *
-from NN_tracer import PYDTNN_MDL_EVENT, \
+from sim import *
+from tracer import PYDTNN_MDL_EVENT, \
                       PYDTNN_MDL_EVENTS, \
                       PYDTNN_MDL_FORWARD, \
                       PYDTNN_MDL_BACKWARD, \
@@ -105,14 +105,14 @@ def checkConvolutionMemory(size):
         ws_ptr = ctypes.c_void_p(int(ws))
 
 
-class InputGPU(NN_layer.Input):
+class InputGPU(layer.Input):
     
     def initialize(self, prev_shape, need_dx, x):
         y_gpu = gpuarray.empty((self.batch_size, *self.shape), self.dtype)
         self.y = TensorGPU(y_gpu, self.tensor_fmt, self.cudnn_dtype)
 
 
-class FCGPU(NN_layer.FC):
+class FCGPU(layer.FC):
 
     def initialize(self, prev_shape, need_dx, x):
         self.need_dx = need_dx
@@ -158,7 +158,7 @@ class FCGPU(NN_layer.FC):
 
         self.onevec_gpu = gpuarray.to_gpu(np.ones((self.batch_size), self.dtype))
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
-        self.matmul, self.matvec = NN_util.matmul_gpu, NN_util.matvec_gpu
+        self.matmul, self.matvec = util.matmul_gpu, util.matvec_gpu
 
         self.fwd_time = \
             matmul_time(m=self.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0], 
@@ -245,7 +245,7 @@ class FCGPU(NN_layer.FC):
             return self.dx
         
 
-class Conv2DGPU(NN_layer.Conv2D):
+class Conv2DGPU(layer.Conv2D):
 
     def initialize(self, prev_shape, need_dx, x):
         self.need_dx = need_dx
@@ -405,7 +405,7 @@ class Conv2DGPU(NN_layer.Conv2D):
             return self.dx
 
 
-class MaxPool2DGPU(NN_layer.MaxPool2D):
+class MaxPool2DGPU(layer.MaxPool2D):
 
     def initialize(self, prev_shape, need_dx, x):
         self.need_dx = need_dx
@@ -469,7 +469,7 @@ class MaxPool2DGPU(NN_layer.MaxPool2D):
             return self.dx
 
 
-class AveragePool2DGPU(NN_layer.AveragePool2D):
+class AveragePool2DGPU(layer.AveragePool2D):
 
     def initialize(self, prev_shape, need_dx, x):
         self.need_dx = need_dx
@@ -533,7 +533,7 @@ class AveragePool2DGPU(NN_layer.AveragePool2D):
             return self.dx
 
 
-class DropoutGPU(NN_layer.Dropout):
+class DropoutGPU(layer.Dropout):
 
     def initialize(self, prev_shape, need_dx, x):
         self.need_dx = need_dx
@@ -583,7 +583,7 @@ class DropoutGPU(NN_layer.Dropout):
             return self.dx
 
 
-class FlattenGPU(NN_layer.Flatten):
+class FlattenGPU(layer.Flatten):
 
     def initialize(self, prev_shape, need_dx, x):
         self.need_dx = need_dx
@@ -616,7 +616,7 @@ class FlattenGPU(NN_layer.Flatten):
             return self.dx
 
 
-class BatchNormalizationGPU(NN_layer.BatchNormalization):
+class BatchNormalizationGPU(layer.BatchNormalization):
 
     def initialize(self, prev_shape, need_dx, x):
         self.shape = shape_ = prev_shape
@@ -726,7 +726,7 @@ class BatchNormalizationGPU(NN_layer.BatchNormalization):
         return self.dx
 
 
-class AdditionBlockGPU(NN_layer.AdditionBlock):
+class AdditionBlockGPU(layer.AdditionBlock):
 
     def initialize(self, prev_shape, need_dx, x):
         self.out_shapes = []
@@ -798,7 +798,7 @@ class AdditionBlockGPU(NN_layer.AdditionBlock):
         return dx
 
 
-class ConcatenationBlockGPU(NN_layer.ConcatenationBlock):
+class ConcatenationBlockGPU(layer.ConcatenationBlock):
 
     def initialize(self, prev_shape, need_dx, x):
         need_dx = True

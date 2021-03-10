@@ -19,9 +19,9 @@ import numpy as np
 from .tools import Spinner
 
 try:
-    from NN_layer import Conv2D
-    from NN_model import Model
-    from NN_conv_gemm import ConvGemm
+    from layer import Conv2D
+    from model import Model
+    from conv_gemm import ConvGemm
     from NN_im2col_cython import im2col_cython
     from unittests.test_conv2d_conv_gemm import TestConv2DConvGemm, D, _print_with_header, get_conv2d_layers
 except ModuleNotFoundError:

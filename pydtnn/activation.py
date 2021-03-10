@@ -39,8 +39,8 @@ __status__ = "Production"
 __version__ = "1.1.0"
 
 import numpy as np
-from NN_base_layer import Layer
-from NN_model import TRAIN_MODE
+from base_layer import Layer
+from model import TRAIN_MODE
 from NN_relu_cython import relu_cython
 
 

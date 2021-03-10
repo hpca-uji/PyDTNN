@@ -1,8 +1,8 @@
 """
-Performance tests for transposing matrices
+Performance tests for shrinking matrices
 
 For running the tests run:
-    python profile_tests/cpr
+    python profile_tests/profile_conv2d_shrink.py
 
 """
 import inspect
@@ -20,8 +20,8 @@ if True:
     current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parent_dir = os.path.dirname(current_dir)
     sys.path.insert(0, parent_dir)
-    from NN_pad_cython import pad_cython
-    from NN_layer import Conv2D
+    from NN_pad_cython import shrink_cython
+    from layer import Conv2D
 
 
 class D:
@@ -62,30 +62,27 @@ class Params:
     pass
 
 
-def pad_numpy(vpadding, hpadding, matrix_in):
-    matrix_out = np.pad(matrix_in,
-                        ((0, 0), (0, 0),
-                         (vpadding, vpadding), (hpadding, hpadding)),
-                        mode='constant')
-    return matrix_out
+def pad_numpy(vpadding, hpadding, matrix_in, matrix_out):
+    h, w = matrix_out.shape[2:4]
+    matrix_out[...] = matrix_in[:, :, vpadding:vpadding + h, hpadding:hpadding + w]
 
 
-def time_pad(x_shape, vpadding, hpadding, dtype=np.float32):
+def time_shrink(x_shape, vpadding, hpadding, dtype=np.float32):
     b, c, h, w = x_shape
-
-    matrix_in = np.random.rand(*x_shape).astype(dtype=dtype)
     new_h = h + 2 * vpadding
     new_w = w + 2 * hpadding
-    cython_matrix_out = np.empty((b, c, new_h, new_w), dtype=dtype, order="C")
+    matrix_in = np.random.rand(b, c, new_h, new_w).astype(dtype=dtype)
+    numpy_matrix_out = np.zeros((b, c, h, w), dtype=dtype, order="C")
+    cython_matrix_out = np.zeros((b, c, h, w), dtype=dtype, order="C")
     #
     # First run
     #
     print(f"First pass {x_shape} (checking outputs)", sep="", end="")
     #
     print(".", sep="", end="")
-    numpy_matrix_out = pad_numpy(vpadding, hpadding, matrix_in)
+    pad_numpy(vpadding, hpadding, matrix_in, numpy_matrix_out)
     print(".", sep="", end="")
-    pad_cython(matrix_in, cython_matrix_out)
+    shrink_cython(matrix_in, cython_matrix_out)
     try:
         assert np.allclose(numpy_matrix_out, cython_matrix_out), "numpy and cython version differ"
     except AssertionError as err:
@@ -100,25 +97,25 @@ def time_pad(x_shape, vpadding, hpadding, dtype=np.float32):
     #
     print(f"Second pass {x_shape} (getting times)", sep="", end="")
     print(".", sep="", end="")
-    numpy_pad_t = timeit(lambda: pad_numpy(vpadding, hpadding, matrix_in),
-                         number=10) / 10
+    numpy_shrink_t = timeit(lambda: pad_numpy(vpadding, hpadding, matrix_in, numpy_matrix_out),
+                            number=10) / 10
     print(".", sep="", end="")
-    cython_pad_t = timeit(lambda: pad_cython(matrix_in, cython_matrix_out),
-                          number=10) / 10
+    cython_shrink_t = timeit(lambda: shrink_cython(matrix_in, cython_matrix_out),
+                             number=10) / 10
     print()
-    min_t = np.min([numpy_pad_t, cython_pad_t])
-    a = "*" if cython_pad_t == min_t else ""
+    min_t = np.min([numpy_shrink_t, cython_shrink_t])
+    a = "*" if cython_shrink_t == min_t else ""
     return [["numpy", "a", "cython"],
-            ["{:6.4f}".format(numpy_pad_t),
+            ["{:6.4f}".format(numpy_shrink_t),
              a,
-             "{:6.4f}".format(cython_pad_t - numpy_pad_t),
+             "{:6.4f}".format(cython_shrink_t - numpy_shrink_t),
              ]]
 
 
 if __name__ == '__main__':
     # D(b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride):
     layers = [
-        # D(1, 1, 5, 5, 64, 3, 3, 1, 1, 2, 2),
+        D(1, 1, 3, 3, 64, 3, 3, 1, 1, 2, 2),
         # AlexNet Cifar
         D(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2),
         D(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1),
@@ -141,7 +138,7 @@ if __name__ == '__main__':
     t = None
     for layer in layers:
         _x_shape = (layer.b, layer.c, layer.h, layer.w)
-        headers, values = time_pad(_x_shape, layer.vpadding, layer.hpadding)
+        headers, values = time_shrink(_x_shape, layer.vpadding, layer.hpadding)
         if t is None:
             t = Table(box=box.HORIZONTALS, show_header=True, header_style="blue")
             t.add_column("x shape")

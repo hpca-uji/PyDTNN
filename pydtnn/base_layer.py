@@ -44,14 +44,14 @@ import importlib
 from math import floor
 
 # import NN_activation
-import NN_initializer
-import NN_model
-from NN_conv_gemm import ConvGemm
+import initializer
+import model
+from conv_gemm import ConvGemm
 from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
 from NN_im2col_cython import im2col_cython, col2im_cython
-from NN_sim import *
-from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_ALLREDUCE_DW, \
+from sim import *
+from tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_ALLREDUCE_DW, \
     PYDTNN_OPS_ALLREDUCE_DW
 
 try:
@@ -72,7 +72,7 @@ class Layer:
 
     def __new__(cls, *args, **kwargs):
         # If GPU is requested, return a GPU-related object instead
-        if not NN_model.enable_cudnn:
+        if not model.enable_cudnn:
             new_cls = cls
         else:
             module_name = "NN_activation" if cls.__name__ in \

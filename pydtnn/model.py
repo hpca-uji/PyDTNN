@@ -47,11 +47,11 @@ from collections import defaultdict
 from tqdm import tqdm
 from timeit import default_timer as timer
 
-import NN_optimizer
-import NN_util
+import optimizer
+import util
 import datasets.NN_dataset
-from NN_sim import *
-from NN_tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, \
+from sim import *
+from tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, \
     PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, SimpleTracer, SimpleTracerGPU, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, \
     PYDTNN_MDL_WAIT_DW, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
 
@@ -324,7 +324,7 @@ class Model:
         print(
             '+-------+--------------------------+---------+---------------+-------------------+------------------------+')
         print(
-            f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {NN_util.convert_size(self.nparams * bfp):^15s} {'':19s} {'':24s}|")
+            f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {util.convert_size(self.nparams * bfp):^15s} {'':19s} {'':24s}|")
         print(
             '+-------+--------------------------+---------+---------------+-------------------+------------------------+')
 
@@ -349,7 +349,7 @@ class Model:
             y = self.layers[-1].y if layer.id > 0 else None
             layer.initialize(prev_shape, need_dx, y)
         else:
-            layer.matmul = getattr(NN_util, "matmul")
+            layer.matmul = getattr(util, "matmul")
             layer.initialize(prev_shape, need_dx)
 
         self.nparams += layer.nparams
@@ -461,7 +461,7 @@ class Model:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(loss_metrics)):
-            loss_str = NN_util.metric_format.get(loss_metrics[c], loss_metrics[c])
+            loss_str = util.metric_format.get(loss_metrics[c], loss_metrics[c])
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
@@ -547,7 +547,7 @@ class Model:
 
     def train(self, X_train, Y_train, X_val, Y_val, nepochs, local_batch_size,
               loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
-              optimizer=NN_optimizer.SGD(), bar_width=110):
+              optimizer=optimizer.SGD(), bar_width=110):
 
         dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train,
                                               X_val=X_val, Y_val=Y_val)
@@ -558,14 +558,14 @@ class Model:
 
     def train_dataset(self, dataset, nepochs, local_batch_size, val_split=0.2,
                       loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
-                      optimizer=NN_optimizer.SGD(), lr_schedulers=[], bar_width=110):
+                      optimizer=optimizer.SGD(), lr_schedulers=[], bar_width=110):
         if self.enable_cudnn and not hasattr(self, "Y_batch"):
-            self.Y_batch = NN_util.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                                             self.tensor_fmt, self.cudnn_dtype)
-        loss_func = getattr(NN_util, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
-                                           enable_gpu=self.enable_cudnn, dtype=self.dtype)
-        metrics_funcs = [getattr(NN_util, l)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
-                                             enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
+            self.Y_batch = util.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                                          self.tensor_fmt, self.cudnn_dtype)
+        loss_func = getattr(util, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
+                                        enable_gpu=self.enable_cudnn, dtype=self.dtype)
+        metrics_funcs = [getattr(util, l)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
+                                          enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
         loss_metrics = [loss] + metrics
         self.history = {l: [] for l in (loss_metrics + [f"val_{m}" for m in loss_metrics])}
         optimizer.gpudirect = self.gpudirect
@@ -671,12 +671,12 @@ class Model:
                          loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
                          bar_width=120):
         if self.enable_cudnn and not hasattr(self, "Y_batch"):
-            self.Y_batch = NN_util.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                                             self.tensor_fmt, self.cudnn_dtype)
-        loss_func = getattr(NN_util, loss)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
-                                           enable_gpu=self.enable_cudnn, dtype=self.dtype)
-        metrics_funcs = [getattr(NN_util, l)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
-                                             enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
+            self.Y_batch = util.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                                          self.tensor_fmt, self.cudnn_dtype)
+        loss_func = getattr(util, loss)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
+                                        enable_gpu=self.enable_cudnn, dtype=self.dtype)
+        metrics_funcs = [getattr(util, l)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
+                                          enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
         loss_metrics = [loss] + metrics
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 

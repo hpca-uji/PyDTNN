@@ -40,10 +40,10 @@ __version__ = "1.1.0"
 
 
 import numpy as np
-import NN_activation
-from NN_layer import Layer
+import activation
+from layer import Layer
 from NN_relu_cython import relu_cython
-from NN_util import TensorGPU
+from util import TensorGPU
 
 try:
     #import pycuda.autoinit
@@ -55,7 +55,7 @@ try:
 except:
     pass
 
-class SigmoidGPU(NN_activation.Sigmoid):
+class SigmoidGPU(activation.Sigmoid):
 
     def initialize(self, prev_shape, need_dx, x):
         self.shape = prev_shape
@@ -95,7 +95,7 @@ class SigmoidGPU(NN_activation.Sigmoid):
             return self.dx
 
 
-class ReluGPU(NN_activation.Relu):
+class ReluGPU(activation.Relu):
 
     def initialize(self, prev_shape, need_dx, x): 
         self.shape = prev_shape
@@ -138,7 +138,7 @@ class ReluGPU(NN_activation.Relu):
             return self.dx
 
 
-class TanhGPU(NN_activation.Tanh):
+class TanhGPU(activation.Tanh):
 
     def initialize(self, prev_shape, need_dx, x):
         self.shape = prev_shape
@@ -178,7 +178,7 @@ class TanhGPU(NN_activation.Tanh):
             return self.dx
 
 
-class ArctanhGPU(NN_activation.Arctanh):
+class ArctanhGPU(activation.Arctanh):
 
     def initialize(self, prev_shape, need_dx, x):
         self.shape = prev_shape
@@ -214,7 +214,7 @@ class ArctanhGPU(NN_activation.Arctanh):
             return self.dx 
 
 
-class LogGPU(NN_activation.Log):
+class LogGPU(activation.Log):
 
     def initialize(self, prev_shape, need_dx, x):
         self.shape = prev_shape
@@ -251,7 +251,7 @@ class LogGPU(NN_activation.Log):
             return self.dx
 
     
-class SoftmaxGPU(NN_activation.Softmax):
+class SoftmaxGPU(activation.Softmax):
 
     def initialize(self, prev_shape, need_dx, x):
         self.shape = prev_shape

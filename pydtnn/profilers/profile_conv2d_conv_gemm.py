@@ -26,9 +26,9 @@ if True:
     current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parent_dir = os.path.dirname(current_dir)
     sys.path.insert(0, parent_dir)
-    import NN_util
-    from NN_layer import Conv2D
-    from NN_model import Model
+    import util
+    from layer import Conv2D
+    from model import Model
 
 
 class D:
@@ -104,7 +104,7 @@ def get_conv2d_layers(d):
         layer.dtype = np.float32
         layer.batch_size = model_i2c.params.batch_size  # batch_size is the same in both models
         layer.tracer = model_i2c.tracer  # tracer is the same on both models
-        layer.matmul = getattr(NN_util, "matmul")
+        layer.matmul = getattr(util, "matmul")
         layer.initialize(prev_shape=(d.c, d.h, d.w))
     # Set the same initial weights and biases to both layers
     conv2d_cg.weights = conv2d_i2c.weights.copy()

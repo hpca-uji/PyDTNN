@@ -249,10 +249,10 @@ if __name__ == "__main__":
     if params.enable_gpu and params.parallel == "data":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
 
-    from NN_model import *
-    from NN_layer import *
-    from NN_optimizer import *
-    from NN_lr_scheduler import *
+    from model import *
+    from layer import *
+    from optimizer import *
+    from lr_scheduler import *
     from models import *
     from datasets import *
 

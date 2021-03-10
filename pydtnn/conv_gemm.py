@@ -45,11 +45,11 @@ from contextlib import suppress
 
 import numpy as np
 
-from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
+from tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
     PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, \
     PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, PYDTNN_OPS_CONVGEMM_TRANS_BIASES
 from NN_transpose_cython import transpose_1230_ji_cython, transpose_0231_kji_cython
-from NN_util import load_library
+from util import load_library
 
 
 class ConvGemmCache(dict):
@@ -101,7 +101,7 @@ class ConvGemm:
     Examples
     --------
     See __usage_example__() method for an example of use. This example can be
-    run with: 'python NN_conv_gemm.py'
+    run with: 'python conv_gemm.py'
 
     Tests
     -----

@@ -1,8 +1,8 @@
 """
-Performance tests for shrinking matrices
+Performance tests for transposing matrices
 
 For running the tests run:
-    python profile_tests/profile_conv2d_shrink.py
+    python profile_tests/cpr
 
 """
 import inspect
@@ -20,8 +20,8 @@ if True:
     current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     parent_dir = os.path.dirname(current_dir)
     sys.path.insert(0, parent_dir)
-    from NN_pad_cython import shrink_cython
-    from NN_layer import Conv2D
+    from NN_reindex_cython import reindex_cython
+    from layer import Conv2D
 
 
 class D:
@@ -62,60 +62,73 @@ class Params:
     pass
 
 
-def pad_numpy(vpadding, hpadding, matrix_in, matrix_out):
-    h, w = matrix_out.shape[2:4]
-    matrix_out[...] = matrix_in[:, :, vpadding:vpadding + h, hpadding:hpadding + w]
+def reindex_numpy(h_new_indexes, v_new_indexes, matrix_in):
+    matrix_out = matrix_in
+    if h_new_indexes is not None:
+        matrix_out = matrix_out[:, :, h_new_indexes, :]
+    if v_new_indexes is not None:
+        matrix_out = matrix_out[:, :, :, v_new_indexes]
+    if h_new_indexes is not None or v_new_indexes is not None:
+        # @warning: The copy() is required to ensure the correct order of the underlying data of
+        #           matrix_out. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
+        #           unexpected results
+        matrix_out = matrix_out.copy()
+    return matrix_out
 
 
-def time_shrink(x_shape, vpadding, hpadding, dtype=np.float32):
+def time_reindex(w_shape, x_shape, y_shape, vstride, hstride, dtype=np.float32):
+    kn, c, kh, kw = w_shape
     b, c, h, w = x_shape
-    new_h = h + 2 * vpadding
-    new_w = w + 2 * hpadding
-    matrix_in = np.random.rand(b, c, new_h, new_w).astype(dtype=dtype)
-    numpy_matrix_out = np.zeros((b, c, h, w), dtype=dtype, order="C")
-    cython_matrix_out = np.zeros((b, c, h, w), dtype=dtype, order="C")
+    kn, b, ho, wo = y_shape
+
+    h_new_indexes, cg_vstride = Conv2D._get_x_new_indexes_and_xstride(kh, ho, vstride)
+    v_new_indexes, cg_hstride = Conv2D._get_x_new_indexes_and_xstride(kw, wo, hstride)
+
+    matrix_in = np.random.rand(*x_shape).astype(dtype=dtype)
+    new_h = len(h_new_indexes) if h_new_indexes is not None else h
+    new_w = len(v_new_indexes) if v_new_indexes is not None else w
+    cython_matrix_out = np.empty((b, c, new_h, new_w), dtype=dtype, order="C")
     #
     # First run
     #
     print(f"First pass {x_shape} (checking outputs)", sep="", end="")
     #
     print(".", sep="", end="")
-    pad_numpy(vpadding, hpadding, matrix_in, numpy_matrix_out)
+    numpy_matrix_out = reindex_numpy(h_new_indexes, v_new_indexes, matrix_in)
     print(".", sep="", end="")
-    shrink_cython(matrix_in, cython_matrix_out)
+    reindex_cython(h_new_indexes, v_new_indexes, matrix_in, cython_matrix_out)
     try:
         assert np.allclose(numpy_matrix_out, cython_matrix_out), "numpy and cython version differ"
     except AssertionError as err:
         print()
         print(err)
-        print("Numpy pad:", numpy_matrix_out.shape)
-        print(numpy_matrix_out)
-        print("Cython pad:", cython_matrix_out.shape)
-        print(cython_matrix_out)
+        print("Numpy reindex:", numpy_matrix_out.shape)
+        print("Cython reindex:", cython_matrix_out.shape)
+        print("np.where(numpy != cython):")
+        print(np.where(numpy_matrix_out != cython_matrix_out))
     #
     # Second run
     #
     print(f"Second pass {x_shape} (getting times)", sep="", end="")
     print(".", sep="", end="")
-    numpy_shrink_t = timeit(lambda: pad_numpy(vpadding, hpadding, matrix_in, numpy_matrix_out),
-                            number=10) / 10
-    print(".", sep="", end="")
-    cython_shrink_t = timeit(lambda: shrink_cython(matrix_in, cython_matrix_out),
+    numpy_reindex_t = timeit(lambda: reindex_numpy(h_new_indexes, v_new_indexes, matrix_in),
                              number=10) / 10
+    print(".", sep="", end="")
+    cython_reindex_t = timeit(lambda: reindex_cython(h_new_indexes, v_new_indexes, matrix_in, cython_matrix_out),
+                              number=10) / 10
     print()
-    min_t = np.min([numpy_shrink_t, cython_shrink_t])
-    a = "*" if cython_shrink_t == min_t else ""
+    min_t = np.min([numpy_reindex_t, cython_reindex_t])
+    a = "*" if cython_reindex_t == min_t else ""
     return [["numpy", "a", "cython"],
-            ["{:6.4f}".format(numpy_shrink_t),
+            ["{:6.4f}".format(numpy_reindex_t),
              a,
-             "{:6.4f}".format(cython_shrink_t - numpy_shrink_t),
+             "{:6.4f}".format(cython_reindex_t - numpy_reindex_t),
              ]]
 
 
 if __name__ == '__main__':
     # D(b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride):
     layers = [
-        D(1, 1, 3, 3, 64, 3, 3, 1, 1, 2, 2),
         # AlexNet Cifar
         D(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2),
         D(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1),
@@ -131,14 +144,26 @@ if __name__ == '__main__':
     ]
     backward_layers = []
     for layer in layers:
+        if layer.vstride != 1 or layer.hstride != 1:
+            continue
         # w <- y (kn * b * ho * wo)
         backward_layers.append(D(layer.c, layer.b, layer.h, layer.w, layer.kn, layer.ho, layer.wo,
                                  layer.vpadding, layer.hpadding, layer.vstride, layer.hstride))
     layers += backward_layers
+    # Keep only those layers with vstride != 1 or hstride != 1
+    layers = [la for la in layers if la.vstride != 1 or la.hstride != 1]
+    # Increase x (h, w) dimensions by 2*vpadding, 2* hpadding
+    for la in layers:
+        la.h = la.h + 2 * la.vpadding
+        la.vpadding = 0
+        la.w = la.w + 2 * la.hpadding
+        la.hpadding = 0
     t = None
     for layer in layers:
+        _w_shape = (layer.kn, layer.c, layer.kh, layer.kw)
         _x_shape = (layer.b, layer.c, layer.h, layer.w)
-        headers, values = time_shrink(_x_shape, layer.vpadding, layer.hpadding)
+        _y_shape = (layer.kn, layer.b, layer.ho, layer.wo)
+        headers, values = time_reindex(_w_shape, _x_shape, _y_shape, layer.vstride, layer.hstride)
         if t is None:
             t = Table(box=box.HORIZONTALS, show_header=True, header_style="blue")
             t.add_column("x shape")

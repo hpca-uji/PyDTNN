@@ -40,8 +40,8 @@ __version__ = "1.1.0"
 
 import ctypes
 import numpy as np
-import NN_optimizer
-from NN_layer import Layer
+import optimizer
+from layer import Layer
 
 import pycuda.gpuarray as gpuarray
 import pycuda.driver as drv
@@ -49,7 +49,7 @@ from pycuda.elementwise import ElementwiseKernel
 from pycuda.compiler import SourceModule
 
 
-class SGDGPU(NN_optimizer.SGD):
+class SGDGPU(optimizer.SGD):
 
     def __init__(self, learning_rate=1e-2, momentum=0.9, 
                  nesterov=False, decay=0.0, dtype=np.float32):
@@ -104,7 +104,7 @@ class SGDGPU(NN_optimizer.SGD):
                 setattr(layer, "velocity_%s" % (w_), velocity)
 
 
-class RMSPropGPU(NN_optimizer.RMSProp):
+class RMSPropGPU(optimizer.RMSProp):
 
     def __init__(self, learning_rate=1e-2, rho=0.9, 
                  epsilon=1e-7, decay=0.0, dtype=np.float32):
@@ -158,7 +158,7 @@ class RMSPropGPU(NN_optimizer.RMSProp):
                 setattr(layer, "cache_%s" % (w_), cache)
 
 
-class AdamGPU(NN_optimizer.Adam):
+class AdamGPU(optimizer.Adam):
 
     def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, 
                  epsilon=1e-7, decay=0.0, dtype=np.float32):
@@ -226,7 +226,7 @@ class AdamGPU(NN_optimizer.Adam):
                 setattr(layer, "v_%s" % (w_), v)
 
 
-class NadamGPU(NN_optimizer.Nadam):
+class NadamGPU(optimizer.Nadam):
 
     def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, 
                  epsilon=1e-7, decay=0.0, dtype=np.float32):

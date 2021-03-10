@@ -43,20 +43,20 @@ from contextlib import suppress
 from functools import lru_cache
 from math import floor
 
-import NN_activation
-import NN_initializer
+import activation
+import initializer
 from NN_add_cython import add_cython
 from NN_argmax_cython import argmax_cython
-from NN_base_layer import Layer
-from NN_conv_gemm import ConvGemm, ConvGemmCache
+from base_layer import Layer
+from conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_bn_inference_cython import bn_inference_cython
 from NN_bn_relu_inference_cython import bn_relu_inference_cython
-from NN_model import EVALUATE_MODE, TRAIN_MODE
+from model import EVALUATE_MODE, TRAIN_MODE
 from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
 from NN_reindex_cython import reindex_cython
-from NN_sim import *
-from NN_tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
+from sim import *
+from tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
     PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_FORWARD_IM2COL, \
     PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
     PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
@@ -120,10 +120,10 @@ class FC(Layer):
                  weights_initializer="glorot_uniform",
                  biases_initializer="zeros"):
         super(FC, self).__init__(shape)
-        self.act = getattr(NN_activation, activation, None)
+        self.act = getattr(activation, activation, None)
         self.use_bias = use_bias
-        self.weights_initializer = getattr(NN_initializer, weights_initializer)
-        self.biases_initializer = getattr(NN_initializer, biases_initializer)
+        self.weights_initializer = getattr(initializer, weights_initializer)
+        self.biases_initializer = getattr(initializer, biases_initializer)
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
@@ -187,10 +187,10 @@ class Conv2D(Layer):
         self.stride = stride
         self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
         self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
-        self.act = getattr(NN_activation, activation, None)
+        self.act = getattr(activation, activation, None)
         self.use_bias = use_bias
-        self.weights_initializer = getattr(NN_initializer, weights_initializer)
-        self.biases_initializer = getattr(NN_initializer, biases_initializer)
+        self.weights_initializer = getattr(initializer, weights_initializer)
+        self.biases_initializer = getattr(initializer, biases_initializer)
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
@@ -719,8 +719,8 @@ class BatchNormalization(Layer):
         self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
-        self.moving_mean_initializer = getattr(NN_initializer, moving_mean_initializer)
-        self.moving_variance_initializer = getattr(NN_initializer, moving_variance_initializer)
+        self.moving_mean_initializer = getattr(initializer, moving_mean_initializer)
+        self.moving_variance_initializer = getattr(initializer, moving_variance_initializer)
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
         # The next attributes will be initialized later

@@ -1,5 +1,5 @@
 import importlib, sys
-from NN_model import *
+from model import *
 
 
 def get_model(params):

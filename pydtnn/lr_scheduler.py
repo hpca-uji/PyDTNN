@@ -41,7 +41,7 @@ __version__ = "1.1.0"
 
 import time, os
 import numpy as np
-from NN_layer import Layer
+from layer import Layer
 
 class LRScheduler():
 

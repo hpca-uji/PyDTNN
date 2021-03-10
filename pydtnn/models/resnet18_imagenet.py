@@ -39,9 +39,9 @@ __status__ = "Production"
 __version__ = "1.1.0"
 
 
-from NN_model import *
-from NN_layer import *
-from NN_activation import *
+from model import *
+from layer import *
+from activation import *
 
 def create_resnet18_imagenet(model):
     model.add( Input(shape=(3, 224, 224)) )
