@@ -740,7 +740,7 @@ class BatchNormalization(Layer):
         self.beta = np.full(shape_, self.beta_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
-        self.updated_running_var = True
+        self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
         self.nparams = self.gamma.size + self.beta.size
 
     def forward(self, x):
@@ -778,12 +778,12 @@ class BatchNormalization(Layer):
             # xn = (x - self.running_mean) / self.std
             # y = self.gamma * xn + self.beta
 
-            # If self.running_var was updated on training we need to recompute self.std!
+            # If self.running_var was updated on training we need to recompute self.inv_std!
             if self.updated_running_var: 
                 self.updated_running_var = False
-                self.std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+                self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
 
-            y = bn_inference_cython(x,self.running_mean, self.std, self.gamma, self.beta)
+            y = bn_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
         
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
