@@ -64,7 +64,10 @@ def im2col_cython(x,
 
     cdef np.ndarray cols = np.zeros(
             (C * KH * KW, N * HH * WW), dtype=x.dtype)
-
+    #if (KH == 3 and KW == 3):
+    #    im2col_3x3_cython_inner_float32(cols, x_padded, N, C, H, W, HH, WW,
+    #                             KH, KW, vstride, hstride)
+    #    return cols
     if (x.dtype == np.int8):
         im2col_cython_inner_int8(cols, x_padded, N, C, H, W, HH, WW,
                                  KH, KW, vstride, hstride)
@@ -82,13 +85,31 @@ def im2col_cython(x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
+cdef int im2col_3x3_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
+                             np.ndarray[np.float32_t, ndim=4] x_padded,
+                             int N, int C, int H, int W, int HH, int WW,
+                             int KH, int KW, int vstride, int hstride) except? -1:
+    cdef int c, ii, jj, row, yy, xx, n, col, col1
+    for c in prange(C, nogil=True, schedule='static'):
+        for ii in range(KH):
+            for jj in range(KW):
+                row = c * KH * KW + ii * KW + jj
+                for n in range(N):
+                    for xx in range(HH):
+                        for yy in range(WW):
+                            col = n * HH * WW + xx * WW + yy
+                            cols[row, col] = x_padded[n, c, vstride * xx + ii, hstride * yy + jj]
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef int im2col_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                              np.ndarray[np.int8_t, ndim=4] x_padded,
                              int N, int C, int H, int W, int HH, int WW,
                              int KH, int KW, int vstride, int hstride) except? -1:
     cdef int c, ii, jj, row, yy, xx, n, col
 
-    for c in prange(C, nogil=True):
+    for c in prange(C, nogil=True, schedule='static'):
         for ii in range(KH):
             for jj in range(KW):
                 row = c * KH * KW + ii * KW + jj
@@ -106,7 +127,7 @@ cdef int im2col_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
                              int KH, int KW, int vstride, int hstride) except? -1:
     cdef int c, ii, jj, row, yy, xx, n, col
 
-    for c in prange(C, nogil=True):
+    for c in prange(C, nogil=True, schedule='static'):
         for ii in range(KH):
             for jj in range(KW):
                 row = c * KH * KW + ii * KW + jj
@@ -124,7 +145,7 @@ cdef int im2col_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
                              int KH, int KW, int vstride, int hstride) except? -1:
     cdef int c, ii, jj, row, yy, xx, n, col
 
-    for c in prange(C, nogil=True):
+    for c in prange(C, nogil=True, schedule='static'):
         for ii in range(KH):
             for jj in range(KW):
                 row = c * KH * KW + ii * KW + jj
@@ -170,7 +191,7 @@ cdef int col2im_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                              int KH, int KW, int vstride, int hstride) except? -1:
     cdef int c, ii, jj, row, yy, xx, n, col
 
-    for c in prange(C, nogil=True):
+    for c in prange(C, nogil=True, schedule='static'):
         for ii in range(KH):
             for jj in range(KW):
                 row = c * KH * KW + ii * KW + jj
@@ -213,7 +234,7 @@ cdef int col2im_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
                              int KH, int KW, int vstride, int hstride) except? -1:
     cdef int c, ii, jj, row, yy, xx, n, col
 
-    for c in prange(C, nogil=True):
+    for c in prange(C, nogil=True, schedule='static'):
         for ii in range(KH):
             for jj in range(KW):
                 row = c * KH * KW + ii * KW + jj
@@ -231,7 +252,7 @@ cdef int col2im_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
                              int KH, int KW, int vstride, int hstride) except? -1:
     cdef int c, ii, jj, row, yy, xx, n, col
   
-    for c in prange(C, nogil=True):
+    for c in prange(C, nogil=True, schedule='static'):
         for ii in range(KH):
             for jj in range(KW):
                 row = c * KH * KW + ii * KW + jj
