@@ -49,6 +49,7 @@ from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_bn_inference_cython import bn_inference_cython
 from NN_model import EVALUATE_MODE, TRAIN_MODE
 from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
 from NN_reindex_cython import reindex_cython
@@ -739,6 +740,8 @@ class BatchNormalization(Layer):
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
         self.nparams = self.gamma.size + self.beta.size
+        #calculate inv 1/std so we can multiplyit at inference
+        self.std = 1/np.sqrt(self.running_var + self.epsilon) 
 
     def forward(self, x):
 
@@ -749,7 +752,6 @@ class BatchNormalization(Layer):
             else:
                 mean = np.mean(data, axis=0)
             return mean
-
         if self.spatial:
             x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
@@ -770,10 +772,11 @@ class BatchNormalization(Layer):
             self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
 
         else:  # EVALUATE_MODE
-            std = np.sqrt(self.running_var + self.epsilon)
-            xn = (x - self.running_mean) / std
-            y = self.gamma * xn + self.beta
-
+            #std = np.sqrt(self.running_var + self.epsilon)
+            #xn = (x - self.running_mean) * self.std
+            #y = self.gamma * xn + self.beta
+            y = bn_inference_cython(x,self.running_mean, self.std, self.gamma, self.beta)
+        
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
 
