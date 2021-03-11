@@ -778,7 +778,7 @@ class BatchNormalization(Layer):
             # xn = (x - self.running_mean) / self.std
             # y = self.gamma * xn + self.beta
 
-            # If running var was updated on training we need to recompute self.std!
+            # If self.running_var was updated on training we need to recompute self.std!
             if self.updated_running_var: 
                 self.updated_running_var = False
                 self.std = 1.0 / np.sqrt(self.running_var + self.epsilon)
