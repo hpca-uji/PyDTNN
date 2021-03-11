@@ -468,7 +468,7 @@ class ImageNet(Dataset):
 
         # Variables for testing dataset
         if self.use_synthetic_data:
-            self.n_test_files = 128
+            self.n_test_files = 1 #128
             self.test_files = [''] * self.n_test_files
         else:
             self.test_files = os.listdir(self.test_path)
