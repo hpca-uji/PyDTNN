@@ -18,7 +18,9 @@ ext_modules = [
                      "NN_add_cython",
                      "NN_transpose_cython",
                      "NN_reindex_cython",
-                     "NN_pad_cython"
+                     "NN_pad_cython",
+                     "NN_bn_inference_cython",
+                     "NN_bn_relu_inference_cython",
                      ]
 ]
 

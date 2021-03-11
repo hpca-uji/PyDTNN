@@ -49,6 +49,7 @@ from NN_argmax_cython import argmax_cython
 from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
+from NN_bn_inference_cython import bn_inference_cython
 from NN_model import EVALUATE_MODE, TRAIN_MODE
 from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
 from NN_reindex_cython import reindex_cython
@@ -204,6 +205,7 @@ class Conv2D(Layer):
         self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
         # The next attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
+        # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -724,6 +726,7 @@ class BatchNormalization(Layer):
         self.gamma = self.beta = self.running_mean = self.running_var = None
         self.std = self.xn = None
         self.dgamma = self.dbeta = None
+        self.updated_running_var = False
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -737,6 +740,7 @@ class BatchNormalization(Layer):
         self.beta = np.full(shape_, self.beta_init_val, self.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.dtype)
+        self.updated_running_var = True
         self.nparams = self.gamma.size + self.beta.size
 
     def forward(self, x):
@@ -748,7 +752,6 @@ class BatchNormalization(Layer):
             else:
                 mean = np.mean(data, axis=0)
             return mean
-
         if self.spatial:
             x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
 
@@ -767,12 +770,21 @@ class BatchNormalization(Layer):
 
             self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
             self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
+            self.updated_running_var = True
 
         else:  # EVALUATE_MODE
-            std = np.sqrt(self.running_var + self.epsilon)
-            xn = (x - self.running_mean) / std
-            y = self.gamma * xn + self.beta
+            # Original numpy-based code
+            # std = np.sqrt(self.running_var + self.epsilon)
+            # xn = (x - self.running_mean) / self.std
+            # y = self.gamma * xn + self.beta
 
+            # If running var was updated on training we need to recompute self.std!
+            if self.updated_running_var: 
+                self.updated_running_var = False
+                self.std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+
+            y = bn_inference_cython(x,self.running_mean, self.std, self.gamma, self.beta)
+        
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
 
