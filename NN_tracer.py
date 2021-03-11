@@ -187,6 +187,9 @@ class Tracer:
         """Fake method, will be replaced by lambda: None or _print_memory_usage()"""
         pass
 
+    def set_default_stream(self, stream):
+        pass
+
     def _get_layers_recursively(self, layers):
         all_layers = []
         for layer in layers:

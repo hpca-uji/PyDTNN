@@ -204,7 +204,6 @@ class Conv2D(Layer):
         self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
         # The next attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
-        self.forward = self.backward = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
