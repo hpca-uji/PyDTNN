@@ -39,6 +39,7 @@ __status__ = "Production"
 __version__ = "1.1.0"
 
 import time
+from contextlib import suppress
 from functools import lru_cache
 from math import floor
 
@@ -50,6 +51,7 @@ from NN_base_layer import Layer
 from NN_conv_gemm import ConvGemm, ConvGemmCache
 from NN_im2col_cython import im2col_cython, col2im_cython
 from NN_bn_inference_cython import bn_inference_cython
+from NN_bn_relu_inference_cython import bn_relu_inference_cython
 from NN_model import EVALUATE_MODE, TRAIN_MODE
 from NN_pad_cython import pad_cython, transpose_1023_and_pad_cython
 from NN_reindex_cython import reindex_cython
@@ -815,6 +817,7 @@ class AdditionBlock(Layer):
         for p in args:
             self.paths.append(p)
         self.out_shapes = []
+        self.is_block_layer = True
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -905,6 +908,7 @@ class ConcatenationBlock(Layer):
         self.out_shapes = []
         # The next attributes will be initialized later
         self.out_co = self.idx_co = None
+        self.is_block_layer = True
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -992,3 +996,74 @@ class ConcatenationBlock(Layer):
                 self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return dx[0]
+
+
+class Conv2DRelu(Conv2D):
+
+    def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
+                 activation="", use_bias=True, weights_initializer="glorot_uniform",
+                 biases_initializer="zeros", from_parent=None):
+        if from_parent is None:
+            super(Conv2DRelu, self).__init__(nfilters, filter_shape, padding, stride,
+                 activation, use_bias, weights_initializer, biases_initializer)
+        else:
+            with suppress(KeyError):
+                from_parent.__dict__.pop("forward")
+            self.__dict__.update(from_parent.__dict__)
+
+    def forward(self, x):
+        """Version of the forward function that uses the convGemm + Relu"""
+
+        if self.model.mode == TRAIN_MODE:
+            raise RuntimeError("Fused layers cannot be used in training mode!")
+
+        biases_vector = self.biases if self.use_bias else None
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
+        # @todo: Replace ConvGemm by the actual fused layer
+        res = self.cg.conv_gemm(self.weights, x, biases=None,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                biases_vector=biases_vector)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        self.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        # @todo: Remove once ConvGemm+Relu is implemented !!
+        y[y < 0] = 0
+
+        return y
+
+
+class BatchNormalizationRelu(BatchNormalization):
+
+    def __init__(self, beta=0.0, gamma=1.0,
+                 momentum=0.9, epsilon=1e-5,
+                 moving_mean_initializer="zeros",
+                 moving_variance_initializer="ones",
+                 sync_stats=False, from_parent=None):
+        if from_parent is None:
+            super(BatchNormalizationRelu, self).__init__(beta, gamma, momentum,
+                epsilon, moving_mean_initializer, moving_variance_initializer, sync_stats)
+        else:
+            with suppress(KeyError):
+                from_parent.__dict__.pop("forward")
+            self.__dict__.update(from_parent.__dict__)
+
+    def forward(self, x):
+        """Version of the forward function that uses the BN + Relu"""
+
+        if self.model.mode == TRAIN_MODE:
+            raise RuntimeError("Fused layers cannot be used in training mode!")
+
+        if self.spatial:
+            x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+
+        y = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
+
+        if self.spatial:
+            y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+
+        return y

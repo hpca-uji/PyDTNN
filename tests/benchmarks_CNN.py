@@ -84,6 +84,7 @@ def parse_options():
     parser.add_argument('--validation_split', type=float, default=0.0)
     parser.add_argument('--steps_per_epoch', type=int, default=0)
     parser.add_argument('--num_epochs', type=int, default=1)
+    parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
     parser.add_argument('--evaluate', default=False, type=bool_lambda)
     parser.add_argument('--weights_and_bias_filename', type=str, default=None)
     parser.add_argument('--shared_storage', default=False, type=bool_lambda)
@@ -129,6 +130,7 @@ def parse_options():
     parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
     parser.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
     parser.add_argument('--enable_nccl', type=bool_lambda, default=False)
+    parser.add_argument('--enable_fused_relus', type=bool_lambda, default=False)
     # ConvGemm
     parser.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
     parser.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
@@ -220,7 +222,7 @@ if __name__ == "__main__":
     params = parse_options()
     params.dtype = getattr(np, params.dtype)
     _MPI = None
-    if params.parallel in ["data", "hybrid"]:
+    if params.parallel in ["data"]:
         from mpi4py import MPI
         _MPI = MPI
         params.comm = MPI.COMM_WORLD
@@ -282,7 +284,7 @@ if __name__ == "__main__":
         print('**** Parameters:')
         show_options(params)
 
-    if params.evaluate:
+    if params.evaluate or params.evaluate_only:
         if rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
@@ -292,8 +294,16 @@ if __name__ == "__main__":
             total_time = t2 - t1
             print(f'Testing time: {total_time:5.4f} s')
             print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
+            print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
+            print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
+            print(f'Testing maximum memory allocated: ',
+                  f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
+            print(f'Testing mean memory allocated: ',
+                  f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
+        if params.evaluate_only:
+            sys.exit(0)
 
-    if params.parallel in ["data", "model"]:
+    if params.parallel in ["data"]:
         params.comm.Barrier()
 
     if rank == 0:
@@ -329,7 +339,7 @@ if __name__ == "__main__":
     #                       optimizer=optimizer,
     #                       lr_schedulers=lr_schedulers)
 
-    if params.parallel in ["data", "model"]:
+    if params.parallel in ["data"]:
         params.comm.Barrier()
 
     if rank == 0:
@@ -372,19 +382,7 @@ if __name__ == "__main__":
     if params.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-            t1 = time.time()
         test_loss = model.evaluate_dataset(dataset, params.batch_size, params.loss_func, metrics)
-        if rank == 0:
-            t2 = time.time()
-            total_time = t2 - t1
-            print(f'Testing time: {total_time:5.4f} s')
-            print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
-            print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
-            print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
-            print(f'Testing maximum memory allocated: ',
-                  f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
-            print(f'Testing mean memory allocated: ',
-                  f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
 
     if params.comm is not None and _MPI is not None:
         params.comm.Barrier()

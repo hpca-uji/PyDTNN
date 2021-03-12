@@ -99,6 +99,7 @@ class Layer:
         self.model = None
         self.prev_shape = None
         self.need_dx = True
+        self.is_block_layer = False
 
     def initialize(self, prev_shape, need_dx=True):
         self.prev_shape = prev_shape

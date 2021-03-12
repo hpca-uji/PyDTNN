@@ -41,6 +41,7 @@ __version__ = "1.1.0"
 import resource
 import sys
 import time
+import importlib
 from collections import defaultdict
 
 from tqdm import tqdm
@@ -358,6 +359,28 @@ class Model:
         if layer.act:
             self.add(layer.act())
 
+    def __apply_relu_fusion(self):
+        """ Apply Relu fusion in a recursive manner """
+
+        def __relu_fusion(layers):
+            fused_layers = []
+            for i, curr_layer in enumerate(layers):
+                if curr_layer.is_block_layer:
+                    for j, p in enumerate(curr_layer.paths):
+                        curr_layer.paths[j] = __relu_fusion(p)
+                elif i > 0 and type(curr_layer).__name__ == "Relu" and \
+                    type(fused_layers[-1]).__name__ in ["Conv2D", "BatchNormalization"]:
+                    prev_layer = fused_layers.pop()
+                    print("Fusing %d_%s with %d_%s ..." % (prev_layer.id, type(prev_layer).__name__, \
+                                                           curr_layer.id, type(curr_layer).__name__))
+                    curr_layer = getattr(importlib.import_module("NN_layer"), \
+                                         type(prev_layer).__name__ + type(curr_layer).__name__)(from_parent=prev_layer)
+                fused_layers.append(curr_layer)
+            return fused_layers
+
+        if not self.enable_cudnn:
+            self.layers = __relu_fusion(self.layers)
+
     def load_weights_and_bias(self, filename):
         d = np.load(filename)
         for l, layer in enumerate(self.layers):
@@ -657,6 +680,8 @@ class Model:
         loss_metrics = [loss] + metrics
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
+        if self.params.enable_fused_relus: self.__apply_relu_fusion()
+
         if self.rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
             pbar = tqdm(total=dataset.test_nsamples, ncols=bar_width,
@@ -664,7 +689,7 @@ class Model:
                         desc="Testing", unit=" samples")
 
         self.perf_counter.init_testing_data()  # Only the last testing data should be kept
-
+        count=0
         for X_batch, Y_batch, batch_size in test_batch_generator:
             tic = timer()
             test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, self.params.batch_size, batch_size,
@@ -677,8 +702,11 @@ class Model:
                 pbar.set_postfix_str(s=string, refresh=True)
                 pbar.update(batch_size)
                 self.perf_counter.add_testing_time_and_batch_size(toc - tic, batch_size)
-
+            count+=1
+            if count == 3: break
         if self.rank == 0:
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
+
+        self.tracer.define_event_types(self)
