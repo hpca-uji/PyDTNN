@@ -689,7 +689,7 @@ class Model:
                         desc="Testing", unit=" samples")
 
         self.perf_counter.init_testing_data()  # Only the last testing data should be kept
-        count=0
+
         for X_batch, Y_batch, batch_size in test_batch_generator:
             tic = timer()
             test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, self.params.batch_size, batch_size,
@@ -702,8 +702,7 @@ class Model:
                 pbar.set_postfix_str(s=string, refresh=True)
                 pbar.update(batch_size)
                 self.perf_counter.add_testing_time_and_batch_size(toc - tic, batch_size)
-            count+=1
-            if count == 3: break
+
         if self.rank == 0:
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
