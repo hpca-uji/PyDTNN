@@ -680,7 +680,8 @@ class Model:
         loss_metrics = [loss] + metrics
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
-        if self.params.enable_fused_relus: self.__apply_relu_fusion()
+        if self.params.enable_fused_relus:
+            self.__apply_relu_fusion()
 
         if self.rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
