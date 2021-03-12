@@ -371,8 +371,8 @@ class Model:
                 elif i > 0 and type(curr_layer).__name__ == "Relu" and \
                     type(fused_layers[-1]).__name__ in ["Conv2D", "BatchNormalization"]:
                     prev_layer = fused_layers.pop()
-                    print("Fusing %d_%s with %d_%s ..." % (prev_layer.id, type(prev_layer).__name__, \
-                                                           curr_layer.id, type(curr_layer).__name__))
+                    print("Fusing %03d_%s with %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__, \
+                                                               curr_layer.id, type(curr_layer).__name__))
                     curr_layer = getattr(importlib.import_module("NN_layer"), \
                                          type(prev_layer).__name__ + type(curr_layer).__name__)(from_parent=prev_layer)
                 fused_layers.append(curr_layer)
