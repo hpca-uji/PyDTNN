@@ -1,5 +1,10 @@
 """
 PyDTNN Activation layers
+
+If you want to add a new activation layer:
+    1) create a new Python file in this directory,
+    2) define your activation layer class as derived from Activation (or any Activation derived class),
+    3) and, optionally, import your activation layer on this file.
 """
 
 #
@@ -21,108 +26,14 @@ PyDTNN Activation layers
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
-from ..layers import Layer
-from ..model import TRAIN_MODE
-from ..cython_modules import relu_cython
-
-
-class ActivationLayer(Layer):
-
-    def initialize(self, prev_shape, need_dx=True, x=None):
-        super().initialize(prev_shape, need_dx, x)
-        self.shape = prev_shape
-
-
-class Sigmoid(ActivationLayer):
-
-    def __init__(self, shape=(1,)):
-        super(Sigmoid, self).__init__(shape)
-        # The next attributes will be initialized later
-        self.y = None
-
-    def forward(self, x):
-        self.y = 1 / (1 + np.exp(-x))
-        return self.y
-
-    def backward(self, dy):
-        if self.need_dx:
-            return dy * (self.y * (1 - self.y))
-
-
-class Relu(ActivationLayer):
-
-    def __init__(self, shape=(1,)):
-        super(Relu, self).__init__(shape)
-        # The next attributes will be initialized later
-        self.mask = None
-
-    def forward(self, x):
-        y, mask = relu_cython(x)
-        if self.model.mode == TRAIN_MODE:
-            self.mask = mask
-        return y
-
-    def backward(self, dy):
-        if self.need_dx:
-            return dy * self.mask
-
-
-class Tanh(ActivationLayer):
-
-    def __init__(self, shape=(1,)):
-        super(Tanh, self).__init__(shape)
-
-    def forward(self, x):
-        return np.tanh(x)
-
-    def backward(self, dy):
-        if self.need_dx:
-            return 1 - np.tanh(dy) ** 2
-
-
-class Arctanh(ActivationLayer):
-
-    def __init__(self, shape=(1,)):
-        super(Arctanh, self).__init__(shape)
-
-    def forward(self, x):
-        return np.arctan(x)
-
-    def backward(self, dy):
-        if self.need_dx:
-            return 1 / (1 + dy ** 2)
-
-
-class Log(ActivationLayer):
-
-    def __init__(self, shape=(1,)):
-        super(Log, self).__init__(shape)
-
-    def forward(self, x):
-        return log(1 / (1 + np.exp(-x)))
-
-    def backward(self, dy):
-        if self.need_dx:
-            return 1 / (np.exp(dy) + 1)
-
-
-class Softmax(ActivationLayer):
-
-    def __init__(self, shape=(1,)):
-        super(Softmax, self).__init__(shape)
-        # The next attributes will be initialized later
-        self.y = None
-
-    def forward(self, x):
-        self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
-        self.y /= np.sum(self.y, axis=1, keepdims=True)
-        return self.y
-
-    def backward(self, dy):
-        if self.need_dx:
-            return self.y * (dy - (dy * self.y).sum(axis=1, keepdims=True))
-
+from .activation import Activation
+from .arctanh import Arctanh
+from .log import Log
+from .relu import Relu
+from .sigmoid import Sigmoid
+from .softmax import Softmax
+from .tanh import Tanh
+from ..utils import get_derived_classes
 
 # Aliases
 sigmoid = Sigmoid
@@ -131,3 +42,6 @@ tanh = Tanh
 arctanh = Arctanh
 log = Log
 softmax = Softmax
+
+# Search this module for Activation derived classes and expose them
+get_derived_classes(Activation, locals())
