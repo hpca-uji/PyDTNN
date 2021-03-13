@@ -1,42 +1,25 @@
 """
-convGemm module for Python Distributed Training of Neural Networks (PyDTNN)
-
-PyDTNN is a light-weight library for distributed Deep Learning training and
-inference that offers an initial starting point for interaction with distributed
-training of (and inference with) deep neural networks. PyDTNN prioritizes
-simplicity over efficiency, providing an amiable user interface which enables a
-flat accessing curve. To perform the training and inference processes, PyDTNN
-exploits distributed inter-process parallelism (via MPI) for clusters and
-intra-process (via multi-threading) parallelism to leverage the presence of
-multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
-message-passing, BLAS calls via NumPy for multicore processors and
-PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
-
-Copyright 2020 Universitat Jaume I
-
-This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
-and/or modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation, either version 3 of the License, or (at your
-option) any later version.
-
-PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details. You
-should have received a copy of the GNU General Public License along with this
-program. If not, see <http://www.gnu.org/licenses/>.
+PyDTNN convGemm module
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalan, Adrian Castello"
-__contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Sergio Barrachina", "Mar Catalan", "Adrian Castello"]
-__date__ = "2020/11/14"
-
-__email__ = "dolzm@uji.es"
-__license__ = "GPLv3"
-__maintainer__ = "Manuel F. Dolz"
-__status__ = "Testing"
-__version__ = "1.1.0"
+#
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+#
+#  Copyright (C) 2021 Universitat Jaume I
+#
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
 import ctypes
 import platform
@@ -45,11 +28,12 @@ from contextlib import suppress
 
 import numpy as np
 
-from tracer import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
-    PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, \
-    PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, PYDTNN_OPS_CONVGEMM_TRANS_BIASES
-from NN_transpose_cython import transpose_1230_ji_cython, transpose_0231_kji_cython
-from util import load_library
+from .cython_modules import transpose_1230_ji_cython, transpose_0231_kji_cython
+from .tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
+    PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, \
+    PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, \
+    PYDTNN_OPS_CONVGEMM_TRANS_BIASES
+from .utils import load_library
 
 
 class ConvGemmCache(dict):
@@ -106,9 +90,9 @@ class ConvGemm:
     Tests
     -----
     To perform the tests, run the following command from the current directory:
-        python -m unittest unittests.TestConvGemm
+        python -m unittest tests.ConvGemmTestCase
 
-    (see unittests/test_NN_conv_gemm.py for more instructions on testing)
+    (see tests/conv_gemm.py for more instructions on testing)
     """
 
     lib_cg = None  # will link to the libconvGemm.so library
@@ -268,11 +252,11 @@ class ConvGemm:
         else:
             with suppress(AttributeError):
                 if not trans:
-                    self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                    self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                               self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                               PYDTNN_OPS_CONVGEMM_X_PAD)
                 else:
-                    self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                    self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                               self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                               PYDTNN_OPS_CONVGEMM_TRANS_X_PAD)
             # Hand made alternative to:
@@ -288,7 +272,7 @@ class ConvGemm:
             # pad_cython(x, x_padded)
             vpadding = hpadding = 0
             with suppress(AttributeError):
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # ----------------------------------------------------------
         # 2) Get matrices dimensions (once x matrix has been padded)
@@ -321,7 +305,7 @@ class ConvGemm:
             kh, ho = ho, kh
             kw, wo = wo, kw
             b, c = c, b
-            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+            self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                       self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                       PYDTNN_OPS_CONVGEMM_TRANS_BIASES)
         if biases is None:
@@ -347,7 +331,7 @@ class ConvGemm:
                 "Biases matrix should be ({}, {}), instead it is {}".format(kn, b * ho * wo, biases.shape)
         if trans:
             with suppress(AttributeError):
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # ---------------------------------------------------
         # 4) Check that dtype is the same on all the matrices
@@ -362,7 +346,7 @@ class ConvGemm:
         # 5) Transpose_1230 weights
         # -------------------------
         if trans:
-            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+            self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                       self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                       PYDTNN_OPS_CONVGEMM_TRANS_TR1230)
         # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
@@ -390,7 +374,7 @@ class ConvGemm:
         transpose_1230_ji_cython(weights, weights_cg)
         if trans:
             with suppress(AttributeError):
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # -------------------
         # 6) Flatten x_padded
@@ -428,11 +412,11 @@ class ConvGemm:
             b, c = c, b
         with suppress(AttributeError):
             if not trans:
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                           self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                           PYDTNN_OPS_CONVGEMM_CG)
             else:
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                           self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                           PYDTNN_OPS_CONVGEMM_TRANS_CG)
         self.x_conv_gemm(ctypes.c_char(b'Y' if trans else b'N'),
@@ -445,7 +429,7 @@ class ConvGemm:
                          ctypes.c_void_p(biases_cg.ctypes.data),
                          self.ac_pack, self.bc_pack)
         with suppress(AttributeError):
-            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if trans:
             # Swap dimensions to regular usage
@@ -539,12 +523,12 @@ class ConvGemm:
         #        1  3  2  0  ->  0231
         dy_cg = self.dy_cg_cache[(b, ho, wo, kn)]
         with suppress(AttributeError):
-            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+            self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                       self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                       PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY)
         transpose_0231_kji_cython(dy, dy_cg)  # Faster than the ijk version
         with suppress(AttributeError):
-            self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # void sconvGemm_back(unsigned int kh, unsigned int kw, unsigned int c, unsigned int kn,
         # 		              float alpha, float * A,
@@ -586,12 +570,12 @@ class ConvGemm:
                            self.ac_pack, self.bc_pack, self.cc_pack)
         if vpadding or hpadding:
             with suppress(AttributeError):
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT,
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                           self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                           PYDTNN_OPS_BACKWARD_DCG_SHRINK)
             dx[...] = dx_padded[:, :, vpadding:vpadding + h, hpadding:hpadding + w]
             with suppress(AttributeError):
-                self.get_parent_layer().tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         else:
             dx = dx_padded
         return dx
@@ -620,7 +604,7 @@ def __free__(pack):
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
-    from NN_im2col_cython import im2col_cython
+    from cython_modules import im2col_cython
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 64  # Batch size
     c = 3  # Channels per layer
