@@ -1,7 +1,3 @@
-"""
-LRScheduler base class
-"""
-
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
@@ -21,8 +17,13 @@ LRScheduler base class
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from abc import ABC
 
-class LRScheduler:
+
+class LRScheduler(ABC):
+    """
+    LRScheduler base class
+    """
 
     def __init__(self):
         pass
