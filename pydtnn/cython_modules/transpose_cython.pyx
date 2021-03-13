@@ -1,42 +1,21 @@
-""" Python Distributed Training of Neural Networks - PyDTNN
-
-PyDTNN is a light-weight library for distributed Deep Learning training and 
-inference that offers an initial starting point for interaction with 
-distributed training of (and inference with) deep neural networks. PyDTNN 
-priorizes simplicity over efficiency, providing an amiable user interface 
-which enables a flat accessing curve. To perform the training and inference 
-processes, PyDTNN exploits distributed inter-process parallelism (via MPI) 
-for clusters and intra-process (via multi-threading) parallelism to leverage 
-the presence of multicore processors and GPUs at node level. For that, PyDTNN 
-uses MPI4Py for message-passing, BLAS calls via NumPy for multicore processors
-and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
-
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU General Public License as published by the Free Software
-Foundation, either version 3 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-You should have received a copy of the GNU General Public License along with
-this program. If not, see <http://www.gnu.org/licenses/>.
-
-"""
-
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina Mir, " \
-             "Mar Catalan, Adrian Castello"
-__contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz", "Enrique S. Quintana", "Sergio Barrachina Mir",
-               "Mar Catalan", "Adrian Castello"]
-__date__ = "2021/01/14"
-
-__email__ = "barrachi@uji.es"
-__license__ = "GPLv3"
-__maintainer__ = "Sergio Barrachina Mir"
-__status__ = "Production"
-__version__ = "1.1.0"
+#
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+#
+#  Copyright (C) 2021 Universitat Jaume I
+#
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
 import numpy as np
 cimport numpy as np
@@ -54,7 +33,7 @@ def transpose_0231_kji_cython(original, transposed):
     if original.dtype == np.float32:
         transpose_021_kji_cython_float32(orig3d, trans3d)
     else:
-        raise ValueError("Type '{}' not supported for transpose_0231_ij_cython".format(original.dtype))
+        raise TypeError("Type '{}' is not supported by transpose_0231_ij_cython".format(original.dtype))
 
 def transpose_0231_ijk_cython(original, transposed):
     """
@@ -67,7 +46,7 @@ def transpose_0231_ijk_cython(original, transposed):
     if original.dtype == np.float32:
         transpose_021_ijk_cython_float32(orig3d, trans3d)
     else:
-        raise ValueError("Type '{}' not supported for transpose_0231_ij_cython".format(original.dtype))
+        raise TypeError("Type '{}' is not supported by transpose_0231_ij_cython".format(original.dtype))
 
 def transpose_1230_ji_cython(original, transposed):
     """
@@ -79,7 +58,7 @@ def transpose_1230_ji_cython(original, transposed):
     if original.dtype == np.float32:
         transpose_2d_ji_cython_float32(orig2d, trans2d)
     else:
-        raise ValueError("Type '{}' not supported for transpose_1230_ij_cython".format(original.dtype))
+        raise TypeError("Type '{}' is not supported by transpose_1230_ij_cython".format(original.dtype))
 
 def transpose_1230_ij_cython(original, transposed):
     """
@@ -91,21 +70,21 @@ def transpose_1230_ij_cython(original, transposed):
     if original.dtype == np.float32:
         transpose_2d_ij_cython_float32(orig2d, trans2d)
     else:
-        raise ValueError("Type '{}' not supported for transpose_1230_ij_cython".format(original.dtype))
+        raise TypeError("Type '{}' is not supported by transpose_1230_ij_cython".format(original.dtype))
 
 def transpose_2d_f2c_ji_cython(original, transposed):
     """Transpose a 2D matrix from column order (Fortran) to row order (C). Read for each column (j) all its rows (i)."""
     if original.dtype == np.float32:
         transpose_2d_f2c_ji_cython_float32(original, transposed)
     else:
-        raise ValueError("Type '{}' not supported for transpose_2d_f2c_ji_cython".format(original.dtype))
+        raise TypeError("Type '{}' is not supported by transpose_2d_f2c_ji_cython".format(original.dtype))
 
 def transpose_2d_f2c_ij_cython(original, transposed):
     """Transpose a 2D matrix from column order (Fortran) to row order (C). Read for each row (i) all its columns (j)."""
     if original.dtype == np.float32:
         transpose_2d_f2c_ij_cython_float32(original, transposed)
     else:
-        raise ValueError("Type '{}' not supported for transpose_2d_f2c_ji_cython".format(original.dtype))
+        raise TypeError("Type '{}' is not supported by transpose_2d_f2c_ji_cython".format(original.dtype))
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
