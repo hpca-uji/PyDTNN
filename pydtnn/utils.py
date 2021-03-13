@@ -1,42 +1,25 @@
 """
-Utils definitions for Python Distributed Training of Neural Networks (PyDTNN)
-
-PyDTNN is a light-weight library for distributed Deep Learning training and
-inference that offers an initial starting point for interaction with distributed
-training of (and inference with) deep neural networks. PyDTNN prioritizes
-simplicity over efficiency, providing an amiable user interface which enables a
-flat accessing curve. To perform the training and inference processes, PyDTNN
-exploits distributed inter-process parallelism (via MPI) for clusters and
-intra-process (via multi-threading) parallelism to leverage the presence of
-multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
-message-passing, BLAS calls via NumPy for multicore processors and
-PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
-
-Copyright 2021 Universitat Jaume I
-
-This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
-and/or modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation, either version 3 of the License, or (at your
-option) any later version.
-
-PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details. You
-should have received a copy of the GNU General Public License along with this
-program. If not, see <http://www.gnu.org/licenses/>.
+PyDTNN Utilities
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalán, Adrián Castelló"
-__contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2021, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Sergio Barrachina", "Mar Catalán", "Adrián Castelló"]
-__date__ = "2020/03/22"
-
-__email__ = "dolzm@uji.es"
-__license__ = "GPLv3"
-__maintainer__ = "Manuel F. Dolz"
-__status__ = "Production"
-__version__ = "1.1.0"
+# 
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+# 
+#  Copyright (C) 2021 Universitat Jaume I
+# 
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+# 
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+# 
+#  You should have received a copy of the GNU General Public License along
+#  with this program.  If not, see <https://www.gnu.org/licenses/>.
+# 
 
 import ctypes
 import inspect
@@ -49,10 +32,6 @@ from importlib import import_module
 
 import numpy as np
 
-# import NN_model
-# import scipy.linalg.blas as slb
-# import scipy.stats as stats
-# from scipy.signal import convolve2d
 
 try:
     # import pycuda.autoinit
@@ -60,10 +39,12 @@ try:
     import pycuda.driver as drv
     import skcuda.linalg as culinalg
     import skcuda.misc as cumisc
+    # noinspection PyUnresolvedReferences
     from skcuda import cublas
+    # noinspection PyUnresolvedReferences
     from pycuda.compiler import SourceModule
     import libcudnn.libcudnn as cudnn
-except ModuleNotFoundError:
+except (ImportError, ModuleNotFoundError):
     pass
 
 
@@ -191,40 +172,40 @@ def matmul_blis(a, b, c=None):
     return _matmul_xgemm("matmul_blis", blis(), a, b, c)
 
 
-def matmul_gpu(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
+def matmul_gpu(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
     try:
         gemm = {np.float32: cublas.cublasSgemm,
                 np.float64: cublas.cublasDgemm}[dtype]
     except KeyError:
         print("I cannot handle %s type!\n" % dtype.__name__)
     else:
-        gemm(handle, transA, transB, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
+        gemm(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
 
 
-def matvec_gpu(handle, transA, m, n, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
+def matvec_gpu(handle, trans_a, m, n, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
     try:
         gemv = {np.float32: cublas.cublasSgemv,
                 np.float64: cublas.cublasDgemv}[dtype]
     except KeyError:
         print("I cannot handle %s type!\n" % dtype.__name__)
     else:
-        gemv(handle, transA, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
+        gemv(handle, trans_a, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
 
 
 class TensorGPU:
-    def __init__(self, gpuarr, tensor_format, cudnn_dtype, tensor_type="tensor", desc=None, gpudirect=False,
+    def __init__(self, gpu_arr, tensor_format, cudnn_dtype, tensor_type="tensor", desc=None, gpudirect=False,
                  cublas=False):
-        if len(gpuarr.shape) == 2:
-            self.shape = (*gpuarr.shape, 1, 1)
+        if len(gpu_arr.shape) == 2:
+            self.shape = (*gpu_arr.shape, 1, 1)
         else:
-            self.shape = gpuarr.shape
-        self.size = gpuarr.size
-        self.ary = gpuarr
+            self.shape = gpu_arr.shape
+        self.size = gpu_arr.size
+        self.ary = gpu_arr
         if gpudirect:
             self.ptr_intp = np.intp(self.ary.base.get_device_pointer())
             self.ptr = ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
         else:
-            self.ptr = ctypes.c_void_p(int(gpuarr.gpudata))
+            self.ptr = ctypes.c_void_p(int(gpu_arr.gpudata))
         if desc:
             self.desc = desc
         if tensor_type == "tensor":
@@ -235,6 +216,7 @@ class TensorGPU:
             self.desc = cudnn.cudnnCreateFilterDescriptor()
             cudnn.cudnnSetFilter4dDescriptor(self.desc, cudnn_dtype,
                                              tensor_format, *self.shape)
+        self.cublas = cublas
 
 
 # Loss functions for classification CNNs
@@ -269,22 +251,22 @@ class CategoricalCrossEntropy(Loss):
 
     def __init_gpu_kernel__(self):
         module = SourceModule("""
-        __global__ void categorical_cross_entropy(T *Y_targ, T *Y_pred, T *res,
+        __global__ void categorical_cross_entropy(T *y_targ, T *y_pred, T *res,
                                                   T *dx, int b, int bs, int n, float eps)
         {
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
             if (idx < b){
                 int i = 0, max = 0;
-                T max_value = Y_targ[idx * n];
-                dx[idx * n] = Y_targ[idx * n];
+                T max_value = y_targ[idx * n];
+                dx[idx * n] = y_targ[idx * n];
                 for ( i = 1; i < n; i++ ) {
-                    dx[idx * n + i] = Y_targ[idx * n + i];
-                    if ( Y_targ[idx * n + i] > max_value ){
+                    dx[idx * n + i] = y_targ[idx * n + i];
+                    if ( y_targ[idx * n + i] > max_value ){
                         max = i;
-                        max_value = Y_targ[idx * n + i];
+                        max_value = y_targ[idx * n + i];
                     }
                 }
-                T pred = Y_pred[idx * n + max];
+                T pred = y_pred[idx * n + max];
                 if ( pred < eps )          pred = eps;
                 else if ( pred > (1-eps) ) pred = (1-eps);
                 res[idx] = logf(pred);
@@ -300,11 +282,11 @@ class CategoricalCrossEntropy(Loss):
         self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
         self.stream = self.model.stream
 
-    def __call__(self, Y_pred, Y_targ, global_batch_size):
+    def __call__(self, y_pred, y_targ, global_batch_size):
         if self.enable_gpu:
             threads = min(self.b, 1024)
             blocks = max(self.b, 1024) // threads + 1
-            self.categorical_cross_entropy_kern(Y_targ.ary, Y_pred.ary, self.loss, self.dx.ary,
+            self.categorical_cross_entropy_kern(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
                                                 np.int32(self.b), np.int32(global_batch_size),
                                                 np.int32(self.n), np.float32(self.eps),
                                                 grid=(blocks, 1, 1), block=(threads, 1, 1),
@@ -312,12 +294,12 @@ class CategoricalCrossEntropy(Loss):
             loss = -gpuarray.sum(self.loss).get() / self.b
             return loss, self.dx
         else:
-            Y_pred = np.clip(Y_pred, a_min=self.eps, a_max=(1 - self.eps))
-            b_range = np.arange(Y_pred.shape[0])
-            loss = -np.sum(np.log(Y_pred[b_range, np.argmax(Y_targ, axis=1)])) / Y_pred.shape[0]
-            dx = np.copy(Y_targ)
+            y_pred = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
+            b_range = np.arange(y_pred.shape[0])
+            loss = -np.sum(np.log(y_pred[b_range, np.argmax(y_targ, axis=1)])) / y_pred.shape[0]
+            dx = np.copy(y_targ)
             dx_amax = np.argmax(dx, axis=1)
-            dx[b_range, dx_amax] /= (-Y_pred[b_range, dx_amax] * global_batch_size)
+            dx[b_range, dx_amax] /= (-y_pred[b_range, dx_amax] * global_batch_size)
             return loss, dx
 
 
@@ -325,7 +307,7 @@ class BinaryCrossEntropy(Loss):
 
     def __init_gpu_kernel__(self):
         module = SourceModule("""
-        __global__ void binary_cross_entropy(T *Y_targ, T *Y_pred, T *res,
+        __global__ void binary_cross_entropy(T *y_targ, T *y_pred, T *res,
                                              T *dx, int b, int bs, int n, T eps)
         {
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -334,13 +316,13 @@ class BinaryCrossEntropy(Loss):
                 T pred;
                 res[idx] = 0;
                 for ( i = 0; i < n; i++ ) {
-                    res[idx]+= logf(fmaxf((1 - Y_targ[idx * n + i] ) -
-                                               Y_pred[idx * n + i], eps));
-                    pred = Y_pred[idx * n + max];
+                    res[idx]+= logf(fmaxf((1 - y_targ[idx * n + i] ) -
+                                               y_pred[idx * n + i], eps));
+                    pred = y_pred[idx * n + max];
                     if ( pred < eps )          pred = eps;
                     else if ( pred > (1-eps) ) pred = (1-eps);
-                    dx[idx * n + i] = (-(Y_targ[idx * n + i]  / pred) +
-                                   ((1 - Y_targ[idx * n + i]) / pred) ) / bs;
+                    dx[idx * n + i] = (-(y_targ[idx * n + i]  / pred) +
+                                   ((1 - y_targ[idx * n + i]) / pred) ) / bs;
                 }
             }
             return;
@@ -353,22 +335,22 @@ class BinaryCrossEntropy(Loss):
         self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
         self.stream = self.model.stream
 
-    def __call__(self, Y_pred, Y_targ, global_batch_size):
-        assert len(Y_targ.shape) == 2
+    def __call__(self, y_pred, y_targ, global_batch_size):
+        assert len(y_targ.shape) == 2
         if self.enable_gpu:
             threads = min(self.b, 1024)
             blocks = max(self.b, 1024) // threads + 1
-            self.binary_cross_entropy_kern(Y_targ, Y_pred, self.loss, self.dx.ary,
+            self.binary_cross_entropy_kern(y_targ, y_pred, self.loss, self.dx.ary,
                                            self.b, global_batch_size, self.n, self.eps,
                                            grid=(blocks, 1, 1), block=(threads, 1, 1),
                                            stream=self.stream)
             loss = -gpuarray.sum(self.loss) / self.b
             return loss, self.dx
         else:
-            b = Y_targ.shape[0]
-            loss = -np.sum(np.log(np.maximum((1 - Y_targ) - Y_pred, self.eps))) / b
-            Y_pred = np.clip(Y_pred, a_min=self.eps, a_max=(1 - self.eps))
-            dx = (-(Y_targ / Y_pred) + ((1 - Y_targ) / (1 - Y_pred))) / global_batch_size
+            b = y_targ.shape[0]
+            loss = -np.sum(np.log(np.maximum((1 - y_targ) - y_pred, self.eps))) / b
+            y_pred = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
+            dx = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / global_batch_size
             return loss, dx
 
 
@@ -392,19 +374,19 @@ class CategoricalAccuracy(Metric):
 
     def __init_gpu_kernel__(self):
         module = SourceModule("""
-        __global__ void categorical_accuracy(T *Y_targ, T *Y_pred, T *res, int b, int n)
+        __global__ void categorical_accuracy(T *y_targ, T *y_pred, T *res, int b, int n)
         {
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
             if (idx < b){
                 int i = 0, max = 0;
-                T max_value = Y_pred[idx * n];
+                T max_value = y_pred[idx * n];
                 for ( i = 1; i < n; i++ ) {
-                    if ( Y_pred[idx * n + i] > max_value ){
+                    if ( y_pred[idx * n + i] > max_value ){
                         max = i;
-                        max_value = Y_pred[idx * n + i];
+                        max_value = y_pred[idx * n + i];
                     }
                 }
-                res[idx] = Y_targ[idx * n + max];
+                res[idx] = y_targ[idx * n + max];
             }
             return;
         }
@@ -413,53 +395,52 @@ class CategoricalAccuracy(Metric):
         self.cost = gpuarray.empty((self.b,), self.dtype)
         self.stream = self.model.stream
 
-    def __call__(self, Y_pred, Y_targ):
+    def __call__(self, y_pred, y_targ):
         if self.enable_gpu:
             threads = min(self.b, 1024)
             blocks = max(self.b, 1024) // threads + 1
-            self.categorical_accuracy_kern(Y_targ, Y_pred, self.cost,
+            self.categorical_accuracy_kern(y_targ, y_pred, self.cost,
                                            np.int32(self.b), np.int32(self.n),
                                            grid=(blocks, 1, 1), block=(threads, 1, 1),
                                            stream=self.stream)
             return gpuarray.sum(self.cost).get() * 100 / self.b
         else:
-            b = Y_targ.shape[0]
-            return np.sum(Y_targ[np.arange(b), np.argmax(Y_pred, axis=1)]) * 100 / b
+            b = y_targ.shape[0]
+            return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
 
 
 class CategoricalHinge(Metric):
 
-    def __call__(self, Y_pred, Y_targ):
-        pos = np.sum(Y_targ * Y_pred, axis=-1)
-        neg = np.max((1.0 - Y_targ) * Y_pred, axis=-1)
+    def __call__(self, y_pred, y_targ):
+        pos = np.sum(y_targ * y_pred, axis=-1)
+        neg = np.max((1.0 - y_targ) * y_pred, axis=-1)
         return np.mean(np.maximum(0.0, neg - pos + 1), axis=-1)
 
 
 class CategoricalMSE(Metric):
 
-    def __call__(self, Y_pred, Y_targ):
-        b = Y_targ.shape[0]
-        return np.square(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]).mean()
+    def __call__(self, y_pred, y_targ):
+        b = y_targ.shape[0]
+        return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
 
 
 class CategoricalMAE(Metric):
 
-    def __call__(self, Y_pred, Y_targ):
-        b = Y_targ.shape[0]
-        targ = np.argmax(Y_targ, axis=1)
-        return np.sum(np.absolute(1 - Y_pred[np.arange(b), np.argmax(Y_targ, axis=1)]))
+    def __call__(self, y_pred, y_targ):
+        b = y_targ.shape[0]
+        return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
 
 
 class RegressionMSE(Metric):
 
-    def __call__(self, Y_pred, Y_targ):
-        return np.square(Y_targ - Y_pred).mean()
+    def __call__(self, y_pred, y_targ):
+        return np.square(y_targ - y_pred).mean()
 
 
 class RegressionMAE(Metric):
 
-    def __call__(self, Y_pred, Y_targ):
-        return np.sum(np.absolute(Y_targ - Y_pred))
+    def __call__(self, y_pred, y_targ):
+        return np.sum(np.absolute(y_targ - y_pred))
 
 
 # Compatibility aliases
