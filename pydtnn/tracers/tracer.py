@@ -1,7 +1,3 @@
-"""
-Tracer base class
-"""
-
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
@@ -29,7 +25,9 @@ from .events import *
 
 
 class EventType:
-    """EventType container"""
+    """
+    EventType container
+    """
 
     def __init__(self, name):
         self.name = name
@@ -55,7 +53,9 @@ class EventType:
 
 
 class Tracer(ABC):
-    """Base class for tracers"""
+    """
+    Tracer base class
+    """
 
     def __init__(self, tracing):
         self.event_types = {
