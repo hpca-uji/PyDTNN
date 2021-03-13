@@ -1,7 +1,3 @@
-"""
-Optimizer abstract base class
-"""
-
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
@@ -25,6 +21,9 @@ from abc import ABC, abstractmethod
 
 
 class Optimizer(ABC):
+    """
+    Optimizer abstract base class
+    """
 
     @abstractmethod
     def update(self, layer):
