@@ -17,24 +17,28 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
+import ctypes
+
+try:
+    import pycuda.driver as drv
+except (ImportError, ModuleNotFoundError):
+    pass
+
+# The below code will allocate the maximum used memory, which will be shared
+# among all layers. This code saves having a memory allocation per layer.
+ws_size = 1
+ws = drv.mem_alloc(ws_size) if ws_size > 0 else 0
+ws_ptr = ctypes.c_void_p(int(ws))
 
 
-class LayerGPU(ABC):
-
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.weights_cpu = None
-        self.biases_cpu = None
-        self.x = None
-        self.dx = None
-        self.dw = None
-        self.db = None
-        self.dw_cpu = None
-        self.db_cpu = None
-        self.one_vec_cpu = None
-        self.one_vec_gpu = None
-
-    def initialize(self, prev_shape, need_dx, x):
-        self.x = x
+def checkConvolutionMemory(size):
+    global ws_size
+    global ws
+    global ws_ptr
+    # if a layer requires more memory than the allocated
+    # we re-allocated that size
+    if size.value > ws_size:
+        ws_size = size.value
+        ws.free()
+        ws = drv.mem_alloc(ws_size) if ws_size > 0 else 0
+        ws_ptr = ctypes.c_void_p(int(ws))

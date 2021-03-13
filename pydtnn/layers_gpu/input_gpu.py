@@ -14,27 +14,23 @@
 #  License for more details.
 #
 #  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
+#  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
+from .layer_gpu import LayerGPU
+from .. import layers
+from ..utils import TensorGPU
+
+try:
+    # noinspection PyUnresolvedReferences
+    import pycuda.gpuarray as gpuarray
+except (ImportError, ModuleNotFoundError):
+    pass
 
 
-class LayerGPU(ABC):
-
-    def __init__(self):
-        self.x = None
-        self.y = None
-        self.weights_cpu = None
-        self.biases_cpu = None
-        self.x = None
-        self.dx = None
-        self.dw = None
-        self.db = None
-        self.dw_cpu = None
-        self.db_cpu = None
-        self.one_vec_cpu = None
-        self.one_vec_gpu = None
+class InputGPU(LayerGPU, layers.Input):
 
     def initialize(self, prev_shape, need_dx, x):
-        self.x = x
+        super().initialize(prev_shape, need_dx, x)
+        y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
