@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Given an output file from benchmarks_CNN.py with the profile option
+Given an output file from pydtnn_benchmark.py with the profile option
 activated, prints a csv file with the profile information.
 """
 
@@ -45,7 +45,7 @@ def my_help():
     """Print the the command line usage help."""
     print("""Usage: extract_profile_from_output.py [OPTION]... FILE
 
-Given an output file from benchmarks_CNN.py with the profile option
+Given an output file from pydtnn_benchmark.py with the profile option
 activated, prints a csv file with the profile information.
 
 Options:

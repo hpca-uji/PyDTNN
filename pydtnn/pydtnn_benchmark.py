@@ -1,63 +1,41 @@
-#!/usr/bin/python
-from __future__ import print_function
+#!/usr/bin/env python
+
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+#
+#  Copyright (C) 2021 Universitat Jaume I
+#
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
 Benchmark module for Python Distributed Training of Neural Networks (PyDTNN)
-
-PyDTNN is a light-weight library for distributed Deep Learning training and
-inference that offers an initial starting point for interaction with distributed
-training of (and inference with) deep neural networks. PyDTNN prioritizes
-simplicity over efficiency, providing an amiable user interface which enables a
-flat accessing curve. To perform the training and inference processes, PyDTNN
-exploits distributed inter-process parallelism (via MPI) for clusters and
-intra-process (via multi-threading) parallelism to leverage the presence of
-multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
-message-passing, BLAS calls via NumPy for multicore processors and
-PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
-
-Copyright 2020 Universitat Jaume I
-
-This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
-and/or modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation, either version 3 of the License, or (at your
-option) any later version.
-
-PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details. You
-should have received a copy of the GNU General Public License along with this
-program. If not, see <http://www.gnu.org/licenses/>.
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, " \
-             "Mar Catalán, Adrian Castelló"
-__contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2020, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz", "Enrique S. Quintana", "Sergio Barrachina",
-               "Mar Catalán", "Adrián Castello"]
-__date__ = "2020/03/22"
-
-__email__ = "dolzm@uji.es"
-__license__ = "GPLv3"
-__maintainer__ = "Manuel F. Dolz"
-__status__ = "Production"
-__version__ = "1.1.0"
+# from __future__ import print_function
 
 import argparse
 import os
 import random
 import subprocess
-import sys
 
-import numpy as np
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from .datasets import *
+from .lr_schedulers import *
+from .models import *
 
 Extrae_tracing = False
-if "EXTRAE_ON" in os.environ and os.environ["EXTRAE_ON"] == "1":
+if os.environ.get("EXTRAE_ON", None) == "1":
     TracingLibrary = "libptmpitrace.so"
     import pyextrae.common.extrae as pyextrae
-
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
@@ -71,6 +49,7 @@ def parse_options():
     parser.add_argument('--model', type=str, default="simplecnn")
     parser.add_argument('--dataset', type=str, default="mnist")
     parser.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
+    # @todo: get correct path or mnist whether installed with pip or not
     parser.add_argument('--dataset_train_path', type=str, default="../datasets/mnist")
     parser.add_argument('--dataset_test_path', type=str, default="../datasets/mnist")
     parser.add_argument('--test_as_validation', default=False, type=bool_lambda)
@@ -155,34 +134,40 @@ def show_options(params):
 
 
 def get_optimizer(params):
-    opt_mod = importlib.import_module("NN_optimizer%s" % ("", "_gpu")[params.enable_gpu])
-    opt_ref = getattr(opt_mod, "%s%s" % (params.optimizer, ("", "_gpu")[params.enable_gpu]))
+    if not params.enable_gpu:
+        optimizers_module = importlib.import_module("optimizers")
+        optimizer = getattr(optimizers_module, params.optimizer)
+    else:
+        optimizers_module = importlib.import_module("optimizers_gpu")
+        optimizer = getattr(optimizers_module, f"{params.optimizer}_gpu")
     if params.optimizer == "rmsprop":
-        opt = opt_ref(learning_rate=params.learning_rate,
-                      rho=params.rho,
-                      epsilon=params.epsilon,
-                      decay=params.decay,
-                      dtype=params.dtype)
+        opt = optimizer(learning_rate=params.learning_rate,
+                        rho=params.rho,
+                        epsilon=params.epsilon,
+                        decay=params.decay,
+                        dtype=params.dtype)
     elif params.optimizer == "adam":
-        opt = opt_ref(learning_rate=params.learning_rate,
-                      beta1=params.beta1,
-                      beta2=params.beta2,
-                      epsilon=params.epsilon,
-                      decay=params.decay,
-                      dtype=params.dtype)
+        opt = optimizer(learning_rate=params.learning_rate,
+                        beta1=params.beta1,
+                        beta2=params.beta2,
+                        epsilon=params.epsilon,
+                        decay=params.decay,
+                        dtype=params.dtype)
     elif params.optimizer == "nadam":
-        opt = opt_ref(learning_rate=params.learning_rate,
-                      beta1=params.beta1,
-                      beta2=params.beta2,
-                      epsilon=params.epsilon,
-                      decay=params.decay,
-                      dtype=params.dtype)
-    else:  # "sgd":
-        opt = opt_ref(learning_rate=params.learning_rate,
-                      momentum=params.momentum,
-                      nesterov=params.nesterov,
-                      decay=params.decay,
-                      dtype=params.dtype)
+        opt = optimizer(learning_rate=params.learning_rate,
+                        beta1=params.beta1,
+                        beta2=params.beta2,
+                        epsilon=params.epsilon,
+                        decay=params.decay,
+                        dtype=params.dtype)
+    elif params.optimizer == "sgd":
+        opt = optimizer(learning_rate=params.learning_rate,
+                        momentum=params.momentum,
+                        nesterov=params.nesterov,
+                        decay=params.decay,
+                        dtype=params.dtype)
+    else:
+        raise ValueError(f"Optimizer '{params.optimizer}' not recognized.")
     return opt
 
 
@@ -212,13 +197,12 @@ def get_lr_schedulers(params):
             lrs = ModelCheckpoint(params.model_checkpoint_metric,
                                   params.model_checkpoint_save_freq)
         else:
-            lrs = None
-        if lrs:
-            lr_schedulers.append(lrs)
+            raise ValueError(f"LRScheduler '{params.optimizer}' not recognized.")
+        lr_schedulers.append(lrs)
     return lr_schedulers
 
 
-if __name__ == "__main__":
+def main():
     params = parse_options()
     params.dtype = getattr(np, params.dtype)
     _MPI = None
@@ -231,11 +215,12 @@ if __name__ == "__main__":
         params.global_batch_size = params.batch_size * params.mpi_processes
         if params.optimizer == "sgd" and params.learning_rate_scaling:
             params.learning_rate *= params.mpi_processes
-
     elif params.parallel == "sequential":
         params.comm = None
         params.mpi_processes = 1
         rank = 0
+    else:
+        raise ValueError(f"Parallel option '{params.parallel}' not recognized.")
 
     params.threads_per_process = os.environ.get("OMP_NUM_THREADS", 1)
 
@@ -249,19 +234,12 @@ if __name__ == "__main__":
     if params.enable_gpu and params.parallel == "data":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
 
-    from model import *
-    from layer import *
-    from optimizer import *
-    from lr_scheduler import *
-    from models import *
-    from datasets import *
-
     # A couple of details...
     random.seed(0)
     np.random.seed(0)
-    # np.set_printoptions(precision=15)
 
-    model = get_model(params)
+    model = Model(**vars(params))
+
     if rank == 0:
         print('**** %s model...' % params.model)
         model.show()
@@ -315,7 +293,6 @@ if __name__ == "__main__":
             import cProfile
             import pstats
             from io import StringIO
-
             pr = cProfile.Profile()
             pr.enable()
 
@@ -386,5 +363,9 @@ if __name__ == "__main__":
 
     if params.comm is not None and _MPI is not None:
         params.comm.Barrier()
-        # The next line is required if running under SLURM (it seems that it is not automatically called at exit)
+        # The next line is required if running under SLURM (it seems it is not automatically called at exit)
         _MPI.Finalize()
+
+
+if __name__ == "__main__":
+    main()

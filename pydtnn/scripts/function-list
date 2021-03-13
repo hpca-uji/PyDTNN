@@ -1,6 +1,6 @@
 add
 backward
-compute_fans
+_compute_fans
 __compute_loss_funcs
 convolve
 convolve_scipy
@@ -8,7 +8,7 @@ evaluate
 __evaluate_batch
 evaluate_dataset
 forward
-generate_distribution
+_generate_distribution
 get_indices
 matmul
 matmul_gpu

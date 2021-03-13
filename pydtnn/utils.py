@@ -39,10 +39,13 @@ __status__ = "Production"
 __version__ = "1.1.0"
 
 import ctypes
+import inspect
 import math
 import os
 from abc import ABC
 from ctypes.util import find_library
+from glob import glob
+from importlib import import_module
 
 import numpy as np
 
@@ -481,6 +484,44 @@ def printf_trace(*args):
 def printf(*args):
     pass
     # print(*args)
+
+
+def get_derived_classes(base_class, module_locals):
+    """
+    Searches on the python files of a module for classes that are derived from
+    the given base_class and automatically exposes them modifying the provided
+    module_locals.
+
+    It should be called from the __init__.py file of a module as:
+
+        get_derived_classes(BaseClass, locals())
+
+    Parameters
+    ----------
+    base_class : class
+        The base class to be tested for.
+    module_locals: dict
+        The locals() dictionary of the caller module.
+    Returns
+    -------
+    Nothing. Modifies the provided module_locals.
+    """
+
+    file_name = inspect.stack()[1].filename
+    if file_name[-11:] != "__init__.py":
+        print("Warning: the 'get_derived_classes()' function should be called from an '__init__.py' file.")
+    dir_path = os.path.dirname(os.path.realpath(file_name))
+    for python_file in glob(os.path.join(dir_path, '*.py')):
+        directory, base_file_name = os.path.split(python_file)
+        module_name = os.path.split(directory)[-1]
+        if base_file_name == "__init__.py":
+            continue
+        module = import_module(f"pydtnn.{module_name}.{base_file_name[:-3]}")
+        for attribute_name in [a_n for a_n in dir(module) if a_n not in module_locals]:
+            attribute = getattr(module, attribute_name)
+            if inspect.isclass(attribute):
+                if issubclass(attribute, base_class):
+                    module_locals[attribute_name] = attribute
 
 
 # The next functions have been deprecated - use them with care!

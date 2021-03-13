@@ -18,15 +18,15 @@ from copy import deepcopy
 
 import numpy as np
 
-import util
+from .. import utils
 
 try:
-    from layer import Conv2D
-    from model import Model
-    from conv_gemm import ConvGemm
-    from NN_im2col_cython import im2col_cython
+    from .. layers import Conv2D
+    from .. model import Model
+    from .. conv_gemm import ConvGemm
+    from .. cython_modules.im2col_cython import im2col_cython
 except ModuleNotFoundError:
-    print("Please, execute as 'python -m unittest unittests.TestConv2DConvGemm'")
+    print("Please, execute as 'python -m unittest tests.TestConv2DConvGemm'")
 
 
 def verbose():
@@ -108,7 +108,7 @@ def get_conv2d_layers(d, deconv=False, trans=False):
         layer.dtype = np.float32
         layer.batch_size = model_i2c.params.batch_size  # batch_size is the same in both models
         layer.tracer = model_i2c.tracer  # tracer is the same on both models
-        layer.matmul = getattr(util, "matmul")
+        layer.matmul = getattr(utils, "matmul")
         layer.initialize(prev_shape=(d.c, d.h, d.w))
     # Set the same initial weights and biases to both layers
     conv2d_cg.weights = conv2d_i2c.weights.copy()
