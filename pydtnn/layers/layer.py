@@ -22,9 +22,8 @@ PyDTNN Layer base class
 #
 
 import importlib
-from abc import ABC
+from abc import ABC, abstractmethod
 
-from .. import activations
 from .. import model
 from ..performance_models import *
 from ..tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
@@ -33,16 +32,9 @@ from ..tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYD
 try:
     # noinspection PyUnresolvedReferences
     from mpi4py import MPI
-    # import pycuda.autoinit
-    import pycuda.gpuarray as gpuarray
-    import pycuda.driver as drv
-    import skcuda.linalg as culinalg
-    import skcuda.misc as cumisc
     # noinspection PyUnresolvedReferences
     import libnccl.libnccl as nccl
-except ModuleNotFoundError:
-    pass
-except ImportError:
+except (ImportError, ModuleNotFoundError, OSError):
     pass
 
 
@@ -53,7 +45,8 @@ class Layer(ABC):
         if not model.enable_cudnn:
             new_cls = cls
         else:
-            module_name = "activations" if cls in activations.__dict__.values() else "layers"
+            subclasses_names = [x.__name__ for x in cls.__subclasses__()]
+            module_name = "activations" if "Activation" in subclasses_names else "layers"
             module = importlib.import_module(f"{module_name}_gpu")
             new_cls = getattr(module, f"{cls.__name__}GPU")
         instance = super(Layer, new_cls).__new__(new_cls)
@@ -77,20 +70,24 @@ class Layer(ABC):
         self.prev_shape = None
         self.need_dx = True
         self.is_block_layer = False
-        self.x = None
         self.reqs_allred = {}
         self.stream_2 = None
-        self.db = None
-        self.dw = None
 
-    def initialize(self, prev_shape, need_dx=True, x=None):
+    def set_model(self, parent_model):
+        self.model = parent_model
+        self.id = next(self.model.layer_id)
+
+    def initialize(self, prev_shape, need_dx=True):
         self.prev_shape = prev_shape
         self.need_dx = need_dx
-        self.x = x
 
-    def set_model(self, parent_model, layer_id):
-        self.model = parent_model
-        self.id = layer_id
+    @abstractmethod
+    def forward(self, x):
+        pass
+
+    @abstractmethod
+    def backward(self, dy):
+        pass
 
     def show(self, attrs=""):
         if not attrs:
@@ -159,7 +156,7 @@ class Layer(ABC):
                     else:
                         self.model.stream.synchronize()
 
-                    dw_cpu = getattr(self, "%s_cpu" % dw_)
+                    dw_cpu = getattr(self, f"{dw_}_cpu")
                     req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
             else:  # Without GPUs, only MPI
