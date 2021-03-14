@@ -1,21 +1,42 @@
-import importlib, sys, numpy as np
+#
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+#
+#  Copyright (C) 2021 Universitat Jaume I
+#
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program. If not, see <https://www.gnu.org/licenses/>.
+#
 
-def get_dataset(params):
+import importlib
+import sys
+
+
+def get_dataset(model):
     try:
         dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet"}
-        dataset_mod = importlib.import_module("datasets.NN_dataset")
-        dataset_obj = getattr(dataset_mod, dataset_name[params.dataset])
-        dataset = dataset_obj(train_path         = params.dataset_train_path, 
-                              test_path          = params.dataset_test_path,
-                              model              = params.model,
-                              test_as_validation = params.test_as_validation,
-                              flip_images        = params.flip_images,
-                              flip_images_prob   = params.flip_images_prob,
-                              crop_images        = params.crop_images,
-                              crop_images_size   = params.crop_images_size,
-                              crop_images_prob   = params.crop_images_prob,
-                              dtype              = params.dtype,
-                              use_synthetic_data = params.use_synthetic_data)
+        dataset_mod = importlib.import_module("datasets.dataset")
+        dataset_obj = getattr(dataset_mod, dataset_name[model.dataset_name])
+        dataset = dataset_obj(train_path=model.dataset_train_path,
+                              test_path=model.dataset_test_path,
+                              model=model.model_name,
+                              test_as_validation=model.test_as_validation,
+                              flip_images=model.flip_images,
+                              flip_images_prob=model.flip_images_prob,
+                              crop_images=model.crop_images,
+                              crop_images_size=model.crop_images_size,
+                              crop_images_prob=model.crop_images_prob,
+                              dtype=model.dtype,
+                              use_synthetic_data=model.use_synthetic_data)
     except Exception as e:
         import traceback
         print(traceback.format_exc())
