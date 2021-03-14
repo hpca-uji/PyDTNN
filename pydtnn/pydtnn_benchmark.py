@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+"""
+PyDTNN Benchmark script
+"""
+
+#
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
 #  Copyright (C) 2021 Universitat Jaume I
@@ -15,115 +20,34 @@
 #  License for more details.
 #
 #  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-"""
-Benchmark module for Python Distributed Training of Neural Networks (PyDTNN)
-"""
+#  with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # from __future__ import print_function
 
-import argparse
+import cProfile
 import os
+import pstats
 import random
 import subprocess
+import sys
+import time
+from io import StringIO
 
-from .datasets import *
-from .lr_schedulers import *
-from .models import *
+import numpy as np
+
+from pydtnn.datasets import get_dataset
+from pydtnn.model import Model
+from pydtnn.optimizers import get_optimizer
+from pydtnn.lr_schedulers import get_lr_schedulers
+from pydtnn.parser import parser
 
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
     TracingLibrary = "libptmpitrace.so"
     import pyextrae.common.extrae as pyextrae
+
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
-
-
-def parse_options():
-    def bool_lambda(x):
-        return str(x).lower() in ['true', '1', 'yes']
-
-    parser = argparse.ArgumentParser()
-    # Model
-    parser.add_argument('--model', type=str, default="simplecnn")
-    parser.add_argument('--dataset', type=str, default="mnist")
-    parser.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
-    # @todo: get correct path or mnist whether installed with pip or not
-    parser.add_argument('--dataset_train_path', type=str, default="../datasets/mnist")
-    parser.add_argument('--dataset_test_path', type=str, default="../datasets/mnist")
-    parser.add_argument('--test_as_validation', default=False, type=bool_lambda)
-    parser.add_argument('--flip_images', default=False, type=bool_lambda)
-    parser.add_argument('--flip_images_prob', type=float, default=0.5)
-    parser.add_argument('--crop_images', default=False, type=bool_lambda)
-    parser.add_argument('--crop_images_size', type=int, default=16)
-    parser.add_argument('--crop_images_prob', type=float, default=0.5)
-    parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--global_batch_size', type=int, default=None)
-    parser.add_argument('--validation_split', type=float, default=0.0)
-    parser.add_argument('--steps_per_epoch', type=int, default=0)
-    parser.add_argument('--num_epochs', type=int, default=1)
-    parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
-    parser.add_argument('--evaluate', default=False, type=bool_lambda)
-    parser.add_argument('--weights_and_bias_filename', type=str, default=None)
-    parser.add_argument('--shared_storage', default=False, type=bool_lambda)
-    parser.add_argument('--history_file', type=str, default=None)
-    # Optimizer
-    parser.add_argument('--optimizer', type=str, default="sgd")
-    parser.add_argument('--learning_rate', type=float, default=1e-2)
-    parser.add_argument('--learning_rate_scaling', default=True, type=bool_lambda)
-    parser.add_argument('--momentum', type=float, default=0.9)
-    parser.add_argument('--decay', type=float, default=0.0)
-    parser.add_argument('--nesterov', default=False, type=bool_lambda)
-    parser.add_argument('--beta1', type=float, default=0.99)
-    parser.add_argument('--beta2', type=float, default=0.999)
-    parser.add_argument('--epsilon', type=float, default=1e-7)
-    parser.add_argument('--rho', type=float, default=0.9)
-    parser.add_argument('--loss_func', type=str, default="categorical_cross_entropy")
-    parser.add_argument('--metrics', type=str, default="categorical_accuracy")
-    # Learning rate schedulers
-    parser.add_argument('--lr_schedulers', type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
-    parser.add_argument('--warm_up_epochs', type=int, default=5)
-    parser.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
-    parser.add_argument('--early_stopping_patience', type=int, default=10)
-    parser.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy")
-    parser.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1)
-    parser.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5)
-    parser.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0)
-    parser.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1)
-    parser.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5)
-    parser.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0)
-    parser.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy")
-    parser.add_argument('--stop_at_loss_threshold', type=float, default=0)
-    parser.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy")
-    parser.add_argument('--model_checkpoint_save_freq', type=int, default=2)
-    # Parallelization + tracing
-    parser.add_argument('--mpi_processes', type=int, default=1, help=argparse.SUPPRESS)
-    parser.add_argument('--threads_per_process', type=int, default=1, help=argparse.SUPPRESS)
-    parser.add_argument('--parallel', type=str, default="sequential")
-    parser.add_argument('--non_blocking_mpi', type=bool_lambda, default=False)
-    parser.add_argument('--tracing', type=bool_lambda, default=False)
-    parser.add_argument('--tracer_output', type=str, default="")
-    parser.add_argument('--profile', type=bool_lambda, default=False)
-    parser.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
-    parser.add_argument('--enable_gpu', type=bool_lambda, default=False)
-    parser.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
-    parser.add_argument('--enable_nccl', type=bool_lambda, default=False)
-    parser.add_argument('--enable_fused_relus', type=bool_lambda, default=False)
-    # ConvGemm
-    parser.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
-    parser.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
-    parser.add_argument('--conv_gemm_cache', type=bool_lambda, default=True)
-    parser.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
-    parser.add_argument('--conv_gemm_trans', type=bool_lambda, default=False)
-    # Other parameters
-    parser.add_argument('--dtype', type=str, default="float32")
-    parser.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
-    parser.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)
-    parser.add_argument('--network_bw', type=float, default=1e9, help=argparse.SUPPRESS)
-    parser.add_argument('--network_lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
-    parser.add_argument('--network_alg', type=str, default="vdg", help=argparse.SUPPRESS)
-    return parser.parse_args()
 
 
 def show_options(params):
@@ -133,78 +57,10 @@ def show_options(params):
             # print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
 
 
-def get_optimizer(params):
-    if not params.enable_gpu:
-        optimizers_module = importlib.import_module("optimizers")
-        optimizer = getattr(optimizers_module, params.optimizer)
-    else:
-        optimizers_module = importlib.import_module("optimizers_gpu")
-        optimizer = getattr(optimizers_module, f"{params.optimizer}_gpu")
-    if params.optimizer == "rmsprop":
-        opt = optimizer(learning_rate=params.learning_rate,
-                        rho=params.rho,
-                        epsilon=params.epsilon,
-                        decay=params.decay,
-                        dtype=params.dtype)
-    elif params.optimizer == "adam":
-        opt = optimizer(learning_rate=params.learning_rate,
-                        beta1=params.beta1,
-                        beta2=params.beta2,
-                        epsilon=params.epsilon,
-                        decay=params.decay,
-                        dtype=params.dtype)
-    elif params.optimizer == "nadam":
-        opt = optimizer(learning_rate=params.learning_rate,
-                        beta1=params.beta1,
-                        beta2=params.beta2,
-                        epsilon=params.epsilon,
-                        decay=params.decay,
-                        dtype=params.dtype)
-    elif params.optimizer == "sgd":
-        opt = optimizer(learning_rate=params.learning_rate,
-                        momentum=params.momentum,
-                        nesterov=params.nesterov,
-                        decay=params.decay,
-                        dtype=params.dtype)
-    else:
-        raise ValueError(f"Optimizer '{params.optimizer}' not recognized.")
-    return opt
-
-
-def get_lr_schedulers(params):
-    lr_schedulers = []
-    for lr_sched in params.lr_schedulers.split(","):
-        if lr_sched == "warm_up":
-            lrs = WarmUpLRScheduler(params.warm_up_epochs,
-                                    params.learning_rate / params.mpi_processes,
-                                    params.learning_rate)
-        elif lr_sched == "early_stopping":
-            lrs = EarlyStopping(params.early_stopping_metric,
-                                params.early_stopping_patience)
-        elif lr_sched == "reduce_lr_on_plateau":
-            lrs = ReduceLROnPlateau(params.reduce_lr_on_plateau_metric,
-                                    params.reduce_lr_on_plateau_factor,
-                                    params.reduce_lr_on_plateau_patience,
-                                    params.reduce_lr_on_plateau_min_lr)
-        elif lr_sched == "reduce_lr_every_nepochs":
-            lrs = ReduceLREveryNEpochs(params.reduce_lr_every_nepochs_factor,
-                                       params.reduce_lr_every_nepochs_nepochs,
-                                       params.reduce_lr_every_nepochs_min_lr)
-        elif lr_sched == "stop_at_loss":
-            lrs = StopAtLoss(params.stop_at_loss_metric,
-                             params.stop_at_loss_threshold)
-        elif lr_sched == "model_checkpoint":
-            lrs = ModelCheckpoint(params.model_checkpoint_metric,
-                                  params.model_checkpoint_save_freq)
-        else:
-            raise ValueError(f"LRScheduler '{params.optimizer}' not recognized.")
-        lr_schedulers.append(lrs)
-    return lr_schedulers
-
-
 def main():
-    params = parse_options()
-    params.dtype = getattr(np, params.dtype)
+    # Parse options
+    params = parser.parse_args()
+    # Adjust params based on the given command line arguments
     _MPI = None
     if params.parallel in ["data"]:
         from mpi4py import MPI
@@ -221,52 +77,47 @@ def main():
         rank = 0
     else:
         raise ValueError(f"Parallel option '{params.parallel}' not recognized.")
-
     params.threads_per_process = os.environ.get("OMP_NUM_THREADS", 1)
-
     try:
         params.gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
-    except FileNotFoundError:
+    except (FileNotFoundError, subprocess.CalledProcessError):
         params.gpus_per_node = 0
-    except subprocess.CalledProcessError:
         params.gpus_per_node = 0
-
     if params.enable_gpu and params.parallel == "data":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
-
-    # A couple of details...
+    # Initialize random seeds to 0
     random.seed(0)
     np.random.seed(0)
-
+    # Create model
     model = Model(**vars(params))
-
+    # Print model
     if rank == 0:
-        print('**** %s model...' % params.model)
+        print(f'**** {model.model_name} model...')
         model.show()
-        print('**** Loading %s dataset...' % params.dataset)
-
-    if params.weights_and_bias_filename:
-        model.load_weights_and_bias(params.weights_and_bias_filename)
-
-    metrics = [f for f in params.metrics.replace(" ", "").split(",")]
-
-    dataset = get_dataset(params)
-    if params.steps_per_epoch > 0:
-        dataset.adjust_steps_per_epoch(params.steps_per_epoch,
-                                       params.batch_size, params.mpi_processes)
-
-    optimizer = get_optimizer(params)
-    lr_schedulers = get_lr_schedulers(params)
-
+        print(f'**** Loading {model.dataset_name} dataset...')
+    # Load weights and bias
+    if model.weights_and_bias_filename:
+        model.load_weights_and_bias(model.weights_and_bias_filename)
+    # Metrics
+    metrics = [f for f in model.metrics.replace(" ", "").split(",")]
+    # Dataset
+    dataset = get_dataset(model)
+    if model.steps_per_epoch > 0:
+        dataset.adjust_steps_per_epoch(model.steps_per_epoch,
+                                       model.batch_size, model.mpi_processes)
+    # Optimizers and LRSchedulers
+    optimizer = get_optimizer(model)
+    lr_schedulers = get_lr_schedulers(model)
+    # Print parameters
     if rank == 0:
         print('**** Parameters:')
         show_options(params)
-
-    if params.evaluate or params.evaluate_only:
+    # First (or unique) evaluation
+    if model.evaluate or model.evaluate_only:
         if rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        test_loss = model.evaluate_dataset(dataset, params.batch_size, params.loss_func, metrics)
+        _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics)
         if rank == 0:
             t2 = time.time()
             total_time = t2 - t1
@@ -278,56 +129,49 @@ def main():
                   f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
             print(f'Testing mean memory allocated: ',
                   f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
-        if params.evaluate_only:
+        if model.evaluate_only:
             sys.exit(0)
-
-    if params.parallel in ["data"]:
-        params.comm.Barrier()
-
+    # Barrier
+    if model.parallel in ["data"]:
+        model.comm.Barrier()
+    # Training
     if rank == 0:
         # print('**** Model time: ', model.calculate_time())
         print('**** Training...')
         t1 = time.time()
-
-        if params.profile:
-            import cProfile
-            import pstats
-            from io import StringIO
+        if model.profile:
             pr = cProfile.Profile()
             pr.enable()
-
     # Training a model directly from a dataset
     history = model.train_dataset(dataset,
-                                  nepochs=params.num_epochs,
-                                  local_batch_size=params.batch_size,
-                                  val_split=params.validation_split,
-                                  loss=params.loss_func,
+                                  nepochs=model.num_epochs,
+                                  local_batch_size=model.batch_size,
+                                  val_split=model.validation_split,
+                                  loss=model.loss_func,
                                   metrics=metrics,
                                   optimizer=optimizer,
                                   lr_schedulers=lr_schedulers)
-
     # Alternatively, the model can be trained on any specific data
-    # history = model.train(X_train=dataset.X_train_val, Y_train=dataset.Y_train_val,
-    #                       X_val=dataset.X_test, Y_val=dataset.Y_test,
+    # history = model.train(x_train=dataset.X_train_val, y_train=dataset.Y_train_val,
+    #                       x_val=dataset.x_test, y_val=dataset.y_test,
     #                       nepochs=params.num_epochs,
     #                       local_batch_size=params.batch_size,
     #                       loss=params.loss_func,
     #                       metrics=metrics,
     #                       optimizer=optimizer,
     #                       lr_schedulers=lr_schedulers)
-
-    if params.parallel in ["data"]:
-        params.comm.Barrier()
-
+    # Barrier
+    if model.parallel in ["data"]:
+        model.comm.Barrier()
+    # Print performance results and evaluation history
     if rank == 0:
-        if params.profile:
+        if model.profile:
             pr.disable()
             s = StringIO()
             sortby = 'time'
             ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
             ps.print_stats()
             print(s.getvalue())
-
         t2 = time.time()
         print('**** Done...')
         total_time = t2 - t1
@@ -348,21 +192,20 @@ def main():
                   f'{model.perf_counter.training_maximum_memory / 1024:.2f} MiB')
             print(f'Training mean memory allocated: '
                   f'{model.perf_counter.training_mean_memory / 1024:.2f} MiB')
-
-        if params.history_file:
-            with open(params.history_file, "w") as f:
+        if model.history_file:
+            with open(model.history_file, "w") as f:
                 keys = [k for k in history]
                 for v in range(len(history[keys[0]])):
                     f.write(' '.join(["%3d" % v] +
                                      [('%20.4f' % history[k][v]) for k in keys]) + '\n')
-
-    if params.evaluate:
+    # Second (and last) evaluation
+    if model.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-        test_loss = model.evaluate_dataset(dataset, params.batch_size, params.loss_func, metrics)
-
-    if params.comm is not None and _MPI is not None:
-        params.comm.Barrier()
+        _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics)
+    # Barrier and finalize
+    if model.comm is not None and _MPI is not None:
+        model.comm.Barrier()
         # The next line is required if running under SLURM (it seems it is not automatically called at exit)
         _MPI.Finalize()
 
