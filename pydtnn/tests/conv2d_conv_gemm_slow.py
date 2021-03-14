@@ -2,13 +2,13 @@
 Unitary tests (exhaustive ones) for Conv2D layer using the convGemm library
 
 For running all the tests quietly, execute from the parent directory:
-    python -m unittest unittests.TestConv2DConvGemmSlow
+    python -m unittest pydtnn.tests.Conv2DConvGemmSlowTestCase
 
 For running all the tests verbosely, execute from the parent directory:
-    python -m unittest -v unittests.TestConv2DConvGemmSlow
+    python -m unittest -v pydtnn.tests.Conv2DConvGemmSlowTestCase
 
 For running an individual test verbosely, execute from the parent directory:
-    python -m unittest -v unittests.TestConv2DConvGemmSlow.test_name
+    python -m unittest -v pydtnn.tests.Conv2DConvGemmSlowTestCase.test_name
 """
 
 import sys
@@ -16,16 +16,9 @@ import unittest
 
 import numpy as np
 
+from .conv2d_conv_gemm import Conv2DConvGemmTestCase, D
 from .tools import Spinner
-
-try:
-    from layer import Conv2D
-    from model import Model
-    from conv_gemm import ConvGemm
-    from NN_im2col_cython import im2col_cython
-    from unittests.test_conv2d_conv_gemm import TestConv2DConvGemm, D, _print_with_header, get_conv2d_layers
-except ModuleNotFoundError:
-    print("Please, execute as 'python -m unittest unittests.TestConv2DConvGemmSlow'")
+from ..layers import Conv2D
 
 
 def verbose():
@@ -33,7 +26,7 @@ def verbose():
     return '-v' in sys.argv or '--verbose' in sys.argv
 
 
-class TestConv2DConvGemmSlow(TestConv2DConvGemm):
+class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """

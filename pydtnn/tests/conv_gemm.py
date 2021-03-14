@@ -2,13 +2,13 @@
 Unitary tests for NN_gemm_conv.py.
 
 For running all the tests quietly, execute from the parent directory:
-    python -m unittest unittests.TestConvGemm
+    python -m unittest pydtnn.tests.ConvGemmTestCase
 
 For running all the tests verbosely, execute from the parent directory:
-    python -m unittest -v unittests.TestConvGemm
+    python -m unittest -v pydtnn.tests.ConvGemmTestCase
 
 For running an individual test verbosely, execute from the parent directory:
-    python -m unittest -v unittests.TestConvGemm.test_name
+    python -m unittest -v pydtnn.tests.ConvGemmTestCase.test_name
 """
 
 import inspect
@@ -19,12 +19,8 @@ import unittest
 import numpy as np
 
 from .tools import Spinner
-
-try:
-    from conv_gemm import ConvGemm
-    from NN_im2col_cython import im2col_cython, col2im_cython
-except ModuleNotFoundError:
-    print("Please, execute as 'python -m unittest unittests.TestConvGemm'")
+from ..conv_gemm import ConvGemm
+from ..cython_modules import im2col_cython, col2im_cython
 
 
 def verbose():
@@ -141,7 +137,7 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     return conv_gemm_result, im2col_mm_result
 
 
-class TestConvGemm(unittest.TestCase):
+class ConvGemmTestCase(unittest.TestCase):
     """
     Tests that conv_gemm leads to the same results than i2c and mm.
     """

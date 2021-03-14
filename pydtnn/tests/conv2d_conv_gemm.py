@@ -2,13 +2,13 @@
 Unitary tests for Conv2D layer using the convGemm library
 
 For running all the tests quietly, execute from the parent directory:
-    python -m unittest unittests.TestConv2DConvGemm
+    python -m unittest pydtnn.tests.Conv2DConvGemmTestCase
 
 For running all the tests verbosely, execute from the parent directory:
-    python -m unittest -v unittests.TestConv2DConvGemm
+    python -m unittest -v pydtnn.tests.Conv2DConvGemmTestCase
 
 For running an individual test verbosely, execute from the parent directory:
-    python -m unittest -v unittests.TestConv2DConvGemm.test_name
+    python -m unittest -v pydtnn.tests.Conv2DConvGemmTestCase.test_name
 """
 
 import inspect
@@ -19,14 +19,8 @@ from copy import deepcopy
 import numpy as np
 
 from .. import utils
-
-try:
-    from .. layers import Conv2D
-    from .. model import Model
-    from .. conv_gemm import ConvGemm
-    from .. cython_modules.im2col_cython import im2col_cython
-except ModuleNotFoundError:
-    print("Please, execute as 'python -m unittest tests.TestConv2DConvGemm'")
+from ..layers import Conv2D
+from ..model import Model
 
 
 def verbose():
@@ -84,31 +78,23 @@ def get_conv2d_layers(d, deconv=False, trans=False):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
-    params.cpu_speed = 4000000000000.0
-    params.memory_bw = 50000000000.0
-    params.network_bw = 1000000000.0
-    params.network_lat = 5e-07
-    model_i2c = Model(params)
+    model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True
-    params_gc.conv_gemm_fallback_to_im2col = False
     params_gc.conv_gemm_cache = True
+    params_gc.conv_gemm_fallback_to_im2col = False
     params_gc.conv_gemm_deconv = deconv
     params_gc.conv_gemm_trans = trans
-    model_cg = Model(params_gc)
+    model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
                         use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
-    conv2d_i2c.model = model_i2c
+    conv2d_i2c.set_model(model_i2c)
     conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                        padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
-    conv2d_cg.model = model_cg
+    conv2d_cg.set_model(model_cg)
     for layer in (conv2d_i2c, conv2d_cg):
-        layer.dtype = np.float32
-        layer.batch_size = model_i2c.params.batch_size  # batch_size is the same in both models
-        layer.tracer = model_i2c.tracer  # tracer is the same on both models
-        layer.matmul = getattr(utils, "matmul")
         layer.initialize(prev_shape=(d.c, d.h, d.w))
     # Set the same initial weights and biases to both layers
     conv2d_cg.weights = conv2d_i2c.weights.copy()
@@ -116,7 +102,7 @@ def get_conv2d_layers(d, deconv=False, trans=False):
     return conv2d_i2c, conv2d_cg
 
 
-class TestConv2DConvGemm(unittest.TestCase):
+class Conv2DConvGemmTestCase(unittest.TestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T
     """
