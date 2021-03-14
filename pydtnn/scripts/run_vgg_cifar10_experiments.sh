@@ -11,7 +11,7 @@ for procs in 6 4 2 1; do
     export OMP_NUM_THREADS=$thrds
 
     mpirun -iface ib0 -ppn 1 -np $procs -host $hosts \
-       python3 -u benchmarks_CNN.py \
+       python -Ou ../pydtnn_benchmark.py \
              --model=vgg11bn_cifar10 \
              --dataset=cifar10 \
              --dataset_train_path=/mnt/beegfs/users/dolzm/datasets/cifar-10-batches-bin \

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python3 -u benchmarks_CNN.py \
+python -Ou ../pydtnn_benchmark.py \
          --model=vgg11_imagenet \
          --dataset=imagenet \
          --dataset_train_path=/scratch/imagenet/np/train \

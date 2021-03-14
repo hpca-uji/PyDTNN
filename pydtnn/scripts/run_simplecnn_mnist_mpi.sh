@@ -2,7 +2,7 @@
 
 export OMP_NUM_THREADS=1
 mpirun -np 4 \
-  python3 -u test/benchmarks_CNN.py \
+  python -Ou ../pydtnn_benchmark.py \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \

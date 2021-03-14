@@ -20,7 +20,7 @@ HOSTS=altec2,altec3,altec4,altec5,altec7,altec8
 
 # -genv LD_PRELOAD $EXTRAELIB
 mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
-   python3 -u benchmarks_CNN.py \
+   python -Ou ../pydtnn_benchmark.py \
          --model=alexnet_cifar10 \
          --dataset=cifar10 \
          --dataset_train_path=/mnt/beegfs/users/dolzm/datasets/cifar-10-batches-bin/ \

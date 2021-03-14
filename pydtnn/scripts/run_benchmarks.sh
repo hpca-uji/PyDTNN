@@ -204,7 +204,7 @@ function run_benchmark() {
 
   # 3) Launch benchmarks_CNN
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
-  LD_PRELOAD="${PRELOAD}" ${CMD} python3 -Ou "${SCRIPT_PATH}"/benchmarks_CNN.py \
+  LD_PRELOAD="${PRELOAD}" ${CMD} python3 -Ou "${SCRIPT_PATH}"/../pydtnn_benchmark.py \
     --model="${MODEL}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \

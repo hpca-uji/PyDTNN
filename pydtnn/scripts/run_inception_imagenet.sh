@@ -2,7 +2,7 @@
 
 export OMP_NUM_THREADS=16
 #mpirun -np 2 \
-python3 -u benchmarks_CNN.py \
+python -Ou ../pydtnn_benchmark.py \
          --model=googlenet_imagenet \
          --dataset=imagenet \
          --dataset_train_path=/path/to/imagenet \

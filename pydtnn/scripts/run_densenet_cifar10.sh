@@ -2,7 +2,7 @@
 
 export OMP_NUM_THREADS=16
 mpirun -np 2 \
-python3 -u benchmarks_CNN.py \
+python -Ou ../pydtnn_benchmark.py \
          --model=densenet121_cifar10 \
          --dataset=cifar10 \
          --dataset_train_path=/scratch/cifar-10/cifar-10-batches-bin \

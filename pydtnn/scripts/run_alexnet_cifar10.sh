@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python3 -u benchmarks_CNN.py \
+python -Ou ../pydtnn_benchmark.py \
          --model=alexnet_cifar10 \
          --dataset=cifar10 \
          --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \

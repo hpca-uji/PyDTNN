@@ -2,7 +2,7 @@
 
 export OMP_NUM_THREADS=16
 #mpirun -np 2 \
-python3.8 -u benchmarks_CNN.py \
+python -Ou ../pydtnn_benchmark.py \
          --model=vgg3dobn \
          --dataset=cifar10 \
          --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin \
