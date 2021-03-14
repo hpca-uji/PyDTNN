@@ -1,59 +1,42 @@
 """
-Model definition for Python Distributed Training of Neural Networks (PyDTNN)
-
-PyDTNN is a light-weight library for distributed Deep Learning training and
-inference that offers an initial starting point for interaction with distributed
-training of (and inference with) deep neural networks. PyDTNN prioritizes
-simplicity over efficiency, providing an amiable user interface which enables a
-flat accessing curve. To perform the training and inference processes, PyDTNN
-exploits distributed inter-process parallelism (via MPI) for clusters and
-intra-process (via multi-threading) parallelism to leverage the presence of
-multicore processors and GPUs at node level. For that, PyDTNN uses MPI4Py for
-message-passing, BLAS calls via NumPy for multicore processors and
-PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
-
-Copyright 2021 Universitat Jaume I
-
-This file is part of PyDTNN. PyDTNN is free software: you can redistribute it
-and/or modify it under the terms of the GNU General Public License as published
-by the Free Software Foundation, either version 3 of the License, or (at your
-option) any later version.
-
-PyDTNN is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE. See the GNU General Public License for more details. You
-should have received a copy of the GNU General Public License along with this
-program. If not, see <http://www.gnu.org/licenses/>.
+PyDTNN model
 """
 
-__author__ = "Manuel F. Dolz, Enrique S. Quintana, Sergio Barrachina, Mar Catalán, Adrián Castelló"
-__contact__ = "dolzm@uji.es"
-__copyright__ = "Copyright 2021, Universitat Jaume I"
-__credits__ = ["Manuel F. Dolz, Enrique S. Quintana", "Sergio Barrachina", "Mar Catalán", "Adrián Castelló"]
-__date__ = "2020/03/22"
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+#
+#  Copyright (C) 2021 Universitat Jaume I
+#
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
 
-__email__ = "dolzm@uji.es"
-__license__ = "GPLv3"
-__maintainer__ = "Manuel F. Dolz"
-__status__ = "Production"
-__version__ = "1.1.0"
-
+import importlib
 import resource
 import sys
 import time
-import importlib
 from collections import defaultdict
-
-from tqdm import tqdm
 from timeit import default_timer as timer
 
-import optimizer
-import util
-import datasets.NN_dataset
-from sim import *
-from tracer import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, \
-    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, SimpleTracer, SimpleTracerGPU, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, \
-    PYDTNN_MDL_WAIT_DW, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
+from tqdm import tqdm
+
+from . import optimizers
+from . import utils
+from .datasets.dataset import Dataset
+from .parser import parser
+from .performance_models import *
+from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
+    SimpleTracer, SimpleTracerGPU, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
+    PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
 
 supported_gpu = False
 supported_cudnn = True
@@ -64,17 +47,15 @@ try:
     import pycuda.driver as drv
     import libcudnn.libcudnn as cudnn
     import libnccl.libnccl as nccl
+    # noinspection PyUnresolvedReferences
     from skcuda import cublas
-except Exception as e:
+except (ImportError, ModuleNotFoundError):
     supported_cudnn = False
-    print(e)
 
 try:
     from mpi4py import MPI
-except Exception as e:
+except (ImportError, ModuleNotFoundError):
     supported_mpi4py = False
-    print(e)
-
 
 EVALUATE_MODE, TRAIN_MODE = (0, 1)
 
@@ -92,11 +73,11 @@ class PerformanceCounter:
     #  Public methods and properties
     # -------------------------------
 
-    def add_training_time_and_batch_size(self, epoch, time, batch_size):
-        self._add_time_and_batch_size(self.TRAINING, epoch, time, batch_size)
+    def add_training_time_and_batch_size(self, epoch, elapsed_time, batch_size):
+        self._add_time_and_batch_size(self.TRAINING, epoch, elapsed_time, batch_size)
 
-    def add_testing_time_and_batch_size(self, time, batch_size):
-        self._add_time_and_batch_size(self.TESTING, 0, time, batch_size)
+    def add_testing_time_and_batch_size(self, elapsed_time, batch_size):
+        self._add_time_and_batch_size(self.TESTING, 0, elapsed_time, batch_size)
 
     def init_testing_data(self):
         """
@@ -157,8 +138,8 @@ class PerformanceCounter:
     #  Private methods
     # -------------------------------
 
-    def _add_time_and_batch_size(self, where, epoch, time, batch_size):
-        self._times_record[where][epoch].append(time)
+    def _add_time_and_batch_size(self, where, epoch, elapsed_time, batch_size):
+        self._times_record[where][epoch].append(elapsed_time)
         self._batch_sizes_record[where][epoch].append(batch_size)
         if where == self.TESTING and self._in_second_testing_round:
             return
@@ -203,48 +184,66 @@ class PerformanceCounter:
         return np.mean(mean_memory_per_epoch)
 
 
-class Model:
+def _layer_id_generator():
+    """To obtain consecutive layer ids. See Layer.set_model()."""
+    current_layer_id = 0
+    while True:
+        yield current_layer_id
+        current_layer_id += 1
 
-    def __init__(self, params, comm=None, non_blocking_mpi=False,
-                 enable_gpu=False, enable_gpudirect=False, enable_nccl=False, dtype=np.float32,
-                 tracing=False, tracer_output=""):
-        self.id = 0
-        self.layers = []
-        self.params = params
+
+class Model:
+    """
+    PyDTNN Model
+    """
+
+    def __init__(self, comm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
+                 enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs):
+        # Attributes related to the given arguments
         self.comm = comm
         self.blocking_mpi = not non_blocking_mpi
+        global enable_cudnn
+        enable_cudnn = self.enable_cudnn = enable_gpu
+        self.gpudirect = enable_gpudirect
+        self.enable_nccl = enable_nccl
+        self.dtype = dtype
         if tracer_output == "":
             self.tracer = ExtraeTracer(tracing)
         elif enable_gpu:
             self.tracer = SimpleTracerGPU(tracing, tracer_output, self.comm)
         else:
             self.tracer = SimpleTracer(tracing, tracer_output, self.comm)
+        # Get default values from parser and update them from the received kwargs
+        self.kwargs = vars(parser.parse_args([]))
+        self.kwargs.update(kwargs)
+        # Set performance counter
         self.perf_counter = PerformanceCounter()
-        global enable_cudnn
-        enable_cudnn = self.enable_cudnn = enable_gpu
-        self.gpudirect = enable_gpudirect
-        self.enable_nccl = enable_nccl
-        self.dtype = dtype
+        # Layers attributes
+        self.layers = []
+        self.layer_id = _layer_id_generator()
         # In data parallel, we assume that file weights are stored in a nfs mounted directory.
-        self.params.shared_storage = True
-
+        self.shared_storage = True
+        # Matmul
+        self.matmul = getattr(utils, "matmul")
+        # Execution attributes
         self.nparams = 0
         self.rank = 0
         self.nprocs = 1
         self.mode = TRAIN_MODE
-
         if self.comm and supported_mpi4py:
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
         elif self.comm:
-            print("You must install mpi4py to allow parallel MPI execution!")
+            print("Please, install mpi4py to allow parallel MPI execution!")
             sys.exit(-1)
-
         if self.enable_cudnn:
             if not supported_cudnn:
-                print("You must install pycuda, skcuda, cudnn, and, optionally, nccl, to be able to use the GPUs!")
+                print("Please, install pycuda, skcuda, cudnn, and, optionally, nccl, to be able to use the GPUs!")
                 sys.exit(-1)
             import pycuda.autoinit
+            # The next fake test exists only to avoid the pycuda.autoinit import being removed when optimizing imports
+            if self.kwargs.get('fake_pycuda_autoinit_option'):
+                pycuda.autoinit()
             # Uncomment the next code if pycuda.autoinit is not available
             # device_id = self.rank % drv.Device.count()
             # drv.init()
@@ -270,11 +269,12 @@ class Model:
                     hosts.setdefault(h, []).append(r)
 
                 # Check that no more processes than GPUs per node are used
+                self.gpus_per_node = self.kwargs.get('gpus_per_node', 1)
                 for host, ranks_in_host in hosts.items():
-                    assert len(ranks_in_host) <= self.params.gpus_per_node
+                    assert len(ranks_in_host) <= self.gpus_per_node
 
-                id = comm.bcast(nccl.ncclGetUniqueId() if self.rank == 0 else None)
-                self.nccl_comm = nccl.ncclCommInitRank(self.nprocs, id, self.rank)
+                nccl_id = comm.bcast(nccl.ncclGetUniqueId() if self.rank == 0 else None)
+                self.nccl_comm = nccl.ncclCommInitRank(self.nprocs, nccl_id, self.rank)
 
                 # if self.enable_nccl_hierarchical:
                 #     self.intra_ranks = hosts[hostname]
@@ -310,35 +310,58 @@ class Model:
             self.cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
             self.tensor_fmt = cudnn.cudnnTensorFormat['CUDNN_TENSOR_NCHW']
             self.tracer.set_default_stream(self.stream)
+        # Read model
+        self.model_name = self.kwargs.get("model_name")
+        if self.model_name:
+            self.read_model(self.model_name)
+        # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
+        self.batch_size = self.kwargs['batch_size']
+        self.steps_per_epoch = self.kwargs['steps_per_epoch']
+        self.cpu_speed = self.kwargs['cpu_speed']
+        self.memory_bw = self.kwargs['memory_bw']
+        self.network_bw = self.kwargs['network_bw']
+        self.network_lat = self.kwargs['network_lat']
+        self.network_alg = self.kwargs['network_alg']
+        # Attributes that will be properly defined elsewhere
+        self.y_batch = None
+        self.history = None
+
+    def __getattr__(self, item):
+        try:
+            return self.kwargs[item]
+        except KeyError:
+            raise AttributeError(f"'Model' object has no attribute '{item}'") from None
+
+    def read_model(self, model_name):
+        try:
+            model_module = importlib.import_module(f"pydtnn.models.{model_name}")
+            getattr(model_module, f"create_{model_name}")(self)
+        except (ModuleNotFoundError, AttributeError):
+            import traceback
+            print(traceback.format_exc())
+            sys.exit(-1)
 
     def show(self):
         bfp = {np.float32: 4, np.float64: 8}[self.dtype]
-        print(
-            "+-------+--------------------------+---------+---------------+-------------------+------------------------+")
-        print(
-            "| Layer |           Type           | #Params | Output shape  |   Weights shape   |       Parameters       |")
-        for l in self.layers:
-            print(
-                '+-------+--------------------------+---------+---------------+-------------------+------------------------+')
-            l.show()
-        print(
-            '+-------+--------------------------+---------+---------------+-------------------+------------------------+')
-        print(
-            f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {util.convert_size(self.nparams * bfp):^15s} {'':19s} {'':24s}|")
-        print(
-            '+-------+--------------------------+---------+---------------+-------------------+------------------------+')
+        line = "+-------+--------------------------+---------+---------------+-------------------" \
+               "+------------------------+"
+        head = "| Layer |           Type           | #Params | Output shape  |   Weights shape   " \
+               "|       Parameters       |"
+        print(line)
+        print(head)
+        for layer in self.layers:
+            print(line)
+            layer.show()
+        print(line)
+        print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size(self.nparams * bfp):^15s} "
+              f"{'':19s} {'':24s}|")
+        print(line)
 
     def add(self, layer):
-        layer.id = self.id
-        layer.tracer = self.tracer
-        layer.dtype = self.dtype
-        layer.model = self
-        layer.batch_size = self.params.batch_size
+        layer.set_model(self)
 
         need_dx = layer.id > 1
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
-
-        layer.gpudirect = self.gpudirect
 
         if self.enable_cudnn:
             layer.cublas_handle = self.cublas_handle
@@ -349,12 +372,10 @@ class Model:
             y = self.layers[-1].y if layer.id > 0 else None
             layer.initialize(prev_shape, need_dx, y)
         else:
-            layer.matmul = getattr(util, "matmul")
             layer.initialize(prev_shape, need_dx)
 
         self.nparams += layer.nparams
         self.layers.append(layer)
-        self.id += 1
 
         if layer.act:
             self.add(layer.act())
@@ -369,11 +390,11 @@ class Model:
                     for j, p in enumerate(curr_layer.paths):
                         curr_layer.paths[j] = __relu_fusion(p)
                 elif i > 0 and type(curr_layer).__name__ == "Relu" and \
-                    type(fused_layers[-1]).__name__ in ["Conv2D", "BatchNormalization"]:
+                        type(fused_layers[-1]).__name__ in ["Conv2D", "BatchNormalization"]:
                     prev_layer = fused_layers.pop()
-                    print("Fusing %03d_%s with %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__, \
+                    print("Fusing %03d_%s with %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                                curr_layer.id, type(curr_layer).__name__))
-                    curr_layer = getattr(importlib.import_module("NN_layer"), \
+                    curr_layer = getattr(importlib.import_module("pydtnn.layers"),
                                          type(prev_layer).__name__ + type(curr_layer).__name__)(from_parent=prev_layer)
                 fused_layers.append(curr_layer)
             return fused_layers
@@ -383,8 +404,8 @@ class Model:
 
     def load_weights_and_bias(self, filename):
         d = np.load(filename)
-        for l, layer in enumerate(self.layers):
-            base = "%s_%s" % (str(l), type(layer).__name__)
+        for i, layer in enumerate(self.layers):
+            base = "%s_%s" % (str(i), type(layer).__name__)
             for p in layer.grad_vars:
                 key = "%s_%s" % (base, p)
                 if key in d.files:
@@ -396,10 +417,10 @@ class Model:
                     print("Could not find %s for layer %s in %s file!" % (p, base, filename))
 
     def store_weights_and_bias(self, filename):
-        if self.params.shared_storage and self.rank == 0:
+        if self.shared_storage and self.rank == 0:
             d = {}
-            for l, layer in enumerate(self.layers):
-                base = "%s_%s" % (str(l), type(layer).__name__)
+            for i, layer in enumerate(self.layers):
+                base = "%s_%s" % (str(i), type(layer).__name__)
                 for p in layer.grad_vars:
                     key = "%s_%s" % (base, p)
                     d[key] = getattr(layer, p)
@@ -408,34 +429,35 @@ class Model:
             np.savez_compressed(filename, **d)
 
     def calculate_time(self):
-        total_time = np.zeros((4,), dtype=np.float32)  # Total time, Comp time, Memo time, Net time
+        # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
+        total_time = np.zeros((4,), dtype=np.float32)
 
         # Forward pass (FP)
-        for l in range(1, len(self.layers)):
-            total_time += self.layers[l].fwd_time
+        for layer in range(1, len(self.layers)):
+            total_time += self.layers[layer].fwd_time
 
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
-                total_time += self.layers[l].bwd_time
+            for layer in range(len(self.layers) - 1, 0, -1):
+                total_time += self.layers[layer].bwd_time
 
             # Weight update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
-                if self.comm and self.layers[l].weights.size > 0:
-                    total_time += allreduce_time(self.layers[l].weights.size + self.layers[l].biases.size,
-                                                 self.params.cpu_speed, self.params.network_bw, self.params.network_lat,
-                                                 self.params.network_alg, self.nprocs, self.dtype)
+            for layer in range(len(self.layers) - 1, 0, -1):
+                if self.comm and self.layers[layer].weights.size > 0:
+                    total_time += allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
+                                                 self.cpu_speed, self.network_bw, self.network_lat,
+                                                 self.network_alg, self.nprocs, self.dtype)
         else:
             total_time_iar = 0
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
-                total_time += self.layers[l].bwd_time
-                if self.comm and self.layers[l].weights.size > 0:
-                    time_iar = allreduce_time(self.layers[l].weights.size + self.layers[l].biases.size,
-                                              self.params.cpu_speed, self.params.network_bw, self.params.network_lat,
-                                              self.params.network_alg, self.nprocs, self.dtype)
+            for layer in range(len(self.layers) - 1, 0, -1):
+                total_time += self.layers[layer].bwd_time
+                if self.comm and self.layers[layer].weights.size > 0:
+                    time_iar = allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
+                                              self.cpu_speed, self.network_bw, self.network_lat,
+                                              self.network_alg, self.nprocs, self.dtype)
                     total_time[3] += time_iar[3]
                     total_time_iar = max(total_time[0], total_time_iar) + time_iar[0]
 
@@ -443,13 +465,13 @@ class Model:
 
         return total_time
 
-    def __compute_metrics_funcs(self, Y_pred, Y_targ, loss, metrics_funcs, blocking=True):
+    def __compute_metrics_funcs(self, y_pred, y_targ, loss, metrics_funcs, blocking=True):
         loss_req = None
         if self.enable_cudnn:
-            losses = np.array([loss] + [func(Y_pred.ary, Y_targ.ary)
+            losses = np.array([loss] + [func(y_pred.ary, y_targ.ary)
                                         for func in metrics_funcs], dtype=np.float32) / self.nprocs
         else:
-            losses = np.array([loss] + [func(Y_pred, Y_targ) for func in metrics_funcs], dtype=np.float32) / self.nprocs
+            losses = np.array([loss] + [func(y_pred, y_targ) for func in metrics_funcs], dtype=np.float32) / self.nprocs
         if self.comm is not None and blocking:
             self.comm.Allreduce(MPI.IN_PLACE, losses, op=MPI.SUM)
         elif self.comm is not None and not blocking:
@@ -461,12 +483,12 @@ class Model:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(loss_metrics)):
-            loss_str = util.metric_format.get(loss_metrics[c], loss_metrics[c])
+            loss_str = utils.metric_format.get(loss_metrics[c], loss_metrics[c])
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
 
-    def __train_batch(self, X_batch, Y_batch, local_batch_size, global_batch_size,
+    def __train_batch(self, x_batch, y_batch, local_batch_size, global_batch_size,
                       loss_func, metrics_funcs, optimizer, lr_schedulers):
 
         self.mode = TRAIN_MODE
@@ -474,30 +496,30 @@ class Model:
             lr_sched.on_batch_begin(self, optimizer, self.rank)
 
         if self.enable_cudnn:
-            if X_batch.shape[0] != local_batch_size:
+            if x_batch.shape[0] != local_batch_size:
                 return self.total_metrics
-            self.layers[0].y.ary.set(X_batch)
-            self.Y_batch.ary.set(Y_batch)
-            x, Y_targ = self.layers[0].y, self.Y_batch
+            self.layers[0].y.ary.set(x_batch)
+            self.y_batch.ary.set(y_batch)
+            x, y_targ = self.layers[0].y, self.y_batch
         else:
-            x, Y_targ = X_batch, Y_batch
+            x, y_targ = x_batch, y_batch
 
         # Forward pass (FP)
-        for l in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
-            x = self.layers[l].forward(x)
+        for i in range(1, len(self.layers)):
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+            x = self.layers[i].forward(x)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-        loss, dx = loss_func(x, Y_targ, global_batch_size)
-        self.total_metrics, _ = self.__compute_metrics_funcs(x, Y_targ, loss, metrics_funcs)
+        loss, dx = loss_func(x, y_targ, global_batch_size)
+        self.total_metrics, _ = self.__compute_metrics_funcs(x, y_targ, loss, metrics_funcs)
 
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
+            for i in range(len(self.layers) - 1, 0, -1):
                 # self.tracer.print_memory_usage(f"Layer {l:03} before backward")
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
-                dx = self.layers[l].backward(dx)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                dx = self.layers[i].backward(dx)
                 # self.tracer.print_memory_usage(f"Layer {l:03} after backward ")
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
@@ -505,69 +527,68 @@ class Model:
                 self.stream.synchronize()
 
             # Weight update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
-                self.layers[l].reduce_weights_sync()
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[l].update_weights(optimizer)
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.layers[i].reduce_weights_sync()
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
+                self.layers[i].update_weights(optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
         else:
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
-                dx = self.layers[l].backward(dx)
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                self.layers[l].reduce_weights_async()
+                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
+                self.layers[i].reduce_weights_async()
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
             # Weight update (WU)
-            for l in range(len(self.layers) - 1, 0, -1):
+            for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                        [self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW,
-                                         self.layers[l].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
-                self.layers[l].wait_allreduce_async()
+                                        [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW,
+                                         self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
+                self.layers[i].wait_allreduce_async()
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
 
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[l].update_weights(optimizer)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
+                self.layers[i].update_weights(optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         if self.enable_cudnn:
-            for l in range(len(self.layers) - 1, 0, -1):
-                if self.layers[l].grad_vars:
-                    self.layers[l].stream_2.synchronize()
+            for i in range(len(self.layers) - 1, 0, -1):
+                if self.layers[i].grad_vars:
+                    self.layers[i].stream_2.synchronize()
 
         for lr_sched in lr_schedulers:
             lr_sched.on_batch_end(self, optimizer, self.rank)
 
         return self.total_metrics
 
-    def train(self, X_train, Y_train, X_val, Y_val, nepochs, local_batch_size,
-              loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
-              optimizer=optimizer.SGD(), bar_width=110):
+    def train(self, x_train, y_train, x_val, y_val, nepochs, local_batch_size,
+              loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
+              optimizer=optimizers.SGD(), bar_width=110):
 
-        dataset = datasets.NN_dataset.Dataset(X_train=X_train, Y_train=Y_train,
-                                              X_val=X_val, Y_val=Y_val)
+        dataset = Dataset(x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val)
         history = self.train_dataset(dataset, nepochs, local_batch_size, 0,
                                      loss=loss, metrics=metrics, optimizer=optimizer,
                                      bar_width=bar_width)
         return history
 
     def train_dataset(self, dataset, nepochs, local_batch_size, val_split=0.2,
-                      loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
-                      optimizer=optimizer.SGD(), lr_schedulers=[], bar_width=110):
-        if self.enable_cudnn and not hasattr(self, "Y_batch"):
-            self.Y_batch = util.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                                          self.tensor_fmt, self.cudnn_dtype)
-        loss_func = getattr(util, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
-                                        enable_gpu=self.enable_cudnn, dtype=self.dtype)
-        metrics_funcs = [getattr(util, l)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
-                                          enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
+                      loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
+                      optimizer=optimizers.SGD(), lr_schedulers=(), bar_width=110):
+        if self.enable_cudnn and not hasattr(self, "y_batch"):
+            self.y_batch = utils.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                                           self.tensor_fmt, self.cudnn_dtype)
+        loss_func = getattr(utils, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
+                                         enable_gpu=self.enable_cudnn, dtype=self.dtype)
+        metrics_funcs = [getattr(utils, m)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
+                                           enable_gpu=self.enable_cudnn, dtype=self.dtype) for m in metrics]
         loss_metrics = [loss] + metrics
-        self.history = {l: [] for l in (loss_metrics + [f"val_{m}" for m in loss_metrics])}
+        self.history = {lm: [] for lm in (loss_metrics + [f"val_{m}" for m in loss_metrics])}
         optimizer.gpudirect = self.gpudirect
 
         dataset.make_train_val_partitions(val_split)
@@ -592,9 +613,9 @@ class Model:
             for lr_sched in lr_schedulers:
                 lr_sched.on_epoch_begin(self, self.rank)
 
-            for X_batch, Y_batch, batch_size in train_batch_generator:
+            for x_batch, y_batch, batch_size in train_batch_generator:
                 tic = timer()
-                train_batch_loss = self.__train_batch(X_batch, Y_batch, local_batch_size, batch_size,
+                train_batch_loss = self.__train_batch(x_batch, y_batch, local_batch_size, batch_size,
                                                       loss_func, metrics_funcs, optimizer, lr_schedulers)
                 toc = timer()
                 train_total_loss, train_batch_count, string = \
@@ -611,8 +632,8 @@ class Model:
                 for c in range(len(loss_metrics)):
                     self.history[loss_metrics[c]].append(train_total_loss[c])
 
-            for X_batch, Y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self.__evaluate_batch(X_batch, Y_batch, local_batch_size, batch_size,
+            for x_batch, y_batch, batch_size in val_batch_generator:
+                val_batch_loss = self.__evaluate_batch(x_batch, y_batch, local_batch_size, batch_size,
                                                        loss_func, metrics_funcs)
                 val_total_loss, val_batch_count, string = \
                     self.__update_running_average(val_batch_loss, val_total_loss,
@@ -637,50 +658,50 @@ class Model:
         self.tracer.define_event_types(self)
         return self.history
 
-    def __evaluate_batch(self, X_batch, Y_batch, local_batch_size, global_batch_size, loss_func, metrics_funcs):
+    def __evaluate_batch(self, x_batch, y_batch, local_batch_size, global_batch_size, loss_func, metrics_funcs):
         self.mode = EVALUATE_MODE
 
         if self.enable_cudnn:
-            if X_batch.shape[0] != local_batch_size:
+            if x_batch.shape[0] != local_batch_size:
                 return self.total_metrics
-            self.layers[0].y.ary.set(X_batch)
-            self.Y_batch.ary.set(Y_batch)
-            x, Y_targ = self.layers[0].y, self.Y_batch
+            self.layers[0].y.ary.set(x_batch)
+            self.y_batch.ary.set(y_batch)
+            x, y_targ = self.layers[0].y, self.y_batch
         else:
-            x, Y_targ = X_batch, Y_batch
+            x, y_targ = x_batch, y_batch
 
         # Forward pass (FP)
-        for l in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[l].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
-            x = self.layers[l].forward(x)
+        for i in range(1, len(self.layers)):
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+            x = self.layers[i].forward(x)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-        Y_pred = self.layers[-1].y
-        loss, _ = loss_func(Y_pred, Y_targ, global_batch_size)
-        self.total_metrics, _ = self.__compute_metrics_funcs(Y_pred, Y_targ, loss, metrics_funcs)
+        y_pred = self.layers[-1].y
+        loss, _ = loss_func(y_pred, y_targ, global_batch_size)
+        self.total_metrics, _ = self.__compute_metrics_funcs(y_pred, y_targ, loss, metrics_funcs)
         return self.total_metrics
 
-    def evaluate(self, X_test, Y_test, local_batch_size,
-                 loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
+    def evaluate(self, x_test, y_test, local_batch_size,
+                 loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
                  bar_width=110):
 
-        dataset = datasets.NN_dataset.Dataset(X_test=X_test, Y_test=Y_test)
+        dataset = Dataset(x_test=x_test, y_test=y_test)
         self.evaluate_dataset(dataset, local_batch_size, loss=loss, metrics=metrics, bar_width=bar_width)
 
     def evaluate_dataset(self, dataset, local_batch_size,
-                         loss="categorical_cross_entropy", metrics=["categorical_accuracy"],
+                         loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
                          bar_width=120):
-        if self.enable_cudnn and not hasattr(self, "Y_batch"):
-            self.Y_batch = util.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                                          self.tensor_fmt, self.cudnn_dtype)
-        loss_func = getattr(util, loss)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
-                                        enable_gpu=self.enable_cudnn, dtype=self.dtype)
-        metrics_funcs = [getattr(util, l)(shape=(self.params.batch_size, *self.layers[-1].shape), model=self,
-                                          enable_gpu=self.enable_cudnn, dtype=self.dtype) for l in metrics]
+        if self.enable_cudnn and not hasattr(self, "y_batch"):
+            self.y_batch = utils.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                                           self.tensor_fmt, self.cudnn_dtype)
+        loss_func = getattr(utils, loss)(shape=(self.batch_size, *self.layers[-1].shape), model=self,
+                                         enable_gpu=self.enable_cudnn, dtype=self.dtype)
+        metrics_funcs = [getattr(utils, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self,
+                                           enable_gpu=self.enable_cudnn, dtype=self.dtype) for m in metrics]
         loss_metrics = [loss] + metrics
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
-        if self.params.enable_fused_relus:
+        if self.kwargs.get("enable_fused_relus"):
             self.__apply_relu_fusion()
 
         if self.rank == 0:
@@ -691,9 +712,9 @@ class Model:
 
         self.perf_counter.init_testing_data()  # Only the last testing data should be kept
 
-        for X_batch, Y_batch, batch_size in test_batch_generator:
+        for x_batch, y_batch, batch_size in test_batch_generator:
             tic = timer()
-            test_batch_loss = self.__evaluate_batch(X_batch, Y_batch, self.params.batch_size, batch_size,
+            test_batch_loss = self.__evaluate_batch(x_batch, y_batch, self.batch_size, batch_size,
                                                     loss_func, metrics_funcs)
             toc = timer()
             if self.rank == 0:
