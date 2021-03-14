@@ -2,31 +2,19 @@
 Performance tests for transposing matrices
 
 For running the tests run:
-    python perftests/perf_test_conv2d_transpose.py
-
-To obtain a profile, run:
-    python3 -m cProfile -o perf_test_conv2d_transpose.prof perftests/perf_test_conv2d_transpose.py
-
-To graphically inspect the profile, run:
-    snakeviz perf_test_conv2d_transpose.prof
+    python profile_conv2d_transpose_2d_f2c.py
 """
+
 import ctypes
-import inspect
 import os
 import platform
-import sys
 from ctypes.util import find_library
 from timeit import timeit
 
 import numpy as np
-from numba import njit, prange
 from prettytable import PrettyTable
 
-if True:
-    current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    parent_dir = os.path.dirname(current_dir)
-    sys.path.insert(0, parent_dir)
-    from NN_transpose_cython import transpose_2d_f2c_ji_cython, transpose_2d_f2c_ij_cython
+from pydtnn.cython_modules import transpose_2d_f2c_ji_cython, transpose_2d_f2c_ij_cython
 
 
 class D:
@@ -88,20 +76,22 @@ def transpose_2d_ravel(original, transposed):
     transposed = original.ravel(order="C")
 
 
-@njit(parallel=True)
-def transpose_2d_numba(original, transposed):
-    n0, n1 = original.shape
-    for d0 in prange(n0):
-        for d1 in range(n1):
-            transposed[d0, d1] = original[d0, d1]
-
-
-@njit(parallel=True)
-def transpose_2d_2nd_numba(original, transposed):
-    n0, n1 = original.shape
-    for d0 in range(n0):
-        for d1 in prange(n1):
-            transposed[d0, d1] = original[d0, d1]
+# from numba import njit, prange
+#
+# @njit(parallel=True)
+# def transpose_2d_numba(original, transposed):
+#     n0, n1 = original.shape
+#     for d0 in prange(n0):
+#         for d1 in range(n1):
+#             transposed[d0, d1] = original[d0, d1]
+#
+#
+# @njit(parallel=True)
+# def transpose_2d_2nd_numba(original, transposed):
+#     n0, n1 = original.shape
+#     for d0 in range(n0):
+#         for d1 in prange(n1):
+#             transposed[d0, d1] = original[d0, d1]
 
 
 def transpose_2d_conv_gemm(original, transposed, lib, layer):
@@ -115,7 +105,7 @@ def time_transpose_10(layer, shape, dtype=np.float32):
     original = np.random.rand(d0, d1).astype(dtype, order="F")
     numpy_transposed = np.empty((d0, d1), dtype, order="C")
     ravel_transposed = np.empty((d0, d1), dtype, order="C")
-    numba_transposed = np.empty((d0, d1), dtype, order="C")
+    # numba_transposed = np.empty((d0, d1), dtype, order="C")
     conv_gemm_transposed = np.empty((d0, d1), dtype, order="C")
     cython_transposed = np.empty((d0, d1), dtype, order="C")
     # Load convGemm library
@@ -241,6 +231,6 @@ if __name__ == '__main__':
         t.align = "r"
         t.add_row([", ".join([str(x) for x in shape]), ] + values)
     print("*************************************************")
-    print("** {}  OMP_NUM_THREADS: {}".format(platform.node(), os.environ["OMP_NUM_THREADS"]))
+    print("** {}  OMP_NUM_THREADS: {}".format(platform.node(), os.environ.get("OMP_NUM_THREADS", 1)))
     print("** All times, except numpy, compared to numpy.")
     print(t)

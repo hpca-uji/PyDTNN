@@ -2,7 +2,7 @@
 Performance tests for Conv2D layer using the convGemm library
 
 For running the tests run:
-    python profile_tests/profile_conv2d_conv_gemm.py
+    python profile_conv2d_conv_gemm.py
 
 To obtain a profile, run:
     python3 -m cProfile -o cprofile_conv2d_conv_gemm.prof profile_tests/profile_conv2d_conv_gemm.py
@@ -10,25 +10,15 @@ To obtain a profile, run:
 To graphically inspect the profile, run:
     snakeviz cprofile_conv2d_conv_gemm.prof
 """
-import pstats
 
-import inspect
-import os
-import sys
+import cProfile
 import time
 from copy import deepcopy
-import cProfile
 
 import numpy as np
 
-# Relative imports
-if True:
-    current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    parent_dir = os.path.dirname(current_dir)
-    sys.path.insert(0, parent_dir)
-    import util
-    from layer import Conv2D
-    from model import Model
+from pydtnn.layers import Conv2D
+from pydtnn.model import Model
 
 
 class D:
@@ -82,29 +72,25 @@ def get_conv2d_layers(d):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
-    params.cpu_speed = 4000000000000.0
-    params.memory_bw = 50000000000.0
-    params.network_bw = 1000000000.0
-    params.network_lat = 5e-07
-    model_i2c = Model(params)
+    params.conv_gemm_cache = False
+    params.conv_gemm_fallback_to_im2col = False
+    params.conv_gemm_deconv = False
+    params.conv_gemm_trans = False
+    model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True
-    model_cg = Model(params_gc)
+    model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
                         use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_i2c.debug = True
-    conv2d_i2c.model = model_i2c
+    conv2d_i2c.set_model(model_i2c)
     conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                        padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_cg.debug = True
-    conv2d_cg.model = model_cg
+    conv2d_cg.set_model(model_cg)
     for layer in (conv2d_i2c, conv2d_cg):
-        layer.dtype = np.float32
-        layer.batch_size = model_i2c.params.batch_size  # batch_size is the same in both models
-        layer.tracer = model_i2c.tracer  # tracer is the same on both models
-        layer.matmul = getattr(util, "matmul")
         layer.initialize(prev_shape=(d.c, d.h, d.w))
     # Set the same initial weights and biases to both layers
     conv2d_cg.weights = conv2d_i2c.weights.copy()
@@ -118,7 +104,6 @@ class PerfTestConv2DConvGemm:
     """
 
     def _test_forward_backward(self, d, x, weights, print_times=False):
-        from timeit import timeit
         conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
         conv2d_i2c.weights = weights.copy()
         conv2d_cg.weights = weights.copy()

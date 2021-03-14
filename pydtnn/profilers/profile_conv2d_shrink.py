@@ -2,13 +2,12 @@
 Performance tests for shrinking matrices
 
 For running the tests run:
-    python profile_tests/profile_conv2d_shrink.py
+    python profile_conv2d_shrink.py
 
 """
-import inspect
+
 import os
 import platform
-import sys
 from timeit import timeit
 
 import numpy as np
@@ -16,12 +15,7 @@ from rich import box
 from rich.console import Console
 from rich.table import Table
 
-if True:
-    current_dir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-    parent_dir = os.path.dirname(current_dir)
-    sys.path.insert(0, parent_dir)
-    from NN_pad_cython import shrink_cython
-    from layer import Conv2D
+from pydtnn.cython_modules import shrink_cython
 
 
 class D:
@@ -147,7 +141,7 @@ if __name__ == '__main__':
         row_list = [", ".join([str(x) for x in _x_shape]), ] + values
         t.add_row(*row_list)
     print("*************************************************")
-    print("** {}  OMP_NUM_THREADS: {}".format(platform.node(), os.environ["OMP_NUM_THREADS"]))
+    print("** {}  OMP_NUM_THREADS: {}".format(platform.node(), os.environ.get("OMP_NUM_THREADS", 1)))
     print("** All times, except numpy, compared to numpy.")
     c = Console()
     c.print(t)
