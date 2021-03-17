@@ -717,7 +717,7 @@ _libcudnn.cudnnSetTensor.argtypes = [ctypes.c_void_p, ctypes.c_void_p,
 
 def cudnnSetTensor(handle, src_desc, src_data, value):
     """"
-    Set all data points of a tensor to a given value : srcDest = alpha.
+    Set all data points of a tensor to a given value : srcDest = value.
     Parameters
     ----------
     handle : cudnnHandle
@@ -732,11 +732,11 @@ def cudnnSetTensor(handle, src_desc, src_data, value):
 
     data_type, _, _, _, _, _, _, _, _ = cudnnGetTensor4dDescriptor(src_desc)
     if data_type == cudnnDataType['CUDNN_DATA_DOUBLE']:
-        alpha_ref = ctypes.byref(ctypes.c_double(alpha))
+        value_ref = ctypes.byref(ctypes.c_double(value))
     else:
-        alpha_ref = ctypes.byref(ctypes.c_float(alpha))
+        value_ref = ctypes.byref(ctypes.c_float(value))
 
-    status = _libcudnn.cudnnSetTensor(handle, src_desc, src_data, alpha_ref)
+    status = _libcudnn.cudnnSetTensor(handle, src_desc, src_data, value_ref)
     cudnnCheckStatus(status)
 
 
@@ -1009,7 +1009,7 @@ def cudnnGetConvolution2dDescriptor(conv_desc):
 
     cudnnCheckStatus(status)
 
-    return (pad_h.value, pad_w.value, u.value, v.value, upscalex.value, upscaley.value, mode.value,
+    return (pad_h.value, pad_w.value, u.value, v.value, dilation_h.value, dilation_w.value, mode.value,
             compute_type.value)
 
 
