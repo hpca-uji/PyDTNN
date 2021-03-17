@@ -18,8 +18,8 @@ import unittest
 
 import numpy as np
 
+from pydtnn.libs.conv_gemm import ConvGemm
 from .tools import Spinner
-from ..conv_gemm import ConvGemm
 from ..cython_modules import im2col_cython, col2im_cython
 
 

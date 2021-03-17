@@ -23,7 +23,7 @@ from .layer import Layer
 class Input(Layer):
 
     def __init__(self, shape=(1,)):
-        super(Input, self).__init__(shape)
+        super().__init__(shape)
 
     def forward(self, x):
         pass

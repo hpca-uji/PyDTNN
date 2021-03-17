@@ -30,8 +30,8 @@ class Conv2DRelu(Conv2D):
                  activation="", use_bias=True, weights_initializer="glorot_uniform",
                  biases_initializer="zeros", from_parent=None):
         if from_parent is None:
-            super(Conv2DRelu, self).__init__(nfilters, filter_shape, padding, stride,
-                                             activation, use_bias, weights_initializer, biases_initializer)
+            super().__init__(nfilters, filter_shape, padding, stride,
+                             activation, use_bias, weights_initializer, biases_initializer)
         else:
             with suppress(KeyError):
                 from_parent.__dict__.pop("forward")

@@ -26,7 +26,7 @@ from ..tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_FORWARD, P
 class AdditionBlock(Layer):
 
     def __init__(self, *args):
-        super(AdditionBlock, self).__init__()
+        super().__init__()
         self.paths = []
         for p in args:
             self.paths.append(p)

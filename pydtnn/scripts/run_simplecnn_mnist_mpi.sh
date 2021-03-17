@@ -1,8 +1,10 @@
 #!/bin/bash
 
 export OMP_NUM_THREADS=1
+export PYTHONOPTIMIZE=2
+export PYTHONUNBUFFERED="True"
 mpirun -np 4 \
-  python -Ou ../pydtnn_benchmark.py \
+  pydtnn_benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \

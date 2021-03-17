@@ -29,8 +29,6 @@ References:
 from setuptools.command.develop import develop
 from setuptools.command.install import install
 
-# from qtarmsim.post_install import main as qtarmsim_post_install
-
 
 class DevelopAndPostDevelop(develop):
     """Post-installation for development mode."""

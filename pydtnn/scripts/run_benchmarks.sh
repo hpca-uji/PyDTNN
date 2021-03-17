@@ -37,9 +37,7 @@ NODES=${NODES:-1}
 if [ -n "${ONLY_TRAINING}" ]; then
   # shellcheck disable=SC2034
   EVALUATE=False
-  # shellcheck disable=SC2034
   TEST_AS_VALIDATION=False
-  # shellcheck disable=SC2034
   VALIDATION_SPLIT=0.2
 fi
 
@@ -199,12 +197,14 @@ function run_benchmark() {
     PARALLEL=data
     # Example of MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts --bind-to none
     # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
-    CMD="mpirun -np "${NODES}" -ppn "${MPI_PPN:-1}" -iface "${MPI_IFACE:-ib0}" ${MPI_EXTRA_FLAGS}"
+    CMD="mpirun -np ${NODES} -ppn ${MPI_PPN:-1} -iface ${MPI_IFACE:-ib0} ${MPI_EXTRA_FLAGS}"
   fi
 
-  # 3) Launch benchmarks_CNN
+  # 3) Launch pydtnn_benchmark
+  export PYTHONOPTIMIZE=2
+  export PYTHONUNBUFFERED="True"
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
-  LD_PRELOAD="${PRELOAD}" ${CMD} python3 -Ou "${SCRIPT_PATH}"/../pydtnn_benchmark.py \
+  LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn_benchmark \
     --model="${MODEL}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \

@@ -99,7 +99,7 @@ def main():
     if model.weights_and_bias_filename:
         model.load_weights_and_bias(model.weights_and_bias_filename)
     # Metrics
-    metrics = [f for f in model.metrics.replace(" ", "").split(",")]
+    metrics_list = [f for f in model.metrics.replace(" ", "").split(",")]
     # Dataset
     dataset = get_dataset(model)
     if model.steps_per_epoch > 0:
@@ -117,7 +117,7 @@ def main():
         if rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
-        _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics)
+        _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)
         if rank == 0:
             t2 = time.time()
             total_time = t2 - t1
@@ -148,7 +148,7 @@ def main():
                                   local_batch_size=model.batch_size,
                                   val_split=model.validation_split,
                                   loss=model.loss_func,
-                                  metrics=metrics,
+                                  metrics_list=metrics_list,
                                   optimizer=optimizer,
                                   lr_schedulers=lr_schedulers)
     # Alternatively, the model can be trained on any specific data
@@ -157,7 +157,7 @@ def main():
     #                       nepochs=params.num_epochs,
     #                       local_batch_size=params.batch_size,
     #                       loss=params.loss_func,
-    #                       metrics=metrics,
+    #                       metrics_list=metrics_list,
     #                       optimizer=optimizer,
     #                       lr_schedulers=lr_schedulers)
     # Barrier
@@ -202,7 +202,7 @@ def main():
     if model.evaluate:
         if rank == 0:
             print('**** Evaluating on test dataset...')
-        _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics)
+        _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)
     # Barrier and finalize
     if model.comm is not None and _MPI is not None:
         model.comm.Barrier()

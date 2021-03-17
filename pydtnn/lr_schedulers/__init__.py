@@ -35,9 +35,6 @@ from .stop_at_loss import StopAtLoss
 from .warm_up_lr_scheduler import WarmUpLRScheduler
 from ..utils import get_derived_classes
 
-# Search this module for LRScheduler derived classes and expose them
-get_derived_classes(LRScheduler, locals())
-
 # Aliases
 early_stopping = EarlyStopping
 model_checkpoint = ModelCheckpoint
@@ -45,6 +42,9 @@ reduce_lr_every_nepochs = ReduceLREveryNEpochs
 reduce_lr_on_plateau = ReduceLROnPlateau
 stop_at_loss = StopAtLoss
 warm_up = WarmUpLRScheduler
+
+# Search this module for LRScheduler derived classes and expose them
+get_derived_classes(LRScheduler, locals())
 
 
 def get_lr_schedulers(model):

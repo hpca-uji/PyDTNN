@@ -54,7 +54,7 @@ _default_dataset_path = os.path.join(_this_file_path, "datasets/mnist")
 _desc = "Trains or evaluates a neural network using PyDTNN."
 _epilogue = f"""Example scripts that call this program for training
 and evaluating different neural network models with different datasets are
-available at: '{_scripts_path}'. """
+available at: '{_scripts_path}'."""
 
 # Parser and the supported arguments with their default values
 parser = argparse.ArgumentParser(description=_desc, epilog=_epilogue)

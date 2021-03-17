@@ -24,7 +24,7 @@ import sys
 def get_dataset(model):
     try:
         dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet"}
-        dataset_mod = importlib.import_module("datasets.dataset")
+        dataset_mod = importlib.import_module("pydtnn.datasets.dataset")
         dataset_obj = getattr(dataset_mod, dataset_name[model.dataset_name])
         dataset = dataset_obj(train_path=model.dataset_train_path,
                               test_path=model.dataset_test_path,

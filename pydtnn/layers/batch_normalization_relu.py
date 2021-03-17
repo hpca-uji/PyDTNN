@@ -32,9 +32,9 @@ class BatchNormalizationRelu(BatchNormalization):
                  moving_variance_initializer="ones",
                  sync_stats=False, from_parent=None):
         if from_parent is None:
-            super(BatchNormalizationRelu, self).__init__(beta, gamma, momentum,
-                                                         epsilon, moving_mean_initializer, moving_variance_initializer,
-                                                         sync_stats)
+            super().__init__(beta, gamma, momentum,
+                             epsilon, moving_mean_initializer, moving_variance_initializer,
+                             sync_stats)
         else:
             with suppress(KeyError):
                 from_parent.__dict__.pop("forward")

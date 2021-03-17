@@ -19,10 +19,10 @@
 
 import time
 
+from pydtnn.libs.conv_gemm import ConvGemm, ConvGemmCache
 from .layer import Layer
 from .. import activations
 from .. import initializers
-from ..conv_gemm import ConvGemm, ConvGemmCache
 from ..cython_modules import im2col_cython, add_cython, col2im_cython, transpose_1023_and_pad_cython, reindex_cython
 from ..model import TRAIN_MODE
 from ..performance_models import *
@@ -40,7 +40,7 @@ class Conv2D(Layer):
     def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
                  activation="", use_bias=True, weights_initializer="glorot_uniform",
                  biases_initializer="zeros"):
-        super(Conv2D, self).__init__()
+        super().__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
         self.padding = padding

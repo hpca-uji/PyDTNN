@@ -26,7 +26,7 @@ from ..performance_models import *
 class Dropout(Layer):
 
     def __init__(self, rate=0.5):
-        super(Dropout, self).__init__()
+        super().__init__()
         self.rate = min(1., max(0., rate))
         # The next attributes will be initialized later
         self.mask = None

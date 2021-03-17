@@ -60,7 +60,7 @@ class Settings:
     license = 'GPLV3+'
     scripts = []
     package_data = {
-        'pydtnn': ['scripts/*.sh', ],
+        'pydtnn': ['scripts/*.sh', 'scripts/extrae.xml', 'scripts/function-list', 'scripts/*.csv'],
     }
     data_files = []
     classifiers = [

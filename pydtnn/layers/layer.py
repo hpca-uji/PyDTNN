@@ -24,8 +24,9 @@ PyDTNN Layer base class
 import importlib
 from abc import ABC, abstractmethod
 
-from .. import model
-from ..performance_models import *
+import numpy as np
+
+from .. import model as model_module
 from ..tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_MDL_ALLREDUCE_DW, PYDTNN_OPS_ALLREDUCE_DW
 
@@ -41,18 +42,15 @@ except (ImportError, ModuleNotFoundError, OSError):
 class Layer(ABC):
 
     def __new__(cls, *args, **kwargs):
-        # If GPU is requested, return a GPU-related object instead
-        if not model.enable_cudnn:
+        if not model_module.enable_cudnn:
             new_cls = cls
         else:
+            # If GPU is requested, return a GPU-related object instead
             subclasses_names = [x.__name__ for x in cls.__subclasses__()]
             module_name = "activations" if "Activation" in subclasses_names else "layers"
-            module = importlib.import_module(f"{module_name}_gpu")
+            module = importlib.import_module(f"gpu_backend.{module_name}")
             new_cls = getattr(module, f"{cls.__name__}GPU")
-        instance = super(Layer, new_cls).__new__(new_cls)
-        if new_cls != cls:
-            instance.__init__(*args, **kwargs)
-        return instance
+        return super(Layer, new_cls).__new__(new_cls)
 
     def __init__(self, shape=()):
         self.nparams = 0

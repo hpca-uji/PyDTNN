@@ -51,7 +51,7 @@ def get_optimizer(model):
         optimizers_module = importlib.import_module("pydtnn.optimizers")
         optimizer_ = getattr(optimizers_module, model.optimizer_name)
     else:
-        optimizers_module = importlib.import_module("pydtnn.optimizers_gpu")
+        optimizers_module = importlib.import_module("pydtnn.gpu_backend.optimizers")
         optimizer_ = getattr(optimizers_module, f"{model.optimizer_name}_gpu")
     if model.optimizer_name == "rmsprop":
         opt = optimizer_(learning_rate=model.learning_rate,

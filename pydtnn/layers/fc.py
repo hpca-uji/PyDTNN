@@ -31,7 +31,7 @@ class FC(Layer):
     def __init__(self, shape=(1,), activation="", use_bias=True,
                  weights_initializer="glorot_uniform",
                  biases_initializer="zeros"):
-        super(FC, self).__init__(shape)
+        super().__init__(shape)
         self.act = getattr(activations, activation, None)
         self.use_bias = use_bias
         self.weights_initializer = getattr(initializers, weights_initializer)

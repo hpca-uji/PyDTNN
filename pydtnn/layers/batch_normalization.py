@@ -38,7 +38,7 @@ class BatchNormalization(Layer):
                  moving_mean_initializer="zeros",
                  moving_variance_initializer="ones",
                  sync_stats=False):
-        super(BatchNormalization, self).__init__()
+        super().__init__()
         self.gamma_init_val = gamma
         self.beta_init_val = beta
         self.momentum = momentum

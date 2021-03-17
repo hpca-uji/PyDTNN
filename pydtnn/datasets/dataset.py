@@ -27,6 +27,8 @@ import threading
 import numpy as np
 
 
+# @todo: split dataset.py into different files
+
 class BackgroundGenerator(threading.Thread):
     def __init__(self, generator, max_prefetch=1):
         threading.Thread.__init__(self)

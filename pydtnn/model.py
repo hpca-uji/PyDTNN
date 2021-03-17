@@ -29,7 +29,9 @@ from timeit import default_timer as timer
 
 from tqdm import tqdm
 
-from . import optimizers
+import pydtnn.gpu_backend.tensor_gpu
+import pydtnn.metrics
+from . import optimizers, losses, metrics
 from . import utils
 from .datasets.dataset import Dataset
 from .parser import parser
@@ -45,8 +47,7 @@ enable_cudnn = False
 try:
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as drv
-    import libcudnn.libcudnn as cudnn
-    import libnccl.libnccl as nccl
+    from .gpu_backend.libs import libcudnn as cudnn, libnccl as nccl
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
 except (ImportError, ModuleNotFoundError):
@@ -364,11 +365,6 @@ class Model:
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
 
         if self.enable_cudnn:
-            layer.cublas_handle = self.cublas_handle
-            layer.cudnn_handle = self.cudnn_handle
-            layer.stream = self.stream
-            layer.cudnn_dtype = self.cudnn_dtype
-            layer.tensor_fmt = self.tensor_fmt
             y = self.layers[-1].y if layer.id > 0 else None
             layer.initialize(prev_shape, need_dx, y)
         else:
@@ -483,7 +479,7 @@ class Model:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(loss_metrics)):
-            loss_str = utils.metric_format.get(loss_metrics[c], loss_metrics[c])
+            loss_str = pydtnn.metrics.metric_format.get(loss_metrics[c], loss_metrics[c])
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
@@ -573,21 +569,21 @@ class Model:
 
         dataset = Dataset(x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val)
         history = self.train_dataset(dataset, nepochs, local_batch_size, 0,
-                                     loss=loss, metrics=metrics, optimizer=optimizer,
+                                     loss=loss, metrics_list=metrics, optimizer=optimizer,
                                      bar_width=bar_width)
         return history
 
     def train_dataset(self, dataset, nepochs, local_batch_size, val_split=0.2,
-                      loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
+                      loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
                       optimizer=optimizers.SGD(), lr_schedulers=(), bar_width=110):
         if self.enable_cudnn and not hasattr(self, "y_batch"):
-            self.y_batch = utils.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                                           self.tensor_fmt, self.cudnn_dtype)
-        loss_func = getattr(utils, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
-                                         enable_gpu=self.enable_cudnn, dtype=self.dtype)
-        metrics_funcs = [getattr(utils, m)(shape=(local_batch_size, *self.layers[-1].shape), model=self,
-                                           enable_gpu=self.enable_cudnn, dtype=self.dtype) for m in metrics]
-        loss_metrics = [loss] + metrics
+            self.y_batch = pydtnn.gpu_backend.tensor_gpu.TensorGPU(
+                gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                self.tensor_fmt, self.cudnn_dtype)
+        loss_func = getattr(losses, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self)
+        metrics_funcs = [getattr(metrics, m)(shape=(local_batch_size, *self.layers[-1].shape), model=self) for m in
+                         metrics_list]
+        loss_metrics = [loss] + metrics_list
         self.history = {lm: [] for lm in (loss_metrics + [f"val_{m}" for m in loss_metrics])}
         optimizer.gpudirect = self.gpudirect
 
@@ -682,23 +678,23 @@ class Model:
         return self.total_metrics
 
     def evaluate(self, x_test, y_test, local_batch_size,
-                 loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
+                 loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
                  bar_width=110):
 
         dataset = Dataset(x_test=x_test, y_test=y_test)
-        self.evaluate_dataset(dataset, local_batch_size, loss=loss, metrics=metrics, bar_width=bar_width)
+        self.evaluate_dataset(dataset, local_batch_size, loss=loss, metrics_list=metrics_list, bar_width=bar_width)
 
     def evaluate_dataset(self, dataset, local_batch_size,
-                         loss="categorical_cross_entropy", metrics=("categorical_accuracy",),
+                         loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
                          bar_width=120):
         if self.enable_cudnn and not hasattr(self, "y_batch"):
-            self.y_batch = utils.TensorGPU(gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                                           self.tensor_fmt, self.cudnn_dtype)
-        loss_func = getattr(utils, loss)(shape=(self.batch_size, *self.layers[-1].shape), model=self,
-                                         enable_gpu=self.enable_cudnn, dtype=self.dtype)
-        metrics_funcs = [getattr(utils, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self,
-                                           enable_gpu=self.enable_cudnn, dtype=self.dtype) for m in metrics]
-        loss_metrics = [loss] + metrics
+            self.y_batch = pydtnn.gpu_backend.tensor_gpu.TensorGPU(
+                gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                self.tensor_fmt, self.cudnn_dtype)
+        loss_func = getattr(losses, loss)(shape=(self.batch_size, *self.layers[-1].shape), model=self)
+        metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
+                         metrics_list]
+        loss_metrics = [loss] + metrics_list
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
         if self.kwargs.get("enable_fused_relus"):

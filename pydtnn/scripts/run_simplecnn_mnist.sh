@@ -1,7 +1,9 @@
 #!/bin/bash
 
 export OMP_NUM_THREADS=4
-python -Ou ../pydtnn_benchmark.py \
+export PYTHONOPTIMIZE=2
+export PYTHONUNBUFFERED="True"
+pydtnn_benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=../datasets/mnist \
