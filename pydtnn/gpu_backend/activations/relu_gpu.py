@@ -1,4 +1,4 @@
-#
+
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
 #  Copyright (C) 2021 Universitat Jaume I
@@ -21,13 +21,10 @@ from pydtnn.activations import Relu
 from .activation_gpu import ActivationGPU
 from ..tensor_gpu import TensorGPU
 
-try:
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
-    # noinspection PyUnresolvedReferences
-    import libcudnn.libcudnn as cudnn
-except (ImportError, ModuleNotFoundError):
-    pass
+# noinspection PyUnresolvedReferences
+import pycuda.gpuarray as gpuarray
+# noinspection PyUnresolvedReferences
+from ..libs import libcudnn as cudnn
 
 
 class ReluGPU(ActivationGPU, Relu):
@@ -37,9 +34,7 @@ class ReluGPU(ActivationGPU, Relu):
         self.act_desc = None
 
     def initialize(self, prev_shape, need_dx, x):
-        self.shape = prev_shape
-        self.need_dx = need_dx
-        self.x = x
+        super().initialize(prev_shape, need_dx, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
 
@@ -50,7 +45,7 @@ class ReluGPU(ActivationGPU, Relu):
         relu_ceiling = 0.0
         cudnn.cudnnSetActivationDescriptor(self.act_desc, mode, nan, relu_ceiling)
 
-        # Activations a
+        # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
 

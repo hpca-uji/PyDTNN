@@ -48,16 +48,16 @@ class BinaryCrossEntropyGPU(LossGPU):
             }
             return;
         }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.dtype]))
+        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("binary_cross_entropy")
 
     def __call__(self, y_pred, y_targ, global_batch_size):
         assert len(y_targ.shape) == 2
-        threads = min(self.b, 1024)
-        blocks = max(self.b, 1024) // threads + 1
+        threads = min(self.model.batch_size, 1024)
+        blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ, y_pred, self.loss, self.dx.ary,
-                    self.b, global_batch_size, self.n, self.eps,
+                    self.model.batch_size, global_batch_size, self.shape[1], self.eps,
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
-        loss = -gpuarray.sum(self.loss) / self.b
+        loss = -gpuarray.sum(self.loss) / self.model.batch_size
         return loss, self.dx

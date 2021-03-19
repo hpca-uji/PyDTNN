@@ -32,12 +32,14 @@ class Metric(ABC):
             new_cls = cls
         else:
             # If GPU is requested, return a GPU-related object instead
-            module = importlib.import_module(f"gpu_backend.losses")
+            module = importlib.import_module(f"..gpu_backend.metrics", package="pydtnn.metrics")
             new_cls = getattr(module, f"{cls.__name__}GPU")
-        return super(Metric, new_cls).__new__(new_cls)
+        instance = super(Metric, new_cls).__new__(new_cls)
+        if new_cls != cls:
+            instance.__init__(*args, **kwargs)
+        return instance
 
     def __init__(self, shape, model, eps=1e-8):
         self.shape = shape
-        self.b, self.n = shape
         self.model = model
         self.eps = eps

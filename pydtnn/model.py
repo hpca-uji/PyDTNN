@@ -208,7 +208,7 @@ class Model:
         self.gpudirect = enable_gpudirect
         self.enable_nccl = enable_nccl
         self.dtype = dtype
-        if tracer_output == "":
+        if tracer_output == "" and not enable_gpu:
             self.tracer = ExtraeTracer(tracing)
         elif enable_gpu:
             self.tracer = SimpleTracerGPU(tracing, tracer_output, self.comm)
@@ -241,16 +241,17 @@ class Model:
             if not supported_cudnn:
                 print("Please, install pycuda, skcuda, cudnn, and, optionally, nccl, to be able to use the GPUs!")
                 sys.exit(-1)
-            import pycuda.autoinit
+
+            # import pycuda.autoinit
             # The next fake test exists only to avoid the pycuda.autoinit import being removed when optimizing imports
-            if self.kwargs.get('fake_pycuda_autoinit_option'):
-                pycuda.autoinit()
+            # if self.kwargs.get('fake_pycuda_autoinit_option'):
+            #    pycuda.autoinit()
             # Uncomment the next code if pycuda.autoinit is not available
-            # device_id = self.rank % drv.Device.count()
-            # drv.init()
-            # context = drv.Device(device_id).make_context()
-            # import atexit
-            # atexit.register(context.pop)
+            device_id = self.rank % drv.Device.count()
+            drv.init()
+            context = drv.Device(device_id).make_context()
+            import atexit
+            atexit.register(context.pop)
 
             if self.enable_nccl and self.comm:
                 types = {np.float64: nccl.DataType.Float64,
@@ -360,7 +361,6 @@ class Model:
 
     def add(self, layer):
         layer.set_model(self)
-
         need_dx = layer.id > 1
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
 
@@ -576,7 +576,7 @@ class Model:
     def train_dataset(self, dataset, nepochs, local_batch_size, val_split=0.2,
                       loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
                       optimizer=optimizers.SGD(), lr_schedulers=(), bar_width=110):
-        if self.enable_cudnn and not hasattr(self, "y_batch"):
+        if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.gpu_backend.tensor_gpu.TensorGPU(
                 gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_fmt, self.cudnn_dtype)
@@ -687,7 +687,7 @@ class Model:
     def evaluate_dataset(self, dataset, local_batch_size,
                          loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
                          bar_width=120):
-        if self.enable_cudnn and not hasattr(self, "y_batch"):
+        if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.gpu_backend.tensor_gpu.TensorGPU(
                 gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_fmt, self.cudnn_dtype)

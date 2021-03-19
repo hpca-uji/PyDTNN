@@ -44,14 +44,14 @@ class CategoricalAccuracyGPU(MetricGPU):
             }
             return;
         }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.dtype]))
+        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("categorical_accuracy")
 
     def __call__(self, y_pred, y_targ):
-        threads = min(self.b, 1024)
-        blocks = max(self.b, 1024) // threads + 1
+        threads = min(self.model.batch_size, 1024)
+        blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ, y_pred, self.cost,
-                    np.int32(self.b), np.int32(self.n),
+                    np.int32(self.model.batch_size), np.int32(self.shape[1]),
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
-        return gpuarray.sum(self.cost).get() * 100 / self.b
+        return gpuarray.sum(self.cost).get() * 100 / self.model.batch_size

@@ -28,7 +28,7 @@ def bn_inference_cython(x, running_mean, inv_std, gamma, beta):
     #   y = gamma * xn + beta
     shape = x.shape
 
-    cdef np.ndarray y = np.zeros((shape,), dtype=x.dtype, order="F")
+    cdef np.ndarray y = np.zeros_like(x, order="F")
 
     if x.dtype == np.int8:
         bn_inference_cython_inner_int8(x, running_mean, inv_std, y, gamma, beta)

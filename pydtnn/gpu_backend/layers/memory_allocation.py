@@ -41,3 +41,9 @@ def checkConvolutionMemory(size):
         ws.free()
         ws = drv.mem_alloc(ws_size) if ws_size > 0 else 0
         ws_ptr = ctypes.c_void_p(int(ws))
+
+def getConvolutionWorkspaceSize():
+    return ws_size
+
+def getConvolutionWorkspacePtr():
+    return ws_ptr

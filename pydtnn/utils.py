@@ -120,7 +120,8 @@ def get_derived_classes(base_class, module_locals):
     dir_path = os.path.dirname(os.path.realpath(file_name))
     for python_file in glob(os.path.join(dir_path, '*.py')):
         directory, base_file_name = os.path.split(python_file)
-        module_name = os.path.split(directory)[-1]
+        # module_name = os.path.split(directory)[-1]
+        module_name = directory.split("pydtnn/")[-1].replace("/", ".")
         if base_file_name == "__init__.py":
             continue
         module = import_module(f"pydtnn.{module_name}.{base_file_name[:-3]}")

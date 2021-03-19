@@ -18,7 +18,7 @@
 #
 
 # noinspection PyUnresolvedReferences
-import libcudnn.libcudnn as cudnn
+from ..libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.driver as drv
 # noinspection PyUnresolvedReferences
@@ -36,7 +36,7 @@ from ..tensor_gpu import TensorGPU
 class FCGPU(LayerGPUMixin, layers.FC):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.matmul = utils.matmul_gpu
         self.matvec = utils.matvec_gpu
 

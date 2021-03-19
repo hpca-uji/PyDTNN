@@ -18,7 +18,7 @@
 #
 
 # noinspection PyUnresolvedReferences
-import libcudnn.libcudnn as cudnn
+from ..libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.driver as drv
 # noinspection PyUnresolvedReferences
@@ -30,14 +30,14 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
     PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES, \
     PYDTNN_OPS_BACKWARD_CUDNN_DW, PYDTNN_OPS_BACKWARD_CUDNN_DB, PYDTNN_OPS_BACKWARD_CUDNN_DX
 from .layer_gpu_mixin import LayerGPUMixin
-from .memory_allocation import checkConvolutionMemory, ws_ptr, ws_size
+from .memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from ..tensor_gpu import TensorGPU
 
 
 class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
 
     def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.fwd_algo = None
         self.fwd_time = None
         self.bwd_dw_algo = None
@@ -103,34 +103,46 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
             self.db = TensorGPU(db_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
                                 gpudirect=self.model.gpudirect)
 
+        self.fwd_algo = cudnn.cudnnFindConvolutionForwardAlgorithm(self.model.cudnn_handle,
+                                              x.desc, self.weights.desc, self.conv_desc, self.y.desc, 20)[0].algo \
+                        if self.model.enable_cudnn_auto_conv_alg else \
+                        cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
+
         local_size = cudnn.cudnnGetConvolutionForwardWorkspaceSize(self.model.cudnn_handle,
-                                                                   x.desc, self.weights.desc, self.conv_desc,
-                                                                   self.y.desc, self.fwd_algo)
+                                              x.desc, self.weights.desc, self.conv_desc,
+                                              self.y.desc, self.fwd_algo)
         checkConvolutionMemory(local_size)
 
+        self.bwd_dw_algo = cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(self.model.cudnn_handle,
+                                              x.desc, self.y.desc, self.conv_desc, self.weights.desc, 20)[0].algo \
+                        if self.model.enable_cudnn_auto_conv_alg else \
+                        cudnn.cudnnConvolutionBwdFilterAlgo['CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1']
+
         local_size = cudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(self.model.cudnn_handle,
-                                                                          x.desc, self.y.desc, self.conv_desc,
-                                                                          self.weights.desc, self.bwd_dw_algo)
+                                              x.desc, self.y.desc, self.conv_desc,
+                                              self.weights.desc, self.bwd_dw_algo)
         checkConvolutionMemory(local_size)
 
         if self.need_dx:
+            self.bwd_dx_algo = cudnn.cudnnFindConvolutionBackwardDataAlgorithm(self.model.cudnn_handle,
+                                              self.weights.desc, self.y.desc, self.conv_desc, x.desc, 20)[0].algo \
+                        if self.model.enable_cudnn_auto_conv_alg else \
+                        cudnn.cudnnConvolutionBwdDataAlgo['CUDNN_CONVOLUTION_BWD_DATA_ALGO_1']
+
             local_size = cudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(self.model.cudnn_handle,
-                                                                            self.weights.desc, self.y.desc,
-                                                                            self.conv_desc,
-                                                                            x.desc, self.bwd_dx_algo)
+                                              self.weights.desc, self.y.desc, self.conv_desc,
+                                              x.desc, self.bwd_dx_algo)
             checkConvolutionMemory(local_size)
 
         self.fwd_time = \
             matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) + \
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) + \
             matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), k=self.co,
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) \
+                        if need_dx else 0
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
@@ -139,7 +151,8 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
         cudnn.cudnnConvolutionForward(self.model.cudnn_handle, alpha,
                                       x.desc, x.ptr,
                                       self.weights.desc, self.weights.ptr,
-                                      self.conv_desc, self.fwd_algo, ws_ptr, ws_size, beta,
+                                      self.conv_desc, self.fwd_algo,
+                                      getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
                                       self.y.desc, self.y.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -159,8 +172,8 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
         # Compute dw
         cudnn.cudnnConvolutionBackwardFilter(self.model.cudnn_handle, alpha,
                                              self.x.desc, self.x.ptr,
-                                             dy.desc, dy.ptr, self.conv_desc,
-                                             self.bwd_dw_algo, ws_ptr, ws_size, beta,
+                                             dy.desc, dy.ptr, self.conv_desc, self.bwd_dw_algo,
+                                             getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
                                              self.dw.desc, self.dw.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -188,7 +201,8 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
             cudnn.cudnnConvolutionBackwardData(self.model.cudnn_handle, alpha,
                                                self.weights.desc, self.weights.ptr,
                                                dy.desc, dy.ptr,
-                                               self.conv_desc, self.bwd_dx_algo, ws_ptr, ws_size,
-                                               beta, self.dx.desc, self.dx.ptr)
+                                               self.conv_desc, self.bwd_dx_algo,
+                                               getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                               self.dx.desc, self.dx.ptr)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx
