@@ -138,6 +138,7 @@ _pe_group.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUP
 _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
+_pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default=True)
 
 # Tracing and profiling
 _tr_group = parser.add_argument_group("Tracing options")

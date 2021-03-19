@@ -53,16 +53,16 @@ class CategoricalCrossEntropyGPU(LossGPU):
             }
             return;
         }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.dtype]))
+        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("categorical_cross_entropy")
 
     def __call__(self, y_pred, y_targ, global_batch_size):
-        threads = min(self.b, 1024)
-        blocks = max(self.b, 1024) // threads + 1
+        threads = min(self.model.batch_size, 1024)
+        blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
-                    np.int32(self.b), np.int32(global_batch_size),
-                    np.int32(self.n), np.float32(self.eps),
+                    np.int32(self.model.batch_size), np.int32(global_batch_size),
+                    np.int32(self.shape[1]), np.float32(self.eps),
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
-        loss = -gpuarray.sum(self.loss).get() / self.b
+        loss = -gpuarray.sum(self.loss).get() / self.model.batch_size
         return loss, self.dx

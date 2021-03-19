@@ -47,7 +47,7 @@ sgd = SGD
 
 def get_optimizer(model):
     """Get optimizer object from model attributes"""
-    if not model.enable_gpu:
+    if not model.enable_cudnn:
         optimizers_module = importlib.import_module("pydtnn.optimizers")
         optimizer_ = getattr(optimizers_module, model.optimizer_name)
     else:

@@ -1,4 +1,4 @@
-#
+
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
 #  Copyright (C) 2021 Universitat Jaume I
@@ -18,7 +18,7 @@
 #
 
 # noinspection PyUnresolvedReferences
-import libcudnn.libcudnn as cudnn
+from ..libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
@@ -42,7 +42,10 @@ class ConcatenationBlockGPU(LayerGPUMixin, layers.ConcatenationBlock):
         self.dy = None
 
     def initialize(self, prev_shape, need_dx, x):
-        super().initialize(prev_shape, need_dx, x)
+        # super().initialize(prev_shape, need_dx, x)
+        need_dx = True
+        self.x = x
+        self.prev_shape = prev_shape 
         self.out_shapes = []
         for p in self.paths:
             for i, layer in enumerate(p):

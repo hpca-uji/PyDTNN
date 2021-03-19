@@ -18,7 +18,7 @@
 #
 
 # noinspection PyUnresolvedReferences
-import libcudnn.libcudnn as cudnn
+from ..libs import libcudnn as cudnn
 
 from pydtnn import layers
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, \
@@ -30,7 +30,10 @@ from .layer_gpu_mixin import LayerGPUMixin
 class AdditionBlockGPU(LayerGPUMixin, layers.AdditionBlock):
 
     def initialize(self, prev_shape, need_dx, x):
-        super().initialize(prev_shape, need_dx, x)
+        # super().initialize(prev_shape, need_dx, x)
+        need_dx = True
+        self.x = x
+        self.prev_shape = prev_shape
         self.out_shapes = []
         for p_i, p in enumerate(self.paths):
             for i, layer in enumerate(p):
@@ -45,6 +48,7 @@ class AdditionBlockGPU(LayerGPUMixin, layers.AdditionBlock):
                 self.nparams += layer.nparams
             self.out_shapes.append(prev_shape)
             prev_shape = self.prev_shape
+            x = self.x
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 

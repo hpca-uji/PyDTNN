@@ -23,13 +23,10 @@ from pydtnn.activations import Log
 from .activation_gpu import ActivationGPU
 from ..tensor_gpu import TensorGPU
 
-try:
-    # noinspection PyUnresolvedReferences
-    from pycuda.elementwise import ElementwiseKernel
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
-except (ImportError, ModuleNotFoundError):
-    pass
+# noinspection PyUnresolvedReferences
+import pycuda.gpuarray as gpuarray
+# noinspection PyUnresolvedReferences
+from ..libs import libcudnn as cudnn
 
 
 class LogGPU(ActivationGPU, Log):
@@ -55,7 +52,7 @@ class LogGPU(ActivationGPU, Log):
             "out[i] = 1.0 / (1.0 + %s(in[i]));" % {np.float32: "expf", np.float64: "exp"}[self.model.dtype],
             "log")
 
-        # Activations a
+        # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
 

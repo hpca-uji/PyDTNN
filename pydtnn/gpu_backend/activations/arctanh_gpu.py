@@ -23,13 +23,10 @@ from pydtnn.activations import Arctanh
 from .activation_gpu import ActivationGPU
 from ..tensor_gpu import TensorGPU
 
-try:
-    # noinspection PyUnresolvedReferences
-    from pycuda.elementwise import ElementwiseKernel
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
-except (ImportError, ModuleNotFoundError):
-    pass
+# noinspection PyUnresolvedReferences
+import pycuda.gpuarray as gpuarray
+# noinspection PyUnresolvedReferences
+from ..libs import libcudnn as cudnn
 
 
 class ArctanhGPU(ActivationGPU, Arctanh):
@@ -52,7 +49,7 @@ class ArctanhGPU(ActivationGPU, Arctanh):
             "out[i] = 1.0 / (1.0 + %s(in[i], 2));" % {np.float32: "powf", np.float64: "pow"}[self.model.dtype],
             "datanh")
 
-        # Activations a
+        # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
 

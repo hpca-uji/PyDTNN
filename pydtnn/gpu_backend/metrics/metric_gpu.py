@@ -28,7 +28,7 @@ class MetricGPU(Metric, ABC):
 
     def __init__(self, shape, model, eps=1e-8):
         super().__init__(shape, model, eps)
-        self.cost = gpuarray.empty((self.b,), self.model.dtype)
+        self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         self.kernel = self.__init_gpu_kernel__()
 
     @abstractmethod

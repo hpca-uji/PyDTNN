@@ -21,13 +21,10 @@ from pydtnn.activations import Softmax
 from .activation_gpu import ActivationGPU
 from ..tensor_gpu import TensorGPU
 
-try:
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
-    # noinspection PyUnresolvedReferences
-    import libcudnn.libcudnn as cudnn
-except (ImportError, ModuleNotFoundError):
-    pass
+# noinspection PyUnresolvedReferences
+import pycuda.gpuarray as gpuarray
+# noinspection PyUnresolvedReferences
+from ..libs import libcudnn as cudnn
 
 
 class SoftmaxGPU(ActivationGPU, Softmax):
@@ -44,7 +41,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         self.mode = cudnn.cudnnSoftmaxMode['CUDNN_SOFTMAX_MODE_INSTANCE']
         self.algo = cudnn.cudnnSoftmaxAlgorithm['CUDNN_SOFTMAX_ACCURATE']
 
-        # Activations a
+        # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
 

@@ -24,7 +24,7 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn import layers
 from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_COPY, PYDTNN_OPS_BACKWARD_COPY
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_RESHAPE_Y, PYDTNN_OPS_BACKWARD_RESHAPE_DX
 from .layer_gpu_mixin import LayerGPUMixin
 from ..tensor_gpu import TensorGPU
 
@@ -33,32 +33,20 @@ class FlattenGPU(LayerGPUMixin, layers.Flatten):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.copy = None
 
     def initialize(self, prev_shape, need_dx, x):
         super().initialize(prev_shape, need_dx, x)
-        self.copy = ElementwiseKernel("T *dst, T *src".replace("T",
-                                                               {np.float32: "float",
-                                                                np.float64: "double"}[self.model.dtype]),
-                                      "dst[i] = src[i];", "copy")
-        # Activations y
-        y_gpu = gpuarray.empty((self.model.batch_size, np.prod(prev_shape)), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
-        # Derivative dx
-        if self.need_dx:
-            dx_gpu = gpuarray.empty((self.model.batch_size, *prev_shape), self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = x
 
     def forward(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_COPY)
-        self.copy(self.y.ary, x.ary, stream=self.model.stream)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = x.reshape((self.model.batch_size, np.prod(self.prev_shape)))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        return self.y
+        return y
 
     def backward(self, dy):
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_COPY)
-            # Compute dx
-            self.copy(self.dx.ary, dy.ary, stream=self.model.stream)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DX)
+            dx = dy.reshape((self.model.batch_size, *self.prev_shape))
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-            return self.dx
+            return dx

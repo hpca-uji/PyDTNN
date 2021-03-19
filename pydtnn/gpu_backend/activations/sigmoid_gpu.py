@@ -21,13 +21,10 @@ from pydtnn.activations import Sigmoid
 from .activation_gpu import ActivationGPU
 from ..tensor_gpu import TensorGPU
 
-try:
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
-    # noinspection PyUnresolvedReferences
-    import libcudnn.libcudnn as cudnn
-except (ImportError, ModuleNotFoundError):
-    pass
+# noinspection PyUnresolvedReferences
+import pycuda.gpuarray as gpuarray
+# noinspection PyUnresolvedReferences
+from ..libs import libcudnn as cudnn
 
 
 class SigmoidGPU(ActivationGPU, Sigmoid):

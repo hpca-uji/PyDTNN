@@ -18,7 +18,7 @@
 #
 
 # noinspection PyUnresolvedReferences
-import libcudnn.libcudnn as cudnn
+from ..libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 

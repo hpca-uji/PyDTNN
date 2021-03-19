@@ -84,18 +84,19 @@ class Conv2D(Layer):
         self.shape = (self.co, self.ho, self.wo)
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
-        if self.model.enable_conv_gemm:
-            self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
-            if not self.model.conv_gemm_cache:
-                ConvGemmCache.disable()
-            setattr(self, "forward", self._forward_cg)
-            setattr(self, "backward", self._backward_cg)
-            self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
-            self.cg_deconv = self.model.conv_gemm_deconv
-            self.cg_trans = self.model.conv_gemm_trans
-        else:
-            setattr(self, "forward", self._forward_i2c)
-            setattr(self, "backward", self._backward_i2c)
+        if not self.model.enable_cudnn:
+            if self.model.enable_conv_gemm:
+                self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                if not self.model.conv_gemm_cache:
+                    ConvGemmCache.disable()
+                setattr(self, "forward", self._forward_cg)
+                setattr(self, "backward", self._backward_cg)
+                self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
+                self.cg_deconv = self.model.conv_gemm_deconv
+                self.cg_trans = self.model.conv_gemm_trans
+            else:
+                setattr(self, "forward", self._forward_i2c)
+                setattr(self, "backward", self._backward_i2c)
 
         if not self.debug:
             time.perf_counter = lambda: 0

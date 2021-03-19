@@ -18,7 +18,7 @@
 #
 
 # noinspection PyUnresolvedReferences
-import libcudnn.libcudnn as cudnn
+from ..libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.driver as drv
 # noinspection PyUnresolvedReferences
@@ -82,7 +82,7 @@ class BatchNormalizationGPU(LayerGPUMixin, layers.BatchNormalization):
         beta_gpu = gpuarray.to_gpu(self.beta_value)
         self.beta = TensorGPU(beta_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
 
-        self.nparams = self.gamma.size + self.beta.size
+        self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         if self.model.gpudirect:
             self.dgamma_cpu = drv.aligned_zeros(self.gamma.ary.shape, self.model.dtype)

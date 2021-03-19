@@ -52,3 +52,7 @@ class TensorGPU:
             cudnn.cudnnSetFilter4dDescriptor(self.desc, cudnn_dtype,
                                              tensor_format, *self.shape)
         self.cublas = cublas
+
+    def reshape(self, shape):
+        self.ary = self.ary.reshape(shape)
+        return self

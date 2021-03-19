@@ -35,10 +35,6 @@ from io import StringIO
 
 import numpy as np
 
-from pydtnn.datasets import get_dataset
-from pydtnn.model import Model
-from pydtnn.optimizers import get_optimizer
-from pydtnn.lr_schedulers import get_lr_schedulers
 from pydtnn.parser import parser
 
 Extrae_tracing = False
@@ -69,7 +65,7 @@ def main():
         params.mpi_processes = params.comm.Get_size()
         rank = params.comm.Get_rank()
         params.global_batch_size = params.batch_size * params.mpi_processes
-        if params.optimizer == "sgd" and params.learning_rate_scaling:
+        if params.optimizer_name == "sgd" and params.learning_rate_scaling:
             params.learning_rate *= params.mpi_processes
     elif params.parallel == "sequential":
         params.comm = None
@@ -82,9 +78,14 @@ def main():
         params.gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
     except (FileNotFoundError, subprocess.CalledProcessError):
         params.gpus_per_node = 0
-        params.gpus_per_node = 0
     if params.enable_gpu and params.parallel == "data":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
+
+    from pydtnn.datasets import get_dataset
+    from pydtnn.model import Model
+    from pydtnn.optimizers import get_optimizer
+    from pydtnn.lr_schedulers import get_lr_schedulers
+
     # Initialize random seeds to 0
     random.seed(0)
     np.random.seed(0)
@@ -144,13 +145,13 @@ def main():
             pr.enable()
     # Training a model directly from a dataset
     history = model.train_dataset(dataset,
-                                  nepochs=model.num_epochs,
-                                  local_batch_size=model.batch_size,
-                                  val_split=model.validation_split,
-                                  loss=model.loss_func,
-                                  metrics_list=metrics_list,
-                                  optimizer=optimizer,
-                                  lr_schedulers=lr_schedulers)
+                                  nepochs = model.num_epochs,
+                                  local_batch_size = model.batch_size,
+                                  val_split = model.validation_split,
+                                  loss = model.loss_func,
+                                  metrics_list = metrics_list,
+                                  optimizer = optimizer,
+                                  lr_schedulers = lr_schedulers)
     # Alternatively, the model can be trained on any specific data
     # history = model.train(x_train=dataset.X_train_val, y_train=dataset.Y_train_val,
     #                       x_val=dataset.x_test, y_val=dataset.y_test,

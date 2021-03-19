@@ -21,10 +21,12 @@ from abc import ABC
 
 class ActivationGPU(ABC):
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.x = None
         self.y = None
         self.dx = None
 
     def initialize(self, prev_shape, need_dx, x):
+        super().initialize(prev_shape, need_dx)
         self.x = x
