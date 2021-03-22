@@ -19,13 +19,12 @@
 
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_MDL_ALLREDUCE_DW, PYDTNN_OPS_ALLREDUCE_DW
-import pydtnn.gpu_backend.libs.libnccl as nccl
 
 try:
     # noinspection PyUnresolvedReferences
     from mpi4py import MPI
     # noinspection PyUnresolvedReferences
-    import libnccl.libnccl as nccl
+    import pydtnn.gpu_backend.libs.libnccl as nccl
 except (ImportError, ModuleNotFoundError, OSError):
     pass
 

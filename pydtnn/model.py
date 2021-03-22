@@ -42,16 +42,22 @@ from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDT
 
 supported_gpu = False
 supported_cudnn = True
+supported_nccl = True
 supported_mpi4py = True
 enable_cudnn = False
 try:
     import pycuda.gpuarray as gpuarray
     import pycuda.driver as drv
-    from .gpu_backend.libs import libcudnn as cudnn, libnccl as nccl
+    from .gpu_backend.libs import libcudnn as cudnn
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
-except (ImportError, ModuleNotFoundError):
+except (ImportError, ModuleNotFoundError, OSError):
     supported_cudnn = False
+
+try:
+    from .gpu_backend.libs import libnccl as nccl
+except (ImportError, ModuleNotFoundError, OSError):
+    supported_nccl = False
 
 try:
     from mpi4py import MPI
@@ -239,7 +245,7 @@ class Model:
             sys.exit(-1)
         if self.enable_cudnn:
             if not supported_cudnn:
-                print("Please, install pycuda, skcuda, cudnn, and, optionally, nccl, to be able to use the GPUs!")
+                print("Please, install pycuda, skcuda and cudnn to be able to use the GPUs!")
                 sys.exit(-1)
 
             # import pycuda.autoinit
@@ -254,6 +260,10 @@ class Model:
             atexit.register(context.pop)
 
             if self.enable_nccl and self.comm:
+                if not supported_nccl:
+                    print("Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!")
+                    sys.exit(-1)
+
                 types = {np.float64: nccl.DataType.Float64,
                          np.float32: nccl.DataType.Float32,
                          np.int8: nccl.DataType.Int8,
