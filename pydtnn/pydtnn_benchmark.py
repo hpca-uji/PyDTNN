@@ -36,6 +36,11 @@ from io import StringIO
 import numpy as np
 
 from pydtnn.parser import parser
+from pydtnn.datasets import get_dataset
+from pydtnn.model import Model
+from pydtnn.optimizers import get_optimizer
+from pydtnn.lr_schedulers import get_lr_schedulers
+
 
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
@@ -45,13 +50,11 @@ if os.environ.get("EXTRAE_ON", None) == "1":
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
-
 def show_options(params):
     for arg in vars(params):
         if arg != "comm":
             print(f'  {arg:31s}: {str(getattr(params, arg)):s}')
             # print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
-
 
 def main():
     # Parse options
@@ -80,11 +83,6 @@ def main():
         params.gpus_per_node = 0
     if params.enable_gpu and params.parallel == "data":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % params.gpus_per_node)
-
-    from pydtnn.datasets import get_dataset
-    from pydtnn.model import Model
-    from pydtnn.optimizers import get_optimizer
-    from pydtnn.lr_schedulers import get_lr_schedulers
 
     # Initialize random seeds to 0
     random.seed(0)

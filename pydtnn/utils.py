@@ -92,6 +92,9 @@ def convert_size(size_bytes):
     s = round(size_bytes / p, 2)
     return "%s %sytes" % (s, size_name[i])
 
+def get_module_path(path, base):
+    prev_dir, last_dir = os.path.split(path)
+    return base if last_dir == base else f"{get_module_path(prev_dir, base)}.{last_dir}"
 
 def get_derived_classes(base_class, module_locals):
     """
@@ -119,12 +122,12 @@ def get_derived_classes(base_class, module_locals):
         print("Warning: the 'get_derived_classes()' function should be called from an '__init__.py' file.")
     dir_path = os.path.dirname(os.path.realpath(file_name))
     for python_file in glob(os.path.join(dir_path, '*.py')):
-        directory, base_file_name = os.path.split(python_file)
-        # module_name = os.path.split(directory)[-1]
-        module_name = directory.split("pydtnn/")[-1].replace("/", ".")
-        if base_file_name == "__init__.py":
+        assert "pydtnn" in python_file
+        directory = get_module_path(python_file, "pydtnn")
+        module_path, module_ext = os.path.splitext(directory)
+        if "__init__" in directory :
             continue
-        module = import_module(f"pydtnn.{module_name}.{base_file_name[:-3]}")
+        module = import_module(module_path)
         for attribute_name in [a_n for a_n in dir(module) if a_n not in module_locals]:
             attribute = getattr(module, attribute_name)
             if inspect.isclass(attribute):
