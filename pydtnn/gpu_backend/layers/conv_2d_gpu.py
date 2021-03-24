@@ -81,7 +81,7 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
         if self.grouping == "depthwise":
             cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
 
-        # Allow NCHW -> NHWC conversion for the of Tensor Cores
+        # Allow NCHW -> NHWC conversion for the use of Tensor Cores
         math_type = cudnn.cudnnMathType['CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION']
         # math_type = cudnn.cudnnMathType['CUDNN_DEFAULT_MATH']
         cudnn.cudnnSetConvolutionMathType(self.conv_desc, math_type)
