@@ -28,3 +28,5 @@ from relu_cython import relu_cython
 from transpose_cython import \
     transpose_0231_kji_cython, transpose_0231_ijk_cython, transpose_1230_ji_cython, \
     transpose_1230_ij_cython, transpose_2d_f2c_ji_cython, transpose_2d_f2c_ij_cython
+from pointwise_conv_cython import pointwise_conv_cython
+from depthwise_conv_cython import depthwise_conv_cython

@@ -48,6 +48,7 @@ class Pool2D(Layer, ABC):
         self.kh, self.kw = self.pool_shape
         self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
+        assert self.ho > 0 and self.wo > 0
         self.co = self.ci
         self.shape = (self.co, self.ho, self.wo)
         self.n = np.prod(self.shape)

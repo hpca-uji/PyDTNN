@@ -55,7 +55,15 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
         self.bwd_dw_algo = cudnn.cudnnConvolutionBwdFilterAlgo['CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1']
         self.bwd_dx_algo = cudnn.cudnnConvolutionBwdDataAlgo['CUDNN_CONVOLUTION_BWD_DATA_ALGO_1']
         # Filters
-        self.weights_cpu = self.weights_initializer((self.co, self.ci, *self.filter_shape), self.model.dtype)
+        if self.grouping == "depthwise":
+            self.co = self.ci
+            weights_shape = (self.co, 1, *self.filter_shape)
+        elif self.grouping == "pointwise":
+            self.kh = self.kw = 1
+            weights_shape = (self.co, self.ci, 1, 1)
+        else:
+            weights_shape = (self.co, self.ci, *self.filter_shape)
+        self.weights_cpu = self.weights_initializer(weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorGPU(weights_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, "filter")
         # Biases
@@ -69,6 +77,15 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
         cudnn.cudnnSetConvolution2dDescriptor(self.conv_desc, self.vpadding, self.hpadding,
                                               self.vstride, self.hstride, upscale_x, upscale_y,
                                               conv_mode, self.model.cudnn_dtype)
+        # Set grouping options
+        if self.grouping == "depthwise":
+            cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
+
+        # Allow NCHW -> NHWC conversion for the of Tensor Cores
+        math_type = cudnn.cudnnMathType['CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION']
+        # math_type = cudnn.cudnnMathType['CUDNN_DEFAULT_MATH']
+        cudnn.cudnnSetConvolutionMathType(self.conv_desc, math_type)
+
         # Get output dimensions
         _, _, self.ho, self.wo = cudnn.cudnnGetConvolution2dForwardOutputDim(self.conv_desc,
                                                                              x.desc, self.weights.desc)
@@ -103,8 +120,11 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
             self.db = TensorGPU(db_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
                                 gpudirect=self.model.gpudirect)
 
+        # Set to 20 the number of requested algorithms for enable_cudnn_auto_conv_alg
+        req_algs = 20
+
         self.fwd_algo = cudnn.cudnnFindConvolutionForwardAlgorithm(self.model.cudnn_handle,
-                                              x.desc, self.weights.desc, self.conv_desc, self.y.desc, 20)[0].algo \
+                                              x.desc, self.weights.desc, self.conv_desc, self.y.desc, req_algs)[0].algo \
                         if self.model.enable_cudnn_auto_conv_alg else \
                         cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
 
@@ -114,7 +134,7 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
         checkConvolutionMemory(local_size)
 
         self.bwd_dw_algo = cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(self.model.cudnn_handle,
-                                              x.desc, self.y.desc, self.conv_desc, self.weights.desc, 20)[0].algo \
+                                              x.desc, self.y.desc, self.conv_desc, self.weights.desc, req_algs)[0].algo \
                         if self.model.enable_cudnn_auto_conv_alg else \
                         cudnn.cudnnConvolutionBwdFilterAlgo['CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1']
 
@@ -125,7 +145,7 @@ class Conv2DGPU(LayerGPUMixin, layers.Conv2D):
 
         if self.need_dx:
             self.bwd_dx_algo = cudnn.cudnnFindConvolutionBackwardDataAlgorithm(self.model.cudnn_handle,
-                                              self.weights.desc, self.y.desc, self.conv_desc, x.desc, 20)[0].algo \
+                                              self.weights.desc, self.y.desc, self.conv_desc, x.desc, req_algs)[0].algo \
                         if self.model.enable_cudnn_auto_conv_alg else \
                         cudnn.cudnnConvolutionBwdDataAlgo['CUDNN_CONVOLUTION_BWD_DATA_ALGO_1']
 

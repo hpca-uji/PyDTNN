@@ -23,7 +23,8 @@ from pydtnn.libs.conv_gemm import ConvGemm, ConvGemmCache
 from .layer import Layer
 from .. import activations
 from .. import initializers
-from ..cython_modules import im2col_cython, add_cython, col2im_cython, transpose_1023_and_pad_cython, reindex_cython
+from ..cython_modules import im2col_cython, add_cython, col2im_cython, transpose_1023_and_pad_cython, reindex_cython, \
+    pointwise_conv_cython, depthwise_conv_cython
 from ..model import TRAIN_MODE
 from ..performance_models import *
 from ..tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
@@ -32,17 +33,19 @@ from ..tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CO
     PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
     PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
     PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
-    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM
+    PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \
+    PYDTNN_OPS_FORWARD_POINTWISE_CONV, PYDTNN_OPS_FORWARD_TRANSPOSE_Y
 
 
 class Conv2D(Layer):
 
-    def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
+    def __init__(self, nfilters=1, filter_shape=(3, 3), grouping=None, padding=0, stride=1,
                  activation="", use_bias=True, weights_initializer="glorot_uniform",
                  biases_initializer="zeros"):
         super().__init__()
         self.co = nfilters
         self.filter_shape = filter_shape
+        self.grouping = grouping
         self.padding = padding
         self.stride = stride
         self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
@@ -75,17 +78,33 @@ class Conv2D(Layer):
         self.ci, self.hi, self.wi = prev_shape
         self.kh, self.kw = self.filter_shape
 
-        self.weights = self.weights_initializer(((self.co,) + (self.ci,) + self.filter_shape), self.model.dtype)
+        if self.grouping == "depthwise":
+            self.co = self.ci
+            weights_shape = (self.ci, *self.filter_shape)
+        elif self.grouping == "pointwise":
+            self.kh = self.kw = 1
+            weights_shape = (self.co, self.ci)
+        else:
+            weights_shape = (self.co, self.ci, *self.filter_shape)
+
+        self.weights = self.weights_initializer(weights_shape, self.model.dtype)
         if self.use_bias:
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
 
         self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
+
         self.shape = (self.co, self.ho, self.wo)
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
         if not self.model.enable_cudnn:
-            if self.model.enable_conv_gemm:
+            if self.grouping == "pointwise":
+                setattr(self, "forward", self._forward_pointwise)
+                setattr(self, "backward", self._backward_pointwise)
+            elif self.grouping == "depthwise":
+                setattr(self, "forward", self._forward_depthwise)
+                setattr(self, "backward", self._backward_depthwise)
+            elif self.model.enable_conv_gemm:
                 self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
                 if not self.model.conv_gemm_cache:
                     ConvGemmCache.disable()
@@ -183,6 +202,40 @@ class Conv2D(Layer):
         y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
+        return y
+
+    def _forward_depthwise(self, x):
+        """ Version of the forward that perform a depthwise convolution"""
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_DEPTHWISE_CONV)
+        res = depthwise_conv_cython(x, self.weights, self.vpadding, self.hpadding, self.vstride, self.hstride)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
+        y = add_cython(res, self.biases) if self.use_bias else res
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        return y
+
+    def _forward_pointwise(self, x):
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_POINTWISE_CONV)
+        # y = np.einsum("nchw,oc->nohw", x, self.weights) # Einsum
+        y = np.matmul(np.transpose(x, axes=(0, 2, 3, 1)), np.transpose(self.weights, axes=(1, 0))) # Matmul
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_TRANSPOSE_Y)
+        y = np.transpose(y, axes=(0, 3, 1, 2))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
+        if self.use_bias:
+            y += self.biases.reshape(1, self.co, 1, 1)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
     def backward(self, dy):
@@ -394,3 +447,9 @@ class Conv2D(Layer):
                                    self.vstride, self.hstride)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
+
+    def _backward_depthwise(self, dy):
+        raise NotImplementedError("Backward not yet implemented!")
+
+    def _backward_pointwise(self, dy):
+        raise NotImplementedError("Backward not yet implemented!")
