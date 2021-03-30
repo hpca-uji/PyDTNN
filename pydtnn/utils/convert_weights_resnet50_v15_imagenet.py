@@ -152,7 +152,7 @@ if __name__ == "__main__":
         try:
             urllib.request.urlretrieve(PATH + IN_FILE, IN_FILE)
         except:
-            print(f"Error while downloading {PATH + FILE}")
+            print(f"Error while downloading {PATH+IN_FILE}")
             sys.exit(-1)
 
     f = h5py.File("resnet50_weights_tf_dim_ordering_tf_kernels.h5", "r")
