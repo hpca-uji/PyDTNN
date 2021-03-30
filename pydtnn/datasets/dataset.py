@@ -464,7 +464,7 @@ class ImageNet(Dataset):
 
         # Variables for testing dataset
         if self.use_synthetic_data:
-            self.n_test_files = 1  # 128
+            self.n_test_files = 128
             self.test_files = [''] * self.n_test_files
         else:
             self.test_files = os.listdir(self.test_path)
@@ -484,11 +484,23 @@ class ImageNet(Dataset):
 
     def __normalize_image(self, x):
         if "alexnet" not in self.model:  # for VGG, ResNet and other models input shape must be (3,224,224)
-            return x[..., 1:225, 1:225]
-        mean = np.array([0.485, 0.456, 0.406])
-        std = np.array([0.229, 0.224, 0.225])
+            x = x[..., 1:225, 1:225]
+
+        # Caffee-like normalization used for pre-trained Keras models
+        x = x[:, ::-1, ...]
+        mean = [103.939, 116.779, 123.68]
+        std = None
+
         for c in range(3):
-            x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
+            x[:, c, :, :] -= mean[c]
+        if std is not None:
+            for c in range(3):
+                x[:, c, :, :] /= std[c]
+
+        # mean = np.array([0.485, 0.456, 0.406])
+        # std = np.array([0.229, 0.224, 0.225])
+        # for c in range(3):
+        #     x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
         return x
 
     def __one_hot_encoder(self, y):
@@ -500,20 +512,20 @@ class ImageNet(Dataset):
         # For batch sizes > 1251 it is needed to concatenate more than one file of 1251 samples
         # In this case we yield bigger chunks of size batch_size
         # The next variable is not used
-        # images_per_file = {"train": self.images_per_train_file,
-        #                    "test": self.images_per_test_file}[op]
-        in_files = files.copy()
-        np.random.shuffle(in_files)
+        if op == "test":
+            images_per_file = self.images_per_test_file
+            in_files = files.copy()
+            np.random.shuffle(in_files)
+        else:
+            images_per_file = self.images_per_train_file
 
-        if batch_size > self.images_per_train_file:
+        if batch_size > images_per_file:
             x_buffer, y_buffer = np.array([]), np.array([])
 
             for f in in_files:
                 if self.use_synthetic_data:
-                    images = {"train": self.images_per_train_file,
-                              "test": self.images_per_test_file}[op]
-                    values = {"x": np.empty((images, *self.shape), dtype=self.dtype),
-                              "y": np.zeros((images, 1), dtype=self.dtype)}
+                    values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
+                              "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
                 else:
                     values = np.load("%s/%s" % (path, f))
 
@@ -526,9 +538,9 @@ class ImageNet(Dataset):
                     y_buffer = np.concatenate((y_buffer, y_data), axis=0)
 
                 if x_buffer.shape[0] >= batch_size:
-                    if self.flip_images:
+                    if self.flip_images and op == "train":
                         x_buffer = do_flip_images(x_buffer, self.flip_images_prob)
-                    if self.crop_images:
+                    if self.crop_images and op == "train":
                         x_buffer = do_crop_images(x_buffer, self.crop_images_size, self.crop_images_prob)
                     yield x_buffer[:batch_size, ...], y_buffer[:batch_size, ...]
                     x_buffer = x_buffer[batch_size:, ...]
@@ -543,18 +555,16 @@ class ImageNet(Dataset):
         else:
             for f in in_files:
                 if self.use_synthetic_data:
-                    images = {"train": self.images_per_train_file,
-                              "test": self.images_per_test_file}[op]
-                    values = {"x": np.empty((images, *self.shape), dtype=self.dtype),
-                              "y": np.zeros((images, 1), dtype=self.dtype)}
+                    values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
+                              "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
                 else:
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-                if self.flip_images:
+                if self.flip_images and op == "train":
                     x_data = do_flip_images(x_data, self.flip_images_prob)
-                if self.crop_images:
+                if self.crop_images and op == "train":
                     x_data = do_crop_images(x_data, self.crop_images_size, self.crop_images_prob)
                 yield x_data, y_data
                 gc.collect()

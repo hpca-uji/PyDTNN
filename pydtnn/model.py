@@ -408,30 +408,43 @@ class Model:
         if not self.enable_cudnn:
             self.layers = __relu_fusion(self.layers)
 
+    def load_store_path(self, layers, d, mode):
+        for layer in layers:
+            name = type(layer).__name__.replace("GPU", "")
+            if name in ["AdditionBlock", "ConcatenationBlock"]:
+                for path in layer.paths:
+                    self.load_store_path(path, d, mode)
+            else:
+                grad_vars = [g for g in layer.grad_vars] + \
+                            ( ["running_var", "running_mean"] \
+                              if name == "BatchNormalization" else [] )
+                if name == "BatchNormalization":
+                    layer.updated_running_var = True
+                for key in grad_vars:
+                    base = "%d_%s_%s" % (layer.id, name, key)
+                    if base not in d.files and mode == "load":
+                        print("Could not find %s for layer %s in file!" % (base, name))
+                        continue
+                    if mode == "load":
+                        if self.enable_cudnn:
+                            ary = getattr(layer, key).ary
+                            ary.set(d[base].reshape(ary.shape))
+                        else:
+                            setattr(layer, key, d[base])
+                    elif mode == "store":
+                        if self.enable_cudnn:
+                            d[base] = getattr(layer, key).ary.get()
+                        else:
+                            d[base] = getattr(layer, key)
+
     def load_weights_and_bias(self, filename):
         d = np.load(filename)
-        for i, layer in enumerate(self.layers):
-            base = "%s_%s" % (str(i), type(layer).__name__)
-            for p in layer.grad_vars:
-                key = "%s_%s" % (base, p)
-                if key in d.files:
-                    if self.enable_cudnn:
-                        getattr(layer, p).ary.set(d[key])
-                    else:
-                        setattr(layer, p, d[key])
-                else:
-                    print("Could not find %s for layer %s in %s file!" % (p, base, filename))
+        self.load_store_path(self.layers, d, "load")
 
     def store_weights_and_bias(self, filename):
         if self.shared_storage and self.rank == 0:
             d = {}
-            for i, layer in enumerate(self.layers):
-                base = "%s_%s" % (str(i), type(layer).__name__)
-                for p in layer.grad_vars:
-                    key = "%s_%s" % (base, p)
-                    d[key] = getattr(layer, p)
-                    if self.enable_cudnn:
-                        d[key] = d[key].ary.get()
+            self.load_store_path(self.layers, d, "store")
             np.savez_compressed(filename, **d)
 
     def calculate_time(self):

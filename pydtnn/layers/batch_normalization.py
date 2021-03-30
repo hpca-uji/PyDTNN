@@ -103,10 +103,11 @@ class BatchNormalization(Layer):
         elif self.model.mode == EVALUATE_MODE:
             # Original numpy-based code
             # std = np.sqrt(self.running_var + self.epsilon)
-            # xn = (x - self.running_mean) / self.std
+            # xn = (x - self.running_mean) / std
             # y = self.gamma * xn + self.beta
 
             # If self.running_var was updated on training we need to recompute self.inv_std!
+
             if self.updated_running_var:
                 self.updated_running_var = False
                 self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
