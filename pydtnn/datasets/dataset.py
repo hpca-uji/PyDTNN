@@ -514,15 +514,15 @@ class ImageNet(Dataset):
         # The next variable is not used
         if op == "test":
             images_per_file = self.images_per_test_file
-            in_files = files.copy()
-            np.random.shuffle(in_files)
         else:
             images_per_file = self.images_per_train_file
+            files = files.copy()
+            np.random.shuffle(files)
 
         if batch_size > images_per_file:
             x_buffer, y_buffer = np.array([]), np.array([])
 
-            for f in in_files:
+            for f in files:
                 if self.use_synthetic_data:
                     values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
                               "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
@@ -553,7 +553,7 @@ class ImageNet(Dataset):
 
         # For batch_sizes <= 1251, complete files of 1251 samples are yield
         else:
-            for f in in_files:
+            for f in files:
                 if self.use_synthetic_data:
                     values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
                               "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
@@ -579,8 +579,8 @@ class ImageNet(Dataset):
         return self.data_generator(self.test_path, self.test_files, batch_size, op="test")
 
     def make_train_val_partitions(self, val_split=0.2):
-        if self.test_as_validation:
-            return
+        # if self.test_as_validation:
+        #     return
         assert 0 <= val_split < 1
         self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_train_file)
 
@@ -603,10 +603,12 @@ class ImageNet(Dataset):
             subset_size = local_batch_size * nprocs * steps_per_epoch
             if subset_size < self.train_val_nsamples:
                 subset_files = max(1, subset_size // self.images_per_train_file)
+
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.n_train_val_files = len(self.train_val_files)
                 self.train_val_nsamples = self.n_train_val_files * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples
+
                 subset_test_files = max(1, subset_size // self.images_per_test_file)
                 self.test_files = self.test_files[:subset_test_files]
                 self.n_test_files = len(self.test_files)

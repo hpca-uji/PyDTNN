@@ -112,7 +112,7 @@ def main():
         print('**** Parameters:')
         show_options(params)
     # First (or unique) evaluation
-    if model.evaluate or model.evaluate_only:
+    if model.evaluate_on_train or model.evaluate_only:
         if rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
@@ -198,7 +198,7 @@ def main():
                     f.write(' '.join(["%3d" % v] +
                                      [('%20.4f' % history[k][v]) for k in keys]) + '\n')
     # Second (and last) evaluation
-    if model.evaluate:
+    if model.evaluate_on_train:
         if rank == 0:
             print('**** Evaluating on test dataset...')
         _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)

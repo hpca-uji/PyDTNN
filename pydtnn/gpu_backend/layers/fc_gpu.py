@@ -27,8 +27,9 @@ import pycuda.gpuarray as gpuarray
 from pydtnn import layers
 from pydtnn import utils
 from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES, \
-    PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW, PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB, PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUBLAS_MATMUL, \
+    PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES, PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW, \
+    PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB, PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX
 from .layer_gpu_mixin import LayerGPUMixin
 from ..tensor_gpu import TensorGPU
 
@@ -105,10 +106,13 @@ class FCGPU(LayerGPUMixin, layers.FC):
         trans_a, trans_b, alpha, beta = 'N', 'N', 1.0, 0.0
 
         # Compute a' = x @ weights
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUBLAS_MATMUL)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     self.weights.ary.gpudata, ldb,
                     x.ary.gpudata, lda, beta,
                     self.y.ary.gpudata, ldc, self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.use_bias:
             alpha, beta = 1.0, 1.0
