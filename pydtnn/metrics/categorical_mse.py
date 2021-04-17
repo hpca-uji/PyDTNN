@@ -17,13 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
+from abc import ABC
 
 from pydtnn.metrics.metric import Metric
 
 
-class CategoricalMSE(Metric):
-
-    def __call__(self, y_pred, y_targ):
-        b = y_targ.shape[0]
-        return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
+class CategoricalMSE(Metric, ABC):
+    pass

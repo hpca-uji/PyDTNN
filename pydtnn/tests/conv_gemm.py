@@ -18,7 +18,7 @@ import unittest
 
 import numpy as np
 
-from pydtnn.libs.conv_gemm import ConvGemm
+from pydtnn.backends.cpu.libs import ConvGemm
 from .tools import Spinner
 from ..cython_modules import im2col_cython, col2im_cython
 

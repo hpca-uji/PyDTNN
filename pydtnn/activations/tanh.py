@@ -24,9 +24,6 @@ from .activation import Activation
 
 class Tanh(Activation):
 
-    def __init__(self, shape=(1,)):
-        super().__init__(shape)
-
     def forward(self, x):
         return np.tanh(x)
 

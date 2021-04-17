@@ -17,14 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
+from abc import ABC
 
 from pydtnn.metrics.metric import Metric
 
 
-class CategoricalHinge(Metric):
-
-    def __call__(self, y_pred, y_targ):
-        pos = np.sum(y_targ * y_pred, axis=-1)
-        neg = np.max((1.0 - y_targ) * y_pred, axis=-1)
-        return np.mean(np.maximum(0.0, neg - pos + 1), axis=-1)
+class CategoricalHinge(Metric, ABC):
+    pass

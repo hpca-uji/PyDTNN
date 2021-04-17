@@ -92,9 +92,11 @@ def convert_size(size_bytes):
     s = round(size_bytes / p, 2)
     return "%s %sytes" % (s, size_name[i])
 
+
 def get_module_path(path, base):
     prev_dir, last_dir = os.path.split(path)
     return base if last_dir == base else f"{get_module_path(prev_dir, base)}.{last_dir}"
+
 
 def get_derived_classes(base_class, module_locals):
     """
@@ -125,7 +127,7 @@ def get_derived_classes(base_class, module_locals):
         assert "pydtnn" in python_file
         directory = get_module_path(python_file, "pydtnn")
         module_path, module_ext = os.path.splitext(directory)
-        if "__init__" in directory :
+        if "__init__" in directory:
             continue
         module = import_module(module_path)
         for attribute_name in [a_n for a_n in dir(module) if a_n not in module_locals]:

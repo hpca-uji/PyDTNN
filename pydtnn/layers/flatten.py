@@ -17,19 +17,14 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from abc import ABC
+
 from .layer import Layer
 from ..performance_models import *
 
 
-class Flatten(Layer):
+class Flatten(Layer, ABC):
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
         self.shape = (np.prod(prev_shape),)
-
-    def forward(self, x):
-        return x.reshape(x.shape[0], *self.shape)
-
-    def backward(self, dy):
-        if self.need_dx:
-            return dy.reshape(dy.shape[0], *self.prev_shape)

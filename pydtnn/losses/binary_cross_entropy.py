@@ -17,17 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
+from abc import ABC
 
 from pydtnn.losses.loss import Loss
 
 
-class BinaryCrossEntropy(Loss):
-
-    def __call__(self, y_pred, y_targ, global_batch_size):
-        assert len(y_targ.shape) == 2
-        b = y_targ.shape[0]
-        loss = -np.sum(np.log(np.maximum((1 - y_targ) - y_pred, self.eps))) / b
-        y_pred = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
-        dx = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / global_batch_size
-        return loss, dx
+class BinaryCrossEntropy(Loss, ABC):
+    pass

@@ -17,19 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
+from abc import ABC
 
 from .activation import Activation
 
 
-class Log(Activation):
-
-    def __init__(self, shape=(1,)):
-        super().__init__(shape)
-
-    def forward(self, x):
-        return np.log(1 / (1 + np.exp(-x)))
-
-    def backward(self, dy):
-        if self.need_dx:
-            return 1 / (np.exp(dy) + 1)
+class Log(Activation, ABC):
+    pass
