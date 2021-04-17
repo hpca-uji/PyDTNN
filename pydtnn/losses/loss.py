@@ -16,29 +16,19 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-import importlib
-from abc import ABC
 
-import numpy as np
+from abc import ABC, abstractmethod
 
-from .. import model as model_module
+from ..backends import PromoteToBackendMixin
 
 
-class Loss(ABC):
-
-    def __new__(cls, *args, **kwargs):
-        if not model_module.enable_cudnn:
-            new_cls = cls
-        else:
-            # If GPU is requested, return a GPU-related object instead
-            module = importlib.import_module(f"..gpu_backend.losses", package="pydtnn.losses")
-            new_cls = getattr(module, f"{cls.__name__}GPU")
-        instance = super(Loss, new_cls).__new__(new_cls)
-        if new_cls != cls:
-            instance.__init__(*args, **kwargs)
-        return instance
+class Loss(PromoteToBackendMixin, ABC):
 
     def __init__(self, shape, model, eps=1e-8):
         self.shape = shape
         self.model = model
         self.eps = eps
+
+    @abstractmethod
+    def __call__(self, y_pred, y_targ, global_batch_size):
+        pass

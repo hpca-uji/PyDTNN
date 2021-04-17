@@ -17,12 +17,14 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from abc import ABC
+
 import numpy as np
 
 from .optimizer import Optimizer
 
 
-class Adam(Optimizer):
+class Adam(Optimizer, ABC):
     """
     Adam optimizer
     """
@@ -35,25 +37,3 @@ class Adam(Optimizer):
         self.epsilon = epsilon
         self.decay = decay
         self.dtype = dtype
-
-    def update(self, layer):
-        lr = self.learning_rate
-        it = getattr(layer, "it", 0) + 1
-        setattr(layer, "it", it)
-
-        for w_, dw_ in layer.grad_vars.items():
-            w, dw = getattr(layer, w_), getattr(layer, dw_)
-            m = getattr(layer, "m_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
-            v = getattr(layer, "v_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
-
-            m = self.beta1 * m + (1 - self.beta1) * dw
-            v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-
-            mt = m / (1 - self.beta1 ** it)
-            vt = v / (1 - self.beta2 ** it)
-
-            w -= lr * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
-
-            setattr(layer, w_, w)
-            setattr(layer, "m_%s" % w_, m)
-            setattr(layer, "v_%s" % w_, v)

@@ -62,6 +62,21 @@ as described in the previous case)::
     (develop) $ git merge new_feature
 
 
+How to interactively debug the code
+-----------------------------------
+
+Among the many options to do this, one is to use the ``ipdb`` module, which
+allows to enclose the part of the code that fails with::
+
+    from ipdb import launch_ipdb_on_exception
+
+    with launch_ipdb_on_exception():
+        [...]
+
+Using the previous construction it is also possible to force a debugging session
+by manually issuing an exception inside the with block.
+
+
 How to upload a new version to Pypi
 -----------------------------------
 

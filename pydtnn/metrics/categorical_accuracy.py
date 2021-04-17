@@ -17,13 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
+from abc import ABC
 
 from pydtnn.metrics.metric import Metric
 
 
-class CategoricalAccuracy(Metric):
-
-    def __call__(self, y_pred, y_targ):
-        b = y_targ.shape[0]
-        return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
+class CategoricalAccuracy(Metric, ABC):
+    pass

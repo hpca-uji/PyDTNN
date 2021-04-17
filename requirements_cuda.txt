@@ -1,1 +1,4 @@
 pycuda~=2019.1.2
+scikit-cuda~=0.5.3
+nvidia-pyindex~=1.0.8
+nvidia-cudnn~=8.1.1.33
