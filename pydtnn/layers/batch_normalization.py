@@ -28,7 +28,7 @@ from .. import initializers
 class BatchNormalization(Layer, ABC):
 
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5,
-                 moving_mean_initializer="zeros", moving_variance_initializer="ones",
+                 moving_mean_initializer="zeros", moving_variance_initializer="zeros",
                  sync_stats=False):
         super().__init__()
         self.gamma_init_val = gamma
