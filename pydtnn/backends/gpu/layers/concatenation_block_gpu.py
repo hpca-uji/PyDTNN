@@ -128,12 +128,12 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                 dx_i = layer.backward(dx_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i == 0:
-                dx = dx_i
+                self.dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
-                                     dx_i.ptr, beta, dx.desc, dx.ptr)
+                                     dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        return dx
+        return self.dx
