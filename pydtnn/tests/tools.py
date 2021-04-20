@@ -2,67 +2,26 @@
 Common tools used by the unit tests.
 """
 
+from rich import print
+from rich.console import Console
+from rich.panel import Panel
+from rich.text import Text
 
-class Spinner:
-    """
-    Renders a spinner on the terminal.
 
-    Methods
-    -------
-    render()
-        Renders the next frame of the selected spinner.
-    stop()
-        Renders the stop character of the spinner.
-
-    Examples
-    --------
-    import time
-    spinner = Spinner()
-    for i in range(10):
-        spinner.render()
-        time.sleep(.5)
-    spinner.stop()
-    """
-
-    def __init__(self, spinner_type='bounce'):
-        self.started = False
-        self.current_frame = 0
-        # Spinner data got from https://github.com/manrajgrover/py-spinners/blob/master/spinners/spinners.py
-        self.spinners = \
-            {
-                "bounce": {
-                    "interval": 120,
-                    "frames": ["⠁", "⠂", "⠄", "⠂"]
-                },
-                "dots": {
-                    "interval": 80,
-                    "frames": ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
-                },
-            }
-        self.frames = self.spinners[spinner_type]['frames']
-
-    def _start(self):
-        self.started = True
-        print("  ", sep='', end='', flush=True)
-
-    def render(self):
-        if not self.started:
-            self._start()
-        print("\b\b{} ".format(self.frames[self.current_frame]), sep='', end='', flush=True)
-        self.current_frame = (self.current_frame + 1) % len(self.frames)
-
-    def stop(self, stop_character=''):
-        self.started = False
-        print("\b\b{}".format(stop_character), sep='', end='', flush=True)
+def print_with_header(header, to_be_printed=None):
+    _console = Console(force_terminal=True)
+    panel = Panel.fit(Text(header, justify="right"), style="bold blue")
+    _console.print()
+    _console.print(panel)
+    if to_be_printed is not None:
+        print(to_be_printed)
 
 
 if __name__ == "__main__":
     import time
 
-    print("Testing the spinner: ", sep='', end='')
-    spinner = Spinner()
-    for i in range(10):
-        spinner.render()
-        time.sleep(.5)
-    spinner.stop()
+    print_with_header("Testing the spinner (3 seconds)")
+    console = Console(force_terminal=True)
+    with console.status("", spinner="dots10"):
+        time.sleep(3)
     print("Done!")
