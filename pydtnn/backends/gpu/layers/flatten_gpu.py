@@ -36,13 +36,13 @@ class FlattenGPU(LayerGPU, Flatten):
 
     def forward(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = x.reshape((self.model.batch_size, *self.shape))
+        self.y = x.reshape((self.model.batch_size, *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        return y
+        return self.y
 
     def backward(self, dy):
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DX)
-            dx = dy.reshape((self.model.batch_size, *self.prev_shape))
+            self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-            return dx
+            return self.dx

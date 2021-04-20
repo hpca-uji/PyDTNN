@@ -387,6 +387,15 @@ class Model:
         if layer.act:
             self.add(layer.act())
 
+    def get_all_layers(self, from_layers=None):
+        if from_layers is None:
+            from_layers = self.layers
+        this_recursion_layers = []
+        for layer in from_layers:
+            this_recursion_layers.append(layer)
+            this_recursion_layers += self.get_all_layers(layer.children)
+        return this_recursion_layers
+
     def __apply_relu_fusion(self):
         """ Apply Relu fusion in a recursive manner """
 

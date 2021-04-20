@@ -41,7 +41,6 @@ from pydtnn.model import Model
 from pydtnn.optimizers import get_optimizer
 from pydtnn.lr_schedulers import get_lr_schedulers
 
-
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
     TracingLibrary = "libptmpitrace.so"
@@ -50,11 +49,13 @@ if os.environ.get("EXTRAE_ON", None) == "1":
     pyextrae.startTracing(TracingLibrary)
     Extrae_tracing = True
 
+
 def show_options(params):
     for arg in vars(params):
         if arg != "comm":
             print(f'  {arg:31s}: {str(getattr(params, arg)):s}')
             # print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
+
 
 def main():
     # Parse options
@@ -119,6 +120,7 @@ def main():
         _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)
         if rank == 0:
             t2 = time.time()
+            # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
             print(f'Testing time: {total_time:5.4f} s')
             print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
@@ -143,13 +145,13 @@ def main():
             pr.enable()
     # Training a model directly from a dataset
     history = model.train_dataset(dataset,
-                                  nepochs = model.num_epochs,
-                                  local_batch_size = model.batch_size,
-                                  val_split = model.validation_split,
-                                  loss = model.loss_func,
-                                  metrics_list = metrics_list,
-                                  optimizer = optimizer,
-                                  lr_schedulers = lr_schedulers)
+                                  nepochs=model.num_epochs,
+                                  local_batch_size=model.batch_size,
+                                  val_split=model.validation_split,
+                                  loss=model.loss_func,
+                                  metrics_list=metrics_list,
+                                  optimizer=optimizer,
+                                  lr_schedulers=lr_schedulers)
     # Alternatively, the model can be trained on any specific data
     # history = model.train(x_train=dataset.X_train_val, y_train=dataset.Y_train_val,
     #                       x_val=dataset.x_test, y_val=dataset.y_test,
@@ -165,6 +167,7 @@ def main():
     # Print performance results and evaluation history
     if rank == 0:
         if model.profile:
+            # noinspection PyUnboundLocalVariable
             pr.disable()
             s = StringIO()
             sortby = 'time'

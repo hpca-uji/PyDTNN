@@ -28,4 +28,7 @@ from ..backends import PromoteToBackendMixin
 
 
 class Layer(PromoteToBackendMixin, LayerAndActivationBase, ABC):
-    pass
+
+    @property
+    def canonical_name_with_id(self):
+        return f"{self._id_prefix}{self.canonical_name}"

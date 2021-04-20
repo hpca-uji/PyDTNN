@@ -44,7 +44,6 @@ class LayerGPU(Layer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
-        self.x = None
         self.y = None
         self.weights_cpu = None
         self.biases_cpu = None
@@ -59,8 +58,8 @@ class LayerGPU(Layer, ABC):
 
     # noinspection PyMethodOverriding
     def initialize(self, prev_shape, need_dx, x):
+        self.x = x  # Must be before super().initialize()
         super().initialize(prev_shape, need_dx)
-        self.x = x
 
     def reduce_weights_async(self):
         if not self.model.comm:

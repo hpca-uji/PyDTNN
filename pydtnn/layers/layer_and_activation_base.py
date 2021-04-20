@@ -43,6 +43,25 @@ class LayerAndActivationBase(ABC):
         self.is_block_layer = False
         self.stream_2 = None
 
+    @property
+    def _id_prefix(self):
+        prefix = ''
+        if self.id is not None and self.model is not None:
+            try:
+                model__last_layer = self.model.layers[-1]
+            except IndexError:
+                max_digits = 1
+            else:
+                model__last_id = model__last_layer.id
+                if len(model__last_layer.children):
+                    model__last_id = model__last_layer.children[-1].id
+                max_digits = len(str(model__last_id))
+            prefix = "{:0{width}d}_".format(self.id, width=max_digits)
+        return prefix
+
+    def __repr__(self):
+        return f"{self._id_prefix}{type(self).__name__}"
+
     def set_model(self, parent_model):
         self.model = parent_model
         self.id = next(self.model.layer_id)
