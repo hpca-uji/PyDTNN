@@ -118,16 +118,16 @@ cudnnDataType = {
 # cudnnMathType_t is an enumerated type used to indicate if the use of Tensor Core 
 # operations is permitted in a given library routine.
 cudnnMathType = {
-    'CUDNN_DEFAULT_MATH': 0, # Tensor Core operations are not used on 
-     # pre-NVIDIA A100 GPU devices. On A100 GPU architecture devices, 
-     # Tensor Core TF32 operation is permitted.
-    'CUDNN_TENSOR_OP_MATH': 1, # The use of Tensor Core operations is permitted 
-     # but will not actively perform datatype down conversion on tensors in order 
-     # to utilize Tensor Cores.
-    'CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION': 2, # The use of Tensor Core operations 
-     # is permitted and will actively perform datatype down conversion on tensors 
-     # in order to utilize Tensor Cores.
-    'CUDNN_FMA_MATH': 3 #  Restricted to only kernels that use FMA instructions.
+    'CUDNN_DEFAULT_MATH': 0,  # Tensor Core operations are not used on
+    # pre-NVIDIA A100 GPU devices. On A100 GPU architecture devices,
+    # Tensor Core TF32 operation is permitted.
+    'CUDNN_TENSOR_OP_MATH': 1,  # The use of Tensor Core operations is permitted
+    # but will not actively perform datatype down conversion on tensors in order
+    # to utilize Tensor Cores.
+    'CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION': 2,  # The use of Tensor Core operations
+    # is permitted and will actively perform datatype down conversion on tensors
+    # in order to utilize Tensor Cores.
+    'CUDNN_FMA_MATH': 3  # Restricted to only kernels that use FMA instructions.
 }
 
 # cudnnAddMode_t is an enumerated type used by cudnnAddTensor() to specify how
@@ -1225,9 +1225,10 @@ def cudnnSetConvolutionGroupCount(conv_desc, group_count):
 
     cudnnCheckStatus(status)
 
+
 _libcudnn.cudnnSetConvolutionMathType.restype = int
 _libcudnn.cudnnSetConvolutionMathType.argtypes = [ctypes.c_void_p,
-                                                    ctypes.c_int]
+                                                  ctypes.c_int]
 
 
 def cudnnSetConvolutionMathType(conv_desc, math_type):
