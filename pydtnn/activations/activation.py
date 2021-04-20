@@ -32,3 +32,7 @@ class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
         self.shape = prev_shape
+
+    @property
+    def canonical_name_with_id(self):
+        return f"{self._id_prefix}{self.canonical_name}"

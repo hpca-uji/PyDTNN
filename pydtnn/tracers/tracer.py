@@ -123,12 +123,11 @@ class Tracer(ABC):
             constants.pop(name)
         mdl_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_MDL_")] == "PYDTNN_MDL_"]
         ops_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_OPS_")] == "PYDTNN_OPS_"]
-        for layer in self._get_layers_recursively(model.layers):
-            layer_name = type(layer).__name__
+        for layer in model.get_all_layers():
             for (name, val) in mdl_constants:
-                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.id:03}_{layer_name}_{name[11:].lower()}"
+                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.canonical_name_with_id}_{name[11:].lower()}"
             for (name, val) in ops_constants:
-                ops_event[layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer_name}_{name[11:].lower()}"
+                ops_event[layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.canonical_name}_{name[11:].lower()}"
 
     @abstractmethod
     def _emit_event(self, evt_type, evt_val, stream=None):
