@@ -54,16 +54,16 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
                 y_i = layer.forward(y_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i == 0:
-                y = y_i
+                self.y = y_i
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, y_i.desc,
-                                     y_i.ptr, beta, y.desc, y.ptr)
+                                     y_i.ptr, beta, self.y.desc, self.y.ptr)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        return y
+        return self.y
 
     def backward(self, dy):
         for i, p in enumerate(self.paths):
@@ -73,13 +73,13 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
                 dx_i = layer.backward(dx_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i == 0:
-                dx = dx_i
+                self.dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
-                                     dx_i.ptr, beta, dx.desc, dx.ptr)
+                                     dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        return dx
+        return self.dx

@@ -39,16 +39,19 @@ class ConvGemmModelsTestCase(unittest.TestCase):
 
     rtol_default = 1e-5
     atol_default = 1e-6
-    rtol_dict = {}
+    rtol_dict = {
+        "AdditionBlock": 1e-4,
+    }
     atol_dict = {
-        "Conv2D": 1e-5,
+        "AdditionBlock": 3e-4,
         "ConcatenationBlock": 3e-4,
+        "Conv2D": 1e-5,
     }
 
     def get_tolerance(self, layer):
         rtol, atol = (self.rtol_dict.get(layer.canonical_name, self.rtol_default),
                       self.atol_dict.get(layer.canonical_name, self.atol_default))
-        if layer.canonical_name == "ConcatenationBlock":
+        if layer.canonical_name in ("AdditionBlock", "ConcatenationBlock"):
             rtol *= len(layer.children)
             atol *= len(layer.children)
         return rtol, atol
@@ -227,6 +230,12 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         Compares results between a VGG-16 model {self.model1_desc} and other {self.model1_desc}
         """
         self.do_test_model("vgg16_cifar10")
+
+    def test_resnet34(self):
+        f"""
+        Compares results between a Densenet model {self.model1_desc} and other {self.model1_desc}
+        """
+        self.do_test_model("resnet34_cifar10")
 
     def test_densenet(self):
         f"""

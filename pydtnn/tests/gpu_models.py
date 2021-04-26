@@ -38,13 +38,15 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
     model2_desc = "using the GPU backend"
 
     rtol_dict = {
+        "AdditionBlock": 2e-4,
         "ConcatenationBlock": 2e-4,
     }
 
     atol_dict = {
-        "Conv2D": 4e-3,
+        "AdditionBlock": 1e-2,
+        "BatchNormalization": 2e-5,
         "ConcatenationBlock": 5e-3,
-        "BatchNormalization": 2e-5
+        "Conv2D": 4e-3,
     }
 
     @staticmethod
