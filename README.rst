@@ -70,12 +70,12 @@ them, type::
 
     $ pip install -r requirements.txt
 
-Optionally, if you are going to use either MPI or CUDA, you should have installed
-the corresponding libraries, and then install the respectively required Python
-packages with::
+Optionally, if you are going to use either MPI or CUDA, you should install the
+corresponding libraries, and then install the required Python packages with::
 
     $ pip install -r requirements_mpi.txt
-    $ pip install -r requirements_cuda.txt
+    $ pip install -r requirements_cuda_1.txt
+    $ pip install -r requirements_cuda_2.txt
 
 Next, the included Cython pyx modules should be compiled. For doing this,
 execute the ``compile_cython_modules.sh`` script or the next line::
