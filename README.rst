@@ -1,5 +1,5 @@
 .. figure:: pydtnn.svg
-   :width: 40 %
+   :width: 50 %
    
 Python Distributed Training of Neural Networks
 =======================================================
