@@ -1,5 +1,5 @@
-. figure:: pydtnn.svg
-   :scale: 50 %
+.. figure:: pydtnn.svg
+   :width: 40 %
    
 Python Distributed Training of Neural Networks
 =======================================================
