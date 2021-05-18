@@ -13,7 +13,7 @@
    viewBox="0 0 137.09128 25.081722"
    version="1.1"
    id="svg8"
-   inkscape:version="1.0.2 (e86c8708, 2021-01-15)"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
    sodipodi:docname="pydtnn.svg">
   <defs
      id="defs2">
@@ -45,15 +45,15 @@
      inkscape:cx="122.17209"
      inkscape:cy="-16.102545"
      inkscape:document-units="mm"
-     inkscape:current-layer="g884"
+     inkscape:current-layer="text866"
      inkscape:document-rotation="0"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
-     inkscape:window-width="1251"
-     inkscape:window-height="847"
-     inkscape:window-x="103"
-     inkscape:window-y="25"
+     inkscape:window-width="2435"
+     inkscape:window-height="1465"
+     inkscape:window-x="1197"
+     inkscape:window-y="527"
      inkscape:window-maximized="0"
      width="53mm"
      fit-margin-top="0"
@@ -68,7 +68,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -84,17 +84,35 @@
        height="25.081722"
        x="69.285988"
        y="22.532484" />
-    <text
-       xml:space="preserve"
-       style="font-size:22.4868px;line-height:1.25;font-family:Montserrat;-inkscape-font-specification:Montserrat;fill:#0020bd;fill-opacity:1;stroke-width:0.562174"
-       x="75.364159"
-       y="42.861027"
-       id="text866"><tspan
-         sodipodi:role="line"
-         id="tspan864"
-         x="75.364159"
-         y="42.861027"
-         style="fill:#0020bd;fill-opacity:1;stroke-width:0.562174">PyDTNN</tspan></text>
+    <g
+       aria-label="PyDTNN"
+       style="font-size:22.48679924px;line-height:1.25;font-family:Montserrat;-inkscape-font-specification:Montserrat;fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+       id="text866">
+      <path
+         d="m 84.044063,27.120267 q 2.091272,0 3.620375,0.697091 1.551589,0.697091 2.383601,1.978838 0.832011,1.281748 0.832011,3.035718 0,1.731484 -0.832011,3.035718 -0.832012,1.281748 -2.383601,1.978839 -1.529103,0.674604 -3.620375,0.674604 h -3.170639 v 4.339952 h -3.642861 v -15.74076 z m -0.202381,8.43255 q 1.641536,0 2.496035,-0.697091 0.854498,-0.719577 0.854498,-2.023812 0,-1.326721 -0.854498,-2.023812 -0.854499,-0.719577 -2.496035,-0.719577 h -2.968258 v 5.464292 z"
+         style="fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+         id="path54" />
+      <path
+         d="m 105.36148,30.763129 -5.464294,12.839962 q -0.832011,2.091272 -2.068785,2.945771 -1.214288,0.854498 -2.945771,0.854498 -0.944446,0 -1.866404,-0.292328 -0.921959,-0.292329 -1.506616,-0.809525 l 1.281748,-2.496035 q 0.404762,0.359789 0.921958,0.56217 0.539684,0.202382 1.05688,0.202382 0.719577,0 1.169313,-0.359789 0.449736,-0.337302 0.809525,-1.146827 l 0.04497,-0.112434 -5.239424,-12.187845 h 3.620374 l 3.395507,8.207681 3.417995,-8.207681 z"
+         style="fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+         id="path56" />
+      <path
+         d="m 107.04798,27.120267 h 7.1508 q 2.5635,0 4.51985,0.989419 1.97884,0.966933 3.0582,2.74339 1.10185,1.776457 1.10185,4.137571 0,2.361114 -1.10185,4.137571 -1.07936,1.776457 -3.0582,2.765876 -1.95635,0.966933 -4.51985,0.966933 h -7.1508 z m 6.97091,12.750015 q 2.36111,0 3.75529,-1.304234 1.41667,-1.326721 1.41667,-3.575401 0,-2.24868 -1.41667,-3.552914 -1.39418,-1.326721 -3.75529,-1.326721 h -3.32805 v 9.75927 z"
+         style="fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+         id="path58" />
+      <path
+         d="m 128.65775,30.088525 h -5.03704 v -2.968258 h 13.71694 v 2.968258 h -5.03704 v 12.772502 h -3.64286 z"
+         style="fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+         id="path60" />
+      <path
+         d="m 153.73049,27.120267 v 15.74076 h -2.99075 l -7.84789,-9.55689 v 9.55689 h -3.59789 v -15.74076 h 3.01323 l 7.82541,9.55689 v -9.55689 z"
+         style="fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+         id="path62" />
+      <path
+         d="m 171.89979,27.120267 v 15.74076 h -2.99074 l -7.84789,-9.55689 v 9.55689 h -3.59789 v -15.74076 h 3.01323 l 7.8254,9.55689 v -9.55689 z"
+         style="fill:#0020bd;fill-opacity:1;stroke-width:0.56217402"
+         id="path64" />
+    </g>
   </g>
   <g
      inkscape:groupmode="layer"
