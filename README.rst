@@ -1,4 +1,7 @@
-PyDTNN - Python Distributed Training of Neural Networks
+.. figure:: pydtnn.svg
+   :width: 50 %
+   
+Python Distributed Training of Neural Networks
 =======================================================
 
 Introduction
