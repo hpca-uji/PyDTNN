@@ -44,7 +44,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
     }
     atol_dict = {
         "AdditionBlock": 3e-4,
-        "ConcatenationBlock": 3e-4,
+        "ConcatenationBlock": 5e-4,
         "Conv2D": 1e-5,
     }
 
@@ -225,11 +225,17 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         self.do_test_model("alexnet_cifar10")
 
-    def test_vgg16(self):
+    def test_vgg11bn(self):
         f"""
-        Compares results between a VGG-16 model {self.model1_desc} and other {self.model1_desc}
+        Compares results between a VGG-11 BN model {self.model1_desc} and other {self.model1_desc}
         """
-        self.do_test_model("vgg16_cifar10")
+        self.do_test_model("vgg11bn_cifar10")
+
+    def test_vgg16bn(self):
+        f"""
+        Compares results between a VGG-16 BN model {self.model1_desc} and other {self.model1_desc}
+        """
+        self.do_test_model("vgg16bn_cifar10")
 
     def test_resnet34(self):
         f"""

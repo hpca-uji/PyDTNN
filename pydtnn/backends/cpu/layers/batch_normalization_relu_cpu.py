@@ -31,12 +31,12 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             raise RuntimeError("Fused layers cannot be used in training mode!")
 
         if self.spatial:
-            x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+            x = x.reshape(-1, self.ci)
 
         y = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
-            y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            y = y.reshape(-1, self.hi, self.wi, self.ci)
 
         return y
 

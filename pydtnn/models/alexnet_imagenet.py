@@ -22,7 +22,7 @@ from ..layers import *
 
 def create_alexnet_imagenet(model):
     _ = model.add
-    _(Input(shape=(3, 227, 227)))
+    _(Input(shape=(227, 227, 3)))
     _(Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation="relu"))
     _(MaxPool2D(pool_shape=(3, 3), stride=2))
     _(Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation="relu"))

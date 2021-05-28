@@ -17,11 +17,16 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from add_cython import add_cython
+from add_nchw_cython import add_nchw_cython
+from add_nhwc_cython import add_nhwc_cython
 from argmax_cython import argmax_cython
 from bn_inference_cython import bn_inference_cython
 from bn_relu_inference_cython import bn_relu_inference_cython
-from im2col_cython import im2col_cython, col2im_cython
+from im2col_nchw_cython import im2col_nchw_cython, col2im_nchw_cython
+from im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
+from im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
+from max_pool_2d_nhwc_cython import max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython
+from average_pool_2d_nhwc_cython import average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython
 from pad_cython import pad_cython, transpose_1023_and_pad_cython, shrink_cython
 from reindex_cython import reindex_cython
 from relu_cython import relu_cython

@@ -42,7 +42,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.ho = self.wo = None
 
     def initialize_pool_2d_gpu(self, prev_shape, need_dx, x, pool_mode):
-        self.ci, self.hi, self.wi = prev_shape
+        self.hi, self.wi, self.ci = prev_shape
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])
         if self.pool_shape[1] == 0:
@@ -58,7 +58,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
                                           self.vstride, self.hstride)
         # Get output dimensions
         _, _, self.ho, self.wo = cudnn.cudnnGetPooling2dForwardOutputDim(self.pool_desc, x.desc)
-        self.shape = (self.co, self.ho, self.wo)
+        self.shape = (self.ho, self.wo, self.co)
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)

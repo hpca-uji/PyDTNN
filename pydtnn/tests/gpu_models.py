@@ -38,15 +38,16 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
     model2_desc = "using the GPU backend"
 
     rtol_dict = {
-        "AdditionBlock": 2e-4,
-        "ConcatenationBlock": 2e-4,
+        "AdditionBlock": 1e-2,
+        "ConcatenationBlock": 1e-2,
     }
 
     atol_dict = {
         "AdditionBlock": 1e-2,
-        "BatchNormalization": 2e-5,
-        "ConcatenationBlock": 5e-3,
+        "BatchNormalization": 6e-5,
+        "ConcatenationBlock": 1e-2,
         "Conv2D": 4e-3,
+        "FC": 1e-5,
     }
 
     @staticmethod
@@ -66,7 +67,10 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
         for cpu_layer, gpu_layer in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             if len(cpu_layer.weights.shape) == 1:
                 continue
-            gpu_layer.weights_cpu = cpu_layer.weights.copy()
+            if "Conv2D" in type(gpu_layer).__name__:
+                gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
+            else:
+                gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if len(gpu_layer.weights_cpu):
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
                 gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_fmt,
@@ -110,11 +114,11 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
             if verbose_test():
                 print(layer)
             try:
-                model2.layers[i + 1].dx.ary.set(dx1[i + 1])
+                model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape))
             except ValueError:
                 warnings.warn(f"dx of model 1 {model2.layers[i + 1].canonical_name_with_id}"
                               f" is not ordered [dx.strides: {dx1[i + 1].strides}")
-                model2.layers[i + 1].dx.ary.set(dx1[i + 1].copy())
+                model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape).copy())
             out = layer.backward(model2.layers[i + 1].dx)
             dx2[i] = out.ary.get()
         return dx2

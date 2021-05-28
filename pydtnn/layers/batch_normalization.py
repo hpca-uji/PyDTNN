@@ -52,8 +52,8 @@ class BatchNormalization(Layer, ABC):
         self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2
         if self.spatial:
-            self.co = self.ci = self.shape[0]
-            self.hi, self.wi = self.shape[1], self.shape[2]
+            self.co = self.ci = self.shape[-1]
+            self.hi, self.wi = self.shape[0], self.shape[1]
             shape_ = (self.ci,)
         self.gamma = np.full(shape_, self.gamma_init_val, self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)

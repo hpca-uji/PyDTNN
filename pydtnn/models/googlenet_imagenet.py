@@ -24,7 +24,7 @@ from ..layers import *
 
 def create_googlenet_imagenet(model):
     _ = model.add
-    _(Input(shape=(3, 224, 224)))
+    _(Input(shape=(224, 224, 3)))
     _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"))
     _(BatchNormalization())
     _(Relu())

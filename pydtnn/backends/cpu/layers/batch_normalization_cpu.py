@@ -44,7 +44,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             return _mean
 
         if self.spatial:
-            x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+            x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
             n = np.array([x.shape[0]], dtype=self.model.dtype)
@@ -81,13 +81,13 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             raise ValueError("Unexpected model mode")
 
         if self.spatial:
-            y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            y = y.reshape(-1, self.hi, self.wi, self.ci)
 
         return y
 
     def backward(self, dy):
         if self.spatial:
-            dy = dy.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+            dy = dy.reshape(-1, self.ci)
 
         n = dy.shape[0]
         self.dgamma = np.sum(dy * self.xn, axis=0)
@@ -98,5 +98,5 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             dx = dx.astype(self.model.dtype)
 
             if self.spatial:
-                dx = dx.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+                dx = dx.reshape(-1, self.hi, self.wi, self.ci)
             return dx

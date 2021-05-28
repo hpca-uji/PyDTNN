@@ -39,7 +39,7 @@ def argmax_cython(x, axis=0):
     else:
         raise TypeError("Type '{}' is not supported by argmax_cython!".format(str(x.dtype)))
 
-    return max, tuple([amax, rng])
+    return max, tuple([amax, rng] if axis == 0 else [rng, amax])
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

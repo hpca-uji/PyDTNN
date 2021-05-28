@@ -36,10 +36,10 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def initialize_block_layer(self):
         super().initialize_block_layer()
-        assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
-        self.out_co = [s[0] for s in self.out_shapes]
+        assert all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes])
+        self.out_co = [s[-1] for s in self.out_shapes]
         self.idx_co = np.cumsum(self.out_co, axis=0)
-        self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
+        self.shape = (*self.out_shapes[0][:-1], sum(self.out_co))
 
     def forward(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_REPLICATE)
@@ -53,14 +53,14 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONCAT)
-        y = np.concatenate(x, axis=1)
+        y = np.concatenate(x, axis=-1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
 
     def backward(self, dy):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SPLIT)
-        dx = np.split(dy, self.idx_co[:-1], axis=1)
+        dx = np.split(dy, self.idx_co[:-1], axis=-1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         for i, p in enumerate(self.paths):

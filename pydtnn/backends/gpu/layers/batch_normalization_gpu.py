@@ -69,11 +69,11 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         cudnn.cudnnDeriveBNTensorDescriptor(self.gamma_beta_mean_var_desc,
                                             x.desc, self.mode)
         if self.spatial:
-            shape_ = (1, self.shape[0], 1, 1)  # 1 x C x 1 x 1
+            shape_ = (1, self.shape[-1], 1, 1)  # 1 x C x 1 x 1
         else:
-            shape_ = (1, self.shape[0],
-                      self.shape[1] if len(self.shape) > 2 else 1,
-                      self.shape[2] if len(self.shape) > 3 else 1)  # 1 x C x H x W
+            shape_ = (1, self.shape[-1],
+                      self.shape[-3] if len(self.shape) > 2 else 1,
+                      self.shape[-2] if len(self.shape) > 1 else 1)  # 1 x C x H x W
         # gamma
         self.gamma_value = np.full(shape_, self.gamma_init_val, self.model.dtype)
         gamma_gpu = gpuarray.to_gpu(self.gamma_value)

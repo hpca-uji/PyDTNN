@@ -31,14 +31,15 @@ from pydtnn.tracers import PYDTNN_OPS_FORWARD_CUBLAS_MATMUL, \
 from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
+from ..utils_gpu import matmul_gpu, matvec_gpu
 
 
 class FCGPU(LayerGPU, FC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.matmul = utils.matmul_gpu
-        self.matvec = utils.matvec_gpu
+        self.matmul = matmul_gpu
+        self.matvec = matvec_gpu
 
     def initialize(self, prev_shape, need_dx, x):
         super().initialize(prev_shape, need_dx, x)
@@ -59,8 +60,9 @@ class FCGPU(LayerGPU, FC):
         self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         if self.need_dx:
-            dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+            dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
             self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.dx.reshape((self.model.batch_size, *prev_shape))
 
         if self.model.gpudirect:
             self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)

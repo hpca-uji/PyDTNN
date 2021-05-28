@@ -33,7 +33,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
-        self.ci, self.hi, self.wi = prev_shape
+        self.hi, self.wi, self.ci = prev_shape
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])
         if self.pool_shape[1] == 0:
@@ -43,7 +43,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
         self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
         assert self.ho > 0 and self.wo > 0
         self.co = self.ci
-        self.shape = (self.co, self.ho, self.wo)
+        self.shape = (self.ho, self.wo, self.co)
         self.n = np.prod(self.shape)
 
         self.fwd_time = \

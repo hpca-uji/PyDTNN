@@ -25,7 +25,7 @@ from ..layers import *
 
 def create_densenet201_cifar10(model):
     _ = model.add
-    _(Input(shape=(3, 32, 32)))
+    _(Input(shape=(32, 32, 3)))
 
     blocks, growth_rate = [6, 12, 48, 32], 32  # DenseNet201
 

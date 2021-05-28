@@ -29,5 +29,5 @@ class AveragePool2DGPU(AbstractPool2DLayerGPU, AveragePool2D):
 
     def initialize(self, prev_shape, need_dx, x):
         super().initialize(prev_shape, need_dx, x)
-        pool_mode = cudnn.cudnnPoolingMode['CUDNN_POOLING_AVERAGE_COUNT_INCLUDE_PADDING']
+        pool_mode = cudnn.cudnnPoolingMode['CUDNN_POOLING_AVERAGE_COUNT_EXCLUDE_PADDING']
         self.initialize_pool_2d_gpu(prev_shape, need_dx, x, pool_mode)

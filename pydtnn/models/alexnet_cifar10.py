@@ -22,7 +22,7 @@ from ..layers import *
 
 def create_alexnet_cifar10(model):
     _ = model.add
-    _(Input(shape=(3, 32, 32)))
+    _(Input(shape=(32, 32, 3)))
     _(Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, stride=2, activation="relu"))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))

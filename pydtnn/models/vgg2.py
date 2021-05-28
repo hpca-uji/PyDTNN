@@ -22,7 +22,7 @@ from ..layers import *
 
 def create_vgg2(model):
     _ = model.add
-    _(Input(shape=(3, 32, 32)))
+    _(Input(shape=(32, 32, 3)))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform"))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform"))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))

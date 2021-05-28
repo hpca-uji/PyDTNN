@@ -24,7 +24,7 @@ from ..activations import *
 def create_mobilenetv1_cifar10(model):
     first_filters = 32
     _ = model.add
-    _( Input(shape=(3, 32, 32)) )
+    _( Input(shape=(32, 32, 3)) )
     _( Conv2D(nfilters=first_filters, filter_shape=(3,3), grouping="standard", padding=1, stride=2, activation="relu", use_bias=False))
 
     layout = [ [64, 1], [128, 2], [256, 2], [512, 6], [1024, 2] ]
