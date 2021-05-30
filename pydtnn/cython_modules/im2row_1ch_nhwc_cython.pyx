@@ -22,9 +22,6 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-# This code has been inspired from cthorey, see:
-#    https://github.com/cthorey/CS231/blob/master/assignment2/cs231n/im2row_1ch_nhwc_cython.pyx
-
 def im2row_1ch_nhwc_cython(x, int kh, int kw, int vpadding, int hpadding, int vstride, int hstride):
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
@@ -34,18 +31,14 @@ def im2row_1ch_nhwc_cython(x, int kh, int kw, int vpadding, int hpadding, int vs
     cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
     cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
 
-    cdef np.ndarray x_padded = np.pad(x,
-                                      ((0, 0), (vpadding, vpadding), (hpadding, hpadding), (0, 0)),
-                                      mode='constant').astype(x.dtype)
-
     cdef np.ndarray rows = np.zeros((n * c * hh * ww, kh * kw), dtype=x.dtype)
 
     if x.dtype == np.int8:
-        im2row_1ch_nhwc_cython_inner_int8(rows, x_padded, n, h, w, c, hh, ww, kh, kw, vstride, hstride)
+        im2row_1ch_nhwc_cython_inner_int8(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding, vstride, hstride)
     elif x.dtype == np.float32:
-        im2row_1ch_nhwc_cython_inner_float32(rows, x_padded, n, h, w, c, hh, ww, kh, kw, vstride, hstride)
+        im2row_1ch_nhwc_cython_inner_float32(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding, vstride, hstride)
     elif x.dtype == np.float64:
-        im2row_1ch_nhwc_cython_inner_float64(rows, x_padded, n, h, w, c, hh, ww, kh, kw, vstride, hstride)
+        im2row_1ch_nhwc_cython_inner_float64(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding, vstride, hstride)
     else:
         raise TypeError("Type '{}' is not supported by im2row_1ch_nhwc_cython!".format(str(rows.dtype)))
 
@@ -54,10 +47,11 @@ def im2row_1ch_nhwc_cython(x, int kh, int kw, int vpadding, int hpadding, int vs
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int im2row_1ch_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] rows,
-                                           np.ndarray[np.int8_t, ndim=4] x_padded,
+                                           np.ndarray[np.int8_t, ndim=4] x,
                                            int n, int h, int w, int c, int hh, int ww,
-                                           int kh, int kw, int vstride, int hstride) except? -1:
-    cdef int cc, ii, jj, row, yy, xx, nn, col
+                                           int kh, int kw, int vpadding, int hpadding,
+                                           int vstride, int hstride) except? -1:
+    cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -65,17 +59,22 @@ cdef int im2row_1ch_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] rows,
                 for cc in range(c):
                     row = nn * hh * ww * c + xx * ww * c + yy * c + cc
                     for ii in range(kh):
-                        for jj in range(kw):
-                            col = ii * kw + jj
-                            rows[row, col] = x_padded[nn, vstride * xx + ii, hstride * yy + jj, cc]
+                        x_x = vstride * xx + ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    rows[row, col] = x[nn, x_x, x_y, cc]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int im2row_1ch_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] rows,
-                                              np.ndarray[np.float32_t, ndim=4] x_padded,
-                                              int n, int h, int w, int c, int hh, int ww,
-                                              int kh, int kw, int vstride, int hstride) except? -1:
-    cdef int cc, ii, jj, row, yy, xx, nn, col
+                                           np.ndarray[np.float32_t, ndim=4] x,
+                                           int n, int h, int w, int c, int hh, int ww,
+                                           int kh, int kw, int vpadding, int hpadding,
+                                           int vstride, int hstride) except? -1:
+    cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -83,17 +82,22 @@ cdef int im2row_1ch_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] r
                 for cc in range(c):
                     row = nn * hh * ww * c + xx * ww * c + yy * c + cc
                     for ii in range(kh):
-                        for jj in range(kw):
-                            col = ii * kw + jj
-                            rows[row, col] = x_padded[nn, vstride * xx + ii, hstride * yy + jj, cc]
+                        x_x = vstride * xx + ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    rows[row, col] = x[nn, x_x, x_y, cc]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int im2row_1ch_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] rows,
-                                              np.ndarray[np.float64_t, ndim=4] x_padded,
-                                              int n, int h, int w, int c, int hh, int ww,
-                                              int kh, int kw, int vstride, int hstride) except? -1:
-    cdef int cc, ii, jj, row, yy, xx, nn, col
+                                           np.ndarray[np.float64_t, ndim=4] x,
+                                           int n, int h, int w, int c, int hh, int ww,
+                                           int kh, int kw, int vpadding, int hpadding,
+                                           int vstride, int hstride) except? -1:
+    cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -101,9 +105,13 @@ cdef int im2row_1ch_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] r
                 for cc in range(c):
                     row = nn * hh * ww * c + xx * ww * c + yy * c + cc
                     for ii in range(kh):
-                        for jj in range(kw):
-                            col = ii * kw + jj
-                            rows[row, col] = x_padded[nn, vstride * xx + ii, hstride * yy + jj, cc]
+                        x_x = vstride * xx + ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    rows[row, col] = x[nn, x_x, x_y, cc]
 
 def row2im_1ch_nhwc_cython(rows,
                            int n, int h, int w, int c,
@@ -112,29 +120,27 @@ def row2im_1ch_nhwc_cython(rows,
     cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
     cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
 
-    cdef np.ndarray x_padded = np.zeros((n, h + 2 * vpadding, w + 2 * hpadding, c),
-                                        dtype=rows.dtype)
+    cdef np.ndarray x = np.zeros((n, h, w, c), dtype=rows.dtype)
+
     if rows.dtype == np.int8:
-        row2im_1ch_nhwc_cython_inner_int8(rows, x_padded, n, h, w, c, hh, ww, kh, kw, vstride, hstride)
+        row2im_1ch_nhwc_cython_inner_int8(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding, vstride, hstride)
     elif rows.dtype == np.float32:
-        row2im_1ch_nhwc_cython_inner_float32(rows, x_padded, n, h, w, c, hh, ww, kh, kw, vstride, hstride)
+        row2im_1ch_nhwc_cython_inner_float32(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding, vstride, hstride)
     elif rows.dtype == np.float64:
-        row2im_1ch_nhwc_cython_inner_float64(rows, x_padded, n, h, w, c, hh, ww, kh, kw, vstride, hstride)
+        row2im_1ch_nhwc_cython_inner_float64(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding, vstride, hstride)
     else:
         raise TypeError("Type '{}' is not supported by row2im_1ch_nhwc_cython!".format(str(rows.dtype)))
 
-    if vpadding > 0 or hpadding > 0:
-        # @warning: padding:-padding will not work if padding is 0
-        return x_padded[:, vpadding:vpadding + h, hpadding:hpadding + w, :]
-    return x_padded
+    return x
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int row2im_1ch_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] rows,
-                                           np.ndarray[np.int8_t, ndim=4] x_padded,
-                                           int n, int h, int w, int c, int hh, int ww,
-                                           int kh, int kw, int vstride, int hstride) except? -1:
-    cdef int nn, xx, yy, row, cc, ii, jj, col
+                                       np.ndarray[np.int8_t, ndim=4] x,
+                                       int n, int h, int w, int c, int hh, int ww,
+                                       int kh, int kw, int vpadding, int hpadding,
+                                       int vstride, int hstride) except? -1:
+    cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -142,17 +148,22 @@ cdef int row2im_1ch_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] rows,
                 for cc in range(c):
                     row = nn * hh * ww * c + xx * ww * c + yy * c + cc
                     for ii in range(kh):
-                        for jj in range(kw):
-                            col = ii * kw + jj
-                            x_padded[nn, vstride * xx + ii, hstride * yy + jj, cc] += rows[row, col]
+                        x_x = vstride * xx + ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    x[nn, x_x, x_y, cc] += rows[row, col]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int row2im_1ch_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] rows,
-                                              np.ndarray[np.float32_t, ndim=4] x_padded,
-                                              int n, int h, int w, int c, int hh, int ww,
-                                              int kh, int kw, int vstride, int hstride) except? -1:
-    cdef int nn, xx, yy, row, cc, ii, jj, col
+                                       np.ndarray[np.float32_t, ndim=4] x,
+                                       int n, int h, int w, int c, int hh, int ww,
+                                       int kh, int kw, int vpadding, int hpadding,
+                                       int vstride, int hstride) except? -1:
+    cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -160,17 +171,22 @@ cdef int row2im_1ch_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] r
                 for cc in range(c):
                     row = nn * hh * ww * c + xx * ww * c + yy * c + cc
                     for ii in range(kh):
-                        for jj in range(kw):
-                            col = ii * kw + jj
-                            x_padded[nn, vstride * xx + ii, hstride * yy + jj, cc] += rows[row, col]
+                        x_x = vstride * xx + ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    x[nn, x_x, x_y, cc] += rows[row, col]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef int row2im_1ch_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] rows,
-                                              np.ndarray[np.float64_t, ndim=4] x_padded,
-                                              int n, int h, int w, int c, int hh, int ww,
-                                              int kh, int kw, int vstride, int hstride) except? -1:
-    cdef int nn, xx, yy, row, cc, ii, jj, col
+                                       np.ndarray[np.float64_t, ndim=4] x,
+                                       int n, int h, int w, int c, int hh, int ww,
+                                       int kh, int kw, int vpadding, int hpadding,
+                                       int vstride, int hstride) except? -1:
+    cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -178,6 +194,10 @@ cdef int row2im_1ch_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] r
                 for cc in range(c):
                     row = nn * hh * ww * c + xx * ww * c + yy * c + cc
                     for ii in range(kh):
-                        for jj in range(kw):
-                            col = ii * kw + jj
-                            x_padded[nn, vstride * xx + ii, hstride * yy + jj, cc] += rows[row, col]
+                        x_x = vstride * xx + ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    x[nn, x_x, x_y, cc] += rows[row, col]

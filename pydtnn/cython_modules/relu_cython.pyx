@@ -23,8 +23,6 @@ cimport cython
 from cython.parallel import prange
 
 def relu_cython(x):
-    #if not x.flags['C_CONTIGUOUS']:
-    #    np.ascontiguousarray(x, dtype=np.float32)
     shape = x.shape
     cdef np.ndarray max = np.zeros((np.prod(shape)), dtype=x.dtype)
     cdef np.ndarray mask = np.zeros((np.prod(shape)), dtype=np.int8)
