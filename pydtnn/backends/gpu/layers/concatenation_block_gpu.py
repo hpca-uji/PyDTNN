@@ -76,12 +76,12 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
             "split")
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Derivative dy
         self.dy = []
         for i, p in enumerate(self.paths):
             dy_gpu = gpuarray.empty((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
-            self.dy.append(TensorGPU(dy_gpu, self.model.tensor_fmt, self.model.cudnn_dtype))
+            self.dy.append(TensorGPU(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
 
     def initialize_block_layer(self):
         super().initialize_block_layer()

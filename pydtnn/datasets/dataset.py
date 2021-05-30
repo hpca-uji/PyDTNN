@@ -103,6 +103,9 @@ class Dataset:
         self.crop_images_size = None
         self.crop_images_prob = None
 
+    def nchw2nhwc(self, x):
+        return x.transpose(0, 2, 3, 1).astype(self.dtype, order="C")
+
     def make_train_val_partitions(self, val_split=0.2):
         pass
 
@@ -202,7 +205,7 @@ class MNIST(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=14, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format="NHWC"):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -214,6 +217,7 @@ class MNIST(Dataset):
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 10
         # self.val_start = 0
 
@@ -247,9 +251,9 @@ class MNIST(Dataset):
         self.x_test = self.x_test.flatten().reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
 
-        # Change data layout CHW -> HWC
-        self.x_train_val = self.__chw2hwc(self.x_train_val)
-        self.x_test = self.__chw2hwc(self.x_test)
+        if self.tensor_format == "NHWC":
+            self.x_train_val = self.nchw2nhwc(self.x_train_val)
+            self.x_test = self.nchw2nhwc(self.x_test)
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -266,9 +270,6 @@ class MNIST(Dataset):
             zero, data_type, dims = struct.unpack('>HBB', f.read(4))
             shape = tuple(struct.unpack('>I', f.read(4))[0] for _ in range(dims))
             return np.fromstring(f.read(), dtype=np.uint8).reshape(shape)
-
-    def __chw2hwc(self, x):
-        return x.transpose(0, 2, 3, 1).astype(self.dtype, order="C")
 
     def __one_hot_encoder(self, y):
         y_one_hot = np.zeros((y.shape[0], self.nclasses), dtype=self.dtype, order="C")
@@ -319,7 +320,7 @@ class CIFAR10(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=16, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format="NHWC"):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -331,6 +332,7 @@ class CIFAR10(Dataset):
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 10
         self.val_start = 0
 
@@ -371,9 +373,9 @@ class CIFAR10(Dataset):
         self.x_test = self.__normalize_image(self.x_test)
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
 
-        # Change data layout CHW -> HWC
-        self.x_train_val = self.__chw2hwc(self.x_train_val)
-        self.x_test = self.__chw2hwc(self.x_test)
+        if self.tensor_format == "NHWC":
+            self.x_train_val = self.nchw2nhwc(self.x_train_val)
+            self.x_test = self.nchw2nhwc(self.x_test)
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -396,9 +398,6 @@ class CIFAR10(Dataset):
         for c in range(3):
             x[:, c, ...] = (x[:, c, ...] - self.mean[c]) / self.std[c]
         return x
-
-    def __chw2hwc(self, x):
-        return x.transpose(0, 2, 3, 1).astype(self.dtype, order="C")
 
     def __one_hot_encoder(self, y):
         y_one_hot = np.zeros((y.shape[0], self.nclasses), dtype=self.dtype, order="C")
@@ -449,7 +448,7 @@ class ImageNet(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=112, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format="NHWC"):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
         self.model = model
@@ -461,6 +460,7 @@ class ImageNet(Dataset):
         self.test_as_validation = test_as_validation
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 1000
         self.val_start = 0
 
@@ -519,9 +519,6 @@ class ImageNet(Dataset):
         #     x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
         return x
 
-    def __chw2hwc(x):
-        return x.transpose(0, 2, 3, 1).astype(self.dtype, order="C")
-
     def __one_hot_encoder(self, y):
         y_one_hot = np.zeros((y.shape[0], self.nclasses), dtype=self.dtype, order="C")
         y_one_hot[np.arange(y.shape[0]), y] = 1
@@ -549,7 +546,8 @@ class ImageNet(Dataset):
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
-                x_data = self.__chw2hwc(x_data)
+                if self.tensor_format == "NHWC":
+                    x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if x_buffer.size == 0:
                     x_buffer, y_buffer = x_data, y_data
@@ -581,7 +579,8 @@ class ImageNet(Dataset):
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
-                x_data = self.__chw2hwc(x_data)
+                if self.tensor_format == "NHWC":
+                    x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if self.flip_images and op == "train":
                     x_data = do_flip_images(x_data, self.flip_images_prob)

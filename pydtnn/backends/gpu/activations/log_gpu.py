@@ -55,12 +55,12 @@ class LogGPU(ActivationGPU, Log):
 
         # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         if self.need_dx:
             dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
     def forward(self, x):
         self.log(x.ary, self.y.ary, stream=self.model.stream)

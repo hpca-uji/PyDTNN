@@ -48,20 +48,20 @@ class FCGPU(LayerGPU, FC):
         # Weights
         self.weights_cpu = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorGPU(weights_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         if self.use_bias:
             # Biases
             self.biases_cpu = self.biases_initializer((1, *self.shape), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
-            self.biases = TensorGPU(biases_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         y_gpu = gpuarray.empty((self.model.batch_size, self.shape[0]), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         if self.need_dx:
             dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
             self.dx.reshape((self.model.batch_size, *prev_shape))
 
         if self.model.gpudirect:
@@ -79,11 +79,11 @@ class FCGPU(LayerGPU, FC):
                 self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
                 db_gpu = gpuarray.empty(self.db_cpu.shape, self.model.dtype)
 
-        self.dw = TensorGPU(dw_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
+        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                             gpudirect=self.model.gpudirect)
         if self.use_bias:
             # noinspection PyUnboundLocalVariable
-            self.db = TensorGPU(db_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
+            self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                                 gpudirect=self.model.gpudirect)
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))

@@ -27,3 +27,7 @@ class Input(Layer, ABC):
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
+    def initialize(self, prev_shape, need_dx=True):
+        super().initialize(prev_shape, need_dx)
+        if self.model.tensor_format == "NCHW":
+           self.shape = (self.shape[2], self.shape[0], self.shape[1])

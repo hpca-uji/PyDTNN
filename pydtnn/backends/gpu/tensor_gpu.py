@@ -27,16 +27,16 @@ except OSError:
     pass
 
 def decode_tensor_dims(shape, fmt):
-    if fmt == cudnn.cudnnTensorFormat['CUDNN_TENSOR_NCHW']:
+    if fmt == 'NCHW':
         n, c, h, w = shape
-    elif fmt == cudnn.cudnnTensorFormat['CUDNN_TENSOR_NHWC']:
+    elif fmt == 'NHWC':
         n, h, w, c = shape
     return (n, c, h, w)
 
 class TensorGPU:
     def __init__(self, gpu_arr, tensor_format, cudnn_dtype, tensor_type="tensor", desc=None, gpudirect=False,
                  cublas=False):
-        self.tensor_format = tensor_format
+        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format]
         if len(gpu_arr.shape) == 2:
             self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
         else:
@@ -52,12 +52,12 @@ class TensorGPU:
             self.desc = desc
         elif tensor_type == "tensor":
             self.desc = cudnn.cudnnCreateTensorDescriptor()
-            cudnn.cudnnSetTensor4dDescriptor(self.desc, self.tensor_format,
+            cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
                                              cudnn_dtype, *decode_tensor_dims(self.shape, tensor_format))
         elif tensor_type == "filter":
             self.desc = cudnn.cudnnCreateFilterDescriptor()
             cudnn.cudnnSetFilter4dDescriptor(self.desc, cudnn_dtype,
-                                             self.tensor_format, *decode_tensor_dims(self.shape, tensor_format))
+                                             self.cudnn_tensor_format, *decode_tensor_dims(self.shape, tensor_format))
         self.cublas = cublas
 
     def reshape(self, shape):

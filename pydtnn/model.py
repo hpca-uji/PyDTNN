@@ -326,7 +326,6 @@ class Model:
             cudnn_type = types.get(self.dtype, "CUDNN_DATA_FLOAT")
 
             self.cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
-            self.tensor_fmt = cudnn.cudnnTensorFormat['CUDNN_TENSOR_NHWC']
             self.tracer.set_default_stream(self.stream)
         # Read model
         self.model_name = self.kwargs.get("model_name")
@@ -617,7 +616,7 @@ class Model:
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
                 gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_fmt, self.cudnn_dtype)
+                self.tensor_format, self.cudnn_dtype)
         loss_func = getattr(losses, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self)
         metrics_funcs = [getattr(metrics, m)(shape=(local_batch_size, *self.layers[-1].shape), model=self) for m in
                          metrics_list]
@@ -731,7 +730,7 @@ class Model:
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
                 gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_fmt, self.cudnn_dtype)
+                self.tensor_format, self.cudnn_dtype)
         loss_func = getattr(losses, loss)(shape=(self.batch_size, *self.layers[-1].shape), model=self)
         metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
                          metrics_list]

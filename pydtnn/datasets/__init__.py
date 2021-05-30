@@ -36,7 +36,8 @@ def get_dataset(model):
                               crop_images_size=model.crop_images_size,
                               crop_images_prob=model.crop_images_prob,
                               dtype=model.dtype,
-                              use_synthetic_data=model.use_synthetic_data)
+                              use_synthetic_data=model.use_synthetic_data,
+                              tensor_format=model.tensor_format)
     except Exception as e:
         import traceback
         print(traceback.format_exc())

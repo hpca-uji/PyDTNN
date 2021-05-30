@@ -36,7 +36,7 @@ class LossGPU(Loss, ABC):
         super().__init__(shape, model, eps)
         self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.kernel = self.__init_gpu_kernel__()
 
     @abstractmethod

@@ -73,7 +73,7 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if len(gpu_layer.weights_cpu):
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
-                gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_fmt,
+                gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_format,
                                               gpu_layer.model.cudnn_dtype, "filter")
             if gpu_layer.use_bias:
                 if len(cpu_layer.biases.shape) == 1:
@@ -81,7 +81,7 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if len(gpu_layer.biases_cpu):
                     biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
-                    gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_fmt,
+                    gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
                                                  gpu_layer.model.cudnn_dtype)
 
     @staticmethod
