@@ -173,7 +173,7 @@ cdef int max_pool_2d_bwd_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] y,
                     ii, jj = idx_maxval // kh, idx_maxval % kw
                     x_x = vstride * xx + ii - vpadding
                     x_y = hstride * yy + jj - hpadding
-                    if x_x >= 0 and x_x < h and x_y >= 0 and x_y < w:
+                    if 0 <= x_x < h and 0 <= x_y < w:
                         x[nn, x_x, x_y, cc] += y[nn, xx, yy, cc]
 
 @cython.boundscheck(False)
@@ -194,7 +194,7 @@ cdef int max_pool_2d_bwd_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim
                     ii, jj = idx_maxval // kh, idx_maxval % kw
                     x_x = vstride * xx + ii - vpadding
                     x_y = hstride * yy + jj - hpadding
-                    if x_x >= 0 and x_x < h and x_y >= 0 and x_y < w:
+                    if 0 <= x_x < h and 0 <= x_y < w:
                         x[nn, x_x, x_y, cc] += y[nn, xx, yy, cc]
 
 @cython.boundscheck(False)
@@ -215,5 +215,5 @@ cdef int max_pool_2d_bwd_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim
                     ii, jj = idx_maxval // kh, idx_maxval % kw
                     x_x = vstride * xx + ii - vpadding
                     x_y = hstride * yy + jj - hpadding
-                    if x_x >= 0 and x_x < h and x_y >= 0 and x_y < w:
+                    if 0 <= x_x < h and 0 <= x_y < w:
                         x[nn, x_x, x_y, cc] += y[nn, xx, yy, cc]
