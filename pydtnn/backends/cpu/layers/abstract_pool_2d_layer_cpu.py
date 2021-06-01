@@ -53,7 +53,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nchw_i2c)
             # setattr(self, "backward", self._backward_nchw_i2c)
-        else: # Asuming PYDTNN_TENSOR_FORMAT_NHWC
+        else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
             setattr(self, "forward", self._forward_nhwc_cython)
             setattr(self, "backward", self._backward_nhwc_cython)
             # I2C-based implementations have been temporarily discarded

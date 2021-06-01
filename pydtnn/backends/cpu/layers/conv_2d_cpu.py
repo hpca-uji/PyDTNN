@@ -215,7 +215,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
-        y = add_cython(res, self.biases) if self.use_bias else res
+        y = add_nchw_cython(res, self.biases) if self.use_bias else res
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
@@ -484,7 +484,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
-                dx = col2im_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                dx = col2im_nchw_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
                                    self.kh, self.kw, self.vpadding, self.hpadding,
                                    self.vstride, self.hstride)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
