@@ -28,7 +28,8 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from . import LayerGPU
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
-
+from pydtnn.utils import decode_tensor, encode_tensor, \
+                         PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
     """
@@ -42,7 +43,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.ho = self.wo = None
 
     def initialize_pool_2d_gpu(self, prev_shape, need_dx, x, pool_mode):
-        self.hi, self.wi, self.ci = prev_shape
+        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])
         if self.pool_shape[1] == 0:
@@ -58,7 +59,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
                                           self.vstride, self.hstride)
         # Get output dimensions
         _, _, self.ho, self.wo = cudnn.cudnnGetPooling2dForwardOutputDim(self.pool_desc, x.desc)
-        self.shape = (self.ho, self.wo, self.co)
+        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)

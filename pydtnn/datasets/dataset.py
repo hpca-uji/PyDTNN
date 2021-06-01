@@ -25,7 +25,7 @@ import struct
 import threading
 
 import numpy as np
-
+from ..utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 # @todo: split dataset.py into different files
 
@@ -56,18 +56,25 @@ class BackgroundGenerator(threading.Thread):
         return self
 
 
-def do_flip_images(data, prob=0.5):
-    n, h, w, c = data.shape
+def do_flip_images(data, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        n, c, h, w = data.shape
+        width_dim = -1
+    else:
+        n, h, w, c = data.shape
+        width_dim = 2
     limit = min(n, int(n * prob))
     s = np.arange(n)
     np.random.shuffle(s)
     s = s[:limit]
-    data[s, ...] = np.flip(data[s, ...], axis=2)
+    data[s, ...] = np.flip(data[s, ...], axis=width_dim)
     return data
 
-
-def do_crop_images(data, crop_size, prob=0.5):
-    n, h, w, c = data.shape
+def do_crop_images(data, crop_size, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        n, c, h, w = data.shape
+    else:
+        n, h, w, c = data.shape
     crop_size = min(crop_size, h, w)
     limit = min(n, int(n * prob))
     s = np.arange(n)
@@ -78,8 +85,12 @@ def do_crop_images(data, crop_size, prob=0.5):
     for i, ri in enumerate(s):
         b, r = t[i] + crop_size, ll[i] + crop_size
         # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
-        data[ri, :t[i], :ll[i], :] = 0.0
-        data[ri, b:, r:, :] = 0.0
+        if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            data[ri, :, :t[i], :ll[i]] = 0.0
+            data[ri, :, b:, r:] = 0.0
+        else:
+            data[ri, :t[i], :ll[i], :] = 0.0
+            data[ri, b:, r:, :] = 0.0
         data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
         data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
     return data
@@ -205,7 +216,7 @@ class MNIST(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=14, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False, tensor_format="NHWC"):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -251,7 +262,7 @@ class MNIST(Dataset):
         self.x_test = self.x_test.flatten().reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
 
-        if self.tensor_format == "NHWC":
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
             self.x_train_val = self.nchw2nhwc(self.x_train_val)
             self.x_test = self.nchw2nhwc(self.x_test)
 
@@ -320,7 +331,7 @@ class CIFAR10(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=16, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False, tensor_format="NHWC"):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -373,7 +384,7 @@ class CIFAR10(Dataset):
         self.x_test = self.__normalize_image(self.x_test)
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
 
-        if self.tensor_format == "NHWC":
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
             self.x_train_val = self.nchw2nhwc(self.x_train_val)
             self.x_test = self.nchw2nhwc(self.x_test)
 
@@ -394,7 +405,6 @@ class CIFAR10(Dataset):
         if not hasattr(self, "mean"):
             self.mean = np.mean(x, axis=(0, 2, 3))
             self.std = np.std(x, axis=(0, 2, 3))
-            
         for c in range(3):
             x[:, c, ...] = (x[:, c, ...] - self.mean[c]) / self.std[c]
         return x
@@ -448,7 +458,7 @@ class ImageNet(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=112, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False, tensor_format="NHWC"):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
         self.model = model
@@ -546,7 +556,7 @@ class ImageNet(Dataset):
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
-                if self.tensor_format == "NHWC":
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
                     x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if x_buffer.size == 0:
@@ -579,7 +589,7 @@ class ImageNet(Dataset):
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
-                if self.tensor_format == "NHWC":
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
                     x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if self.flip_images and op == "train":

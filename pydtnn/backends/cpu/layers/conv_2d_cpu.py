@@ -22,7 +22,8 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2D
 from pydtnn.backends.cpu.libs import ConvGemm, ConvGemmCache
 from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
-from pydtnn.cython_modules import im2row_nhwc_cython, add_nhwc_cython, row2im_nhwc_cython, transpose_1023_and_pad_cython, \
+from pydtnn.cython_modules import im2row_nhwc_cython, add_nhwc_cython, row2im_nhwc_cython, \
+    im2col_nchw_cython, add_nchw_cython, col2im_nchw_cython, transpose_1023_and_pad_cython, \
     reindex_cython, \
     depthwise_conv_cython
 from pydtnn.model import TRAIN_MODE
@@ -35,6 +36,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
     PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
     PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \
     PYDTNN_OPS_FORWARD_POINTWISE_CONV, PYDTNN_OPS_FORWARD_TRANSPOSE_Y
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 
 class Conv2DCPU(LayerCPU, Conv2D):
@@ -61,23 +63,31 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
         # Set forward and backward implementation
         if self.grouping == "pointwise":
-            setattr(self, "forward", self._forward_pointwise)
-            setattr(self, "backward", self._backward_pointwise)
+            setattr(self, "forward", self._forward_nchw_pointwise \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._forward_nhwc_pointwise)
+            setattr(self, "backward", self._backward_nchw_pointwise \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._backward_nhwc_pointwise)
         elif self.grouping == "depthwise":
-            setattr(self, "forward", self._forward_depthwise)
-            setattr(self, "backward", self._backward_depthwise)
+            setattr(self, "forward", self._forward_nchw_depthwise \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._forward_nhwc_depthwise)
+            setattr(self, "backward", self._backward_nchw_depthwise \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._backward_nhwc_depthwise)
         elif self.model.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
             if not self.model.conv_gemm_cache:
                 ConvGemmCache.disable()
-            setattr(self, "forward", self._forward_cg)
-            setattr(self, "backward", self._backward_cg)
+            setattr(self, "forward", self._forward_nchw_cg \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._forward_nhwc_cg)
+            setattr(self, "backward", self._backward_nchw_cg \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._backward_nhwc_cg)
             self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
             self.cg_deconv = self.model.conv_gemm_deconv
             self.cg_trans = self.model.conv_gemm_trans
         else:
-            setattr(self, "forward", self._forward_i2c)
-            setattr(self, "backward", self._backward_i2c)
+            setattr(self, "forward", self._forward_nchw_i2c \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._forward_nhwc_i2c)
+            setattr(self, "backward", self._backward_nchw_i2c \
+                                     if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else self._backward_nhwc_i2c)
         # Performance models
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
@@ -100,14 +110,14 @@ class Conv2DCPU(LayerCPU, Conv2D):
                                          dtype=self.model.dtype)
 
     def forward(self, x):
-        """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
+        """This is a fake forward function. It will be masked on initialization by _forward_nhwc_i2c or _forward_nhwc_cg"""
         pass
 
     def backward(self, dy):
-        """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
+        """This is a fake backward function. It will be masked on initialization by _backward_nhwc_i2c or _backward_nhwc_cg"""
         pass
 
-    def _forward_i2c(self, x):
+    def _forward_nhwc_i2c(self, x):
         """Version of the forward function that uses im2col and matmul"""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
@@ -133,10 +143,47 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
         y = y.reshape(-1, self.ho, self.wo, self.co)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return y
+
+    def _forward_nhwc_cg(self, x):
+        raise NotImplementedError("Forward not yet implemented!")
+
+    def _forward_nhwc_depthwise(self, x):
+        raise NotImplementedError("Forward not yet implemented!")
+
+    def _forward_nhwc_pointwise(self, x):
+        raise NotImplementedError("Forward not yet implemented!")
+
+    def _forward_nchw_i2c(self, x):
+        """Version of the forward function that uses im2col and matmul"""
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
+        x_cols = im2col_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                    self.vstride, self.hstride)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.model.mode == TRAIN_MODE:
+            self.x_cols = x_cols
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_W)
+        w_cols = self.weights.reshape(self.co, -1)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_MATMUL)
+        res = self.model.matmul(w_cols, x_cols)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
+        y = add_nchw_cython(res, self.biases) if self.use_bias else res
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
 
-    def _forward_cg(self, x):
+    def _forward_nchw_cg(self, x):
         """Version of the forward function that uses the convGemm library"""
 
         if self.model.mode == TRAIN_MODE:
@@ -158,10 +205,9 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
         y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
         return y
 
-    def _forward_depthwise(self, x):
+    def _forward_nchw_depthwise(self, x):
         """ Version of the forward that perform a depthwise convolution"""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_DEPTHWISE_CONV)
@@ -175,10 +221,9 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
         y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
         return y
 
-    def _forward_pointwise(self, x):
+    def _forward_nchw_pointwise(self, x):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_POINTWISE_CONV)
         # y = np.einsum("nchw,oc->nohw", x, self.weights) # Einsum
@@ -195,7 +240,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
-    def _backward_i2c(self, dy):
+    def _backward_nhwc_i2c(self, dy):
         """Version of the backward function that uses im2col and matmul"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
         dy_rows = dy.reshape(-1, self.co)
@@ -230,6 +275,50 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
+    def _backward_nhwc_cg(self, dy):
+        raise NotImplementedError("Backward not yet implemented!")
+
+    def _backward_nhwc_depthwise(self, dy):
+        raise NotImplementedError("Backward not yet implemented!")
+
+    def _backward_nhwc_pointwise(self, dy):
+        raise NotImplementedError("Backward not yet implemented!")
+
+    def _backward_nchw_i2c(self, dy):
+        """Version of the backward function that uses im2col and matmul"""
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+        dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
+        w_cols = self.weights.reshape(self.co, -1).T
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
+        res = self.model.matmul(dy_cols, self.x_cols.T)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
+        self.dw = res.reshape(self.weights.shape)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
+        if self.use_bias:
+            self.db = np.sum(dy, axis=(0, 2, 3))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.need_dx:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+            res = self.model.matmul(w_cols, dy_cols)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            dx = col2im_nchw_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                                    self.kh, self.kw, self.vpadding, self.hpadding,
+                                    self.vstride, self.hstride)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            return dx
+
     @staticmethod
     # @lru_cache(maxsize=4)
     def _get_x_new_indexes_and_xstride(kx, xo, s):
@@ -245,7 +334,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
         return np.array(x_reorder), xo
 
-    def _backward_cg(self, dy):
+    def _backward_nchw_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
 
         # if self.id == 4:
@@ -266,10 +355,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
             # As the first option has been implemented, using the convGemm library in this case is now competitive.
             #
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
-            self.x_rows = im2row_nhwc_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
+            self.x_cols = im2col_nchw_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                              self.vstride, self.hstride)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-            return self._backward_i2c(dy)
+            return self._backward_nchw_i2c(dy)
 
         if not self.cg_trans:
             # 1) cg_dy
@@ -401,8 +490,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
-    def _backward_depthwise(self, dy):
+    def _backward_nchw_depthwise(self, dy):
         raise NotImplementedError("Backward not yet implemented!")
 
-    def _backward_pointwise(self, dy):
+    def _backward_nchw_pointwise(self, dy):
         raise NotImplementedError("Backward not yet implemented!")

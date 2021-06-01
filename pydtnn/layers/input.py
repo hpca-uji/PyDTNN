@@ -20,7 +20,7 @@
 from abc import ABC
 
 from .layer import Layer
-
+from pydtnn.utils import encode_tensor
 
 class Input(Layer, ABC):
 
@@ -29,5 +29,4 @@ class Input(Layer, ABC):
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
-        if self.model.tensor_format == "NCHW":
-           self.shape = (self.shape[2], self.shape[0], self.shape[1])
+        self.shape = encode_tensor(self.shape, self.model.tensor_format)

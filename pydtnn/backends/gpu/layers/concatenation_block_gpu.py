@@ -1,3 +1,4 @@
+#
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
 #  Copyright (C) 2021 Universitat Jaume I
@@ -29,7 +30,7 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_FORWA
 from . import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
-
+from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
 
@@ -49,31 +50,55 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                                                                                           {np.float32: "float",
                                                                                            np.float64: "double"}[
                                                                                               self.model.dtype]),
-            """int c_ = i % C;
-               if (first_c <= c_ && c_ < last_c) {
-                   int w_ = i / C % W;
-                   int h_ = i / (W*C) % H;
-                   int n_ = i / (H*W*C) % N;
-                   int i_ = n_ * H * W * (last_c-first_c) + h_ * W * (last_c-first_c) + w_ * (last_c-first_c) + (c_-first_c);
-                   dst[i] = src[i_];
-               }
-            """,
-            "concat")
+            {PYDTNN_TENSOR_FORMAT_NHWC :
+                """int c_ = i % C;
+                   if (first_c <= c_ && c_ < last_c) {
+                       int w_ = i / C % W;
+                       int h_ = i / (W*C) % H;
+                       int n_ = i / (H*W*C) % N;
+                       int i_ = n_ * H * W * (last_c-first_c) + h_ * W * (last_c-first_c) + w_ * (last_c-first_c) + (c_-first_c);
+                       dst[i] = src[i_];
+                   }
+                """,
+             PYDTNN_TENSOR_FORMAT_NCHW :
+                """int c_ = i / (H*W) % C;
+                   if (first_c <= c_ && c_ < last_c) {
+                       int w_ = i % W;
+                       int h_ = i / W % H;
+                       int n_ = i / (C*H*W) % N;
+                       int i_ = n_ * (last_c-first_c) * H * W + (c_-first_c) * H * W + h_ * W + w_;
+                       dst[i] = src[i_];
+                   }
+                """}[self.model.tensor_format],
+             "concat")
+
         self.split = ElementwiseKernel(
             "T *src, T *dst, int N, int H, int W, int C, int first_c, int last_c".replace("T",
                                                                                           {np.float32: "float",
                                                                                            np.float64: "double"}[
                                                                                               self.model.dtype]),
-            """int c_ = i % C;
-               if (first_c <= c_ && c_ < last_c) {
-                   int w_ = i / C % W;
-                   int h_ = i / (W*C) % H;
-                   int n_ = i / (H*W*C) % N;
-                   int i_ = n_ * H * W * (last_c-first_c) + h_ * W * (last_c-first_c) + w_ * (last_c-first_c) + (c_-first_c);
-                   dst[i_] = src[i];
-               }
-            """,
-            "split")
+            {PYDTNN_TENSOR_FORMAT_NHWC :
+                """int c_ = i % C;
+                   if (first_c <= c_ && c_ < last_c) {
+                       int w_ = i / C % W;
+                       int h_ = i / (W*C) % H;
+                       int n_ = i / (H*W*C) % N;
+                       int i_ = n_ * H * W * (last_c-first_c) + h_ * W * (last_c-first_c) + w_ * (last_c-first_c) + (c_-first_c);
+                       dst[i_] = src[i];
+                   }
+                """,
+             PYDTNN_TENSOR_FORMAT_NCHW :
+                """int c_ = i / (H*W) % C;
+                   if (first_c <= c_ && c_ < last_c) {
+                       int w_ = i % W;
+                       int h_ = i / W % H;
+                       int n_ = i / (C*H*W) % N;
+                       int i_ = n_ * (last_c-first_c) * H * W + (c_-first_c) * H * W + h_ * W + w_;
+                       dst[i_] = src[i];
+                   }
+                """}[self.model.tensor_format],
+             "split")
+
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
@@ -97,10 +122,18 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                 self.bwd_time += layer.bwd_time
                 self.nparams += layer.nparams
             self.out_shapes.append(prev_shape)
-        assert all([o[:-1] == self.out_shapes[0][:-1] for o in self.out_shapes])
-        self.out_co = [s[-1] for s in self.out_shapes]
-        self.idx_co = np.cumsum(self.out_co, axis=0)
-        self.shape = (*self.out_shapes[0][:-1], sum(self.out_co))
+
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            assert all([o[1:] == self.out_shapes[0][1:] for o in self.out_shapes])
+            self.out_co = [s[0] for s in self.out_shapes]
+            self.idx_co = np.cumsum(self.out_co, axis=0)
+            self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
+        else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+            assert all([o[:-1] == self.out_shapes[0][:-1] for o in self.out_shapes])
+            self.out_co = [s[-1] for s in self.out_shapes]
+            self.idx_co = np.cumsum(self.out_co, axis=0)
+            self.shape = (*self.out_shapes[0][:-1], sum(self.out_co))
+        self.ho, self.wo, self.co = decode_tensor(self.shape, self.model.tensor_format)
 
     def forward(self, x):
         for i, p in enumerate(self.paths):
@@ -110,7 +143,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                 y_i = layer.forward(y_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONCAT)
-            self.concat(self.y.ary, y_i.ary, self.model.batch_size, *self.shape,
+            self.concat(self.y.ary, y_i.ary, self.model.batch_size, self.ho, self.wo, self.co,
                         0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
@@ -118,10 +151,9 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
     def backward(self, dy):
         for i, p in enumerate(self.paths):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SPLIT)
-            self.split(dy.ary, self.dy[i].ary, self.model.batch_size, *self.shape,
+            self.split(dy.ary, self.dy[i].ary, self.model.batch_size, self.ho, self.wo, self.co,
                        0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
             dx_i = self.dy[i]
             for layer in reversed(p):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)

@@ -22,7 +22,8 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.model import Model
 from pydtnn.tests import ConvGemmModelsTestCase
 from pydtnn.tests.common import verbose_test
-
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+from pydtnn import losses
 
 class Params:
     pass
@@ -49,6 +50,21 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
         "Conv2D": 4e-3,
         "FC": 1e-5,
     }
+  
+    @staticmethod
+    def get_model1_and_loss_func(model_name):
+        # CPU model with no convGemm
+        params = Params()
+        params.model_name = model_name
+        params.enable_conv_gemm = False
+        params.conv_gemm_cache = False
+        params.tensor_format = "NHWC"
+        model1 = Model(**vars(params))
+        # loss function
+        loss = model1.loss_func
+        local_batch_size = model1.batch_size
+        loss_func = getattr(losses, loss)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
+        return model1, loss_func
 
     @staticmethod
     def get_model2(model_name):
@@ -57,6 +73,7 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
         params.model_name = model_name
         params.enable_gpu = True
         params.enable_cudnn_auto_conv_alg = True
+        params.tensor_format = "NHWC"
         return Model(**vars(params))
 
     @staticmethod
@@ -68,7 +85,10 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
             if len(cpu_layer.weights.shape) == 1:
                 continue
             if "Conv2D" in type(gpu_layer).__name__:
-                gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
+                if model2.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                    gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
+                else:
+                    gpu_layer.weights_cpu = cpu_layer.weights.copy()
             else:
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if len(gpu_layer.weights_cpu):

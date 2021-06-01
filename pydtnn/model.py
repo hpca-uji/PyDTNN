@@ -38,6 +38,7 @@ from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
     SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
     PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 supported_gpu = False
 supported_cudnn = True
@@ -231,8 +232,8 @@ class Model:
         elif self.comm:
             print("Please, install mpi4py to allow parallel MPI execution!")
             sys.exit(-1)
-        if self.enable_cudnn:
 
+        if self.enable_cudnn:
             supported_cudnn = True
             supported_nccl = True
             try:
@@ -327,6 +328,16 @@ class Model:
 
             self.cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
             self.tracer.set_default_stream(self.stream)
+        # Set data format
+        if self.tensor_format == "AUTO":
+            if self.enable_cudnn:
+                self.tensor_format = PYDTNN_TENSOR_FORMAT_NCHW
+            else:
+                self.tensor_format = PYDTNN_TENSOR_FORMAT_NHWC
+        elif self.tensor_format == "NCHW":
+            self.tensor_format = PYDTNN_TENSOR_FORMAT_NCHW
+        else:
+            self.tensor_format = PYDTNN_TENSOR_FORMAT_NHWC
         # Read model
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:

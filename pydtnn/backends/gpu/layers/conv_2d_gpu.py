@@ -32,7 +32,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from .layer_gpu import LayerGPU
 from .memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from ..tensor_gpu import TensorGPU
-
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 class Conv2DGPU(LayerGPU, Conv2D):
 
@@ -45,11 +45,10 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.conv_desc = None
 
     def initialize(self, prev_shape, need_dx, x):
-        #import pycuda
-        #pycuda.tools.DeviceData().align_bytes(16)
         super().initialize(prev_shape, need_dx, x)
         # This weight shape is required for cuDNN when NHWC is seleted!
-        self.weights_shape = (self.co, *self.filter_shape, self.ci)
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            self.weights_shape = (self.co, *self.filter_shape, self.ci)
 
         self.stream_2 = drv.Stream()
         # Convolution params
@@ -63,7 +62,8 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, "filter")
         # Biases
         if self.use_bias:
-            self.biases_cpu = self.biases_initializer((1, 1, 1, self.co), self.model.dtype)
+            self.biases_cpu = self.biases_initializer((1, self.co, 1, 1) \
+               if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else (1, 1, 1, self.co), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Create convolution descriptor

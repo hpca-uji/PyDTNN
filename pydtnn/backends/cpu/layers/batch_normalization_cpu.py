@@ -1,4 +1,4 @@
-#
+
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
 #  Copyright (C) 2021 Universitat Jaume I
@@ -23,6 +23,7 @@ from pydtnn.cython_modules import bn_inference_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
 from .layer_cpu import LayerCPU
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 try:
     # noinspection PyUnresolvedReferences
@@ -44,6 +45,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             return _mean
 
         if self.spatial:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                x = x.transpose(0, 2, 3, 1)
             x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
@@ -82,11 +85,15 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci)
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                y = y.transpose(0, 3, 1, 2)
 
         return y
 
     def backward(self, dy):
         if self.spatial:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                dy = dy.transpose(0, 2, 3, 1)
             dy = dy.reshape(-1, self.ci)
 
         n = dy.shape[0]
@@ -99,4 +106,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
             if self.spatial:
                 dx = dx.reshape(-1, self.hi, self.wi, self.ci)
+                if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                    dx = dx.transpose(0, 3, 1, 2)
+
             return dx

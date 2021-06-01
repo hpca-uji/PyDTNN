@@ -32,7 +32,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
-
+from pydtnn.utils import decode_tensor
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
@@ -69,11 +69,12 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         cudnn.cudnnDeriveBNTensorDescriptor(self.gamma_beta_mean_var_desc,
                                             x.desc, self.mode)
         if self.spatial:
-            shape_ = (1, self.shape[-1], 1, 1)  # 1 x C x 1 x 1
+            self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+            shape_ = (1, self.ci, 1, 1)  # 1 x C x 1 x 1
         else:
-            shape_ = (1, self.shape[-1],
-                      self.shape[-3] if len(self.shape) > 2 else 1,
-                      self.shape[-2] if len(self.shape) > 1 else 1)  # 1 x C x H x W
+            (self.ci,) = decode_tensor(prev_shape, self.model.tensor_format)
+            shape_ = (1, self.ci, 1, 1)  # 1 x C x H x W
+
         # gamma
         self.gamma_value = np.full(shape_, self.gamma_init_val, self.model.dtype)
         gamma_gpu = gpuarray.to_gpu(self.gamma_value)
