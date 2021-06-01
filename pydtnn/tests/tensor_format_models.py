@@ -2,13 +2,13 @@
 Unitary tests for GPU with different models' layers
 
 For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.GPUModelsTestCase
+    python -um unittest pydtnn.tests.TensorFormatModelsTestCase
 
 For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.GPUModelsTestCase
+    python -um unittest -v pydtnn.tests.TensorFormatModelsTestCase
 
 For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.GPUModelsTestCase.test_name
+    python -um unittest -v pydtnn.tests.TensorFormatModelsTestCase.test_name
 """
 
 import sys
