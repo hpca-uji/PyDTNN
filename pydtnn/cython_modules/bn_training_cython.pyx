@@ -58,25 +58,25 @@ cdef bn_training_fwd_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
                                     float momentum,
                                     float eps):
     cdef int i, j
-    cdef np.int8_t mu_, var_
+    cdef np.int8_t mu, var
 
     for j in prange(x.shape[1], nogil=True, schedule='static'):
         # mu = mean(x, n, self.model.comm)
-        mu_ = 0
+        mu = 0
         for i in range(x.shape[0]):
-            mu_ += x[i, j]
-        mu_ = mu_ // x.shape[0]
+            mu += x[i, j]
+        mu = mu // x.shape[0]
 
         # xc = (x - mu)
         # var = mean(xc ** 2, n, self.model.comm)
-        var_ = 0
+        var = 0
         for i in range(x.shape[0]):
-            xc[i, j] = x[i, j] - mu_
-            var_ += xc[i, j] * xc[i, j]
-        var_ = var_ // x.shape[0]
+            xc[i, j] = x[i, j] - mu
+            var += xc[i, j] * xc[i, j]
+        var = var // x.shape[0]
 
         # self.std = np.sqrt(var + self.epsilon)
-        std[j] = int(sqrt(var_ + eps))
+        std[j] = int(sqrt(var + eps))
 
         # self.xn = xc / self.std
         # y = self.gamma * self.xn + self.beta
@@ -86,8 +86,8 @@ cdef bn_training_fwd_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
 
         # self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
         # self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
-        running_mean[j] = int(momentum * running_mean[j] + (1.0 - momentum) * mu_)
-        running_var[j] = int(momentum * running_var[j] + (1.0 - momentum) * var_)
+        running_mean[j] = int(momentum * running_mean[j] + (1.0 - momentum) * mu)
+        running_var[j] = int(momentum * running_var[j] + (1.0 - momentum) * var)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -103,25 +103,25 @@ cdef bn_training_fwd_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
                                     float momentum,
                                     float eps):
     cdef int i, j
-    cdef np.float32_t mu_, var_
+    cdef np.float32_t mu, var
 
     for j in prange(x.shape[1], nogil=True, schedule='static'):
         # mu = mean(x, n, self.model.comm)
-        mu_ = 0
+        mu = 0
         for i in range(x.shape[0]):
-            mu_ += x[i, j]
-        mu_ = mu_ / x.shape[0]
+            mu += x[i, j]
+        mu = mu / x.shape[0]
 
         # xc = (x - mu)
         # var = mean(xc ** 2, n, self.model.comm)
-        var_ = 0
+        var = 0
         for i in range(x.shape[0]): 
-            xc[i, j] = x[i, j] - mu_
-            var_ += xc[i, j] * xc[i, j]
-        var_ = var_ / x.shape[0]
+            xc[i, j] = x[i, j] - mu
+            var += xc[i, j] * xc[i, j]
+        var = var / x.shape[0]
 
         # self.std = np.sqrt(var + self.epsilon)
-        std[j] = sqrt(var_ + eps)
+        std[j] = sqrt(var + eps)
 
         # self.xn = xc / self.std
         # y = self.gamma * self.xn + self.beta
@@ -131,8 +131,8 @@ cdef bn_training_fwd_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
 
         # self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
         # self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
-        running_mean[j] = momentum * running_mean[j] + (1.0 - momentum) * mu_
-        running_var[j] = momentum * running_var[j] + (1.0 - momentum) * var_
+        running_mean[j] = momentum * running_mean[j] + (1.0 - momentum) * mu
+        running_var[j] = momentum * running_var[j] + (1.0 - momentum) * var
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -148,25 +148,25 @@ cdef bn_training_fwd_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
                                     float momentum,
                                     float eps):
     cdef int i, j
-    cdef np.float64_t mu_, var_
+    cdef np.float64_t mu, var
 
     for j in prange(x.shape[1], nogil=True, schedule='static'):
         # mu = mean(x, n, self.model.comm)
-        mu_ = 0
+        mu = 0
         for i in range(x.shape[0]):
-            mu_ += x[i, j]
-        mu_ = mu_ // x.shape[0]
+            mu += x[i, j]
+        mu = mu // x.shape[0]
 
         # xc = (x - mu)
         # var = mean(xc ** 2, n, self.model.comm)
-        var_ = 0
+        var = 0
         for i in range(x.shape[0]):
-            xc[i, j] = x[i, j] - mu_
-            var_ += xc[i, j] * xc[i, j]
-        var_ = var_ // x.shape[0]
+            xc[i, j] = x[i, j] - mu
+            var += xc[i, j] * xc[i, j]
+        var = var // x.shape[0]
 
         # self.std = np.sqrt(var + self.epsilon)
-        std[j] = sqrt(var_ + eps)
+        std[j] = sqrt(var + eps)
 
         # self.xn = xc / self.std
         # y = self.gamma * self.xn + self.beta
@@ -176,8 +176,8 @@ cdef bn_training_fwd_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
 
         # self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
         # self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
-        running_mean[j] = momentum * running_mean[j] + (1.0 - momentum) * mu_
-        running_var[j] = momentum * running_var[j] + (1.0 - momentum) * var_
+        running_mean[j] = momentum * running_mean[j] + (1.0 - momentum) * mu
+        running_var[j] = momentum * running_var[j] + (1.0 - momentum) * var
 
 def bn_training_bwd_cython(dy, std, xn, gamma, dgamma, dbeta):
 
