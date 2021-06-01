@@ -135,7 +135,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         dx1 = [None] * len(model1.layers)
         dx1[-1] = first_dx
-        for i, layer in reversed(list(enumerate(model1.layers[2:-1], 2))):
+        for i, layer in reversed(list(enumerate(model1.layers[1:-1], 1))):
             if verbose_test():
                 print(layer)
             dx1[i] = layer.backward(dx1[i + 1])
@@ -148,7 +148,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         dx2 = [None] * len(model2.layers)
         dx2[-1] = dx1[-1]
-        for i, layer in reversed(list(enumerate(model2.layers[2:-1], 2))):
+        for i, layer in reversed(list(enumerate(model2.layers[1:-1], 1))):
             if verbose_test():
                 print(layer)
             dx2[i] = layer.backward(dx1[i + 1])
@@ -231,11 +231,11 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         self.do_test_model("alexnet_cifar10")
 
-    def test_vgg11bn(self):
+    def test_vgg11(self):
         f"""
         Compares results between a VGG-11 BN model {self.model1_desc} and other {self.model1_desc}
         """
-        self.do_test_model("vgg11bn_cifar10")
+        self.do_test_model("vgg11_cifar10")
 
     def test_vgg16bn(self):
         f"""

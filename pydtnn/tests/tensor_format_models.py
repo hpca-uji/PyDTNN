@@ -47,7 +47,7 @@ class TensorFormatModelsTestCase(ConvGemmModelsTestCase):
         "AdditionBlock": 1e-2,
         "BatchNormalization": 6e-5,
         "ConcatenationBlock": 1e-2,
-        "Conv2D": 4e-3,
+        "Conv2D": 1e-5,
         "FC": 1e-5,
     }
 
@@ -95,7 +95,7 @@ class TensorFormatModelsTestCase(ConvGemmModelsTestCase):
         """
         dx2 = [None] * len(model2.layers)
         dx2[-1] = self.nhwc2nchw(dx1[-1])
-        for i, layer in reversed(list(enumerate(model2.layers[2:-1], 2))):
+        for i, layer in reversed(list(enumerate(model2.layers[1:-1], 1))):
             if verbose_test():
                 print(layer)
             dx2[i] = layer.backward(self.nhwc2nchw(dx1[i + 1]))
@@ -116,6 +116,34 @@ class TensorFormatModelsTestCase(ConvGemmModelsTestCase):
 
     def compare_backward(self, model1, dx1, model2, dx2):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
+        if verbose_test():
+            print()
+            print(f"Comparing dw of both models...")
+        for i, layer in reversed(list(enumerate(model2.layers[1:], 1))):
+            if layer.canonical_name in ["Conv2D", "FC"]:
+                rtol, atol = self.get_tolerance(layer)
+                if len(layer.weights.shape) == 4:
+                    if layer.dw.transpose(1, 2, 3, 0).shape == model1.layers[i].dw.shape:
+                        allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol, atol=atol)
+                        self.assertTrue(allclose,
+                                f"Backward dw from layer {layer.canonical_name_with_id} differ"
+                                f" (max diff: {self.max_diff(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
+                else:
+                    if layer.dw.shape == model1.layers[i].dw.shape:
+                        allclose = np.allclose(layer.dw, model1.layers[i].dw, rtol=rtol, atol=atol)
+                        self.assertTrue(allclose,
+                                f"Backward dw from layer {layer.canonical_name_with_id} differ"
+                                f" (max diff: {self.max_diff(layer.dw, model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
+        if verbose_test():
+            print()
+            print(f"Comparing db of both models...")
+        for i, layer in reversed(list(enumerate(model2.layers[1:], 1))):
+            if layer.canonical_name in ["Conv2D", "FC"] and layer.use_bias:
+                rtol, atol = self.get_tolerance(layer)
+                allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
+                self.assertTrue(allclose,
+                                f"Backward db from layer {layer.canonical_name_with_id} differ"
+                                f" (max diff: {self.max_diff(layer.db, model1.layers[i].db)}, rtol: {rtol}, atol: {atol})")
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")

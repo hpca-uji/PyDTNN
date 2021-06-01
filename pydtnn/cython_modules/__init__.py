@@ -20,6 +20,7 @@
 from add_nchw_cython import add_nchw_cython
 from add_nhwc_cython import add_nhwc_cython
 from argmax_cython import argmax_cython
+from bn_training_cython import bn_training_fwd_cython, bn_training_bwd_cython
 from bn_inference_cython import bn_inference_cython
 from bn_relu_inference_cython import bn_relu_inference_cython
 from im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython

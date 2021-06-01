@@ -290,10 +290,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
         dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
-        w_cols = self.weights.reshape(self.co, -1).T
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
         res = self.model.matmul(dy_cols, self.x_cols.T)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -308,6 +304,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.need_dx:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
+            w_cols = self.weights.reshape(self.co, -1).T
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
             res = self.model.matmul(w_cols, dy_cols)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)

@@ -19,7 +19,8 @@
 
 import numpy as np
 
-from pydtnn.cython_modules import bn_inference_cython
+from pydtnn.cython_modules import bn_inference_cython, bn_training_fwd_cython, \
+                                  bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
 from .layer_cpu import LayerCPU
@@ -64,6 +65,11 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
             self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
             self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
+
+            # y, self.std, self.xn = bn_training_fwd_cython(x, self.gamma, self.beta, \
+            #                                               self.running_mean, self.running_var, \
+            #                                               self.momentum, self.epsilon)
+
             self.updated_running_var = True
 
         elif self.model.mode == EVALUATE_MODE:
@@ -101,8 +107,10 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         self.dbeta = np.sum(dy, axis=0)
 
         if self.need_dx:
-            dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
-            dx = dx.astype(self.model.dtype)
+            # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
+            # dx = dx.astype(self.model.dtype)
+
+            dx = bn_training_bwd_cython(dy, self.std, self.xn, self.gamma, self.dgamma, self.dbeta)
 
             if self.spatial:
                 dx = dx.reshape(-1, self.hi, self.wi, self.ci)
