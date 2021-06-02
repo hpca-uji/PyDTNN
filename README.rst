@@ -64,26 +64,32 @@ Supported datasets:
 Installing PyDTNN from source
 -----------------------------
 
-Download PyDTNN source code from its GitHub repository::
+Download PyDTNN source code from its GitHub repository and enter the PyDTNN directory::
 
     $ git clone https://github.com/hpca-uji/PyDTNN
+    $ cd PyDTNN
 
 The required Python packages are listed in the ``requirements.txt`` file, to install
 them, type::
 
     $ pip install -r requirements.txt
 
-Optionally, if you are going to use either MPI or CUDA, you should install the
-corresponding libraries, and then install the required Python packages with::
+Then, the PyDTNN package itself must be installed::
 
-    $ pip install -r requirements_mpi.txt
-    $ pip install -r requirements_cuda_1.txt
+    $ pip install .
+
+If you plan to modify the PyDTNN code, instead of using the previous line, you
+can install PyDTNN in editable mode (see ``DEVELOPMENT.rst` for more details)::
+
+    $ pip install -e .
+
+Optionally, if you are going to use either MPI or CUDA, you should have
+installed the corresponding system libraries, and install the required Python
+packages with::
+
+    $ pip install -r requirements_mpi.txt       # If MPI is going to be used
+    $ pip install -r requirements_cuda_1.txt    # If CUDA is going to be used
     $ pip install -r requirements_cuda_2.txt
-
-Next, the included Cython pyx modules should be compiled. For doing this,
-execute the ``compile_cython_modules.sh`` script or the next line::
-
-    $ LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
 
 
 Launcher options
