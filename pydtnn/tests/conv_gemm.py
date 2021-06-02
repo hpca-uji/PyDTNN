@@ -448,7 +448,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 dy_cols = dy.transpose((1, 0, 2, 3)).reshape(layer.kn, -1)
                 w_cols = weights.reshape(layer.kn, -1).T
                 res = np.matmul(w_cols, dy_cols)
-                mm_col2im_result = col2im_cython(res, dy.shape[0], layer.c, layer.h, layer.w,
+                mm_col2im_result = col2im_nchw_cython(res, dy.shape[0], layer.c, layer.h, layer.w,
                                                  layer.kh, layer.kw, layer.vpadding, layer.hpadding,
                                                  layer.vstride, layer.hstride)
                 if verbose_test():
