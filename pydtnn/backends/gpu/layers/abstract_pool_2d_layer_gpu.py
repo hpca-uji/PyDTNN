@@ -28,8 +28,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from . import LayerGPU
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils import decode_tensor, encode_tensor, \
-                         PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import decode_tensor, encode_tensor
 
 class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
     """

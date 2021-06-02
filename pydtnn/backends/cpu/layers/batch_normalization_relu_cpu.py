@@ -20,7 +20,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.cython_modules import bn_relu_inference_cython
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.model import TRAIN_MODE
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):

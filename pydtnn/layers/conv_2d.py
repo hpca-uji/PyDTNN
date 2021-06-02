@@ -22,7 +22,7 @@ from abc import ABC
 from .layer import Layer
 from .. import activations
 from .. import initializers
-from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT_NCHW
 import numpy as np
 
 

@@ -19,9 +19,7 @@
 
 from abc import ABC
 
-from ..cython_modules import bn_relu_inference_cython
 from .batch_normalization import BatchNormalization
-from ..model import TRAIN_MODE
 
 
 class BatchNormalizationRelu(BatchNormalization, ABC):

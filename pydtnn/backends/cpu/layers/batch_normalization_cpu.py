@@ -24,7 +24,7 @@ from pydtnn.cython_modules import bn_inference_cython, bn_training_fwd_cython, \
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
 from .layer_cpu import LayerCPU
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
 try:
     # noinspection PyUnresolvedReferences
@@ -52,8 +52,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         if self.model.mode == TRAIN_MODE:
             if self.sync_stats and self.model.comm is not None:
-                n = self.nprocs * self.model.batch_size
-                # n = np.array([x.shape[0]], dtype=self.model.dtype)
+                n = self.model.nprocs * self.model.batch_size
+                # n = np.array([x.shape[0]], dype=self.model.dtype)
                 # self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
             else: 
                 n = None
