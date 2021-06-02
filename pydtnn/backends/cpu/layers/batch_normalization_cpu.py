@@ -51,9 +51,12 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
-            n = np.array([x.shape[0]], dtype=self.model.dtype)
             if self.sync_stats and self.model.comm is not None:
-                self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
+                n = self.nprocs * self.model.batch_size
+                # n = np.array([x.shape[0]], dtype=self.model.dtype)
+                # self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
+            else: 
+                n = None
 
             mu = mean(x, n, self.model.comm)
             xc = (x - mu)

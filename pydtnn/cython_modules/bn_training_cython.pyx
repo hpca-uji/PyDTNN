@@ -207,7 +207,7 @@ cdef bn_training_bwd_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] dx,
 
     for i in prange(dy.shape[0], nogil=True, schedule='static'):
         for j in range(dy.shape[1]):
-          # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
+            # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
             dx[i, j] = (gamma[j] // (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j])
 
 @cython.boundscheck(False)
@@ -223,7 +223,7 @@ cdef bn_training_bwd_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] dx,
 
     for i in prange(dy.shape[0], nogil=True, schedule='static'):
         for j in range(dy.shape[1]):
-          # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
+            # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
             dx[i, j] = (gamma[j] / (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j])
 
 @cython.boundscheck(False)
@@ -239,5 +239,5 @@ cdef bn_training_bwd_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] dx,
 
     for i in prange(dy.shape[0], nogil=True, schedule='static'):
         for j in range(dy.shape[1]):
-          # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
+            # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
             dx[i, j] = (gamma[j] / (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j])
