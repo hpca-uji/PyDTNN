@@ -50,7 +50,7 @@ def depthwise_conv_cython(x, k, int vpadding, int hpadding, int vstride, int hst
         depthwise_conv_cython_inner_float64(res, x_padded, k, n, c, h, w, hh, ww,
                                  kh, kw, vstride, hstride)
     else:
-        raise TypeError("Type '{}' is not supported by im2col_cython!".format(str(res.dtype)))
+        raise TypeError("Type '{}' is not supported by depthwise_conv_cython!".format(str(res.dtype)))
 
     return res
 

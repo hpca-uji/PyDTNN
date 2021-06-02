@@ -604,7 +604,7 @@ def __free__(pack):
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
-    from pydtnn.cython_modules import im2col_cython
+    from pydtnn.cython_modules import im2col_nchw_cython
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 64  # Batch size
     c = 3  # Channels per layer
@@ -642,13 +642,13 @@ def __usage_example__():
     print("conv_gemm time: {:.4f}".format(conv_gemm_t))
     print()
     print("Using im2col and mm...")
-    x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
+    x_c = im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = w_c @ x_c + biases
     print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
     print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
-    im2col_t = timeit(lambda: im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride), number=10) / 10
+    im2col_t = timeit(lambda: im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride), number=10) / 10
     print("im2col time: {:.4f}".format(im2col_t))
     mm_t = timeit(lambda: w_c @ x_c + biases, number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
