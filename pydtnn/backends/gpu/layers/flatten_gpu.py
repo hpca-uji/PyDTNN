@@ -26,6 +26,7 @@ from pydtnn.layers import Flatten
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
     PYDTNN_OPS_BACKWARD_RESHAPE_DX
 from .layer_gpu import LayerGPU
+from ..tensor_gpu import TensorGPU
 
 
 class FlattenGPU(LayerGPU, Flatten):
@@ -36,7 +37,7 @@ class FlattenGPU(LayerGPU, Flatten):
 
     def forward(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        self.y = x.reshape((self.model.batch_size, *self.shape))
+        self.y.ary = self.x.ary.reshape((self.model.batch_size, *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.y
 
@@ -44,5 +45,6 @@ class FlattenGPU(LayerGPU, Flatten):
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DX)
             self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
+            # self.y.reshape((self.model.batch_size, *self.prev_shape))
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return self.dx

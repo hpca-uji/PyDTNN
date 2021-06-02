@@ -25,7 +25,7 @@ import struct
 import threading
 
 import numpy as np
-
+from ..utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 # @todo: split dataset.py into different files
 
@@ -56,18 +56,25 @@ class BackgroundGenerator(threading.Thread):
         return self
 
 
-def do_flip_images(data, prob=0.5):
-    n, c, h, w = data.shape
+def do_flip_images(data, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        n, c, h, w = data.shape
+        width_dim = -1
+    else:
+        n, h, w, c = data.shape
+        width_dim = 2
     limit = min(n, int(n * prob))
     s = np.arange(n)
     np.random.shuffle(s)
     s = s[:limit]
-    data[s, ...] = np.flip(data[s, ...], axis=-1)
+    data[s, ...] = np.flip(data[s, ...], axis=width_dim)
     return data
 
-
-def do_crop_images(data, crop_size, prob=0.5):
-    n, c, h, w = data.shape
+def do_crop_images(data, crop_size, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        n, c, h, w = data.shape
+    else:
+        n, h, w, c = data.shape
     crop_size = min(crop_size, h, w)
     limit = min(n, int(n * prob))
     s = np.arange(n)
@@ -78,8 +85,12 @@ def do_crop_images(data, crop_size, prob=0.5):
     for i, ri in enumerate(s):
         b, r = t[i] + crop_size, ll[i] + crop_size
         # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
-        data[ri, :, :t[i], :ll[i]] = 0.0
-        data[ri, :, b:, r:] = 0.0
+        if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            data[ri, :, :t[i], :ll[i]] = 0.0
+            data[ri, :, b:, r:] = 0.0
+        else:
+            data[ri, :t[i], :ll[i], :] = 0.0
+            data[ri, b:, r:, :] = 0.0
         data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
         data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
     return data
@@ -102,6 +113,9 @@ class Dataset:
         self.crop_images = None
         self.crop_images_size = None
         self.crop_images_prob = None
+
+    def nchw2nhwc(self, x):
+        return x.transpose(0, 2, 3, 1).astype(self.dtype, order="C")
 
     def make_train_val_partitions(self, val_split=0.2):
         pass
@@ -202,7 +216,7 @@ class MNIST(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=14, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -214,6 +228,7 @@ class MNIST(Dataset):
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 10
         # self.val_start = 0
 
@@ -246,6 +261,10 @@ class MNIST(Dataset):
         self.y_train_val = self.__one_hot_encoder(self.y_train_val.astype(np.int16))
         self.x_test = self.x_test.flatten().reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
+
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            self.x_train_val = self.nchw2nhwc(self.x_train_val)
+            self.x_test = self.nchw2nhwc(self.x_test)
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -312,7 +331,7 @@ class CIFAR10(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=16, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -324,6 +343,7 @@ class CIFAR10(Dataset):
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 10
         self.val_start = 0
 
@@ -358,11 +378,15 @@ class CIFAR10(Dataset):
             self.x_test, self.y_test = self.__read_file("%s/%s" % (self.test_path, xy_test_fname))
 
         self.x_train_val = self.x_train_val.reshape(self.train_val_nsamples, *self.shape).astype(self.dtype) / 255.0
-        # self.x_train_val = self.__normalize_image(self.x_train_val)
+        self.x_train_val = self.__normalize_image(self.x_train_val)
         self.y_train_val = self.__one_hot_encoder(self.y_train_val.astype(np.int16))
         self.x_test = self.x_test.reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
-        # self.x_test = self.__normalize_image(self.x_test)
+        self.x_test = self.__normalize_image(self.x_test)
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
+
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            self.x_train_val = self.nchw2nhwc(self.x_train_val)
+            self.x_test = self.nchw2nhwc(self.x_test)
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -376,12 +400,13 @@ class CIFAR10(Dataset):
             y, x = im[:, 0].flatten(), im[:, 1:].flatten()
             return x, y
 
-    @staticmethod
-    def __normalize_image(x):
-        mean = np.mean(x, axis=(0, 2, 3))
-        std = np.std(x, axis=(0, 2, 3))
+    # @staticmethod
+    def __normalize_image(self, x):
+        if not hasattr(self, "mean"):
+            self.mean = np.mean(x, axis=(0, 2, 3))
+            self.std = np.std(x, axis=(0, 2, 3))
         for c in range(3):
-            x[:, c, ...] = (x[:, c, ...] - mean[c]) / std[c]
+            x[:, c, ...] = (x[:, c, ...] - self.mean[c]) / self.std[c]
         return x
 
     def __one_hot_encoder(self, y):
@@ -433,7 +458,7 @@ class ImageNet(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=112, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
         self.model = model
@@ -445,6 +470,7 @@ class ImageNet(Dataset):
         self.test_as_validation = test_as_validation
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 1000
         self.val_start = 0
 
@@ -530,6 +556,8 @@ class ImageNet(Dataset):
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                    x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if x_buffer.size == 0:
                     x_buffer, y_buffer = x_data, y_data
@@ -561,6 +589,8 @@ class ImageNet(Dataset):
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                    x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if self.flip_images and op == "train":
                     x_data = do_flip_images(x_data, self.flip_images_prob)

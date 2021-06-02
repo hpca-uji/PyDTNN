@@ -22,7 +22,7 @@ from rich.console import Console
 from pydtnn.backends.cpu.libs import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers
 from .tools import print_with_header
-from ..cython_modules import im2col_cython, col2im_cython
+from ..cython_modules import im2col_nchw_cython, col2im_nchw_cython
 
 
 def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1):
@@ -35,7 +35,7 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=cg_biases,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride)
-    x_c = im2col_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
+    x_c = im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
     w_c = weights.reshape(kn, -1)
     if biases is None:
         im2col_mm_result = w_c @ x_c
@@ -271,7 +271,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride)
-                x_c = im2col_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride)
+                x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride)
                 w_c = weights.reshape(kn, -1)
                 im2col_mm_result = w_c @ x_c
                 if verbose_test():
@@ -299,7 +299,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride)
-                x_c = im2col_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride)
+                x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride)
                 w_c = weights.reshape(d.kn, -1)
                 im2col_mm_result = w_c @ x_c
                 if verbose_test():
@@ -327,7 +327,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=padding, hpadding=padding,
                                                        vstride=d.vstride, hstride=d.hstride)
-                x_c = im2col_cython(x, d.kh, d.kw, padding, padding, d.vstride, d.hstride)
+                x_c = im2col_nchw_cython(x, d.kh, d.kw, padding, padding, d.vstride, d.hstride)
                 w_c = weights.reshape(d.kn, -1)
                 im2col_mm_result = w_c @ x_c
                 if verbose_test():
@@ -355,7 +355,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=stride, hstride=stride)
-                x_c = im2col_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride)
+                x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride)
                 w_c = weights.reshape(d.kn, -1)
                 im2col_mm_result = w_c @ x_c
                 if verbose_test():
@@ -385,7 +385,7 @@ class ConvGemmTestCase(unittest.TestCase):
                     conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                            vpadding=d.vpadding, hpadding=d.hpadding,
                                                            vstride=vstride, hstride=hstride)
-                    x_c = im2col_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride)
+                    x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride)
                     w_c = weights.reshape(d.kn, -1)
                     im2col_mm_result = w_c @ x_c
                     if verbose_test():
@@ -412,7 +412,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=layer.vpadding, hpadding=layer.hpadding,
                                                        vstride=layer.vstride, hstride=layer.hstride)
-                x_c = im2col_cython(x, layer.kh, layer.kw, layer.vpadding, layer.hpadding, layer.vstride, layer.hstride)
+                x_c = im2col_nchw_cython(x, layer.kh, layer.kw, layer.vpadding, layer.hpadding, layer.vstride, layer.hstride)
                 w_c = weights.reshape(layer.kn, -1)
                 im2col_mm_result = w_c @ x_c
                 if verbose_test():

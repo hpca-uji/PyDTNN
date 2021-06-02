@@ -20,6 +20,7 @@
 import ctypes
 
 import numpy as np
+from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 try:
     from .libs import libcudnn as cudnn
@@ -30,8 +31,13 @@ except OSError:
 class TensorGPU:
     def __init__(self, gpu_arr, tensor_format, cudnn_dtype, tensor_type="tensor", desc=None, gpudirect=False,
                  cublas=False):
+        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + {PYDTNN_TENSOR_FORMAT_NCHW :"NCHW", \
+                                                                              PYDTNN_TENSOR_FORMAT_NHWC :"NHWC"}[tensor_format]]
         if len(gpu_arr.shape) == 2:
-            self.shape = (*gpu_arr.shape, 1, 1)
+            if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                self.shape = (*gpu_arr.shape, 1, 1)
+            else:
+                self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
         else:
             self.shape = gpu_arr.shape
         self.size = gpu_arr.size
@@ -43,14 +49,16 @@ class TensorGPU:
             self.ptr = ctypes.c_void_p(int(gpu_arr.gpudata))
         if desc:
             self.desc = desc
-        if tensor_type == "tensor":
+        elif tensor_type == "tensor":
+            n, h, w, c = (self.shape[0], *decode_tensor(self.shape[1:], tensor_format))
             self.desc = cudnn.cudnnCreateTensorDescriptor()
-            cudnn.cudnnSetTensor4dDescriptor(self.desc, tensor_format,
-                                             cudnn_dtype, *self.shape)
+            cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
+                                             cudnn_dtype, n, c, h, w)
         elif tensor_type == "filter":
+            n, h, w, c = (self.shape[0], *decode_tensor(self.shape[1:], tensor_format))
             self.desc = cudnn.cudnnCreateFilterDescriptor()
             cudnn.cudnnSetFilter4dDescriptor(self.desc, cudnn_dtype,
-                                             tensor_format, *self.shape)
+                                             self.cudnn_tensor_format, n, c, h, w)
         self.cublas = cublas
 
     def reshape(self, shape):

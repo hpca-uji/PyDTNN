@@ -26,25 +26,25 @@ def argmax_cython(x, axis=0):
     if axis == 0: x = x.T
     # if not x.flags['C_CONTIGUOUS']:
     #     np.ascontiguousarray(x, dtype=np.float32)
-    cdef np.ndarray max = np.zeros((x.shape[0]), dtype=x.dtype)
-    cdef np.ndarray amax = np.zeros((x.shape[0]), dtype=np.int32)
-    cdef np.ndarray rng = np.zeros((x.shape[0]), dtype=np.int32)
+    cdef np.ndarray maxv = np.zeros((x.shape[0],), dtype=x.dtype)
+    cdef np.ndarray amax = np.zeros((x.shape[0],), dtype=np.int32)
+    cdef np.ndarray rng = np.zeros((x.shape[0],), dtype=np.int32)
 
     if x.dtype == np.int8:
-        argmax_cython_inner_int8(x, max, amax, rng)
+        argmax_cython_inner_int8(x, maxv, amax, rng)
     elif x.dtype == np.float32:
-        argmax_cython_inner_float32(x, max, amax, rng)
+        argmax_cython_inner_float32(x, maxv, amax, rng)
     elif x.dtype == np.float64:
-        argmax_cython_inner_float64(x, max, amax, rng)
+        argmax_cython_inner_float64(x, maxv, amax, rng)
     else:
         raise TypeError("Type '{}' is not supported by argmax_cython!".format(str(x.dtype)))
 
-    return max, tuple([amax, rng])
+    return maxv, tuple([amax, rng] if axis == 0 else [rng, amax])
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef argmax_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
-                              np.ndarray[np.int8_t, ndim=1] max,
+                              np.ndarray[np.int8_t, ndim=1] maxv,
                               np.ndarray[np.int32_t, ndim=1] amax,
                               np.ndarray[np.int32_t, ndim=1] rng):
     cdef int i, j, idx_maxval
@@ -56,12 +56,12 @@ cdef argmax_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
         for j in range(x.shape[1]):
             if x[i, j] > maxval:
                 maxval, idx_maxval = x[i, j], j
-        amax[i], max[i], rng[i] = idx_maxval, maxval, i
+        amax[i], maxv[i], rng[i] = idx_maxval, maxval, i
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef argmax_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
-                                 np.ndarray[np.float32_t, ndim=1] max,
+                                 np.ndarray[np.float32_t, ndim=1] maxv,
                                  np.ndarray[np.int32_t, ndim=1] amax,
                                  np.ndarray[np.int32_t, ndim=1] rng):
     cdef int i, j, idx_maxval
@@ -73,12 +73,12 @@ cdef argmax_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
         for j in range(x.shape[1]):
             if x[i, j] > maxval:
                 maxval, idx_maxval = x[i, j], j
-        amax[i], max[i], rng[i] = idx_maxval, maxval, i
+        amax[i], maxv[i], rng[i] = idx_maxval, maxval, i
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cdef argmax_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
-                                 np.ndarray[np.float64_t, ndim=1] max,
+                                 np.ndarray[np.float64_t, ndim=1] maxv,
                                  np.ndarray[np.int32_t, ndim=1] amax,
                                  np.ndarray[np.int32_t, ndim=1] rng):
     cdef int i, j, idx_maxval
@@ -90,4 +90,4 @@ cdef argmax_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
         for j in range(x.shape[1]):
             if x[i, j] > maxval:
                 maxval, idx_maxval = x[i, j], j
-        amax[i], max[i], rng[i] = idx_maxval, maxval, i
+        amax[i], maxv[i], rng[i] = idx_maxval, maxval, i

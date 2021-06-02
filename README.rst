@@ -106,6 +106,9 @@ The PyDTNN framework comes with a utility launcher called
       ``imagenet``.
    -  ``--dataset_train_path``: Path to the training dataset.
    -  ``--dataset_test_path``: Path to the training dataset.
+   -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
+      Optionally, the ``AUTO`` value sets ``NCHW`` when the use of GPUs
+      is enabled and ``NHWC`` otherwise.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.

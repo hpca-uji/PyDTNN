@@ -23,7 +23,7 @@ from abc import ABC
 
 from .layer import Layer
 from .. import initializers
-
+from pydtnn.utils import decode_tensor
 
 class BatchNormalization(Layer, ABC):
 
@@ -52,8 +52,7 @@ class BatchNormalization(Layer, ABC):
         self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2
         if self.spatial:
-            self.co = self.ci = self.shape[0]
-            self.hi, self.wi = self.shape[1], self.shape[2]
+            self.hi, self.wi, self.ci = decode_tensor(self.shape, self.model.tensor_format)
             shape_ = (self.ci,)
         self.gamma = np.full(shape_, self.gamma_init_val, self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)

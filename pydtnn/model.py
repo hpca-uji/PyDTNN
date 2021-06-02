@@ -29,7 +29,6 @@ from timeit import default_timer as timer
 
 from tqdm import tqdm
 
-import pydtnn.backends.gpu.tensor_gpu
 import pydtnn.metrics
 from . import optimizers, losses, metrics
 from . import utils
@@ -37,8 +36,9 @@ from .datasets.dataset import Dataset
 from .parser import parser
 from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
-    SimpleTracer, SimpleTracerGPU, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
+    SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
     PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 supported_gpu = False
 supported_cudnn = True
@@ -46,19 +46,6 @@ supported_nccl = True
 supported_mpi4py = True
 enable_cudnn = False
 
-try:
-    import pycuda.gpuarray as gpuarray
-    import pycuda.driver as drv
-    from pydtnn.backends.gpu.libs import libcudnn as cudnn
-    # noinspection PyUnresolvedReferences
-    from skcuda import cublas
-except (ImportError, ModuleNotFoundError, OSError):
-    supported_cudnn = False
-
-try:
-    from pydtnn.backends.gpu.libs import libnccl as nccl
-except (ImportError, ModuleNotFoundError, OSError):
-    supported_nccl = False
 
 try:
     from mpi4py import MPI
@@ -218,6 +205,7 @@ class Model:
         if tracer_output == "" and not enable_gpu:
             self.tracer = ExtraeTracer(tracing)
         elif enable_gpu:
+            from .tracers import SimpleTracerGPU
             self.tracer = SimpleTracerGPU(tracing, tracer_output, self.comm)
         else:
             self.tracer = SimpleTracer(tracing, tracer_output, self.comm)
@@ -244,7 +232,25 @@ class Model:
         elif self.comm:
             print("Please, install mpi4py to allow parallel MPI execution!")
             sys.exit(-1)
+
         if self.enable_cudnn:
+            supported_cudnn = True
+            supported_nccl = True
+            try:
+                import pydtnn.backends.gpu.tensor_gpu
+                global gpuarray
+                import pycuda.gpuarray as gpuarray
+                import pycuda.driver as drv
+                from pydtnn.backends.gpu.libs import libcudnn as cudnn
+                # noinspection PyUnresolvedReferences
+                from skcuda import cublas
+            except (ImportError, ModuleNotFoundError, OSError):
+                supported_cudnn = False
+            try:
+                from pydtnn.backends.gpu.libs import libnccl as nccl
+            except (ImportError, ModuleNotFoundError, OSError):
+                supported_nccl = False
+
             if not supported_cudnn:
                 print("Please, install pycuda, skcuda and cudnn to be able to use the GPUs!")
                 sys.exit(-1)
@@ -321,8 +327,17 @@ class Model:
             cudnn_type = types.get(self.dtype, "CUDNN_DATA_FLOAT")
 
             self.cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
-            self.tensor_fmt = cudnn.cudnnTensorFormat['CUDNN_TENSOR_NCHW']
             self.tracer.set_default_stream(self.stream)
+        # Set data format
+        if self.tensor_format == "AUTO":
+            if self.enable_cudnn:
+                self.tensor_format = PYDTNN_TENSOR_FORMAT_NCHW
+            else:
+                self.tensor_format = PYDTNN_TENSOR_FORMAT_NHWC
+        elif self.tensor_format == "NCHW":
+            self.tensor_format = PYDTNN_TENSOR_FORMAT_NCHW
+        else:
+            self.tensor_format = PYDTNN_TENSOR_FORMAT_NHWC
         # Read model
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
@@ -612,7 +627,7 @@ class Model:
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
                 gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_fmt, self.cudnn_dtype)
+                self.tensor_format, self.cudnn_dtype)
         loss_func = getattr(losses, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self)
         metrics_funcs = [getattr(metrics, m)(shape=(local_batch_size, *self.layers[-1].shape), model=self) for m in
                          metrics_list]
@@ -726,7 +741,7 @@ class Model:
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
                 gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
-                self.tensor_fmt, self.cudnn_dtype)
+                self.tensor_format, self.cudnn_dtype)
         loss_func = getattr(losses, loss)(shape=(self.batch_size, *self.layers[-1].shape), model=self)
         metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
                          metrics_list]

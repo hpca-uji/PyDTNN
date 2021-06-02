@@ -32,7 +32,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
-
+from pydtnn.utils import decode_tensor
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
@@ -55,11 +55,11 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
         # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.spatial = len(self.shape) > 2
         self.mode = \
@@ -69,19 +69,20 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         cudnn.cudnnDeriveBNTensorDescriptor(self.gamma_beta_mean_var_desc,
                                             x.desc, self.mode)
         if self.spatial:
-            shape_ = (1, self.shape[0], 1, 1)  # 1 x C x 1 x 1
+            self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+            shape_ = (1, self.ci, 1, 1)  # 1 x C x 1 x 1
         else:
-            shape_ = (1, self.shape[0],
-                      self.shape[1] if len(self.shape) > 2 else 1,
-                      self.shape[2] if len(self.shape) > 3 else 1)  # 1 x C x H x W
+            (self.ci,) = decode_tensor(prev_shape, self.model.tensor_format)
+            shape_ = (1, self.ci, 1, 1)  # 1 x C x H x W
+
         # gamma
         self.gamma_value = np.full(shape_, self.gamma_init_val, self.model.dtype)
         gamma_gpu = gpuarray.to_gpu(self.gamma_value)
-        self.gamma = TensorGPU(gamma_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.gamma = TensorGPU(gamma_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # beta
         self.beta_value = np.full(shape_, self.beta_init_val, self.model.dtype)
         beta_gpu = gpuarray.to_gpu(self.beta_value)
-        self.beta = TensorGPU(beta_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.beta = TensorGPU(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
@@ -98,22 +99,22 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
             self.dbeta_cpu = np.zeros(self.beta.ary.shape, self.model.dtype)
             dbeta_gpu = gpuarray.empty(self.beta.ary.shape, self.model.dtype)
 
-        self.dgamma = TensorGPU(dgamma_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
+        self.dgamma = TensorGPU(dgamma_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                                 gpudirect=self.model.gpudirect)
-        self.dbeta = TensorGPU(dbeta_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
+        self.dbeta = TensorGPU(dbeta_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                                gpudirect=self.model.gpudirect)
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
-        self.running_mean = TensorGPU(running_mean_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.running_mean = TensorGPU(running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         running_var_gpu = gpuarray.to_gpu(self.moving_variance_initializer(shape_, self.model.dtype))
-        self.running_var = TensorGPU(running_var_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.running_var = TensorGPU(running_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         save_mean_gpu = gpuarray.empty(shape_, self.model.dtype)
-        self.save_mean = TensorGPU(save_mean_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.save_mean = TensorGPU(save_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         save_inv_var_gpu = gpuarray.empty(shape_, self.model.dtype)
-        self.save_inv_var = TensorGPU(save_inv_var_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.save_inv_var = TensorGPU(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.factor = 1.0 - self.momentum
 
