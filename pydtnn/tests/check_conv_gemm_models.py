@@ -2,13 +2,13 @@
 Unitary tests for ConvGemm with different models' layers
 
 For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.ConvGemmModelsTestCase
+    python -um unittest pydtnn.tests.CheckConvGemmModels
 
 For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.ConvGemmModelsTestCase
+    python -um unittest -v pydtnn.tests.CheckConvGemmModels
 
 For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.ConvGemmModelsTestCase.test_name
+    python -um unittest -v pydtnn.tests.CheckConvGemmModels.test_name
 """
 
 import sys
@@ -28,7 +28,7 @@ class Params:
     pass
 
 
-class ConvGemmModelsTestCase(unittest.TestCase):
+class CheckConvGemmModels(unittest.TestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
@@ -57,13 +57,19 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         return rtol, atol
 
     @staticmethod
-    def get_model1_and_loss_func(model_name):
+    def get_model1_and_loss_func(model_name, overwrite_params=None):
         # CPU model with no convGemm
         params = Params()
+        # Begin of params configuration
         params.model_name = model_name
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
-        model1 = Model(**vars(params))
+        params.tensor_format = "NHWC"
+        # End of params configuration
+        params_dict = vars(params)
+        if overwrite_params is not None:
+            params_dict.update(overwrite_params)
+        model1 = Model(**params_dict)
         # loss function
         loss = model1.loss_func
         local_batch_size = model1.batch_size
@@ -71,15 +77,21 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         return model1, loss_func
 
     @staticmethod
-    def get_model2(model_name):
+    def get_model2(model_name, overwrite_params=None):
         # CPU model with convGemm
         params = Params()
+        # Begin of params configuration
         params.model_name = model_name
         params.enable_conv_gemm = True
         params.conv_gemm_cache = True
         params.conv_gemm_trans = True
         params.conv_gemm_deconv = True
-        return Model(**vars(params))
+        params.tensor_format = "NHWC"
+        # End of params configuration
+        params_dict = vars(params)
+        if overwrite_params is not None:
+            params_dict.update(overwrite_params)
+        return Model(**params_dict)
 
     @staticmethod
     def copy_weights_and_biases(model1, model2):

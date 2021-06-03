@@ -20,6 +20,10 @@
 from .conv2d_conv_gemm import Conv2DConvGemmTestCase
 from .conv2d_conv_gemm_slow import Conv2DConvGemmSlowTestCase
 from .conv_gemm import ConvGemmTestCase
-from .conv_gemm_models import ConvGemmModelsTestCase
-from .gpu_models import GPUModelsTestCase
-from .tensor_format_models import TensorFormatModelsTestCase
+from .check_conv_gemm_models import CheckConvGemmModels
+from .check_conv_gemm_nchw_models import CheckConvGemmNCHWModels
+try:
+    from .check_gpu_models import CheckGPUModels
+    from .check_tensor_format_models import CheckTensorFormatModels
+except (ModuleNotFoundError, ImportError):
+    pass
