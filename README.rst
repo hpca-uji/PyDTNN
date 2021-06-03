@@ -15,8 +15,8 @@ amiable user interface which enables a flat accessing curve. To perform the
 training and inference processes, PyDTNN exploits distributed inter-process
 parallelism (via MPI) for clusters and intra-process (via multi-threading)
 parallelism to leverage the presence of multicore processors and GPUs at node
-level. For that, PyDTNN uses MPI4Py for message-passing, BLAS calls via NumPy
-for multicore processors and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
+level. For that, PyDTNN uses MPI4Py/NCCL for message-passing, BLAS calls via 
+NumPy/Cython for multicore processors and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 Supported layers:
 
@@ -198,7 +198,7 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
       performing convolution algorithm.
    -  ``--enable_nccl``: Enable the use of the NCCL library for 
-      collective communications on GPUs. This option can only be set if 
+      collective communications on GPUs. This option can only be set 
       with ``--enable_gpu``.
    -  ``--enable_conv_gemm``: Enables the use of libconvGemm to replace
       im2col and gemm operations.
