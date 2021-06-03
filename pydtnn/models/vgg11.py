@@ -22,7 +22,7 @@ from ..layers import *
 
 def create_vgg11(model):
     _ = model.add
-    _(Input(shape=(3, 224, 224)))
+    _(Input(shape=(224, 224, 3)))
     conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):

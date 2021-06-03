@@ -63,6 +63,6 @@ class ModelCheckpoint(LRScheduler):
                 if self.verbose and rank == 0:
                     print("LRScheduler %s: saving model weights and bias in %s" %
                           (type(self).__name__, self.filename))
-                if self.last_filename:
+                if model.rank == 0 and self.last_filename:
                     os.remove(self.last_filename)
                 self.last_filename = self.filename

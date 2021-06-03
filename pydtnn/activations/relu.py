@@ -17,24 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+from abc import ABC
+
 from .activation import Activation
-from ..cython_modules import relu_cython
-from ..model import TRAIN_MODE
 
 
-class Relu(Activation):
-
-    def __init__(self, shape=(1,)):
-        super().__init__(shape)
-        # The next attributes will be initialized later
-        self.mask = None
-
-    def forward(self, x):
-        y, mask = relu_cython(x)
-        if self.model.mode == TRAIN_MODE:
-            self.mask = mask
-        return y
-
-    def backward(self, dy):
-        if self.need_dx:
-            return dy * self.mask
+class Relu(Activation, ABC):
+    pass

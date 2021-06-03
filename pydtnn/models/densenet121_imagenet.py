@@ -26,7 +26,7 @@ from ..layers import *
 def create_densenet121_imagenet(model):
     _ = model.add
 
-    _(Input(shape=(3, 224, 224)))
+    _(Input(shape=(224, 224, 3)))
 
     blocks, growth_rate = [6, 12, 24, 16], 32  # DenseNet121
 

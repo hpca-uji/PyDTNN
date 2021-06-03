@@ -19,8 +19,10 @@
 
 from abc import ABC, abstractmethod
 
+from pydtnn.backends import PromoteToBackendMixin
 
-class Optimizer(ABC):
+
+class Optimizer(PromoteToBackendMixin, ABC):
     """
     Optimizer abstract base class
     """

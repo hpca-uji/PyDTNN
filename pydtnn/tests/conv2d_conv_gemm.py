@@ -1,14 +1,14 @@
 """
 Unitary tests for Conv2D layer using the convGemm library
 
-For running all the tests quietly, execute from the parent directory:
-    python -m unittest pydtnn.tests.Conv2DConvGemmTestCase
+For running all the tests quietly, execute the next command:
+    python -um unittest pydtnn.tests.Conv2DConvGemmTestCase
 
-For running all the tests verbosely, execute from the parent directory:
-    python -m unittest -v pydtnn.tests.Conv2DConvGemmTestCase
+For running all the tests verbosely, execute the next command:
+    python -um unittest -v pydtnn.tests.Conv2DConvGemmTestCase
 
-For running an individual test verbosely, execute from the parent directory:
-    python -m unittest -v pydtnn.tests.Conv2DConvGemmTestCase.test_name
+For running an individual test verbosely, execute the next command:
+    python -um unittest -v pydtnn.tests.Conv2DConvGemmTestCase.test_name
 """
 
 import inspect
@@ -18,63 +18,17 @@ from copy import deepcopy
 
 import numpy as np
 
-from .. import utils
-from ..layers import Conv2D
+from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
+from pydtnn.tests.common import verbose_test, D
+from pydtnn.tests.tools import print_with_header
 from ..model import Model
-
-
-def verbose():
-    """Returns True if unittest has been called with -v or --verbose options."""
-    return '-v' in sys.argv or '--verbose' in sys.argv
-
-
-class D:
-    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1):
-        self.b = b  # Batch size
-        self.c = c  # Channels per layer
-        self.h = h  # Layers height
-        self.w = w  # Layers width
-        self.kn = kn  # Number of filters
-        self.kh = kh  # Filters weights height
-        self.kw = kw  # Filters weights width
-        self.vpadding = vpadding  # Vertical padding
-        self.hpadding = hpadding  # Horizontal padding
-        self.vstride = vstride  # Vertical stride
-        self.hstride = hstride  # Horizontal stride
-
-    @property
-    def ho(self):
-        return (self.h + 2 * self.vpadding - self.kh) // self.vstride + 1
-
-    @property
-    def wo(self):
-        return (self.w + 2 * self.hpadding - self.kw) // self.hstride + 1
-
-    def __repr__(self):
-        return f"""\
-x, weights, and y parameters:
-  (b, c, h, w)    = {self.b} {self.c} {self.h} {self.w}
-  (kn, c, kh, kw) = {self.kn} {self.c} {self.kh} {self.kw}
-  (kn, b, ho, wo) = {self.kn} {self.b} {self.ho} {self.wo}
-  padding         = {self.vpadding} {self.hpadding}
-  stride          = {self.vstride} {self.hstride}
-"""
-
-
-def _print_with_header(header, to_be_printed=None):
-    print()
-    print("-" * (len(header) + 2))
-    print(" {}".format(header))
-    print("-" * (len(header) + 2))
-    if to_be_printed is not None:
-        print(to_be_printed)
 
 
 class Params:
     pass
 
 
-def get_conv2d_layers(d, deconv=False, trans=False):
+def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
@@ -86,13 +40,13 @@ def get_conv2d_layers(d, deconv=False, trans=False):
     params_gc.conv_gemm_deconv = deconv
     params_gc.conv_gemm_trans = trans
     model_cg = Model(**vars(params_gc))
-    conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                        padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
-                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+    conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                           padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
+                           use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_i2c.set_model(model_i2c)
-    conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                       padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
-                       use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+    conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                          padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
+                          use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_cg.set_model(model_cg)
     for layer in (conv2d_i2c, conv2d_cg):
         layer.initialize(prev_shape=(d.c, d.h, d.w))
@@ -148,7 +102,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
 
     def _test_forward_backward_inner(self, d, x, weights, print_times=False, deconv=False, trans=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = get_conv2d_layers(d, deconv, trans)
+        conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d, deconv, trans)
         conv2d_i2c.weights = weights.copy()
         conv2d_cg.weights = weights.copy()
         # Forward pass
@@ -161,8 +115,8 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         # All close?
         dw_allclose = np.allclose(conv2d_i2c.dw, conv2d_cg.dw)
         dx_allclose = np.allclose(dx_i2c, dx_cg)
-        if verbose():
-            _print_with_header(inspect.stack()[1][3])
+        if verbose_test():
+            print_with_header(inspect.stack()[1][3])
             # np.set_printoptions(threshold=50)  # default is 1000
             print(d)
             print("---=[ Forward results ]=---")
@@ -225,12 +179,12 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         Test that the default parameters lead to the same solution on the forward step
         """
         d = D()
-        conv2d_i2c, conv2d_cg = get_conv2d_layers(d)
+        conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         y_i2c = conv2d_i2c.forward(x)
         y_cg = conv2d_cg.forward(x)
-        if verbose():
-            _print_with_header("test forward defaults")
+        if verbose_test():
+            print_with_header("test forward defaults")
             print(y_i2c)
             print(y_cg)
             print("y_i2c.shape:", y_i2c.shape)
@@ -372,7 +326,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     try:
-        Conv2D()
+        Conv2DCPU()
     except NameError:
         sys.exit(-1)
     unittest.main()

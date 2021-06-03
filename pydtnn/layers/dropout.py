@@ -16,20 +16,17 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+from abc import ABC
 
-from pydtnn.model import EVALUATE_MODE
+
 from .layer import Layer
-from ..model import TRAIN_MODE
-from ..performance_models import *
 
 
-class Dropout(Layer):
+class Dropout(Layer, ABC):
 
     def __init__(self, rate=0.5):
         super().__init__()
         self.rate = min(1., max(0., rate))
-        # The next attributes will be initialized later
-        self.mask = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -37,17 +34,3 @@ class Dropout(Layer):
 
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^24s}|".format("", "rate=%.2f" % self.rate))
-
-    def forward(self, x):
-        if self.model.mode == TRAIN_MODE:
-            self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (
-                    1 - self.rate)
-            return x * self.mask
-        elif self.model.mode == EVALUATE_MODE:
-            return x
-        else:
-            raise ValueError("Unexpected model mode")
-
-    def backward(self, dy):
-        if self.need_dx:
-            return dy * self.mask

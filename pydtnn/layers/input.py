@@ -17,16 +17,16 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from abc import ABC
+
 from .layer import Layer
+from pydtnn.utils import encode_tensor
 
-
-class Input(Layer):
+class Input(Layer, ABC):
 
     def __init__(self, shape=(1,)):
         super().__init__(shape)
 
-    def forward(self, x):
-        pass
-
-    def backward(self, dy):
-        pass
+    def initialize(self, prev_shape, need_dx=True):
+        super().initialize(prev_shape, need_dx)
+        self.shape = encode_tensor(self.shape, self.model.tensor_format)

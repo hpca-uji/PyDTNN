@@ -22,7 +22,7 @@ from ..layers import *
 
 def create_vgg16_cifar10(model):
     _ = model.add
-    _(Input(shape=(3, 32, 32)))
+    _(Input(shape=(32, 32, 3)))
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):

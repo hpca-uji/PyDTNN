@@ -17,22 +17,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import numpy as np
+from abc import ABC
 
 from .activation import Activation
 
 
-class Sigmoid(Activation):
-
-    def __init__(self, shape=(1,)):
-        super().__init__(shape)
-        # The next attributes will be initialized later
-        self.y = None
-
-    def forward(self, x):
-        self.y = 1 / (1 + np.exp(-x))
-        return self.y
-
-    def backward(self, dy):
-        if self.need_dx:
-            return dy * (self.y * (1 - self.y))
+class Sigmoid(Activation, ABC):
+    pass

@@ -22,7 +22,7 @@ from ..layers import *
 
 def create_simplemlp(model):
     _ = model.add
-    _(Input(shape=(1, 28, 28)))
+    _(Input(shape=(28, 28, 1)))
     _(Flatten())
     _(FC(shape=(512,), activation="relu"))
     _(FC(shape=(512,), activation="relu"))

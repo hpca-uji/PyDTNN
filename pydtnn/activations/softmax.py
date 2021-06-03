@@ -24,11 +24,6 @@ from .activation import Activation
 
 class Softmax(Activation):
 
-    def __init__(self, shape=(1,)):
-        super().__init__(shape)
-        # The next attributes will be initialized later
-        self.y = None
-
     def forward(self, x):
         self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
         self.y /= np.sum(self.y, axis=1, keepdims=True)

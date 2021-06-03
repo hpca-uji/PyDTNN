@@ -19,11 +19,20 @@
 
 from abc import ABC
 
-from ..layers.layer import Layer
+from ..backends import PromoteToBackendMixin
+from ..layers.layer_and_activation_base import LayerAndActivationBase
 
 
-class Activation(Layer, ABC):
+class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
+
+    def __init__(self, shape=(1,)):
+        super().__init__(shape)
+        self.y = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
         self.shape = prev_shape
+
+    @property
+    def canonical_name_with_id(self):
+        return f"{self._id_prefix}{self.canonical_name}"

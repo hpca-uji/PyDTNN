@@ -31,11 +31,21 @@ from importlib import import_module
 
 import numpy as np
 
-try:
-    # noinspection PyUnresolvedReferences
-    from skcuda import cublas
-except (ImportError, ModuleNotFoundError):
-    pass
+PYDTNN_TENSOR_FORMATS = 2
+(PYDTNN_TENSOR_FORMAT_NHWC,
+ PYDTNN_TENSOR_FORMAT_NCHW) = range(PYDTNN_TENSOR_FORMATS)
+
+def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        return (shape[2], shape[0], shape[1])
+    else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+        return shape
+
+def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        return (shape[1], shape[2], shape[0])
+    else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+        return shape
 
 
 def load_library(name):
@@ -93,6 +103,11 @@ def convert_size(size_bytes):
     return "%s %sytes" % (s, size_name[i])
 
 
+def get_module_path(path, base):
+    prev_dir, last_dir = os.path.split(path)
+    return base if last_dir == base else f"{get_module_path(prev_dir, base)}.{last_dir}"
+
+
 def get_derived_classes(base_class, module_locals):
     """
     Searches on the python files of a module for classes that are derived from
@@ -119,12 +134,12 @@ def get_derived_classes(base_class, module_locals):
         print("Warning: the 'get_derived_classes()' function should be called from an '__init__.py' file.")
     dir_path = os.path.dirname(os.path.realpath(file_name))
     for python_file in glob(os.path.join(dir_path, '*.py')):
-        directory, base_file_name = os.path.split(python_file)
-        # module_name = os.path.split(directory)[-1]
-        module_name = directory.split("pydtnn/")[-1].replace("/", ".")
-        if base_file_name == "__init__.py":
+        assert "pydtnn" in python_file
+        directory = get_module_path(python_file, "pydtnn")
+        module_path, module_ext = os.path.splitext(directory)
+        if "__init__" in directory:
             continue
-        module = import_module(f"pydtnn.{module_name}.{base_file_name[:-3]}")
+        module = import_module(module_path)
         for attribute_name in [a_n for a_n in dir(module) if a_n not in module_locals]:
             attribute = getattr(module, attribute_name)
             if inspect.isclass(attribute):
@@ -200,25 +215,6 @@ def matmul_mkl(a, b, c=None):
 def matmul_blis(a, b, c=None):
     return _matmul_xgemm("matmul_blis", blis(), a, b, c)
 
-
-def matmul_gpu(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
-    try:
-        gemm = {np.float32: cublas.cublasSgemm,
-                np.float64: cublas.cublasDgemm}[dtype]
-    except KeyError:
-        print("I cannot handle %s type!\n" % dtype.__name__)
-    else:
-        gemm(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc)
-
-
-def matvec_gpu(handle, trans_a, m, n, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
-    try:
-        gemv = {np.float32: cublas.cublasSgemv,
-                np.float64: cublas.cublasDgemv}[dtype]
-    except KeyError:
-        print("I cannot handle %s type!\n" % dtype.__name__)
-    else:
-        gemv(handle, trans_a, m, n, alpha, a, lda, b, ldb, beta, c, ldc)
 
 ###############################################################
 # The next functions have been deprecated - use them with care!
