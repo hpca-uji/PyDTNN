@@ -79,7 +79,7 @@ Then, the PyDTNN package itself must be installed::
     $ pip install .
 
 If you plan to modify the PyDTNN code, instead of using the previous line, you
-can install PyDTNN in editable mode (see ``DEVELOPMENT.rst` for more details)::
+can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
 
     $ pip install -e .
 
@@ -107,8 +107,8 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--dataset_train_path``: Path to the training dataset.
    -  ``--dataset_test_path``: Path to the training dataset.
    -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
-      Optionally, the ``AUTO`` value sets ``NCHW`` when the use of GPUs
-      is enabled and ``NHWC`` otherwise.
+      Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
+      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.
@@ -192,14 +192,24 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data``. Default: ``sequential``.
    -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
-   -  ``--tracing``: Obtain Extrae traces.
-   -  ``--profile``: Obtain cProfile profiles.
    -  ``--enable_gpu``: Enable GPU, use cuDNN library.
    -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
       when using a CUDA-aware MPI version.
+   -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
+      performing convolution algorithm.
+   -  ``--enable_nccl``: Enable the use of the NCCL library for 
+      collective communications on GPUs. This option can only be set if 
+      with ``--enable_gpu``.
    -  ``--enable_conv_gemm``: Enables the use of libconvGemm to replace
       im2col and gemm operations.
    -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
+
+-  Tracing and profiling parameters:
+
+   -  ``--tracing``: Obtain Simple/Extrae-based traces.
+   -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
+     traces.
+   -  ``--profile``: Obtain cProfile profiles.
 
 Example: distributed training of a CNN for the MNIST dataset
 ------------------------------------------------------------
