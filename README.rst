@@ -393,6 +393,15 @@ in your academic publication, we suggest citing the following paper:
    1573-0484. DOI: `10.1007/s11227-021-03673-z
    <http://dx.doi.org/10.1007/s11227-021-03673-z>`_.
 
+Other references:
+
+-  **A Flexible Research-Oriented Framework for Distributed Training 
+   of Deep Neural Networks**. Sergio Barrachina, Adrián Castelló, 
+   Mar Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE 
+   International Parallel and Distributed Processing Symposium 
+   Workshops (IPDPSW)*, 2021, pp. TBD, DOI: `TDB 
+   <http://dx.doi.org/10.1007/TBD`_.
+
 
 Acknowledgments
 ---------------
