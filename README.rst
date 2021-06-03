@@ -208,7 +208,7 @@ The PyDTNN framework comes with a utility launcher called
 
    -  ``--tracing``: Obtain Simple/Extrae-based traces.
    -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
-     traces.
+      traces.
    -  ``--profile``: Obtain cProfile profiles.
 
 Example: distributed training of a CNN for the MNIST dataset
