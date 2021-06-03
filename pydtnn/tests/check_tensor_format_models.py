@@ -2,26 +2,25 @@
 Unitary tests for GPU with different models' layers
 
 For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.TensorFormatModelsTestCase
+    python -um unittest pydtnn.tests.CheckTensorFormatModels
 
 For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.TensorFormatModelsTestCase
+    python -um unittest -v pydtnn.tests.CheckTensorFormatModels
 
 For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.TensorFormatModelsTestCase.test_name
+    python -um unittest -v pydtnn.tests.CheckTensorFormatModels.test_name
 """
 
 import sys
 import unittest
 import warnings
-import numpy as np
 
+import numpy as np
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.model import Model
-from pydtnn.tests import ConvGemmModelsTestCase
+from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test
 
 
@@ -29,7 +28,7 @@ class Params:
     pass
 
 
-class TensorFormatModelsTestCase(ConvGemmModelsTestCase):
+class CheckTensorFormatModels(CheckConvGemmModels):
     """
     Tests that two models with different parameters lead to the same results
     """
@@ -124,16 +123,17 @@ class TensorFormatModelsTestCase(ConvGemmModelsTestCase):
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
                     if layer.dw.transpose(1, 2, 3, 0).shape == model1.layers[i].dw.shape:
-                        allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol, atol=atol)
+                        allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol,
+                                               atol=atol)
                         self.assertTrue(allclose,
-                                f"Backward dw from layer {layer.canonical_name_with_id} differ"
-                                f" (max diff: {self.max_diff(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
+                                        f"Backward dw from layer {layer.canonical_name_with_id} differ"
+                                        f" (max diff: {self.max_diff(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
                 else:
                     if layer.dw.shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw, model1.layers[i].dw, rtol=rtol, atol=atol)
                         self.assertTrue(allclose,
-                                f"Backward dw from layer {layer.canonical_name_with_id} differ"
-                                f" (max diff: {self.max_diff(layer.dw, model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
+                                        f"Backward dw from layer {layer.canonical_name_with_id} differ"
+                                        f" (max diff: {self.max_diff(layer.dw, model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
         if verbose_test():
             print()
             print(f"Comparing db of both models...")
@@ -161,6 +161,7 @@ class TensorFormatModelsTestCase(ConvGemmModelsTestCase):
                 self.assertTrue(allclose,
                                 f"Backward result from layer {layer.canonical_name_with_id} differ"
                                 f" (max diff: {self.max_diff(self.nhwc2nchw(dx1[i]), dx2[i])}, rtol: {rtol}, atol: {atol})")
+
 
 if __name__ == '__main__':
     try:

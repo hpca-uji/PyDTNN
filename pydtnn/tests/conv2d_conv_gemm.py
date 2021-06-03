@@ -32,6 +32,7 @@ def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
+    params.tensor_format = 'NCHW'
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True

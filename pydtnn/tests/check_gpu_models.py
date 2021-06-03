@@ -2,13 +2,13 @@
 Unitary tests for GPU with different models' layers
 
 For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.GPUModelsTestCase
+    python -um unittest pydtnn.tests.CheckGPUModels
 
 For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.GPUModelsTestCase
+    python -um unittest -v pydtnn.tests.CheckGPUModels
 
 For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.GPUModelsTestCase.test_name
+    python -um unittest -v pydtnn.tests.CheckGPUModels.test_name
 """
 
 import sys
@@ -20,16 +20,17 @@ import pycuda.gpuarray as gpuarray
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.model import Model
-from pydtnn.tests import ConvGemmModelsTestCase
+from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
 from pydtnn import losses
+
 
 class Params:
     pass
 
 
-class GPUModelsTestCase(ConvGemmModelsTestCase):
+class CheckGPUModels(CheckConvGemmModels):
     """
     Tests that two models with different parameters lead to the same results
     """
@@ -50,7 +51,7 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
         "Conv2D": 4e-3,
         "FC": 1e-5,
     }
-  
+
     @staticmethod
     def get_model1_and_loss_func(model_name):
         # CPU model with no convGemm
