@@ -400,7 +400,7 @@ Other references:
    Mar Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE 
    International Parallel and Distributed Processing Symposium 
    Workshops (IPDPSW)*, 2021, pp. TBD, DOI: `TDB 
-   <http://dx.doi.org/10.1007/TBD`_.
+   <http://dx.doi.org/10.1007/TBD>`_.
 
 
 Acknowledgments
