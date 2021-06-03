@@ -20,3 +20,6 @@
 from .conv2d_conv_gemm import Conv2DConvGemmTestCase
 from .conv2d_conv_gemm_slow import Conv2DConvGemmSlowTestCase
 from .conv_gemm import ConvGemmTestCase
+from .conv_gemm_models import ConvGemmModelsTestCase
+from .gpu_models import GPUModelsTestCase
+from .tensor_format_models import TensorFormatModelsTestCase

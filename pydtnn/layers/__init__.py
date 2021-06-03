@@ -39,6 +39,7 @@ from .flatten import Flatten
 from .input import Input
 from .layer import Layer
 from .max_pool_2d import MaxPool2D
+from .abstract_pool_2d_layer import AbstractPool2DLayer
 from ..utils import get_derived_classes
 
 # Search this module for Layer derived classes and expose them

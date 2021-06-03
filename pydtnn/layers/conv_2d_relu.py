@@ -17,47 +17,17 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from contextlib import suppress
+from abc import ABC
 
 from .conv_2d import Conv2D
-from ..model import TRAIN_MODE
-from ..tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, PYDTNN_OPS_FORWARD_RESHAPE_Y
 
 
-class Conv2DRelu(Conv2D):
+class Conv2DRelu(Conv2D, ABC):
 
-    def __init__(self, nfilters=1, filter_shape=(3, 3), padding=0, stride=1,
-                 activation="", use_bias=True, weights_initializer="glorot_uniform",
-                 biases_initializer="zeros", from_parent=None):
+    def __init__(self, *args, **kwargs):
+        from_parent = kwargs.pop("from_parent", None)
         if from_parent is None:
-            super().__init__(nfilters, filter_shape, padding, stride,
-                             activation, use_bias, weights_initializer, biases_initializer)
+            super().__init__(*args, **kwargs)
         else:
-            with suppress(KeyError):
-                from_parent.__dict__.pop("forward")
+            from_parent.__dict__.pop("forward", None)
             self.__dict__.update(from_parent.__dict__)
-
-    def forward(self, x):
-        """Version of the forward function that uses the convGemm + Relu"""
-
-        if self.model.mode == TRAIN_MODE:
-            raise RuntimeError("Fused layers cannot be used in training mode!")
-
-        biases_vector = self.biases if self.use_bias else None
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        # @todo: Replace ConvGemm by the actual fused layer
-        res = self.cg.conv_gemm(self.weights, x, biases=None,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                biases_vector=biases_vector)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # @todo: Remove once ConvGemm+Relu is implemented !!
-        y[y < 0] = 0
-
-        return y

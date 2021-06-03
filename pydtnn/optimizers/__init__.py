@@ -47,34 +47,30 @@ sgd = SGD
 
 def get_optimizer(model):
     """Get optimizer object from model attributes"""
-    if not model.enable_cudnn:
-        optimizers_module = importlib.import_module("pydtnn.optimizers")
-        optimizer_ = getattr(optimizers_module, model.optimizer_name)
-    else:
-        optimizers_module = importlib.import_module("pydtnn.gpu_backend.optimizers")
-        optimizer_ = getattr(optimizers_module, f"{model.optimizer_name}_gpu")
+    optimizers_module = importlib.import_module("pydtnn.optimizers")
+    _optimizer = getattr(optimizers_module, model.optimizer_name)
     if model.optimizer_name == "rmsprop":
-        opt = optimizer_(learning_rate=model.learning_rate,
+        opt = _optimizer(learning_rate=model.learning_rate,
                          rho=model.rho,
                          epsilon=model.epsilon,
                          decay=model.decay,
                          dtype=model.dtype)
     elif model.optimizer_name == "adam":
-        opt = optimizer_(learning_rate=model.learning_rate,
+        opt = _optimizer(learning_rate=model.learning_rate,
                          beta1=model.beta1,
                          beta2=model.beta2,
                          epsilon=model.epsilon,
                          decay=model.decay,
                          dtype=model.dtype)
     elif model.optimizer_name == "nadam":
-        opt = optimizer_(learning_rate=model.learning_rate,
+        opt = _optimizer(learning_rate=model.learning_rate,
                          beta1=model.beta1,
                          beta2=model.beta2,
                          epsilon=model.epsilon,
                          decay=model.decay,
                          dtype=model.dtype)
     elif model.optimizer_name == "sgd":
-        opt = optimizer_(learning_rate=model.learning_rate,
+        opt = _optimizer(learning_rate=model.learning_rate,
                          momentum=model.momentum,
                          nesterov=model.nesterov,
                          decay=model.decay,

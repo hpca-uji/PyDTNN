@@ -24,7 +24,7 @@ from ..layers import *
 def create_googlenet_cifar10(model):
     _ = model.add
 
-    _(Input(shape=(3, 32, 32)))
+    _(Input(shape=(32, 32, 3)))
     _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"))
     _(BatchNormalization())
     _(Relu())

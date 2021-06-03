@@ -120,6 +120,7 @@ def reduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, 
 
 
 def bcast_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time = 0
     if network_alg == "bta":
         time = ceil(log(nprocs, 2)) * ((3 * network_lat) + \
@@ -132,6 +133,7 @@ def bcast_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, d
 
 
 def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time = 0
     if network_alg == "bta":
         time = ceil(log(nprocs, 2)) * network_lat + \
@@ -144,12 +146,13 @@ def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs,
 
 
 def gather_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    time = bcast(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype)
+    time = bcast_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype)
     # print("gather_time; s; %8d; t; %8.8f" % (elems, time))
     return time
 
 
 def allgather_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time = 0
     if network_alg == "bta":
         time = (nprocs - 1) * network_lat + \
@@ -162,6 +165,7 @@ def allgather_time(elems, cpu_speed, network_bw, network_lat, network_alg, nproc
 
 
 def reduce_scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
+    bfp = {np.float32: 4, np.float64: 8}[dtype]
     time = 0
     if network_alg == "bta":
         comp_time = ((nprocs - 1) / nprocs) * (elems / cpu_speed)

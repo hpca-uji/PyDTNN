@@ -25,7 +25,7 @@ import struct
 import threading
 
 import numpy as np
-
+from ..utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 # @todo: split dataset.py into different files
 
@@ -56,18 +56,25 @@ class BackgroundGenerator(threading.Thread):
         return self
 
 
-def do_flip_images(data, prob=0.5):
-    n, c, h, w = data.shape
+def do_flip_images(data, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        n, c, h, w = data.shape
+        width_dim = -1
+    else:
+        n, h, w, c = data.shape
+        width_dim = 2
     limit = min(n, int(n * prob))
     s = np.arange(n)
     np.random.shuffle(s)
     s = s[:limit]
-    data[s, ...] = np.flip(data[s, ...], axis=-1)
+    data[s, ...] = np.flip(data[s, ...], axis=width_dim)
     return data
 
-
-def do_crop_images(data, crop_size, prob=0.5):
-    n, c, h, w = data.shape
+def do_crop_images(data, crop_size, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
+    if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        n, c, h, w = data.shape
+    else:
+        n, h, w, c = data.shape
     crop_size = min(crop_size, h, w)
     limit = min(n, int(n * prob))
     s = np.arange(n)
@@ -78,8 +85,12 @@ def do_crop_images(data, crop_size, prob=0.5):
     for i, ri in enumerate(s):
         b, r = t[i] + crop_size, ll[i] + crop_size
         # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
-        data[ri, :, :t[i], :ll[i]] = 0.0
-        data[ri, :, b:, r:] = 0.0
+        if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            data[ri, :, :t[i], :ll[i]] = 0.0
+            data[ri, :, b:, r:] = 0.0
+        else:
+            data[ri, :t[i], :ll[i], :] = 0.0
+            data[ri, b:, r:, :] = 0.0
         data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
         data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
     return data
@@ -102,6 +113,9 @@ class Dataset:
         self.crop_images = None
         self.crop_images_size = None
         self.crop_images_prob = None
+
+    def nchw2nhwc(self, x):
+        return x.transpose(0, 2, 3, 1).astype(self.dtype, order="C")
 
     def make_train_val_partitions(self, val_split=0.2):
         pass
@@ -202,7 +216,7 @@ class MNIST(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=14, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -214,6 +228,7 @@ class MNIST(Dataset):
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 10
         # self.val_start = 0
 
@@ -246,6 +261,10 @@ class MNIST(Dataset):
         self.y_train_val = self.__one_hot_encoder(self.y_train_val.astype(np.int16))
         self.x_test = self.x_test.flatten().reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
+
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            self.x_train_val = self.nchw2nhwc(self.x_train_val)
+            self.x_test = self.nchw2nhwc(self.x_test)
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -312,7 +331,7 @@ class CIFAR10(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=16, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = train_path
         self.test_path = test_path
         self.model = model
@@ -324,6 +343,7 @@ class CIFAR10(Dataset):
         self.crop_images_prob = crop_images_prob
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 10
         self.val_start = 0
 
@@ -358,11 +378,15 @@ class CIFAR10(Dataset):
             self.x_test, self.y_test = self.__read_file("%s/%s" % (self.test_path, xy_test_fname))
 
         self.x_train_val = self.x_train_val.reshape(self.train_val_nsamples, *self.shape).astype(self.dtype) / 255.0
-        # self.x_train_val = self.__normalize_image(self.x_train_val)
+        self.x_train_val = self.__normalize_image(self.x_train_val)
         self.y_train_val = self.__one_hot_encoder(self.y_train_val.astype(np.int16))
         self.x_test = self.x_test.reshape(self.test_nsamples, *self.shape).astype(self.dtype) / 255.0
-        # self.x_test = self.__normalize_image(self.x_test)
+        self.x_test = self.__normalize_image(self.x_test)
         self.y_test = self.__one_hot_encoder(self.y_test.astype(np.int16))
+
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            self.x_train_val = self.nchw2nhwc(self.x_train_val)
+            self.x_test = self.nchw2nhwc(self.x_test)
 
         if self.test_as_validation:
             # print("  Using test as validation data - val_split parameter is ignored!")
@@ -376,12 +400,13 @@ class CIFAR10(Dataset):
             y, x = im[:, 0].flatten(), im[:, 1:].flatten()
             return x, y
 
-    @staticmethod
-    def __normalize_image(x):
-        mean = np.mean(x, axis=(0, 2, 3))
-        std = np.std(x, axis=(0, 2, 3))
+    # @staticmethod
+    def __normalize_image(self, x):
+        if not hasattr(self, "mean"):
+            self.mean = np.mean(x, axis=(0, 2, 3))
+            self.std = np.std(x, axis=(0, 2, 3))
         for c in range(3):
-            x[:, c, ...] = (x[:, c, ...] - mean[c]) / std[c]
+            x[:, c, ...] = (x[:, c, ...] - self.mean[c]) / self.std[c]
         return x
 
     def __one_hot_encoder(self, y):
@@ -433,7 +458,7 @@ class ImageNet(Dataset):
     def __init__(self, train_path, test_path, model="", test_as_validation=False,
                  flip_images=False, flip_images_prob=0.5,
                  crop_images=False, crop_images_size=112, crop_images_prob=0.5,
-                 dtype=np.float32, use_synthetic_data=False):
+                 dtype=np.float32, use_synthetic_data=False, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
         self.train_path = self.val_path = train_path
         self.test_path = test_path
         self.model = model
@@ -445,6 +470,7 @@ class ImageNet(Dataset):
         self.test_as_validation = test_as_validation
         self.dtype = dtype
         self.use_synthetic_data = use_synthetic_data
+        self.tensor_format = tensor_format
         self.nclasses = 1000
         self.val_start = 0
 
@@ -464,7 +490,7 @@ class ImageNet(Dataset):
 
         # Variables for testing dataset
         if self.use_synthetic_data:
-            self.n_test_files = 1  # 128
+            self.n_test_files = 128
             self.test_files = [''] * self.n_test_files
         else:
             self.test_files = os.listdir(self.test_path)
@@ -484,11 +510,23 @@ class ImageNet(Dataset):
 
     def __normalize_image(self, x):
         if "alexnet" not in self.model:  # for VGG, ResNet and other models input shape must be (3,224,224)
-            return x[..., 1:225, 1:225]
-        mean = np.array([0.485, 0.456, 0.406])
-        std = np.array([0.229, 0.224, 0.225])
+            x = x[..., 1:225, 1:225]
+
+        # Caffee-like normalization used for pre-trained Keras models
+        x = x[:, ::-1, ...]
+        mean = [103.939, 116.779, 123.68]
+        std = None
+
         for c in range(3):
-            x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
+            x[:, c, :, :] -= mean[c]
+        if std is not None:
+            for c in range(3):
+                x[:, c, :, :] /= std[c]
+
+        # mean = np.array([0.485, 0.456, 0.406])
+        # std = np.array([0.229, 0.224, 0.225])
+        # for c in range(3):
+        #     x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
         return x
 
     def __one_hot_encoder(self, y):
@@ -500,24 +538,26 @@ class ImageNet(Dataset):
         # For batch sizes > 1251 it is needed to concatenate more than one file of 1251 samples
         # In this case we yield bigger chunks of size batch_size
         # The next variable is not used
-        # images_per_file = {"train": self.images_per_train_file,
-        #                    "test": self.images_per_test_file}[op]
-        in_files = files.copy()
-        np.random.shuffle(in_files)
+        if op == "test":
+            images_per_file = self.images_per_test_file
+        else:
+            images_per_file = self.images_per_train_file
+            files = files.copy()
+            np.random.shuffle(files)
 
-        if batch_size > self.images_per_train_file:
+        if batch_size > images_per_file:
             x_buffer, y_buffer = np.array([]), np.array([])
 
-            for f in in_files:
+            for f in files:
                 if self.use_synthetic_data:
-                    images = {"train": self.images_per_train_file,
-                              "test": self.images_per_test_file}[op]
-                    values = {"x": np.empty((images, *self.shape), dtype=self.dtype),
-                              "y": np.zeros((images, 1), dtype=self.dtype)}
+                    values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
+                              "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
                 else:
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                    x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
                 if x_buffer.size == 0:
                     x_buffer, y_buffer = x_data, y_data
@@ -526,9 +566,9 @@ class ImageNet(Dataset):
                     y_buffer = np.concatenate((y_buffer, y_data), axis=0)
 
                 if x_buffer.shape[0] >= batch_size:
-                    if self.flip_images:
+                    if self.flip_images and op == "train":
                         x_buffer = do_flip_images(x_buffer, self.flip_images_prob)
-                    if self.crop_images:
+                    if self.crop_images and op == "train":
                         x_buffer = do_crop_images(x_buffer, self.crop_images_size, self.crop_images_prob)
                     yield x_buffer[:batch_size, ...], y_buffer[:batch_size, ...]
                     x_buffer = x_buffer[batch_size:, ...]
@@ -541,20 +581,20 @@ class ImageNet(Dataset):
 
         # For batch_sizes <= 1251, complete files of 1251 samples are yield
         else:
-            for f in in_files:
+            for f in files:
                 if self.use_synthetic_data:
-                    images = {"train": self.images_per_train_file,
-                              "test": self.images_per_test_file}[op]
-                    values = {"x": np.empty((images, *self.shape), dtype=self.dtype),
-                              "y": np.zeros((images, 1), dtype=self.dtype)}
+                    values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
+                              "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
                 else:
                     values = np.load("%s/%s" % (path, f))
 
                 x_data = self.__normalize_image(values['x'].astype(self.dtype))
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                    x_data = self.nchw2nhwc(x_data)
                 y_data = self.__one_hot_encoder(values['y'].astype(np.int16).flatten() - 1)
-                if self.flip_images:
+                if self.flip_images and op == "train":
                     x_data = do_flip_images(x_data, self.flip_images_prob)
-                if self.crop_images:
+                if self.crop_images and op == "train":
                     x_data = do_crop_images(x_data, self.crop_images_size, self.crop_images_prob)
                 yield x_data, y_data
                 gc.collect()
@@ -569,8 +609,8 @@ class ImageNet(Dataset):
         return self.data_generator(self.test_path, self.test_files, batch_size, op="test")
 
     def make_train_val_partitions(self, val_split=0.2):
-        if self.test_as_validation:
-            return
+        # if self.test_as_validation:
+        #     return
         assert 0 <= val_split < 1
         self.val_size = int((self.train_val_nsamples * val_split) / self.images_per_train_file)
 
@@ -593,10 +633,12 @@ class ImageNet(Dataset):
             subset_size = local_batch_size * nprocs * steps_per_epoch
             if subset_size < self.train_val_nsamples:
                 subset_files = max(1, subset_size // self.images_per_train_file)
+
                 self.train_val_files = self.train_val_files[:subset_files]
                 self.n_train_val_files = len(self.train_val_files)
                 self.train_val_nsamples = self.n_train_val_files * self.images_per_train_file
                 self.train_nsamples = self.train_val_nsamples
+
                 subset_test_files = max(1, subset_size // self.images_per_test_file)
                 self.test_files = self.test_files[:subset_test_files]
                 self.n_test_files = len(self.test_files)
