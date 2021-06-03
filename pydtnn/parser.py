@@ -72,6 +72,7 @@ parser.add_argument('--weights_and_bias_filename', type=str, default=None)
 parser.add_argument('--history_file', type=str, default=None)
 parser.add_argument('--shared_storage', default=False, type=bool_lambda)
 parser.add_argument('--enable_fused_relus', type=bool_lambda, default=False)
+parser.add_argument('--tensor_format', type=lambda s : s.upper(), default="NHWC")
 
 # Dataset options
 _ds_group = parser.add_argument_group("Dataset options")

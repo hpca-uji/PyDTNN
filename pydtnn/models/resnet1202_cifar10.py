@@ -23,7 +23,7 @@ from ..layers import *
 
 def create_resnet1202_cifar10(model):
     _ = model.add
-    _(Input(shape=(3, 32, 32)))
+    _(Input(shape=(32, 32, 3)))
     _(Conv2D(nfilters=16, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"))
     _(BatchNormalization())
 

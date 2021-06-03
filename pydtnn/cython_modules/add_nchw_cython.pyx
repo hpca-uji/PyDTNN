@@ -22,27 +22,27 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def add_cython(x, b):
+def add_nchw_cython(x, b):
     # if axis == 0:
     #     x = x.T
     # if not x.flags['C_CONTIGUOUS']:
     #     np.ascontiguousarray(x, dtype=np.float32)
 
     if x.dtype == np.int8:
-        add_cython_inner_int8(x, b)
+        add_nchw_cython_inner_int8(x, b)
     elif x.dtype == np.float32:
-        add_cython_inner_float32(x, b)
+        add_nchw_cython_inner_float32(x, b)
     elif x.dtype == np.float64:
-        add_cython_inner_float64(x, b)
+        add_nchw_cython_inner_float64(x, b)
     else:
-        raise TypeError("Type '{}' is not supported by add_cython!".format(str(x.dtype)))
+        raise TypeError("Type '{}' is not supported by add_nchw_cython!".format(str(x.dtype)))
 
     return x
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef add_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
-                           np.ndarray[np.int8_t, ndim=1] b):
+cdef add_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
+                                np.ndarray[np.int8_t, ndim=1] b):
     cdef int i, j
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
@@ -50,8 +50,8 @@ cdef add_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef add_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
-                              np.ndarray[np.float32_t, ndim=1] b):
+cdef add_nchw_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
+                                   np.ndarray[np.float32_t, ndim=1] b):
     cdef int i, j
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
@@ -59,8 +59,8 @@ cdef add_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef add_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
-                              np.ndarray[np.float64_t, ndim=1] b):
+cdef add_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
+                                   np.ndarray[np.float64_t, ndim=1] b):
     cdef int i, j
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):

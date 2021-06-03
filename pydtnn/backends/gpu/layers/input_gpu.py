@@ -30,7 +30,7 @@ class InputGPU(LayerGPU, Input):
     def initialize(self, prev_shape, need_dx, x):
         super().initialize(prev_shape, need_dx, x)
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
     def forward(self, x):
         pass

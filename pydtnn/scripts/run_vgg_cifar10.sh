@@ -1,21 +1,25 @@
 #!/bin/bash
 
-export OMP_NUM_THREADS=16
+export OMP_NUM_THREADS=8
+export MKL_NUM_THREADS=8
+#export GOMP_CPU_AFFINITY="2 4 6 8 10 12 14 16"
 export PYTHONOPTIMIZE=2
+#export OMP_DISPLAY_ENV=True
+#export OMP_DISPLAY_AFFINITY=True
 export PYTHONUNBUFFERED="True"
 #mpirun -np 2 \
 pydtnn_benchmark \
   --model=vgg3dobn \
   --dataset=cifar10 \
-  --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin \
-  --dataset_test_path=/Users/mdolz/Downloads/cifar-10-batches-bin \
+  --dataset_train_path=/scratch/cifar-10/cifar-10-batches-bin \
+  --dataset_test_path=/scratch/cifar-10/cifar-10-batches-bin \
   --test_as_validation=True \
-  --flip_images=True \
-  --crop_images=True \
+  --flip_images=False \
+  --crop_images=False \
   --batch_size=64 \
   --validation_split=0.2 \
   --steps_per_epoch=0 \
-  --num_epochs=400 \
+  --num_epochs=10 \
   --evaluate=False \
   --optimizer=sgd \
   --nesterov=False \
@@ -41,7 +45,8 @@ pydtnn_benchmark \
   --non_blocking_mpi=False \
   --tracing=False \
   --profile=False \
-  --enable_gpu=True \
+  --enable_gpu=False \
+  --enable_cudnn_auto_conv_alg=False \
   --enable_gpudirect=False \
   --history_file="results/result_vgg3dobn.history" \
   --dtype=float32

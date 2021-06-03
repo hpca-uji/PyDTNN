@@ -22,6 +22,8 @@ from abc import ABC
 from .layer import Layer
 from .. import activations
 from .. import initializers
+from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT_NCHW
+import numpy as np
 
 
 class Conv2D(Layer, ABC):
@@ -52,20 +54,26 @@ class Conv2D(Layer, ABC):
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
-        self.ci, self.hi, self.wi = prev_shape
+        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape
         if self.grouping == "depthwise":
             self.co = self.ci
             self.weights_shape = (self.ci, *self.filter_shape)
         elif self.grouping == "pointwise":
             self.kh = self.kw = 1
-            self.weights_shape = (self.co, self.ci)
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                self.weights_shape = (self.co, self.ci)
+            else:
+                self.weights_shape = (self.ci, self.co)
         else:
-            self.weights_shape = (self.co, self.ci, *self.filter_shape)
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+            else:
+                self.weights_shape = (self.ci, *self.filter_shape, self.co)
         self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
-        self.shape = (self.co, self.ho, self.wo)
-        self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
+        self.nparams = np.prod(self.weights_shape) + (self.co if self.use_bias else 0)
 
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape),

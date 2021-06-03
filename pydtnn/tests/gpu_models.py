@@ -22,7 +22,8 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.model import Model
 from pydtnn.tests import ConvGemmModelsTestCase
 from pydtnn.tests.common import verbose_test
-
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+from pydtnn import losses
 
 class Params:
     pass
@@ -38,16 +39,32 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
     model2_desc = "using the GPU backend"
 
     rtol_dict = {
-        "AdditionBlock": 2e-4,
-        "ConcatenationBlock": 2e-4,
+        "AdditionBlock": 1e-2,
+        "ConcatenationBlock": 1e-2,
     }
 
     atol_dict = {
         "AdditionBlock": 1e-2,
-        "BatchNormalization": 2e-5,
-        "ConcatenationBlock": 5e-3,
+        "BatchNormalization": 6e-5,
+        "ConcatenationBlock": 1e-2,
         "Conv2D": 4e-3,
+        "FC": 1e-5,
     }
+  
+    @staticmethod
+    def get_model1_and_loss_func(model_name):
+        # CPU model with no convGemm
+        params = Params()
+        params.model_name = model_name
+        params.enable_conv_gemm = False
+        params.conv_gemm_cache = False
+        params.tensor_format = "NHWC"
+        model1 = Model(**vars(params))
+        # loss function
+        loss = model1.loss_func
+        local_batch_size = model1.batch_size
+        loss_func = getattr(losses, loss)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
+        return model1, loss_func
 
     @staticmethod
     def get_model2(model_name):
@@ -56,6 +73,7 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
         params.model_name = model_name
         params.enable_gpu = True
         params.enable_cudnn_auto_conv_alg = True
+        params.tensor_format = "NHWC"
         return Model(**vars(params))
 
     @staticmethod
@@ -66,10 +84,16 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
         for cpu_layer, gpu_layer in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             if len(cpu_layer.weights.shape) == 1:
                 continue
-            gpu_layer.weights_cpu = cpu_layer.weights.copy()
+            if "Conv2D" in type(gpu_layer).__name__:
+                if model2.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                    gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
+                else:
+                    gpu_layer.weights_cpu = cpu_layer.weights.copy()
+            else:
+                gpu_layer.weights_cpu = cpu_layer.weights.copy()
             if len(gpu_layer.weights_cpu):
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
-                gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_fmt,
+                gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_format,
                                               gpu_layer.model.cudnn_dtype, "filter")
             if gpu_layer.use_bias:
                 if len(cpu_layer.biases.shape) == 1:
@@ -77,7 +101,7 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
                 if len(gpu_layer.biases_cpu):
                     biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
-                    gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_fmt,
+                    gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
                                                  gpu_layer.model.cudnn_dtype)
 
     @staticmethod
@@ -110,11 +134,11 @@ class GPUModelsTestCase(ConvGemmModelsTestCase):
             if verbose_test():
                 print(layer)
             try:
-                model2.layers[i + 1].dx.ary.set(dx1[i + 1])
+                model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape))
             except ValueError:
                 warnings.warn(f"dx of model 1 {model2.layers[i + 1].canonical_name_with_id}"
                               f" is not ordered [dx.strides: {dx1[i + 1].strides}")
-                model2.layers[i + 1].dx.ary.set(dx1[i + 1].copy())
+                model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape).copy())
             out = layer.backward(model2.layers[i + 1].dx)
             dx2[i] = out.ary.get()
         return dx2

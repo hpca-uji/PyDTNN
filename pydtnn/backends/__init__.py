@@ -32,18 +32,15 @@ class PromoteToBackendMixin:
         new_cls_name = f"{cls.__name__}{backend.upper()}"
         # cls.__module__ should be something like 'pydtnn.activations.arctanh'
         submodule_name = cls.__module__.split(".")[1]
-        backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
-        # print(cls.__name__)
-        # print(new_cls_name)
-        # print(cls.__module__)
-        # print(backend_module_name)
-        # import ipdb
-        # ipdb.set_trace()
-        try:
-            backend_module = importlib.import_module(backend_module_name)
-            new_cls = getattr(backend_module, new_cls_name)
-        except (ModuleNotFoundError, AttributeError):
+        if submodule_name == "backends":
             new_cls = cls
+        else:
+            backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
+            backend_module = importlib.import_module(backend_module_name)
+            try:
+                new_cls = getattr(backend_module, new_cls_name)
+            except AttributeError:
+                new_cls = cls
         instance = super().__new__(new_cls)
         if new_cls != cls:
             # noinspection PyArgumentList

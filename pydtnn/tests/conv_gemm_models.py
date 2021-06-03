@@ -44,7 +44,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
     }
     atol_dict = {
         "AdditionBlock": 3e-4,
-        "ConcatenationBlock": 3e-4,
+        "ConcatenationBlock": 5e-4,
         "Conv2D": 1e-5,
     }
 
@@ -135,7 +135,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         dx1 = [None] * len(model1.layers)
         dx1[-1] = first_dx
-        for i, layer in reversed(list(enumerate(model1.layers[2:-1], 2))):
+        for i, layer in reversed(list(enumerate(model1.layers[1:-1], 1))):
             if verbose_test():
                 print(layer)
             dx1[i] = layer.backward(dx1[i + 1])
@@ -148,11 +148,44 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         dx2 = [None] * len(model2.layers)
         dx2[-1] = dx1[-1]
-        for i, layer in reversed(list(enumerate(model2.layers[2:-1], 2))):
+        for i, layer in reversed(list(enumerate(model2.layers[1:-1], 1))):
             if verbose_test():
                 print(layer)
             dx2[i] = layer.backward(dx1[i + 1])
         return dx2
+
+    def compare_forward(self, model1, x1, model2, x2):
+        assert len(x1) == len(x2), "x1 and x2 should have the same length"
+        if verbose_test():
+            print()
+            print(f"Comparing outputs of both models...")
+        for i, layer in enumerate(model1.layers[1:], 1):
+            # Skip test on layers that behave randomly
+            if layer.canonical_name != "Dropout":
+                rtol, atol = self.get_tolerance(layer)
+                self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol),
+                                f"Forward result from layers {layer.canonical_name_with_id} differ"
+                                f" (max diff: {self.max_diff(x1[i], x2[i])}, rtol: {rtol}, atol: {atol})")
+
+    def compare_backward(self, model1, dx1, model2, dx2):
+        assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
+        if verbose_test():
+            print()
+            print(f"Comparing dx of both models...")
+        for i, layer in reversed(list(enumerate(model2.layers[2:], 2))):
+            # Skip test on layers that behave randomly
+            if layer.canonical_name != "Dropout":
+                rtol, atol = self.get_tolerance(layer)
+                if dx1[i].shape == dx2[i].shape:
+                    allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)
+                else:
+                    warnings.warn(f"dx shape on both models for {layer.canonical_name_with_id} differ:"
+                                  f" [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
+                    # Try flattening both
+                    allclose = np.allclose(dx1[i].flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
+                self.assertTrue(allclose,
+                                f"Backward result from layer {layer.canonical_name_with_id} differ"
+                                f" (max diff: {self.max_diff(dx1[i], dx2[i])}, rtol: {rtol}, atol: {atol})")
 
     def do_test_model(self, model_name):
         """
@@ -176,17 +209,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
             x2 = self.do_model2_forward_pass(model2, x1)
 
             # Compare forward results
-            assert len(x1) == len(x2), "x1 and x2 should have the same length"
-            if verbose_test():
-                print()
-                print(f"Comparing outputs of both models...")
-            for i, layer in enumerate(model1.layers[1:], 1):
-                # Skip test on layers that behave randomly
-                if layer.canonical_name != "Dropout":
-                    rtol, atol = self.get_tolerance(layer)
-                    self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol),
-                                    f"Forward result from layers {layer.canonical_name_with_id} differ"
-                                    f" (max diff: {self.max_diff(x1[i], x2[i])}, rtol: {rtol}, atol: {atol})")
+            self.compare_forward(model1, x1, model2, x2)
 
             # Model 1 backward
             if verbose_test():
@@ -200,24 +223,7 @@ class ConvGemmModelsTestCase(unittest.TestCase):
             dx2 = self.do_model2_backward_pass(model2, dx1)
 
             # Compare backward results
-            assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
-            if verbose_test():
-                print()
-                print(f"Comparing dx of both models...")
-            for i, layer in reversed(list(enumerate(model2.layers[2:], 2))):
-                # Skip test on layers that behave randomly
-                if layer.canonical_name != "Dropout":
-                    rtol, atol = self.get_tolerance(layer)
-                    if dx1[i].shape == dx2[i].shape:
-                        allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)
-                    else:
-                        warnings.warn(f"dx shape on both models for {layer.canonical_name_with_id} differ:"
-                                      f" [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
-                        # Try flattening both
-                        allclose = np.allclose(dx1[i].flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
-                    self.assertTrue(allclose,
-                                    f"Backward result from layer {layer.canonical_name_with_id} differ"
-                                    f" (max diff: {self.max_diff(x1[i], x2[i])}, rtol: {rtol}, atol: {atol})")
+            self.compare_backward(model1, dx1, model2, dx2)
 
     def test_alexnet(self):
         f"""
@@ -225,11 +231,17 @@ class ConvGemmModelsTestCase(unittest.TestCase):
         """
         self.do_test_model("alexnet_cifar10")
 
-    def test_vgg16(self):
+    def test_vgg11(self):
         f"""
-        Compares results between a VGG-16 model {self.model1_desc} and other {self.model1_desc}
+        Compares results between a VGG-11 BN model {self.model1_desc} and other {self.model1_desc}
         """
-        self.do_test_model("vgg16_cifar10")
+        self.do_test_model("vgg11_cifar10")
+
+    def test_vgg16bn(self):
+        f"""
+        Compares results between a VGG-16 BN model {self.model1_desc} and other {self.model1_desc}
+        """
+        self.do_test_model("vgg16bn_cifar10")
 
     def test_resnet34(self):
         f"""

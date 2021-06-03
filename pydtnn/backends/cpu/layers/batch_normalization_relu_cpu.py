@@ -20,6 +20,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.cython_modules import bn_relu_inference_cython
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.model import TRAIN_MODE
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
@@ -31,12 +32,16 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             raise RuntimeError("Fused layers cannot be used in training mode!")
 
         if self.spatial:
-            x = x.transpose(0, 2, 3, 1).reshape(-1, self.ci)
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                x = x.transpose(0, 2, 3, 1)
+            x = x.reshape(-1, self.ci)
 
         y = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
-            y = y.reshape(-1, self.hi, self.wi, self.ci).transpose(0, 3, 1, 2)
+            y = y.reshape(-1, self.hi, self.wi, self.ci)
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                y = y.transpose(0, 3, 1, 2)
 
         return y
 

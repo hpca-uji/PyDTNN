@@ -23,5 +23,6 @@ from .conv_gemm import ConvGemmTestCase
 from .conv_gemm_models import ConvGemmModelsTestCase
 try:
     from .gpu_models import GPUModelsTestCase
+    from .tensor_format_models import TensorFormatModelsTestCase
 except (ModuleNotFoundError, ImportError):
     pass

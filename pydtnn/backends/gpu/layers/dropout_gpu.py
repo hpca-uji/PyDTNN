@@ -43,21 +43,21 @@ class DropoutGPU(LayerGPU, Dropout):
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         if need_dx:
             dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
 
         space_gpu = gpuarray.empty((self.space_size.value,), np.byte)
-        self.space = TensorGPU(space_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, "other")
+        self.space = TensorGPU(space_gpu, self.model.tensor_format, self.model.cudnn_dtype, "other")
 
         states_gpu = gpuarray.empty((self.states_size.value,), np.byte)
-        self.states = TensorGPU(states_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, "other")
+        self.states = TensorGPU(states_gpu, self.model.tensor_format, self.model.cudnn_dtype, "other")
 
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 

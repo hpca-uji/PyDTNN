@@ -32,7 +32,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from .layer_gpu import LayerGPU
 from .memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from ..tensor_gpu import TensorGPU
-
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 class Conv2DGPU(LayerGPU, Conv2D):
 
@@ -46,20 +46,26 @@ class Conv2DGPU(LayerGPU, Conv2D):
 
     def initialize(self, prev_shape, need_dx, x):
         super().initialize(prev_shape, need_dx, x)
+        # This weight shape is required for cuDNN when NHWC is seleted!
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            self.weights_shape = (self.co, *self.filter_shape, self.ci)
+
         self.stream_2 = drv.Stream()
         # Convolution params
         conv_mode = cudnn.cudnnConvolutionMode['CUDNN_CROSS_CORRELATION']
         self.fwd_algo = cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
         self.bwd_dw_algo = cudnn.cudnnConvolutionBwdFilterAlgo['CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1']
         self.bwd_dx_algo = cudnn.cudnnConvolutionBwdDataAlgo['CUDNN_CONVOLUTION_BWD_DATA_ALGO_1']
+
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorGPU(weights_gpu, self.model.tensor_fmt, self.model.cudnn_dtype, "filter")
+        self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, "filter")
         # Biases
         if self.use_bias:
-            self.biases_cpu = self.biases_initializer((1, self.co), self.model.dtype)
+            self.biases_cpu = self.biases_initializer((1, self.co, 1, 1) \
+               if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else (1, 1, 1, self.co), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
-            self.biases = TensorGPU(biases_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Create convolution descriptor
         self.conv_desc = cudnn.cudnnCreateConvolutionDescriptor()
         upscale_x, upscale_y = 1, 1
@@ -73,20 +79,22 @@ class Conv2DGPU(LayerGPU, Conv2D):
         # Allow NCHW -> NHWC conversion for the use of Tensor Cores
         math_type = cudnn.cudnnMathType['CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION']
         # math_type = cudnn.cudnnMathType['CUDNN_DEFAULT_MATH']
+        # math_type = cudnn.cudnnMathType['CUDNN_TENSOR_OP_MATH']
         cudnn.cudnnSetConvolutionMathType(self.conv_desc, math_type)
 
         # Get output dimensions
-        _, _, self.ho, self.wo = cudnn.cudnnGetConvolution2dForwardOutputDim(self.conv_desc,
-                                                                             x.desc, self.weights.desc)
-        self.shape = (self.co, self.ho, self.wo)
-        self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+        _, _, _ho, _wo = cudnn.cudnnGetConvolution2dForwardOutputDim(self.conv_desc,
+                                                                     x.desc, self.weights.desc)
+        assert self.ho == _ho and self.wo == _wo, "cuDNN output sizes differ from expected ones!"
+
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
         # Derivative dx
         if self.need_dx:
             dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_fmt, self.model.cudnn_dtype)
+            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Derivative dw and derivative db
         if self.model.gpudirect:
             self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
@@ -102,12 +110,13 @@ class Conv2DGPU(LayerGPU, Conv2D):
             if self.use_bias:
                 self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
                 db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
-        self.dw = TensorGPU(dw_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
+
+        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                             tensor_type="filter", gpudirect=self.model.gpudirect)
 
         if self.use_bias:
             # noinspection PyUnboundLocalVariable
-            self.db = TensorGPU(db_gpu, self.model.tensor_fmt, self.model.cudnn_dtype,
+            self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                                 gpudirect=self.model.gpudirect)
 
         # Set to 20 the number of requested algorithms for enable_cudnn_auto_conv_alg

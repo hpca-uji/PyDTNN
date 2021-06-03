@@ -1,4 +1,7 @@
-PyDTNN - Python Distributed Training of Neural Networks
+.. figure:: pydtnn.svg
+   :width: 50 %
+   
+Python Distributed Training of Neural Networks
 =======================================================
 
 Introduction
@@ -12,8 +15,8 @@ amiable user interface which enables a flat accessing curve. To perform the
 training and inference processes, PyDTNN exploits distributed inter-process
 parallelism (via MPI) for clusters and intra-process (via multi-threading)
 parallelism to leverage the presence of multicore processors and GPUs at node
-level. For that, PyDTNN uses MPI4Py for message-passing, BLAS calls via NumPy
-for multicore processors and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
+level. For that, PyDTNN uses MPI4Py/NCCL for message-passing, BLAS calls via 
+NumPy/Cython for multicore processors and PyCUDA+cuDNN+cuBLAS for NVIDIA GPUs.
 
 Supported layers:
 
@@ -61,26 +64,32 @@ Supported datasets:
 Installing PyDTNN from source
 -----------------------------
 
-Download PyDTNN source code from its GitHub repository::
+Download PyDTNN source code from its GitHub repository and enter the PyDTNN directory::
 
     $ git clone https://github.com/hpca-uji/PyDTNN
+    $ cd PyDTNN
 
 The required Python packages are listed in the ``requirements.txt`` file, to install
 them, type::
 
     $ pip install -r requirements.txt
 
-Optionally, if you are going to use either MPI or CUDA, you should have installed
-the corresponding libraries, and then install the respectively required Python
+Then, the PyDTNN package itself must be installed::
+
+    $ pip install .
+
+If you plan to modify the PyDTNN code, instead of using the previous line, you
+can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
+
+    $ pip install -e .
+
+Optionally, if you are going to use either MPI or CUDA, you should have
+installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install -r requirements_mpi.txt
-    $ pip install -r requirements_cuda.txt
-
-Next, the included Cython pyx modules should be compiled. For doing this,
-execute the ``compile_cython_modules.sh`` script or the next line::
-
-    $ LDSHARED="gcc -shared" CC=gcc python3 setup.py build_ext --inplace
+    $ pip install -r requirements_mpi.txt       # If MPI is going to be used
+    $ pip install -r requirements_cuda_1.txt    # If CUDA is going to be used
+    $ pip install -r requirements_cuda_2.txt
 
 
 Launcher options
@@ -97,6 +106,9 @@ The PyDTNN framework comes with a utility launcher called
       ``imagenet``.
    -  ``--dataset_train_path``: Path to the training dataset.
    -  ``--dataset_test_path``: Path to the training dataset.
+   -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
+      Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
+      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.
@@ -180,14 +192,24 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data``. Default: ``sequential``.
    -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
-   -  ``--tracing``: Obtain Extrae traces.
-   -  ``--profile``: Obtain cProfile profiles.
    -  ``--enable_gpu``: Enable GPU, use cuDNN library.
    -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
       when using a CUDA-aware MPI version.
+   -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
+      performing convolution algorithm.
+   -  ``--enable_nccl``: Enable the use of the NCCL library for 
+      collective communications on GPUs. This option can only be set 
+      with ``--enable_gpu``.
    -  ``--enable_conv_gemm``: Enables the use of libconvGemm to replace
       im2col and gemm operations.
    -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
+
+-  Tracing and profiling parameters:
+
+   -  ``--tracing``: Obtain Simple/Extrae-based traces.
+   -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
+      traces.
+   -  ``--profile``: Obtain cProfile profiles.
 
 Example: distributed training of a CNN for the MNIST dataset
 ------------------------------------------------------------
@@ -370,6 +392,15 @@ in your academic publication, we suggest citing the following paper:
    Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing*. ISSN:
    1573-0484. DOI: `10.1007/s11227-021-03673-z
    <http://dx.doi.org/10.1007/s11227-021-03673-z>`_.
+
+Other references:
+
+-  **A Flexible Research-Oriented Framework for Distributed Training 
+   of Deep Neural Networks**. Sergio Barrachina, Adrián Castelló, 
+   Mar Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE 
+   International Parallel and Distributed Processing Symposium 
+   Workshops (IPDPSW)*, 2021, pp. TBD, DOI: `10.1109/IPDPSW52791.2021.00110 
+   <http://dx.doi.org/10.1109/IPDPSW52791.2021.00110>`_.
 
 
 Acknowledgments
