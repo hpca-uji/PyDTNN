@@ -26,10 +26,12 @@ import sys
 import time
 from collections import defaultdict
 from timeit import default_timer as timer
+from typing import Any
 
 from tqdm import tqdm
 
 import pydtnn.metrics
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 from . import optimizers, losses, metrics
 from . import utils
 from .datasets.dataset import Dataset
@@ -38,14 +40,13 @@ from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
     SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
     PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
 supported_gpu = False
 supported_cudnn = True
 supported_nccl = True
 supported_mpi4py = True
 enable_cudnn = False
-
+gpuarray: Any = None
 
 try:
     from mpi4py import MPI
@@ -234,6 +235,7 @@ class Model:
             sys.exit(-1)
 
         if self.enable_cudnn:
+            global supported_cudnn, supported_nccl
             supported_cudnn = True
             supported_nccl = True
             try:
