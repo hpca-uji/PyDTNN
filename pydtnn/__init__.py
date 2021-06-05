@@ -20,4 +20,6 @@
 from . model import Model
 
 from . import activations
+from . import backends
+
 
