@@ -206,6 +206,8 @@ function run_benchmark() {
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
   LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn_benchmark \
     --model="${MODEL}" \
+    --tensor_format="${TENSOR_FORMAT:-NHWC}" \
+    --enable_best_of="${ENABLE_BEST_OF:-False}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \

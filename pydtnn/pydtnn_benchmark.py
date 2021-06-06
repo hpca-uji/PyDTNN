@@ -40,6 +40,7 @@ from pydtnn.datasets import get_dataset
 from pydtnn.model import Model
 from pydtnn.optimizers import get_optimizer
 from pydtnn.lr_schedulers import get_lr_schedulers
+from pydtnn.utils.best_of import BestOf
 
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
@@ -205,6 +206,10 @@ def main():
         if rank == 0:
             print('**** Evaluating on test dataset...')
         _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)
+    # Print BestOf report
+    if model.enable_best_of:
+        print()
+        BestOf.print_report()
     # Barrier and finalize
     if model.comm is not None and _MPI is not None:
         model.comm.Barrier()

@@ -40,6 +40,7 @@ from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
     SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
     PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
+from .utils.best_of import BestOf
 
 supported_gpu = False
 supported_cudnn = True
@@ -340,6 +341,9 @@ class Model:
             self.tensor_format = PYDTNN_TENSOR_FORMAT_NCHW
         else:
             self.tensor_format = PYDTNN_TENSOR_FORMAT_NHWC
+        # Disable BestOf globally if not enabled
+        if self.kwargs['enable_best_of'] is False:
+            BestOf.use_always_the_first_alternative()
         # Read model
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:

@@ -64,7 +64,7 @@ def transpose_2d_f2c_ij_cython_wrapper(original):
     return transposed
 
 
-best_transpose_2d_fc = BestOf(
+best_transpose_2d_f2c = BestOf(
     name="Transpose 2D f2c methods",
     alternatives=[("numpy", transpose_2d_numpy),
                   ("ravel", transpose_2d_ravel),
