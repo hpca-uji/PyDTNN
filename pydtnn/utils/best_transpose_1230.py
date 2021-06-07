@@ -21,8 +21,7 @@ import ctypes
 
 import numpy as np
 
-from pydtnn.cython_modules import transpose_0231_ijk_cython, transpose_0231_kji_cython, transpose_1230_ij_cython, \
-    transpose_1230_ji_cython
+from pydtnn.cython_modules import transpose_1230_ij_cython, transpose_1230_ji_cython
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
 

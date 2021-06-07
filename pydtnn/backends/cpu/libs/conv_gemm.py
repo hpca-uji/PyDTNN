@@ -28,7 +28,7 @@ from contextlib import suppress
 
 import numpy as np
 
-from pydtnn.cython_modules import transpose_1230_ji_cython, transpose_0231_kji_cython
+from pydtnn.cython_modules import transpose_1230_ji_cython, transpose_0231_ikj_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
     PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, \
     PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, \
@@ -535,7 +535,7 @@ class ConvGemm:
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                             self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                             PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY)
-        transpose_0231_kji_cython(dy, dy_cg)  # Faster than the ijk version
+        transpose_0231_ikj_cython(dy, dy_cg)  # Faster than the ijk version
         with suppress(AttributeError):
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
