@@ -316,11 +316,6 @@ class BestOf:
         else:
             alternative = self.alternatives[current_alternative][1][stage]
         tic = timer()
-        # from ipdb import launch_ipdb_on_exception
-        # if stage == 1 and current_alternative == 1:
-        #     with launch_ipdb_on_exception:
-        #         raise IndexError
-        print(stage, current_alternative, problem_size)
         output = alternative(*args, **kwargs)
         elapsed_time = timer() - tic
         BestOf._current_parents.pop()
