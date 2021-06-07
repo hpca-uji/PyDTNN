@@ -43,7 +43,7 @@ from pydtnn.utils.best_of import BestOf
 
 
 class Conv2DCPU(LayerCPU, Conv2D):
-    # _best_fw_bw_pipeline: Any = None
+    _best_fw_bw_pipeline: Any = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -57,7 +57,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.model.dtype, order="C"))
         self.cg_biases_cache = ConvGemmCache(lambda shape: np.empty(shape, self.model.dtype, order="F"))  # order F!
         self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.model.dtype, order="C"))
-        self._best_fw_bw_pipeline: Any = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -74,8 +73,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
             variant = 'depthwise'
         elif self.model.enable_best_of:
             variant = 'best_of'
-            if self._best_fw_bw_pipeline is None:
-                self._best_fw_bw_pipeline = BestOf(
+            if self.__class__._best_fw_bw_pipeline is None:
+                self.__class__._best_fw_bw_pipeline = BestOf(
                     name="Conv2DCPU forward backward",
                     alternatives=[
                         ('i2c', self._get_class_forward_and_backward('i2c')),
