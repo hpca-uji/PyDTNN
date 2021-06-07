@@ -57,7 +57,7 @@ class _BestOfExecution:
         _BestOfExecution._longest_name = max(_BestOfExecution._longest_name, len(self.name))
         if self.parent is not None:
             self.parent.children.append(self)
-        self._blocked_by = defaultdict(lambda: defaultdict(lambda: False))
+        self._blocked_by = defaultdict(lambda: defaultdict(lambda: 50))
         self._current_problem_size = None
 
     def __repr__(self):
@@ -65,7 +65,7 @@ class _BestOfExecution:
 
     def block_parent(self):
         if not self.parent._is_root:
-            self.parent._blocked_by[self.parent._current_problem_size][self] = True
+            self.parent._blocked_by[self.parent._current_problem_size][self] = 50
 
     def unblock_parent(self):
         if not self.parent._is_root:
@@ -74,7 +74,24 @@ class _BestOfExecution:
 
     @property
     def is_blocked(self):
-        return True in self._blocked_by[self._current_problem_size].values()
+        """
+        Determines whether this BestOfExecution is blocked or not. To get rid of stale blockers, each block_by counter
+        is decreased by one every time this function is called.
+
+        Returns
+        -------
+        It this BestOfExecution is still blocked.
+        """
+
+        # warning: as the blocked_by dictionary could be modified inside the for loop, the keys() generator is first
+        #          converted to a list
+        for k in list(self._blocked_by[self._current_problem_size].keys()):
+            # Decrement blocking counter
+            self._blocked_by[self._current_problem_size][k] -= 1
+            # If the blocking counter reaches 0, release the corresponding blocker
+            if self._blocked_by[self._current_problem_size][k] <= 0:
+                self._blocked_by[self._current_problem_size].pop(k)
+        return len(self._blocked_by[self._current_problem_size]) > 0
 
     def set_problem_size(self, problem_size):
         self._current_problem_size = problem_size
