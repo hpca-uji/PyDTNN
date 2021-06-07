@@ -36,6 +36,7 @@ class _BestOfExecution:
     """
 
     _names = defaultdict(lambda: 0)
+    _longest_name = 0
 
     def __init__(self, best_of: Optional['BestOf'], execution_id: Optional[Hashable],
                  parent: Optional['_BestOfExecution']):
@@ -52,6 +53,7 @@ class _BestOfExecution:
             index += 1
             _BestOfExecution._names[name] = index
             self.name = f"{name} {index:02d}"
+        _BestOfExecution._longest_name = max(_BestOfExecution._longest_name, len(self.name))
         if self.parent is not None:
             self.parent.children.append(self)
         self._blocked_by = defaultdict(lambda: defaultdict(lambda: False))
@@ -98,7 +100,7 @@ class _BestOfExecution:
                 parts.append(f"{alternative[0]}: ---")
             else:
                 parts.append(f"{alternative[0]}: {(count[i] * 100) / total:.0f}%")
-        return " ".join(parts) + f" of {total} sizes"
+        return "\\[{}]/{}".format(" ".join(parts), total)
 
     @property
     def max_speedup(self):
@@ -118,7 +120,7 @@ class _BestOfExecution:
     @staticmethod
     def _walk_nodes(node: '_BestOfExecution', tree: Tree):
         for child in node.children:
-            txt = f"{child.name} \\[{child.summary}]"
+            txt = f"{child.name:{_BestOfExecution._longest_name}s}   {child.summary}"
             max_speedup = child.max_speedup
             if max_speedup:
                 txt += f" max speedup: {max_speedup:.1f}"
@@ -128,7 +130,7 @@ class _BestOfExecution:
     def print_report(self):
         tree = Tree("BestOf execution graph")
         _BestOfExecution._walk_nodes(self, tree)
-        c = Console(force_terminal=True)
+        c = Console(force_terminal=True, width=120)
         c.print(tree)
 
     # Protected members
@@ -168,8 +170,8 @@ class BestOf:
     """
 
     _use_first_alternative: bool = False
-    _current_parents: List[_BestOfExecution] = []
-    _root = _BestOfExecution(best_of=None, execution_id=None, parent=None)
+    _current_parents: List[_BestOfExecution] = [_BestOfExecution(best_of=None, execution_id=None, parent=None)]
+    _root: _BestOfExecution = _current_parents[0]
 
     def __init__(self,
                  name: str,
@@ -208,17 +210,18 @@ class BestOf:
         self.best_name = defaultdict(lambda: 'None')
         self.best_method = defaultdict(lambda: None)
         self.best_pipeline = defaultdict(lambda: None)
+        self.total_alternatives = len(self.alternatives)
+        # Protected members
         self._current_round = defaultdict(lambda: 0)
         self._current_alternative = defaultdict(lambda: 0)
-        self._total_alternatives = len(self.alternatives)
         self._times = defaultdict(self._times_arrays)
         self._stages_times = defaultdict(self._stages_times_arrays)
-        self._executions: Dict[_BestOfExecution] = {}
+        self._executions: Dict[List[_BestOfExecution]] = defaultdict(lambda: [])
 
     def _times_arrays(self) -> List[List]:
         """Returns an array with n empty arrays, where n is the number of alternatives to be evaluated"""
         v = []
-        for i in range(self._total_alternatives):
+        for i in range(self.total_alternatives):
             v.append([])
         return v
 
@@ -228,17 +231,18 @@ class BestOf:
         alternatives to be evaluated, and m is the number of stages.
         """
         v = []
-        for i in range(self._total_alternatives):
+        for i in range(self.total_alternatives):
             v.append([None] * self.stages)
         return v
 
     def _register(self, execution_id) -> _BestOfExecution:
+        current_parent = self._current_parents[-1]
         if execution_id in self._executions:
-            current_execution = self._executions[execution_id]
-        else:
-            current_root = self._current_parents[-1] if len(self._current_parents) else BestOf._root
-            current_execution = _BestOfExecution(best_of=self, execution_id=execution_id, parent=current_root)
-            self._executions[execution_id] = current_execution
+            for execution in self._executions[execution_id]:
+                if execution.parent == current_parent:
+                    return execution
+        current_execution = _BestOfExecution(best_of=self, execution_id=execution_id, parent=current_parent)
+        self._executions[execution_id].append(current_execution)
         return current_execution
 
     @classmethod
@@ -331,7 +335,7 @@ class BestOf:
             new_alternative = _alternative
             new_round = _round
             if self.stages == 1 or (self.stages > 1 and stage == self.stages - 1):
-                new_alternative = (new_alternative + 1) % self._total_alternatives
+                new_alternative = (new_alternative + 1) % self.total_alternatives
                 if new_alternative == 0:
                     new_round += 1
             return new_alternative, new_round
@@ -407,7 +411,7 @@ class BestOf:
         return out
 
     def print_as_table(self, execution=None, time_format="6.4f"):
-        c = Console(force_terminal=True)
+        c = Console(force_terminal=True, width=100)
         caption = self.name if execution is None else execution.name
         t = Table(box=box.HORIZONTALS, show_header=True, header_style="blue", caption=caption)
         t.add_column("size")
@@ -421,13 +425,12 @@ class BestOf:
         for problem_size in self._times.keys():
             if execution is not None and problem_size not in execution.problem_sizes:
                 continue
-            row_contents = [""] * self._total_alternatives
+            row_contents = [""] * self.total_alternatives
             for i in range(len(self.alternatives)):
                 row_contents[i] = "{0:{1}}".format(medians[problem_size][i], time_format)
             best_idx = self.best_idx[problem_size]
             if best_idx != -1:
-                row_contents[best_idx] = \
-                    "*[bold green]{}[/bold green]".format(row_contents[best_idx])
+                row_contents[best_idx] = "*[bold green]{}[/bold green]".format(row_contents[best_idx])
                 row_contents.append("{:.1f}".format(speedups[problem_size]))
             else:
                 row_contents.append("")

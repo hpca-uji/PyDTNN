@@ -62,8 +62,8 @@ best_transpose_1230 = BestOf(
     name="Transpose 1230 methods",
     alternatives=[("numpy", transpose_1230_numpy),
                   ("convGemm", transpose_1230_conv_gemm),
-                  ("ij_cython", transpose_1230_ij_cython_wrapper),
-                  ("ji_cython", transpose_1230_ji_cython_wrapper),
+                  ("ij_cyt", transpose_1230_ij_cython_wrapper),
+                  ("ji_cyt", transpose_1230_ji_cython_wrapper),
                   ],
     get_problem_size=lambda m: m.shape,
 )

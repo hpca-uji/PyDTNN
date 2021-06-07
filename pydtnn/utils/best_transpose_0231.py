@@ -47,8 +47,8 @@ def transpose_0231_kji_cython_wrapper(original):
 best_transpose_0231 = BestOf(
     name="Transpose 0231 methods",
     alternatives=[("numpy", transpose_0231_numpy),
-                  ("ijk_cython", transpose_0231_ijk_cython_wrapper),
-                  ("kji_cython", transpose_0231_kji_cython_wrapper),
+                  ("ijk_cyt", transpose_0231_ijk_cython_wrapper),
+                  ("kji_cyt", transpose_0231_kji_cython_wrapper),
                   ],
     get_problem_size=lambda m: m.shape,
 )

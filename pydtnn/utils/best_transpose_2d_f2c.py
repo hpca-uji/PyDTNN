@@ -69,8 +69,8 @@ best_transpose_2d_f2c = BestOf(
     alternatives=[("numpy", transpose_2d_numpy),
                   # ("ravel", transpose_2d_ravel), # Same time as the numpy variant
                   ("convGemm", transpose_2d_conv_gemm),
-                  ("ji_cython", transpose_2d_f2c_ji_cython_wrapper),
-                  ("ij_cython", transpose_2d_f2c_ij_cython_wrapper),
+                  ("ji_cyt", transpose_2d_f2c_ji_cython_wrapper),
+                  ("ij_cyt", transpose_2d_f2c_ij_cython_wrapper),
                   ],
     get_problem_size=lambda m: m.shape,
 )
