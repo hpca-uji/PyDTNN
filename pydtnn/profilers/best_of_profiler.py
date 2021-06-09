@@ -62,6 +62,10 @@ class BestOfProfiler:
 
     def print_results(self):
         c = Console(force_terminal=True)
-        msg = "{}  {}  OMP_NUM_THREADS: {}".format(self.header, platform.node(), os.environ.get("OMP_NUM_THREADS", 1))
+        #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
+        #  default value to form a new team for the first encountered parallel construct.
+        import multiprocessing
+        num_threads = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
+        msg = "{}  {}  OMP_NUM_THREADS: {}".format(self.header, platform.node(), num_threads)
         c.print(Panel.fit(msg))
         self.best_method.print_as_table()
