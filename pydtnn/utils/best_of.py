@@ -227,8 +227,8 @@ class BestOf:
         self.best_pipeline = defaultdict(lambda: None)
         self.total_alternatives = len(self.alternatives)
         # Protected members
-        self._current_round = defaultdict(lambda: 0)
-        self._current_alternative = defaultdict(lambda: 0)
+        self._previous_round = defaultdict(lambda: 0)
+        self._previous_alternative = defaultdict(lambda: 0)
         self._times = defaultdict(self._times_arrays)
         self._stages_times = defaultdict(self._stages_times_arrays)
         self._executions: Dict[List[_BestOfExecution]] = defaultdict(lambda: [])
@@ -240,14 +240,14 @@ class BestOf:
             v.append([])
         return v
 
-    def _stages_times_arrays(self) -> List[List[List[Any]]]:
+    def _stages_times_arrays(self) -> List[List]:
         """
         Returns an array with n arrays with m Nones each, where n is the number of
         alternatives to be evaluated, and m is the number of stages.
         """
         v = []
-        for i in range(self.total_alternatives):
-            v.append([[] for _ in range(self.stages)])
+        for i in range(self.stages):
+            v.append([])
         return v
 
     def _register(self, execution_id) -> _BestOfExecution:
@@ -302,14 +302,16 @@ class BestOf:
         # Get _current_execution_id and register this call
         current_execution_id = tuple(traceback.format_list(traceback.extract_stack()))
         current_execution = self._register(current_execution_id)
-        # Continue
+        # Get stage
         args = list(args)  # Convert args to a list (so that its first element can be removed if in a pipeline)
         stage = int(args.pop(0)) if self.stages > 1 else 0
         assert stage < self.stages, \
             f"The stage number ({stage}) must be less than the specified number of stages ({self.stages})."
+        # Should we call the first alternative?
         if self._use_first_alternative:
             first_alternative = self.alternatives[0][1] if self.stages == 1 else self.alternatives[0][1][stage]
             return first_alternative(*args, **kwargs)
+        # Get problem size
         problem_size: Hashable = self.get_problem_size(*args, **kwargs)
         current_execution.set_problem_size(problem_size)
         # If best method has been already found, call it and return
@@ -324,7 +326,72 @@ class BestOf:
         # Block parent until best method is found
         current_execution.block_parent()
         # Set local variables for the given problem size
-        current_alternative = self._current_alternative[problem_size]
+        previous_alternative = self._previous_alternative[problem_size]
+        previous_round = self._previous_round[problem_size]
+        if current_execution.is_blocked:
+            current_alternative = previous_alternative
+            current_round = previous_round
+        else:
+            evolve = True if self.stages == 1 else False
+            round_increment = 1
+            if self.stages > 1:
+                stages_times = self._stages_times[problem_size]
+                # Store the sum of all the stages elapsed times and change to the next alternative only if:
+                #  * current stage is 0
+                #  * all the stages greater than 0 for the previous alternative have been executed more or
+                #    the same number of times of their stage 0, and
+                #  * they have been executed at least once.
+                stages_that_met_previous_conditions = [1 for x in stages_times[1:]
+                                                       if len(x) >= len(stages_times[0]) >= 1]
+                if stage == 0 and len(stages_that_met_previous_conditions) == self.stages - 1:
+                    medians_per_stage = [np.median(x) for x in stages_times]
+                    pipeline_elapsed_time = np.sum(medians_per_stage)
+                    # Small caveat: this is performed when stage 0 of the next alternative is executed, it's Ok
+                    self._times[problem_size][previous_alternative].append(pipeline_elapsed_time)
+                    evolve = True
+                    round_increment = len(stages_times[0])
+                    # In order to reset self._stages_times[problem_size], problem_size is popped
+                    self._stages_times.pop(problem_size)
+            if not evolve:
+                current_alternative = previous_alternative
+                current_round = previous_round
+            else:
+                # 1) Evolve current alternative and round
+                current_alternative = (previous_alternative + 1) % self.total_alternatives
+                if current_alternative == 0:
+                    current_round = previous_round + round_increment
+                else:
+                    current_round = previous_round
+                # 2) If enough rounds have been performed:
+                if current_round >= min(self.prune_after_round, self.total_rounds):
+                    best_times = [np.median(x) for x in self._times[problem_size]]
+                    min_time = min(best_times)
+                    # 2.a) Prune alternatives and ensure that the next alternative is one of remaining ones
+                    remaining_alternatives = [i for i, x in enumerate(best_times)
+                                              if x <= min_time * self.pruning_speedup]
+                    if current_alternative not in remaining_alternatives:
+                        for i in remaining_alternatives:
+                            if i > current_alternative:
+                                current_alternative = i
+                                break
+                        else:
+                            # No remaining alternative is greater than the current one, then a round has been completed
+                            current_alternative = remaining_alternatives[0]
+                            current_round = previous_round + round_increment
+                    # 2.b) Select the best method/pipeline if a new round is going to be performed and either next_round
+                    #      is greater than total rounds or there is only one remaining alternative
+                    if current_round > previous_round and (current_round >= self.total_rounds
+                                                           or len(remaining_alternatives) == 1):
+                        current_alternative = best_times.index(min_time)  # first of the minimums
+                        self.best_idx[problem_size] = current_alternative
+                        if self.stages == 1:
+                            (self.best_name[problem_size],
+                             self.best_method[problem_size]) = self.alternatives[current_alternative]
+                        else:
+                            (self.best_name[problem_size],
+                             self.best_pipeline[problem_size]) = self.alternatives[current_alternative]
+                        # Best method/pipeline set, unblock parent
+                        current_execution.unblock_parent()
         # Evaluate current alternative for current round
         BestOf._current_parents.append(current_execution)
         if self.stages == 1:
@@ -335,77 +402,20 @@ class BestOf:
         output = alternative(*args, **kwargs)
         elapsed_time = timer() - tic
         BestOf._current_parents.pop()
-
-        # Stop here if any of the current execution children have not found its best alternative yet
+        # Update self._previous_alternative and self._previous_round for the current problem size
+        self._previous_alternative[problem_size] = current_alternative
+        self._previous_round[problem_size] = current_round
+        # If any of the current execution children have not found its best alternative yet, return
         if current_execution.is_blocked:
+            if self.stages > 1 and problem_size in self._stages_times:
+                # Clear partial times from stages of the same alternative that were not being blocked
+                self._stages_times.pop(problem_size)
             return output
-
-        # If all the children have found their best alternative, record this execution and evaluate the alternatives
-
         # Record execution time
-        evolve = False
-        round_increment = 1
         if self.stages == 1:
             self._times[problem_size][current_alternative].append(elapsed_time)
-            evolve = True
         else:
-            stages_times = self._stages_times[problem_size][current_alternative]
-            self._stages_times[problem_size][current_alternative][stage].append(elapsed_time)
-            # Store the sum of all the stages elapsed times and change to the next alternative only if:
-            #  * all the stages have been executed the same number of times, and
-            #  * they have been executed at least once.
-            stages_that_met_previous_conditions = [1 for x in stages_times if len(x) == len(stages_times[0]) >= 1]
-            if len(stages_that_met_previous_conditions) == self.stages:
-                medians_per_stage = [np.median(x) for x in stages_times]
-                pipeline_elapsed_time = np.sum(medians_per_stage)
-                self._times[problem_size][current_alternative].append(pipeline_elapsed_time)
-                evolve = True
-                round_increment = len(stages_times[0])
-                # In order to reset self._stages_times[problem_size], problem_size is popped from self._stages_times
-                self._stages_times.pop(problem_size)
-
-        # If evolve:
-        if evolve:
-            # 1) Evolve current alternative and round
-            next_alternative = (current_alternative + 1) % self.total_alternatives
-            current_round = self._current_round[problem_size]
-            if next_alternative == 0:
-                next_round = current_round + round_increment
-            else:
-                next_round = current_round
-
-            # 2) If enough rounds have been performed:
-            if next_round >= min(self.prune_after_round, self.total_rounds):
-                best_times = [np.median(x) for x in self._times[problem_size]]
-                min_time = min(best_times)
-                # 2.a) Prune alternatives and ensure that the next alternative is one of remaining ones
-                remaining_alternatives = [i for i, x in enumerate(best_times) if x <= min_time * self.pruning_speedup]
-                if next_alternative not in remaining_alternatives:
-                    for i in remaining_alternatives:
-                        if i > next_alternative:
-                            next_alternative = i
-                            break
-                    else:
-                        # As no remaining alternative is greater than current next one, a round has been completed
-                        next_alternative = remaining_alternatives[0]
-                        next_round = current_round + round_increment
-                # 2.b) Select the best method/pipeline if a new round is going to be performed and either next_round
-                #      is greater than total rounds or there is only one remaining alternative
-                if next_round > current_round and (next_round >= self.total_rounds or len(remaining_alternatives) == 1):
-                    self.best_idx[problem_size] = best_times.index(min_time)  # first of the minimums
-                    if self.stages == 1:
-                        (self.best_name[problem_size],
-                         self.best_method[problem_size]) = self.alternatives[self.best_idx[problem_size]]
-                    else:
-                        (self.best_name[problem_size],
-                         self.best_pipeline[problem_size]) = self.alternatives[self.best_idx[problem_size]]
-                    # Best method/pipeline set, unblock parent
-                    current_execution.unblock_parent()
-
-            # 3) Update self._current_alternative and self._current_round for the current problem size
-            self._current_alternative[problem_size] = next_alternative
-            self._current_round[problem_size] = next_round
-
+            self._stages_times[problem_size][stage].append(elapsed_time)
         # Return output
         return output
 
