@@ -176,7 +176,7 @@ function set_model_flags() {
       break
     fi
   done
-  [ -n "${model_column}" ] || {
+  [ -n "${model_column-}" ] || {
     echo "Error: Model '${MODEL}' not found in run_benchmarks_data.csv"
     exit 1
   }

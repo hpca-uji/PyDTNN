@@ -187,7 +187,6 @@ class BestOf:
     _use_first_alternative: bool = False
     _current_parents: List[_BestOfExecution] = [_BestOfExecution(best_of=None, execution_id=None, parent=None)]
     _root: _BestOfExecution = _current_parents[0]
-    _instances: List["BestOf"] = []
 
     def __init__(self,
                  name: str,
@@ -236,8 +235,7 @@ class BestOf:
         self._times = defaultdict(self._times_arrays)
         self._stages_times = defaultdict(self._stages_times_arrays)
         self._stages_executions = defaultdict(lambda: [0] * self.stages)
-        # Add this instance to class instances and set call
-        BestOf._instances.append(self)
+        # Set __call__() for this instance
         self._set_instance_call()
 
     def _times_arrays(self) -> List[List]:
@@ -274,8 +272,10 @@ class BestOf:
         deactivating any competition among the different alternatives.
         """
         cls._use_first_alternative = True
-        for instance in cls._instances:
-            instance._set_instance_call()
+        import gc
+        for obj in gc.get_objects():
+            if isinstance(obj, cls):
+                obj._set_instance_call()
 
     def _set_instance_call(self):
         if self.__class__._use_first_alternative:

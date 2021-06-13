@@ -74,6 +74,10 @@ class ConvGemmCache(dict):
             if isinstance(obj, cls):
                 obj.clear()
 
+    @classmethod
+    def enable(cls):
+        cls._preserve_values = True
+
 
 class ConvGemm:
     """

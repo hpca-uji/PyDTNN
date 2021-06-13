@@ -69,6 +69,14 @@ class Conv2DCPU(LayerCPU, Conv2D):
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
+        # Set convGemm parameters
+        if self.model.enable_conv_gemm:
+            self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+            if not self.model.conv_gemm_cache:
+                ConvGemmCache.disable()
+            self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
+            self.cg_deconv = self.model.conv_gemm_deconv
+            self.cg_trans = self.model.conv_gemm_trans
         # Set forward and backward implementations
         variant = 'i2c'  # Use i2c as default
         if self.grouping == "pointwise":
@@ -94,19 +102,18 @@ class Conv2DCPU(LayerCPU, Conv2D):
                     ],
                     get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
                 )
+            # Fix ConvGemm parameters to use convGemmTrans and Persistent memory (CGT+PM)
+            if self.cg is None:
+                self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+            ConvGemmCache.enable()
+            self.cg_trans = True
+            self.cg_fallback_to_im2col = False
+            self.cg_deconv = False
         elif self.model.enable_conv_gemm:
             variant = 'cg'
         forward, backward = self._get_forward_and_backward(variant)
         setattr(self, "forward", forward)
         setattr(self, "backward", backward)
-        # Set convGemm parameters
-        if self.model.enable_conv_gemm or self.model.enable_best_of:
-            self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
-            if not self.model.conv_gemm_cache:
-                ConvGemmCache.disable()
-            self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
-            self.cg_deconv = self.model.conv_gemm_deconv
-            self.cg_trans = self.model.conv_gemm_trans
         # Performance models
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
