@@ -108,6 +108,7 @@ class Dataset:
         self.train_nsamples = self.x_train.shape[0]
         self.test_as_validation = False
         # Attributes that will be properly defined elsewhere
+        self.dtype = None
         self.flip_images = None
         self.flip_images_prob = None
         self.crop_images = None
