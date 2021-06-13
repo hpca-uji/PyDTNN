@@ -54,7 +54,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     supported_mpi4py = False
 
-EVALUATE_MODE, TRAIN_MODE = (0, 1)
+EVALUATE_MODE, TRAIN_MODE, UNSPECIFIED_MODE = (0, 1, 2)
 
 
 class PerformanceCounter:
@@ -227,7 +227,7 @@ class Model:
         self.nparams = 0
         self.rank = 0
         self.nprocs = 1
-        self.mode = TRAIN_MODE
+        self.mode = UNSPECIFIED_MODE
         if self.comm and supported_mpi4py:
             self.rank = self.comm.Get_rank()
             self.nprocs = self.comm.Get_size()
