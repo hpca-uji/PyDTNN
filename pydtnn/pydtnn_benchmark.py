@@ -123,14 +123,15 @@ def main():
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
-            print(f'Testing time: {total_time:5.4f} s')
-            print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
-            print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
-            print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
-            print(f'Testing maximum memory allocated: ',
-                  f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
-            print(f'Testing mean memory allocated: ',
-                  f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
+            if model.evaluate_only:
+                print(f'Testing time: {total_time:5.4f} s')
+                print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
+                print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
+                print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
+                print(f'Testing maximum memory allocated: ',
+                      f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
+                print(f'Testing mean memory allocated: ',
+                      f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
         if model.evaluate_only:
             sys.exit(0)
     # Barrier
@@ -205,7 +206,21 @@ def main():
     if model.evaluate_on_train:
         if rank == 0:
             print('**** Evaluating on test dataset...')
+            t1 = time.time()
         _ = model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)
+        if rank == 0:
+            t2 = time.time()
+            # noinspection PyUnboundLocalVariable
+            total_time = t2 - t1
+            if not model.evaluate_only:
+                print(f'Testing time: {total_time:5.4f} s')
+                print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
+                print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
+                print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
+                print(f'Testing maximum memory allocated: ',
+                      f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
+                print(f'Testing mean memory allocated: ',
+                      f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
     # Print BestOf report
     if model.enable_best_of:
         print()
