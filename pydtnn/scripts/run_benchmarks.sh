@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -o errexit  # Abort on first error
+set -o nounset  # Abort on undefined variables
+
 #-----------------------
 # Command line options
 #-----------------------
@@ -11,6 +14,7 @@
 #-------------------------
 MODEL=${MODEL:-alexnet_cifar10}
 DATASET=${DATASET:-cifar10}
+TENSOR_FORMAT=${TENSOR_FORMAT:-NHWC}
 case "${DATASET}" in
 cifar10)
   DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar-10-batches-bin}
@@ -24,9 +28,11 @@ imagenet)
   ;;
 esac
 DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
+BATCH_SIZE=${BATCH_SIZE:-64}
+ENABLE_BEST_OF=${ENABLE_BEST_OF:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
 CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-False}
-CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-False}
+CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-True}
 CONV_GEMM_DECONV=${CONV_GEMM_DECONV:-False}
 CONV_GEMM_TRANS=${CONV_GEMM_TRANS:-False}
 NODES=${NODES:-1}
@@ -34,20 +40,24 @@ NODES=${NODES:-1}
 #--------------------------
 # Only training parameters
 #--------------------------
-if [ -n "${ONLY_TRAINING}" ]; then
+if [ -n "${ONLY_TRAINING-}" ]; then
   # shellcheck disable=SC2034
   EVALUATE=False
   TEST_AS_VALIDATION=False
   VALIDATION_SPLIT=0.2
 fi
 
-if [ -n "${ONLY_INFERENCE}" ]; then
+#--------------------------
+# Only inference parameters
+#--------------------------
+if [ -n "${ONLY_INFERENCE-}" ]; then
 	  # shellcheck disable=SC2034
     EVALUATE=True
     NUM_EPOCHS=0
     STEPS_EPOCH=10
     TEST_AS_VALIDATION=False
 fi
+
 #-------------------
 # OpenMP parameters
 #-------------------
@@ -102,7 +112,9 @@ SCRIPT_PATH="$(
 # File name for output files
 #----------------------------
 FILE_NAME="${MODEL}"
-if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
+if [ "${ENABLE_BEST_OF}" == "True" ]; then
+  FILE_NAME="${FILE_NAME}_bo"
+elif [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_cg"
   if [ "${CONV_GEMM_FALLBACK_TO_IM2COL}" == "True" ]; then
     FILE_NAME="${FILE_NAME}-fb"
@@ -119,11 +131,11 @@ if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
 else
   FILE_NAME="${FILE_NAME}_i2c-mm"
 fi
-FILE_NAME="${FILE_NAME}_$(printf '%03d' "${NUM_EPOCHS:-1}")e"
-FILE_NAME="${FILE_NAME}_$(printf '%03d' "${STEPS_PER_EPOCH:-1}")s"
-FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NODES:-1}")n"
-FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS:-1}")t"
-FILE_NAME="${FILE_NAME}_$(printf '%02d' "${BATCH_SIZE:-1}")bs"
+FILE_NAME="${FILE_NAME}_$(printf '%03d' "${NUM_EPOCHS}")e"
+FILE_NAME="${FILE_NAME}_$(printf '%03d' "${STEPS_PER_EPOCH}")s"
+FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NODES}")n"
+FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS}")t"
+FILE_NAME="${FILE_NAME}_$(printf '%02d' "${BATCH_SIZE}")bs"
 FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
 MACHINE="$(uname -n)"
 if [[ "${MACHINE}" == "altec"* ]]; then
@@ -175,7 +187,7 @@ function set_model_flags() {
     value=$(echo "$line" | cut -d ";" -f ${model_column})
     if [ -z "${value}" ]; then
       # If parameter has no value, only add it if it has been previously defined
-      if [ -n "${!PARAMETER}" ]; then
+      if [ -n "${!PARAMETER-}" ]; then
         MODEL_FLAGS="${MODEL_FLAGS} --${parameter}=${!PARAMETER} "
       fi
     else
@@ -185,6 +197,9 @@ function set_model_flags() {
   done < <(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep -v model)
 }
 
+#----------------------------
+# Run benchmarkSet
+#----------------------------
 function run_benchmark() {
   # 1) set model flags and
   set_model_flags
@@ -206,12 +221,12 @@ function run_benchmark() {
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
   LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn_benchmark \
     --model="${MODEL}" \
-    --tensor_format="${TENSOR_FORMAT:-NHWC}" \
-    --enable_best_of="${ENABLE_BEST_OF:-False}" \
+    --tensor_format="${TENSOR_FORMAT}" \
     --dataset_train_path="${DATASET_TRAIN_PATH}" \
     --dataset_test_path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \
     --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
+    --enable_best_of="${ENABLE_BEST_OF}" \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --conv_gemm_fallback_to_im2col="${CONV_GEMM_FALLBACK_TO_IM2COL}" \
     --conv_gemm_cache="${CONV_GEMM_CACHE}" \
