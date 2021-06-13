@@ -23,32 +23,36 @@ from pydtnn.cython_modules import transpose_1023_jik_cython, transpose_1023_ijk_
 from pydtnn.utils.best_of import BestOf
 
 
-def transpose_1023_numpy(original):
+def transpose_1023_numpy(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
     transposed[...] = original.transpose((1, 0, 2, 3))
     return transposed
 
 
-def transpose_1023_ijk_cython_wrapper(original):
+def transpose_1023_ijk_cython_wrapper(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
     transpose_1023_ijk_cython(original, transposed)
     return transposed
 
 
-def transpose_1023_jik_cython_wrapper(original):
+def transpose_1023_jik_cython_wrapper(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
     transpose_1023_jik_cython(original, transposed)
     return transposed
 
 
 best_transpose_1023 = BestOf(
     name="Transpose 1023 methods",
-    alternatives=[("numpy", transpose_1023_numpy),
-                  ("ijk_cyt", transpose_1023_ijk_cython_wrapper),
-                  ("jik_cyt", transpose_1023_jik_cython_wrapper),
-                  ],
+    alternatives=[
+        ("ijk_cyt", transpose_1023_ijk_cython_wrapper),
+        ("jik_cyt", transpose_1023_jik_cython_wrapper),
+        ("numpy", transpose_1023_numpy),
+    ],
     get_problem_size=lambda m: m.shape,
 )

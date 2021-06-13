@@ -23,27 +23,44 @@ from pydtnn.cython_modules import pad_cython
 from pydtnn.utils.best_of import BestOf
 
 
-def pad_numpy(matrix_in, vpadding, hpadding):
-    matrix_out = np.pad(matrix_in,
+def pad_assign(original, vpadding, hpadding, padded=None):
+    b, c, h, w = original.shape
+    new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
+    if padded is None:
+        padded = np.zeros((b, c, new_h, new_w), original.dtype)
+    padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = original
+    return padded
+
+
+def pad_numpy(original, vpadding, hpadding, padded=None):
+    if padded is None:
+        padded = np.pad(original,
                         ((0, 0), (0, 0),
                          (vpadding, vpadding), (hpadding, hpadding)),
                         mode='constant')
-    return matrix_out
+    else:
+        padded[...] = np.pad(original,
+                             ((0, 0), (0, 0),
+                              (vpadding, vpadding), (hpadding, hpadding)),
+                             mode='constant')
+    return padded
 
 
-def pad_cython_wrapper(matrix_in, vpadding, hpadding):
-    b, c, h, w = matrix_in.shape
-    dtype = matrix_in.dtype
-    new_h = h + 2 * vpadding
-    new_w = w + 2 * hpadding
-    cython_matrix_out = np.empty((b, c, new_h, new_w), dtype=dtype, order="C")
-    pad_cython(matrix_in, cython_matrix_out)
-    return cython_matrix_out
+def pad_cython_wrapper(original, vpadding, hpadding, padded=None):
+    if padded is None:
+        b, c, h, w = original.shape
+        new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
+        padded = np.empty((b, c, new_h, new_w), dtype=original.dtype, order="C")
+    pad_cython(original, padded)
+    return padded
 
 
 best_pad = BestOf(
     name="Padding methods",
-    alternatives=[("numpy", pad_numpy),
-                  ("cython", pad_cython_wrapper)],
+    alternatives=[
+        ("assign", pad_assign),
+        ("numpy", pad_numpy),
+        ("cython", pad_cython_wrapper),
+    ],
     get_problem_size=lambda *args: args[0].shape,
 )

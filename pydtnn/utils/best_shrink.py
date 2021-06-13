@@ -23,29 +23,29 @@ from pydtnn.cython_modules import shrink_cython
 from pydtnn.utils.best_of import BestOf
 
 
-def shrink_numpy(matrix_in, vpadding, hpadding):
-    b, c, h, w = matrix_in.shape
-    dtype = matrix_in.dtype
-    new_h = h - 2 * vpadding
-    new_w = w - 2 * hpadding
-    matrix_out = np.empty((b, c, new_h, new_w), dtype=dtype, order="C")
-    matrix_out[...] = matrix_in[:, :, vpadding:vpadding + new_h, hpadding:hpadding + new_w]
-    return matrix_out
+def shrink_numpy(original, vpadding, hpadding, shrunk=None):
+    b, c, h, w = original.shape
+    new_h, new_w = h - 2 * vpadding, w - 2 * hpadding
+    if shrunk is None:
+        shrunk = np.empty((b, c, new_h, new_w), dtype=original.dtype, order="C")
+    shrunk[...] = original[:, :, vpadding:vpadding + new_h, hpadding:hpadding + new_w]
+    return shrunk
 
 
-def shrink_cython_wrapper(matrix_in, vpadding, hpadding):
-    b, c, h, w = matrix_in.shape
-    dtype = matrix_in.dtype
-    new_h = h - 2 * vpadding
-    new_w = w - 2 * hpadding
-    cython_matrix_out = np.empty((b, c, new_h, new_w), dtype=dtype, order="C")
-    shrink_cython(matrix_in, cython_matrix_out)
-    return cython_matrix_out
+def shrink_cython_wrapper(original, vpadding, hpadding, shrunk=None):
+    if shrunk is None:
+        b, c, h, w = original.shape
+        new_h, new_w = h - 2 * vpadding, w - 2 * hpadding
+        shrunk = np.empty((b, c, new_h, new_w), dtype=original.dtype, order="C")
+    shrink_cython(original, shrunk)
+    return shrunk
 
 
 best_shrink = BestOf(
     name="Shrink methods",
-    alternatives=[("numpy", shrink_numpy),
-                  ("cython", shrink_cython_wrapper)],
+    alternatives=[
+        ("numpy", shrink_numpy),
+        ("cython", shrink_cython_wrapper)
+    ],
     get_problem_size=lambda *args: args[0].shape,
 )

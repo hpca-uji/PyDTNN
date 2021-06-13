@@ -28,51 +28,58 @@ from pydtnn.utils.best_of import BestOf
 cg_lib = load_library("convGemm")
 
 
-def transpose_2d_numpy(original):
+def transpose_2d_numpy(original, transposed=None):
     d0, d1 = original.shape
-    transposed = np.empty((d0, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d1), original.dtype, order="C")
     transposed[...] = original
     return transposed
 
 
-def transpose_2d_ravel(original):
+def transpose_2d_ravel(original, transposed=None):
     d0, d1 = original.shape
-    transposed = original.ravel(order="C").reshape(d0, d1)
+    if transposed is None:
+        transposed = np.empty((d0, d1), original.dtype, order="C")
+    transposed[...] = original.ravel(order="C").reshape(d0, d1)
     return transposed
 
 
-def transpose_2d_conv_gemm(original):
+def transpose_2d_conv_gemm(original, transposed=None):
     d0, d1 = original.shape
-    transposed = np.empty((d0, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d1), original.dtype, order="C")
     cg_lib.sreshapeOut_pydtnn(ctypes.c_uint(d0), ctypes.c_uint(d1), ctypes.c_uint(1),
                               ctypes.c_uint(1),
                               ctypes.c_void_p(original.ctypes.data), ctypes.c_void_p(transposed.ctypes.data))
     return transposed
 
 
-def transpose_2d_f2c_ji_cython_wrapper(original):
+def transpose_2d_f2c_ji_cython_wrapper(original, transposed=None):
     d0, d1 = original.shape
-    transposed = np.empty((d0, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d1), original.dtype, order="C")
     transpose_2d_f2c_ji_cython(original, transposed)
     return transposed
 
 
-def transpose_2d_f2c_ij_cython_wrapper(original):
+def transpose_2d_f2c_ij_cython_wrapper(original, transposed=None):
     d0, d1 = original.shape
-    transposed = np.empty((d0, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d1), original.dtype, order="C")
     transpose_2d_f2c_ij_cython(original, transposed)
     return transposed
 
 
 best_transpose_2d_f2c = BestOf(
     name="Transpose 2D f2c methods",
-    alternatives=[("numpy", transpose_2d_numpy),
-                  # ("ravel", transpose_2d_ravel), # Same time as the numpy variant
-                  ("convGemm", transpose_2d_conv_gemm),
-                  ("ji_cyt", transpose_2d_f2c_ji_cython_wrapper),
-                  ("ij_cyt", transpose_2d_f2c_ij_cython_wrapper),
-                  ],
-    get_problem_size=lambda m: m.shape,
+    alternatives=[
+        ("convGemm", transpose_2d_conv_gemm),
+        ("ji_cyt", transpose_2d_f2c_ji_cython_wrapper),
+        ("ij_cyt", transpose_2d_f2c_ij_cython_wrapper),
+        ("numpy", transpose_2d_numpy),
+        # ("ravel", transpose_2d_ravel), # Same time as the numpy variant
+    ],
+    get_problem_size=lambda *args: args[0].shape,
 )
 
 #

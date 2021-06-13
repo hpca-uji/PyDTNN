@@ -51,7 +51,7 @@ def main():
         h_new_indexes, cg_vstride = Conv2DCPUWrapper.get_x_new_indexes_and_xstride(kh, ho, layer.vstride)
         v_new_indexes, cg_hstride = Conv2DCPUWrapper.get_x_new_indexes_and_xstride(kw, wo, layer.hstride)
         matrix_in = np.random.rand(*x_shape).astype(dtype=np.float32)
-        bop(h_new_indexes, v_new_indexes, matrix_in)
+        bop(matrix_in, h_new_indexes, v_new_indexes)
     bop.print_results()
 
 

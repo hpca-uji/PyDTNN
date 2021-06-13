@@ -23,32 +23,36 @@ from pydtnn.cython_modules import transpose_0231_ijk_cython, transpose_0231_ikj_
 from pydtnn.utils.best_of import BestOf
 
 
-def transpose_0231_numpy(original):
+def transpose_0231_numpy(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
     transposed[...] = original.transpose((0, 2, 3, 1))
     return transposed
 
 
-def transpose_0231_ijk_cython_wrapper(original):
+def transpose_0231_ijk_cython_wrapper(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
     transpose_0231_ijk_cython(original, transposed)
     return transposed
 
 
-def transpose_0231_kji_cython_wrapper(original):
+def transpose_0231_ikj_cython_wrapper(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
     transpose_0231_ikj_cython(original, transposed)
     return transposed
 
 
 best_transpose_0231 = BestOf(
     name="Transpose 0231 methods",
-    alternatives=[("numpy", transpose_0231_numpy),
-                  ("ijk_cyt", transpose_0231_ijk_cython_wrapper),
-                  ("kji_cyt", transpose_0231_kji_cython_wrapper),
-                  ],
-    get_problem_size=lambda m: m.shape,
+    alternatives=[
+        ("ikj_cyt", transpose_0231_ikj_cython_wrapper),
+        ("ijk_cyt", transpose_0231_ijk_cython_wrapper),
+        ("numpy", transpose_0231_numpy),
+    ],
+    get_problem_size=lambda *args: args[0].shape,
 )

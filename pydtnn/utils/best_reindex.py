@@ -23,32 +23,36 @@ from pydtnn.cython_modules import reindex_cython
 from pydtnn.utils.best_of import BestOf
 
 
-def reindex_numpy(h_new_indexes, v_new_indexes, matrix_in):
-    matrix_out = matrix_in
+def reindex_numpy(original, h_new_indexes, v_new_indexes, indexed=None):
+    if indexed is None:
+        indexed = original
     if h_new_indexes is not None:
-        matrix_out = matrix_out[:, :, h_new_indexes, :]
+        indexed = indexed[:, :, h_new_indexes, :]
     if v_new_indexes is not None:
-        matrix_out = matrix_out[:, :, :, v_new_indexes]
+        indexed = indexed[:, :, :, v_new_indexes]
     if h_new_indexes is not None or v_new_indexes is not None:
         # @warning: The copy() is required to ensure the correct order of the underlying data of
-        #           matrix_out. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
+        #           indexed. Otherwise using self.cg_x_indexed.ravel(order="K") will lead to
         #           unexpected results
-        matrix_out = matrix_out.copy()
-    return matrix_out
+        indexed = indexed.copy()
+    return indexed
 
 
-def reindex_cython_wrapper(h_new_indexes, v_new_indexes, matrix_in):
-    b, c, h, w = matrix_in.shape
-    new_h = len(h_new_indexes) if h_new_indexes is not None else h
-    new_w = len(v_new_indexes) if v_new_indexes is not None else w
-    cython_matrix_out = np.empty((b, c, new_h, new_w), dtype=matrix_in.dtype, order="C")
-    reindex_cython(h_new_indexes, v_new_indexes, matrix_in, cython_matrix_out)
-    return cython_matrix_out
+def reindex_cython_wrapper(original, h_new_indexes, v_new_indexes, indexed=None):
+    if indexed is None:
+        b, c, h, w = original.shape
+        new_h = len(h_new_indexes) if h_new_indexes is not None else h
+        new_w = len(v_new_indexes) if v_new_indexes is not None else w
+        indexed = np.empty((b, c, new_h, new_w), dtype=original.dtype, order="C")
+    reindex_cython(h_new_indexes, v_new_indexes, original, indexed)
+    return indexed
 
 
 best_reindex = BestOf(
     name="Reindex methods",
-    alternatives=[("numpy", reindex_numpy),
-                  ("cython", reindex_cython_wrapper)],
-    get_problem_size=lambda *args: args[2].shape,
+    alternatives=[
+        ("numpy", reindex_numpy),
+        ("cython", reindex_cython_wrapper)
+    ],
+    get_problem_size=lambda *args: args[0].shape,
 )

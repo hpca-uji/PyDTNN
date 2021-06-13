@@ -28,41 +28,46 @@ from pydtnn.utils.best_of import BestOf
 cg_lib = load_library("convGemm")
 
 
-def transpose_1230_numpy(original):
+def transpose_1230_numpy(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
     transposed[...] = original.transpose((1, 2, 3, 0))
     return transposed
 
 
-def transpose_1230_conv_gemm(original):
+def transpose_1230_conv_gemm(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
     cg_lib.sreshapeWeights_pydtnn(ctypes.c_uint(d0), ctypes.c_uint(d1), ctypes.c_uint(d3), ctypes.c_uint(d2),
                                   ctypes.c_void_p(original.ctypes.data), ctypes.c_void_p(transposed.ctypes.data))
     return transposed
 
 
-def transpose_1230_ij_cython_wrapper(original):
+def transpose_1230_ij_cython_wrapper(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
     transpose_1230_ij_cython(original, transposed)
     return transposed
 
 
-def transpose_1230_ji_cython_wrapper(original):
+def transpose_1230_ji_cython_wrapper(original, transposed=None):
     d0, d1, d2, d3 = original.shape
-    transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
+    if transposed is None:
+        transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")
     transpose_1230_ji_cython(original, transposed)
     return transposed
 
 
 best_transpose_1230 = BestOf(
     name="Transpose 1230 methods",
-    alternatives=[("numpy", transpose_1230_numpy),
-                  ("convGemm", transpose_1230_conv_gemm),
-                  ("ij_cyt", transpose_1230_ij_cython_wrapper),
-                  ("ji_cyt", transpose_1230_ji_cython_wrapper),
-                  ],
-    get_problem_size=lambda m: m.shape,
+    alternatives=[
+        ("ji_cyt", transpose_1230_ji_cython_wrapper),
+        ("ij_cyt", transpose_1230_ij_cython_wrapper),
+        ("convGemm", transpose_1230_conv_gemm),
+        ("numpy", transpose_1230_numpy),
+    ],
+    get_problem_size=lambda *args: args[0].shape,
 )
