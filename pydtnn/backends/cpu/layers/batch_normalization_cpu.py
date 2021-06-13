@@ -23,6 +23,7 @@ from pydtnn.cython_modules import bn_inference_cython, bn_training_fwd_cython, \
                                   bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from .layer_cpu import LayerCPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
@@ -47,7 +48,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                x = x.transpose(0, 2, 3, 1)
+                # x = x.transpose(0, 2, 3, 1)
+                x = best_transpose_0231(x)
             x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
@@ -102,7 +104,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     def backward(self, dy):
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                dy = dy.transpose(0, 2, 3, 1)
+                # dy = dy.transpose(0, 2, 3, 1)
+                dy = best_transpose_0231(dy)
             dy = dy.reshape(-1, self.ci)
 
         n = dy.shape[0]

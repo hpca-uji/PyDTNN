@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
-from typing import Callable, List, Any
+
+from typing import Callable, List, Optional
 
 import numpy as np
 
@@ -27,7 +28,7 @@ from pydtnn.cython_modules import im2row_nhwc_cython, add_nhwc_cython, row2im_nh
     reindex_cython, \
     depthwise_conv_cython
 from pydtnn.layers import Conv2D
-from pydtnn.model import TRAIN_MODE
+from pydtnn.model import TRAIN_MODE, EVALUATE_MODE
 from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, \
     PYDTNN_OPS_FORWARD_RESHAPE_Y, \
@@ -40,10 +41,13 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
     PYDTNN_OPS_FORWARD_POINTWISE_CONV, PYDTNN_OPS_FORWARD_TRANSPOSE_Y
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
 class Conv2DCPU(LayerCPU, Conv2D):
-    _best_fw_bw_pipeline: Any = None
+
+    _best_fw: Optional[BestOf] = None
+    _best_fw_bw_pipeline: Optional[BestOf] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -73,7 +77,15 @@ class Conv2DCPU(LayerCPU, Conv2D):
             variant = 'depthwise'
         elif self.model.enable_best_of:
             variant = 'best_of'
-            if self.__class__._best_fw_bw_pipeline is None:
+            if self.__class__._best_fw is None:
+                self.__class__._best_fw = BestOf(
+                    name="Conv2DCPU only forward",
+                    alternatives=[
+                        ('i2c', self._get_class_forward_and_backward('i2c')[0]),
+                        ('cg', self._get_class_forward_and_backward('cg')[0]),
+                    ],
+                    get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
+                )
                 self.__class__._best_fw_bw_pipeline = BestOf(
                     name="Conv2DCPU forward backward",
                     alternatives=[
@@ -81,7 +93,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
                         ('cg', self._get_class_forward_and_backward('cg')),
                     ],
                     get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
-                    stages=2,
                 )
         elif self.model.enable_conv_gemm:
             variant = 'cg'
@@ -172,9 +183,18 @@ class Conv2DCPU(LayerCPU, Conv2D):
     def _forward_nhwc_pointwise(self, x):
         raise NotImplementedError("Forward not yet implemented!")
 
+    def _fw_bw_best_of(self, stage, x_or_y):
+        if self.model.mode == TRAIN_MODE:
+            # noinspection PyTypeChecker
+            return self._best_fw_bw_pipeline(stage, self, x_or_y)
+        elif self.model.mode == EVALUATE_MODE:
+            # noinspection PyTypeChecker
+            return self._best_fw(self, x_or_y)
+        else:
+            raise RuntimeError("Conv2D BestOf variant requires to Model.mode to be set to EVALUATE_MODE or TRAIN_MODE")
+
     def _forward_nhwc_best_of(self, x):
-        # noinspection PyTypeChecker
-        return self._best_fw_bw_pipeline(0, self, x)
+        return self._fw_bw_best_of(0, x)
 
     def _forward_nchw_i2c(self, x):
         """Version of the forward function that uses im2col and matmul"""
@@ -200,7 +220,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        # y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        y = best_transpose_1023(y.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
@@ -225,7 +246,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
         # y = add_cython(res, self.biases) if self.use_bias else res
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        # y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        y = best_transpose_1023(res.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
@@ -241,7 +263,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        # y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        y = best_transpose_1023(y.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
@@ -263,8 +286,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         return y
 
     def _forward_nchw_best_of(self, x):
-        # noinspection PyTypeChecker
-        return self._best_fw_bw_pipeline(0, self, x)
+        return self._fw_bw_best_of(0, x)
 
     def _backward_nhwc_i2c(self, dy):
         """Version of the backward function that uses im2col and matmul"""
@@ -312,13 +334,13 @@ class Conv2DCPU(LayerCPU, Conv2D):
         raise NotImplementedError("Backward not yet implemented!")
 
     def _backward_nhwc_best_of(self, y):
-        # noinspection PyTypeChecker
-        return self._best_fw_bw_pipeline(1, self, y)
+        return self._fw_bw_best_of(1, y)
 
     def _backward_nchw_i2c(self, dy):
         """Version of the backward function that uses im2col and matmul"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-        dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
+        # dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
+        dy_cols = best_transpose_1023(dy).reshape(self.co, -1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
@@ -396,7 +418,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
             # 1) cg_dy
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-            cg_dy = dy.transpose((1, 0, 2, 3))
+            # cg_dy = dy.transpose((1, 0, 2, 3))
+            cg_dy = best_transpose_1023(dy)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             # 2) cg_x_transposed
             b, c, h, w = self.cg_x.shape
@@ -418,8 +441,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
             #     self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
             #         self.cg_x.transpose((1, 0, 2, 3))
             if self.vpadding == 0 and self.hpadding == 0:
-                # @todo: cython transpose version
-                cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
+                # cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
+                cg_x_transposed = best_transpose_1023(self.cg_x)
             else:
                 new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
                 cg_x_transposed = self.cg_x_transposed_cache[(c, b, new_h, new_w)]
@@ -464,7 +487,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
             # 1) cg_dy
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-            cg_dy = dy.transpose((1, 0, 2, 3))
+            # cg_dy = dy.transpose((1, 0, 2, 3))
+            cg_dy = best_transpose_1023(dy)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             # 2) cg_x_indexed
             cg_x_indexed = self.cg_x
@@ -529,5 +553,4 @@ class Conv2DCPU(LayerCPU, Conv2D):
         raise NotImplementedError("Backward not yet implemented!")
 
     def _backward_nchw_best_of(self, y):
-        # noinspection PyTypeChecker
-        return self._best_fw_bw_pipeline(1, self, y)
+        return self._fw_bw_best_of(1, y)

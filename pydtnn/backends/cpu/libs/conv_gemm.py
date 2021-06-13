@@ -28,13 +28,13 @@ from contextlib import suppress
 
 import numpy as np
 
-from pydtnn.cython_modules import transpose_1230_ji_cython, transpose_0231_ikj_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
     PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, \
     PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, \
     PYDTNN_OPS_CONVGEMM_TRANS_BIASES
 from pydtnn.utils import load_library
 from pydtnn.utils.best_pad import best_pad
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_1230 import best_transpose_1230
 from pydtnn.utils.best_transpose_2d_f2c import best_transpose_2d_f2c
 
@@ -264,16 +264,17 @@ class ConvGemm:
                                                                     PYDTNN_OPS_CONVGEMM_TRANS_X_PAD)
             # Hand made alternative to:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
-            b, c, h, w = x.shape
-            new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
+            # b, c, h, w = x.shape
+            # new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
             # Padding alternative 1)
             #  x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
             #  x_padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = x
             # Padding alternative 2)
             # Better for matrices greater than a given size (but is machine dependant).
-            #  x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
+            #  x_padded = np.zeros((b, c, new_h, new_w), x.dtype), no if best: self.x_padded_cache[(b, c, new_h, new_w)]
             #  pad_cython(x, x_padded)
             # Padding alternative 3)
+            # x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
             x_padded = best_pad(x, vpadding, hpadding)
             vpadding = hpadding = 0
             with suppress(AttributeError):
@@ -378,7 +379,8 @@ class ConvGemm:
         # weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
         # transpose_1230_ji_cython(weights, weights_cg)
         # NEW(wxh): 7)
-        weights_cg = best_transpose_1230(weights)
+        weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
+        best_transpose_1230(weights, weights_cg)
         if trans:
             with suppress(AttributeError):
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -476,8 +478,7 @@ class ConvGemm:
         # self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
         #                                ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
         # * NEW(wxh) 6):
-        out = best_transpose_2d_f2c(biases_cg)
-        return out
+        return best_transpose_2d_f2c(biases_cg)
 
     def deconv_gemm(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1):
         """
@@ -530,12 +531,13 @@ class ConvGemm:
         #   DY → kn×ho*wo*b  | PyDTNN (C order): b×kn×ho×wo (F order: wo×ho×kn×b)
         #                                        0 1  2  3             3  2  1 0
         #        1  3  2  0  ->  0231
-        dy_cg = self.dy_cg_cache[(b, ho, wo, kn)]
         with suppress(AttributeError):
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                                             self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
                                                             PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY)
-        transpose_0231_ikj_cython(dy, dy_cg)  # Faster than the ijk version
+        dy_cg = self.dy_cg_cache[(b, ho, wo, kn)]
+        # transpose_0231_ikj_cython(dy, dy_cg)  # Faster than the ijk version
+        best_transpose_0231(dy, dy_cg)
         with suppress(AttributeError):
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 

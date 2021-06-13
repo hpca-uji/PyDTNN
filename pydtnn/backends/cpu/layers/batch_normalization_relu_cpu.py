@@ -21,6 +21,7 @@ from pydtnn.cython_modules import bn_relu_inference_cython
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.model import TRAIN_MODE
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
@@ -33,7 +34,8 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                x = x.transpose(0, 2, 3, 1)
+                # x = x.transpose(0, 2, 3, 1)
+                x = best_transpose_0231(x)
             x = x.reshape(-1, self.ci)
 
         y = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
