@@ -243,6 +243,8 @@ class ConvGemm:
             The result of alpha * weights * im2col(x_padded) + beta * biases.
         """
 
+        # TODO: Support dilated convolutions
+        assert vdilation == 1 and hdilation == 1, "Conv gemm does not yet support dilated convolutions"
         # convGemm expected order for all matrices
         # ----------------------------------------
         #   Where I→hi×wi×ci×b corresponds to the input tensor, | PyDTNN (C order): b×ci×hi×wi   (F order: wi×hi×ci×b)
@@ -515,6 +517,8 @@ class ConvGemm:
         array_like
             The dx matrix.
         """
+        # TODO: Support dilated deconvolutions
+        assert vdilation == 1 and hdilation == 1, "Deconv gemm does not yet support dilated deconvolutions"
 
         # Get matrices dimensions
         kn, ck, kh, kw = weights.shape
