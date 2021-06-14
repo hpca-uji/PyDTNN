@@ -331,8 +331,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
         if s == 1:
             return None, 1
         x_reorder = []
-        for i in range(d * (kx - 1) + 1):
-            x_reorder += [i + j * s for j in range(xo)]
+        for i in range(kx):
+            x_reorder += [i * d + j * s for j in range(xo)]
         # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
         return np.array(x_reorder), xo
 
