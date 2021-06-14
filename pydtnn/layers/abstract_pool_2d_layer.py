@@ -49,7 +49,7 @@ class AbstractPool2DLayer(Layer, ABC):
         self.co = self.ci
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
-        assert self.ho > 0 and self.wo > 0
+        assert self.ho > 0 and self.wo > 0, "Output dimensions must be greater than 0"
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
         self.n = np.prod(self.shape)
 
