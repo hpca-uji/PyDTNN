@@ -29,7 +29,7 @@ import numpy as np
 class Conv2D(Layer, ABC):
 
     def __init__(self, nfilters=1, filter_shape=(3, 3), grouping=None, padding=0, stride=1,
-                 activation="", use_bias=True, weights_initializer="glorot_uniform",
+                 dilation=1, activation="", use_bias=True, weights_initializer="glorot_uniform",
                  biases_initializer="zeros"):
         super().__init__()
         self.co = nfilters
@@ -37,8 +37,10 @@ class Conv2D(Layer, ABC):
         self.grouping = grouping
         self.padding = padding
         self.stride = stride
+        self.dilation = dilation
         self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
         self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
+        self.vdilation, self.hdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.act = getattr(activations, activation, None)
         self.use_bias = use_bias
         self.weights_initializer = getattr(initializers, weights_initializer)
@@ -70,12 +72,13 @@ class Conv2D(Layer, ABC):
                 self.weights_shape = (self.co, self.ci, *self.filter_shape)
             else:
                 self.weights_shape = (self.ci, *self.filter_shape, self.co)
-        self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
-        self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
+        self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
+        self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
         self.nparams = np.prod(self.weights_shape) + (self.co if self.use_bias else 0)
 
     def show(self, attrs=""):
-        super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape),
+        super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
-                                                f"stride=({self.vstride},{self.hstride})"))
+                                                f"stride=({self.vstride},{self.hstride}), "
+                                                f"dilat=({self.vdilation},{self.hdilation})"))

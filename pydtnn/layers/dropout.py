@@ -33,4 +33,4 @@ class Dropout(Layer, ABC):
         self.shape = prev_shape
 
     def show(self, attrs=""):
-        super().show("|{:^19s}|{:^24s}|".format("", "rate=%.2f" % self.rate))
+        super().show("|{:^19s}|{:^37s}|".format("", "rate=%.2f" % self.rate))

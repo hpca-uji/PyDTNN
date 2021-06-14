@@ -78,7 +78,8 @@ class ConvGemm:
 
     Methods
     -------
-    conv_gemm(weights, x, biases, alpha, beta, vpadding, hpadding, vstride, hstride, biases_vector)
+    conv_gemm(weights, x, biases, alpha, beta, vpadding, hpadding, vstride, hstride,
+              vdilation, hdilation, biases_vector)
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
 
@@ -194,7 +195,7 @@ class ConvGemm:
             pass
 
     def conv_gemm(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                  biases_vector=None, trans=False):
+                  vdilation=1, hdilation=1, biases_vector=None, trans=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -227,6 +228,10 @@ class ConvGemm:
             The vertical stride.
         hstride : int
             The horizontal stride.
+        vdilation : int
+            The vertical dilation.
+        hdilation : int
+            The horizontal dilation.
         biases_vector: array_like
             The biases that have to be summed to all the elements in each output channel.
         trans: bool
@@ -284,8 +289,8 @@ class ConvGemm:
             # Compute height and weight of the output
             # Note: h and w are obtained from x_padded (no from x) and vpadding and
             #       hpadding were set to 0 just to use the usual formulation
-            ho = (h + 2 * vpadding - kh) // vstride + 1
-            wo = (w + 2 * hpadding - kw) // hstride + 1
+            ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+            wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
         else:
             assert biases is not None, "If using the transposed convGemm, the biases matrix must be supplied"
             # if trans: Filters = Output_1023 x Im2ColT(Input)
@@ -470,7 +475,8 @@ class ConvGemm:
 
         return out
 
-    def deconv_gemm(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1):
+    def deconv_gemm(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
+                    vstride=1, hstride=1, vdilation=1, hdilation=1):
         """
         Calls the appropriate deconv_gemm function from libconvGemm.so to perform
         an inplace matrix matrix multiplication and deconvolution:
@@ -499,6 +505,10 @@ class ConvGemm:
             The vertical stride.
         hstride : int
             The horizontal stride.
+        vdilation : int
+            The vertical dilation.
+        hdilation : int
+            The horizontal dilation.
 
         Returns
         -------
@@ -617,6 +627,8 @@ def __usage_example__():
     hpadding = 1  # Horizontal padding
     vstride = 2  # Vertical stride
     hstride = 2  # Horizontal stride
+    vdilation = 1  # Vertical dilation
+    hdilation = 1  # Horizontal dilation
     # Create weights, x, and biases matrices from previous parameters. If no biases
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
@@ -625,30 +637,33 @@ def __usage_example__():
     weights[1][1][1][1] = 3.0
     weights[2][2][2][2] = 4.0
     x = np.ones((b, c, h, w)).astype(np.float32, order='C')
-    ho = (h + 2 * vpadding - kh) // vstride + 1
-    wo = (w + 2 * hpadding - kw) // hstride + 1
+    ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+    wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * biases...")
     conv_gemm = ConvGemm(debug=False)
     conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                            vpadding=vpadding, hpadding=hpadding,
-                                           vstride=vstride, hstride=hstride)
+                                           vstride=vstride, hstride=hstride,
+                                           vdilation=vdilation, hdilation=hdilation)
     print(conv_gemm_result)
     print("Sum: ", conv_gemm_result.sum())
     conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(weights, x,
                                                      vpadding=vpadding, hpadding=hpadding,
-                                                     vstride=vstride, hstride=hstride),
+                                                     vstride=vstride, hstride=hstride,
+                                                     vdilation=vdilation, hdilation=hdilation),
                          number=10) / 10
     print("conv_gemm time: {:.4f}".format(conv_gemm_t))
     print()
     print("Using im2col and mm...")
-    x_c = im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride)
+    x_c = im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = w_c @ x_c + biases
     print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
     print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
-    im2col_t = timeit(lambda: im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride), number=10) / 10
+    im2col_t = timeit(lambda: im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride,
+                                                 vdilation, hdilation), number=10) / 10
     print("im2col time: {:.4f}".format(im2col_t))
     mm_t = timeit(lambda: w_c @ x_c + biases, number=10) / 10
     print("mm time: {:.4f}".format(mm_t))

@@ -25,23 +25,27 @@ from cython.parallel import prange
 # This code has been inspired from cthorey, see:
 #    https://github.com/cthorey/CS231/blob/master/assignment2/cs231n/im2col_cython.pyx
 
-def im2col_nchw_cython(x, int kh, int kw, int vpadding, int hpadding, int vstride, int hstride):
+def im2col_nchw_cython(x, int kh, int kw, int vpadding, int hpadding,
+                       int vstride, int hstride, int vdilation, int hdilation):
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
     cdef int w = x.shape[3]
 
-    cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
+    cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     cdef np.ndarray cols = np.zeros((c * kh * kw, n * hh * ww), dtype=x.dtype)
 
     if x.dtype == np.int8:
-        im2col_nchw_cython_inner_int8(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+        im2col_nchw_cython_inner_int8(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,
+                                      vstride, hstride, vdilation, hdilation)
     elif x.dtype == np.float32:
-        im2col_nchw_cython_inner_float32(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+        im2col_nchw_cython_inner_float32(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,
+                                      vstride, hstride, vdilation, hdilation)
     elif x.dtype == np.float64:
-        im2col_nchw_cython_inner_float64(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+        im2col_nchw_cython_inner_float64(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,
+                                      vstride, hstride, vdilation, hdilation)
     else:
         raise TypeError("Type '{}' is not supported by im2col_nchw_cython!".format(str(cols.dtype)))
 
@@ -53,7 +57,8 @@ cdef int im2col_nchw_3x3_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] c
                                          np.ndarray[np.float32_t, ndim=4] x,
                                          int n, int c, int h, int w, int hh, int ww,
                                          int kh, int kw, int vpadding, int hpadding,
-                                         int vstride, int hstride) except? -1:
+                                         int vstride, int hstride,
+                                         int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True, schedule='static'):
@@ -62,10 +67,10 @@ cdef int im2col_nchw_3x3_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] c
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     cols[row, col] = x[nn, cc, x_x, x_y]
@@ -76,7 +81,8 @@ cdef int im2col_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                                        np.ndarray[np.int8_t, ndim=4] x,
                                        int n, int c, int h, int w, int hh, int ww,
                                        int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride) except? -1:
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -85,10 +91,10 @@ cdef int im2col_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     cols[row, col] = x[nn, cc, x_x, x_y]
@@ -99,7 +105,8 @@ cdef int im2col_nchw_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
                                        np.ndarray[np.float32_t, ndim=4] x,
                                        int n, int c, int h, int w, int hh, int ww,
                                        int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride) except? -1:
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -108,10 +115,10 @@ cdef int im2col_nchw_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     cols[row, col] = x[nn, cc, x_x, x_y]
@@ -122,7 +129,8 @@ cdef int im2col_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
                                        np.ndarray[np.float64_t, ndim=4] x,
                                        int n, int c, int h, int w, int hh, int ww,
                                        int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride) except? -1:
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -131,10 +139,10 @@ cdef int im2col_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     cols[row, col] = x[nn, cc, x_x, x_y]
@@ -142,18 +150,23 @@ cdef int im2col_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
 def col2im_nchw_cython(cols,
                   int n, int c, int h, int w,
                   int kh, int kw,
-                  int vpadding, int hpadding, int vstride, int hstride):
-    cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
+                  int vpadding, int hpadding,
+                  int vstride, int hstride,
+                  int vdilation, int hdilation):
+    cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     cdef np.ndarray x = np.zeros((n, c, h, w), dtype=cols.dtype)
 
     if cols.dtype == np.int8:
-        col2im_nchw_cython_inner_int8(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+        col2im_nchw_cython_inner_int8(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,
+                                      vstride, hstride, vdilation, hdilation)
     elif cols.dtype == np.float32:
-        col2im_nchw_cython_inner_float32(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+        col2im_nchw_cython_inner_float32(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,
+                                      vstride, hstride, vdilation, hdilation)
     elif cols.dtype == np.float64:
-        col2im_nchw_cython_inner_float64(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+        col2im_nchw_cython_inner_float64(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,
+                                      vstride, hstride, vdilation, hdilation)
     else:
         raise TypeError("Type '{}' is not supported by col2im_nchw_cython!".format(str(cols.dtype)))
 
@@ -165,7 +178,8 @@ cdef int col2im_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                                        np.ndarray[np.int8_t, ndim=4] x,
                                        int n, int c, int h, int w, int hh, int ww,
                                        int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride) except? -1:
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -174,34 +188,34 @@ cdef int col2im_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] cols,
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     x[nn, cc, x_x, x_y] += cols[row, col]
 
 #                                   x_x                           x_y
-#                           x[n, c, vstride * xx + ii - vpadding, hstride * yy + jj - hpadding] += cols[]
+#                           x[n, c, vstride * xx + vdilation * ii - vpadding, hstride * yy + hdilation * jj - hpadding] += cols[]
 # Throw away 1)
-# x_x = vstride * xx + ii - vpadding
+# x_x = vstride * xx + vdilation * ii - vpadding
 # if x_x < 0 or x_x >= H:
 #   continue
 #
 # Throw away 2)
-# x_y = hstride * yy + jj - hpadding
+# x_y = hstride * yy + hdilation * jj - hpadding
 # if x_y < 0 or x_y >= W:
 #  continue
 
 # Alternative to throw away 1)
 # Range for xx: from:  / a >=0
-#                      \ vstride * xx + ii - vpadding >= 0
+#                      \ vstride * xx + vdilation * ii - vpadding >= 0
 #                         -> a >= (vpadding - ii) // vstride
 #                      -> xx = max(0, (vpadding - ii) // vstride))
 
 #               to:    / xx < HH
-#                      \ vstride * xx + ii - vpadding < H
+#                      \ vstride * xx + vdilation * ii - vpadding < H
 #                         -> xx < H + (vpadding - ii) // vstride
 #                      -> xx = min(HH, H + (vpadding - ii) // vstride))
 
@@ -211,7 +225,8 @@ cdef int col2im_nchw_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
                                        np.ndarray[np.float32_t, ndim=4] x,
                                        int n, int c, int h, int w, int hh, int ww,
                                        int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride) except? -1:
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -220,10 +235,10 @@ cdef int col2im_nchw_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] cols,
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     x[nn, cc, x_x, x_y] += cols[row, col]
@@ -234,7 +249,8 @@ cdef int col2im_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
                                        np.ndarray[np.float64_t, ndim=4] x,
                                        int n, int c, int h, int w, int hh, int ww,
                                        int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride) except? -1:
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -243,10 +259,10 @@ cdef int col2im_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] cols,
                 row = cc * kh * kw + ii * kw + jj
                 for nn in range(n):
                     for xx in range(hh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for yy in range(ww):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = nn * hh * ww + xx * ww + yy
                                     x[nn, cc, x_x, x_y] += cols[row, col]

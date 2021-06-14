@@ -374,9 +374,9 @@ class Model:
     def show(self):
         bfp = {np.float32: 4, np.float64: 8}[self.dtype]
         line = "+-------+--------------------------+---------+---------------+-------------------" \
-               "+------------------------+"
+               "+-------------------------------------+"
         head = "| Layer |           Type           | #Params | Output shape  |   Weights shape   " \
-               "|       Parameters       |"
+               "|             Parameters              |"
         print(line)
         print(head)
         for layer in self.layers:
@@ -384,7 +384,7 @@ class Model:
             layer.show()
         print(line)
         print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size(self.nparams * bfp):^15s} "
-              f"{'':19s} {'':24s}|")
+              f"{'':19s} {'':37s}|")
         print(line)
 
     def add(self, layer):

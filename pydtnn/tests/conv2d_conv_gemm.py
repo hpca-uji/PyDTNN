@@ -42,11 +42,15 @@ def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     params_gc.conv_gemm_trans = trans
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                           padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
+                           padding=(d.vpadding, d.hpadding),
+                           stride=(d.vstride, d.hstride),
+                           dilation=(d.vdilation, d.hdilation),
                            use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_i2c.set_model(model_i2c)
     conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                          padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
+                          padding=(d.vpadding, d.hpadding),
+                          stride=(d.vstride, d.hstride),
+                          dilation=(d.vdilation, d.hdilation),
                           use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_cg.set_model(model_cg)
     for layer in (conv2d_i2c, conv2d_cg):
@@ -211,6 +215,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (2, 2)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 1
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_handmade_array_stride2(self):
@@ -223,6 +228,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (2, 2)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 2
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_larger_handmade_array_stride2(self):
@@ -235,6 +241,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (2, 2)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 2
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_larger_handmade_array_stride3(self):
@@ -247,6 +254,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (2, 2)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 3
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_even_larger_handmade_array_stride3(self):
@@ -259,6 +267,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (2, 2)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 3
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self):
@@ -271,6 +280,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (1, 2)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 3
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self):
@@ -283,6 +293,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.kh, d.kw = (1, 1)
         d.vpadding = d.hpadding = 0
         d.vstride = d.hstride = 3
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_even_larger_handmade_array_stride12(self):
@@ -296,6 +307,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.vpadding = d.hpadding = 0
         d.vstride = 1
         d.hstride = 2
+        d.vdilation = d.hdilation = 1
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_alexnet_cifar10_first_conv2d(self):
@@ -306,6 +318,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.c, d.h, d.w = (3, 32, 32)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
+        d.vdilation = d.hdilation = (1, 1)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
@@ -320,6 +333,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.c, d.h, d.w = (3, 227, 227)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (4, 4)
+        d.vdilation = d.hdilation = (1, 1)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)

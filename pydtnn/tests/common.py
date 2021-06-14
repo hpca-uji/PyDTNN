@@ -31,7 +31,8 @@ def verbose_test():
 
 
 class D:
-    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1, vstride=1, hstride=1):
+    def __init__(self, b=1, c=1, h=128, w=100, kn=1, kh=16, kw=10, vpadding=1, hpadding=1,
+                 vstride=1, hstride=1, vdilation=1, hdilation=1):
         self.b = b  # Batch size
         self.c = c  # Channels per layer
         self.h = h  # Layers height
@@ -43,14 +44,16 @@ class D:
         self.hpadding = hpadding  # Horizontal padding
         self.vstride = vstride  # Vertical stride
         self.hstride = hstride  # Horizontal stride
+        self.vdilation = vdilation  # Vertical dilation
+        self.hdilation = hdilation  # Horizontal dilation
 
     @property
     def ho(self):
-        return (self.h + 2 * self.vpadding - self.kh) // self.vstride + 1
+        return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
     def wo(self):
-        return (self.w + 2 * self.hpadding - self.kw) // self.hstride + 1
+        return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
     def __repr__(self):
         return f"""\
@@ -60,20 +63,21 @@ x, weights, and y parameters:
   (kn, b, ho, wo) = {self.kn} {self.b} {self.ho} {self.wo}
   padding         = {self.vpadding} {self.hpadding}
   stride          = {self.vstride} {self.hstride}
+  dilation        = {self.vdilation} {self.hdilation}
 """
 
 
 alexnet_layers = [
     # AlexNet Cifar
-    D(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2),
-    D(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1),
-    D(64, 192, 4, 4, 384, 3, 3, 1, 1, 1, 1),
-    D(64, 384, 4, 4, 256, 3, 3, 1, 1, 1, 1),
-    D(64, 256, 4, 4, 256, 3, 3, 1, 1, 1, 1),
+    D(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2, 1, 1),
+    D(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1, 1, 1),
+    D(64, 192, 4, 4, 384, 3, 3, 1, 1, 1, 1, 1, 1),
+    D(64, 384, 4, 4, 256, 3, 3, 1, 1, 1, 1, 1, 1),
+    D(64, 256, 4, 4, 256, 3, 3, 1, 1, 1, 1, 1, 1),
     # AlexNet ImageNet
-    D(64, 3, 227, 227, 96, 11, 11, 1, 1, 4, 4),
-    D(64, 96, 27, 27, 256, 5, 5, 1, 1, 1, 1),
-    D(64, 256, 13, 13, 384, 3, 3, 1, 1, 1, 1),
-    D(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1),
-    D(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1),
+    D(64, 3, 227, 227, 96, 11, 11, 1, 1, 4, 4, 1, 1),
+    D(64, 96, 27, 27, 256, 5, 5, 1, 1, 1, 1, 1, 1),
+    D(64, 256, 13, 13, 384, 3, 3, 1, 1, 1, 1, 1, 1),
+    D(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1, 1, 1),
+    D(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1, 1, 1),
 ]

@@ -49,6 +49,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
             self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
         self.co = self.ci
+        assert self.vdilation == 1 and self.hdilation == 1, "cuDNN does not support dilated pooling"
 
         nan_prop = cudnn.cudnnNanPropagation['CUDNN_NOT_PROPAGATE_NAN']
 
