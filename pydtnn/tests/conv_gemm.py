@@ -446,7 +446,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 w_c = weights.reshape(d.kn, -1)
                 im2col_mm_result = w_c @ x_c
                 if verbose_test():
-                    print("{:3}    {:9.7f}".format(stride,
+                    print("{:3}    {:9.7f}".format(dilation,
                                                    max([abs(x - y) for x, y
                                                         in
                                                         zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
