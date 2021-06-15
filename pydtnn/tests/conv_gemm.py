@@ -228,8 +228,8 @@ class ConvGemmTestCase(unittest.TestCase):
         x = np.ones((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
         conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,
-                                                                      vstride=stride, hstride=stride,
-                                                                      vdilation=dilation, hdilation=dilation)
+                                                                      vstride=d.vstride, hstride=d.hstride,
+                                                                      vdilation=d.vdilation, hdilation=d.hdilation)
         self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result))
 
     def test_defaults_with_random(self):
@@ -241,8 +241,8 @@ class ConvGemmTestCase(unittest.TestCase):
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x,
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,
-                                                                      vstride=stride, hstride=stride,
-                                                                      vdilation=dilation, hdilation=dilation)
+                                                                      vstride=d.vstride, hstride=d.hstride,
+                                                                      vdilation=d.vdilation, hdilation=d.hdilation)
         # if verbose_test():
         #     print("Result[0, 0, 0, 1]=")
         #     partial_l = x[0, 0, 0:d.kh, 1:d.kw+1].flatten()
@@ -378,7 +378,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=stride, hstride=stride,
-                                                       vdilation=dilation, hdilation=dilation)
+                                                       vdilation=d.vdilation, hdilation=d.hdilation)
                 x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride,
                                          d.vdilation, d.hdilation)
                 w_c = weights.reshape(d.kn, -1)
@@ -410,7 +410,7 @@ class ConvGemmTestCase(unittest.TestCase):
                     conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                            vpadding=d.vpadding, hpadding=d.hpadding,
                                                            vstride=vstride, hstride=hstride,
-                                                           vdilation=vdilation, hdilation=dilation)
+                                                           vdilation=d.vdilation, hdilation=d.hdilation)
                     x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
                                              d.vdilation, d.hdilation)
                     w_c = weights.reshape(d.kn, -1)
@@ -423,6 +423,36 @@ class ConvGemmTestCase(unittest.TestCase):
                                                                      im2col_mm_result.flatten())])))
                     self.assertTrue(np.allclose(conv_gemm_result, im2col_mm_result),
                                     f"Results differ with vstride {vstride} and hstride {hstride}")
+
+    def test_with_different_dilation(self):
+        d = D()
+        if verbose_test():
+            print_with_header("{}".format(inspect.stack()[1][3]), None)
+            print("  s   Maximum difference")
+            print("----+--------------------")
+        conv_gemm = ConvGemm(debug=False)
+        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        np_all_close_for_all_cases = True
+        console = Console(force_terminal=not verbose_test())
+        with console.status("", spinner="bouncingBar"):
+            for dilation in range(1, 3):
+                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                                                       vpadding=d.vpadding, hpadding=d.hpadding,
+                                                       vstride=d.vstride, hstride=d.hstride,
+                                                       vdilation=dilation, hdilation=dilation)
+                x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
+                                         dilation, dilation)
+                w_c = weights.reshape(d.kn, -1)
+                im2col_mm_result = w_c @ x_c
+                if verbose_test():
+                    print("{:3}    {:9.7f}".format(stride,
+                                                   max([abs(x - y) for x, y
+                                                        in
+                                                        zip(conv_gemm_result.flatten(), im2col_mm_result.flatten())])))
+                np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result,
+                                                                                        im2col_mm_result)
+        self.assertTrue(np_all_close_for_all_cases)
 
     def test_alexnet_layers(self):
         if verbose_test():
