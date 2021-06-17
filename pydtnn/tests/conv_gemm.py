@@ -287,7 +287,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 weights = np.random.rand(kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
                 conv_gemm_result = conv_gemm.conv_gemm(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
-                                                       vstride=d.vstride, hstride=d.hstride)
+                                                       vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
                 x_c = im2col_nchw_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
