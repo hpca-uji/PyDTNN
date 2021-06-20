@@ -16,8 +16,6 @@ import unittest
 import warnings
 
 import numpy as np
-# noinspection PyUnresolvedReferences
-import pycuda.gpuarray as gpuarray
 
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
