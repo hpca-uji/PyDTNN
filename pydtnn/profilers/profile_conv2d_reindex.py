@@ -21,7 +21,8 @@ from pydtnn.layers import Conv2D
 
 class D:
 
-    def __init__(self, b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride):
+    def __init__(self, b, c, h, w, kn, kh, kw, vpadding, hpadding,
+                 vstride, hstride, vdilation, hdilation):
         self.b = b  # Batch size
         self.c = c  # Channels per layer
         self.h = h  # Layers height
@@ -33,14 +34,16 @@ class D:
         self.hpadding = hpadding  # Horizontal padding
         self.vstride = vstride  # Vertical stride
         self.hstride = hstride  # Horizontal stride
+        self.vdilation = vdilation  # Vertical dilation
+        self.hdilation = hdilation  # Horizontal dilation
 
     @property
     def ho(self):
-        return (self.h + 2 * self.vpadding - self.kh) // self.vstride + 1
+        return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
     def wo(self):
-        return (self.w + 2 * self.hpadding - self.kw) // self.hstride + 1
+        return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
     def __repr__(self):
         return f"""\
@@ -50,6 +53,7 @@ x, weights, and y parameters:
   (kn, b, ho, wo) = {self.kn} {self.b} {self.ho} {self.wo}
   padding         = {self.vpadding} {self.hpadding}
   stride          = {self.vstride} {self.hstride}
+  dilation        = {self.vdilation} {self.hdilation}
 """
 
 
@@ -71,13 +75,13 @@ def reindex_numpy(h_new_indexes, v_new_indexes, matrix_in):
     return matrix_out
 
 
-def time_reindex(w_shape, x_shape, y_shape, vstride, hstride, dtype=np.float32):
+def time_reindex(w_shape, x_shape, y_shape, vstride, hstride, vdilation, hdilation, dtype=np.float32):
     kn, c, kh, kw = w_shape
     b, c, h, w = x_shape
     kn, b, ho, wo = y_shape
 
-    h_new_indexes, cg_vstride = Conv2D._get_x_new_indexes_and_xstride(kh, ho, vstride)
-    v_new_indexes, cg_hstride = Conv2D._get_x_new_indexes_and_xstride(kw, wo, hstride)
+    h_new_indexes, cg_vstride = Conv2D._get_x_new_indexes_and_xstride(kh, ho, vstride, vdilation)
+    v_new_indexes, cg_hstride = Conv2D._get_x_new_indexes_and_xstride(kw, wo, hstride, hdilation)
 
     matrix_in = np.random.rand(*x_shape).astype(dtype=dtype)
     new_h = len(h_new_indexes) if h_new_indexes is not None else h
@@ -122,20 +126,20 @@ def time_reindex(w_shape, x_shape, y_shape, vstride, hstride, dtype=np.float32):
 
 
 if __name__ == '__main__':
-    # D(b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride):
+    # D(b, c, h, w, kn, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation):
     layers = [
         # AlexNet Cifar
-        D(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2),
-        D(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1),
-        D(64, 192, 4, 4, 384, 3, 3, 1, 1, 1, 1),
-        D(64, 384, 4, 4, 256, 3, 3, 1, 1, 1, 1),
-        D(64, 256, 4, 4, 256, 3, 3, 1, 1, 1, 1),
+        D(64, 3, 32, 32, 64, 3, 3, 1, 1, 2, 2, 1, 1),
+        D(64, 64, 8, 8, 192, 3, 3, 1, 1, 1, 1, 1, 1),
+        D(64, 192, 4, 4, 384, 3, 3, 1, 1, 1, 1, 1, 1),
+        D(64, 384, 4, 4, 256, 3, 3, 1, 1, 1, 1, 1, 1),
+        D(64, 256, 4, 4, 256, 3, 3, 1, 1, 1, 1, 1, 1),
         # AlexNet ImageNet
-        D(64, 3, 227, 227, 96, 11, 11, 1, 1, 4, 4),
-        D(64, 96, 27, 27, 256, 5, 5, 1, 1, 1, 1),
-        D(64, 256, 13, 13, 384, 3, 3, 1, 1, 1, 1),
-        D(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1),
-        D(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1),
+        D(64, 3, 227, 227, 96, 11, 11, 1, 1, 4, 4, 1, 1),
+        D(64, 96, 27, 27, 256, 5, 5, 1, 1, 1, 1, 1, 1),
+        D(64, 256, 13, 13, 384, 3, 3, 1, 1, 1, 1, 1, 1),
+        D(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1, 1, 1),
+        D(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1, 1, 1),
     ]
     backward_layers = []
     for layer in layers:
@@ -143,7 +147,8 @@ if __name__ == '__main__':
             continue
         # w <- y (kn * b * ho * wo)
         backward_layers.append(D(layer.c, layer.b, layer.h, layer.w, layer.kn, layer.ho, layer.wo,
-                                 layer.vpadding, layer.hpadding, layer.vstride, layer.hstride))
+                                 layer.vpadding, layer.hpadding, layer.vstride, layer.hstride,
+                                 layer.vdilation, layer.hdilation))
     layers += backward_layers
     # Keep only those layers with vstride != 1 or hstride != 1
     layers = [la for la in layers if la.vstride != 1 or la.hstride != 1]
@@ -158,7 +163,8 @@ if __name__ == '__main__':
         _w_shape = (layer.kn, layer.c, layer.kh, layer.kw)
         _x_shape = (layer.b, layer.c, layer.h, layer.w)
         _y_shape = (layer.kn, layer.b, layer.ho, layer.wo)
-        headers, values = time_reindex(_w_shape, _x_shape, _y_shape, layer.vstride, layer.hstride)
+        headers, values = time_reindex(_w_shape, _x_shape, _y_shape,
+                                       layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
         if t is None:
             t = Table(box=box.HORIZONTALS, show_header=True, header_style="blue")
             t.add_column("x shape")

@@ -39,4 +39,4 @@ class FC(Layer, ABC):
             self.grad_vars["biases"] = "db"
 
     def show(self, attrs=""):
-        super().show("|{:^19s}|{:^24s}|".format(str(self.weights.shape), ""))
+        super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape), ""))

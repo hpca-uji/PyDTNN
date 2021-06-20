@@ -22,26 +22,30 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def average_pool_2d_fwd_nchw_cython(x, int kh, int kw, int vpadding, int hpadding, int vstride, int hstride):
+def average_pool_2d_fwd_nchw_cython(x, int kh, int kw, int vpadding, int hpadding,
+                                    int vstride, int hstride, int vdilation, int hdilation):
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
     cdef int w = x.shape[3]
 
-    cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
+    cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     cdef np.ndarray y = np.zeros((n, c, hh, ww), dtype=x.dtype)
 
     if x.dtype == np.int8:
         average_pool_2d_fwd_nchw_cython_inner_int8(y, x, n, h, w, c,
-                                                   hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+                                                   hh, ww, kh, kw, vpadding, hpadding,
+                                                   vstride, hstride, vdilation, hdilation)
     elif x.dtype == np.float32:
         average_pool_2d_fwd_nchw_cython_inner_float32(y, x, n, h, w, c,
-                                                   hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+                                                   hh, ww, kh, kw, vpadding, hpadding,
+                                                   vstride, hstride, vdilation, hdilation)
     elif x.dtype == np.float64:
         average_pool_2d_fwd_nchw_cython_inner_float64(y, x, n, h, w, c,
-                                                   hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+                                                   hh, ww, kh, kw, vpadding, hpadding,
+                                                   vstride, hstride, vdilation, hdilation)
     else:
         raise TypeError("Type '{}' is not supported by average_pool_2d_fwd_nchw_cython!".format(str(y.dtype)))
 
@@ -53,7 +57,8 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=4
                                                 np.ndarray[np.int8_t, ndim=4] x,
                                                 int n, int h, int w, int c, int hh, int ww,
                                                 int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride) except? -1:
+                                                int vstride, int hstride, 
+                                                int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y, items
     cdef np.int8_t accum
 
@@ -64,10 +69,10 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=4
                     accum, items = 0, 0
                     # accum, items = 0, (kh * kw)
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     accum = accum + x[nn, cc, x_x, x_y]
                                     items = items + 1
@@ -79,7 +84,8 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_float32(np.ndarray[np.float32_t, 
                                                 np.ndarray[np.float32_t, ndim=4] x,
                                                 int n, int h, int w, int c, int hh, int ww,
                                                 int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride) except? -1:
+                                                int vstride, int hstride,
+                                                int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y, items
     cdef np.float32_t accum
 
@@ -90,10 +96,10 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_float32(np.ndarray[np.float32_t, 
                     accum, items = 0, 0
                     # accum, items = 0, (kh * kw)
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     accum = accum + x[nn, cc, x_x, x_y]
                                     items = items + 1
@@ -105,7 +111,8 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_float64(np.ndarray[np.float64_t, 
                                                 np.ndarray[np.float64_t, ndim=4] x,
                                                 int n, int h, int w, int c, int hh, int ww,
                                                 int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride) except? -1:
+                                                int vstride, int hstride,
+                                                int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y, items
     cdef np.float64_t accum
 
@@ -116,10 +123,10 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_float64(np.ndarray[np.float64_t, 
                     accum, items = 0, 0
                     # accum, items = 0, (kh * kw)
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     accum = accum + x[nn, cc, x_x, x_y]
                                     items = items + 1
@@ -128,21 +135,26 @@ cdef int average_pool_2d_fwd_nchw_cython_inner_float64(np.ndarray[np.float64_t, 
 def average_pool_2d_bwd_nchw_cython(y,
                                 int n, int h, int w, int c,
                                 int kh, int kw,
-                                int vpadding, int hpadding, int vstride, int hstride):
-    cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
+                                int vpadding, int hpadding,
+                                int vstride, int hstride,
+                                int vdilation, int hdilation):
+    cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     cdef np.ndarray x = np.zeros((n, c, h, w), dtype=y.dtype)
 
     if y.dtype == np.int8:
         average_pool_2d_bwd_nchw_cython_inner_int8(y, x, n, h, w, c,
-                                                   hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+                                                   hh, ww, kh, kw, vpadding, hpadding,
+                                                   vstride, hstride, vdilation, hdilation)
     elif y.dtype == np.float32:
         average_pool_2d_bwd_nchw_cython_inner_float32(y, x, n, h, w, c,
-                                                   hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+                                                   hh, ww, kh, kw, vpadding, hpadding,
+                                                   vstride, hstride, vdilation, hdilation)
     elif y.dtype == np.float64:
         average_pool_2d_bwd_nchw_cython_inner_float64(y, x, n, h, w, c,
-                                                   hh, ww, kh, kw, vpadding, hpadding, vstride, hstride)
+                                                   hh, ww, kh, kw, vpadding, hpadding,
+                                                   vstride, hstride, vdilation, hdilation)
     else:
         raise TypeError("Type '{}' is not supported by average_pool_2d_bwd_nchw_cython!".format(str(y.dtype)))
 
@@ -154,7 +166,8 @@ cdef int average_pool_2d_bwd_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=4
                                                 np.ndarray[np.int8_t, ndim=4] x,
                                                 int n, int h, int w, int c, int hh, int ww,
                                                 int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride) except? -1:
+                                                int vstride, int hstride,
+                                                int vdilation, int hdilation) except? -1:
     cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, items
     cdef np.int8_t avgval
 
@@ -164,19 +177,19 @@ cdef int average_pool_2d_bwd_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=4
                 for yy in range(ww):
                     items = 0
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     items = items + 1
                     avgval = y[nn, cc, xx, yy] // items
                     # avgval = y[nn, xx, yy, cc] // (kh * kw)
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     x[nn, cc, x_x, x_y] += avgval
 
@@ -186,7 +199,8 @@ cdef int average_pool_2d_bwd_nchw_cython_inner_float32(np.ndarray[np.float32_t, 
                                                 np.ndarray[np.float32_t, ndim=4] x,
                                                 int n, int h, int w, int c, int hh, int ww,
                                                 int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride) except? -1:
+                                                int vstride, int hstride,
+                                                int vdilation, int hdilation) except? -1:
     cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, items
     cdef np.float32_t avgval
 
@@ -196,19 +210,19 @@ cdef int average_pool_2d_bwd_nchw_cython_inner_float32(np.ndarray[np.float32_t, 
                 for yy in range(ww):
                     items = 0
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     items = items + 1
                     avgval = y[nn, cc, xx, yy] / items
                     # avgval = y[nn, xx, yy, cc] // (kh * kw)
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     x[nn, cc, x_x, x_y] += avgval
 
@@ -218,7 +232,8 @@ cdef int average_pool_2d_bwd_nchw_cython_inner_float64(np.ndarray[np.float64_t, 
                                                 np.ndarray[np.float64_t, ndim=4] x,
                                                 int n, int h, int w, int c, int hh, int ww,
                                                 int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride) except? -1:
+                                                int vstride, int hstride,
+                                                int vdilation, int hdilation) except? -1:
     cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, items
     cdef np.float64_t avgval
 
@@ -228,18 +243,18 @@ cdef int average_pool_2d_bwd_nchw_cython_inner_float64(np.ndarray[np.float64_t, 
                 for yy in range(ww):
                     items = 0
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     items = items + 1
                     avgval = y[nn, cc, xx, yy] / items
                     # avgval = y[nn, xx, yy, cc] // (kh * kw)
                     for ii in range(kh):
-                        x_x = vstride * xx + ii - vpadding
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
                             for jj in range(kw):
-                                x_y = hstride * yy + jj - hpadding
+                                x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     x[nn, cc, x_x, x_y] += avgval

@@ -41,6 +41,7 @@ class Conv2DReluCPU(Conv2DCPU, Conv2DRelu):
         res = self.cg.conv_gemm(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation,
                                 biases_vector=biases_vector)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 

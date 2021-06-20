@@ -19,6 +19,9 @@
 
 import importlib
 from contextlib import suppress
+
+from . import cpu
+from . import gpu
 from .. import model as model_module
 
 
@@ -55,7 +58,7 @@ class PromoteToBackendMixin:
         for i, submodule in enumerate(module_submodules):
             if submodule == "backends":
                 with suppress(IndexError):
-                    suffix = module_submodules[i+1].upper()
+                    suffix = module_submodules[i + 1].upper()
                 break
         if suffix != "":
             suffix_len = len(suffix)

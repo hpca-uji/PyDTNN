@@ -92,7 +92,7 @@ class LayerAndActivationBase(ABC):
 
     def show(self, attrs=""):
         if not attrs:
-            attrs = "|{:19s}|{:^24s}|".format("", "")
+            attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
 
     @property

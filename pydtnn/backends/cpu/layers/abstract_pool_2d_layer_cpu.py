@@ -19,32 +19,17 @@
 
 from abc import ABC
 
-import numpy as np
-
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
 class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
-        if self.pool_shape[0] == 0:
-            self.pool_shape = (self.hi, self.pool_shape[1])
-        if self.pool_shape[1] == 0:
-            self.pool_shape = (self.pool_shape[0], self.wi)
-        self.kh, self.kw = self.pool_shape
-        self.ho = (self.hi + 2 * self.vpadding - self.kh) // self.vstride + 1
-        self.wo = (self.wi + 2 * self.hpadding - self.kw) // self.hstride + 1
-        assert self.ho > 0 and self.wo > 0
-        self.co = self.ci
-        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
-        self.n = np.prod(self.shape)
 
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
             setattr(self, "forward", self._forward_nchw_cython)

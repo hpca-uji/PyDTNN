@@ -68,9 +68,8 @@ class Conv2DGPU(LayerGPU, Conv2D):
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Create convolution descriptor
         self.conv_desc = cudnn.cudnnCreateConvolutionDescriptor()
-        upscale_x, upscale_y = 1, 1
         cudnn.cudnnSetConvolution2dDescriptor(self.conv_desc, self.vpadding, self.hpadding,
-                                              self.vstride, self.hstride, upscale_x, upscale_y,
+                                              self.vstride, self.hstride, self.vdilation, self.hdilation,
                                               conv_mode, self.model.cudnn_dtype)
         # Set grouping options
         if self.grouping == "depthwise":

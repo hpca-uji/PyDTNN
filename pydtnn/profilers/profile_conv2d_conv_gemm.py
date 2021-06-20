@@ -35,14 +35,16 @@ class D:
         self.hpadding = 1  # Horizontal padding
         self.vstride = 1  # Vertical stride
         self.hstride = 1  # Horizontal stride
+        self.vdilation = 1  # Vertical dilation
+        self.hdilation = 1  # Horizontal dilation
 
     @property
     def ho(self):
-        return (self.h + 2 * self.vpadding - self.kh) // self.vstride + 1
+        return (self.h + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
 
     @property
     def wo(self):
-        return (self.w + 2 * self.hpadding - self.kw) // self.hstride + 1
+        return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
 
     def __repr__(self):
         return f"""\
@@ -52,6 +54,7 @@ x, weights, and y parameters:
   (kn, b, ho, wo) = {self.kn} {self.b} {self.ho} {self.wo}
   padding         = {self.vpadding} {self.hpadding}
   stride          = {self.vstride} {self.hstride}
+  dilation        = {self.vdilation} {self.hdilation}
 """
 
 
@@ -81,12 +84,14 @@ def get_conv2d_layers(d):
     params_gc.enable_conv_gemm = True
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                        padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
+                        padding=(d.vpadding, d.hpadding),
+                        stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_i2c.debug = True
     conv2d_i2c.set_model(model_i2c)
     conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                       padding=(d.vpadding, d.hpadding), stride=(d.vstride, d.hstride),
+                       padding=(d.vpadding, d.hpadding),
+                       stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
     conv2d_cg.debug = True
     conv2d_cg.set_model(model_cg)
@@ -196,6 +201,7 @@ class PerfTestConv2DConvGemm:
         d.c, d.h, d.w = (3, 32, 32)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
+        d.vdilation, d.hdilation = (1, 1)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
@@ -208,6 +214,7 @@ class PerfTestConv2DConvGemm:
         d.c, d.h, d.w = (64, 8, 8)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (1, 1)
+        d.vdilation, d.hdilation = (1, 1)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
@@ -220,6 +227,7 @@ class PerfTestConv2DConvGemm:
         d.c, d.h, d.w = (384, 3, 3)
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (1, 1)
+        d.vdilation, d.hdilation = (1, 1)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
@@ -234,6 +242,7 @@ class PerfTestConv2DConvGemm:
         d.c, d.h, d.w = (3, 227, 227)
         d.vpadding, d.hpadding = (0, 0)
         d.vstride, d.hstride = (4, 4)
+        d.vdilation, d.hdilation = (1, 1)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
