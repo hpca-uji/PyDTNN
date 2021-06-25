@@ -21,6 +21,8 @@ Common methods and properties for various unitary tests
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+import numpy as np
+
 import sys
 
 
@@ -46,6 +48,7 @@ class D:
         self.hstride = hstride  # Horizontal stride
         self.vdilation = vdilation  # Vertical dilation
         self.hdilation = hdilation  # Horizontal dilation
+        self.dtype = np.float32
 
     @property
     def ho(self):
@@ -54,6 +57,10 @@ class D:
     @property
     def wo(self):
         return (self.w + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
+
+    @property
+    def shape(self):
+        return self.b, self.c, self.h, self.w
 
     def __repr__(self):
         return f"""\
@@ -81,3 +88,11 @@ alexnet_layers = [
     D(64, 384, 13, 13, 384, 3, 3, 1, 1, 1, 1, 1, 1),
     D(64, 384, 13, 13, 256, 3, 3, 1, 1, 1, 1, 1, 1),
 ]
+
+alexnet_backward_layers = []
+for layer in alexnet_layers:
+    # w <- y (kn * b * ho * wo)
+    alexnet_backward_layers.append(D(layer.c, layer.b, layer.h, layer.w, layer.kn, layer.ho, layer.wo,
+                                     layer.vpadding, layer.hpadding, layer.vstride, layer.hstride))
+
+alexnet_all_layers = alexnet_layers + alexnet_backward_layers

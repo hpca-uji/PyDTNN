@@ -21,7 +21,7 @@ import numpy as np
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.tools import print_with_header
-from ..model import Model
+from ..model import Model, TRAIN_MODE
 
 
 class Params:
@@ -32,8 +32,10 @@ def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
+    params.enable_best_of = False
     params.tensor_format = 'NCHW'
     model_i2c = Model(**vars(params))
+    model_i2c.mode = TRAIN_MODE
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True
     params_gc.conv_gemm_cache = True
@@ -41,6 +43,7 @@ def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     params_gc.conv_gemm_deconv = deconv
     params_gc.conv_gemm_trans = trans
     model_cg = Model(**vars(params_gc))
+    model_cg.mode = TRAIN_MODE
     conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                            padding=(d.vpadding, d.hpadding),
                            stride=(d.vstride, d.hstride),

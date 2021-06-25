@@ -72,7 +72,8 @@ parser.add_argument('--weights_and_bias_filename', type=str, default=None)
 parser.add_argument('--history_file', type=str, default=None)
 parser.add_argument('--shared_storage', default=False, type=bool_lambda)
 parser.add_argument('--enable_fused_relus', type=bool_lambda, default=False)
-parser.add_argument('--tensor_format', type=lambda s : s.upper(), default="NHWC")
+parser.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
+parser.add_argument('--enable_best_of', type=bool_lambda, default=False)
 
 # Dataset options
 _ds_group = parser.add_argument_group("Dataset options")
@@ -105,7 +106,8 @@ _op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
 
 # Learning rate schedulers options
 _lr_group = parser.add_argument_group("Learning rate schedulers options")
-_lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
+_lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
+                       default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
 _lr_group.add_argument('--warm_up_epochs', type=int, default=5)
 _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
 _lr_group.add_argument('--early_stopping_patience', type=int, default=10)
