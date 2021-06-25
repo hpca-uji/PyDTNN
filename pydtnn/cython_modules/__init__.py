@@ -38,6 +38,7 @@ from reindex_cython import reindex_cython
 from relu_cython import relu_cython
 from transpose_cython import \
     transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
+    transpose_0312_ijk_cython, transpose_0312_ikj_cython, \
     transpose_1023_jik_cython, transpose_1023_ijk_cython, \
     transpose_1230_ji_cython, transpose_1230_ij_cython, \
     transpose_2d_f2c_ji_cython, transpose_2d_f2c_ij_cython

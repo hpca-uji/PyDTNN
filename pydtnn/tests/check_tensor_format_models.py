@@ -22,6 +22,7 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test
+from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 
 class Params:
@@ -60,7 +61,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
 
     @staticmethod
     def nhwc2nchw(x):
-        return x.transpose(0, 3, 1, 2) if len(x.shape) == 4 else x
+        return best_transpose_0312(x) if len(x.shape) == 4 else x
 
     @staticmethod
     def copy_weights_and_biases(model1, model2):

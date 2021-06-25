@@ -48,6 +48,32 @@ def transpose_0231_ijk_cython(original, transposed):
     else:
         raise TypeError("Type '{}' is not supported by transpose_0231_ijk_cython".format(original.dtype))
 
+def transpose_0312_ikj_cython(original, transposed):
+    """
+    Transposes a 4D matrix from (0,1,2,3) to (0,3,1,2).
+    This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
+    This variant calls transpose_021_ikj_cython_float32().
+    """
+    orig3d = original.reshape(original.shape[0], -1, original.shape[3])
+    trans3d = transposed.reshape(transposed.shape[0], transposed.shape[1], -1)
+    if original.dtype == np.float32:
+        transpose_021_ikj_cython_float32(orig3d, trans3d)
+    else:
+        raise TypeError("Type '{}' is not supported by transpose_0312_ikj_cython".format(original.dtype))
+
+def transpose_0312_ijk_cython(original, transposed):
+    """
+    Transposes a 4D matrix from (0,1,2,3) to (0,3,1,2).
+    This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
+    This variant calls transpose_021_ikj_cython_float32().
+    """
+    orig3d = original.reshape(original.shape[0], -1, original.shape[3])
+    trans3d = transposed.reshape(transposed.shape[0], transposed.shape[1], -1)
+    if original.dtype == np.float32:
+        transpose_021_ijk_cython_float32(orig3d, trans3d)
+    else:
+        raise TypeError("Type '{}' is not supported by transpose_0312_ijk_cython".format(original.dtype))
+
 def transpose_1023_jik_cython(original, transposed):
     """
     Transposes a 4D matrix from (0,1,2,3) to (1,0,2,3).

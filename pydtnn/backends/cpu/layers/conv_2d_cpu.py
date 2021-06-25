@@ -41,6 +41,8 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
     PYDTNN_OPS_FORWARD_POINTWISE_CONV, PYDTNN_OPS_FORWARD_TRANSPOSE_Y
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
+from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
@@ -227,7 +229,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        # y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
         y = best_transpose_1023(y.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -253,7 +254,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
         # y = add_cython(res, self.biases) if self.use_bias else res
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        # y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
         y = best_transpose_1023(res.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
@@ -270,7 +270,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        # y = y.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
         y = best_transpose_1023(y.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
@@ -279,11 +278,11 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_POINTWISE_CONV)
         # y = np.einsum("nchw,oc->nohw", x, self.weights) # Einsum
-        y = np.matmul(np.transpose(x, axes=(0, 2, 3, 1)), np.transpose(self.weights, axes=(1, 0)))  # Matmul
+        y = np.matmul(best_transpose_0231(x), np.transpose(self.weights, axes=(1, 0)))  # Matmul
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_TRANSPOSE_Y)
-        y = np.transpose(y, axes=(0, 3, 1, 2))
+        y = best_transpose_0312(y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
@@ -346,7 +345,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
     def _backward_nchw_i2c(self, dy):
         """Version of the backward function that uses im2col and matmul"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-        # dy_cols = dy.transpose((1, 0, 2, 3)).reshape(self.co, -1)
         dy_cols = best_transpose_1023(dy).reshape(self.co, -1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -425,7 +423,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
             # 1) cg_dy
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-            # cg_dy = dy.transpose((1, 0, 2, 3))
             cg_dy = best_transpose_1023(dy)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             # 2) cg_x_transposed
@@ -448,7 +445,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
             #     self.cg_x_indexed[:, :, self.vpadding:new_h - self.vpadding, self.hpadding:new_w - self.hpadding] = \
             #         self.cg_x.transpose((1, 0, 2, 3))
             if self.vpadding == 0 and self.hpadding == 0:
-                # cg_x_transposed = self.cg_x.transpose((1, 0, 2, 3))
                 cg_x_transposed = best_transpose_1023(self.cg_x)
             else:
                 new_h, new_w = h + 2 * self.vpadding, w + 2 * self.hpadding
@@ -494,7 +490,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
             # 1) cg_dy
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
-            # cg_dy = dy.transpose((1, 0, 2, 3))
             cg_dy = best_transpose_1023(dy)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             # 2) cg_x_indexed

@@ -26,6 +26,9 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 
 # Next no inspection due to Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
 # noinspection PyAbstractClass
+from pydtnn.utils.best_transpose_1023 import best_transpose_1023
+
+
 class Conv2DReluCPU(Conv2DCPU, Conv2DRelu):
 
     def forward(self, x):
@@ -45,7 +48,7 @@ class Conv2DReluCPU(Conv2DCPU, Conv2DRelu):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = res.reshape(self.co, -1, self.ho, self.wo).transpose(1, 0, 2, 3)
+        y = best_transpose_1023(res.reshape(self.co, -1, self.ho, self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         # @todo: Remove once ConvGemm+Relu is implemented !!
