@@ -38,14 +38,17 @@ def depthwise_conv_cython(x, k, int vpadding, int hpadding,
     cdef np.ndarray res = np.zeros((n, c, hh, ww), dtype=x.dtype)
 
     if (x.dtype == np.int8):
-        depthwise_conv_cython_inner_int8(res, x, k, n, c, h, w, hh, ww,
-                                 kh, kw, vstride, hstride, vdilation, hdilation)
+        depthwise_conv_cython_inner_int8(res, x, k, n, c, h, w,
+                                 hh, ww, kh, kw, vpadding, hpadding,
+                                 vstride, hstride, vdilation, hdilation)
     elif (x.dtype == np.float32):
-        depthwise_conv_cython_inner_float32(res, x, k, n, c, h, w, hh, ww,
-                                 kh, kw, vstride, hstride, vdilation, hdilation)
+        depthwise_conv_cython_inner_float32(res, x, k, n, c, h, w,
+                                 hh, ww, kh, kw, vpadding, hpadding,
+                                 vstride, hstride, vdilation, hdilation)
     elif (x.dtype == np.float64):
-        depthwise_conv_cython_inner_float64(res, x, k, n, c, h, w, hh, ww,
-                                 kh, kw, vstride, hstride, vdilation, hdilation)
+        depthwise_conv_cython_inner_float64(res, x, k, n, c, h, w,
+                                 hh, ww, kh, kw, vpadding, hpadding,
+                                 vstride, hstride, vdilation, hdilation)
     else:
         raise TypeError("Type '{}' is not supported by depthwise_conv_cython!".format(str(res.dtype)))
 
@@ -57,7 +60,8 @@ cdef int depthwise_conv_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] res,
                              np.ndarray[np.int8_t, ndim=4] x,
                              np.ndarray[np.int8_t, ndim=3] k,
                              int n, int c, int h, int w, int hh, int ww,
-                             int kh, int kw, int vstride, int hstride,
+                             int kh, int kw, int vpadding, int hpadding,
+                             int vstride, int hstride,
                              int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
@@ -79,7 +83,8 @@ cdef int depthwise_conv_cython_inner_float32(np.ndarray[np.float32_t, ndim=4] re
                              np.ndarray[np.float32_t, ndim=4] x,
                              np.ndarray[np.float32_t, ndim=3] k,
                              int n, int c, int h, int w, int hh, int ww,
-                             int kh, int kw, int vstride, int hstride,
+                             int kh, int kw, int vpadding, int hpadding,
+                             int vstride, int hstride,
                              int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
@@ -101,7 +106,8 @@ cdef int depthwise_conv_cython_inner_float64(np.ndarray[np.float64_t, ndim=4] re
                              np.ndarray[np.float64_t, ndim=4] x,
                              np.ndarray[np.float64_t, ndim=3] k,
                              int n, int c, int h, int w, int hh, int ww,
-                             int kh, int kw, int vstride, int hstride,
+                             int kh, int kw, int vpadding, int hpadding,
+                             int vstride, int hstride,
                              int vdilation, int hdilation) except? -1:
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
