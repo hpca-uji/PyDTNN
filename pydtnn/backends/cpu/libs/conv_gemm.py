@@ -162,9 +162,17 @@ class ConvGemm:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
             if self.dtype == np.float32:
-                self.x_conv_gemm = self.lib_cg.sconvGemm
-                self.x_apply_bias = self.lib_cg.sapplyBias
-                self.x_deconv_gemm = self.lib_cg.sconvGemm_back
+                try:
+                    self.x_conv_gemm = self.lib_cg.sconvGemm
+                    self.x_apply_bias = self.lib_cg.sapplyBias
+                    self.x_deconv_gemm = self.lib_cg.sconvGemm_back
+                except AttributeError:
+                    pass # do not complain about missing symbols
+                try:
+                    self.x_conv_gemm_nhwc = self.lib_cg.sconvGemmNHWC
+                    self.x_deconv_gemm_nhwc = self.lib_cg.sconvGemmNHWC_back
+                except AttributeError:
+                    pass # do not complain about missing symbols
             else:
                 raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
         else:
@@ -474,6 +482,37 @@ class ConvGemm:
         # * NEW(wxh) 4):
         # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
         # transpose_2d_f2c_ji_cython(biases_cg, out)
+
+        return out
+
+    def conv_gemm_nhwc(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+                  vdilation=1, hdilation=1, biases_vector=None, trans=False):
+
+        if not trans:
+            ck, kh, kw, kn = weights.shape
+            b, h, w, c = x.shape
+            assert ck == c, "Number of channels in weights and x should be the same!"
+            ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+            wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
+            # print("h", h, "vpadding", vpadding, "vstride", vstride, "vdilation", vdilation, "ho", ho)
+            # print("w", w, "hpadding", hpadding, "hstride", hstride, "hdilation", hdilation, "wo", wo)
+        else:
+            assert False, "conv_gemm_nhwc trans not implemented"
+
+        assert biases_vector is None, "conv_gemm_nhwc bias vector not implemented"
+
+        out = np.empty((b * ho * wo, kn), weights.dtype, order="C")
+
+        self.x_conv_gemm_nhwc(ctypes.c_char(b'Y' if trans else b'N'),
+                         ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw), ctypes.c_uint(c),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+                         ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w),
+                         ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
+                         ctypes.c_uint(vstride), ctypes.c_uint(hstride),
+                         ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                         ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
+                         ctypes.c_void_p(out.ctypes.data),
+                         self.ac_pack, self.bc_pack)
 
         return out
 

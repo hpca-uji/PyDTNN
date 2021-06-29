@@ -146,7 +146,24 @@ class Conv2DCPU(LayerCPU, Conv2D):
         return y
 
     def _forward_nhwc_cg(self, x):
-        raise NotImplementedError("Forward not yet implemented!")
+
+        if self.model.mode == TRAIN_MODE:
+            self.cg_x = x
+
+        biases_vector = self.biases if self.use_bias else None
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
+        y = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                biases_vector=biases_vector)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        y = y.reshape(-1, self.ho, self.wo, self.co)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return y
 
     def _forward_nhwc_depthwise(self, x):
         raise NotImplementedError("Forward not yet implemented!")
