@@ -109,6 +109,7 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
       Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
       ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
+   - ``--enable_best_of``: Enable the BestOf auto-tuner.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.
@@ -154,7 +155,8 @@ The PyDTNN framework comes with a utility launcher called
       batch: ``categorical_cross_entropy``, ``binary_cross_entropy``.
    -  ``--metrics``: List of comma-separated metrics that are evaluated
       on each trained batch:
-      ``categorical_accuracy``,\ ``categorical_hinge``,\ ``categorical_mse``,\ ``categorical_mae``,\ ``regression_mse``,\ ``regression_mae``.
+      ``categorical_accuracy``, ``categorical_hinge``, ``categorical_mse``,
+      ``categorical_mae``, ``regression_mse``, ``regression_mae``.
 
 -  Learning rate schedulers parameters:
 

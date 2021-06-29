@@ -27,6 +27,7 @@ import threading
 import numpy as np
 from ..utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 
+
 # @todo: split dataset.py into different files
 
 class BackgroundGenerator(threading.Thread):
@@ -70,6 +71,7 @@ def do_flip_images(data, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     data[s, ...] = np.flip(data[s, ...], axis=width_dim)
     return data
 
+
 def do_crop_images(data, crop_size, prob=0.5, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
         n, c, h, w = data.shape
@@ -108,6 +110,7 @@ class Dataset:
         self.train_nsamples = self.x_train.shape[0]
         self.test_as_validation = False
         # Attributes that will be properly defined elsewhere
+        self.dtype = None
         self.flip_images = None
         self.flip_images_prob = None
         self.crop_images = None
@@ -240,10 +243,10 @@ class MNIST(Dataset):
 
         if self.use_synthetic_data:
             self.x_train_val, self.y_train_val = \
-                np.empty((self.train_val_nsamples * np.prod(self.shape)), dtype=self.dtype), \
+                np.zeros((self.train_val_nsamples * np.prod(self.shape)), dtype=self.dtype), \
                 np.zeros((self.train_val_nsamples,), dtype=self.dtype)
             self.x_test, self.y_test = \
-                np.empty((self.test_nsamples * np.prod(self.shape)), dtype=self.dtype), \
+                np.zeros((self.test_nsamples * np.prod(self.shape)), dtype=self.dtype), \
                 np.zeros((self.test_nsamples,), dtype=self.dtype)
         else:
             x_train_fname = "train-images-idx3-ubyte"
@@ -359,7 +362,7 @@ class CIFAR10(Dataset):
         for b in range(1, 6):
             if self.use_synthetic_data:
                 self.x_train_val_aux, self.y_train_val_aux = \
-                    np.empty((self.images_per_file * np.prod(self.shape)), dtype=self.dtype), \
+                    np.zeros((self.images_per_file * np.prod(self.shape)), dtype=self.dtype), \
                     np.zeros((self.images_per_file,), dtype=self.dtype)
             else:
                 self.x_train_val_aux, self.y_train_val_aux = \
@@ -372,7 +375,7 @@ class CIFAR10(Dataset):
 
         if self.use_synthetic_data:
             self.x_test, self.y_test = \
-                np.empty((self.images_per_file * np.prod(self.shape)), dtype=self.dtype), \
+                np.zeros((self.images_per_file * np.prod(self.shape)), dtype=self.dtype), \
                 np.zeros((self.images_per_file,), dtype=self.dtype)
         else:
             self.x_test, self.y_test = self.__read_file("%s/%s" % (self.test_path, xy_test_fname))
@@ -550,7 +553,7 @@ class ImageNet(Dataset):
 
             for f in files:
                 if self.use_synthetic_data:
-                    values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
+                    values = {"x": np.zeros((images_per_file, *self.shape), dtype=self.dtype),
                               "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
                 else:
                     values = np.load("%s/%s" % (path, f))
@@ -583,7 +586,7 @@ class ImageNet(Dataset):
         else:
             for f in files:
                 if self.use_synthetic_data:
-                    values = {"x": np.empty((images_per_file, *self.shape), dtype=self.dtype),
+                    values = {"x": np.zeros((images_per_file, *self.shape), dtype=self.dtype),
                               "y": np.zeros((images_per_file, 1), dtype=self.dtype)}
                 else:
                     values = np.load("%s/%s" % (path, f))

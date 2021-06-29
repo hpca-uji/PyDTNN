@@ -28,12 +28,15 @@ from contextlib import suppress
 
 import numpy as np
 
-from pydtnn.cython_modules import transpose_1230_ji_cython, transpose_0231_kji_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
     PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, \
     PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, \
     PYDTNN_OPS_CONVGEMM_TRANS_BIASES
 from pydtnn.utils import load_library
+from pydtnn.utils.best_pad import best_pad
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
+from pydtnn.utils.best_transpose_1230 import best_transpose_1230
+from pydtnn.utils.best_transpose_2d_f2c import best_transpose_2d_f2c
 
 
 class ConvGemmCache(dict):
@@ -70,6 +73,10 @@ class ConvGemmCache(dict):
         for obj in gc.get_objects():
             if isinstance(obj, cls):
                 obj.clear()
+
+    @classmethod
+    def enable(cls):
+        cls._preserve_values = True
 
 
 class ConvGemm:
@@ -268,23 +275,26 @@ class ConvGemm:
             with suppress(AttributeError):
                 if not trans:
                     self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                              self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                              PYDTNN_OPS_CONVGEMM_X_PAD)
+                                                                    self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                                    PYDTNN_OPS_CONVGEMM_X_PAD)
                 else:
                     self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                              self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                              PYDTNN_OPS_CONVGEMM_TRANS_X_PAD)
+                                                                    self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                                    PYDTNN_OPS_CONVGEMM_TRANS_X_PAD)
             # Hand made alternative to:
             #  x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), (hpadding, hpadding)), mode='constant')
-            b, c, h, w = x.shape
-            new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
+            # b, c, h, w = x.shape
+            # new_h, new_w = h + 2 * vpadding, w + 2 * hpadding
             # Padding alternative 1)
-            x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
-            x_padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = x
+            #  x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
+            #  x_padded[:, :, vpadding:new_h - vpadding, hpadding:new_w - hpadding] = x
             # Padding alternative 2)
             # Better for matrices greater than a given size (but is machine dependant).
-            # x_padded = self.x_padded_cache[(b, c, new_h, new_w)]
-            # pad_cython(x, x_padded)
+            #  x_padded = np.zeros((b, c, new_h, new_w), x.dtype), no if best: self.x_padded_cache[(b, c, new_h, new_w)]
+            #  pad_cython(x, x_padded)
+            # Padding alternative 3)
+            # x_padded = np.zeros((b, c, new_h, new_w), x.dtype)
+            x_padded = best_pad(x, vpadding, hpadding)
             vpadding = hpadding = 0
             with suppress(AttributeError):
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -321,8 +331,8 @@ class ConvGemm:
             kw, wo = wo, kw
             b, c = c, b
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                      self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                      PYDTNN_OPS_CONVGEMM_TRANS_BIASES)
+                                                            self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                            PYDTNN_OPS_CONVGEMM_TRANS_BIASES)
         if biases is None:
             # @warning: np.empty() could be used instead of np.zeros() only if the underlying operation does not
             # sum the biases when beta is 0.0. Otherwise, as the non initialized biases matrix could have nan elements,
@@ -362,8 +372,8 @@ class ConvGemm:
         # -------------------------
         if trans:
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                      self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                      PYDTNN_OPS_CONVGEMM_TRANS_TR1230)
+                                                            self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                            PYDTNN_OPS_CONVGEMM_TRANS_TR1230)
         # PREVIOUS(hxw): weights_cg = weights.transpose((0, 2, 3, 1)).reshape((kn, -1), order="F")
         # NEW(wxh): 1) weights_cg = weights.transpose((0, 3, 2, 1)).flatten(order="F")
         # NEW(wxh): 2) weights_cg = weights.transpose((1, 2, 3, 0)).flatten(order="C")
@@ -384,9 +394,12 @@ class ConvGemm:
         #                                    ctypes.c_void_p(weights.ctypes.data),
         #                                    ctypes.c_void_p(weights_cg.ctypes.data))
         # NEW(wxh): 6)
-        # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
+        # # weights_cg = np.empty((c, kh, kw, kn), weights.dtype, order="C")
+        # weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
+        # transpose_1230_ji_cython(weights, weights_cg)
+        # NEW(wxh): 7)
         weights_cg = self.weights_cg_cache[(c, kh, kw, kn)]
-        transpose_1230_ji_cython(weights, weights_cg)
+        best_transpose_1230(weights, weights_cg)
         if trans:
             with suppress(AttributeError):
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -428,12 +441,12 @@ class ConvGemm:
         with suppress(AttributeError):
             if not trans:
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                          self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                          PYDTNN_OPS_CONVGEMM_CG)
+                                                                self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                                PYDTNN_OPS_CONVGEMM_CG)
             else:
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                          self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                          PYDTNN_OPS_CONVGEMM_TRANS_CG)
+                                                                self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                                PYDTNN_OPS_CONVGEMM_TRANS_CG)
         self.x_conv_gemm(ctypes.c_char(b'Y' if trans else b'N'),
                          ctypes.c_uint(kw), ctypes.c_uint(kh),
                          ctypes.c_uint(c), ctypes.c_uint(kn),
@@ -474,16 +487,17 @@ class ConvGemm:
         # * NEW(wxh) 3):
         #     void sreshapeOut_pydtnn(unsigned int kn, unsigned int b, unsigned int h, unsigned int w,
         #                             float*  out, float* restrict reshaped);
-        out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
-        # Warning: don't use a matrix cache for out (it will be rewritten elsewhere, no matter how hard you try not to)
-        # out = self.out_cg_cache[(kn, b * ho * wo)]
-        self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
-                                       ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
         # * NEW(wxh) 4):
         # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
         # transpose_2d_f2c_ji_cython(biases_cg, out)
-
-        return out
+        # * NEW(wxh) 5):
+        # # Warning: don't use a matrix cache for out (it will be rewritten, no matter how hard you try not to)
+        # # out = self.out_cg_cache[(kn, b * ho * wo)]
+        # out = np.empty((kn, b * ho * wo), weights.dtype, order="C")
+        # self.lib_cg.sreshapeOut_pydtnn(ctypes.c_uint(kn), ctypes.c_uint(b), ctypes.c_uint(wo), ctypes.c_uint(ho),
+        #                                ctypes.c_void_p(biases_cg.ctypes.data), ctypes.c_void_p(out.ctypes.data))
+        # * NEW(wxh) 6):
+        return best_transpose_2d_f2c(biases_cg)
 
     def conv_gemm_nhwc(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False):
@@ -574,12 +588,13 @@ class ConvGemm:
         #   DY → kn×ho*wo*b  | PyDTNN (C order): b×kn×ho×wo (F order: wo×ho×kn×b)
         #                                        0 1  2  3             3  2  1 0
         #        1  3  2  0  ->  0231
-        dy_cg = self.dy_cg_cache[(b, ho, wo, kn)]
         with suppress(AttributeError):
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                      self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                      PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY)
-        transpose_0231_kji_cython(dy, dy_cg)  # Faster than the ijk version
+                                                            self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                            PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY)
+        dy_cg = self.dy_cg_cache[(b, ho, wo, kn)]
+        # transpose_0231_ikj_cython(dy, dy_cg)  # Faster than the ijk version
+        best_transpose_0231(dy, dy_cg)
         with suppress(AttributeError):
             self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
@@ -624,8 +639,8 @@ class ConvGemm:
         if vpadding or hpadding:
             with suppress(AttributeError):
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                          self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                          PYDTNN_OPS_BACKWARD_DCG_SHRINK)
+                                                                self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
+                                                                PYDTNN_OPS_BACKWARD_DCG_SHRINK)
             dx[...] = dx_padded[:, :, vpadding:vpadding + h, hpadding:hpadding + w]
             with suppress(AttributeError):
                 self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
