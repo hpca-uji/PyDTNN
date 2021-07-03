@@ -401,9 +401,9 @@ Other references:
    of Deep Neural Networks**. Sergio Barrachina, Adrián Castelló, 
    Mar Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE 
    International Parallel and Distributed Processing Symposium 
-   Workshops (IPDPSW)*, 2021, pp. TBD, DOI: `10.1109/IPDPSW52791.2021.00110 
+   Workshops (IPDPSW)*, 2021, pp. 730-739, 
+   DOI: `10.1109/IPDPSW52791.2021.00110 
    <http://dx.doi.org/10.1109/IPDPSW52791.2021.00110>`_.
-
 
 Acknowledgments
 ---------------

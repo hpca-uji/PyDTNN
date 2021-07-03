@@ -43,7 +43,7 @@ def relu_cython(x):
 cdef relu_cython_inner_int8(np.ndarray[np.int8_t, ndim=1] x,
                             np.ndarray[np.int8_t, ndim=1] max,
                             np.ndarray[np.int8_t, ndim=1] mask):
-    cdef int i, j = 0
+    cdef int i
     for i in prange(x.shape[0], nogil=True):
         if x[i] > 0:
             max[i], mask[i] = x[i], 1
