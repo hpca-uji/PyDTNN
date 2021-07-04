@@ -25,7 +25,7 @@ from pydtnn.cython_modules import transpose_1230_ij_cython, transpose_1230_ji_cy
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
 
-cg_lib = load_library("convGemm")
+cg_lib = None
 
 
 def transpose_1230_numpy(original, transposed=None):
@@ -37,6 +37,9 @@ def transpose_1230_numpy(original, transposed=None):
 
 
 def transpose_1230_conv_gemm(original, transposed=None):
+    global cg_lib
+    if cg_lib is None:
+        cg_lib = load_library("convGemm")
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d1, d2, d3, d0), original.dtype, order="C")

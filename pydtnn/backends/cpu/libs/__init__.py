@@ -18,3 +18,4 @@
 #
 
 from .conv_gemm import ConvGemm, ConvGemmCache
+from .conv_winograd import ConvWinograd
