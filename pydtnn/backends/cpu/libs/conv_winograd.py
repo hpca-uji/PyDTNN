@@ -29,8 +29,8 @@ from contextlib import suppress
 import numpy as np
 
 # from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ...
-# from pydtnn.utils import load_library
-# from pydtnn.utils.best_pad import best_pad
+from pydtnn.utils import load_library
+from pydtnn.utils.best_pad import best_pad
 # from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 # from pydtnn.utils.best_transpose_1230 import best_transpose_1230
 # from pydtnn.utils.best_transpose_2d_f2c import best_transpose_2d_f2c
@@ -164,8 +164,7 @@ class ConvWinograd:
                 u[..., k, c] = (g @ weights[k, c, ...]) @ g.T    
 
         # 1.1) First alternative: padding first
-        x_padded = np.pad(x, ((0, 0), (0, 0), (vpadding, vpadding), 
-                                              (hpadding, hpadding)), mode="constant")
+        x_padded = best_pad(x, vpadding, hpadding)
         _, _, hi, wi = x_padded.shape
         for c in range(ci):
             for b in range(n):
