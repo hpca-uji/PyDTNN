@@ -152,11 +152,11 @@ class ConvWinograd:
 
         tile_h, tile_w = hi // m + 1, wi // m + 1
 
-        y = np.zeros((n, co, ho, wo))    # Output
-        u = np.zeros((t, t, co, ci))     # Workspace for G   * g * G^T
-        v = np.zeros((t, t, ci, (n * tile_h * tile_w)))    
-        m_= np.zeros((t, t, co, (n * tile_h * tile_w)))
-        d = np.zeros((t, t))
+        y = np.zeros((n, co, ho, wo), dtype=x.dtype)    # Output
+        u = np.zeros((t, t, co, ci), dtype=x.dtype)     # Workspace for G   * g * G^T
+        v = np.zeros((t, t, ci, (n * tile_h * tile_w)), dtype=x.dtype)
+        m_= np.zeros((t, t, co, (n * tile_h * tile_w)), dtype=x.dtype)
+        d = np.zeros((t, t), dtype=x.dtype)
 
         for k in range(co):
             for c in range(ci):
