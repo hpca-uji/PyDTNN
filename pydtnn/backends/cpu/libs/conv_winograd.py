@@ -31,6 +31,7 @@ import numpy as np
 # from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ...
 from pydtnn.utils import load_library
 from pydtnn.utils.best_pad import best_pad
+from pydtnn.backends.cpu.libs.conv_gemm import ConvGemmCache
 # from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 # from pydtnn.utils.best_transpose_1230 import best_transpose_1230
 # from pydtnn.utils.best_transpose_2d_f2c import best_transpose_2d_f2c
@@ -83,42 +84,58 @@ class ConvWinograd:
             except coeyError:
                 raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
 
-        # if convWinograd.lib_cw is None:
-        #     convWinograd.lib_cw = load_library("winograd")
-        # 
-        # # The x_padded and output matrices are also cached, but only on the current instance
-        # self.x_padded_cache = cionvGemmciache(lambda shape: np.zeros(shape, self.dtype, order="ci"))
-        # self.out_cw_cache = cionvGemmciache(lambda shape: np.empty(shape, self.dtype, order="ci"))
+        if ConvWinograd.lib_cw is None:
+            ConvWinograd.lib_cw = load_library("convWinograd")
 
-        # # Debug
-        # self.debug = debug
-        # # Parent layer
-        # if parent_layer is not None:
-        #     self.get_parent_layer = weakref.ref(parent_layer)
-        # # cihoose the appropriate convGemm function depending on the architecture and the data type being used
-        # if platform.machine() == 'aarch64':
-        #     if self.dtype == np.float32:
-        #         self.x_winograd = self.lib_cw.swinograd
-        #     else:
-        #         raise ValueError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
-        # elif platform.machine() == 'x86_64':
-        #     if self.dtype == np.float32:
-        #         try:
-        #             self.x_winograd_nchw = self.lib_cw.swinograd_nchw
-        #         except AttributeError:
-        #             pass # do not complain about missing symbols
-        #         try:
-        #             self.x_winograd_nhwc = self.lib_cw.swinograd_nhwc
-        #         except AttributeError:
-        #             pass # do not complain about missing symbols
-        #     else:
-        #         raise ValueError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
-        # else:
-        #     raise ValueError("Platform '{}' not yet supported")
+        # F(2x2, 3x3)
+        self.bt_2x2_3x3 = np.array([[   1,   0,  -1  ,0 ], 
+                                    [   0,   1,   1,  0 ], 
+                                    [   0,  -1,   1,  0 ], 
+                                    [   0,   1,   0, -1 ]])  # Transpose of B
+        self.g_2x2_3x3  = np.array([[   1,   0,   0 ], 
+                                    [ 0.5, 0.5, 0.5 ], 
+                                    [ 0.5,-0.5, 0.5 ], 
+                                    [   0,   0,   1 ]])
+        self.at_2x2_3x3 = np.array([[   1,   1,   1,  0 ], 
+                                    [   0,   1,  -1, -1 ]])  # Transpose of A
+
+        # The x_padded and output matrices are also cached, but only on the current instance
+        self.x_padded_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.out_cw_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+        self.y_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.u_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.v_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.m_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.d_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+
+        # Debug
+        self.debug = debug
+        # Parent layer
+        if parent_layer is not None:
+            self.get_parent_layer = weakref.ref(parent_layer)
+        # choose the appropriate convWinograd function depending on the architecture and the data type being used
+        if platform.machine() == 'aarch64':
+            if self.dtype == np.float32:
+                self.x_winograd = self.lib_cw.sconvWinograd2x2_3x3_nchw
+            else:
+                raise ValueError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
+        elif platform.machine() == 'x86_64':
+            if self.dtype == np.float32:
+                try:
+                    self.x_winograd_nchw = self.lib_cw.sconvWinograd2x2_3x3_nchw
+                except AttributeError:
+                    pass # do not complain about missing symbols
+                # try:
+                #     self.x_winograd_nhwc = self.lib_cw.sconvWinograd2x2_3x3_nhwc
+                # except AttributeError:
+                #     pass # do not complain about missing symbols
+            else:
+                raise ValueError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
+        else:
+            raise ValueError("Platform '{}' not yet supported")
 
     def conv_winograd_2x2_3x3_numpy_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0, 
                                          vstride=1, hstride=1, vdilation=1, hdilation=1):
-
         n, ci, hi, wi = x.shape
         co, ci, kh, kw = weights.shape
 
@@ -133,39 +150,28 @@ class ConvWinograd:
             raise ValueError("Stride {} supported by this version of Winograd, stride should be (1,1)!".format(str((vstride, hstride))))
 
         if (vdilation, hdilation) != (1, 1):
-            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vstride, hstride))))
-
-        # F(2x2,3x3)
-        bt = np.array([[   1,   0,  -1  ,0 ], 
-                       [   0,   1,   1,  0 ], 
-                       [   0,  -1,   1,  0 ], 
-                       [   0,   1,   0, -1 ]])  # Transpose of B
-        g  = np.array([[   1,   0,   0 ], 
-                       [ 0.5, 0.5, 0.5 ], 
-                       [ 0.5,-0.5, 0.5 ], 
-                       [   0,   0,   1 ]])
-        at = np.array([[   1,   1,   1,  0 ], 
-                       [   0,   1,  -1, -1 ]])  # Transpose of A
+            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vdilation, hdilation))))
 
         ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
         wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
         tile_h, tile_w = hi // m + 1, wi // m + 1
 
-        y = np.zeros((n, co, ho, wo), dtype=x.dtype)    # Output
-        u = np.zeros((t, t, co, ci), dtype=x.dtype)     # Workspace for G   * g * G^T
-        v = np.zeros((t, t, ci, (n * tile_h * tile_w)), dtype=x.dtype)
-        m_= np.zeros((t, t, co, (n * tile_h * tile_w)), dtype=x.dtype)
-        d = np.zeros((t, t), dtype=x.dtype)
+        y = self.y_cache[(n, co, ho, wo)]    # Output
+        u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
+        v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
+        m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
+        d = self.d_cache[(t, t)]
 
         for k in range(co):
             for c in range(ci):
                 # U = G  * g * G^T
-                u[..., k, c] = (g @ weights[k, c, ...]) @ g.T    
+                u[..., k, c] = (self.g_2x2_3x3 @ weights[k, c, ...]) @ self.g_2x2_3x3.T    
 
         # 1.1) First alternative: padding first
         x_padded = best_pad(x, vpadding, hpadding)
         _, _, hi, wi = x_padded.shape
+        
         for c in range(ci):
             for b in range(n):
                 for h in range(tile_h):
@@ -173,7 +179,7 @@ class ConvWinograd:
                         hh, ww = h * s, w * s
                         th, tw = min(hi-hh,t), min(wi-ww,t) 
                         d[:th, :tw] = x_padded[b, c, hh:hh+th, ww:ww+tw]
-                        v[..., c, b * tile_h * tile_w + h * tile_w + w] = (bt @ d) @ bt.T
+                        v[..., c, b * tile_h * tile_w + h * tile_w + w] = (self.bt_2x2_3x3 @ d) @ self.bt_2x2_3x3.T
 
         # 1.2) Second alternative: avoid padding
         # for c in range(ci):
@@ -210,11 +216,65 @@ class ConvWinograd:
             for b in range(n):
                 for h in range(tile_h):
                     for w in range(tile_w): 
-                        z = (at @ m_[..., k, b * tile_h * tile_w + h * tile_w + w]) @ at.T
+                        z = (self.at_2x2_3x3 @ m_[..., k, b * tile_h * tile_w + h * tile_w + w]) @ self.at_2x2_3x3.T
                         hh, ww = h * s, w * s
                         y[b, k, hh:hh+m, ww:ww+m] = z[:min(m, ho-hh), :min(m, wo-ww)]
 
             if biases is not None:
+                y[:, k, ...] += biases[k]
+
+        return y
+
+    def conv_winograd_2x2_3x3_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0, 
+                                   vstride=1, hstride=1, vdilation=1, hdilation=1):
+
+        n, ci, hi, wi = x.shape
+        co, ci, kh, kw = weights.shape
+
+        m, r = 2, 3    # Winograd output tile (m x m) and filter (r x r) sizes
+        s = r - 1      # Winograd sliding window stride
+        t = m + r - 1  # Winograd sliding window size t x t
+
+        if (kh, kw) != (r, r):
+            raise ValueError("Kernel size {} supported by this version of Winograd, kernel size should be (3x3)!".format(str((kh, kw))))
+
+        if (vstride, hstride) != (1, 1):
+            raise ValueError("Stride {} supported by this version of Winograd, stride should be (1,1)!".format(str((vstride, hstride))))
+
+        if (vdilation, hdilation) != (1, 1):
+            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vdilation, hdilation))))
+
+        ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+        wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
+
+        tile_h, tile_w = hi // m + 1, wi // m + 1
+
+        y = self.y_cache[(n, co, ho, wo)]    # Output
+        u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
+        v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
+        m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
+        d = self.d_cache[(t, t)]
+
+        ldD1, ldD2, ldD3 = ci * hi * wi, hi * wi, wi
+        ldF1, ldF2, ldF3 = ci * kh * kw, kh * kw, kw
+        ldY1, ldY2, ldY3 = co * ho * wo, ho * wo, wo
+
+        x_padded = best_pad(x, vpadding, hpadding)
+        _, _, hi, wi = x_padded.shape
+
+        self.x_winograd_nchw(ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci), 
+                             ctypes.c_uint(hi), ctypes.c_uint(wi),
+                             ctypes.c_uint(kh), ctypes.c_uint(kw),
+                             ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), 
+                             ctypes.c_void_p(x_padded.ctypes.data), ctypes.c_uint(ldD1), ctypes.c_uint(ldD2), ctypes.c_uint(ldD3),
+                             ctypes.c_void_p(weights.ctypes.data),ctypes.c_uint(ldF1), ctypes.c_uint(ldF2), ctypes.c_uint(ldF3),
+                             ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ldY1), ctypes.c_uint(ldY2), ctypes.c_uint(ldY3),
+                             ctypes.c_void_p(self.bt_2x2_3x3.ctypes.data), ctypes.c_void_p(self.g_2x2_3x3.ctypes.data),
+                             ctypes.c_void_p(self.at_2x2_3x3.ctypes.data), ctypes.c_void_p(u.ctypes.data),
+                             ctypes.c_void_p(v.ctypes.data), ctypes.c_void_p(m_.ctypes.data))
+
+        if biases is not None:
+            for k in range(co):
                 y[:, k, ...] += biases[k]
 
         return y
