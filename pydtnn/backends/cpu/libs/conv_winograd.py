@@ -133,9 +133,9 @@ class ConvWinograd:
             raise ValueError("Stride {} supported by this version of Winograd, stride should be (1,1)!".format(str((vstride, hstride))))
 
         if (vdilation, hdilation) != (1, 1):
-            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vstride, hstride))))
+            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vdilation, hdilation))))
 
-        # F(2x2,3x3)
+        # F(2x2, 3x3)
         bt = np.array([[   1,   0,  -1  ,0 ], 
                        [   0,   1,   1,  0 ], 
                        [   0,  -1,   1,  0 ], 
@@ -166,6 +166,7 @@ class ConvWinograd:
         # 1.1) First alternative: padding first
         x_padded = best_pad(x, vpadding, hpadding)
         _, _, hi, wi = x_padded.shape
+        
         for c in range(ci):
             for b in range(n):
                 for h in range(tile_h):
