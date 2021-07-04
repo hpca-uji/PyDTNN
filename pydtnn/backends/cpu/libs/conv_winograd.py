@@ -119,8 +119,8 @@ class ConvWinograd:
     def conv_winograd_2x2_3x3_numpy_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0, 
                                          vstride=1, hstride=1, vdilation=1, hdilation=1):
 
-        co, ci, kh, kw = weights.shape
         n, ci, hi, wi = x.shape
+        co, ci, kh, kw = weights.shape
 
         m, r = 2, 3    # Winograd output tile (m x m) and filter (r x r) sizes
         s = r - 1      # Winograd sliding window stride
@@ -129,10 +129,10 @@ class ConvWinograd:
         if (kh, kw) != (r, r):
             raise ValueError("Kernel size {} supported by this version of Winograd, kernel size should be (3x3)!".format(str((kh, kw))))
 
-        if (vstride, hstride) != (1,1):
+        if (vstride, hstride) != (1, 1):
             raise ValueError("Stride {} supported by this version of Winograd, stride should be (1,1)!".format(str((vstride, hstride))))
 
-        if (vdilation, hdilation) != (1,1):
+        if (vdilation, hdilation) != (1, 1):
             raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vstride, hstride))))
 
         # F(2x2,3x3)
