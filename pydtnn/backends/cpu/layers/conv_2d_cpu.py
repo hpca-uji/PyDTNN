@@ -199,16 +199,13 @@ class Conv2DCPU(LayerCPU, Conv2D):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        y = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
+        y = self.cg.conv_gemm_nhwc(self.weights, x,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation,
                                 biases_vector=biases_vector)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = y.reshape(-1, self.ho, self.wo, self.co)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
     def _forward_nhwc_cw(self, x):
@@ -377,7 +374,49 @@ class Conv2DCPU(LayerCPU, Conv2D):
             return dx
 
     def _backward_nhwc_cg(self, dy):
-        raise NotImplementedError("Backward not yet implemented!")
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+        dy_rows = dy.reshape(-1, self.co)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        # self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
+        # x_rows = im2row_nhwc_cython(self.cg_x, self.kh, self.kw, self.vpadding, self.hpadding, self.vstride, self.hstride, self.vdilation, self.hdilation)
+        # self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
+        # res = self.model.matmul(x_rows.T, dy_rows)
+        res = np.empty(self.weights.shape)
+        self.cg.conv_gemm_nhwc(dy, self.cg_x, out=res,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                trans=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
+        self.dw = res.reshape(self.weights.shape)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
+        if self.use_bias:
+            self.db = np.sum(dy, axis=(0, 1, 2))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.need_dx:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
+            w_rows = self.weights.reshape(-1, self.co)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+            res = self.model.matmul(dy_rows, w_rows.T)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            dx = row2im_nhwc_cython(res, dy.shape[0], self.hi, self.wi, self.ci,
+                                    self.kh, self.kw, self.vpadding, self.hpadding,
+                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            return dx
 
     def _backward_nhwc_cw(self, x):
         raise NotImplementedError("Backward not yet implemented!")

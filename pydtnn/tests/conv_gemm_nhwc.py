@@ -37,6 +37,7 @@ def _conv_gemm_and_im2row_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride,
                                            vdilation=vdilation, hdilation=hdilation)
+    conv_gemm_result = conv_gemm_result.reshape(-1, kn)
     x_c = im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(-1, kn)
     if biases is None:
@@ -66,13 +67,15 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
     Tests that conv_gemm leads to the same results than i2c and mm.
     """
 
-    # @delete: different strides are now supported
-    # def test_raise_on_different_strides(self):
-    #     x = np.ones((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-    #     weights = np.ones((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
-    #     conv_gemm = ConvGemm(debug=verbose_test())
-    #     with self.assertRaises(AssertionError):
-    #         conv_gemm.conv_gemm(weights, x, vstride=1, hstride=2)
+    def test_raise_on_different_strides(self):
+        d = D()
+        weights = np.ones((d.c, d.kh, d.kw, d.kn)).astype(np.float32, order='C')
+        x = np.ones((d.b, d.h, d.w, d.c)).astype(np.float32, order='C')
+        conv_gemm_result, im2row_mm_result = _conv_gemm_and_im2row_mm(weights, x,
+                                                                      vpadding=d.vpadding, hpadding=d.hpadding,
+                                                                      vstride=1, hstride=2,
+                                                                      vdilation=d.vdilation, hdilation=d.hdilation)
+        self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result))
 
     # def test_handmade_array(self):
     #     """
@@ -256,21 +259,21 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
 
         self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result))
 
-#    def test_defaults_including_biases_with_random(self):
-#        """
-#        Test that the default parameters on random matrices, including b, lead to the same solution
-#        """
-#        d = D()
-#        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-#        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
-#        ho = int(math.floor((d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) / d.vstride + 1))
-#        wo = int(math.floor((d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) / d.hstride + 1))
-#        biases = np.random.rand(d.kn, d.b * ho * wo).astype(np.float32, order='C')
-#        conv_gemm_result, im2row_mm_result = _conv_gemm_and_im2row_mm(weights, x, biases=biases,
-#                                                                      vpadding=d.vpadding, hpadding=d.hpadding,
-#                                                                      vstride=d.vstride, hstride=d.hstride,
-#                                                                      vdilation=d.vdilation, hdilation=d.hdilation)
-#        self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result))
+    def test_defaults_including_biases_with_random(self):
+        """
+        Test that the default parameters on random matrices, including b, lead to the same solution
+        """
+        d = D()
+        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        ho = int(math.floor((d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) / d.vstride + 1))
+        wo = int(math.floor((d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) / d.hstride + 1))
+        biases = np.random.rand(d.b * ho * wo, d.kn).astype(np.float32, order='C')
+        conv_gemm_result, im2row_mm_result = _conv_gemm_and_im2row_mm(weights, x, biases=biases,
+                                                                      vpadding=d.vpadding, hpadding=d.hpadding,
+                                                                      vstride=d.vstride, hstride=d.hstride,
+                                                                      vdilation=d.vdilation, hdilation=d.hdilation)
+        self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result))
 
     def test_with_different_kn(self):
         d = D()
@@ -289,6 +292,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
+                conv_gemm_result = conv_gemm_result.reshape(-1, kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
                 w_c = weights.reshape(-1, kn)
@@ -319,6 +323,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
+                conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
                 w_c = weights.reshape(-1, d.kn)
@@ -349,6 +354,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                        vpadding=padding, hpadding=padding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
+                conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, padding, padding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
                 w_c = weights.reshape(-1, d.kn)
@@ -379,6 +385,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=stride, hstride=stride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
+                conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride,
                                          d.vdilation, d.hdilation)
                 w_c = weights.reshape(-1, d.kn)
@@ -411,6 +418,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                            vpadding=d.vpadding, hpadding=d.hpadding,
                                                            vstride=vstride, hstride=hstride,
                                                            vdilation=d.vdilation, hdilation=d.hdilation)
+                    conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                     x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
                                              d.vdilation, d.hdilation)
                     w_c = weights.reshape(-1, d.kn)
@@ -441,6 +449,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=dilation, hdilation=dilation)
+                conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
                                          dilation, dilation)
                 w_c = weights.reshape(-1, d.kn)
@@ -470,6 +479,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                        vpadding=layer.vpadding, hpadding=layer.hpadding,
                                                        vstride=layer.vstride, hstride=layer.hstride,
                                                        vdilation=layer.vdilation, hdilation=layer.hdilation)
+                conv_gemm_result = conv_gemm_result.reshape(-1, layer.kn)
                 x_c = im2row_nhwc_cython(x, layer.kh, layer.kw, layer.vpadding, layer.hpadding,
                                          layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
                 w_c = weights.reshape(-1, layer.kn)
@@ -496,11 +506,11 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
 #         console = Console(force_terminal=not verbose_test())
 #         with console.status("", spinner="bouncingBar"):
 #             for n, layer in enumerate(layers):
-#                 weights = np.random.rand(layer.kn, layer.c, layer.kh, layer.kw).astype(np.float32, order='C')
-#                 dy = np.random.rand(layer.b, layer.kn, layer.ho, layer.wo).astype(np.float32, order='C')
-#                 dx = np.empty((layer.b, layer.c, layer.h, layer.w), dtype=np.float32, order='C')
+#                 weights = np.random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
+#                 dy = np.random.rand(layer.b, layer.ho, layer.wo, layer.kn).astype(np.float32, order='C')
+#                 dx = np.empty((layer.b, layer.h, layer.w, layer.c), dtype=np.float32, order='C')
 #                 # deconv_gemm
-#                 deconv_gemm_result = conv_gemm.deconv_gemm(weights, dy, dx,
+#                 deconv_gemm_result = conv_gemm.deconv_gemm_nhwc(weights, dy, dx,
 #                                                            vpadding=layer.vpadding, hpadding=layer.hpadding,
 #                                                            vstride=layer.vstride, hstride=layer.hstride,
 #                                                            vdilation=layer.vdilation, hdilation=layer.hdilation)
