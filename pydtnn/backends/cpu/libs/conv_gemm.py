@@ -652,6 +652,24 @@ class ConvGemm:
             dx = dx_padded
         return dx
 
+    def deconv_gemm_nhwc(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
+                    vstride=1, hstride=1, vdilation=1, hdilation=1):
+
+        ck, kh, kw, kn = weights.shape
+        b, h, w, c = dx.shape
+        assert ck == c, "Number of channels in weights and x should be the same!"
+
+        self.x_deconv_gemm_nhwc(ctypes.c_uint(kn), ctypes.c_uint(kh),
+                        ctypes.c_uint(kw), ctypes.c_uint(c),
+                        ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+                        ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w),
+                        ctypes.c_uint(hstride), ctypes.c_uint(vstride),
+                        ctypes.c_uint(hpadding), ctypes.c_uint(vpadding),
+                        ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                        ctypes.c_void_p(dy.ctypes.data), ctypes.c_void_p(dx.ctypes.data),
+                        self.ac_pack, self.bc_pack, self.cc_pack)
+
+        return dx
 
 def __free__(pack):
     def find_msvcr():
