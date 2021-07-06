@@ -256,7 +256,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        res = self.cg.conv_gemm(self.weights, x, biases=None,
+        res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation,
@@ -555,7 +555,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.cg_x_indexed = cg_x_indexed
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
-        res = self.cg.conv_gemm(cg_dy, cg_x_indexed,
+        res = self.cg.conv_gemm_nchw(cg_dy, cg_x_indexed,
                                 biases=cg_biases, beta=0.0,
                                 vpadding=cg_vpadding, hpadding=cg_hpadding,
                                 vstride=cg_vstride, hstride=cg_hstride,
@@ -575,7 +575,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
             if self.cg_deconv:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
-                dx = self.cg.deconv_gemm(self.weights, dy, self.cg_x,
+                dx = self.cg.deconv_gemm_nchw(self.weights, dy, self.cg_x,
                                          vpadding=self.vpadding, hpadding=self.hpadding,
                                          vstride=self.vstride, hstride=self.hstride,
                                          vdilation=self.vdilation, hdilation=self.hdilation)

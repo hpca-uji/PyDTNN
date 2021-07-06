@@ -209,7 +209,7 @@ class ConvGemm:
         except AttributeError:
             pass
 
-    def conv_gemm(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+    def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
@@ -534,7 +534,7 @@ class ConvGemm:
 
         return out
 
-    def deconv_gemm(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
+    def deconv_gemm_nchw(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
                     vstride=1, hstride=1, vdilation=1, hdilation=1):
         """
         Calls the appropriate deconv_gemm function from libconvGemm.so to perform
@@ -722,13 +722,13 @@ def __usage_example__():
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * biases...")
     conv_gemm = ConvGemm(debug=False)
-    conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+    conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride,
                                            vdilation=vdilation, hdilation=hdilation)
     print(conv_gemm_result)
     print("Sum: ", conv_gemm_result.sum())
-    conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm(weights, x,
+    conv_gemm_t = timeit(lambda: conv_gemm.conv_gemm_nchw(weights, x,
                                                      vpadding=vpadding, hpadding=hpadding,
                                                      vstride=vstride, hstride=hstride,
                                                      vdilation=vdilation, hdilation=hdilation),
