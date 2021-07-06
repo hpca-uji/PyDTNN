@@ -131,6 +131,10 @@ _cg_group.add_argument('--conv_gemm_cache', type=bool_lambda, default=True)
 _cg_group.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
 _cg_group.add_argument('--conv_gemm_trans', type=bool_lambda, default=False)
 
+# ConvGemm
+_wg_group = parser.add_argument_group("ConvWinograd options")
+_wg_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False)
+
 # Parallel execution options
 _pe_group = parser.add_argument_group("Parallel execution options")
 _pe_group.add_argument('--mpi_processes', type=int, default=1, help=argparse.SUPPRESS)

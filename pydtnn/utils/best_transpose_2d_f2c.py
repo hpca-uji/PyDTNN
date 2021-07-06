@@ -25,7 +25,7 @@ from pydtnn.cython_modules import transpose_2d_f2c_ji_cython, transpose_2d_f2c_i
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
 
-cg_lib = load_library("convGemm")
+cg_lib = None
 
 
 def transpose_2d_numpy(original, transposed=None):
@@ -46,6 +46,9 @@ def transpose_2d_ravel(original, transposed=None):
 
 def transpose_2d_conv_gemm(original, transposed=None):
     d0, d1 = original.shape
+    global cg_lib
+    if cg_lib is None:
+        cg_lib = load_library("convGemm")
     if transposed is None:
         transposed = np.empty((d0, d1), original.dtype, order="C")
     cg_lib.sreshapeOut_pydtnn(ctypes.c_uint(d0), ctypes.c_uint(d1), ctypes.c_uint(1),
