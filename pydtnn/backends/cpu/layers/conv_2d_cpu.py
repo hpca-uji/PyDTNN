@@ -192,6 +192,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         return y
 
     def _forward_nhwc_cg(self, x):
+        """Version of the forward function that uses the convGemm library"""
 
         if self.model.mode == TRAIN_MODE:
             self.cg_x = x
@@ -377,7 +378,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
         res = np.empty(self.weights.shape, dtype=dy.dtype)
-        self.cg.conv_gemm_nhwc(dy, self.cg_x, out=res,
+        self.cg.conv_gemm_nhwc(dy, self.cg_x, biases=res,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation,

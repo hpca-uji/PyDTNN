@@ -178,6 +178,8 @@ class ConvGemm:
                 try:
                     self.x_conv_gemm_nhwc = self.lib_cg.sconvGemmNHWC
                     self.x_deconv_gemm_nhwc = self.lib_cg.sconvGemmNHWC_back
+                    self.x_conv_gemm_nchw = self.lib_cg.sconvGemmNCHW
+                    self.x_deconv_gemm_nchw = self.lib_cg.sconvGemmNCHW_back
                 except AttributeError:
                     pass # do not complain about missing symbols
             else:
@@ -209,7 +211,7 @@ class ConvGemm:
         except AttributeError:
             pass
 
-    def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+    def conv_gemm_nchw_old(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
@@ -499,40 +501,84 @@ class ConvGemm:
         # * NEW(wxh) 6):
         return best_transpose_2d_f2c(biases_cg)
 
-    def conv_gemm_nhwc(self, In, x, out=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+    def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+                  vdilation=1, hdilation=1, biases_vector=None, trans=False):
+
+        if self.x_conv_gemm_nchw is None:
+            return self.conv_gemm_nchw_old( weights, x, biases, alpha, beta, vpadding, hpadding, vstride, hstride, vdilation, hdilation, biases_vector, trans)
+
+        b, c, h, w = x.shape
+
+        if not trans:
+            kn, ck, kh, kw = weights.shape
+            if biases is None:
+                ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+                wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
+                biases = np.empty((b, ho, wo, kn), weights.dtype, order="C")
+            else:
+                bb, ho, wo, knb = biases.shape
+                assert kn == knb, "Number of filters must be the same!"
+                assert b == bb, "Batch size must be the same!"
+        else:
+            kn, ck, kh, kw = biases.shape
+            knw, bw, ho, wo = weights.shape
+            assert kn == knw, "Number of filters must be the same!"
+            assert b == bw, "Batch size must be the same!"
+
+        assert ck == c, "Number of channels in weights and x should be the same!"
+
+        self.x_conv_gemm_nchw(ctypes.c_char(b'Y' if trans else b'N'),
+                         ctypes.c_uint(kh), ctypes.c_uint(kw),
+                         ctypes.c_uint(c), ctypes.c_uint(kn),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
+                         ctypes.c_uint(h), ctypes.c_uint(w), ctypes.c_uint(b),
+                         ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
+                         ctypes.c_uint(vstride), ctypes.c_uint(hstride),
+                         ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                         ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
+                         ctypes.c_void_p(biases_cg.ctypes.data),
+                         self.ac_pack, self.bc_pack)
+
+        return biases
+
+    def conv_gemm_nhwc(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False):
 
         b, h, w, c = x.shape
 
         if not trans:
-            ck, kh, kw, kn = In.shape
-            if out is None:
+            ck, kh, kw, kn = weights.shape
+            if biases is None:
                 beta = 0.0
                 ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
                 wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-                out = np.empty((b, ho, wo, kn), In.dtype, order="C")
+                biases = np.empty((b, ho, wo, kn), weights.dtype, order="C")
+            else:
+                bb, ho, wo, knb = biases.shape
+                assert kn == knb, "Number of filters must be the same!"
+                assert b == bb, "Batch size must be the same!"
         else:
-            assert out is not None, "If using the transposed convGemm, the output matrix must be supplied"
-            ck, kh, kw, kn = out.shape
-            bw, ho, wo, knw  = In.shape
+            assert biases is not None, "If using the transposed convGemm, the output matrix must be supplied"
+            ck, kh, kw, kn = biases.shape
+            bw, ho, wo, knw  = weights.shape
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
 
         assert ck == c, "Number of channels in weights and x should be the same!"
 
         self.x_conv_gemm_nhwc(ctypes.c_char(b'Y' if trans else b'N'),
-                         ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw), ctypes.c_uint(c),
-                         ctypes.c_float(alpha), ctypes.c_void_p(In.ctypes.data),
+                         ctypes.c_uint(c), ctypes.c_uint(kh), ctypes.c_uint(kw), ctypes.c_uint(kn),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
                          ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w),
                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                          ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                          ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
                          ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
-                         ctypes.c_void_p(out.ctypes.data),
+                         ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
                          self.ac_pack, self.bc_pack)
 
-        return out
+        return biases
 
     def deconv_gemm_nchw(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
                     vstride=1, hstride=1, vdilation=1, hdilation=1):
@@ -658,6 +704,13 @@ class ConvGemm:
         ck, kh, kw, kn = weights.shape
         b, h, w, c = dx.shape
         assert ck == c, "Number of channels in weights and x should be the same!"
+
+        # Allocate space for self.cc_pack
+        if self._cc_pack_size == 0:
+            self._cc_pack_size = self.lib_cg.alloc_unpack_buff(ctypes.c_int(kh), ctypes.c_int(kw),
+                    ctypes.c_int(c), ctypes.byref(self.cc_pack))
+            if self._cc_pack_size == 0:
+                raise MemoryError("Could not allocate space for cc_pack!")
 
         self.x_deconv_gemm_nhwc(ctypes.c_uint(kn), ctypes.c_uint(kh),
                         ctypes.c_uint(kw), ctypes.c_uint(c),
