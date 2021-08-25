@@ -17,5 +17,5 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from .conv_gemm import ConvGemm, ConvGemmCache
-from .conv_winograd import ConvWinograd
+from .conv_gemm import ConvGemm, is_conv_gemm_available
+from .conv_winograd import ConvWinograd, is_conv_winograd_available

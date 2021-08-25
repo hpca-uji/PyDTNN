@@ -22,7 +22,7 @@ from typing import Callable, List, Optional
 import numpy as np
 
 from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.backends.cpu.libs import ConvGemm, ConvGemmCache, ConvWinograd
+from pydtnn.backends.cpu.libs import ConvGemm, ConvWinograd, is_conv_gemm_available, is_conv_winograd_available
 from pydtnn.cython_modules import im2row_nhwc_cython, add_nhwc_cython, row2im_nhwc_cython, \
     im2col_nchw_cython, add_nchw_cython, col2im_nchw_cython, transpose_1023_and_pad_cython, \
     reindex_cython, \
@@ -40,6 +40,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
     PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \
     PYDTNN_OPS_FORWARD_POINTWISE_CONV, PYDTNN_OPS_FORWARD_TRANSPOSE_Y, PYDTNN_OPS_FORWARD_CONVWINOGRAD
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
@@ -58,10 +59,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.cg_cache = True  # Store created matrices to allow them to be reused
         self.cg_deconv = False  # Use deconvGemm instead of matmul + col2im
         self.cg_trans = False  # Use the convGemm function to operate with im2colT
-        self.cg_x_transposed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.model.dtype, order="C"))
-        self.cg_x_indexed_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.model.dtype, order="C"))
-        self.cg_biases_cache = ConvGemmCache(lambda shape: np.empty(shape, self.model.dtype, order="F"))  # order F!
-        self.cg_matmul_out_cache = ConvGemmCache(lambda shape: np.empty(shape, self.model.dtype, order="C"))
+        self.cg_x_transposed_cache = MemoryCache(lambda shape: np.zeros(shape, self.model.dtype, order="C"))
+        self.cg_x_indexed_cache = MemoryCache(lambda shape: np.zeros(shape, self.model.dtype, order="C"))
+        self.cg_biases_cache = MemoryCache(lambda shape: np.empty(shape, self.model.dtype, order="F"))  # order F!
+        self.cg_matmul_out_cache = MemoryCache(lambda shape: np.empty(shape, self.model.dtype, order="C"))
         # convWinograd related attributes (some of them will be modified in initialize())
         self.cw = None
 
@@ -72,16 +73,19 @@ class Conv2DCPU(LayerCPU, Conv2D):
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
+        if not self.model.enable_memory_cache:
+            MemoryCache.disable()
         # Set convGemm parameters
         if self.model.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
-            if not self.model.conv_gemm_cache:
-                ConvGemmCache.disable()
             self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
             self.cg_deconv = self.model.conv_gemm_deconv
             self.cg_trans = self.model.conv_gemm_trans
         # Set convWinograd parameters
-        if self.model.enable_conv_winograd:
+        cw_constraints_fulfilled = (self.kh, self.kw) == (3, 3) and \
+                                   (self.vstride, self.hstride) == (1, 1) and \
+                                   (self.vdilation, self.hdilation) == (1, 1)
+        if self.model.enable_conv_winograd and cw_constraints_fulfilled:
             self.cw = ConvWinograd(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
         # Set forward and backward implementations
         variant = 'i2c'  # Use i2c as default
@@ -92,35 +96,51 @@ class Conv2DCPU(LayerCPU, Conv2D):
         elif self.model.enable_best_of:
             variant = 'best_of'
             if self.__class__._best_fw is None:
+                alternatives_fw=[ ('i2c', self._get_class_forward_and_backward('i2c')[0]) ]
+                if is_conv_gemm_available:
+                    alternatives_fw.append( ('cg', self._get_class_forward_and_backward('cg')[0]) )
+                if is_conv_winograd_available and cw_constraints_fulfilled:
+                    alternatives_fw.append( ('cw', self._get_class_forward_and_backward('cw')[0]) )
+
                 self.__class__._best_fw = BestOf(
                     name="Conv2DCPU only forward",
-                    alternatives=[
-                        ('i2c', self._get_class_forward_and_backward('i2c')[0]),
-                        ('cg', self._get_class_forward_and_backward('cg')[0]),
-                        ('cw', self._get_class_forward_and_backward('cw')[0]),
-                    ],
+                    alternatives=alternatives_fw,
                     get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
                 )
+
+                alternatives_fw_bw_pipeline=[ ('i2c', self._get_class_forward_and_backward('i2c')) ]
+                if is_conv_gemm_available:
+                    alternatives_fw_bw_pipeline.append( ('cg', self._get_class_forward_and_backward('cg')) )
+                if is_conv_winograd_available and cw_constraints_fulfilled:
+                    alternatives_fw_bw_pipeline.append( ('cw', self._get_class_forward_and_backward('cw')) )
+
                 self.__class__._best_fw_bw_pipeline = BestOf(
                     name="Conv2DCPU forward backward",
-                    alternatives=[
-                        ('i2c', self._get_class_forward_and_backward('i2c')),
-                        ('cg', self._get_class_forward_and_backward('cg')),
-                        ('cw', self._get_class_forward_and_backward('cw')),
-                    ],
+                    alternatives=alternatives_fw_bw_pipeline,
                     get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
                 )
             # Fix ConvGemm parameters to use convGemmTrans and Persistent memory (CGT+PM)
-            if self.cg is None:
-                self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
-            ConvGemmCache.enable()
-            self.cg_trans = True
-            self.cg_fallback_to_im2col = False
-            self.cg_deconv = False
+            MemoryCache.enable()
+            if is_conv_gemm_available:
+                if self.cg is None:
+                    self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                self.cg_trans = True
+                self.cg_fallback_to_im2col = False
+                self.cg_deconv = False
+            if is_conv_winograd_available:
+                if self.cw is None:
+                    self.cw = ConvWinograd(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+        elif self.model.enable_conv_winograd:
+            if cw_constraints_fulfilled:
+                MemoryCache.enable()
+                variant = 'cw'
+            elif self.model.enable_conv_gemm:
+                MemoryCache.enable()
+                variant = 'cg'
+            else:
+                variant = 'i2c'
         elif self.model.enable_conv_gemm:
             variant = 'cg'
-        elif self.model.enable_conv_winograd:
-            variant = 'cw'
         forward, backward = self._get_forward_and_backward(variant)
         setattr(self, "forward", forward)
         setattr(self, "backward", backward)
@@ -293,7 +313,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVWINOGRAD)
-        y = self.cw.conv_winograd_2x2_3x3_numpy_nchw(self.weights, x, biases=biases_vector,
+        y = self.cw.conv_winograd_2x2_3x3_nchw(self.weights, x, biases=biases_vector,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation)
