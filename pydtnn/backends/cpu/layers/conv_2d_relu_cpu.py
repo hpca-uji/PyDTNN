@@ -41,7 +41,7 @@ class Conv2DReluCPU(Conv2DCPU, Conv2DRelu):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         # @todo: Replace ConvGemm by the actual fused layer
-        res = self.cg.conv_gemm(self.weights, x, biases=None,
+        res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation,
