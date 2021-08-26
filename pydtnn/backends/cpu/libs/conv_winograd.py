@@ -92,7 +92,7 @@ class ConvWinograd:
                 raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
 
         if ConvWinograd.lib_cw is None:
-            ConvWinograd.lib_cw = load_library("convWinograd")
+            ConvWinograd.lib_cw = load_library("convwinograd")
 
         # F(2x2, 3x3)
         self.bt_2x2_3x3 = np.array([[   1,   0,  -1  ,0 ], 
@@ -309,7 +309,7 @@ class ConvWinograd:
                              ctypes.c_void_p(self.at_2x2_3x3.ctypes.data),
                              ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data),
                              ctypes.c_void_p(m1.ctypes.data), ctypes.c_void_p(m2.ctypes.data),
-                             ctypes.c_char((b'T', b'F')[relu]), ctypes.c_char((b'F', b'T')[bn]),
+                             ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
                              ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
                              ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
                              ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
