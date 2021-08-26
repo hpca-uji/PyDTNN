@@ -391,8 +391,8 @@ in your academic publication, we suggest citing the following paper:
 
 -  **PyDTNN: A user-friendly and extensible framework for distributed
    deep learning**. Sergio Barrachina, Adrián Castelló, Mar Catalán,
-   Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing*. ISSN:
-   1573-0484. DOI: `10.1007/s11227-021-03673-z
+   Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing* 77(9), 
+   pp. 9971-9987 (2021) ISSN: 1573-0484. DOI: `10.1007/s11227-021-03673-z
    <http://dx.doi.org/10.1007/s11227-021-03673-z>`_.
 
 Other references:
@@ -401,7 +401,7 @@ Other references:
    of Deep Neural Networks**. Sergio Barrachina, Adrián Castelló, 
    Mar Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE 
    International Parallel and Distributed Processing Symposium 
-   Workshops (IPDPSW)*, 2021, pp. 730-739, 
+   Workshops (IPDPSW)*, pp. 730-739 (2021)
    DOI: `10.1109/IPDPSW52791.2021.00110 
    <http://dx.doi.org/10.1109/IPDPSW52791.2021.00110>`_.
 

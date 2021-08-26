@@ -124,22 +124,22 @@ class ConvWinograd:
         if platform.machine() == 'aarch64':
             if self.dtype == np.float32:
                 try:
-                    self.x_winograd_nchw = self.lib_cw.sconvWinograd2x2_3x3_nchw
+                    self.x_winograd_nchw = self.lib_cw.sconv_winograd2x2_3x3_nchw
                 except AttributeError:
-                    print("Winograd sconvWinograd2x2_3x3_nchw routine not found. Fallback to numpy version!".format(str(self.dtype)))
-                    self.x_winograd_nchw = self.lib_cw.sconvWinograd2x2_3x3_numpy_nchw
+                    print("Winograd sconv_winograd2x2_3x3_nchw routine not found. Fallback to numpy version!".format(str(self.dtype)))
+                    self.x_winograd_nchw = self.lib_cw.sconv_winograd2x2_3x3_numpy_nchw
             else:
                 raise ValueError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
         elif platform.machine() == 'x86_64':
             if self.dtype == np.float32:
                 try:
-                    self.x_winograd_nchw = self.lib_cw.sconvWinograd2x2_3x3_nchw
+                    self.x_winograd_nchw = self.lib_cw.sconv_winograd2x2_3x3_nchw
                 except AttributeError:
-                    print("Winograd sconvWinograd2x2_3x3_nchw routine not found. Fallback to numpy version!".format(str(self.dtype)))
-                    self.x_winograd_nchw = self.lib_cw.sconvWinograd2x2_3x3_numpy_nchw
+                    print("Winograd sconv_winograd2x2_3x3_nchw routine not found. Fallback to numpy version!".format(str(self.dtype)))
+                    self.x_winograd_nchw = self.lib_cw.sconv_winograd2x2_3x3_numpy_nchw
 
                 # try:
-                #     self.x_winograd_nhwc = self.lib_cw.sconvWinograd2x2_3x3_nhwc
+                #     self.x_winograd_nhwc = self.lib_cw.sconv_winograd2x2_3x3_nhwc
                 # except AttributeError:
                 #     pass # do not complain about missing symbols
             else:
@@ -259,7 +259,9 @@ class ConvWinograd:
         return y
 
     def conv_winograd_2x2_3x3_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0, 
-                                   vstride=1, hstride=1, vdilation=1, hdilation=1):
+                                   vstride=1, hstride=1, vdilation=1, hdilation=1,
+                                   relu=False, bn=False, running_mean=None, inv_std=None,
+                                   gamma=None, beta=None):
 
         n, ci, hi, wi = x.shape
         co, ci, kh, kw = weights.shape
@@ -301,12 +303,17 @@ class ConvWinograd:
                              ctypes.c_void_p(x.ctypes.data), ctypes.c_uint(ldD1), ctypes.c_uint(ldD2), ctypes.c_uint(ldD3),
                              ctypes.c_void_p(weights.ctypes.data),ctypes.c_uint(ldF1), ctypes.c_uint(ldF2), ctypes.c_uint(ldF3),
                              ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ldY1), ctypes.c_uint(ldY2), ctypes.c_uint(ldY3),
-                             ctypes.c_void_p(0 if biases is None else biases.ctypes.data),
+                             ctypes.c_void_p(None if biases is None else biases.ctypes.data),
                              ctypes.c_void_p(self.bt_2x2_3x3.ctypes.data),
                              ctypes.c_void_p(self.g_2x2_3x3.ctypes.data),
                              ctypes.c_void_p(self.at_2x2_3x3.ctypes.data),
                              ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data),
-                             ctypes.c_void_p(m1.ctypes.data), ctypes.c_void_p(m2.ctypes.data))
+                             ctypes.c_void_p(m1.ctypes.data), ctypes.c_void_p(m2.ctypes.data),
+                             ctypes.c_char((b'T', b'F')[relu]), ctypes.c_char((b'F', b'T')[bn]),
+                             ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
+                             ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
+                             ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
+                             ctypes.c_void_p(None if beta is None else beta.ctypes.data))
         return y
 
 
@@ -332,26 +339,27 @@ def __usage_example__():
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
     weights = np.zeros((kn, c, kh, kw)).astype(np.float32, order='C')
-    weights[0][0][0][0] = 1.89
-    weights[1][1][1][1] = 3.0
-    weights[2][2][2][2] = 4.0
+    weights[0][0][0][0] = -100.89
+    weights[1][1][1][1] = -322.0
+    weights[2][2][2][2] = -334.0
     x = np.ones((b, c, h, w)).astype(np.float32, order='C')
     ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     biases_wg = (np.ones((kn)) * 10).astype(np.float32, order='C')
     print("Using conv_winograd to compute weights * x + biases...")
+    r = False
     conv_winograd = ConvWinograd(debug=False)
     conv_winograd_result = conv_winograd.conv_winograd_2x2_3x3_nchw(weights, x, biases_wg,
                                          vpadding=vpadding, hpadding=hpadding,
                                          vstride=vstride, hstride=hstride,
-                                         vdilation=vdilation, hdilation=hdilation)
+                                         vdilation=vdilation, hdilation=hdilation, relu=r)
     # print(conv_winograd_result)
     print("Sum: ", conv_winograd_result.sum())
     conv_winograd_t = timeit(lambda: conv_winograd.conv_winograd_2x2_3x3_nchw(weights, x, biases_wg,
                                         vpadding=vpadding, hpadding=hpadding,
                                         vstride=vstride, hstride=hstride,
-                                        vdilation=vdilation, hdilation=hdilation),
+                                        vdilation=vdilation, hdilation=hdilation, relu=r),
                                         number=10) / 10
     print("conv_winograd time: {:.4f}".format(conv_winograd_t))
     print()
@@ -360,6 +368,8 @@ def __usage_example__():
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = w_c @ x_c + biases
     im2col_mm_result = im2col_mm_result.reshape(kn, -1, ho, wo).transpose(1, 0, 2, 3)
+    if r:
+        im2col_mm_result = np.maximum(im2col_mm_result, 0)
     # print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
     print("np.allclose: ", np.allclose(conv_winograd_result, im2col_mm_result))

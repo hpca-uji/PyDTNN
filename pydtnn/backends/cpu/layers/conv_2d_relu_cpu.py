@@ -17,7 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
+from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DRelu
 from pydtnn.model import TRAIN_MODE
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, \
@@ -29,9 +29,22 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
-class Conv2DReluCPU(Conv2DCPU, Conv2DRelu):
+class Conv2DReluCPU(LayerCPU, Conv2DRelu):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def initialize(self, prev_shape=None, need_dx=True, from_parent_dict=None):
+        self.forward = {"_forward_nchw_cg": self._forward_nchw_cg, \
+                        "_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
+        self.weights = from_parent_dict["weights"]
+        self.biases = from_parent_dict["biases"]
 
     def forward(self, x):
+        """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
+        pass
+
+    def _forward_nchw_cg(self, x):
         """Version of the forward function that uses the convGemm + Relu"""
 
         if self.model.mode == TRAIN_MODE:
@@ -54,6 +67,24 @@ class Conv2DReluCPU(Conv2DCPU, Conv2DRelu):
 
         # @todo: Remove once ConvGemm+Relu is implemented !!
         y[y < 0] = 0
+
+        return y
+
+    def _forward_nchw_cw(self, x):
+        """Version of the forward function that uses the convWinograd + Relu"""
+
+        if self.model.mode == TRAIN_MODE:
+            raise RuntimeError("Fused layers cannot be used in training mode!")
+
+        biases_vector = self.biases if self.use_bias else None
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
+        y = self.cw.conv_winograd_2x2_3x3_nchw(self.weights, x, biases_vector,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                relu=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
 
