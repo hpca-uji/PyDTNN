@@ -126,6 +126,10 @@ class ConvWinograd:
                                                            getattr(self, f"bt_{m}x{m}_{r}x{r}"),
                                                            getattr(self, f"at_{m}x{m}_{r}x{r}"),
                                                            funcs[1], *args, **kwargs))
+            if r not in self.alternatives:
+                self.alternatives[r] = []
+            self.alternatives[r].append((f"winograd_{m}x{m}_{r}x{r}", getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw")))
+
         # Parent layer
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
@@ -144,6 +148,7 @@ class ConvWinograd:
         if ConvWinograd.lib_cw is None:
             ConvWinograd.lib_cw = load_library("convwinograd")
 
+        self.alternatives = {}
         m, r = None, None
 
         if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
@@ -245,13 +250,10 @@ class ConvWinograd:
         # Debug
         self.debug = debug
 
-        if enable_best_of and r == 3:
+        if enable_best_of and len(self.alternatives[r]) > 1:
             self.conv_winograd_nchw = BestOf(
                 name="Winograd functions",
-                alternatives=[
-                    ("winograd_2x2_3x3", self._conv_winograd_2x2_3x3_nchw),
-                    ("winograd_4x4_3x3", self._conv_winograd_4x4_3x3_nchw),
-                ],
+                alternatives=self.alternatives[r],
                 get_problem_size=lambda *args, **kwargs: tuple(list(args[0].shape) + list(args[1].shape)),
             )
         else:
