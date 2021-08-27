@@ -259,14 +259,6 @@ class ConvWinograd:
         else:
             self.conv_winograd_nchw = getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw")
 
-    def _conv_winograd_nchw_gen(self, m, r, *args, **kwargs):
-       return getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw_func")\
-                                           (m, r, getattr(self, f"g_{m}x{m}_{r}x{r}"),
-                                                  getattr(self, f"bt_{m}x{m}_{r}x{r}"),
-                                                  getattr(self, f"at_{m}x{m}_{r}x{r}"),
-                                                  getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw_func_int"),
-                                                  *args, **kwargs)
-
     def _conv_winograd_numpy_nchw(self, m, r, g, bt, at, x_winograd_nchw,
                                   weights, x, biases=None, vpadding=0, hpadding=0,
                                   vstride=1, hstride=1, vdilation=1, hdilation=1,
