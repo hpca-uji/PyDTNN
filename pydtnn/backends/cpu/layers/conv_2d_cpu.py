@@ -75,18 +75,21 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
         if not self.model.enable_memory_cache:
             MemoryCache.disable()
+        # Set convWinograd parameters
+        if self.model.enable_conv_winograd:
+            try:
+                self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
+                                       self.vdilation, self.hdilation,
+                                       dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                cw_constraints_fulfilled = True
+            except NotImplementedError:
+                cw_constraints_fulfilled = False
         # Set convGemm parameters
         if self.model.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
             self.cg_fallback_to_im2col = self.model.conv_gemm_fallback_to_im2col
             self.cg_deconv = self.model.conv_gemm_deconv
             self.cg_trans = self.model.conv_gemm_trans
-        # Set convWinograd parameters
-        cw_constraints_fulfilled = (self.kh, self.kw) == (3, 3) and \
-                                   (self.vstride, self.hstride) == (1, 1) and \
-                                   (self.vdilation, self.hdilation) == (1, 1)
-        if self.model.enable_conv_winograd and cw_constraints_fulfilled:
-            self.cw = ConvWinograd(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
         # Set forward and backward implementations
         variant = 'i2c'  # Use i2c as default
         if self.grouping == "pointwise":
@@ -313,7 +316,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVWINOGRAD)
-        y = self.cw.conv_winograd_2x2_3x3_nchw(self.weights, x, biases=biases_vector,
+        y = self.cw.conv_winograd_nchw(self.weights, x, biases=biases_vector,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation)

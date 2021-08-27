@@ -44,7 +44,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        y = self.cw.conv_winograd_2x2_3x3_nchw(self.weights, x, biases_vector,
+        y = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation, 
