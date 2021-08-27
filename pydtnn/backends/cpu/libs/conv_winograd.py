@@ -33,15 +33,14 @@ import numpy as np
 from pydtnn.utils import load_library
 from pydtnn.utils.best_pad import best_pad
 from pydtnn.utils.memory_cache import MemoryCache
+from pydtnn.utils.best_of import BestOf
 
 
-@property
-def is_conv_winograd_available():
-    try:
-        load_library("convWinograd")
-    except ImportError:
-        return False
-    return True
+try:
+   load_library("convwinograd")
+   is_conv_winograd_available = True
+except ImportError:
+   is_conv_winograd_available = False
 
 
 class ConvWinograd:
@@ -70,7 +69,7 @@ class ConvWinograd:
 
     lib_cw = None  # will link to the libconvWinograd.so library
 
-    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation,
+    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation, winograd_tile_size=2,
                  dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvWinograd.so library.
@@ -96,6 +95,39 @@ class ConvWinograd:
         parent_layer: layer
             The layer that is using it (for tracing purposes).
         """
+
+        def get_winograd_function(m, r):
+            # choose the appropriate convWinograd function depending on the architecture and the data type being used
+            if platform.machine() == 'aarch64':
+                if self.dtype == np.float32:
+                    try:
+                        x_winograd_nchw = getattr(lib_cw, f"sconv_winograd{m}x{m}_{r}x{r}_nchw")
+                        return (self._conv_winograd_c_nchw, x_winograd_nchw)
+                    except AttributeError:
+                        print(f"Winograd sconv_winograd{m}x{m}_{r}x{r}_nchw routine not found. Fallback to numpy version!")
+                        return (self._conv_winograd_numpy_nchw, None)
+                else:
+                    raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
+            elif platform.machine() == 'x86_64':
+                if self.dtype == np.float32:
+                    try:
+                        x_winograd_nchw = getattr(self.lib_cw, f"sconv_winograd{m}x{m}_{r}x{r}_nchw")
+                        return (self._conv_winograd_c_nchw, x_winograd_nchw)
+                    except AttributeError:
+                        print(f"Winograd sconv_winograd{m}x{m}_{r}x{r}_nchw routine not found. Fallback to numpy version!")
+                        return (self._conv_winograd_numpy_nchw, None)
+                else:
+                    raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
+            else:
+                raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
+
+        # Parent layer
+        if parent_layer is not None:
+            self.get_parent_layer = weakref.ref(parent_layer)
+            enable_best_of = self.get_parent_layer().model.enable_best_of
+        else:
+            enable_best_of = False
+
         if isinstance(dtype, type):
             self.dtype = dtype
         else:
@@ -104,65 +136,77 @@ class ConvWinograd:
             except KeyError:
                 raise NotImplementedError("dtype '{}' not recognized".format(dtype))
 
+        if ConvWinograd.lib_cw is None:
+            ConvWinograd.lib_cw = load_library("convwinograd")
+
         if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
             # F(3x3, 2x2)
             self.m, self.r = 3, 2   # Winograd output tile (m x m) and filter (r x r) sizes
-            self.g  = np.array([[      1,      0 ],
-                                [  1./2.,  1./2. ],
-                                [  1./2., -1./2. ],
-                                [      0,      1 ]],
-                                 dtype=self.dtype, order="C")  # G
-            self.bt = np.array([[      1,      0,     -1,      0 ],
-                                [      0,      1,      1,      0 ],
-                                [      0,     -1,      1,      0 ],
-                                [      0,     -1,      0,      1 ]],
-                                 dtype=self.dtype, order="C")  # Transpose of B
-            self.at = np.array([[      1,      1,      1,      0 ],
-                                [      0,      1,     -1,      0 ],
-                                [      0,      1,      1,      1 ]],
-                                 dtype=self.dtype, order="C")  # Transpose of A
+            self.g_3x3_2x2  = np.array([[      1,      0 ],
+                                        [  1./2.,  1./2. ],
+                                        [  1./2., -1./2. ],
+                                        [      0,      1 ]],
+                                         dtype=self.dtype, order="C")  # G
+            self.bt_3x3_2x2 = np.array([[      1,      0,     -1,      0 ],
+                                        [      0,      1,      1,      0 ],
+                                        [      0,     -1,      1,      0 ],
+                                        [      0,     -1,      0,      1 ]],
+                                         dtype=self.dtype, order="C")  # Transpose of B
+            self.at_3x3_2x2 = np.array([[      1,      1,      1,      0 ],
+                                        [      0,      1,     -1,      0 ],
+                                        [      0,      1,      1,      1 ]],
+                                         dtype=self.dtype, order="C")  # Transpose of A
+            self._conv_winograd_3x3_2x2_nchw_func, self._conv_winograd_3x3_2x2_nchw_func_int = \
+                                                                               get_winograd_function(3, 2)
 
-        elif (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
+        elif (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1) and \
+             (winograd_tile_size == 2 or enable_best_of):
             # F(2x2, 3x3)
             self.m, self.r = 2, 3   # Winograd output tile (m x m) and filter (r x r) sizes
-            self.g  = np.array([[      1,      0,      0 ],
-                                [  1./2.,  1./2.,  1./2. ],
-                                [  1./2., -1./2.,  1./2. ],
-                                [      0,      0,      1 ]],
-                                 dtype=self.dtype, order="C")  # G
-            self.bt = np.array([[      1,      0,     -1,      0 ],
-                                [      0,      1,      1,      0 ],
-                                [      0,     -1,      1,      0 ],
-                                [      0,      1,      0,     -1 ]],
-                                 dtype=self.dtype, order="C")  # Transpose of B
-            self.at = np.array([[      1,      1,      1,      0 ],
-                                [      0,      1,     -1,     -1 ]],
-                                 dtype=self.dtype, order="C")  # Transpose of A
+            self.g_2x2_3x3  = np.array([[      1,      0,      0 ],
+                                        [  1./2.,  1./2.,  1./2. ],
+                                        [  1./2., -1./2.,  1./2. ],
+                                        [      0,      0,      1 ]],
+                                         dtype=self.dtype, order="C")  # G
+            self.bt_2x2_3x3 = np.array([[      1,      0,     -1,      0 ],
+                                        [      0,      1,      1,      0 ],
+                                        [      0,     -1,      1,      0 ],
+                                        [      0,      1,      0,     -1 ]],
+                                         dtype=self.dtype, order="C")  # Transpose of B
+            self.at_2x2_3x3 = np.array([[      1,      1,      1,      0 ],
+                                        [      0,      1,     -1,     -1 ]],
+                                         dtype=self.dtype, order="C")  # Transpose of A
+            self._conv_winograd_2x2_3x3_nchw_func, self._conv_winograd_2x2_3x3_nchw_func_int = \
+                                                                               get_winograd_function(2, 3)
 
-        elif (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
-            # F(4x4, 3x3)
-            self.m, self.r = 4, 3   # Winograd output tile (m x m) and filter (r x r) sizes
-            self.g  = np.array([[  1./4.,      0,      0 ],
-                                [ -1./6., -1./6., -1./6. ],
-                                [ -1./6.,  1./6., -1./6. ],
-                                [ 1./24., 1./12.,  1./6. ],
-                                [ 1./24.,-1./12.,  1./6. ],
-                                [      0,      0,      1 ]],
-                                 dtype=self.dtype, order="C")  # G
-            self.bt = np.array([[      4,      0,     -5,      0,      1,      0 ],
-                                [      0,     -4,     -4,      1,      1,      0 ],
-                                [      0,      4,     -4,     -1,      1,      0 ],
-                                [      0,     -2,     -1,      2,      1,      0 ],
-                                [      0,      2,     -1,     -2,      1,      0 ],
-                                [      0,      4,      0,     -5,      0,      1 ]],
-                                 dtype=self.dtype, order="C")  # Transpose of B
-            self.at = np.array([[      1,      1,      1,      1,      1,      0 ],
-                                [      0,      1,     -1,      2,     -2,      0 ],
-                                [      0,      1,      1,      4,      4,      0 ],
-                                [      0,      1,     -1,      8,     -8,      1 ]],
-                                 dtype=self.dtype, order="C")  # Transpose of A
         else:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
+
+        if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1) and \
+           (winograd_tile_size == 4 or enable_best_of):
+            # F(4x4, 3x3)
+            self.m, self.r = 4, 3   # Winograd output tile (m x m) and filter (r x r) sizes
+            self.g_4x4_3x3  = np.array([[  1./4.,      0,      0 ],
+                                        [ -1./6., -1./6., -1./6. ],
+                                        [ -1./6.,  1./6., -1./6. ],
+                                        [ 1./24., 1./12.,  1./6. ],
+                                        [ 1./24.,-1./12.,  1./6. ],
+                                        [      0,      0,      1 ]],
+                                         dtype=self.dtype, order="C")  # G
+            self.bt_4x4_3x3 = np.array([[      4,      0,     -5,      0,      1,      0 ],
+                                        [      0,     -4,     -4,      1,      1,      0 ],
+                                        [      0,      4,     -4,     -1,      1,      0 ],
+                                        [      0,     -2,     -1,      2,      1,      0 ],
+                                        [      0,      2,     -1,     -2,      1,      0 ],
+                                        [      0,      4,      0,     -5,      0,      1 ]],
+                                         dtype=self.dtype, order="C")  # Transpose of B
+            self.at_4x4_3x3 = np.array([[      1,      1,      1,      1,      1,      0 ],
+                                        [      0,      1,     -1,      2,     -2,      0 ],
+                                        [      0,      1,      1,      4,      4,      0 ],
+                                        [      0,      1,     -1,      8,     -8,      1 ]],
+                                         dtype=self.dtype, order="C")  # Transpose of A
+            self._conv_winograd_4x4_3x3_nchw_func, self._conv_winograd_4x4_3x3_nchw_func_int = \
+                                                                               get_winograd_function(4, 3)
 
         # The x_padded and output matrices are also cached, but only on the current instance
         # self.x_padded_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
@@ -172,69 +216,74 @@ class ConvWinograd:
         self.m_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.d_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
 
-        if ConvWinograd.lib_cw is None:
-            ConvWinograd.lib_cw = load_library("convwinograd")
-
         # Debug
         self.debug = debug
 
-        # choose the appropriate convWinograd function depending on the architecture and the data type being used
-        if platform.machine() == 'aarch64':
-            if self.dtype == np.float32:
-                try:
-                    self.x_winograd_nchw = getattr(self.lib_cw, f"sconv_winograd{self.m}x{self.m}_{self.r}x{self.r}_nchw")
-                except AttributeError:
-                    print(f"Winograd sconv_winograd{self.m}x{self.m}_{self.r}x{self.r}_nchw routine not found. Fallback to numpy version!")
-                    self.conv_winograd_nchw = self.conv_winograd_numpy_nchw
-            else:
-                raise ValueError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
-        elif platform.machine() == 'x86_64':
-            if self.dtype == np.float32:
-                try:
-                    self.x_winograd_nchw = getattr(self.lib_cw, f"sconv_winograd{self.m}x{self.m}_{self.r}x{self.r}_nchw")
-                except AttributeError:
-                    print(f"Winograd sconv_winograd{self.m}x{self.m}_{self.r}x{self.r}_nchw routine not found. Fallback to numpy version!")
-                    self.conv_winograd_nchw = self.conv_winograd_numpy_nchw
-            else:
-                raise NotImplementedError("Type {} not supported by this version of libconvWinograd!".format(str(self.dtype)))
+        if enable_best_of and self.r == 3:
+            self.conv_winograd_nchw = BestOf(
+                name="Winograd functions",
+                alternatives=[
+                    ("winograd_2x2_3x3", self._conv_winograd_2x2_3x3_nchw),
+                    ("winograd_4x4_3x3", self._conv_winograd_4x4_3x3_nchw),
+                ],
+                get_problem_size=lambda *args, **kwargs: tuple(list(args[0].shape) + list(args[1].shape)),
+            )
         else:
-            raise NotImplementedError("Platform '{}' not yet supported".format(str(platform.machine())))
+            self.conv_winograd_nchw = getattr(self, f"_conv_winograd_{self.m}x{self.m}_{self.r}x{self.r}_nchw")
 
-    def conv_winograd_numpy_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0,
-                                 vstride=1, hstride=1, vdilation=1, hdilation=1,
-                                 relu=False, bn=False, running_mean=None, inv_std=None,
-                                 gamma=None, beta=None):
-        n, ci, hi, wi = x.shape
+    def _conv_winograd_3x3_2x2_nchw(self, *args, **kwargs):
+       return self._conv_winograd_nchw_gen(3, 2, *args, **kwargs)
+
+    def _conv_winograd_2x2_3x3_nchw(self, *args, **kwargs):
+       return self._conv_winograd_nchw_gen(2, 3, *args, **kwargs)
+
+    def _conv_winograd_4x4_3x3_nchw(self, *args, **kwargs):
+       return self._conv_winograd_nchw_gen(4, 3, *args, **kwargs)
+
+    def _conv_winograd_nchw_gen(self, m, r, *args, **kwargs):
+       return getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw_func")\
+                                           (m, r, getattr(self, f"g_{m}x{m}_{r}x{r}"),
+                                                  getattr(self, f"bt_{m}x{m}_{r}x{r}"),
+                                                  getattr(self, f"at_{m}x{m}_{r}x{r}"),
+                                                  getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw_func_int"),
+                                                  *args, **kwargs)
+
+    def _conv_winograd_numpy_nchw(self, m, r, g, bt, at, x_winograd_nchw,
+                                  weights, x, biases=None, vpadding=0, hpadding=0,
+                                  vstride=1, hstride=1, vdilation=1, hdilation=1,
+                                  relu=False, bn=False, running_mean=None, inv_std=None,
+                                  gamma=None, beta=None):
+        n,  ci, hi, wi = x.shape
         co, ci, kh, kw = weights.shape
 
-        s = self.r - 1           # Winograd sliding window stride
-        t = self.m + self.r - 1  # Winograd sliding window size t x t
+        s = r - 1      # Winograd sliding window stride
+        t = m + r - 1  # Winograd sliding window size t x t
 
-        if (kh, kw) != (self.r, self.r):
-            raise ValueError("Kernel size {} supported by this version of Winograd, kernel size should be (3x3)!".format(str((kh, kw))))
+        if (kh, kw) != (r, r):
+            raise ValueError(f"Kernel size {kh}x{kw} supported by this version of Winograd, kernel size should be ({r}x{r})!")
 
         if (vstride, hstride) != (1, 1):
-            raise ValueError("Stride {} supported by this version of Winograd, stride should be (1,1)!".format(str((vstride, hstride))))
+            raise ValueError(f"Stride {vstride}x{hstride} supported by this version of Winograd, stride should be (1,1)!")
 
         if (vdilation, hdilation) != (1, 1):
-            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vdilation, hdilation))))
+            raise ValueError(f"Dilation {vdilation}x{hdilation} supported by this version of Winograd, dilation should be (1,1)!")
 
         ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
         wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-        tile_h = (hi + 2 * vpadding - kh) // self.m + 1
-        tile_w = (wi + 2 * hpadding - kw) // self.m + 1
+        tile_h = (hi + 2 * vpadding - kh) // m + 1
+        tile_w = (wi + 2 * hpadding - kw) // m + 1
 
         y = self.y_cache[(n, co, ho, wo)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
         v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
-        m = self.m_cache[(t, t, co, (n * tile_h * tile_w))]
+        # m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
         d = self.d_cache[(t, t)]
 
         for k in range(co):
             for c in range(ci):
                 # U = G  * g * G^T
-                u[..., k, c] = (self.g @ weights[k, c, ...]) @ self.g.T
+                u[..., k, c] = (g @ weights[k, c, ...]) @ g.T
 
         # 1.1) First alternative: padding first
         # x_padded = best_pad(x, vpadding, hpadding)
@@ -289,10 +338,10 @@ class ConvWinograd:
                         if fw+ow < t:
                             d[fh:fh+oh, fw+ow:] = 0
 
-                        v[..., c, b * tile_h * tile_w + h * tile_w + w] = (self.bt @ d) @ self.bt.T
+                        v[..., c, b * tile_h * tile_w + h * tile_w + w] = (bt @ d) @ bt.T
 
         # 2.1) Firt alternative: np.einsum
-        m = np.einsum('... i j, ... j k -> ... i k', u, v)
+        m_= np.einsum('... i j, ... j k -> ... i k', u, v)
 
         # 2.2) Second alternative: matmul
         # for i in range(t):
@@ -303,9 +352,9 @@ class ConvWinograd:
             for b in range(n):
                 for h in range(tile_h):
                     for w in range(tile_w): 
-                        z = (self.at @ m[..., k, b * tile_h * tile_w + h * tile_w + w]) @ self.at.T
+                        z = (at @ m_[..., k, b * tile_h * tile_w + h * tile_w + w]) @ at.T
                         hh, ww = h * s, w * s
-                        y[b, k, hh:hh+self.m, ww:ww+self.m] = z[:min(self.m, ho-hh), :min(self.m, wo-ww)]
+                        y[b, k, hh:hh+m, ww:ww+m] = z[:min(m, ho-hh), :min(m, wo-ww)]
 
             if biases is not None:
                 y[:, k, ...] += biases[k]
@@ -318,30 +367,31 @@ class ConvWinograd:
 
         return y
 
-    def conv_winograd_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0,
-                           vstride=1, hstride=1, vdilation=1, hdilation=1,
-                           relu=False, bn=False, running_mean=None, inv_std=None,
-                           gamma=None, beta=None):
-        n, ci, hi, wi = x.shape
+    def _conv_winograd_c_nchw(self, m, r, g, bt, at, x_winograd_nchw,
+                              weights, x, biases=None, vpadding=0, hpadding=0,
+                              vstride=1, hstride=1, vdilation=1, hdilation=1,
+                              relu=False, bn=False, running_mean=None, inv_std=None,
+                              gamma=None, beta=None):
+        n,  ci, hi, wi = x.shape
         co, ci, kh, kw = weights.shape
 
-        s = self.r - 1      # Winograd sliding window stride
-        t = self.m + self.r - 1  # Winograd sliding window size t x t
+        s = r - 1      # Winograd sliding window stride
+        t = m + r - 1  # Winograd sliding window size t x t
 
-        if (kh, kw) != (self.r, self.r):
-            raise ValueError("Kernel size {} supported by this version of Winograd, kernel size should be (3x3)!".format(str((kh, kw))))
+        if (kh, kw) != (r, r):
+            raise ValueError(f"Kernel size {kh}x{kw} supported by this version of Winograd, kernel size should be ({r}x{r})!")
 
         if (vstride, hstride) != (1, 1):
-            raise ValueError("Stride {} supported by this version of Winograd, stride should be (1,1)!".format(str((vstride, hstride))))
+            raise ValueError(f"Stride {vstride}x{hstride} supported by this version of Winograd, stride should be (1,1)!")
 
         if (vdilation, hdilation) != (1, 1):
-            raise ValueError("Dilation {} supported by this version of Winograd, dilation should be (1,1)!".format(str((vdilation, hdilation))))
+            raise ValueError(f"Dilation {vdilation}x{hdilation} supported by this version of Winograd, dilation should be (1,1)!")
 
         ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
         wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-        tile_h = (hi + 2 * vpadding - kh) // self.m + 1
-        tile_w = (wi + 2 * hpadding - kw) // self.m + 1
+        tile_h = (hi + 2 * vpadding - kh) // m + 1
+        tile_w = (wi + 2 * hpadding - kw) // m + 1
 
         y = self.y_cache[(n, co, ho, wo)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
@@ -354,24 +404,22 @@ class ConvWinograd:
         ldF1, ldF2, ldF3 = ci * kh * kw, kh * kw, kw
         ldY1, ldY2, ldY3 = co * ho * wo, ho * wo, wo
 
-        self.x_winograd_nchw(ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci), 
-                             ctypes.c_uint(hi), ctypes.c_uint(wi),
-                             ctypes.c_uint(kh), ctypes.c_uint(kw),
-                             ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), 
-                             ctypes.c_void_p(x.ctypes.data), ctypes.c_uint(ldD1), ctypes.c_uint(ldD2), ctypes.c_uint(ldD3),
-                             ctypes.c_void_p(weights.ctypes.data),ctypes.c_uint(ldF1), ctypes.c_uint(ldF2), ctypes.c_uint(ldF3),
-                             ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ldY1), ctypes.c_uint(ldY2), ctypes.c_uint(ldY3),
-                             ctypes.c_void_p(None if biases is None else biases.ctypes.data),
-                             ctypes.c_void_p(self.bt.ctypes.data),
-                             ctypes.c_void_p(self.g.ctypes.data),
-                             ctypes.c_void_p(self.at.ctypes.data),
-                             ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data),
-                             ctypes.c_void_p(m1.ctypes.data), ctypes.c_void_p(m2.ctypes.data),
-                             ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
-                             ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
-                             ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
-                             ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
-                             ctypes.c_void_p(None if beta is None else beta.ctypes.data))
+        x_winograd_nchw(ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
+                        ctypes.c_uint(hi), ctypes.c_uint(wi),
+                        ctypes.c_uint(kh), ctypes.c_uint(kw),
+                        ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
+                        ctypes.c_void_p(x.ctypes.data), ctypes.c_uint(ldD1), ctypes.c_uint(ldD2), ctypes.c_uint(ldD3),
+                        ctypes.c_void_p(weights.ctypes.data),ctypes.c_uint(ldF1), ctypes.c_uint(ldF2), ctypes.c_uint(ldF3),
+                        ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ldY1), ctypes.c_uint(ldY2), ctypes.c_uint(ldY3),
+                        ctypes.c_void_p(None if biases is None else biases.ctypes.data),
+                        ctypes.c_void_p(bt.ctypes.data), ctypes.c_void_p(g.ctypes.data), ctypes.c_void_p(at.ctypes.data),
+                        ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data),
+                        ctypes.c_void_p(m1.ctypes.data), ctypes.c_void_p(m2.ctypes.data),
+                        ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
+                        ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
+                        ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
+                        ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
+                        ctypes.c_void_p(None if beta is None else beta.ctypes.data))
         return y
 
 
@@ -457,7 +505,7 @@ def __usage_example__():
                                 wo = (ww + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
                                 biases = (np.ones((kk, nn * ho * wo)) * 10).astype(np.float32, order='C')
                                 biases_wg = (np.ones((kk)) * 10).astype(np.float32, order='C')
-                                conv_winograd = ConvWinograd(debug=False)
+                                conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation, debug=False)
                                 conv_winograd_t = timeit(lambda: conv_winograd.conv_winograd_nchw(weights, x, biases_wg,
                                                                     vpadding=vpadding, hpadding=hpadding,
                                                                     vstride=vstride, hstride=hstride,

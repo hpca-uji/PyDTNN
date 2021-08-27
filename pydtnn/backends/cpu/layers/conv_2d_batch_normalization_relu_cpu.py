@@ -29,6 +29,8 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
     def initialize(self, prev_shape=None, need_dx=True, from_parent_dict=None):
         self.forward = {"_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
+        # self.forward = {"_forward_nchw_cw": self._forward_nchw_cw, \
+        #                 "_forward_nchw_best_of": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
 

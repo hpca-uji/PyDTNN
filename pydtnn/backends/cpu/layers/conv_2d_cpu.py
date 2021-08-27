@@ -48,8 +48,8 @@ from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
 class Conv2DCPU(LayerCPU, Conv2D):
-    _best_fw: Optional[BestOf] = None
-    _best_fw_bw_pipeline: Optional[BestOf] = None
+    # _best_fw: Optional[BestOf] = None
+    # _best_fw_bw_pipeline: Optional[BestOf] = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -65,6 +65,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.cg_matmul_out_cache = MemoryCache(lambda shape: np.empty(shape, self.model.dtype, order="C"))
         # convWinograd related attributes (some of them will be modified in initialize())
         self.cw = None
+        self._best_fw = None
+        self._best_fw_bw_pipeline = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -75,6 +77,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
         if not self.model.enable_memory_cache:
             MemoryCache.disable()
+        cw_constraints_fulfilled = None
         # Set convWinograd parameters
         if self.model.enable_conv_winograd:
             try:
@@ -98,41 +101,48 @@ class Conv2DCPU(LayerCPU, Conv2D):
             variant = 'depthwise'
         elif self.model.enable_best_of:
             variant = 'best_of'
-            if self.__class__._best_fw is None:
-                alternatives_fw=[ ('i2c', self._get_class_forward_and_backward('i2c')[0]) ]
-                if is_conv_gemm_available:
-                    alternatives_fw.append( ('cg', self._get_class_forward_and_backward('cg')[0]) )
-                if is_conv_winograd_available and cw_constraints_fulfilled:
-                    alternatives_fw.append( ('cw', self._get_class_forward_and_backward('cw')[0]) )
 
-                self.__class__._best_fw = BestOf(
-                    name="Conv2DCPU only forward",
-                    alternatives=alternatives_fw,
-                    get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
-                )
-
-                alternatives_fw_bw_pipeline=[ ('i2c', self._get_class_forward_and_backward('i2c')) ]
-                if is_conv_gemm_available:
-                    alternatives_fw_bw_pipeline.append( ('cg', self._get_class_forward_and_backward('cg')) )
-                if is_conv_winograd_available and cw_constraints_fulfilled:
-                    alternatives_fw_bw_pipeline.append( ('cw', self._get_class_forward_and_backward('cw')) )
-
-                self.__class__._best_fw_bw_pipeline = BestOf(
-                    name="Conv2DCPU forward backward",
-                    alternatives=alternatives_fw_bw_pipeline,
-                    get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
-                )
             # Fix ConvGemm parameters to use convGemmTrans and Persistent memory (CGT+PM)
             MemoryCache.enable()
+            if is_conv_winograd_available and self.cw is None and cw_constraints_fulfilled is None:
+                try:
+                    self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
+                                           self.vdilation, self.hdilation,
+                                           dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                    cw_constraints_fulfilled = True
+                except NotImplementedError:
+                    cw_constraints_fulfilled = False
             if is_conv_gemm_available:
                 if self.cg is None:
                     self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
                 self.cg_trans = True
                 self.cg_fallback_to_im2col = False
                 self.cg_deconv = False
-            if is_conv_winograd_available:
-                if self.cw is None:
-                    self.cw = ConvWinograd(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+
+            # if self.__class__._best_fw is None:
+            alternatives_fw=[ ('i2c', self._get_class_forward_and_backward('i2c')[0]) ]
+            if is_conv_gemm_available:
+                alternatives_fw.append( ('cg', self._get_class_forward_and_backward('cg')[0]) )
+            if is_conv_winograd_available and cw_constraints_fulfilled:
+                alternatives_fw.append( ('cw', self._get_class_forward_and_backward('cw')[0]) )
+
+            self._best_fw = BestOf(
+                name="Conv2DCPU only forward",
+                alternatives=alternatives_fw,
+                get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
+            )
+
+            alternatives_fw_bw_pipeline=[ ('i2c', self._get_class_forward_and_backward('i2c')) ]
+            if is_conv_gemm_available:
+                alternatives_fw_bw_pipeline.append( ('cg', self._get_class_forward_and_backward('cg')) )
+            if is_conv_winograd_available and cw_constraints_fulfilled:
+                alternatives_fw_bw_pipeline.append( ('cw', self._get_class_forward_and_backward('cw')) )
+
+            self._best_fw_bw_pipeline = BestOf(
+                name="Conv2DCPU forward backward",
+                alternatives=alternatives_fw_bw_pipeline,
+                get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
+            )
         elif self.model.enable_conv_winograd:
             if cw_constraints_fulfilled:
                 MemoryCache.enable()
@@ -144,6 +154,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
                 variant = 'i2c'
         elif self.model.enable_conv_gemm:
             variant = 'cg'
+        self.cw_constraints_fulfilled = cw_constraints_fulfilled
         forward, backward = self._get_forward_and_backward(variant)
         setattr(self, "forward", forward)
         setattr(self, "backward", backward)

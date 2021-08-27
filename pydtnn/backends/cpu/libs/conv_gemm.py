@@ -39,13 +39,12 @@ from pydtnn.utils.best_transpose_1230 import best_transpose_1230
 from pydtnn.utils.best_transpose_2d_f2c import best_transpose_2d_f2c
 from pydtnn.utils.memory_cache import MemoryCache
 
-@property
-def is_conv_gemm_available():
-    try:
-        load_library("convGemm")
-    except ImportError:
-        return False
-    return True
+
+try:
+   load_library("convGemm")
+   is_conv_gemm_available = True
+except ImportError:
+   is_conv_gemm_available = False
 
 
 class ConvGemm:

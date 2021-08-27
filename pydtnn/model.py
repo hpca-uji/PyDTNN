@@ -423,7 +423,7 @@ class Model:
         def __layer_fusion(layers, relu=True, conv_bn_relu=False):
             fused_layers = []
             for i, curr_layer in enumerate(layers):
-                #if i > 0: print(i, curr_layer.canonical_name, fused_layers[-1].canonical_name)
+                # if i > 0: print(i, curr_layer.canonical_name, fused_layers[-1].canonical_name)
                 if curr_layer.is_block_layer:
                     for j, p in enumerate(curr_layer.paths):
                         curr_layer.paths[j] = __layer_fusion(p, relu, conv_bn_relu)
@@ -436,7 +436,7 @@ class Model:
                                           fused_layers[-2].canonical_name + \
                                           fused_layers[-1].canonical_name + \
                                           type(curr_layer).__name__)
-                    if fused_layers[-2].forward.__name__ in fused_layer.__dict__:
+                    if fused_layers[-2].forward.__name__ in fused_layer.__dict__: # or self.enable_best_of:
                         bn_layer = fused_layers.pop()
                         cv_layer = fused_layers.pop()
                         print("Fusing %03d_%s + %03d_%s + %03d_%s..." % (cv_layer.id, type(cv_layer).__name__,
@@ -451,7 +451,7 @@ class Model:
                     fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
                                           fused_layers[-1].canonical_name + \
                                           type(curr_layer).__name__)
-                    if fused_layers[-1].forward.__name__ in fused_layer.__dict__:
+                    if fused_layers[-1].forward.__name__ in fused_layer.__dict__: # or self.enable_best_of:
                         prev_layer = fused_layers.pop()
                         print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                                 curr_layer.id, type(curr_layer).__name__))
