@@ -96,7 +96,7 @@ class ConvWinograd:
             The layer that is using it (for tracing purposes).
         """
 
-        def set_winograd_functions(m, r):
+        def set_winograd_functions(m, r, g, bt, at):
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
@@ -122,10 +122,8 @@ class ConvWinograd:
                 raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
 
             setattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw",
-                    lambda *args, **kwargs: funcs[0](m, r, getattr(self, f"g_{m}x{m}_{r}x{r}"),
-                                                           getattr(self, f"bt_{m}x{m}_{r}x{r}"),
-                                                           getattr(self, f"at_{m}x{m}_{r}x{r}"),
-                                                           funcs[1], *args, **kwargs))
+                          lambda *args, **kwargs: funcs[0](m, r, g, bt, at, funcs[1], *args, **kwargs))
+
             if r not in self.alternatives:
                 self.alternatives[r] = []
             self.alternatives[r].append((f"winograd_{m}x{m}_{r}x{r}", getattr(self, f"_conv_winograd_{m}x{m}_{r}x{r}_nchw")))
@@ -168,7 +166,7 @@ class ConvWinograd:
                                         [      0,      1,     -1,      0 ],
                                         [      0,      1,      1,      1 ]],
                                          dtype=self.dtype, order="C")  # Transpose of A
-            set_winograd_functions(m, r)
+            set_winograd_functions(m, r, self.g_3x3_2x2, self.bt_3x3_2x2, self.at_3x3_2x2)
 
         if (kh, kw) == (5, 5) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
             # F(2x2, 5x5)
@@ -190,7 +188,7 @@ class ConvWinograd:
             self.at_2x2_5x5 = np.array([[      1,      1,      1,      1,      1,      0 ],
                                         [      0,      1,     -1,      2,     -2,      0 ]],
                                          dtype=self.dtype, order="C")  # Transpose of A
-            set_winograd_functions(m, r)
+            set_winograd_functions(m, r, self.g_2x2_5x5, self.bt_2x2_5x5, self.at_2x2_5x5)
 
         if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1) and \
              (winograd_tile_size == 2 or enable_best_of):
@@ -209,7 +207,7 @@ class ConvWinograd:
             self.at_2x2_3x3 = np.array([[      1,      1,      1,      0 ],
                                         [      0,      1,     -1,     -1 ]],
                                          dtype=self.dtype, order="C")  # Transpose of A
-            set_winograd_functions(m, r)
+            set_winograd_functions(m, r, self.g_2x2_3x3, self.bt_2x2_3x3, self.at_2x2_3x3)
 
         if m is None and r is None:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
@@ -237,7 +235,7 @@ class ConvWinograd:
                                         [      0,      1,      1,      4,      4,      0 ],
                                         [      0,      1,     -1,      8,     -8,      1 ]],
                                          dtype=self.dtype, order="C")  # Transpose of A
-            set_winograd_functions(m, r)
+            set_winograd_functions(m, r, self.g_4x4_3x3, self.bt_4x4_3x3, self.at_4x4_3x3)
 
         # The x_padded and output matrices are also cached, but only on the current instance
         # self.x_padded_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
