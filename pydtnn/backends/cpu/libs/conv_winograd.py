@@ -69,7 +69,7 @@ class ConvWinograd:
 
     lib_cw = None  # will link to the libconvWinograd.so library
 
-    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation, winograd_tile_size=2,
+    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation,
                  dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvWinograd.so library.
