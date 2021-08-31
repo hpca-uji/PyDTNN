@@ -105,7 +105,7 @@ class ConvWinograd:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
-                    routine_name = "conv_winograd_nchw"
+                    routine_name = "conv_winograd_nchw_fp32"
                 else:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             else:
