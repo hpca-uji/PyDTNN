@@ -402,7 +402,7 @@ class ConvWinograd:
         y = self.y_cache[(n, co, ho, wo)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
         v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
-        m1= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
+        m1= self.m_cache[(co, (n * tile_h * tile_w, t, t))]
         m2= self.m_cache[(co, (n * tile_h * tile_w))]
         d = self.d_cache[(t, t)]
 
