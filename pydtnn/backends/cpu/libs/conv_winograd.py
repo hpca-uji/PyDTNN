@@ -69,7 +69,7 @@ class ConvWinograd:
 
     lib_cw = None  # will link to the libconvWinograd.so library
 
-    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation, winograd_tile_size=2,
+    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation,
                  dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvWinograd.so library.
@@ -403,7 +403,7 @@ class ConvWinograd:
         y = self.y_cache[(n, co, ho, wo)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
         v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
-        m1= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
+        m1= self.m_cache[(co, (n * tile_h * tile_w, t, t))]
         m2= self.m_cache[(co, (n * tile_h * tile_w))]
         d = self.d_cache[(t, t)]
 
