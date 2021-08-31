@@ -100,22 +100,23 @@ class ConvWinograd:
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
+                    routine_name = f"conv_winograd_{m}x{m}_{r}x{r}_nchw_neon_fp32"
                     try:
-                        x_winograd_nchw = getattr(lib_cw, f"sconv_winograd{m}x{m}_{r}x{r}_nchw")
+                        x_winograd_nchw = getattr(__class__.lib_cw, routine_name)
                         funcs = (self._conv_winograd_c_nchw, x_winograd_nchw)
                     except AttributeError:
-                        print(f"Winograd sconv_winograd{m}x{m}_{r}x{r}_nchw routine not found. Fallback to numpy version!")
+                        print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
                         funcs = (self._conv_winograd_numpy_nchw, None)
                 else:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
+                    routine_name = "conv_winograd_nchw"
                     try:
-                        # x_winograd_nchw = getattr(self.lib_cw, f"sconv_winograd{m}x{m}_{r}x{r}_nchw")
-                        x_winograd_nchw = getattr(self.lib_cw, f"sconv_winograd_nchw")
+                        x_winograd_nchw = getattr(__class__.lib_cw, routine_name)
                         funcs = (self._conv_winograd_c_nchw, x_winograd_nchw)
                     except AttributeError:
-                        print(f"Winograd sconv_winograd{m}x{m}_{r}x{r}_nchw routine not found. Fallback to numpy version!")
+                        print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
                         funcs = (self._conv_winograd_numpy_nchw, None)
                 else:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
