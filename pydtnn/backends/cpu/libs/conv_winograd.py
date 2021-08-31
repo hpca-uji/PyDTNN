@@ -67,7 +67,7 @@ class ConvWinograd:
     (see tests/winograd.py for more instructions on testing)
     """
 
-    lib_cw = None  # will link to the libconvWinograd.so library
+    lib_cw = None  # will link to the libconvwinograd.so library
 
     def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation,
                  dtype=np.float32, debug=False, parent_layer=None):
@@ -101,27 +101,21 @@ class ConvWinograd:
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
                     routine_name = f"conv_winograd_{m}x{m}_{r}x{r}_nchw_neon_fp32"
-                    try:
-                        x_winograd_nchw = getattr(__class__.lib_cw, routine_name)
-                        funcs = (self._conv_winograd_c_nchw, x_winograd_nchw)
-                    except AttributeError:
-                        print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
-                        funcs = (self._conv_winograd_numpy_nchw, None)
                 else:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
                     routine_name = "conv_winograd_nchw"
-                    try:
-                        x_winograd_nchw = getattr(__class__.lib_cw, routine_name)
-                        funcs = (self._conv_winograd_c_nchw, x_winograd_nchw)
-                    except AttributeError:
-                        print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
-                        funcs = (self._conv_winograd_numpy_nchw, None)
                 else:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             else:
                 raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
+
+            try:
+                funcs = (self._conv_winograd_c_nchw, getattr(__class__.lib_cw, routine_name))
+            except AttributeError:
+                print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
+                funcs = (self._conv_winograd_numpy_nchw, None)
 
             if r not in self.alternatives:
                 self.alternatives[r] = []
@@ -403,7 +397,7 @@ class ConvWinograd:
         y = self.y_cache[(n, co, ho, wo)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
         v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
-        m1= self.m_cache[(co, (n * tile_h * tile_w, t, t))]
+        m1= self.m_cache[((n * tile_h * tile_w), co, t, t)]
         m2= self.m_cache[(co, (n * tile_h * tile_w))]
         d = self.d_cache[(t, t)]
 
