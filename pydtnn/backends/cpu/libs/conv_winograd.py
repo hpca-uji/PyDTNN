@@ -105,7 +105,7 @@ class ConvWinograd:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
-                    routine_name = "conv_winograd_nchw_fp32"
+                    routine_name = f"conv_winograd_{m}x{m}_{r}x{r}_nchw_avx_fp32"
                 else:
                     raise NotImplementedError(f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             else:
@@ -397,9 +397,7 @@ class ConvWinograd:
         y = self.y_cache[(n, co, ho, wo)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
         v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
-        m1= self.m_cache[((n * tile_h * tile_w), co, t, t)]
-        m2= self.m_cache[(co, (n * tile_h * tile_w))]
-        d = self.d_cache[(t, t)]
+        m1= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
 
         ldD1, ldD2, ldD3 = ci * hi * wi, hi * wi, wi
         ldF1, ldF2, ldF3 = ci * kh * kw, kh * kw, kw
@@ -415,8 +413,7 @@ class ConvWinograd:
                         ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ldY1), ctypes.c_uint(ldY2), ctypes.c_uint(ldY3),
                         ctypes.c_void_p(None if biases is None else biases.ctypes.data),
                         ctypes.c_void_p(bt.ctypes.data), ctypes.c_void_p(g.ctypes.data), ctypes.c_void_p(at.ctypes.data),
-                        ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data),
-                        ctypes.c_void_p(m1.ctypes.data), ctypes.c_void_p(m2.ctypes.data),
+                        ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data), ctypes.c_void_p(m1.ctypes.data),
                         ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
                         ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
                         ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
@@ -430,13 +427,13 @@ def __usage_example__():
     from timeit import timeit
     from pydtnn.cython_modules import im2col_nchw_cython
     # Default parameters (1st layer AlexNet for Cifar10)
-    b = 64  # Batch size
-    c = 3  # Channels per layer
-    h = 32  # Layers height
-    w = 32  # Layers width
-    kn = 64  # Number of filters
-    kh = 3  # Filters weights height
-    kw = 3  # Filters weights width
+    b = 16  # Batch size
+    c = 16  # Channels per layer
+    h = 8  # Layers height
+    w = 8  # Layers width
+    kn = 8  # Number of filters
+    kh = 2  # Filters weights height
+    kw = 2  # Filters weights width
     vpadding = 1  # Vertical padding
     hpadding = 1  # Horizontal padding
     vstride = 1  # Vertical stride
@@ -446,6 +443,7 @@ def __usage_example__():
     # Create weights, x, and biases matrices from previous parameters. If no biases
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
+    np.random.seed(0)
     weights = np.zeros((kn, c, kh, kw)).astype(np.float32, order='C')
     weights[0][0][0][0] = -100.89
     #weights[1][1][1][1] = -322.0
@@ -488,21 +486,20 @@ def __usage_example__():
     mm_t = timeit(lambda: w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation) \
                        + biases, number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
-
     # """
-    n = 64
-    c = k = 64
-    h = w = 32
+    n = 65
+    c = k = 65
+    h = w = 33
     vpadd = hpadd = 6
     for nn in range(16, n, 16):
         for cc in range(16, c, 16):
             for kk in range(16, k, 16):
-                for hh in range(8, h, 1):
-                    for ww in range(8, w, 1):
+                for hh in range(8, h, 4):
                         for vpadding in range(1, vpadd):
                             for hpadding in range(1, hpadd):
-                                for kh in [2,3,5]:
+                                for kh in [5]:
                                     kw = kh
+                                    ww = hh
                                     print(nn, cc, kk, hh, ww, vpadding, hpadding, kh, end="")
                                     weights = np.random.rand(kk, cc, kh, kw).astype(np.float32, order='C')
                                     x = np.random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
@@ -519,16 +516,17 @@ def __usage_example__():
                                                                         vpadding=vpadding, hpadding=hpadding,
                                                                         vstride=vstride, hstride=hstride,
                                                                         vdilation=vdilation, hdilation=hdilation),
-			                                                number=1) / 1
+			                                                number=10) / 10
                                     print(" conv_winograd time: {:.4f} ".format(conv_winograd_t), end="")
                                     w_c = weights.reshape(kk, -1)
                                     im2col_mm_result = w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation) \
                                                        + biases
                                     im2col_mm_result = im2col_mm_result.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
-                                    im2col_t = timeit(lambda: w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation) \
-                                                       + biases, number=1) / 1
+                                    im2col_t = timeit(lambda: (w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation) \
+                                                       + biases).reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3), number=10) / 10
                                     print("mm time: {:.4f} ".format(im2col_t), end="")
-                                    print("np.allclose:", np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-6), end="")
+                                    print("np.allclose:", np.allclose(conv_winograd_result, im2col_mm_result, atol=1e-3), end="")
+                                    # print(" np.sum:", np.max(np.abs(conv_winograd_result-im2col_mm_result)), end="")
                                     print((" WINOGR", " IM2COL")[conv_winograd_t > im2col_t], im2col_t/conv_winograd_t)
     # """
 
