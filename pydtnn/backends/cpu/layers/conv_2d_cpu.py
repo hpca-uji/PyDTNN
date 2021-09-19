@@ -83,7 +83,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
             try:
                 self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
                                        self.vdilation, self.hdilation,
-                                       dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                                       dtype=self.model.dtype, tensor_format=self.model.tensor_format,
+                                       debug=self.debug, parent_layer=self)
                 cw_constraints_fulfilled = True
             except NotImplementedError:
                 cw_constraints_fulfilled = False
@@ -108,7 +109,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
                 try:
                     self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
                                            self.vdilation, self.hdilation,
-                                           dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                                           dtype=self.model.dtype, tensor_format=self.model.tensor_format,
+                                           debug=self.debug, parent_layer=self)
                     cw_constraints_fulfilled = True
                 except NotImplementedError:
                     cw_constraints_fulfilled = False
@@ -243,7 +245,20 @@ class Conv2DCPU(LayerCPU, Conv2D):
         return y
 
     def _forward_nhwc_cw(self, x):
-        raise NotImplementedError("Forward not yet implemented!")
+        """Version of the forward function that uses the convWinograd library"""
+
+        if self.model.mode == TRAIN_MODE:
+            self.cw_x = x
+
+        biases_vector = self.biases if self.use_bias else None
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVWINOGRAD)
+        y = self.cw.conv_winograd_nhwc(self.weights, x, biases=biases_vector,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return y
 
     def _forward_nhwc_depthwise(self, x):
         raise NotImplementedError("Forward not yet implemented!")
@@ -437,8 +452,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
             return dx
 
-    def _backward_nhwc_cw(self, x):
-        raise NotImplementedError("Backward not yet implemented!")
+    def _backward_nhwc_cw(self, dy):
+        return self._backward_nhwc_i2c(dy)
 
     def _backward_nhwc_depthwise(self, dy):
         raise NotImplementedError("Backward not yet implemented!")
