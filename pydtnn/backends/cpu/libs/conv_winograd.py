@@ -254,13 +254,17 @@ class ConvWinograd:
         else:
             setattr(self, f"conv_winograd_{self.tensor_format_str}", self.alternatives[r][0][1])
 
-    def _conv_winograd_numpy_nchw(self, m, r, g, bt, at, x_winograd_nchw,
+    def _conv_winograd_numpy(self, m, r, g, bt, at, x_winograd_nchw,
                                   weights, x, biases=None, vpadding=0, hpadding=0,
                                   vstride=1, hstride=1, vdilation=1, hdilation=1,
                                   relu=False, bn=False, running_mean=None, inv_std=None,
                                   gamma=None, beta=None):
-        n,  ci, hi, wi = x.shape
-        co, ci, kh, kw = weights.shape
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            n,  ci, hi, wi = x.shape
+            co, ci, kh, kw = weights.shape
+        else:
+            n,  hi, wi, ci = x.shape
+            ci, kh, kw, co = weights.shape
 
         t = m + r - 1    # Winograd sliding window size t x t
         s = m            # Winograd sliding window stride: t - (r - 1) = m
@@ -280,7 +284,10 @@ class ConvWinograd:
         tile_h = math.ceil((hi + 2 * vpadding - t) / s) + 1
         tile_w = math.ceil((wi + 2 * hpadding - t) / s) + 1
 
-        y = self.y_cache[(n, co, ho, wo)]    # Output
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            y = self.y_cache[(n, co, ho, wo)]    # Output
+        else:
+            y = self.y_cache[(n, ho, wo, co)]    # Output
         u = self.u_cache[(t, t, co, ci)]     # Workspace for G * g * G^T
         v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
         # m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
@@ -318,7 +325,10 @@ class ConvWinograd:
                         ow = max(min(t, wi - ww) - min(t, fw), 0)
 
                         if hh < hh+oh and ww < ww+ow:
-                            d[fh:fh+oh, fw:fw+ow] = x[b, c, hh:hh+oh, ww:ww+ow]
+                            if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                                d[fh:fh+oh, fw:fw+ow] = x[b, c, hh:hh+oh, ww:ww+ow]
+                            else:
+                                d[fh:fh+oh, fw:fw+ow] = x[b, hh:hh+oh, ww:ww+ow, c]
 
                         #   0  0  0
                         #   X  X  X
@@ -360,13 +370,22 @@ class ConvWinograd:
                     for w in range(tile_w): 
                         z = (at @ m_[..., k, b * tile_h * tile_w + h * tile_w + w]) @ at.T
                         hh, ww = h * s, w * s
-                        y[b, k, hh:hh+m, ww:ww+m] = z[:min(m, ho-hh), :min(m, wo-ww)]
+                        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                            y[b, k, hh:hh+m, ww:ww+m] = z[:min(m, ho-hh), :min(m, wo-ww)]
+                        else:
+                            y[b, hh:hh+m, ww:ww+m, k] = z[:min(m, ho-hh), :min(m, wo-ww)]
 
             if biases is not None:
-                y[:, k, ...] += biases[k]
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                    y[:, k, ...] += biases[k]
+                else:
+                    y[..., k] += biases[k]
 
             if bn:
-                y[:, k, ...] = (((y[:, k, ...]  - running_mean[k]) * inv_std[k]) * gamma[k]) + beta[k];
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                    y[:, k, ...] = (((y[:, k, ...]  - running_mean[k]) * inv_std[k]) * gamma[k]) + beta[k]
+                else:
+                    y[..., k] = (((y[..., k]  - running_mean[k]) * inv_std[k]) * gamma[k]) + beta[k]
 
         if relu:
            y[y < 0] = 0
@@ -383,7 +402,7 @@ class ConvWinograd:
             n,  ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
-            n,  hi, wi, ci= x.shape
+            n,  hi, wi, ci = x.shape
             ci, kh, kw, co = weights.shape
 
         t = m + r - 1    # Winograd sliding window size t x t
