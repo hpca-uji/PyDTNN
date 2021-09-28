@@ -145,13 +145,13 @@ class ConvGemm:
         # @todo: The next fragment of code should be dependant on the architecture and the dtype
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
+        self.cc_pack = ctypes.POINTER(ctypes.c_float)()
         self.lib_cg.alloc_pack_buffs.restype = ctypes.c_int
-        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
+        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack), ctypes.byref(self.cc_pack))
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         # Declare cc_pack
-        self.cc_pack = ctypes.POINTER(ctypes.c_float)()
-        self._cc_pack_size = 0
+        self._cc_pack_size = 1
         # Debug
         self.debug = debug
         # Parent layer
@@ -512,6 +512,7 @@ class ConvGemm:
         if not trans:
             kn, ck, kh, kw = weights.shape
             if biases is None:
+                beta = 0.0
                 ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
                 wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
                 biases = np.empty((b, ho, wo, kn), weights.dtype, order="C")
@@ -576,7 +577,7 @@ class ConvGemm:
                          ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
-                         self.ac_pack, self.bc_pack)
+                         self.ac_pack, self.bc_pack, self.cc_pack)
 
         return biases
 
@@ -704,13 +705,6 @@ class ConvGemm:
         ck, kh, kw, kn = weights.shape
         b, h, w, c = dx.shape
         assert ck == c, "Number of channels in weights and x should be the same!"
-
-        # Allocate space for self.cc_pack
-        if self._cc_pack_size == 0:
-            self._cc_pack_size = self.lib_cg.alloc_unpack_buff(ctypes.c_int(kh), ctypes.c_int(kw),
-                    ctypes.c_int(c), ctypes.byref(self.cc_pack))
-            if self._cc_pack_size == 0:
-                raise MemoryError("Could not allocate space for cc_pack!")
 
         self.x_deconv_gemm_nhwc(ctypes.c_uint(kn), ctypes.c_uint(kh),
                         ctypes.c_uint(kw), ctypes.c_uint(c),
