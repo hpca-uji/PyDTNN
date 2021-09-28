@@ -417,27 +417,60 @@ class Model:
             this_recursion_layers += self.get_all_layers(layer.children)
         return this_recursion_layers
 
-    def __apply_relu_fusion(self):
-        """ Apply Relu fusion in a recursive manner """
+    def __apply_layer_fusion(self, relu=True, conv_bn_relu=False):
+        """ Apply layer fusion in a recursive manner """
 
-        def __relu_fusion(layers):
+        def __layer_fusion(layers, relu=True, conv_bn_relu=False):
             fused_layers = []
             for i, curr_layer in enumerate(layers):
+                # if i > 0: print(i, curr_layer.canonical_name, fused_layers[-1].canonical_name)
                 if curr_layer.is_block_layer:
                     for j, p in enumerate(curr_layer.paths):
-                        curr_layer.paths[j] = __relu_fusion(p)
-                elif i > 0 and type(curr_layer).__name__ == "Relu" and \
-                        type(fused_layers[-1]).__name__ in ["Conv2D", "BatchNormalization"]:
+                        curr_layer.paths[j] = __layer_fusion(p, relu, conv_bn_relu)
+                elif conv_bn_relu and len(fused_layers) > 1 and \
+                                         curr_layer.canonical_name == "Relu" and \
+                                         fused_layers[-1].canonical_name == "BatchNormalization" and \
+                                         fused_layers[-2].canonical_name == "Conv2D":
+                    backend = "gpu" if self.enable_cudnn else "cpu"
+                    fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
+                                          fused_layers[-2].canonical_name + \
+                                          fused_layers[-1].canonical_name + \
+                                          type(curr_layer).__name__)
+                    if fused_layers[-2].forward.__name__ in fused_layer.__dict__: # or self.enable_best_of:
+                        bn_layer = fused_layers.pop()
+                        cv_layer = fused_layers.pop()
+                        print("Fusing %03d_%s + %03d_%s + %03d_%s..." % (cv_layer.id, type(cv_layer).__name__,
+                                                                         bn_layer.id, type(bn_layer).__name__,
+                                                                         curr_layer.id, type(curr_layer).__name__))
+                        curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer) 
+                        curr_layer.initialize(from_parent_dict=cv_layer.__dict__)
+                elif relu and len(fused_layers) > 0 and \
+                                         curr_layer.canonical_name == "Relu" and \
+                                         fused_layers[-1].canonical_name == "Conv2D":
+                    backend = "gpu" if self.enable_cudnn else "cpu"
+                    fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
+                                          fused_layers[-1].canonical_name + \
+                                          type(curr_layer).__name__)
+                    if fused_layers[-1].forward.__name__ in fused_layer.__dict__: # or self.enable_best_of:
+                        prev_layer = fused_layers.pop()
+                        print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
+                                                                curr_layer.id, type(curr_layer).__name__))
+                        curr_layer = fused_layer(from_parent=prev_layer)
+                        curr_layer.initialize(from_parent_dict=prev_layer.__dict__)
+                elif relu and len(fused_layers) > 0 and \
+                                         curr_layer.canonical_name == "Relu" and \
+                                         fused_layers[-1].canonical_name == "BatchNormalization":
                     prev_layer = fused_layers.pop()
-                    print("Fusing %03d_%s with %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
-                                                               curr_layer.id, type(curr_layer).__name__))
+                    print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
+                                                            curr_layer.id, type(curr_layer).__name__))
                     curr_layer = getattr(importlib.import_module("pydtnn.layers"),
-                                         type(prev_layer).__name__ + type(curr_layer).__name__)(from_parent=prev_layer)
+                                         prev_layer.canonical_name + \
+                                         curr_layer.canonical_name)(from_parent=prev_layer)
                 fused_layers.append(curr_layer)
             return fused_layers
 
-        if not self.enable_cudnn:
-            self.layers = __relu_fusion(self.layers)
+        if not self.enable_cudnn and (relu or conv_bn_relu):
+            self.layers = __layer_fusion(self.layers, relu, conv_bn_relu)
 
     def load_store_path(self, layers, d, mode):
         for layer in layers:
@@ -754,8 +787,7 @@ class Model:
         loss_metrics = [loss] + metrics_list
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
-        if self.kwargs.get("enable_fused_relus"):
-            self.__apply_relu_fusion()
+        self.__apply_layer_fusion(self.kwargs.get("enable_fused_relu"), self.kwargs.get("enable_fused_conv_bn_relu"))
 
         if self.rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0

@@ -71,7 +71,8 @@ parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
 parser.add_argument('--weights_and_bias_filename', type=str, default=None)
 parser.add_argument('--history_file', type=str, default=None)
 parser.add_argument('--shared_storage', default=False, type=bool_lambda)
-parser.add_argument('--enable_fused_relus', type=bool_lambda, default=False)
+parser.add_argument('--enable_fused_relu', type=bool_lambda, default=False)
+parser.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
 parser.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
 parser.add_argument('--enable_best_of', type=bool_lambda, default=False)
 
@@ -127,11 +128,11 @@ _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2)
 _cg_group = parser.add_argument_group("ConvGemm options")
 _cg_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
 _cg_group.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_cache', type=bool_lambda, default=True)
 _cg_group.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
 _cg_group.add_argument('--conv_gemm_trans', type=bool_lambda, default=False)
+_cg_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
 
-# ConvGemm
+# ConvWinograd
 _wg_group = parser.add_argument_group("ConvWinograd options")
 _wg_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False)
 
