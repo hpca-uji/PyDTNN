@@ -101,13 +101,13 @@ class ConvGemm:
                 raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
         if ConvGemm.lib_cg is None:
             ConvGemm.lib_cg = load_library("convGemm")
-            ConvGemm.biases_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="F"))
-            ConvGemm.weights_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
-            ConvGemm.dy_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
-            ConvGemm.dx_padded_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.biases_cg_cache =  MemoryCache(lambda shape: np.empty(shape, self.dtype, order="F"))
+            ConvGemm.weights_cg_cache =  MemoryCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.dy_cg_cache =  MemoryCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+            ConvGemm.dx_padded_cache =  MemoryCache(lambda shape: np.empty(shape, self.dtype, order="C"))
         # The x_padded and output matrices are also cached, but only on the current instance
-        self.x_padded_cache = ConvGemmCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.out_cg_cache = ConvGemmCache(lambda shape: np.empty(shape, self.dtype, order="C"))
+        self.x_padded_cache =  MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.out_cg_cache =  MemoryCache(lambda shape: np.empty(shape, self.dtype, order="C"))
 
         # Declare ac_pack and bc_pack and allocate space for them
         # @todo: The next fragment of code should be dependant on the architecture and the dtype
@@ -469,7 +469,7 @@ class ConvGemm:
         # * NEW(wxh) 6):
         return best_transpose_2d_f2c(biases_cg)
 
-    def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+    def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=0.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False):
 
         if self.x_conv_gemm_nchw is None:
@@ -483,34 +483,36 @@ class ConvGemm:
                 beta = 0.0
                 ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
                 wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-                biases = np.empty((b, ho, wo, kn), weights.dtype, order="C")
+                biases = np.empty((b, kn, ho, wo), weights.dtype, order="C")
             else:
                 bb, ho, wo, knb = biases.shape
                 assert kn == knb, "Number of filters must be the same!"
                 assert b == bb, "Batch size must be the same!"
         else:
+            assert biases is not None, "If using the transposed convGemm, the biases matrix must be supplied"
             kn, ck, kh, kw = biases.shape
-            knw, bw, ho, wo = weights.shape
+            bw, knw, ho, wo = weights.shape
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
 
         assert ck == c, "Number of channels in weights and x should be the same!"
 
         self.x_conv_gemm_nchw(ctypes.c_char(b'Y' if trans else b'N'),
+                         ctypes.c_uint(kn), ctypes.c_uint(c),
                          ctypes.c_uint(kh), ctypes.c_uint(kw),
-                         ctypes.c_uint(c), ctypes.c_uint(kn),
-                         ctypes.c_float(alpha), ctypes.c_void_p(weights_cg.ctypes.data),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
                          ctypes.c_uint(h), ctypes.c_uint(w), ctypes.c_uint(b),
                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                          ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                          ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
-                         ctypes.c_void_p(x_padded_cg.ctypes.data), ctypes.c_float(beta),
-                         ctypes.c_void_p(biases_cg.ctypes.data),
-                         self.ac_pack, self.bc_pack)
+                         ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
+                         ctypes.c_void_p(biases.ctypes.data),
+                         ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
+                         self.ac_pack, self.bc_pack, self.cc_pack)
 
         return biases
 
-    def conv_gemm_nhwc(self, weights, x, biases=None, alpha=1.0, beta=1.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+    def conv_gemm_nhwc(self, weights, x, biases=None, alpha=1.0, beta=0.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False):
 
         b, h, w, c = x.shape

@@ -324,15 +324,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
                                 vdilation=self.vdilation, hdilation=self.hdilation,
                                 biases_vector=biases_vector)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # Biases sum is now done on conv_gemm
-        # y = res + self.biases.reshape(-1, 1)
-        # y = add_cython(res, self.biases) if self.use_bias else res
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = best_transpose_1023(res.reshape(self.co, -1, self.ho, self.wo))
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        return y
+        return res
 
     def _forward_nchw_cw(self, x):
         """Version of the forward function that uses the convWinograd library"""
@@ -518,6 +510,42 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
     def _backward_nchw_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
+        res = np.empty(self.weights.shape, dtype=dy.dtype)
+        self.cg.conv_gemm_nchw(dy, self.cg_x, biases=res,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                trans=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.dw = res # .reshape(self.weights.shape)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
+        if self.use_bias:
+            self.db = np.sum(dy, axis=(0, 2, 3))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.need_dx:
+            # TODO
+            dy_cols = best_transpose_1023(dy).reshape(self.co, -1)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
+            w_cols = self.weights.reshape(self.co, -1).T
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+            res = self.model.matmul(w_cols, dy_cols)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            dx = col2im_nchw_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
+                                    self.kh, self.kw, self.vpadding, self.hpadding,
+                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            return dx
+
+    def _backward_nchw_cg_old(self, dy):
 
         # if self.id == 4:
         #     self.model.tracer.print_memory_usage(f"Inside layer {self.id:03} backward 01")
