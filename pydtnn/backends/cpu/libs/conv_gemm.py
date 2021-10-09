@@ -498,13 +498,12 @@ class ConvGemm:
         assert ck == c, "Number of channels in weights and x should be the same!"
 
         self.x_conv_gemm_nchw(ctypes.c_char(b'Y' if trans else b'N'),
-                         ctypes.c_uint(kn), ctypes.c_uint(c),
-                         ctypes.c_uint(kh), ctypes.c_uint(kw),
-                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
-                         ctypes.c_uint(h), ctypes.c_uint(w), ctypes.c_uint(b),
+                         ctypes.c_uint(b), ctypes.c_uint(c), ctypes.c_uint(h), ctypes.c_uint(w),
+                         ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw),
                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                          ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                          ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
                          ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
@@ -538,12 +537,12 @@ class ConvGemm:
         assert ck == c, "Number of channels in weights and x should be the same!"
 
         self.x_conv_gemm_nhwc(ctypes.c_char(b'Y' if trans else b'N'),
-                         ctypes.c_uint(c), ctypes.c_uint(kh), ctypes.c_uint(kw), ctypes.c_uint(kn),
-                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
-                         ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w),
+                         ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w), ctypes.c_uint(c),
+                         ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw),
                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                          ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                          ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
                          ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
@@ -591,6 +590,28 @@ class ConvGemm:
         array_like
             The dx matrix.
         """
+
+        kn, ck, kh, kw = weights.shape
+        b2, kn2, ho, wo = dy.shape
+        b, c, h, w = dx.shape
+        assert kn == kn2, "Number of filters outputs in weights and dy should be the same!"
+        assert b == b2, "Different batch size!"
+        assert ck == c, "Number of channels in weights and x should be the same!"
+
+        self.x_deconv_gemm_nchw(ctypes.c_uint(b), ctypes.c_uint(c), ctypes.c_uint(h), ctypes.c_uint(w),
+                           ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw),
+                           ctypes.c_uint(vstride), ctypes.c_uint(hstride),
+                           ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
+                           ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                           ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+                           ctypes.c_void_p(dy.ctypes.data),
+                           ctypes.c_void_p(dx.ctypes.data),
+                           self.ac_pack, self.bc_pack, self.cc_pack)
+
+        return dx
+
+    def deconv_gemm_nchw_old(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
+                    vstride=1, hstride=1, vdilation=1, hdilation=1):
         # TODO: Support dilated deconvolutions
         assert vdilation == 1 and hdilation == 1, "Deconv gemm does not yet support dilated deconvolutions"
 
@@ -673,16 +694,18 @@ class ConvGemm:
                     vstride=1, hstride=1, vdilation=1, hdilation=1):
 
         ck, kh, kw, kn = weights.shape
+        b2, ho, wo, kn2 = dy.shape
         b, h, w, c = dx.shape
+        assert kn == kn2, "Number of filters outputs in weights and dy should be the same!"
+        assert b == b2, "Different batch size!"
         assert ck == c, "Number of channels in weights and x should be the same!"
 
-        self.x_deconv_gemm_nhwc(ctypes.c_uint(kn), ctypes.c_uint(kh),
-                        ctypes.c_uint(kw), ctypes.c_uint(c),
-                        ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
-                        ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w),
-                        ctypes.c_uint(hstride), ctypes.c_uint(vstride),
-                        ctypes.c_uint(hpadding), ctypes.c_uint(vpadding),
+        self.x_deconv_gemm_nhwc(ctypes.c_uint(b), ctypes.c_uint(h), ctypes.c_uint(w), ctypes.c_uint(c),
+                        ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw),
+                        ctypes.c_uint(vstride), ctypes.c_uint(hstride),
+                        ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                         ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
+                        ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
                         ctypes.c_void_p(dy.ctypes.data), ctypes.c_void_p(dx.ctypes.data),
                         self.ac_pack, self.bc_pack, self.cc_pack)
 

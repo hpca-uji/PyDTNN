@@ -518,7 +518,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
                                 vdilation=self.vdilation, hdilation=self.hdilation,
                                 trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-        self.dw = res # .reshape(self.weights.shape)
+        self.dw = res
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
         if self.use_bias:
@@ -526,23 +526,15 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.need_dx:
-            # TODO
-            dy_cols = best_transpose_1023(dy).reshape(self.co, -1)
-
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)
-            w_cols = self.weights.reshape(self.co, -1).T
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
+            dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
+            self.cg.deconv_gemm_nchw(self.weights, dy, dx,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
-            res = self.model.matmul(w_cols, dy_cols)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
-            dx = col2im_nchw_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
-                                    self.kh, self.kw, self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
     def _backward_nchw_cg_old(self, dy):
