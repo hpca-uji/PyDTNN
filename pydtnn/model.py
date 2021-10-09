@@ -804,7 +804,7 @@ class Model:
             toc = timer()
             if self.rank == 0:
                 # noinspection PyUnboundLocalVariable
-                val_total_loss, val_batch_count, string = \
+                test_total_loss, test_batch_count, string = \
                     self.__update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size,
                                                   loss_metrics, prefix="test_")
                 # noinspection PyUnboundLocalVariable
