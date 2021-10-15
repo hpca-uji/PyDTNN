@@ -1,7 +1,7 @@
 #!/bin/bash
 
-set -o errexit  # Abort on first error
-set -o nounset  # Abort on undefined variables
+set -o errexit # Abort on first error
+set -o nounset # Abort on undefined variables
 
 #-----------------------
 # Command line options
@@ -51,11 +51,11 @@ fi
 # Only inference parameters
 #--------------------------
 if [ -n "${ONLY_INFERENCE-}" ]; then
-	  # shellcheck disable=SC2034
-    EVALUATE=True
-    NUM_EPOCHS=0
-    STEPS_EPOCH=10
-    TEST_AS_VALIDATION=False
+  # shellcheck disable=SC2034
+  EVALUATE=True
+  NUM_EPOCHS=0
+  STEPS_EPOCH=10
+  TEST_AS_VALIDATION=False
 fi
 
 #-------------------
@@ -92,7 +92,9 @@ volta)
 *)
   if hostname | grep -q altec; then
     export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-14 15 16 17 18 19 20 21 22 23 24 25 26 27 2 3 4 5 6 7 8 9 10 11 12 13 1 0}"
-    export PRELOAD=${PRELOAD:-"/usr/lib64/libtcmalloc.so.4"}
+    # export PRELOAD=${PRELOAD:-"/usr/lib64/libtcmalloc.so.4"}
+  elif hostname | grep -q cmts; then
+    export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 2 3 4 5 6 7 8 9 10 11 12 13 14 15 1 0}"
   else
     export OMP_PLACES="cores"
     export OMP_PROC_BIND="close"
@@ -137,10 +139,8 @@ FILE_NAME="${FILE_NAME}_$(printf '%02d' "${NODES}")n"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS}")t"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${BATCH_SIZE}")bs"
 FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
-MACHINE="$(uname -n)"
-if [[ "${MACHINE}" == "altec"* ]]; then
-  MACHINE="altec"
-fi
+# Get machine name and remove any trailing numbers
+MACHINE="$( uname -n | sed -e 's/[0-9]*$//' )"
 FILE_NAME="${MACHINE}_${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
 HISTORY_FILENAME="${FILE_NAME}.history"
 OUTPUT_FILENAME="${FILE_NAME}.out"
@@ -149,7 +149,11 @@ SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"
 #--------------------------------------------------------------------------------
 # Do not launch the experiment if the same experiment has already been completed
 #--------------------------------------------------------------------------------
-SEARCH_TEXT="Testing maximum memory"
+if [ ${NUM_EPOCHS} == 0 ]; then
+  SEARCH_TEXT="Testing maximum memory"
+else
+  SEARCH_TEXT="Training maximum memory"
+fi
 if grep -q "${SEARCH_TEXT}" ./*"${FILE_NAME_NO_MACHINE_NO_DATE}"*.out 2>/dev/null; then
   echo "The next result files (with '${SEARCH_TEXT}') have been found:"
   grep --files-with-matches "${SEARCH_TEXT}" ./*"${FILE_NAME_NO_MACHINE_NO_DATE}"*.out
@@ -168,9 +172,9 @@ function set_model_flags() {
   # Model dependent parameters (extracted from run_benchmarks_data.csv)
   MODEL_FLAGS=""
   # 1) Get column for model
-  # model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet
+  # model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet;...
   models_line=$(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep model)
-  for i in 2 3 4 5 6 7; do
+  for i in 2 3 4 5 6 7 8 9 10 11; do
     if [ "$(echo "${models_line}" | cut -d ";" -f ${i})" = "${MODEL}" ]; then
       model_column=${i}
       break
@@ -210,9 +214,20 @@ function run_benchmark() {
     CMD=""
   else
     PARALLEL=data
-    # Example of MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts --bind-to none
-    # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
-    CMD="mpirun -np ${NODES} -ppn ${MPI_PPN:-1} -iface ${MPI_IFACE:-ib0} ${MPI_EXTRA_FLAGS}"
+    # Example of Intel MPI CMD: mpirun -np $procs -iface ib0 -ppn 1 -host $hosts
+    MPI_RUN=${MPI_RUN:-mpirun}
+    if ${MPI_RUN} --version | grep -q "Intel(R) MPI"; then
+      # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
+      CMD="mpirun -np ${NODES} -ppn ${MPI_PPN:-1} -iface ${MPI_IFACE:-ib0} ${MPI_EXTRA_FLAGS}"
+    elif ${MPI_RUN} --version | grep -q "Open MPI"; then
+      # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
+      CMD="mpirun -np ${NODES} -N ${MPI_PPN:-1} --bind-to none ${MPI_EXTRA_FLAGS}"
+    else
+      echo "Error: current MPI version is not yet supported!"
+      echo "Output of ${MPI_RUN} --version is:"
+      ${MPI_RUN} --version
+      exit 1
+    fi
   fi
 
   # 3) Launch pydtnn_benchmark
