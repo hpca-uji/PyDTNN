@@ -127,9 +127,6 @@ _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2)
 # ConvGemm
 _cg_group = parser.add_argument_group("ConvGemm options")
 _cg_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_trans', type=bool_lambda, default=False)
 _cg_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
 
 # ConvWinograd
