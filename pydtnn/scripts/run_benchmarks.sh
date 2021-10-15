@@ -54,7 +54,6 @@ if [ -n "${ONLY_INFERENCE-}" ]; then
   # shellcheck disable=SC2034
   EVALUATE=True
   NUM_EPOCHS=0
-  STEPS_EPOCH=10
   TEST_AS_VALIDATION=False
 fi
 
