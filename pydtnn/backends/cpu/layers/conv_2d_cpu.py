@@ -478,21 +478,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
-    @staticmethod
-    # @lru_cache(maxsize=4)
-    def _get_x_new_indexes_and_xstride(kx, xo, s, d):
-        """
-        Returns x_reorder and xstride based on kx (kh or kw), xo (ho or wo), and s (hstride or
-        vstride)
-        """
-        if s == 1:
-            return None, 1
-        x_reorder = []
-        for i in range(kx):
-            x_reorder += [i * d + j * s for j in range(xo)]
-        # Return x_reorder as a numpy.array because indexing is faster with a numpy.array than with a list
-        return np.array(x_reorder), xo
-
     def _backward_nchw_cg(self, dy):
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
