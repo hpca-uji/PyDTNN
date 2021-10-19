@@ -31,7 +31,6 @@ import numpy as np
 
 # from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ...
 from pydtnn.utils import load_library
-from pydtnn.utils.best_pad import best_pad
 from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC

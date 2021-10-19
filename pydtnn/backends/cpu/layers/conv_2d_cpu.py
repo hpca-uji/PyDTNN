@@ -24,8 +24,7 @@ import numpy as np
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.backends.cpu.libs import ConvGemm, ConvWinograd, is_conv_gemm_available, is_conv_winograd_available
 from pydtnn.cython_modules import im2row_nhwc_cython, add_nhwc_cython, row2im_nhwc_cython, \
-    im2col_nchw_cython, add_nchw_cython, col2im_nchw_cython, transpose_1023_and_pad_cython, \
-    reindex_cython, \
+    im2col_nchw_cython, add_nchw_cython, col2im_nchw_cython, \
     depthwise_conv_cython
 from pydtnn.layers import Conv2D
 from pydtnn.model import TRAIN_MODE, EVALUATE_MODE
@@ -33,8 +32,8 @@ from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, \
     PYDTNN_OPS_FORWARD_RESHAPE_Y, \
     PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_FORWARD_IM2COL, \
-    PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, PYDTNN_OPS_BACKWARD_PADDING_X, \
-    PYDTNN_OPS_BACKWARD_COMP_NEW_INDEXES, PYDTNN_OPS_BACKWARD_REINDEX, PYDTNN_OPS_BACKWARD_CONVGEMM, \
+    PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, \
+    PYDTNN_OPS_BACKWARD_CONVGEMM, \
     PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_MATMUL, PYDTNN_OPS_FORWARD_SUM_BIASES, \
     PYDTNN_OPS_FORWARD_RESHAPE_W, PYDTNN_OPS_BACKWARD_TRANSPOSE_W, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
     PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \

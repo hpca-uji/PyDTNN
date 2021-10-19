@@ -24,14 +24,9 @@ PyDTNN convGemm module
 import ctypes
 import platform
 import weakref
-from contextlib import suppress
 
 import numpy as np
 
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_BACKWARD_DCG_TRANSPOSE_DY, \
-    PYDTNN_OPS_BACKWARD_DCG_SHRINK, PYDTNN_OPS_CONVGEMM_CG, PYDTNN_OPS_CONVGEMM_X_PAD, \
-    PYDTNN_OPS_CONVGEMM_TRANS_X_PAD, PYDTNN_OPS_CONVGEMM_TRANS_CG, PYDTNN_OPS_CONVGEMM_TRANS_TR1230, \
-    PYDTNN_OPS_CONVGEMM_TRANS_BIASES
 from pydtnn.utils import load_library
 
 try:
@@ -199,16 +194,6 @@ class ConvGemm:
             "this class was instantiated!"
 
         # Call the appropriate convGemm function from libconvGemm
-        with suppress(AttributeError):
-            if not trans:
-                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                                self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                                PYDTNN_OPS_CONVGEMM_CG)
-            else:
-                self.get_parent_layer().model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                                                self.get_parent_layer().id * PYDTNN_OPS_EVENTS +
-                                                                PYDTNN_OPS_CONVGEMM_TRANS_CG)
-
         self.x_conv_gemm_nchw(ctypes.c_char(b'Y' if trans else b'N'),
                          ctypes.c_uint(b), ctypes.c_uint(c), ctypes.c_uint(h), ctypes.c_uint(w),
                          ctypes.c_uint(kn), ctypes.c_uint(kh), ctypes.c_uint(kw),
