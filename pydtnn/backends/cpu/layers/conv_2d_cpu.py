@@ -56,6 +56,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.cg = None
         # convWinograd related attributes (some of them will be modified in initialize())
         self.cw = None
+        self.cw_constraints_fulfilled = None
+        # best_of related attributes
         self._best_fw = None
         self._best_fw_bw_pipeline = None
 
@@ -66,7 +68,9 @@ class Conv2DCPU(LayerCPU, Conv2D):
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
-        if not self.model.enable_memory_cache:
+        if self.model.enable_memory_cache:
+            MemoryCache.enable()
+        else:
             MemoryCache.disable()
         cw_constraints_fulfilled = None
         # Set convWinograd parameters
@@ -84,15 +88,12 @@ class Conv2DCPU(LayerCPU, Conv2D):
             self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
         # Set forward and backward implementations
         variant = 'i2c'  # Use i2c as default
-        if self.grouping == "pointwise":
+        if self.grouping == 'pointwise':
             variant = 'pointwise'
-        elif self.grouping == "depthwise":
+        elif self.grouping == 'depthwise':
             variant = 'depthwise'
         elif self.model.enable_best_of:
             variant = 'best_of'
-
-            # Fix ConvGemm parameters to use convGemmTrans and Persistent memory (CGT+PM)
-            MemoryCache.enable()
             if is_conv_winograd_available and self.cw is None and cw_constraints_fulfilled is None:
                 try:
                     self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
@@ -132,10 +133,8 @@ class Conv2DCPU(LayerCPU, Conv2D):
             )
         elif self.model.enable_conv_winograd:
             if cw_constraints_fulfilled:
-                MemoryCache.enable()
                 variant = 'cw'
             elif self.model.enable_conv_gemm:
-                MemoryCache.enable()
                 variant = 'cg'
             else:
                 variant = 'i2c'
