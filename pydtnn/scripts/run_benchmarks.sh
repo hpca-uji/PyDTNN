@@ -30,11 +30,9 @@ esac
 DATASET_TEST_PATH=${DATASET_TEST_PATH:-${DATASET_TRAIN_PATH}}
 BATCH_SIZE=${BATCH_SIZE:-64}
 ENABLE_BEST_OF=${ENABLE_BEST_OF:-False}
-ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-True}
-CONV_GEMM_FALLBACK_TO_IM2COL=${CONV_GEMM_FALLBACK_TO_IM2COL:-False}
-CONV_GEMM_CACHE=${CONV_GEMM_CACHE:-True}
-CONV_GEMM_DECONV=${CONV_GEMM_DECONV:-False}
-CONV_GEMM_TRANS=${CONV_GEMM_TRANS:-False}
+ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-False}
+ENABLE_CONV_WINOGRAD=${ENABLE_CONV_WINOGRAD:-False}
+ENABLE_MEMORY_CACHE=${ENABLE_MEMORY_CACHE:-False}
 NODES=${NODES:-1}
 
 #--------------------------
@@ -115,22 +113,20 @@ SCRIPT_PATH="$(
 FILE_NAME="${MODEL}"
 if [ "${ENABLE_BEST_OF}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_bo"
+elif [ "${ENABLE_CONV_WINOGRAD}" == "True" ]; then
+  FILE_NAME="${FILE_NAME}_wg"
+  if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}-cg"
+  else
+    FILE_NAME="${FILE_NAME}-i2c-mm"
+  fi
 elif [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_cg"
-  if [ "${CONV_GEMM_FALLBACK_TO_IM2COL}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}-fb"
-  fi
-  if [ "${CONV_GEMM_TRANS}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}-cgt"
-  fi
-  if [ "${CONV_GEMM_DECONV}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}-dg"
-  fi
-  if [ "${CONV_GEMM_CACHE}" == "True" ]; then
-    FILE_NAME="${FILE_NAME}-pm"
-  fi
 else
   FILE_NAME="${FILE_NAME}_i2c-mm"
+fi
+if [ "${ENABLE_MEMORY_CACHE}" == "True" ]; then
+  FILE_NAME="${FILE_NAME}-pm"
 fi
 FILE_NAME="${FILE_NAME}_$(printf '%03d' "${NUM_EPOCHS}")e"
 FILE_NAME="${FILE_NAME}_$(printf '%03d' "${STEPS_PER_EPOCH}")s"
@@ -242,10 +238,8 @@ function run_benchmark() {
     --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
     --enable_best_of="${ENABLE_BEST_OF}" \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
-    --conv_gemm_fallback_to_im2col="${CONV_GEMM_FALLBACK_TO_IM2COL}" \
-    --conv_gemm_cache="${CONV_GEMM_CACHE}" \
-    --conv_gemm_deconv="${CONV_GEMM_DECONV}" \
-    --conv_gemm_trans="${CONV_GEMM_TRANS}" \
+    --enable_conv_winograd="${ENABLE_CONV_WINOGRAD}" \
+    --enable_memory_cache="${ENABLE_MEMORY_CACHE}" \
     --history="${HISTORY_FILENAME}" \
     ${MODEL_FLAGS} |
     tee "${OUTPUT_FILENAME}"
