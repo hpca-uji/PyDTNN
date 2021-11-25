@@ -430,6 +430,12 @@ class Conv2DCPU(LayerCPU, Conv2D):
             return dx
 
     def _backward_nhwc_cw(self, dy):
+        """Version of the backward function that uses the convWinograd library"""
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
+        self.x_rows = im2row_nhwc_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)        
         return self._backward_nhwc_i2c(dy)
 
     def _backward_nhwc_depthwise(self, dy):
