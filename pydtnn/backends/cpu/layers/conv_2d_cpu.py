@@ -106,26 +106,23 @@ class Conv2DCPU(LayerCPU, Conv2D):
             if is_conv_gemm_available:
                 if self.cg is None:
                     self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
-
-            # if self.__class__._best_fw is None:
+            # Set forward alternatives
             alternatives_fw = [('i2c', self._get_class_forward_and_backward('i2c')[0])]
             if is_conv_gemm_available:
                 alternatives_fw.append(('cg', self._get_class_forward_and_backward('cg')[0]))
             if is_conv_winograd_available and cw_constraints_fulfilled:
                 alternatives_fw.append(('cw', self._get_class_forward_and_backward('cw')[0]))
-
             self._best_fw = BestOf(
                 name="Conv2DCPU only forward",
                 alternatives=alternatives_fw,
                 get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
             )
-
+            # Set forward backward alternatives
             alternatives_fw_bw_pipeline = [('i2c', self._get_class_forward_and_backward('i2c'))]
             if is_conv_gemm_available:
                 alternatives_fw_bw_pipeline.append(('cg', self._get_class_forward_and_backward('cg')))
             if is_conv_winograd_available and cw_constraints_fulfilled:
                 alternatives_fw_bw_pipeline.append(('cw', self._get_class_forward_and_backward('cw')))
-
             self._best_fw_bw_pipeline = BestOf(
                 name="Conv2DCPU forward backward",
                 alternatives=alternatives_fw_bw_pipeline,
@@ -259,7 +256,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
             # noinspection PyTypeChecker
             return self._best_fw(self, x_or_y)
         else:
-            raise RuntimeError("Conv2D BestOf variant requires to Model.mode to be set to EVALUATE_MODE or TRAIN_MODE")
+            raise RuntimeError("Conv2D BestOf variant requires Model.mode to be set to EVALUATE_MODE or TRAIN_MODE")
 
     def _forward_nhwc_best_of(self, x):
         return self._fw_bw_best_of(0, x)
@@ -400,6 +397,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
             return dx
 
     def _backward_nhwc_cg(self, dy):
+        """Version of the backward function that uses the convGemm library"""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
         res = np.empty(self.weights.shape, dtype=dy.dtype)
@@ -513,7 +511,6 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
     def _backward_nchw_cw(self, dy):
         """Version of the backward function that uses the convWinograd library"""
-
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
         self.x_cols = im2col_nchw_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                          self.vstride, self.hstride, self.vdilation, self.hdilation)
