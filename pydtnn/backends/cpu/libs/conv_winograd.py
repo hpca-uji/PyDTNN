@@ -247,7 +247,7 @@ class ConvWinograd:
             setattr(self, f"conv_winograd_{self.tensor_format_str}", BestOf(
                 name="Winograd functions",
                 alternatives=self.alternatives[r],
-                get_problem_size=lambda *args, **kwargs: tuple(list(args[0].shape) + list(args[1].shape)),
+                get_problem_size=lambda *args, **kwargs: tuple(list(args[0].shape) + list(args[1].shape[1:])),
             ))
         else:
             setattr(self, f"conv_winograd_{self.tensor_format_str}", self.alternatives[r][0][1])
