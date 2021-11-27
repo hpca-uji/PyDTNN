@@ -113,7 +113,7 @@ class ConvWinograd:
                 raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
 
             try:
-                funcs = (self._conv_winograd_c, getattr(__class__.lib_cw, routine_name))
+                funcs = (self._conv_winograd_c, getattr(self.__class__.lib_cw, routine_name))
             except AttributeError:
                 print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
                 funcs = (self._conv_winograd_numpy, None)
@@ -358,7 +358,7 @@ class ConvWinograd:
 
                         v[..., c, b * tile_h * tile_w + h * tile_w + w] = (bt @ d) @ bt.T
 
-        # 2.1) Firt alternative: np.einsum
+        # 2.1) First alternative: np.einsum
         m_ = np.einsum('... i j, ... j k -> ... i k', u, v)
 
         # 2.2) Second alternative: matmul
@@ -515,7 +515,7 @@ def __usage_example__():
     w_c = weights.reshape(kn, -1)
     im2col_mm_result_nchw = (w_c @ x_c + biases).reshape(kn, -1, ho, wo).transpose(1, 0, 2, 3)
     mm_t = timeit(
-        lambda: w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation) \
+        lambda: w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
                 + biases, number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
 
@@ -558,10 +558,10 @@ def __usage_example__():
     print("np.allclose NHWC: ", np.allclose(conv_winograd_result_nhwc, im2col_mm_result_nhwc, atol=1e-3))
     # """
 
-    n = 65
-    c = k = 65
-    h = w = 33
-    vpadd = hpadd = 6
+    # n = 65
+    # c = k = 65
+    # h = w = 33
+    # vpadd = hpadd = 6
     n = 17
     c = k = 17
     h = w = 33
@@ -584,7 +584,7 @@ def __usage_example__():
                                     print(nn, cc, kk, hh, ww, vpadding, hpadding, kh, conv_winograd.tensor_format_str,
                                           end="")
 
-                                    biases_wg = (np.ones((kk)) * 10).astype(np.float32, order='C')
+                                    biases_wg = (np.ones(kk) * 10).astype(np.float32, order='C')
                                     if tensor_fmt == PYDTNN_TENSOR_FORMAT_NCHW:
                                         weights = np.random.rand(kk, cc, kh, kw).astype(np.float32, order='C')
                                         x = np.random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
@@ -629,7 +629,7 @@ def __usage_example__():
                                         im2col_mm_result = im2col_mm_result.reshape(-1, ho, wo, kk)
                                         im2col_t = timeit(lambda: (
                                                 im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride,
-                                                                   vdilation, hdilation) @ w_c 
+                                                                   vdilation, hdilation) @ w_c
                                                 + biases).reshape(-1, ho, wo, kk), number=10) / 10
 
                                         conv_winograd_result = conv_winograd.conv_winograd_nhwc(weights, x, biases_wg,
