@@ -17,7 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from typing import Callable, List, Optional
+from typing import Callable, List
 
 import numpy as np
 
@@ -39,11 +39,11 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWA
     PYDTNN_OPS_BACKWARD_IM2COL, PYDTNN_OPS_BACKWARD_DECONV_GEMM, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \
     PYDTNN_OPS_FORWARD_POINTWISE_CONV, PYDTNN_OPS_FORWARD_TRANSPOSE_Y, PYDTNN_OPS_FORWARD_CONVWINOGRAD
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
-from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
+from pydtnn.utils.memory_cache import MemoryCache
 
 
 class Conv2DCPU(LayerCPU, Conv2D):
@@ -108,11 +108,11 @@ class Conv2DCPU(LayerCPU, Conv2D):
                     self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
 
             # if self.__class__._best_fw is None:
-            alternatives_fw=[ ('i2c', self._get_class_forward_and_backward('i2c')[0]) ]
+            alternatives_fw = [('i2c', self._get_class_forward_and_backward('i2c')[0])]
             if is_conv_gemm_available:
-                alternatives_fw.append( ('cg', self._get_class_forward_and_backward('cg')[0]) )
+                alternatives_fw.append(('cg', self._get_class_forward_and_backward('cg')[0]))
             if is_conv_winograd_available and cw_constraints_fulfilled:
-                alternatives_fw.append( ('cw', self._get_class_forward_and_backward('cw')[0]) )
+                alternatives_fw.append(('cw', self._get_class_forward_and_backward('cw')[0]))
 
             self._best_fw = BestOf(
                 name="Conv2DCPU only forward",
@@ -120,11 +120,11 @@ class Conv2DCPU(LayerCPU, Conv2D):
                 get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
             )
 
-            alternatives_fw_bw_pipeline=[ ('i2c', self._get_class_forward_and_backward('i2c')) ]
+            alternatives_fw_bw_pipeline = [('i2c', self._get_class_forward_and_backward('i2c'))]
             if is_conv_gemm_available:
-                alternatives_fw_bw_pipeline.append( ('cg', self._get_class_forward_and_backward('cg')) )
+                alternatives_fw_bw_pipeline.append(('cg', self._get_class_forward_and_backward('cg')))
             if is_conv_winograd_available and cw_constraints_fulfilled:
-                alternatives_fw_bw_pipeline.append( ('cw', self._get_class_forward_and_backward('cw')) )
+                alternatives_fw_bw_pipeline.append(('cw', self._get_class_forward_and_backward('cw')))
 
             self._best_fw_bw_pipeline = BestOf(
                 name="Conv2DCPU forward backward",
@@ -221,10 +221,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         y = self.cg.conv_gemm_nhwc(self.weights, x,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                biases_vector=biases_vector)
+                                   vpadding=self.vpadding, hpadding=self.hpadding,
+                                   vstride=self.vstride, hstride=self.hstride,
+                                   vdilation=self.vdilation, hdilation=self.hdilation,
+                                   biases_vector=biases_vector)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
@@ -239,9 +239,9 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVWINOGRAD)
         y = self.cw.conv_winograd_nhwc(self.weights, x, biases=biases_vector,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation)
+                                       vpadding=self.vpadding, hpadding=self.hpadding,
+                                       vstride=self.vstride, hstride=self.hstride,
+                                       vdilation=self.vdilation, hdilation=self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
@@ -303,10 +303,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                biases_vector=biases_vector)
+                                     vpadding=self.vpadding, hpadding=self.hpadding,
+                                     vstride=self.vstride, hstride=self.hstride,
+                                     vdilation=self.vdilation, hdilation=self.hdilation,
+                                     biases_vector=biases_vector)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return res
 
@@ -320,9 +320,9 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVWINOGRAD)
         y = self.cw.conv_winograd_nchw(self.weights, x, biases=biases_vector,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation)
+                                       vpadding=self.vpadding, hpadding=self.hpadding,
+                                       vstride=self.vstride, hstride=self.hstride,
+                                       vdilation=self.vdilation, hdilation=self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
 
@@ -404,10 +404,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
         res = np.empty(self.weights.shape, dtype=dy.dtype)
         self.cg.conv_gemm_nhwc(dy, self.cg_x, biases=res,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                trans=True)
+                               vpadding=self.vpadding, hpadding=self.hpadding,
+                               vstride=self.vstride, hstride=self.hstride,
+                               vdilation=self.vdilation, hdilation=self.hdilation,
+                               trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         self.dw = res
 
@@ -417,14 +417,13 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.need_dx:
-
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
             dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=dy.dtype)
             self.cg.deconv_gemm_nhwc(self.weights, dy, dx,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation)
+                                     vpadding=self.vpadding, hpadding=self.hpadding,
+                                     vstride=self.vstride, hstride=self.hstride,
+                                     vdilation=self.vdilation, hdilation=self.hdilation)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
             return dx
@@ -435,7 +434,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_IM2COL)
         self.x_rows = im2row_nhwc_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                          self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)        
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self._backward_nhwc_i2c(dy)
 
     def _backward_nhwc_depthwise(self, dy):
@@ -488,10 +487,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CONVGEMM)
         res = np.empty(self.weights.shape, dtype=dy.dtype)
         self.cg.conv_gemm_nchw(dy, self.cg_x, biases=res,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                trans=True)
+                               vpadding=self.vpadding, hpadding=self.hpadding,
+                               vstride=self.vstride, hstride=self.hstride,
+                               vdilation=self.vdilation, hdilation=self.hdilation,
+                               trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         self.dw = res
 
@@ -502,12 +501,12 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_DECONV_GEMM)
             dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
             self.cg.deconv_gemm_nchw(self.weights, dy, dx,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation)
+                                     vpadding=self.vpadding, hpadding=self.hpadding,
+                                     vstride=self.vstride, hstride=self.hstride,
+                                     vdilation=self.vdilation, hdilation=self.hdilation)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
             return dx
