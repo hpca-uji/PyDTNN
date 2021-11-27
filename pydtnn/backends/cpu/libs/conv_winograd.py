@@ -25,6 +25,7 @@ import ctypes
 import math
 import platform
 import weakref
+from collections import defaultdict
 
 import numpy as np
 
@@ -118,8 +119,6 @@ class ConvWinograd:
                 print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
                 funcs = (self._conv_winograd_numpy, None)
 
-            if r not in self.alternatives:
-                self.alternatives[r] = []
             self.alternatives[r].append((f"winograd_{m}x{m}_{r}x{r}",
                                          lambda *args, **kwargs: funcs[0](m, r, g, bt, at, funcs[1], *args, **kwargs)))
 
@@ -144,7 +143,7 @@ class ConvWinograd:
         if ConvWinograd.lib_cw is None:
             ConvWinograd.lib_cw = load_library("convwinograd")
 
-        self.alternatives = {}
+        self.alternatives = defaultdict(lambda: [])
         m, r = None, None
 
         if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
