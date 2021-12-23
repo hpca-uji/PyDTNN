@@ -35,23 +35,21 @@ ENABLE_CONV_WINOGRAD=${ENABLE_CONV_WINOGRAD:-False}
 ENABLE_MEMORY_CACHE=${ENABLE_MEMORY_CACHE:-False}
 NODES=${NODES:-1}
 
+
+
 #--------------------------
-# Only training parameters
+# Evaluation parameters
 #--------------------------
+EVALUATE=${EVALUATE:-True}
+EVALUATE_ONLY=${EVALUATE_ONLY:-False}
+TEST_AS_VALIDATION=${TEST_AS_VALIDATION:-True}
 if [ -n "${ONLY_TRAINING-}" ]; then
   # shellcheck disable=SC2034
   EVALUATE=False
   TEST_AS_VALIDATION=False
-  VALIDATION_SPLIT=0.2
-fi
-
-#--------------------------
-# Only inference parameters
-#--------------------------
-if [ -n "${ONLY_INFERENCE-}" ]; then
+elif [ -n "${ONLY_INFERENCE-}" ]; then
   # shellcheck disable=SC2034
-  EVALUATE=True
-  NUM_EPOCHS=0
+  EVALUATE_ONLY=True
   TEST_AS_VALIDATION=False
 fi
 
@@ -236,6 +234,9 @@ function run_benchmark() {
     --dataset_test_path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \
     --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
+    --evaluate="${EVALUATE}" \
+    --evaluate_only="${EVALUATE_ONLY}" \
+    --test_as_validation="${TEST_AS_VALIDATION}" \
     --enable_best_of="${ENABLE_BEST_OF}" \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --enable_conv_winograd="${ENABLE_CONV_WINOGRAD}" \
