@@ -9,6 +9,8 @@
 #   vgg16_imagenet <- run_vgg_imagenet.sh
 #   resnet34_cifar10 <- run_resnet_cifar10.sh
 #   resnet34_imagenet <- run_resnet_imagenet.sh
+#   resnet50_cifar10 <- run_resnet_cifar10.sh
+#   resnet50_imagenet <- run_resnet_imagenet.sh
 #   densenet121_cifar10 <- run_densenet_cifar10.sh
 #   densenet121_imagenet <- run_densenet_imagenet.sh
 #   googlenet_cifar10 <- run_inception_cifar10.sh
@@ -16,83 +18,85 @@
 #
 # Those parameters that have been edited on the script have been prepended with an '*'.
 #
-+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-| parameter    | AC           | AI           | VC           | VI           | RC           | RI           | DC            | DI           | GC            | GI           |
-|--------------+--------------+--------------+--------------+--------------+--------------+--------------+---------------+--------------+---------------+--------------|
-| batch_size   | 64           | 64           | 64           | 64           | 64           | 64           | 64            | 64           | 128           | 128          |
-| crop_images  | *False       | *False       | *False       | *False       | *False       | *False       | *False        | *False       | *False        | *False       |
-| crop_images… |              |              |              |              | 16           | 16           | 16            | 16           | 16            | 16           |
-| dataset      | cifar10      | imagenet     | cifar10      | imagenet     | cifar10      | imagenet     | cifar10       | imagenet     | cifar10       | imagenet     |
-| decay        |              |              | 1e-4         |              |              |              | 1e-4          | 1e-4         |               |              |
-| dtype        | float32      | float32      | float32      | float32      | float32      | float32      | float32       | float32      | float32       | float32      |
-| early_stopp… | *            | *            | *            | *            | *            | *            | *             | *            | *             | *            |
-| early_stopp… | 10           | 10           | 20           | 10           | 40           | 40           | 40            | 40           | 40            | 40           |
-| enable_gpu   | False        | False        | *False       | False        | *False       | *False       | *False        | False        | *False        | *False       |
-| enable_gpud… |              |              | False        |              | False        | False        | True          | True         | False         | False        |
-| evaluate     | True         | True         | *True        | *True        | *True        | *True        | *True         | *True        | *True         | *True        |
-| flip_images  | *False       | *False       | *False       | *False       | *False       | *False       | *False        | *False       | *False        | *False       |
-| learning_ra… | 0.01         | 0.01         | 0.01         | *0.01        | 0.1          | 0.1          | 0.01          | 0.01         | 0.01          | 0.01         |
-| loss_func    | categorical… | categorical… | categorical… | categorical… | categorical… | categorical… | categorical_… | categorical… | categorical_… | categorical… |
-| lr_schedule… | *            | *            | *            | *            | *            | *            | *             | *            | *             | *            |
-| metrics      | categorical… | categorical… | categorical… | categorical… | categorical… | categorical… | categorical_… | categorical… | categorical_… | categorical… |
-| model        | alexnet_cif… | alexnet_ima… | *vgg16_cifa… | *vgg16_imag… | *resnet34_c… | *resnet34_i… | densenet121_… | densenet121… | googlenet_ci… | googlenet_i… |
-| momentum     | 0.9          | 0.9          | 0.9          | 0.9          | 0.9          | 0.9          | 0.9           | 0.9          | 0.9           | 0.9          |
-| nesterov     |              |              | False        |              | False        | False        | False         | False        | False         | False        |
-| non_blockin… | False        | False        | False        | False        | False        | False        | False         | False        | True          | True         |
-| num_epochs   | 30           | 30           | 400          | 30           | 400          | 400          | 400           | 400          | 400           | 400          |
-| optimizer    | sgd          | sgd          | sgd          | *sgd         | sgd          | sgd          | sgd           | sgd          | sgd           | sgd          |
-| profile      | False        | False        | False        | False        | False        | False        | False         | False        | False         | False        |
-| reduce_lr_e… |              |              | 0.5          |              | 0.1          | 0.1          | 0.1           | 0.1          |               |              |
-| reduce_lr_e… |              |              | 0.001        |              | 0.00001      | 0.00001      | 0.001         | 0.001        |               |              |
-| reduce_lr_e… |              |              | 50           |              | 30           | 30           | 90            | 90           |               |              |
-| reduce_lr_o… | 0.1          | 0.1          | 0.1          | 0.1          | 0.5          | 0.5          | 0.1           | 0.1          | 0.5           | 0.5          |
-| reduce_lr_o… | *            | *            | *            | *            | *            | *            | *             | *            | *             | *            |
-| reduce_lr_o… | 0            | 0            | 0.0001       | 0            | 0.00001      | 0.00001      | 0.0001        | 0.0001       | 0.0001        | 0.0001       |
-| reduce_lr_o… | 5            | 5            | 15           | 5            | 15           | 15           | 15            | 15           | 15            | 15           |
-| steps_per_e… | 0            | 0            | 0            | 0            | 0            | 0            | 0             | 0            | 0             | 0            |
-| stop_at_los… |              |              | *            |              | *            | *            | *             | *            | *             | *            |
-| stop_at_los… |              |              | 70.0         |              | 70.0         | 70.0         | 70.0          | 70.0         | 70.0          | 70.0         |
-| test_as_val… | True         | False        | True         | *False       | True         | *False       | True          | True         | True          | True         |
-| tracing      | False        | False        | False        | False        | False        | False        | False         | False        | False         | False        |
-| use_synthet… |              | True         |              | True         |              | True         |               | True         |               | True         |
-| validation_… | 0.2          | 0.2          | 0.2          | 0.2          | 0.2          | 0.2          | 0.2           | 0.2          | 0.2           | 0.2          |
-| warm_up_epo… | 5            | 5            | 5            | 5            | 5            | 5            | 5             | 5            | 5             | 5            |
-+----------------------------------------------------------------------------------------------------------------------------------------------------------------------+
-model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet;densenet121_cifar10;densenet121_imagenet;googlenet_cifar10;googlenet_imagenet
-dataset;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet
-test_as_validation;True;False;True;False;True;False;True;True;True;True
-batch_size;64;64;64;64;64;64;64;64;128;128
-validation_split;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2
-steps_per_epoch;0;0;0;0;0;0;0;0;0;0
-num_epochs;30;30;400;30;400;400;400;400;400;400
-evaluate;True;True;True;True;True;True;True;True;True;True
-optimizer;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd
-learning_rate;0.01;0.01;0.01;0.01;0.1;0.1;0.01;0.01;0.01;0.01
-momentum;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9
-loss_func;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy
-metrics;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy
-lr_schedulers;;;;;;;;;;
-warm_up_epochs;5;5;5;5;5;5;5;5;5;5
-early_stopping_metric;;;;;;;;;;
-early_stopping_patience;10;10;20;10;40;40;40;40;40;40
-reduce_lr_on_plateau_metric;;;;;;;;;;
-reduce_lr_on_plateau_factor;0.1;0.1;0.1;0.1;0.5;0.5;0.1;0.1;0.5;0.5
-reduce_lr_on_plateau_patience;5;5;15;5;15;15;15;15;15;15
-reduce_lr_on_plateau_min_lr;0;0;0.0001;0;0.00001;0.00001;0.0001;0.0001;0.0001;0.0001
-non_blocking_mpi;False;False;False;False;False;False;False;False;True;True
-tracing;False;False;False;False;False;False;False;False;False;False
-profile;False;False;False;False;False;False;False;False;False;False
-enable_gpu;False;False;False;False;False;False;False;False;False;False
-dtype;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32
-use_synthetic_data;;True;;True;;True;;True;;True
-flip_images;False;False;False;False;False;False;False;False;False;False
-crop_images;False;False;False;False;False;False;False;False;False;False
-nesterov;;;False;;False;False;False;False;False;False
-decay;;;1e-4;;;;1e-4;1e-4;;
-reduce_lr_every_nepochs_factor;;;0.5;;0.1;0.1;0.1;0.1;;
-reduce_lr_every_nepochs_nepochs;;;50;;30;30;90;90;;
-reduce_lr_every_nepochs_min_lr;;;0.001;;0.00001;0.00001;0.001;0.001;;
-stop_at_loss_metric;;;;;;;;;;
-stop_at_loss_threshold;;;70.0;;70.0;70.0;70.0;70.0;70.0;70.0
-enable_gpudirect;;;False;;False;False;True;True;False;False
-crop_images_size;;;;;16;16;16;16;16;16
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| parameter   | AC          | AI          | VC          | VI          | RC          | RI           | RC          | RI           | DC          | DI           | GC          | GI           |
+|-------------+-------------+-------------+-------------+-------------+-------------+--------------+-------------+--------------+-------------+--------------+-------------+--------------|
+| batch_size  | 64          | 64          | 64          | 64          | 64          | 64           | 64          | 64           | 64          | 64           | 128         | 128          |
+| crop_images | *False      | *False      | False       | *False      | *False      | *False       | *False      | *False       | *False      | *False       | *False      | *False       |
+| crop_image… |             |             |             |             | 16          | 16           | 16          | 16           | 16          | 16           | 16          | 16           |
+| dataset     | cifar10     | imagenet    | cifar10     | imagenet    | cifar10     | imagenet     | cifar10     | imagenet     | cifar10     | imagenet     | cifar10     | imagenet     |
+| decay       |             |             | 1e-4        |             |             |              |             |              | 1e-4        | 1e-4         |             |              |
+| dtype       | float32     | float32     | float32     | float32     | float32     | float32      | float32     | float32      | float32     | float32      | float32     | float32      |
+| early_stop… | *           | *           | *           | *           | *           | *            | *           | *            | *           | *            | *           | *            |
+| early_stop… | 10          | 10          | 20          | 10          | 40          | 40           | 40          | 40           | 40          | 40           | 40          | 40           |
+| enable_cud… |             |             | False       |             |             |              |             |              |             |              |             |              |
+| enable_gpu  | False       | False       | False       | False       | *False      | *False       | *False      | *False       | *False      | False        | *False      | *False       |
+| enable_gpu… |             |             | False       |             | False       | False        | False       | False        | True        | True         | False       | False        |
+| evaluate    | True        | True        | *True       | *True       | *True       | *True        | *True       | *True        | *True       | *True        | *True       | *True        |
+| flip_images | *False      | *False      | False       | *False      | *False      | *False       | *False      | *False       | *False      | *False       | *False      | *False       |
+| learning_r… | 0.01        | 0.01        | 0.01        | *0.01       | 0.1         | 0.1          | 0.1         | 0.1          | 0.01        | 0.01         | 0.01        | 0.01         |
+| loss_func   | categorica… | categorica… | categorica… | categorica… | categorica… | categorical… | categorica… | categorical… | categorica… | categorical… | categorica… | categorical… |
+| lr_schedul… | *           | *           | *           | *           | *           | *            | *           | *            | *           | *            | *           | *            |
+| metrics     | categorica… | categorica… | categorica… | categorica… | categorica… | categorical… | categorica… | categorical… | categorica… | categorical… | categorica… | categorical… |
+| model       | alexnet_ci… | alexnet_im… | *vgg16_cif… | *vgg16_ima… | *resnet34_… | *resnet34_i… | *resnet50_… | *resnet50_i… | densenet12… | densenet121… | googlenet_… | googlenet_i… |
+| momentum    | 0.9         | 0.9         | 0.9         | 0.9         | 0.9         | 0.9          | 0.9         | 0.9          | 0.9         | 0.9          | 0.9         | 0.9          |
+| nesterov    |             |             | False       |             | False       | False        | False       | False        | False       | False        | False       | False        |
+| non_blocki… | False       | False       | False       | False       | False       | False        | False       | False        | False       | False        | True        | True         |
+| num_epochs  | 30          | 30          | 10          | 30          | 400         | 400          | 400         | 400          | 400         | 400          | 400         | 400          |
+| optimizer   | sgd         | sgd         | sgd         | *sgd        | sgd         | sgd          | sgd         | sgd          | sgd         | sgd          | sgd         | sgd          |
+| profile     | False       | False       | False       | False       | False       | False        | False       | False        | False       | False        | False       | False        |
+| reduce_lr_… |             |             | 0.5         |             | 0.1         | 0.1          | 0.1         | 0.1          | 0.1         | 0.1          |             |              |
+| reduce_lr_… |             |             | 0.001       |             | 0.00001     | 0.00001      | 0.00001     | 0.00001      | 0.001       | 0.001        |             |              |
+| reduce_lr_… |             |             | 50          |             | 30          | 30           | 30          | 30           | 90          | 90           |             |              |
+| reduce_lr_… | 0.1         | 0.1         | 0.1         | 0.1         | 0.5         | 0.5          | 0.5         | 0.5          | 0.1         | 0.1          | 0.5         | 0.5          |
+| reduce_lr_… | *           | *           | *           | *           | *           | *            | *           | *            | *           | *            | *           | *            |
+| reduce_lr_… | 0           | 0           | 0.0001      | 0           | 0.00001     | 0.00001      | 0.00001     | 0.00001      | 0.0001      | 0.0001       | 0.0001      | 0.0001       |
+| reduce_lr_… | 5           | 5           | 15          | 5           | 15          | 15           | 15          | 15           | 15          | 15           | 15          | 15           |
+| steps_per_… | 0           | 0           | 0           | 0           | 0           | 0            | 0           | 0            | 0           | 0            | 0           | 0            |
+| stop_at_lo… |             |             | *           |             | *           | *            | *           | *            | *           | *            | *           | *            |
+| stop_at_lo… |             |             | 70.0        |             | 70.0        | 70.0         | 70.0        | 70.0         | 70.0        | 70.0         | 70.0        | 70.0         |
+| test_as_va… | True        | False       | True        | *False      | True        | *False       | True        | True         | True        | True         | True        | True         |
+| tracing     | False       | False       | False       | False       | False       | False        | False       | False        | False       | False        | False       | False        |
+| use_synthe… |             | True        |             | True        |             | True         |             | True         |             | True         |             | True         |
+| validation… | 0.2         | 0.2         | 0.2         | 0.2         | 0.2         | 0.2          | 0.2         | 0.2          | 0.2         | 0.2          | 0.2         | 0.2          |
+| warm_up_ep… | 5           | 5           | 5           | 5           | 5           | 5            | 5           | 5            | 5           | 5            | 5           | 5            |
++-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet;resnet50_cifar10;resnet50_imagenet;densenet121_cifar10;densenet121_imagenet;googlenet_cifar10;googlenet_imagenet
+dataset;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet;cifar10;imagenet
+test_as_validation;True;False;True;False;True;False;True;True;True;True;True;True
+batch_size;64;64;64;64;64;64;64;64;64;64;128;128
+validation_split;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2;0.2
+steps_per_epoch;0;0;0;0;0;0;0;0;0;0;0;0
+num_epochs;30;30;10;30;400;400;400;400;400;400;400;400
+evaluate;True;True;True;True;True;True;True;True;True;True;True;True
+optimizer;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd;sgd
+learning_rate;0.01;0.01;0.01;0.01;0.1;0.1;0.1;0.1;0.01;0.01;0.01;0.01
+momentum;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9;0.9
+loss_func;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy;categorical_cross_entropy
+metrics;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy;categorical_accuracy
+lr_schedulers;;;;;;;;;;;;
+warm_up_epochs;5;5;5;5;5;5;5;5;5;5;5;5
+early_stopping_metric;;;;;;;;;;;;
+early_stopping_patience;10;10;20;10;40;40;40;40;40;40;40;40
+reduce_lr_on_plateau_metric;;;;;;;;;;;;
+reduce_lr_on_plateau_factor;0.1;0.1;0.1;0.1;0.5;0.5;0.5;0.5;0.1;0.1;0.5;0.5
+reduce_lr_on_plateau_patience;5;5;15;5;15;15;15;15;15;15;15;15
+reduce_lr_on_plateau_min_lr;0;0;0.0001;0;0.00001;0.00001;0.00001;0.00001;0.0001;0.0001;0.0001;0.0001
+non_blocking_mpi;False;False;False;False;False;False;False;False;False;False;True;True
+tracing;False;False;False;False;False;False;False;False;False;False;False;False
+profile;False;False;False;False;False;False;False;False;False;False;False;False
+enable_gpu;False;False;False;False;False;False;False;False;False;False;False;False
+dtype;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32
+use_synthetic_data;;True;;True;;True;;True;;True;;True
+flip_images;False;False;False;False;False;False;False;False;False;False;False;False
+crop_images;False;False;False;False;False;False;False;False;False;False;False;False
+nesterov;;;False;;False;False;False;False;False;False;False;False
+decay;;;1e-4;;;;;;1e-4;1e-4;;
+reduce_lr_every_nepochs_factor;;;0.5;;0.1;0.1;0.1;0.1;0.1;0.1;;
+reduce_lr_every_nepochs_nepochs;;;50;;30;30;30;30;90;90;;
+reduce_lr_every_nepochs_min_lr;;;0.001;;0.00001;0.00001;0.00001;0.00001;0.001;0.001;;
+stop_at_loss_metric;;;;;;;;;;;;
+stop_at_loss_threshold;;;70.0;;70.0;70.0;70.0;70.0;70.0;70.0;70.0;70.0
+enable_cudnn_auto_conv_alg;;;False;;;;;;;;;
+enable_gpudirect;;;False;;False;False;False;False;True;True;False;False
+crop_images_size;;;;;16;16;16;16;16;16;16;16
