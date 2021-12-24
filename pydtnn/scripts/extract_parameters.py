@@ -102,6 +102,8 @@ def extract_parameters():
                     'resnet34_imagenet': 'run_resnet_imagenet.sh',
                     'resnet50_cifar10': 'run_resnet_cifar10.sh',
                     'resnet50_imagenet': 'run_resnet_imagenet.sh',
+                    'resnet50v15_cifar10': 'run_resnet_cifar10.sh',
+                    'resnet50v15_imagenet': 'run_resnet_imagenet.sh',
                     'densenet121_cifar10': 'run_densenet_cifar10.sh',
                     'densenet121_imagenet': 'run_densenet_imagenet.sh',
                     'googlenet_cifar10': 'run_inception_cifar10.sh',
