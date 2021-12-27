@@ -19,7 +19,7 @@
 
 import numpy as np
 
-from pydtnn.cython_modules import bn_inference_cython, bn_training_fwd_cython, \
+from pydtnn.cython_modules import bn_inference_cython, bn_inference_nchw_cython, bn_training_fwd_cython, \
                                   bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
@@ -46,6 +46,10 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             else:
                 _mean = np.mean(data, axis=0)
             return _mean
+
+        if self.model.mode == EVALUATE_MODE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            y = bn_inference_nchw_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
+            return y
 
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
