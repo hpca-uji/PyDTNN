@@ -23,8 +23,6 @@ cimport cython
 from cython.parallel import prange
 
 def eltw_sum_cython(x_acc, x):
-    shape = x_acc.shape
-
     if x.dtype == np.int8:
         eltw_sum_cython_inner_int8(x_acc.reshape(-1), x.reshape(-1))
     elif x.dtype == np.float32:
@@ -34,7 +32,7 @@ def eltw_sum_cython(x_acc, x):
     else:
         raise TypeError("Type '{}' is not supported by eltw_sum_cython!" % (str(x.dtype)))
 
-    return x_acc.reshape(shape)
+    return x_acc
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
