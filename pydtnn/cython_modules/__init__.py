@@ -26,6 +26,7 @@ from bn_inference_cython import bn_inference_cython
 from bn_relu_inference_cython import bn_relu_inference_cython
 from bn_training_cython import bn_training_fwd_cython, bn_training_bwd_cython
 from depthwise_conv_cython import depthwise_conv_cython
+from eltw_sum_cython import eltw_sum_cython
 from im2col_1ch_nchw_cython import im2col_1ch_nchw_cython, col2im_1ch_nchw_cython
 from im2col_nchw_cython import im2col_nchw_cython, col2im_nchw_cython
 from im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython

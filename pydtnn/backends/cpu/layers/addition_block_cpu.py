@@ -19,6 +19,7 @@
 
 from pydtnn.backends.cpu.layers.abstract_block_layer_cpu import AbstractBlockLayerCPU
 from pydtnn.layers import AdditionBlock
+from pydtnn.cython_modules import eltw_sum_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, \
     PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_BACKWARD_ELTW_SUM, PYDTNN_OPS_FORWARD_ELTW_SUM
 
@@ -40,7 +41,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
-                x[0] += x[i]
+                eltw_sum_cython(x[0], x[i])
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return x[0]
 
@@ -54,6 +55,6 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
-                dx[0] += dx[i]
+                eltw_sum_cython(dx[0], dx[i])
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return dx[0]
