@@ -62,7 +62,7 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, dtype=np.float32, debug=False, parent_layer=None):
+    def __init__(self, m=0, n=0, k=0, dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
@@ -90,7 +90,9 @@ class ConvGemm:
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
         self.cc_pack = ctypes.POINTER(ctypes.c_float)()
         self.lib_cg.alloc_pack_buffs.restype = ctypes.c_int
-        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack), ctypes.byref(self.cc_pack))
+        result = self.lib_cg.alloc_pack_buffs(
+                ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k),
+                ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack), ctypes.byref(self.cc_pack))
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         # Debug
