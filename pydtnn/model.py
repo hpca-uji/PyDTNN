@@ -417,16 +417,16 @@ class Model:
             this_recursion_layers += self.get_all_layers(layer.children)
         return this_recursion_layers
 
-    def __apply_layer_fusion(self, relu=True, conv_bn_relu=False):
+    def __apply_layer_fusion(self, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
         """ Apply layer fusion in a recursive manner """
 
-        def __layer_fusion(layers, relu=True, conv_bn_relu=False):
+        def __layer_fusion(layers, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
             fused_layers = []
             for i, curr_layer in enumerate(layers):
                 # if i > 0: print(i, curr_layer.canonical_name, fused_layers[-1].canonical_name)
                 if curr_layer.is_block_layer:
                     for j, p in enumerate(curr_layer.paths):
-                        curr_layer.paths[j] = __layer_fusion(p, relu, conv_bn_relu)
+                        curr_layer.paths[j] = __layer_fusion(p, bn_relu, conv_relu, conv_bn, conv_bn_relu)
                 elif conv_bn_relu and len(fused_layers) > 1 and \
                                          curr_layer.canonical_name == "Relu" and \
                                          fused_layers[-1].canonical_name == "BatchNormalization" and \
@@ -444,9 +444,11 @@ class Model:
                                                                          curr_layer.id, type(curr_layer).__name__))
                         curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer) 
                         curr_layer.initialize(from_parent_dict=cv_layer.__dict__)
-                elif relu and len(fused_layers) > 0 and \
-                                         curr_layer.canonical_name == "Relu" and \
-                                         fused_layers[-1].canonical_name == "Conv2D":
+                elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
+                                        (curr_layer.canonical_name == "Relu" or \
+                                         curr_layer.canonical_name == "BatchNormalization") and \
+                                         fused_layers[-1].canonical_name == "Conv2D" and \
+                      not (conv_bn_relu and i+1 < len(layers) and layers[i+1].canonical_name == "Relu"):
                     backend = "gpu" if self.enable_cudnn else "cpu"
                     fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
                                           fused_layers[-1].canonical_name + \
@@ -455,9 +457,9 @@ class Model:
                         prev_layer = fused_layers.pop()
                         print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                                 curr_layer.id, type(curr_layer).__name__))
-                        curr_layer = fused_layer(from_parent=prev_layer)
+                        curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
                         curr_layer.initialize(from_parent_dict=prev_layer.__dict__)
-                elif relu and len(fused_layers) > 0 and \
+                elif bn_relu and len(fused_layers) > 0 and \
                                          curr_layer.canonical_name == "Relu" and \
                                          fused_layers[-1].canonical_name == "BatchNormalization":
                     prev_layer = fused_layers.pop()
@@ -469,8 +471,8 @@ class Model:
                 fused_layers.append(curr_layer)
             return fused_layers
 
-        if not self.enable_cudnn and (relu or conv_bn_relu):
-            self.layers = __layer_fusion(self.layers, relu, conv_bn_relu)
+        if not self.enable_cudnn and (bn_relu or conv_relu or conv_bn, conv_bn_relu):
+            self.layers = __layer_fusion(self.layers, bn_relu, conv_relu, conv_bn, conv_bn_relu)
 
     def load_store_path(self, layers, d, mode):
         for layer in layers:
@@ -787,7 +789,8 @@ class Model:
         loss_metrics = [loss] + metrics_list
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
-        self.__apply_layer_fusion(self.kwargs.get("enable_fused_relu"), self.kwargs.get("enable_fused_conv_bn_relu"))
+        self.__apply_layer_fusion(self.kwargs.get("enable_fused_bn_relu"), self.kwargs.get("enable_fused_conv_relu"),
+                                  self.kwargs.get("enable_fused_conv_bn"), self.kwargs.get("enable_fused_conv_bn_relu"))
 
         if self.rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
