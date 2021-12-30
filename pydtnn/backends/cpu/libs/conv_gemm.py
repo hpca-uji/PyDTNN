@@ -119,7 +119,8 @@ class ConvGemm:
             pass
 
     def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=0.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                  vdilation=1, hdilation=1, biases_vector=None, trans=False):
+                  vdilation=1, hdilation=1, biases_vector=None, trans=False, bn_running_mean=None, bn_inv_std=None,
+                  bn_gamma=None, bn_beta=None, relu=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -206,6 +207,10 @@ class ConvGemm:
                          ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
+                         ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
+                         ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
+                         ctypes.c_void_p(None if bn_gamma  is None else bn_gamma.ctypes.data),
+                         ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
                          self.ac_pack, self.bc_pack, self.cc_pack)
 
         return biases
