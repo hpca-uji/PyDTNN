@@ -35,7 +35,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
         super().__init__(*args, **kwargs)
 
     def initialize(self, prev_shape=None, need_dx=True, from_parent_dict=None):
-        self.forward = {"_forward_nchw_cg": self._forward_nchw_cg, \
+        self.forward = {"_forward_nchw_cg": self._forward_nchw_cg,
                         "_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
@@ -53,22 +53,13 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        # @todo: Replace ConvGemm by the actual fused layer
         res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation,
-                                biases_vector=biases_vector)
+                                biases_vector=biases_vector, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
-        y = best_transpose_1023(res.reshape(self.co, -1, self.ho, self.wo))
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
-        # @todo: Remove once ConvGemm+Relu is implemented !!
-        y[y < 0] = 0
-
-        return y
+        return res
 
     def _forward_nchw_cw(self, x):
         """Version of the forward function that uses the convWinograd + Relu"""
