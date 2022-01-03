@@ -43,6 +43,14 @@ def bool_lambda(x):
     return str(x).lower() in ['true', '1', 'yes']
 
 
+def factor(x):
+    """Returns x, which must be 0.0 < x <= 1.0"""
+    x = float(x)
+    if not (0.0 < x <= 1.0):
+        raise ValueError("Value must be greater than 0.0 and less or equal to 1.0")
+    return x
+
+
 def np_dtype(x):
     """Returns a numpy object from an string representing the data type"""
     return getattr(np, x)
@@ -86,11 +94,11 @@ _ds_group.add_argument('--dataset_train_path', type=str, default=_default_datase
 _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path)
 _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda)
 _ds_group.add_argument('--flip_images', default=False, type=bool_lambda)
-_ds_group.add_argument('--flip_images_prob', type=float, default=0.5)
+_ds_group.add_argument('--flip_images_prob', type=factor, default=0.5)
 _ds_group.add_argument('--crop_images', default=False, type=bool_lambda)
 _ds_group.add_argument('--crop_images_size', type=int, default=16)
-_ds_group.add_argument('--crop_images_prob', type=float, default=0.5)
-_ds_group.add_argument('--validation_split', type=float, default=0.2)
+_ds_group.add_argument('--crop_images_prob', type=factor, default=0.5)
+_ds_group.add_argument('--validation_split', type=factor, default=0.2)
 
 # Optimizer options
 _op_group = parser.add_argument_group("Optimizer options")
