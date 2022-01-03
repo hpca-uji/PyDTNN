@@ -57,6 +57,13 @@ def show_options(params):
             print(f'  {arg:31s}: {str(getattr(params, arg)):s}')
             # print(f'  --{arg:s}={str(getattr(params, arg)):s} \\')
 
+def print_model_reports(model):
+    # Print performance counter report
+    model.perf_counter.print_report()
+    # Print BestOf report
+    if model.enable_best_of:
+        print()
+        BestOf.print_report()
 
 def main():
     # Parse options
@@ -129,13 +136,8 @@ def main():
             if model.evaluate_only:
                 print(f'Testing time: {total_time:5.4f} s')
                 print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
-                print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
-                print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
-                print(f'Testing maximum memory allocated: ',
-                      f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
-                print(f'Testing mean memory allocated: ',
-                      f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
         if model.evaluate_only:
+            print_model_reports(model)
             sys.exit(0)
     # Barrier
     if model.parallel in ["data"]:
@@ -175,8 +177,7 @@ def main():
             # noinspection PyUnboundLocalVariable
             pr.disable()
             s = StringIO()
-            sortby = 'time'
-            ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+            ps = pstats.Stats(pr, stream=s).sort_stats('time')
             ps.print_stats()
             print(s.getvalue())
         t2 = time.time()
@@ -187,18 +188,6 @@ def main():
             print(f'Time per epoch: {total_time / model.perf_counter.num_epochs:5.4f} s')
             print(f'Training throughput: '
                   f'{(dataset.train_val_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
-            print(f'Training time (from model): {model.perf_counter.training_time:5.4f} s')
-            print(f'Training time per epoch (from model): '
-                  f'{model.perf_counter.training_time / model.perf_counter.num_epochs:5.4f} s')
-            print(f'Training throughput (from model): {model.perf_counter.training_throughput:5.4f} samples/s')
-            print(f'Training time (from model, estimated from last half of each epoch): '
-                  f'{model.perf_counter.training_time_estimated_from_last_half_of_each_epoch:5.4f} s')
-            print(f'Training throughput (from model, from last half of each epoch): '
-                  f'{model.perf_counter.training_throughput_only_last_half_of_each_epoch:5.4f} samples/s')
-            print(f'Training maximum memory allocated: '
-                  f'{model.perf_counter.training_maximum_memory / 1024:.2f} MiB')
-            print(f'Training mean memory allocated: '
-                  f'{model.perf_counter.training_mean_memory / 1024:.2f} MiB')
         if model.history_file:
             with open(model.history_file, "w") as f:
                 keys = [k for k in history]
@@ -218,16 +207,9 @@ def main():
             if not model.evaluate_only:
                 print(f'Testing time: {total_time:5.4f} s')
                 print(f'Testing throughput: {dataset.test_nsamples / total_time:5.4f} samples/s')
-                print(f'Testing time (from model): {model.perf_counter.testing_time:5.4f} s')
-                print(f'Testing throughput (from model): {model.perf_counter.testing_throughput:5.4f} samples/s')
-                print(f'Testing maximum memory allocated: ',
-                      f'{model.perf_counter.testing_maximum_memory / 1024:.2f} MiB')
-                print(f'Testing mean memory allocated: ',
-                      f'{model.perf_counter.testing_mean_memory / 1024:.2f} MiB')
-    # Print BestOf report
-    if model.enable_best_of:
-        print()
-        BestOf.print_report()
+    # Print model reports
+    if rank == 0:
+        print_model_reports(model)
     # Barrier and finalize
     if model.comm is not None and _MPI is not None:
         model.comm.Barrier()
