@@ -78,7 +78,10 @@ def main():
         rank = 0
     else:
         raise ValueError(f"Parallel option '{params.parallel}' not recognized.")
-    params.threads_per_process = os.environ.get("OMP_NUM_THREADS", 1)
+    #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
+    #  default value to form a new team for the first encountered parallel construct.
+    import multiprocessing
+    params.threads_per_process = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
     try:
         params.gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
     except (FileNotFoundError, subprocess.CalledProcessError):
