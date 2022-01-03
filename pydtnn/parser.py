@@ -90,7 +90,7 @@ _ds_group.add_argument('--flip_images_prob', type=float, default=0.5)
 _ds_group.add_argument('--crop_images', default=False, type=bool_lambda)
 _ds_group.add_argument('--crop_images_size', type=int, default=16)
 _ds_group.add_argument('--crop_images_prob', type=float, default=0.5)
-_ds_group.add_argument('--validation_split', type=float, default=0.0)
+_ds_group.add_argument('--validation_split', type=float, default=0.2)
 
 # Optimizer options
 _op_group = parser.add_argument_group("Optimizer options")
