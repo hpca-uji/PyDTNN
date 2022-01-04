@@ -29,7 +29,8 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
     def initialize(self, prev_shape=None, need_dx=True, from_parent_dict=None):
         self.forward = {"_forward_nchw_cw": self._forward_nchw_cw,
-                        "_forward_nchw_cg": self._forward_nchw_cg}[from_parent_dict["forward"].__name__]
+                        "_forward_nchw_cg": self._forward_nchw_cg,
+                        "_forward_nhwc_cg": self._forward_nhwc_cg}[from_parent_dict["forward"].__name__]
         # self.forward = {"_forward_nchw_cw": self._forward_nchw_cw, \
         #                 "_forward_nchw_best_of": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]
@@ -67,6 +68,23 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
+                                     vpadding=self.vpadding, hpadding=self.hpadding,
+                                     vstride=self.vstride, hstride=self.hstride,
+                                     vdilation=self.vdilation, hdilation=self.hdilation,
+                                     biases_vector=biases_vector, bn_running_mean=self.running_mean,
+                                     bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return res
+
+    def _forward_nhwc_cg(self, x):
+        """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
+
+        if self.model.mode == TRAIN_MODE:
+            raise RuntimeError("Fused layers cannot be used in training mode!")
+
+        biases_vector = self.biases if self.use_bias else None
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
+        res = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
                                      vpadding=self.vpadding, hpadding=self.hpadding,
                                      vstride=self.vstride, hstride=self.hstride,
                                      vdilation=self.vdilation, hdilation=self.hdilation,

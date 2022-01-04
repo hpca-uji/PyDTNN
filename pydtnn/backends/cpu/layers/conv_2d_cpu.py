@@ -85,8 +85,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
                 cw_constraints_fulfilled = False
         # Set convGemm parameters
         if self.model.enable_conv_gemm:
-            self.cg = ConvGemm(m=self.ho*self.wo*self.model.batch_size, n=self.co, k=self.kh*self.kw*self.ci,
-                dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+            self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
         # Set forward and backward implementations
         variant = 'i2c'  # Use i2c as default
         if self.grouping == 'pointwise':
@@ -106,8 +105,7 @@ class Conv2DCPU(LayerCPU, Conv2D):
                     cw_constraints_fulfilled = False
             if is_conv_gemm_available:
                 if self.cg is None:
-                    self.cg = ConvGemm(m=self.ho*self.wo*self.model.batch_size, n=self.co, k=self.kh*self.kw*self.ci,
-                        dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+                    self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
             # Set forward alternatives
             alternatives_fw = [('i2c', self._get_class_forward_and_backward('i2c')[0])]
             if is_conv_gemm_available:
