@@ -36,6 +36,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
     def initialize(self, prev_shape=None, need_dx=True, from_parent_dict=None):
         self.forward = {"_forward_nchw_cg": self._forward_nchw_cg,
+                        "_forward_nhwc_cg": self._forward_nhwc_cg,
                         "_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
@@ -54,6 +55,23 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
+                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                vstride=self.vstride, hstride=self.hstride,
+                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                biases_vector=biases_vector, relu=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return res
+
+    def _forward_nhwc_cg(self, x):
+        """Version of the forward function that uses the convGemm + Relu"""
+
+        if self.model.mode == TRAIN_MODE:
+            raise RuntimeError("Fused layers cannot be used in training mode!")
+
+        biases_vector = self.biases if self.use_bias else None
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
+        res = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
                                 vdilation=self.vdilation, hdilation=self.hdilation,

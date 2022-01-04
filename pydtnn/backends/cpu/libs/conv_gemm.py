@@ -62,7 +62,7 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, m=0, n=0, k=0, dtype=np.float32, debug=False, parent_layer=None):
+    def __init__(self, dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
@@ -89,9 +89,7 @@ class ConvGemm:
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
         self.lib_cg.alloc_pack_buffs.restype = ctypes.c_int
-        result = self.lib_cg.alloc_pack_buffs(
-                ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k),
-                ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
+        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         # Debug
@@ -209,7 +207,8 @@ class ConvGemm:
         return biases
 
     def conv_gemm_nhwc(self, weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                  vdilation=1, hdilation=1, biases_vector=None, trans=False):
+                  vdilation=1, hdilation=1, biases_vector=None, trans=False,bn_running_mean=None, bn_inv_std=None,
+                  bn_gamma=None, bn_beta=None, relu=False):
 
         b, h, w, c = x.shape
 
@@ -242,6 +241,10 @@ class ConvGemm:
                          ctypes.c_void_p(x.ctypes.data),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
+                         ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
+                         ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
+                         ctypes.c_void_p(None if bn_gamma  is None else bn_gamma.ctypes.data),
+                         ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
                          self.ac_pack, self.bc_pack)
 
         return biases
