@@ -33,7 +33,7 @@ def _conv_gemm_and_im2col_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     # b, c, h, w = x.shape
     conv_gemm = ConvGemm(debug=verbose_test())
     cg_biases = biases.copy() if biases is not None else None
-    conv_gemm_result = conv_gemm.conv_gemm(weights, x, biases=cg_biases,
+    conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x, biases=cg_biases,
                                            vpadding=vpadding, hpadding=hpadding,
                                            vstride=vstride, hstride=hstride,
                                            vdilation=vdilation, hdilation=hdilation)
@@ -285,7 +285,7 @@ class ConvGemmTestCase(unittest.TestCase):
         with console.status("", spinner="bouncingBar"):
             for kn in range(1, 32):
                 weights = np.random.rand(kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
-                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
@@ -315,7 +315,7 @@ class ConvGemmTestCase(unittest.TestCase):
         with console.status("", spinner="bouncingBar"):
             for b in range(1, 32):
                 x = np.random.rand(b, d.c, d.h, d.w).astype(np.float32, order='C')
-                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
@@ -345,7 +345,7 @@ class ConvGemmTestCase(unittest.TestCase):
         console = Console(force_terminal=not verbose_test())
         with console.status("", spinner="bouncingBar"):
             for padding in range(0, 5):
-                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                        vpadding=padding, hpadding=padding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
@@ -375,7 +375,7 @@ class ConvGemmTestCase(unittest.TestCase):
         console = Console(force_terminal=not verbose_test())
         with console.status("", spinner="bouncingBar"):
             for stride in range(1, 6):
-                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=stride, hstride=stride,
                                                        vdilation=d.vdilation, hdilation=d.hdilation)
@@ -407,7 +407,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 for hstride in range(1, 5):
                     if vstride == hstride:
                         continue
-                    conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                    conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                            vpadding=d.vpadding, hpadding=d.hpadding,
                                                            vstride=vstride, hstride=hstride,
                                                            vdilation=d.vdilation, hdilation=d.hdilation)
@@ -437,7 +437,7 @@ class ConvGemmTestCase(unittest.TestCase):
         console = Console(force_terminal=not verbose_test())
         with console.status("", spinner="bouncingBar"):
             for dilation in range(1, 3):
-                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                        vpadding=d.vpadding, hpadding=d.hpadding,
                                                        vstride=d.vstride, hstride=d.hstride,
                                                        vdilation=dilation, hdilation=dilation)
@@ -466,7 +466,7 @@ class ConvGemmTestCase(unittest.TestCase):
             for n, layer in enumerate(layers):
                 weights = np.random.rand(layer.kn, layer.c, layer.kh, layer.kw).astype(np.float32, order='C')
                 x = np.random.rand(layer.b, layer.c, layer.h, layer.w).astype(np.float32, order='C')
-                conv_gemm_result = conv_gemm.conv_gemm(weights, x,
+                conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                        vpadding=layer.vpadding, hpadding=layer.hpadding,
                                                        vstride=layer.vstride, hstride=layer.hstride,
                                                        vdilation=layer.vdilation, hdilation=layer.hdilation)
@@ -500,7 +500,7 @@ class ConvGemmTestCase(unittest.TestCase):
                 dy = np.random.rand(layer.b, layer.kn, layer.ho, layer.wo).astype(np.float32, order='C')
                 dx = np.empty((layer.b, layer.c, layer.h, layer.w), dtype=np.float32, order='C')
                 # deconv_gemm
-                deconv_gemm_result = conv_gemm.deconv_gemm(weights, dy, dx,
+                deconv_gemm_result = conv_gemm.deconv_gemm_nchw(weights, dy, dx,
                                                            vpadding=layer.vpadding, hpadding=layer.hpadding,
                                                            vstride=layer.vstride, hstride=layer.hstride,
                                                            vdilation=layer.vdilation, hdilation=layer.hdilation)
@@ -509,8 +509,8 @@ class ConvGemmTestCase(unittest.TestCase):
                 w_cols = weights.reshape(layer.kn, -1).T
                 res = np.matmul(w_cols, dy_cols)
                 mm_col2im_result = col2im_nchw_cython(res, dy.shape[0], layer.c, layer.h, layer.w,
-                                                 layer.kh, layer.kw, layer.vpadding, layer.hpadding,
-                                                 layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
+                                                      layer.kh, layer.kw, layer.vpadding, layer.hpadding,
+                                                      layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
                 if verbose_test():
                     print("   {:2}      {:9.7f}".format(n,
                                                         max([abs(x - y) for x, y

@@ -19,10 +19,12 @@
 
 import numpy as np
 
-from pydtnn.cython_modules import bn_inference_cython, bn_training_fwd_cython, \
+from pydtnn.cython_modules import bn_inference_cython, bn_inference_nchw_cython, bn_training_fwd_cython, \
                                   bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
+from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from .layer_cpu import LayerCPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
@@ -45,15 +47,19 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                 _mean = np.mean(data, axis=0)
             return _mean
 
+        if self.model.mode == EVALUATE_MODE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            y = bn_inference_nchw_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
+            return y
+
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                x = x.transpose(0, 2, 3, 1)
+                x = best_transpose_0231(x)
             x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
             if self.sync_stats and self.model.comm is not None:
                 n = self.model.nprocs * self.model.batch_size
-                # n = np.array([x.shape[0]], dype=self.model.dtype)
+                # n = np.array([x.shape[0]], dtype=self.model.dtype)
                 # self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
             else: 
                 n = None
@@ -95,14 +101,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci)
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                y = y.transpose(0, 3, 1, 2)
+                y = best_transpose_0312(y)
 
         return y
 
     def backward(self, dy):
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                dy = dy.transpose(0, 2, 3, 1)
+                dy = best_transpose_0231(dy)
             dy = dy.reshape(-1, self.ci)
 
         n = dy.shape[0]
@@ -118,6 +124,6 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             if self.spatial:
                 dx = dx.reshape(-1, self.hi, self.wi, self.ci)
                 if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-                    dx = dx.transpose(0, 3, 1, 2)
+                    dx = best_transpose_0312(dx)
 
             return dx

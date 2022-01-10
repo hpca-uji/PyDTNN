@@ -102,16 +102,10 @@ The PyDTNN framework comes with a utility launcher called
 
    -  ``--model``: Neural network model: ``simplemlp``, ``simplecnn``,
       ``alexnet``, ``vgg11``, ``vgg16``, etc.
-   -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
-      ``imagenet``.
-   -  ``--dataset_train_path``: Path to the training dataset.
-   -  ``--dataset_test_path``: Path to the training dataset.
    -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
       Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
       ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
-   -  ``--test_as_validation``: Prevent making partitions on training
-      data for training+validation data, use test data for validation.
-      True if specified.
+   - ``--enable_best_of``: Enable the BestOf auto-tuner.
    -  ``--flip_images``: Enable horizontal flip of images in the
       dataset. Default: False
    -  ``--flip_images_prob``: Probability of horizontal flip of images
@@ -121,17 +115,49 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--crop_images_prob``: Probability of random cropping of images
       in the dataset. Default: 0.5
    -  ``--batch_size``: Batch size per MPI rank.
-   -  ``--validation_split``: Split between training and validation
-      data.
    -  ``--steps_per_epoch``: Trims the training data depending on the
       given number of steps per epoch. Default: 0, i.e., do not trim.
    -  ``--num_epochs``: Number of epochs to perform. Default value: 1.
    -  ``--evaluate``: Evaluate the model before and after training the
       model. Default: False.
+   -  ``--evaluate_only``: Only evaluate the model. Default: False.
    -  ``--weights_and_bias_filename``: Load weights and bias from file.
       Default: None.
    -  ``--shared_storage``: If true only rank 0 can dump weights and
       bias onto a file. Default: True.
+   -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
+   -  ``--history_file``: Filename to save training loss and metrics.
+   -  ``--enable_fused_bn_relu``: Fuse BatchNormalization and Relu
+      layers. True if specified
+   -  ``--enable_fused_conv_relu``: Fuse Conv2D and Relu layers.
+      True if specified
+   -  ``--enable_fused_conv_bn``: Fuse Conv2D and BatchNormalization
+      layers. True if specified
+   -  ``--enable_fused_conv_bn_relu``: Fuse Conv2D and
+      BatchNormalization and Relu layers. Default: False
+   -  ``--enable_best_of``: Enable BestOf optimization. True if
+      specified
+
+-  Dataset parameters:
+
+   -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
+      ``imagenet``.
+   -  ``--dataset_train_path``: Path to the training dataset.
+   -  ``--dataset_test_path``: Path to the training dataset.
+   -  ``--use_synthetic_data``: Use synthetic data. Default: False.
+   -  ``--test_as_validation``: Prevent making partitions on training
+      data for training+validation data, use test data for validation.
+      True if specified.
+   -  ``--flip_images``: Flip horizontally training images. Default:
+      False
+   -  ``--flip_images_prob``: Probability to flip training images.
+      Default: 0.5
+   -  ``--crop_images``: Crop training images. Default: False
+   -  ``--crop_images_size``: Size to crop training images Default: 16
+   -  ``--crop_images_prob``: Probability to crop training images.
+      Default: 0.5
+   -  ``--validation_split``: Split between training and validation
+      data.
 
 -  Optimizer parameters:
 
@@ -154,7 +180,8 @@ The PyDTNN framework comes with a utility launcher called
       batch: ``categorical_cross_entropy``, ``binary_cross_entropy``.
    -  ``--metrics``: List of comma-separated metrics that are evaluated
       on each trained batch:
-      ``categorical_accuracy``,\ ``categorical_hinge``,\ ``categorical_mse``,\ ``categorical_mae``,\ ``regression_mse``,\ ``regression_mae``.
+      ``categorical_accuracy``, ``categorical_hinge``, ``categorical_mse``,
+      ``categorical_mae``, ``regression_mse``, ``regression_mae``.
 
 -  Learning rate schedulers parameters:
 
@@ -187,6 +214,15 @@ The PyDTNN framework comes with a utility launcher called
       the model weights and bias will be saved by the model\_checkpoint
       LR scheduler.
 
+-  Convolution operation parameters:
+
+   -  ``--enable_conv_gemm``: Use ConvGemm (implicit gemm) module to
+      realize convolutions in Conv2D layers. True if specified.
+   -  ``--enable_conv_winograd``: Use the Winograd algorithm to
+      realize convolutions in Conv2D layers. True if specified.
+   -  ``--enable_memory_cache``: Enable the memory cache module to use
+      persistent memory.
+
 -  Parallelization and other performance-related parameters:
 
    -  ``--parallel``: Data parallelization modes: ``sequential``,
@@ -202,7 +238,6 @@ The PyDTNN framework comes with a utility launcher called
       with ``--enable_gpu``.
    -  ``--enable_conv_gemm``: Enables the use of libconvGemm to replace
       im2col and gemm operations.
-   -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
 
 -  Tracing and profiling parameters:
 
@@ -380,6 +415,190 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
     **** Evaluating on test dataset...
     Testing: 100%|███████████████████| 10000/10000 [00:00<00:00, 28720.12 samples/s, test_acc: 100.00%, test_cro: 0.0000443]
 
+Example: inference of the VGG16 CNN for the CIFAR-10 dataset
+------------------------------------------------------------
+
+In this example, we perform inference with the CNN VGG16 for the CIFAR-10 dataset 
+using 4 OpenMP threads::
+
+    $ export OMP_NUM_THREADS=4
+    $ python3 -Ou pydtnn_benchmark.py \
+        --model=vgg16_cifar10 \
+        --dataset=cifar10 \
+        --dataset_train_path=datasets/cifar-10/cifar-10-batches-bin \
+        --dataset_test_path=datasets/cifar-10/cifar-10-batches-bin \
+        --evaluate_only=True \
+        --batch_size=64 \
+        --validation_split=0.2 \
+        --weights_and_bias_filename=vgg16-weights-nhwc.npz \
+        --tracing=False \
+        --profile=False \
+        --enable_gpu=True \
+        --dtype=float32
+
+
+    **** vgg16_cifar10 model...
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    | Layer |           Type           | #Params | Output shape  |   Weights shape   |             Parameters              |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   0   |         InputCPU         |    0    |  (32, 32, 3)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   1   |        Conv2DCPU         |  1792   | (32, 32, 64)  |   (3, 3, 3, 64)   |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   2   |         ReluCPU          |    0    | (32, 32, 64)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   3   |        Conv2DCPU         |  36928  | (32, 32, 64)  |  (64, 3, 3, 64)   |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   4   |         ReluCPU          |    0    | (32, 32, 64)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   5   |       MaxPool2DCPU       |    0    | (16, 16, 64)  |      (2, 2)       |padd=(0,0), stride=(2,2), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   6   |        Conv2DCPU         |  73856  | (16, 16, 128) |  (64, 3, 3, 128)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   7   |         ReluCPU          |    0    | (16, 16, 128) |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   8   |        Conv2DCPU         | 147584  | (16, 16, 128) | (128, 3, 3, 128)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |   9   |         ReluCPU          |    0    | (16, 16, 128) |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  10   |       MaxPool2DCPU       |    0    |  (8, 8, 128)  |      (2, 2)       |padd=(0,0), stride=(2,2), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  11   |        Conv2DCPU         | 295168  |  (8, 8, 256)  | (128, 3, 3, 256)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  12   |         ReluCPU          |    0    |  (8, 8, 256)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  13   |        Conv2DCPU         | 590080  |  (8, 8, 256)  | (256, 3, 3, 256)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  14   |         ReluCPU          |    0    |  (8, 8, 256)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  15   |        Conv2DCPU         | 590080  |  (8, 8, 256)  | (256, 3, 3, 256)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  16   |         ReluCPU          |    0    |  (8, 8, 256)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  17   |       MaxPool2DCPU       |    0    |  (4, 4, 256)  |      (2, 2)       |padd=(0,0), stride=(2,2), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  18   |        Conv2DCPU         | 1180160 |  (4, 4, 512)  | (256, 3, 3, 512)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  19   |         ReluCPU          |    0    |  (4, 4, 512)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  20   |        Conv2DCPU         | 2359808 |  (4, 4, 512)  | (512, 3, 3, 512)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  21   |         ReluCPU          |    0    |  (4, 4, 512)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  22   |        Conv2DCPU         | 2359808 |  (4, 4, 512)  | (512, 3, 3, 512)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  23   |         ReluCPU          |    0    |  (4, 4, 512)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  24   |       MaxPool2DCPU       |    0    |  (2, 2, 512)  |      (2, 2)       |padd=(0,0), stride=(2,2), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  25   |        Conv2DCPU         | 2359808 |  (2, 2, 512)  | (512, 3, 3, 512)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  26   |         ReluCPU          |    0    |  (2, 2, 512)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  27   |        Conv2DCPU         | 2359808 |  (2, 2, 512)  | (512, 3, 3, 512)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  28   |         ReluCPU          |    0    |  (2, 2, 512)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  29   |        Conv2DCPU         | 2359808 |  (2, 2, 512)  | (512, 3, 3, 512)  |padd=(1,1), stride=(1,1), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  30   |         ReluCPU          |    0    |  (2, 2, 512)  |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  31   |       MaxPool2DCPU       |    0    |  (1, 1, 512)  |      (2, 2)       |padd=(0,0), stride=(2,2), dilat=(1,1)|
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  32   |        FlattenCPU        |    0    |    (512,)     |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  33   |          FCCPU           | 262656  |    (512,)     |    (512, 512)     |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  34   |         ReluCPU          |    0    |    (512,)     |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  35   |        DropoutCPU        |    0    |    (512,)     |                   |              rate=0.50              |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  36   |          FCCPU           | 262656  |    (512,)     |    (512, 512)     |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  37   |         ReluCPU          |    0    |    (512,)     |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  38   |        DropoutCPU        |    0    |    (512,)     |                   |              rate=0.50              |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  39   |          FCCPU           |  5130   |     (10,)     |     (512, 10)     |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |  40   |        SoftmaxCPU        |    0    |     (10,)     |                   |                                     |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    |             Total parameters      15245130   58.16 MBytes                                                            |
+    +-------+--------------------------+---------+---------------+-------------------+-------------------------------------+
+    **** Loading cifar10 dataset...
+    **** Parameters:
+      model_name                     : vgg16_cifar10
+      batch_size                     : 64
+      global_batch_size              : None
+      dtype                          : <class 'numpy.float32'>
+      num_epochs                     : 400
+      steps_per_epoch                : 0
+      evaluate_on_train              : True
+      evaluate_only                  : True
+      weights_and_bias_filename      : vgg16-weights-nhwc.npz
+      history_file                   : None
+      shared_storage                 : False
+      enable_fused_bn_relu           : False
+      enable_fused_conv_relu         : False
+      enable_fused_conv_bn           : False
+      enable_fused_conv_bn_relu      : False
+      tensor_format                  : NHWC
+      enable_best_of                 : False
+      dataset_name                   : cifar10
+      use_synthetic_data             : False
+      dataset_train_path             : datasets/cifar-10/cifar-10-batches-bin
+      dataset_test_path              : datasets/cifar-10/cifar-10-batches-bin
+      test_as_validation             : True
+      flip_images                    : True
+      flip_images_prob               : 0.5
+      crop_images                    : True
+      crop_images_size               : 16
+      crop_images_prob               : 0.5
+      validation_split               : 0.2
+      optimizer_name                 : sgd
+      learning_rate                  : 0.01
+      learning_rate_scaling          : True
+      momentum                       : 0.9
+      decay                          : 0.0001
+      nesterov                       : False
+      beta1                          : 0.99
+      beta2                          : 0.999
+      epsilon                        : 1e-07
+      rho                            : 0.9
+      loss_func                      : categorical_cross_entropy
+      metrics                        : categorical_accuracy
+      lr_schedulers_names            : warm_up,reduce_lr_on_plateau,model_checkpoint,early_stopping
+      warm_up_epochs                 : 5
+      early_stopping_metric          : val_categorical_cross_entropy
+      early_stopping_patience        : 20
+      reduce_lr_on_plateau_metric    : val_categorical_cross_entropy
+      reduce_lr_on_plateau_factor    : 0.1
+      reduce_lr_on_plateau_patience  : 15
+      reduce_lr_on_plateau_min_lr    : 1e-05
+      reduce_lr_every_nepochs_factor : 0.5
+      reduce_lr_every_nepochs_nepochs: 50
+      reduce_lr_every_nepochs_min_lr : 0.001
+      stop_at_loss_metric            : val_categorical_accuracy
+      stop_at_loss_threshold         : 70.0
+      model_checkpoint_metric        : categorical_accuracy
+      model_checkpoint_save_freq     : 2
+      enable_conv_gemm               : False
+      enable_memory_cache            : True
+      enable_conv_winograd           : False
+      mpi_processes                  : 1
+      threads_per_process            : 4
+      parallel                       : sequential
+      non_blocking_mpi               : False
+      gpus_per_node                  : 2
+      enable_gpu                     : False
+      enable_gpudirect               : False
+      enable_nccl                    : False
+      enable_cudnn_auto_conv_alg     : True
+      tracing                        : True
+      tracer_output                  : prueba.trc
+      profile                        : False
+    **** Evaluating on test dataset...
+    Testing: 100%|██████████████████████| 10000/10000 [00:13<00:00, 715.46 samples/s, test_cce: 0.4376189, test_acc: 89.24%]
 
 Citing PyDTNN
 -------------
@@ -389,8 +608,8 @@ in your academic publication, we suggest citing the following paper:
 
 -  **PyDTNN: A user-friendly and extensible framework for distributed
    deep learning**. Sergio Barrachina, Adrián Castelló, Mar Catalán,
-   Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing*. ISSN:
-   1573-0484. DOI: `10.1007/s11227-021-03673-z
+   Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing* 77(9), 
+   pp. 9971-9987 (2021) ISSN: 1573-0484. DOI: `10.1007/s11227-021-03673-z
    <http://dx.doi.org/10.1007/s11227-021-03673-z>`_.
 
 Other references:
@@ -399,9 +618,9 @@ Other references:
    of Deep Neural Networks**. Sergio Barrachina, Adrián Castelló, 
    Mar Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE 
    International Parallel and Distributed Processing Symposium 
-   Workshops (IPDPSW)*, 2021, pp. TBD, DOI: `10.1109/IPDPSW52791.2021.00110 
+   Workshops (IPDPSW)*, pp. 730-739 (2021)
+   DOI: `10.1109/IPDPSW52791.2021.00110 
    <http://dx.doi.org/10.1109/IPDPSW52791.2021.00110>`_.
-
 
 Acknowledgments
 ---------------

@@ -35,7 +35,7 @@ class SimpleTracer(Tracer):
         self.rank = 0
         if comm is not None:
             self.rank = comm.Get_rank()
-        self.events = defaultdict(lambda: defaultdict(lambda: [0, 0.0]))
+        self.events = defaultdict(lambda: defaultdict(lambda: [0, []]))
         self.pending_events = []
 
     def enable_tracing(self):
@@ -54,8 +54,8 @@ class SimpleTracer(Tracer):
             if self.pending_events[-1][0] != evt_type_val:
                 raise ValueError("Received an 'End' event for a different event type than expected!")
             _evt_type_val, _evt_val, tic = self.pending_events.pop()
-            previous_calls, previous_time = self.events[_evt_type_val][_evt_val]
-            self.events[_evt_type_val][_evt_val] = [previous_calls + 1, previous_time + toc - tic]
+            self.events[_evt_type_val][_evt_val][0] += 1
+            self.events[_evt_type_val][_evt_val][1].append(toc - tic)
 
     def _emit_nevent(self, evt_type_val_list, evt_val_list, stream=None):
         """This method will be called only if tracing is enabled"""
@@ -72,9 +72,12 @@ class SimpleTracer(Tracer):
                 print("Warning: finishing simple tracer while there are pending events to be marked as finished.")
             print(f"Writing simple tracer output to '{self.output_filename}'...")
             with open(self.output_filename, 'w') as f:
-                f.write("Event type;Event value;Event name;Calls;Total time;Time per call\n")
+                f.write("Event type;Event value;Event name;Calls;Total time;Median of times\n")
                 for event_type_key, events in self.events.items():
                     event_type = self.event_types[event_type_key]
                     event_type_name = event_type.name
-                    for value, (_calls, _time) in events.items():
-                        f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{_time};{_time / _calls}\n")
+                    for value, (_calls, _times) in events.items():
+                        _times.sort()
+                        total_time = sum(_times)
+                        mean_of_times = _times[int(len(_times)/2)]
+                        f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{total_time};{mean_of_times}\n")

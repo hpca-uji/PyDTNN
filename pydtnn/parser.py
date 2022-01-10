@@ -71,8 +71,12 @@ parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
 parser.add_argument('--weights_and_bias_filename', type=str, default=None)
 parser.add_argument('--history_file', type=str, default=None)
 parser.add_argument('--shared_storage', default=False, type=bool_lambda)
-parser.add_argument('--enable_fused_relus', type=bool_lambda, default=False)
-parser.add_argument('--tensor_format', type=lambda s : s.upper(), default="NHWC")
+parser.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
+parser.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
+parser.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
+parser.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
+parser.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
+parser.add_argument('--enable_best_of', type=bool_lambda, default=False)
 
 # Dataset options
 _ds_group = parser.add_argument_group("Dataset options")
@@ -105,7 +109,8 @@ _op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
 
 # Learning rate schedulers options
 _lr_group = parser.add_argument_group("Learning rate schedulers options")
-_lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
+_lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
+                       default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
 _lr_group.add_argument('--warm_up_epochs', type=int, default=5)
 _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
 _lr_group.add_argument('--early_stopping_patience', type=int, default=10)
@@ -124,10 +129,11 @@ _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2)
 # ConvGemm
 _cg_group = parser.add_argument_group("ConvGemm options")
 _cg_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_fallback_to_im2col', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_cache', type=bool_lambda, default=True)
-_cg_group.add_argument('--conv_gemm_deconv', type=bool_lambda, default=False)
-_cg_group.add_argument('--conv_gemm_trans', type=bool_lambda, default=False)
+_cg_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
+
+# ConvWinograd
+_wg_group = parser.add_argument_group("ConvWinograd options")
+_wg_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False)
 
 # Parallel execution options
 _pe_group = parser.add_argument_group("Parallel execution options")

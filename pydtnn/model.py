@@ -21,10 +21,8 @@ PyDTNN model
 #
 
 import importlib
-import resource
 import sys
 import time
-from collections import defaultdict
 from timeit import default_timer as timer
 from typing import Any
 
@@ -40,6 +38,8 @@ from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
     SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
     PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
+from .utils.best_of import BestOf
+from .utils.performance_counter import PerformanceCounter
 
 supported_gpu = False
 supported_cudnn = True
@@ -53,131 +53,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     supported_mpi4py = False
 
-EVALUATE_MODE, TRAIN_MODE = (0, 1)
-
-
-class PerformanceCounter:
-    TRAINING, TESTING = range(2)
-
-    def __init__(self):
-        self._in_second_testing_round = False
-        self._times_record = defaultdict(lambda: defaultdict(lambda: []))
-        self._batch_sizes_record = defaultdict(lambda: defaultdict(lambda: []))
-        self._memory_record = defaultdict(lambda: defaultdict(lambda: []))
-
-    # -------------------------------
-    #  Public methods and properties
-    # -------------------------------
-
-    def add_training_time_and_batch_size(self, epoch, elapsed_time, batch_size):
-        self._add_time_and_batch_size(self.TRAINING, epoch, elapsed_time, batch_size)
-
-    def add_testing_time_and_batch_size(self, elapsed_time, batch_size):
-        self._add_time_and_batch_size(self.TESTING, 0, elapsed_time, batch_size)
-
-    def init_testing_data(self):
-        """
-        Should be called before a testing round to perform the next actions:
-          * Keep the memory consumption of the first testing round.
-          * Clear the time and size data of the first testing round.
-        """
-        if len(self._times_record[self.TESTING]):
-            self._in_second_testing_round = True
-            self._times_record[self.TESTING] = defaultdict(lambda: [])
-            self._batch_sizes_record[self.TESTING] = defaultdict(lambda: [])
-
-    @property
-    def training_throughput(self):
-        return self._throughput(self.TRAINING)
-
-    @property
-    def training_throughput_only_last_half_of_each_epoch(self):
-        return self._throughput(self.TRAINING, last_half=True)
-
-    @property
-    def num_epochs(self):
-        return len(self._batch_sizes_record[self.TRAINING].keys())
-
-    @property
-    def training_time(self):
-        return self._time(self.TRAINING)
-
-    @property
-    def training_time_estimated_from_last_half_of_each_epoch(self):
-        return self._time(self.TRAINING, last_half=True)
-
-    @property
-    def training_maximum_memory(self):
-        return self._maximum_memory(self.TRAINING)
-
-    @property
-    def training_mean_memory(self):
-        return self._mean_memory(self.TRAINING)
-
-    @property
-    def testing_throughput(self):
-        return self._throughput(self.TESTING)
-
-    @property
-    def testing_time(self):
-        return self._time(self.TESTING)
-
-    @property
-    def testing_maximum_memory(self):
-        return self._maximum_memory(self.TESTING)
-
-    @property
-    def testing_mean_memory(self):
-        return self._mean_memory(self.TESTING)
-
-    # -------------------------------
-    #  Private methods
-    # -------------------------------
-
-    def _add_time_and_batch_size(self, where, epoch, elapsed_time, batch_size):
-        self._times_record[where][epoch].append(elapsed_time)
-        self._batch_sizes_record[where][epoch].append(batch_size)
-        if where == self.TESTING and self._in_second_testing_round:
-            return
-        mem = (resource.getrusage(resource.RUSAGE_SELF)[2]
-               + resource.getrusage(resource.RUSAGE_CHILDREN)[2])
-        self._memory_record[where][epoch].append(mem)  # KiB in GNU/Linux
-
-    def _time(self, where, last_half=False):
-        # When last_half is True, the total time is estimated from the last half steps of each epoch time
-        if not last_half:
-            times_per_epoch = [np.sum(t_array) for t_array in self._times_record[where].values()]
-        else:
-            times_per_epoch = []
-            for t_array in self._times_record[where].values():
-                t_array_last_half = t_array[len(t_array) // 2:]
-                if len(t_array_last_half) > 0:
-                    times_per_epoch.append(np.sum(t_array_last_half) * len(t_array) / len(t_array_last_half))
-        return np.sum(times_per_epoch)
-
-    def _size(self, where, last_half=False):
-        # When last_half is True, the total size is estimated from the last half steps of each epoch size
-        if not last_half:
-            batch_sizes_per_epoch = [np.sum(s_array) for s_array in self._batch_sizes_record[where].values()]
-        else:
-            batch_sizes_per_epoch = []
-            for s_array in self._batch_sizes_record[where].values():
-                s_array_last_half = s_array[len(s_array) // 2:]
-                if len(s_array_last_half) > 0:
-                    batch_sizes_per_epoch.append(np.sum(s_array_last_half) * len(s_array) / len(s_array_last_half))
-        return np.sum(batch_sizes_per_epoch)
-
-    def _throughput(self, where, last_half=False):
-        return self._size(where, last_half) / self._time(where, last_half)
-
-    def _maximum_memory(self, where):
-        maximum_memory_per_epoch = [np.max(m_array) for m_array in self._memory_record[where].values()]
-        return np.max(maximum_memory_per_epoch)
-
-    def _mean_memory(self, where):
-        mean_memory_per_epoch = [np.mean(m_array[len(m_array) // 2:])
-                                 for m_array in self._memory_record[where].values()]
-        return np.mean(mean_memory_per_epoch)
+EVALUATE_MODE, TRAIN_MODE, UNSPECIFIED_MODE = (0, 1, 2)
 
 
 def _layer_id_generator():
@@ -226,14 +102,14 @@ class Model:
         self.nparams = 0
         self.rank = 0
         self.nprocs = 1
-        self.mode = TRAIN_MODE
-        if self.comm and supported_mpi4py:
-            self.rank = self.comm.Get_rank()
-            self.nprocs = self.comm.Get_size()
-        elif self.comm:
-            print("Please, install mpi4py to allow parallel MPI execution!")
-            sys.exit(-1)
-
+        self.mode = UNSPECIFIED_MODE
+        if self.comm:
+            if supported_mpi4py:
+                self.rank = self.comm.Get_rank()
+                self.nprocs = self.comm.Get_size()
+            else:
+                print("Please, install mpi4py to allow parallel MPI execution!")
+                sys.exit(-1)
         if self.enable_cudnn:
             global supported_cudnn, supported_nccl
             supported_cudnn = True
@@ -248,13 +124,7 @@ class Model:
                 from skcuda import cublas
             except (ImportError, ModuleNotFoundError, OSError):
                 supported_cudnn = False
-            try:
-                from pydtnn.backends.gpu.libs import libnccl as nccl
-            except (ImportError, ModuleNotFoundError, OSError):
-                supported_nccl = False
-
-            if not supported_cudnn:
-                print("Please, install pycuda, skcuda and cudnn to be able to use the GPUs!")
+                print("Please, install pycuda, skcuda, and cudnn to be able to use the GPUs!")
                 sys.exit(-1)
 
             # import pycuda.autoinit
@@ -268,8 +138,11 @@ class Model:
             import atexit
             atexit.register(context.pop)
 
-            if self.enable_nccl and self.comm:
-                if not supported_nccl:
+            if self.comm and self.enable_nccl:
+                try:
+                    from pydtnn.backends.gpu.libs import libnccl as nccl
+                except (ImportError, ModuleNotFoundError, OSError):
+                    supported_nccl = False
                     print("Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!")
                     sys.exit(-1)
 
@@ -340,6 +213,9 @@ class Model:
             self.tensor_format = PYDTNN_TENSOR_FORMAT_NCHW
         else:
             self.tensor_format = PYDTNN_TENSOR_FORMAT_NHWC
+        # Disable BestOf globally if not enabled
+        if self.kwargs['enable_best_of'] is False:
+            BestOf.use_always_the_first_alternative()
         # Read model
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
@@ -355,6 +231,8 @@ class Model:
         # Attributes that will be properly defined elsewhere
         self.y_batch = None
         self.history = None
+        # Private attributes
+        self._evaluate_round = 0
 
     def __getattr__(self, item):
         try:
@@ -413,27 +291,62 @@ class Model:
             this_recursion_layers += self.get_all_layers(layer.children)
         return this_recursion_layers
 
-    def __apply_relu_fusion(self):
-        """ Apply Relu fusion in a recursive manner """
+    def __apply_layer_fusion(self, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
+        """ Apply layer fusion in a recursive manner """
 
-        def __relu_fusion(layers):
+        def __layer_fusion(layers, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
             fused_layers = []
             for i, curr_layer in enumerate(layers):
+                # if i > 0: print(i, curr_layer.canonical_name, fused_layers[-1].canonical_name)
                 if curr_layer.is_block_layer:
                     for j, p in enumerate(curr_layer.paths):
-                        curr_layer.paths[j] = __relu_fusion(p)
-                elif i > 0 and type(curr_layer).__name__ == "Relu" and \
-                        type(fused_layers[-1]).__name__ in ["Conv2D", "BatchNormalization"]:
+                        curr_layer.paths[j] = __layer_fusion(p, bn_relu, conv_relu, conv_bn, conv_bn_relu)
+                elif conv_bn_relu and len(fused_layers) > 1 and \
+                        curr_layer.canonical_name == "Relu" and \
+                        fused_layers[-1].canonical_name == "BatchNormalization" and \
+                        fused_layers[-2].canonical_name == "Conv2D":
+                    backend = "gpu" if self.enable_cudnn else "cpu"
+                    fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
+                                          fused_layers[-2].canonical_name + \
+                                          fused_layers[-1].canonical_name + \
+                                          type(curr_layer).__name__)
+                    if fused_layers[-2].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
+                        bn_layer = fused_layers.pop()
+                        cv_layer = fused_layers.pop()
+                        print("Fusing %03d_%s + %03d_%s + %03d_%s..." % (cv_layer.id, type(cv_layer).__name__,
+                                                                         bn_layer.id, type(bn_layer).__name__,
+                                                                         curr_layer.id, type(curr_layer).__name__))
+                        curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer)
+                        curr_layer.initialize(from_parent_dict=cv_layer.__dict__)
+                elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
+                        (curr_layer.canonical_name == "Relu" or
+                         curr_layer.canonical_name == "BatchNormalization") and \
+                        fused_layers[-1].canonical_name == "Conv2D" and \
+                        not (conv_bn_relu and i + 1 < len(layers) and layers[i + 1].canonical_name == "Relu"):
+                    backend = "gpu" if self.enable_cudnn else "cpu"
+                    fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
+                                          fused_layers[-1].canonical_name + \
+                                          type(curr_layer).__name__)
+                    if fused_layers[-1].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
+                        prev_layer = fused_layers.pop()
+                        print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
+                                                                curr_layer.id, type(curr_layer).__name__))
+                        curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
+                        curr_layer.initialize(from_parent_dict=prev_layer.__dict__)
+                elif bn_relu and len(fused_layers) > 0 and \
+                        curr_layer.canonical_name == "Relu" and \
+                        fused_layers[-1].canonical_name == "BatchNormalization":
                     prev_layer = fused_layers.pop()
-                    print("Fusing %03d_%s with %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
-                                                               curr_layer.id, type(curr_layer).__name__))
+                    print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
+                                                            curr_layer.id, type(curr_layer).__name__))
                     curr_layer = getattr(importlib.import_module("pydtnn.layers"),
-                                         type(prev_layer).__name__ + type(curr_layer).__name__)(from_parent=prev_layer)
+                                         prev_layer.canonical_name + \
+                                         curr_layer.canonical_name)(from_parent=prev_layer)
                 fused_layers.append(curr_layer)
             return fused_layers
 
-        if not self.enable_cudnn:
-            self.layers = __relu_fusion(self.layers)
+        if not self.enable_cudnn and (bn_relu or conv_relu or conv_bn, conv_bn_relu):
+            self.layers = __layer_fusion(self.layers, bn_relu, conv_relu, conv_bn, conv_bn_relu)
 
     def load_store_path(self, layers, d, mode):
         for layer in layers:
@@ -750,16 +663,14 @@ class Model:
         loss_metrics = [loss] + metrics_list
         test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
-        if self.kwargs.get("enable_fused_relus"):
-            self.__apply_relu_fusion()
+        self.__apply_layer_fusion(self.kwargs.get("enable_fused_bn_relu"), self.kwargs.get("enable_fused_conv_relu"),
+                                  self.kwargs.get("enable_fused_conv_bn"), self.kwargs.get("enable_fused_conv_bn_relu"))
 
         if self.rank == 0:
             test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
             pbar = tqdm(total=dataset.test_nsamples, ncols=bar_width,
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
-
-        self.perf_counter.init_testing_data()  # Only the last testing data should be kept
 
         for x_batch, y_batch, batch_size in test_batch_generator:
             tic = timer()
@@ -768,13 +679,16 @@ class Model:
             toc = timer()
             if self.rank == 0:
                 # noinspection PyUnboundLocalVariable
-                val_total_loss, val_batch_count, string = \
+                test_total_loss, test_batch_count, string = \
                     self.__update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size,
                                                   loss_metrics, prefix="test_")
                 # noinspection PyUnboundLocalVariable
                 pbar.set_postfix_str(s=string, refresh=True)
                 pbar.update(batch_size)
-                self.perf_counter.add_testing_time_and_batch_size(toc - tic, batch_size)
+                self.perf_counter.add_testing_time_and_batch_size(self._evaluate_round, toc - tic, batch_size)
+
+        # Increment self._evaluate_round
+        self._evaluate_round += 1
 
         if self.rank == 0:
             pbar.close()

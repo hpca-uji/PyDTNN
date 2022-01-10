@@ -33,6 +33,8 @@ from .batch_normalization_relu import BatchNormalizationRelu
 from .concatenation_block import ConcatenationBlock
 from .conv_2d import Conv2D
 from .conv_2d_relu import Conv2DRelu
+from .conv_2d_batch_normalization import Conv2DBatchNormalization
+from .conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from .dropout import Dropout
 from .fc import FC
 from .flatten import Flatten

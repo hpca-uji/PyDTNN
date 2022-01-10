@@ -20,22 +20,22 @@
 from add_nchw_cython import add_nchw_cython
 from add_nhwc_cython import add_nhwc_cython
 from argmax_cython import argmax_cython
-from bn_training_cython import bn_training_fwd_cython, bn_training_bwd_cython
-from bn_inference_cython import bn_inference_cython
+from average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
+from average_pool_2d_nhwc_cython import average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython
+from bn_inference_cython import bn_inference_cython, bn_inference_nchw_cython
 from bn_relu_inference_cython import bn_relu_inference_cython
-from im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
+from bn_training_cython import bn_training_fwd_cython, bn_training_bwd_cython
+from depthwise_conv_cython import depthwise_conv_cython
+from eltw_sum_cython import eltw_sum_cython
+from im2col_1ch_nchw_cython import im2col_1ch_nchw_cython, col2im_1ch_nchw_cython
 from im2col_nchw_cython import im2col_nchw_cython, col2im_nchw_cython
 from im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
-from im2col_1ch_nchw_cython import im2col_1ch_nchw_cython, col2im_1ch_nchw_cython
-from max_pool_2d_nhwc_cython import max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython
+from im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
 from max_pool_2d_nchw_cython import max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd_nchw_cython
-from average_pool_2d_nhwc_cython import average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython
-from average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
-from pad_cython import pad_cython, transpose_1023_and_pad_cython, shrink_cython
-from reindex_cython import reindex_cython
+from max_pool_2d_nhwc_cython import max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython
+from pointwise_conv_cython import pointwise_conv_cython
 from relu_cython import relu_cython
 from transpose_cython import \
-    transpose_0231_kji_cython, transpose_0231_ijk_cython, transpose_1230_ji_cython, \
-    transpose_1230_ij_cython, transpose_2d_f2c_ji_cython, transpose_2d_f2c_ij_cython
-from pointwise_conv_cython import pointwise_conv_cython
-from depthwise_conv_cython import depthwise_conv_cython
+    transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
+    transpose_0312_ijk_cython, transpose_0312_ikj_cython, \
+    transpose_1023_jik_cython, transpose_1023_ijk_cython
