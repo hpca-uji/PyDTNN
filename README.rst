@@ -430,8 +430,7 @@ using 4 OpenMP threads::
         --evaluate_only=True \
         --batch_size=64 \
         --validation_split=0.2 \
-        --num_epochs=50 \
-        --weights_and_bias_filename=vgg16_cifar10_weights.npz \
+        --weights_and_bias_filename=vgg16-weights-nhwc.npz \
         --tracing=False \
         --profile=False \
         --enable_gpu=True \
@@ -537,7 +536,7 @@ using 4 OpenMP threads::
       evaluate_on_train              : True
       evaluate_only                  : True
       weights_and_bias_filename      : vgg16-weights-nhwc.npz
-      history_file                   : results/result_vgg3dobn.history
+      history_file                   : None
       shared_storage                 : False
       enable_fused_bn_relu           : False
       enable_fused_conv_relu         : False
