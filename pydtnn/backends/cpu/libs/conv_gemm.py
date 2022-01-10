@@ -42,7 +42,7 @@ class ConvGemm:
 
     Methods
     -------
-    conv_gemm(weights, x, biases, alpha, beta, vpadding, hpadding, vstride, hstride,
+    conv_gemm(weights, x, biases, vpadding, hpadding, vstride, hstride,
               vdilation, hdilation, biases_vector)
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -62,7 +62,7 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, m=0, n=0, k=0, dtype=np.float32, debug=False, parent_layer=None):
+    def __init__(self, dtype=np.float32, debug=False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
@@ -88,11 +88,8 @@ class ConvGemm:
         # Declare ac_pack and bc_pack and allocate space for them
         self.ac_pack = ctypes.POINTER(ctypes.c_float)()
         self.bc_pack = ctypes.POINTER(ctypes.c_float)()
-        self.cc_pack = ctypes.POINTER(ctypes.c_float)()
         self.lib_cg.alloc_pack_buffs.restype = ctypes.c_int
-        result = self.lib_cg.alloc_pack_buffs(
-                ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k),
-                ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack), ctypes.byref(self.cc_pack))
+        result = self.lib_cg.alloc_pack_buffs(ctypes.byref(self.ac_pack), ctypes.byref(self.bc_pack))
         if result == 1:
             raise MemoryError("Could not allocate space for ac_pack or bc_pack!")
         # Debug
@@ -114,18 +111,17 @@ class ConvGemm:
         try:
             __free__(self.ac_pack)
             __free__(self.bc_pack)
-            __free__(self.cc_pack)
         except AttributeError:
             pass
 
-    def conv_gemm_nchw(self, weights, x, biases=None, alpha=1.0, beta=0.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
+    def conv_gemm_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
                   vdilation=1, hdilation=1, biases_vector=None, trans=False, bn_running_mean=None, bn_inv_std=None,
                   bn_gamma=None, bn_beta=None, relu=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
 
-        The matrix matrix product is in the form C = alpha * A * B + beta * C, where:
+        The matrix matrix product is in the form C = A * B, where:
             + A is the weights matrix,
             + B is the im2col(x) matrix, and
             + C is the biases matrix.
@@ -141,10 +137,6 @@ class ConvGemm:
             The layers matrix (b x c x h x w).
         biases : array_like
             An optional biases matrix (kn x b*ho*wo). If provided, can be overwritten.
-        alpha : float
-            The alpha factor.
-        beta : float
-            The beta factor.
         vpadding : int
             The vertical padding to be applied to the x matrix.
         hpadding : int
@@ -165,7 +157,7 @@ class ConvGemm:
         Returns
         -------
         array_like
-            The result of alpha * weights * im2col(x_padded) + beta * biases.
+            The result of weights * im2col(x)
         """
 
         # Get matrices dimensions
@@ -173,7 +165,6 @@ class ConvGemm:
         if not trans:
             kn, ck, kh, kw = weights.shape
             if biases is None:
-                beta = 0.0
                 ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
                 wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
                 biases = np.empty((b, kn, ho, wo), weights.dtype, order="C")
@@ -203,27 +194,27 @@ class ConvGemm:
                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                          ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                          ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
-                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
-                         ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
+                         ctypes.c_void_p(weights.ctypes.data),
+                         ctypes.c_void_p(x.ctypes.data),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
                          ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
                          ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
                          ctypes.c_void_p(None if bn_gamma  is None else bn_gamma.ctypes.data),
                          ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
-                         self.ac_pack, self.bc_pack, self.cc_pack)
+                         self.ac_pack, self.bc_pack)
 
         return biases
 
-    def conv_gemm_nhwc(self, weights, x, biases=None, alpha=1.0, beta=0.0, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                  vdilation=1, hdilation=1, biases_vector=None, trans=False):
+    def conv_gemm_nhwc(self, weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
+                  vdilation=1, hdilation=1, biases_vector=None, trans=False,bn_running_mean=None, bn_inv_std=None,
+                  bn_gamma=None, bn_beta=None, relu=False):
 
         b, h, w, c = x.shape
 
         if not trans:
             ck, kh, kw, kn = weights.shape
             if biases is None:
-                beta = 0.0
                 ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
                 wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
                 biases = np.empty((b, ho, wo, kn), weights.dtype, order="C")
@@ -246,21 +237,25 @@ class ConvGemm:
                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                          ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                          ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
-                         ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
-                         ctypes.c_void_p(x.ctypes.data), ctypes.c_float(beta),
+                         ctypes.c_void_p(weights.ctypes.data),
+                         ctypes.c_void_p(x.ctypes.data),
                          ctypes.c_void_p(biases.ctypes.data),
                          ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
-                         self.ac_pack, self.bc_pack, self.cc_pack)
+                         ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
+                         ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
+                         ctypes.c_void_p(None if bn_gamma  is None else bn_gamma.ctypes.data),
+                         ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
+                         self.ac_pack, self.bc_pack)
 
         return biases
 
-    def deconv_gemm_nchw(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
+    def deconv_gemm_nchw(self, weights, dy, dx, vpadding=0, hpadding=0,
                     vstride=1, hstride=1, vdilation=1, hdilation=1):
         """
         Calls the appropriate deconv_gemm function from libconvGemm.so to perform
         an inplace matrix matrix multiplication and deconvolution:
 
-            dx = col2im(alpha * weights_2D_T * dy_2D),
+            dx = col2im(weights_2D_T * dy_2D),
 
         where:
           * weights_2D_T is the weights matrix reshaped to 2D and transposed (c·kh·kw x kn),
@@ -273,9 +268,7 @@ class ConvGemm:
         dy : array_like
             The dy matrix (b x kn x ho x wo).
         dx : array_like
-            An empty dx matrix (b x c x h x w) that will be overwritten with col2im(alpha * weights_2D_T * dy_2D).
-        alpha : float
-            The alpha factor.
+            An empty dx matrix (b x c x h x w) that will be overwritten with col2im(* weights_2D_T * dy_2D).
         vpadding : int
             The vertical padding to be applied to the x matrix.
         hpadding : int
@@ -308,14 +301,14 @@ class ConvGemm:
                            ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                            ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                            ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
-                           ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+                           ctypes.c_void_p(weights.ctypes.data),
                            ctypes.c_void_p(dy.ctypes.data),
                            ctypes.c_void_p(dx.ctypes.data),
-                           self.ac_pack, self.bc_pack, self.cc_pack)
+                           self.ac_pack, self.bc_pack)
 
         return dx
 
-    def deconv_gemm_nhwc(self, weights, dy, dx, alpha=1.0, vpadding=0, hpadding=0,
+    def deconv_gemm_nhwc(self, weights, dy, dx, vpadding=0, hpadding=0,
                     vstride=1, hstride=1, vdilation=1, hdilation=1):
 
         ck, kh, kw, kn = weights.shape
@@ -330,9 +323,9 @@ class ConvGemm:
                         ctypes.c_uint(vstride), ctypes.c_uint(hstride),
                         ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                         ctypes.c_uint(vdilation), ctypes.c_uint(hdilation),
-                        ctypes.c_float(alpha), ctypes.c_void_p(weights.ctypes.data),
+                        ctypes.c_void_p(weights.ctypes.data),
                         ctypes.c_void_p(dy.ctypes.data), ctypes.c_void_p(dx.ctypes.data),
-                        self.ac_pack, self.bc_pack, self.cc_pack)
+                        self.ac_pack, self.bc_pack)
 
         return dx
 
