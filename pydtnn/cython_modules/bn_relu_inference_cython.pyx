@@ -25,9 +25,8 @@ from cython.parallel import prange
 def bn_relu_inference_cython(x, running_mean, inv_std, gamma, beta):
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
-    shape = x.shape
 
-    cdef np.ndarray y = np.zeros((shape,), dtype=x.dtype, order="F")
+    cdef np.ndarray y = np.empty_like(x, order="C")
 
     if x.dtype == np.int8:
         bn_relu_inference_cython_inner_int8(x, running_mean, inv_std, y, gamma, beta)
@@ -50,8 +49,8 @@ cdef bn_relu_inference_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
                                          np.ndarray[np.int8_t, ndim=1] beta):
     cdef int i, j = 0
     cdef int tmp
-    for j in prange(x.shape[1], nogil=True, schedule='static'):
-        for i in range(x.shape[0]):
+    for i in prange(x.shape[0], nogil=True, schedule='static'):
+        for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
             y[i, j] = max((tmp * gamma[j]) + beta[j], 0)
 
@@ -65,8 +64,8 @@ cdef bn_relu_inference_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
                                             np.ndarray[np.float32_t, ndim=1] beta):
     cdef int i, j
     cdef float tmp
-    for j in prange(x.shape[1], nogil=True, schedule='static'):
-        for i in range(x.shape[0]):
+    for i in prange(x.shape[0], nogil=True, schedule='static'):
+        for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
             y[i, j] = max((tmp * gamma[j]) + beta[j], 0)
 
@@ -80,7 +79,7 @@ cdef bn_relu_inference_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
                                             np.ndarray[np.float64_t, ndim=1] beta):
     cdef int i, j
     cdef double tmp
-    for j in prange(x.shape[1], nogil=True, schedule='static'):
-        for i in range(x.shape[0]):
+    for i in prange(x.shape[0], nogil=True, schedule='static'):
+        for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
             y[i, j] = max((tmp * gamma[j]) + beta[j], 0)

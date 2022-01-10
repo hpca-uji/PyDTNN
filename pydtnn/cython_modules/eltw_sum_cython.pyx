@@ -22,48 +22,38 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def relu_cython(x):
-    shape = x.shape
-    cdef np.ndarray max = np.zeros((np.prod(shape)), dtype=x.dtype)
-    cdef np.ndarray mask = np.zeros((np.prod(shape)), dtype=np.int8)
-
+def eltw_sum_cython(x_acc, x):
     if x.dtype == np.int8:
-        relu_cython_inner_int8(x.reshape(-1), max, mask)
+        eltw_sum_cython_inner_int8(x_acc.reshape(-1), x.reshape(-1))
     elif x.dtype == np.float32:
-        relu_cython_inner_float32(x.reshape(-1), max, mask)
+        eltw_sum_cython_inner_float32(x_acc.reshape(-1), x.reshape(-1))
     elif x.dtype == np.float64:
-        relu_cython_inner_float64(x.reshape(-1), max, mask)
+        eltw_sum_cython_inner_float64(x_acc.reshape(-1), x.reshape(-1))
     else:
-        raise TypeError("Type '{}' is not supported by relu_cython!" % (str(x.dtype)))
+        raise TypeError("Type '{}' is not supported by eltw_sum_cython!" % (str(x.dtype)))
 
-    return max.reshape(shape), mask.reshape(shape)
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef relu_cython_inner_int8(np.ndarray[np.int8_t, ndim=1] x,
-                            np.ndarray[np.int8_t, ndim=1] max,
-                            np.ndarray[np.int8_t, ndim=1] mask):
-    cdef int i
-    for i in prange(x.shape[0], nogil=True):
-        if x[i] > 0:
-            max[i], mask[i] = x[i], 1
+    return x_acc
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef relu_cython_inner_float32(np.ndarray[np.float32_t, ndim=1] x,
-                               np.ndarray[np.float32_t, ndim=1] max,
-                               np.ndarray[np.int8_t, ndim=1] mask):
+cdef eltw_sum_cython_inner_int8(np.ndarray[np.int8_t, ndim=1] x_acc,
+                                np.ndarray[np.int8_t, ndim=1] x):
     cdef int i
     for i in prange(x.shape[0], nogil=True):
-        if x[i] > 0:
-            max[i], mask[i] = x[i], 1
+        x_acc[i] += x[i]
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef relu_cython_inner_float64(np.ndarray[np.float64_t, ndim=1] x,
-                               np.ndarray[np.float64_t, ndim=1] max,
-                               np.ndarray[np.int8_t, ndim=1] mask):
+cdef eltw_sum_cython_inner_float32(np.ndarray[np.float32_t, ndim=1] x_acc,
+                                   np.ndarray[np.float32_t, ndim=1] x):
     cdef int i
     for i in prange(x.shape[0], nogil=True):
-        if x[i] > 0:
-            max[i], mask[i] = x[i], 1
+        x_acc[i] += x[i]
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef eltw_sum_cython_inner_float64(np.ndarray[np.float64_t, ndim=1] x_acc,
+                                   np.ndarray[np.float64_t, ndim=1] x):
+    cdef int i
+    for i in prange(x.shape[0], nogil=True):
+        x_acc[i] += x[i]

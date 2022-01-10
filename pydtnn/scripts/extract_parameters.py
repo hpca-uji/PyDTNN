@@ -99,7 +99,15 @@ def extract_parameters():
                     'vgg16_cifar10': 'run_vgg_cifar10.sh',
                     'vgg16_imagenet': 'run_vgg_imagenet.sh',
                     'resnet34_cifar10': 'run_resnet_cifar10.sh',
-                    'resnet50_imagenet': 'run_resnet50_imagenet.sh'
+                    'resnet34_imagenet': 'run_resnet_imagenet.sh',
+                    'resnet50_cifar10': 'run_resnet_cifar10.sh',
+                    'resnet50_imagenet': 'run_resnet_imagenet.sh',
+                    'resnet50v15_cifar10': 'run_resnet_cifar10.sh',
+                    'resnet50v15_imagenet': 'run_resnet_imagenet.sh',
+                    'densenet121_cifar10': 'run_densenet_cifar10.sh',
+                    'densenet121_imagenet': 'run_densenet_imagenet.sh',
+                    'googlenet_cifar10': 'run_inception_cifar10.sh',
+                    'googlenet_imagenet': 'run_inception_imagenet.sh',
                     }
     parameters_with_short_values = defaultdict(lambda: defaultdict(lambda: ""))
     parameters_with_long_values = defaultdict(lambda: defaultdict(lambda: ""))
@@ -122,7 +130,7 @@ def extract_parameters():
         parameters_overwritten["reduce_lr_on_plateau_metric"][model] = ""
         parameters_overwritten["stop_at_loss_metric"][model] = ""
     # Patterns
-    command_pattern = re.compile(r"[^#]*python.*pydtnn_benchmark.py")
+    command_pattern = re.compile(r"[^#]*.*pydtnn_benchmark")
     parameter_pattern = re.compile(r"--([^=]+)=([^ ]+)")
     ignore_parameters = ("dataset_train_path", "dataset_test_path", "parallel", "history_file")
     # Extract the parameters
