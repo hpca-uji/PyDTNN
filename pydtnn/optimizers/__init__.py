@@ -76,5 +76,5 @@ def get_optimizer(model):
                          decay=model.decay,
                          dtype=model.dtype)
     else:
-        raise ValueError(f"Optimizer '{model.optimizer}' not recognized.")
+        raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
     return opt

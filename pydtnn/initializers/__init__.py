@@ -33,7 +33,7 @@ def _compute_fans(shape):
         fan_in = shape[1] * receptive_field
         fan_out = shape[0] * receptive_field
     else:
-        raise ValueError("The length of 'shape' must be greater or equal to 2")
+        raise ValueError(f"The length of 'shape' must be greater or equal to 2, it is {len(shape)}.")
     return fan_in, fan_out
 
 

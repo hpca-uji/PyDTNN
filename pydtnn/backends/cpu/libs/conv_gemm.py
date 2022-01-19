@@ -106,7 +106,7 @@ class ConvGemm:
             self.x_conv_gemm_nchw = self.lib_cg.sconvGemmNCHW
             self.x_deconv_gemm_nchw = self.lib_cg.sconvGemmNCHW_back
         else:
-            raise ValueError("Type {} not supported by this version of libconvGemm!".format(str(self.dtype)))
+            raise TypeError(f"Type '{str(self.dtype)}' not supported by this version of libconvGemm!")
 
     def __del__(self):
         """Free the allocated matrices"""

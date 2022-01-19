@@ -74,6 +74,6 @@ def get_lr_schedulers(model):
             lrs = ModelCheckpoint(model.model_checkpoint_metric,
                                   model.model_checkpoint_save_freq)
         else:
-            raise ValueError(f"LRScheduler '{model.optimizer}' not recognized.")
+            raise SystemExit(f"LRScheduler '{model.optimizer}' not supported yet!")
         lr_schedulers.append(lrs)
     return lr_schedulers

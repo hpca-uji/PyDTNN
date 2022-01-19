@@ -70,7 +70,7 @@ def main():
     params = parser.parse_args()
     # Adjust params based on the given command line arguments
     _MPI = None
-    if params.parallel in ["data"]:
+    if params.parallel == "data":
         from mpi4py import MPI
         _MPI = MPI
         params.comm = MPI.COMM_WORLD
@@ -84,7 +84,7 @@ def main():
         params.mpi_processes = 1
         rank = 0
     else:
-        raise ValueError(f"Parallel option '{params.parallel}' not recognized.")
+        raise SystemExit(f"Parallel option '{params.parallel}' not recognized.")
     #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
     #  default value to form a new team for the first encountered parallel construct.
     import multiprocessing

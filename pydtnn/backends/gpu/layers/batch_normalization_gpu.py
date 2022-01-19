@@ -140,7 +140,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
                                                           self.epsilon)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         else:
-            raise ValueError("Unexpected model mode")
+            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
         return self.y
 
     def backward(self, dy):

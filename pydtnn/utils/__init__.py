@@ -198,7 +198,7 @@ def _matmul_xgemm(called_from, lib, a, b, c=None):
                         ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
                         ctypes.c_double(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
     else:
-        raise ValueError(f"Type '{a.dtype}' not supported by {called_from}().")
+        raise TypeError(f"Type '{a.dtype}' not supported by {called_from}().")
     return c
 
 

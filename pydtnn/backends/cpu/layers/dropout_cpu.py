@@ -38,7 +38,7 @@ class DropoutCPU(LayerCPU, Dropout):
         elif self.model.mode == EVALUATE_MODE:
             return x
         else:
-            raise ValueError("Unexpected model mode")
+            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
     def backward(self, dy):
         if self.need_dx:

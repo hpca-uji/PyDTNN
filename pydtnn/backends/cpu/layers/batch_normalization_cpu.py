@@ -96,7 +96,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             y = bn_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         else:
-            raise ValueError("Unexpected model mode")
+            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci)

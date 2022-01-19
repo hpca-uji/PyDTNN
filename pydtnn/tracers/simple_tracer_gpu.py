@@ -54,9 +54,9 @@ class SimpleTracerGPU(SimpleTracer):
             start.record(stream=stream)
         else:
             if len(self.pending_events) == 0:
-                raise ValueError("Received an 'End' event but there are no pending events!")
+                raise RuntimeError("Received an 'End' event but there are no pending events!")
             if self.pending_events[-1][0] != evt_type_val:
-                raise ValueError("Received an 'End' event for a different event type than expected!")
+                raise RuntimeError("Received an 'End' event for a different event type than expected!")
             _evt_type_val, _evt_val, start, end = self.pending_events.pop()
             end.record(stream=stream)
             end.synchronize()

@@ -47,7 +47,7 @@ def factor(x):
     """Returns x, which must be 0.0 < x <= 1.0"""
     x = float(x)
     if not (0.0 < x <= 1.0):
-        raise ValueError("Value must be greater than 0.0 and less or equal to 1.0")
+        raise ValueError("Provided value must be greater than 0.0 and less or equal to 1.0")
     return x
 
 
