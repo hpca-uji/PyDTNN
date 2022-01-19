@@ -32,7 +32,7 @@ elif sys.platform == 'darwin':
 elif sys.platform == 'win32':
     _libcudnn_libname_list = ['cudnn64_6.dll']
 else:
-    raise RuntimeError('unsupported platform')
+    raise SystemExit('PyDTNN CUDNN: current platform is not yet supported!')
 
 _libcudnn = None
 for _libcudnn_libname in _libcudnn_libname_list:

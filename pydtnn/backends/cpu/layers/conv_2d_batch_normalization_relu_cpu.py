@@ -43,7 +43,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
         """Version of the forward function that uses the convWinograd + BatchNorm + Relu"""
 
         if self.model.mode == TRAIN_MODE:
-            raise RuntimeError("Fused layers cannot be used in training mode!")
+            raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
@@ -62,7 +62,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
 
         if self.model.mode == TRAIN_MODE:
-            raise RuntimeError("Fused layers cannot be used in training mode!")
+            raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
@@ -76,4 +76,4 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
         return res
 
     def backward(self, x):
-        raise RuntimeError(f"Backward method of {self.__class__.__name__} should not be called")
+        raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")
