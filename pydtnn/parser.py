@@ -5,7 +5,7 @@ The parser in this module will be used by 'pydtnn_benchmark' to parse the
 command line arguments.
 
 And what is even more important, it will also be loaded by the Model class to
-obtain default values to its non mandatory attributes. This way, when a model
+obtain default values to its non-mandatory attributes. This way, when a model
 object is instantiated (even if it is not from 'pydtnn_benchmark') it will
 initially have default values for all the attributes declared on the parser.
 
@@ -33,6 +33,7 @@ be available as a Model attribute.
 #
 
 import argparse
+import multiprocessing
 import os
 
 import numpy as np
@@ -52,7 +53,7 @@ def factor(x):
 
 
 def np_dtype(x):
-    """Returns a numpy object from an string representing the data type"""
+    """Returns a numpy object from a string representing the data type"""
     return getattr(np, x)
 
 
@@ -64,8 +65,43 @@ _epilogue = f"""Example scripts that call this program for training
 and evaluating different neural network models with different datasets are
 available at: '{_scripts_path}'."""
 
+
+class PydtnnArgumentParser(argparse.ArgumentParser):
+
+    def parse_args(self, args=None, namespace=None):
+        args = super().parse_args(args, namespace)
+        # Add to args the next runtime parallel execution data:
+        # 1) mpi_processes
+        args.mpi_processes = 1
+        try:
+            # noinspection PyUnresolvedReferences,PyPackageRequirements
+            from mpi4py import MPI
+        except ModuleNotFoundError:
+            pass
+        else:
+            args.mpi_processes = MPI.COMM_WORLD.Get_size()
+        # 2) threads_per_process
+        #  From IBM OpenMP documentation: If you do not set OMP_NUM_THREADS, the number of processors available is the
+        #  default value to form a new team for the first encountered parallel construct.
+        args.threads_per_process = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
+        # 3) gpus_per_node
+        import subprocess
+        try:
+            args.gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
+        except (FileNotFoundError, subprocess.CalledProcessError):
+            args.gpus_per_node = 0
+        # @todo: delete
+        # # Add Runtime parallel execution options (not actual parameters)
+        # _re_group = self.add_argument_group("Runtime parallel execution options")
+        # _re_group.add_argument('--mpi_processes', type=int, default=mpi_processes, help=argparse.SUPPRESS)
+        # _re_group.add_argument('--threads_per_process', type=int, default=threads_per_process, help=argparse.SUPPRESS)
+        # _re_group.add_argument('--gpus_per_node', type=int, default=gpus_per_node, help=argparse.SUPPRESS)
+        # return super().parse_args()
+        return args
+
+
 # Parser and the supported arguments with their default values
-parser = argparse.ArgumentParser(description=_desc, epilog=_epilogue)
+parser = PydtnnArgumentParser(description=_desc, epilog=_epilogue)
 
 # Model
 parser.add_argument('--model', dest="model_name", type=str, default="simplecnn")
@@ -112,7 +148,7 @@ _op_group.add_argument('--beta1', type=float, default=0.99)
 _op_group.add_argument('--beta2', type=float, default=0.999)
 _op_group.add_argument('--epsilon', type=float, default=1e-7)
 _op_group.add_argument('--rho', type=float, default=0.9)
-_op_group.add_argument('--loss_func', type=str, default="categorical_cross_entropy")
+_op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy")
 _op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
 
 # Learning rate schedulers options
@@ -145,11 +181,8 @@ _wg_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False
 
 # Parallel execution options
 _pe_group = parser.add_argument_group("Parallel execution options")
-_pe_group.add_argument('--mpi_processes', type=int, default=1, help=argparse.SUPPRESS)
-_pe_group.add_argument('--threads_per_process', type=int, default=1, help=argparse.SUPPRESS)
 _pe_group.add_argument('--parallel', type=str, default="sequential")
 _pe_group.add_argument('--non_blocking_mpi', type=bool_lambda, default=False)
-_pe_group.add_argument('--gpus_per_node', type=int, default=1, help=argparse.SUPPRESS)
 _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
