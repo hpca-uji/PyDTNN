@@ -20,7 +20,9 @@ PyDTNN model
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import functools
 import importlib
+import os
 import sys
 import time
 from timeit import default_timer as timer
@@ -30,9 +32,11 @@ from tqdm import tqdm
 
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
-from . import optimizers, losses, metrics
+from . import losses, metrics
 from . import utils
-from .datasets.dataset import Dataset
+from .datasets import CustomDataset, get_dataset
+from .lr_schedulers import get_lr_schedulers
+from .optimizers import get_optimizer
 from .parser import parser
 from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
@@ -49,6 +53,7 @@ enable_cudnn = False
 gpuarray: Any = None
 
 try:
+    # noinspection PyUnresolvedReferences,PyPackageRequirements
     from mpi4py import MPI
 except (ImportError, ModuleNotFoundError):
     supported_mpi4py = False
@@ -64,21 +69,44 @@ def _layer_id_generator():
         current_layer_id += 1
 
 
+def ensure_model_is_initialized(method):
+    @functools.wraps(method)
+    def wrapper_ensure_model_is_initialized(*args, **kwargs):
+        self = args[0]
+        if not self._initialized:
+            self._initialize()
+        return method(*args, **kwargs)
+
+    return wrapper_ensure_model_is_initialized
+
+
 class Model:
     """
     PyDTNN Model
     """
 
-    def __init__(self, comm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
+    def __init__(self, parallel="sequential", non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs):
         # Attributes related to the given arguments
-        self.comm = comm
+        self.parallel = parallel
         self.blocking_mpi = not non_blocking_mpi
         global enable_cudnn
         enable_cudnn = self.enable_cudnn = enable_gpu
         self.gpudirect = enable_gpudirect
         self.enable_nccl = enable_nccl
         self.dtype = dtype
+        # Set MPI and comm
+        if self.parallel == "sequential":
+            self.MPI = None
+            self.comm = None
+        elif self.parallel == "data":
+            if not supported_mpi4py:
+                raise SystemExit("Please, install mpi4py to allow parallel MPI execution!")
+            self.MPI = MPI
+            self.comm = MPI.COMM_WORLD
+        else:
+            raise SystemExit(f"Parallel option '{parallel}' not recognized.")
+        # Set tracer
         if tracer_output == "" and not enable_gpu:
             self.tracer = ExtraeTracer(tracing)
         elif enable_gpu:
@@ -98,18 +126,19 @@ class Model:
         self.shared_storage = True
         # Matmul
         self.matmul = getattr(utils, "matmul")
-        # Execution attributes
+        # Set current mode to unspecified
+        self.mode = UNSPECIFIED_MODE
+        # Initialize the total number of params of the model
         self.nparams = 0
+        # Execution attributes
         self.rank = 0
         self.nprocs = 1
-        self.mode = UNSPECIFIED_MODE
         if self.comm:
             if supported_mpi4py:
                 self.rank = self.comm.Get_rank()
                 self.nprocs = self.comm.Get_size()
             else:
-                print("Please, install mpi4py to allow parallel MPI execution!")
-                sys.exit(-1)
+                raise SystemExit("Please, install mpi4py to allow parallel MPI execution!")
         if self.enable_cudnn:
             global supported_cudnn, supported_nccl
             supported_cudnn = True
@@ -117,15 +146,16 @@ class Model:
             try:
                 import pydtnn.backends.gpu.tensor_gpu
                 global gpuarray
+                # noinspection PyUnresolvedReferences
                 import pycuda.gpuarray as gpuarray
+                # noinspection PyUnresolvedReferences
                 import pycuda.driver as drv
                 from pydtnn.backends.gpu.libs import libcudnn as cudnn
                 # noinspection PyUnresolvedReferences
                 from skcuda import cublas
             except (ImportError, ModuleNotFoundError, OSError):
-                supported_cudnn = False
-                print("Please, install pycuda, skcuda, and cudnn to be able to use the GPUs!")
-                sys.exit(-1)
+                msg = "Please, install pycuda, skcuda, and cudnn to be able to use the GPUs!"
+                raise SystemExit(msg) from None
 
             # import pycuda.autoinit
             # The next fake test exists only to avoid the pycuda.autoinit import being removed when optimizing imports
@@ -143,8 +173,8 @@ class Model:
                     from pydtnn.backends.gpu.libs import libnccl as nccl
                 except (ImportError, ModuleNotFoundError, OSError):
                     supported_nccl = False
-                    print("Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!")
-                    sys.exit(-1)
+                    msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
+                    raise SystemExit(msg) from None
 
                 types = {np.float64: nccl.DataType.Float64,
                          np.float32: nccl.DataType.Float32,
@@ -155,19 +185,21 @@ class Model:
 
                 hostname = MPI.Get_processor_name()
 
-                hosts_data = comm.allgather([self.rank, hostname])
+                hosts_data = self.comm.allgather([self.rank, hostname])
                 # Build a dictionary hostname : [ranks_in_host]
                 #   { "host1": [0, 1], "host2": [2, 3] }
                 hosts = {}
                 for r, h in hosts_data:
+                    # noinspection PyTypeChecker
                     hosts.setdefault(h, []).append(r)
-
+                if self.parallel == "data":
+                    os.environ["CUDA_VISIBLE_DEVICES"] = str(self.rank % self.gpus_per_node)
                 # Check that no more processes than GPUs per node are used
-                self.gpus_per_node = self.kwargs.get('gpus_per_node', 1)
                 for host, ranks_in_host in hosts.items():
-                    assert len(ranks_in_host) <= self.gpus_per_node
+                    if len(ranks_in_host) > self.gpus_per_node:
+                        raise SystemExit("Not able to run more processes than GPUs per node!")
 
-                nccl_id = comm.bcast(nccl.ncclGetUniqueId() if self.rank == 0 else None)
+                nccl_id = self.comm.bcast(nccl.ncclGetUniqueId() if self.rank == 0 else None)
                 self.nccl_comm = nccl.ncclCommInitRank(self.nprocs, nccl_id, self.rank)
 
                 # if self.enable_nccl_hierarchical:
@@ -184,7 +216,7 @@ class Model:
                 #         inter_group = MPI.Group.Incl(inter_group_, self.inter_ranks)
                 #         self.inter_comm = comm.Create(inter_group)
                 # 
-                #     # Get an id once per master process and distribute it to all intra ranks
+                #     # Get an id once per master process and distribute it to all the intra ranks
                 #     id = intra_comm.bcast(nccl.ncclGetUniqueId() if self.rank in self.inter_ranks else None)
                 #     self.nccl_comm = nccl.ncclCommInitRank(len(self.intra_ranks), id, intra_comm.Get_rank())
 
@@ -216,10 +248,6 @@ class Model:
         # Disable BestOf globally if not enabled
         if self.kwargs['enable_best_of'] is False:
             BestOf.use_always_the_first_alternative()
-        # Read model
-        self.model_name = self.kwargs.get("model_name")
-        if self.model_name:
-            self.read_model(self.model_name)
         # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
         self.batch_size = self.kwargs['batch_size']
         self.steps_per_epoch = self.kwargs['steps_per_epoch']
@@ -228,19 +256,36 @@ class Model:
         self.network_bw = self.kwargs['network_bw']
         self.network_lat = self.kwargs['network_lat']
         self.network_alg = self.kwargs['network_alg']
+        # Load weights and bias
+        if self.weights_and_bias_filename:
+            self.load_weights_and_bias(self.weights_and_bias_filename)
+        # Dataset
+        self.dataset = get_dataset(self)
+        # Optimizers and LRSchedulers
+        if self.kwargs["optimizer_name"] == "sgd" and self.kwargs["learning_rate_scaling"]:
+            self.kwargs["learning_rate"] *= self.nprocs
+        self.optimizer = get_optimizer(self)
+        self.lr_schedulers = get_lr_schedulers(self)
+        # Metrics list
+        self.metrics_list = [m for m in self.metrics.replace(" ", "").split(",")]
+        # Private attributes
+        self._evaluate_round = 0
+        self._initialized = False
         # Attributes that will be properly defined elsewhere
         self.y_batch = None
         self.history = None
-        # Private attributes
-        self._evaluate_round = 0
+        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
+        self.model_name = self.kwargs.get("model_name")
+        if self.model_name:
+            self._read_model(self.model_name)
 
     def __getattr__(self, item):
         try:
             return self.kwargs[item]
         except KeyError:
-            raise AttributeError(f"'Model' object has no attribute '{item}'") from None
+            raise AttributeError(f"Model object has no attribute '{item}'!") from None
 
-    def read_model(self, model_name):
+    def _read_model(self, model_name):
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
             getattr(model_module, f"create_{model_name}")(self)
@@ -248,6 +293,8 @@ class Model:
             import traceback
             print(traceback.format_exc())
             sys.exit(-1)
+        else:  # There was no error, call _initialize()
+            self._initialize()
 
     def show(self):
         bfp = {np.float32: 4, np.float64: 8}[self.dtype]
@@ -291,7 +338,7 @@ class Model:
             this_recursion_layers += self.get_all_layers(layer.children)
         return this_recursion_layers
 
-    def __apply_layer_fusion(self, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
+    def _apply_layer_fusion(self, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
         """ Apply layer fusion in a recursive manner """
 
         def __layer_fusion(layers, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
@@ -307,8 +354,8 @@ class Model:
                         fused_layers[-2].canonical_name == "Conv2D":
                     backend = "gpu" if self.enable_cudnn else "cpu"
                     fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
-                                          fused_layers[-2].canonical_name + \
-                                          fused_layers[-1].canonical_name + \
+                                          fused_layers[-2].canonical_name +
+                                          fused_layers[-1].canonical_name +
                                           type(curr_layer).__name__)
                     if fused_layers[-2].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
                         bn_layer = fused_layers.pop()
@@ -325,7 +372,7 @@ class Model:
                         not (conv_bn_relu and i + 1 < len(layers) and layers[i + 1].canonical_name == "Relu"):
                     backend = "gpu" if self.enable_cudnn else "cpu"
                     fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
-                                          fused_layers[-1].canonical_name + \
+                                          fused_layers[-1].canonical_name +
                                           type(curr_layer).__name__)
                     if fused_layers[-1].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
                         prev_layer = fused_layers.pop()
@@ -340,7 +387,7 @@ class Model:
                     print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                             curr_layer.id, type(curr_layer).__name__))
                     curr_layer = getattr(importlib.import_module("pydtnn.layers"),
-                                         prev_layer.canonical_name + \
+                                         prev_layer.canonical_name +
                                          curr_layer.canonical_name)(from_parent=prev_layer)
                 fused_layers.append(curr_layer)
             return fused_layers
@@ -423,13 +470,13 @@ class Model:
 
         return total_time
 
-    def __compute_metrics_funcs(self, y_pred, y_targ, loss, metrics_funcs, blocking=True):
+    def _compute_metrics_funcs(self, y_pred, y_targ, loss, blocking=True):
         loss_req = None
         if self.enable_cudnn:
-            _losses = np.array([loss] + [func(y_pred.ary, y_targ.ary)
-                                         for func in metrics_funcs], dtype=np.float32) / self.nprocs
+            _losses = np.array([loss] + [func(y_pred.ary, y_targ.ary) for func in self.metrics_funcs],
+                               dtype=np.float32) / self.nprocs
         else:
-            _losses = np.array([loss] + [func(y_pred, y_targ) for func in metrics_funcs],
+            _losses = np.array([loss] + [func(y_pred, y_targ) for func in self.metrics_funcs],
                                dtype=np.float32) / self.nprocs
         if self.comm is not None and blocking:
             self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
@@ -437,31 +484,36 @@ class Model:
             loss_req = self.comm.Iallreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
         return _losses, loss_req
 
-    @staticmethod
-    def __update_running_average(curr, total, count, batch_size, loss_metrics, prefix=""):
+    def _update_running_average(self, curr, total, count, batch_size, prefix=""):
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
-        for c in range(len(loss_metrics)):
-            loss_str = pydtnn.metrics.metric_format.get(loss_metrics[c], loss_metrics[c])
+        for c in range(len(self.loss_and_metrics)):
+            loss_str = pydtnn.metrics.metric_format.get(self.loss_and_metrics[c], self.loss_and_metrics[c])
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
 
-    def __train_batch(self, x_batch, y_batch, local_batch_size, global_batch_size,
-                      loss_func, metrics_funcs, optimizer, lr_schedulers):
-
-        self.mode = TRAIN_MODE
-        for lr_sched in lr_schedulers:
-            lr_sched.on_batch_begin(self, optimizer, self.rank)
-
+    def _get_x_y_targ(self, x_batch, y_batch, current_batch_size):
         if self.enable_cudnn:
-            if x_batch.shape[0] != local_batch_size:
-                return self.total_metrics
+            if x_batch.shape[0] != current_batch_size:
+                raise ValueError
             self.layers[0].y.ary.set(x_batch)
             self.y_batch.ary.set(y_batch)
             x, y_targ = self.layers[0].y, self.y_batch
         else:
             x, y_targ = x_batch, y_batch
+        return x, y_targ
+
+    def _train_batch(self, x_batch, y_batch, current_batch_size):
+
+        self.mode = TRAIN_MODE
+        for lr_sched in self.lr_schedulers:
+            lr_sched.on_batch_begin()
+
+        try:
+            x, y_targ = self._get_x_y_targ(x_batch, y_batch, current_batch_size)
+        except ValueError:
+            return self.total_metrics
 
         # Forward pass (FP)
         for i in range(1, len(self.layers)):
@@ -469,8 +521,8 @@ class Model:
             x = self.layers[i].forward(x)
             self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-        loss, dx = loss_func(x, y_targ, global_batch_size)
-        self.total_metrics, _ = self.__compute_metrics_funcs(x, y_targ, loss, metrics_funcs)
+        loss, dx = self.loss_func(x, y_targ, self.batch_size)
+        self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss)
 
         if self.blocking_mpi:
             # Blocking MPI
@@ -489,7 +541,7 @@ class Model:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.layers[i].reduce_weights_sync()
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[i].update_weights(optimizer)
+                self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
         else:
             # Non-blocking MPI
@@ -513,7 +565,7 @@ class Model:
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
 
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[i].update_weights(optimizer)
+                self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         if self.enable_cudnn:
@@ -521,68 +573,64 @@ class Model:
                 if self.layers[i].grad_vars:
                     self.layers[i].stream_2.synchronize()
 
-        for lr_sched in lr_schedulers:
-            lr_sched.on_batch_end(self, optimizer, self.rank)
+        for lr_sched in self.lr_schedulers:
+            lr_sched.on_batch_end(self)
 
         return self.total_metrics
 
-    def train(self, x_train, y_train, x_val, y_val, nepochs, local_batch_size,
-              loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
-              optimizer=optimizers.SGD(), bar_width=110):
+    def _initialize(self):
+        if self._initialized:
+            return
+        self._apply_layer_fusion(self.kwargs.get("enable_fused_bn_relu"), self.kwargs.get("enable_fused_conv_relu"),
+                                 self.kwargs.get("enable_fused_conv_bn"), self.kwargs.get("enable_fused_conv_bn_relu"))
+        self.loss_func = getattr(losses, self.loss_func_name)(shape=(self.batch_size, *self.layers[-1].shape),
+                                                              model=self)
+        self.metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
+                              self.metrics_list]
+        self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
+        self.tracer.define_event_types(self)
+        self._initialized = True
 
-        dataset = Dataset(x_train=x_train, y_train=y_train, x_val=x_val, y_val=y_val)
-        history = self.train_dataset(dataset, nepochs, local_batch_size, 0,
-                                     loss=loss, metrics_list=metrics_list, optimizer=optimizer,
-                                     bar_width=bar_width)
+    def train(self, x_train, y_train, x_val, y_val, bar_width=110):
+        self.dataset = CustomDataset(self, x_train=x_train, y_train=y_train, x_test=x_val, y_test=y_val)
+        history = self.train_dataset(bar_width=bar_width)
         return history
 
-    def train_dataset(self, dataset, nepochs, local_batch_size, val_split=0.2,
-                      loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
-                      optimizer=optimizers.SGD(), lr_schedulers=(), bar_width=110):
+    @ensure_model_is_initialized
+    def train_dataset(self, bar_width=110):
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
-                gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
-        loss_func = getattr(losses, loss)(shape=(local_batch_size, *self.layers[-1].shape), model=self)
-        metrics_funcs = [getattr(metrics, m)(shape=(local_batch_size, *self.layers[-1].shape), model=self) for m in
-                         metrics_list]
-        loss_metrics = [loss] + metrics_list
-        self.history = {lm: [] for lm in (loss_metrics + [f"val_{m}" for m in loss_metrics])}
-        if self.enable_cudnn:
-            # noinspection PyUnresolvedReferences
-            optimizer.set_gpudirect(self.gpudirect)
 
-        dataset.make_train_val_partitions(val_split)
-        self.steps_per_epoch = dataset.train_nsamples / (local_batch_size * self.nprocs)
+        self.history = {lm: [] for lm in (self.loss_and_metrics + [f"val_{m}" for m in self.loss_and_metrics])}
+
         terminate = False
 
-        for epoch in range(nepochs):
+        for epoch in range(self.num_epochs):
 
-            train_batch_generator, val_batch_generator = \
-                dataset.get_train_val_generator(local_batch_size, self.rank, self.nprocs, val_split)
+            train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
 
-            train_total_loss, train_batch_count = np.zeros(len(loss_metrics)), 0
-            val_total_loss, val_batch_count = np.zeros(len(loss_metrics)), 0
+            train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+            val_total_loss, val_batch_count = np.zeros(len(self.loss_and_metrics)), 0
 
             if self.rank == 0:
-                fmt = "%%%dd" % (len(str(nepochs)))
+                fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
-                pbar = tqdm(total=dataset.train_nsamples, ncols=bar_width,
+                pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width,
                             ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
-                            desc=epoch_string % (epoch + 1, nepochs), unit=" samples")
+                            desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
 
-            for lr_sched in lr_schedulers:
+            for lr_sched in self.lr_schedulers:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for x_batch, y_batch, batch_size in train_batch_generator:
                 tic = timer()
-                train_batch_loss = self.__train_batch(x_batch, y_batch, local_batch_size, batch_size,
-                                                      loss_func, metrics_funcs, optimizer, lr_schedulers)
+                train_batch_loss = self._train_batch(x_batch, y_batch, batch_size)
                 toc = timer()
                 train_total_loss, train_batch_count, string = \
-                    self.__update_running_average(train_batch_loss, train_total_loss,
-                                                  train_batch_count, batch_size,
-                                                  loss_metrics)
+                    self._update_running_average(train_batch_loss, train_total_loss,
+                                                 train_batch_count, batch_size)
                 if self.rank == 0:
                     # noinspection PyUnboundLocalVariable
                     pbar.set_postfix_str(s=string, refresh=True)
@@ -591,26 +639,23 @@ class Model:
 
             if self.rank == 0:
                 pbar.close()
-                for c in range(len(loss_metrics)):
-                    self.history[loss_metrics[c]].append(train_total_loss[c])
+                for c in range(len(self.loss_and_metrics)):
+                    self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for x_batch, y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self.__evaluate_batch(x_batch, y_batch, local_batch_size, batch_size,
-                                                       loss_func, metrics_funcs)
+                val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
                 val_total_loss, val_batch_count, string = \
-                    self.__update_running_average(val_batch_loss, val_total_loss,
-                                                  val_batch_count, batch_size,
-                                                  loss_metrics, prefix="val_")
+                    self._update_running_average(val_batch_loss, val_total_loss,
+                                                 val_batch_count, batch_size, prefix="val_")
                 if self.rank == 0:
                     print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
             if self.rank == 0:
-                for c in range(len(loss_metrics)):
-                    self.history["val_" + loss_metrics[c]].append(val_total_loss[c])
+                for c in range(len(self.loss_and_metrics)):
+                    self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
-            for lr_sched in lr_schedulers:
-                lr_sched.on_epoch_end(self, optimizer, loss_metrics,
-                                      train_total_loss, val_total_loss, self.rank)
+            for lr_sched in self.lr_schedulers:
+                lr_sched.on_epoch_end(train_total_loss, val_total_loss)
                 if getattr(lr_sched, "stop_training", False):
                     terminate = True
 
@@ -620,17 +665,13 @@ class Model:
         self.tracer.define_event_types(self)
         return self.history
 
-    def __evaluate_batch(self, x_batch, y_batch, local_batch_size, global_batch_size, loss_func, metrics_funcs):
+    def _evaluate_batch(self, x_batch, y_batch, current_batch_size):
         self.mode = EVALUATE_MODE
 
-        if self.enable_cudnn:
-            if x_batch.shape[0] != local_batch_size:
-                return self.total_metrics
-            self.layers[0].y.ary.set(x_batch)
-            self.y_batch.ary.set(y_batch)
-            x, y_targ = self.layers[0].y, self.y_batch
-        else:
-            x, y_targ = x_batch, y_batch
+        try:
+            x, y_targ = self._get_x_y_targ(x_batch, y_batch, current_batch_size)
+        except ValueError:
+            return self.total_metrics
 
         # Forward pass (FP)
         for i in range(1, len(self.layers)):
@@ -639,49 +680,38 @@ class Model:
             self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         y_pred = self.layers[-1].y
-        loss, _ = loss_func(y_pred, y_targ, global_batch_size)
-        self.total_metrics, _ = self.__compute_metrics_funcs(y_pred, y_targ, loss, metrics_funcs)
+        loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
+        self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss)
         return self.total_metrics
 
-    def evaluate(self, x_test, y_test, local_batch_size,
-                 loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
-                 bar_width=110):
+    def evaluate(self, x_test, y_test, bar_width=110):
+        self.dataset = CustomDataset(self, x_test=x_test, y_test=y_test)
+        self.evaluate_dataset(bar_width=bar_width)
 
-        dataset = Dataset(x_test=x_test, y_test=y_test)
-        self.evaluate_dataset(dataset, local_batch_size, loss=loss, metrics_list=metrics_list, bar_width=bar_width)
-
-    def evaluate_dataset(self, dataset, local_batch_size,
-                         loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
-                         bar_width=120):
+    @ensure_model_is_initialized
+    def evaluate_dataset(self, bar_width=120):
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
-                gpuarray.empty((local_batch_size, *self.layers[-1].shape), self.dtype),
+                gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
-        loss_func = getattr(losses, loss)(shape=(self.batch_size, *self.layers[-1].shape), model=self)
-        metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
-                         metrics_list]
-        loss_metrics = [loss] + metrics_list
-        test_batch_generator = dataset.get_test_generator(local_batch_size, self.rank, self.nprocs)
 
-        self.__apply_layer_fusion(self.kwargs.get("enable_fused_bn_relu"), self.kwargs.get("enable_fused_conv_relu"),
-                                  self.kwargs.get("enable_fused_conv_bn"), self.kwargs.get("enable_fused_conv_bn_relu"))
+        test_batch_generator = self.dataset.get_test_generator()
 
         if self.rank == 0:
-            test_total_loss, test_batch_count = np.zeros(len(loss_metrics)), 0
-            pbar = tqdm(total=dataset.test_nsamples, ncols=bar_width,
+            test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
+            pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
         for x_batch, y_batch, batch_size in test_batch_generator:
             tic = timer()
-            test_batch_loss = self.__evaluate_batch(x_batch, y_batch, self.batch_size, batch_size,
-                                                    loss_func, metrics_funcs)
+            test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
             toc = timer()
             if self.rank == 0:
                 # noinspection PyUnboundLocalVariable
                 test_total_loss, test_batch_count, string = \
-                    self.__update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size,
-                                                  loss_metrics, prefix="test_")
+                    self._update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size,
+                                                 prefix="test_")
                 # noinspection PyUnboundLocalVariable
                 pbar.set_postfix_str(s=string, refresh=True)
                 pbar.update(batch_size)
@@ -694,5 +724,3 @@ class Model:
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
-
-        self.tracer.define_event_types(self)
