@@ -17,36 +17,24 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from . import LRScheduler
+from . import LRSchedulerWithLossOrMetric
 
 
-class StopAtLoss(LRScheduler):
+class StopAtLoss(LRSchedulerWithLossOrMetric):
     """
     StopAtLoss LRScheduler
     """
 
-    def __init__(self, loss_metric="", threshold_value=0, verbose=True):
-        super().__init__()
-        self.loss_metric = loss_metric
-        self.is_val_metric = "val_" in self.loss_metric
-        check_val = self.loss_metric.split("_")
-        if "val" == check_val[0]:
-            self.loss_metric_ = "_".join(check_val[1:])
+    def __init__(self, model, loss_or_metric="", threshold_value=0, verbose=True):
+        super().__init__(model, loss_or_metric, verbose)
         self.threshold_value = threshold_value
         self.stop_training = False
-        self.epoch_count = 0
-        self.verbose = verbose
 
-    def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
-        try:
-            idx = loss_metrics.index(self.loss_metric_)
-        except:
-            idx = 0
+    def on_epoch_end(self, train_loss, val_loss):
+        idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_metric and loss[idx] > self.threshold_value) or \
-                ("accuracy" not in self.loss_metric and loss[idx] < self.threshold_value):
+        if ("accuracy" in self.loss_or_metric and loss[idx] > self.threshold_value) or \
+                ("accuracy" not in self.loss_or_metric and loss[idx] < self.threshold_value):
             self.stop_training = True
-            if self.verbose and rank == 0:
-                print("LRScheduler %s: metric %s reached threshold value %f, stop training!" %
-                      (type(self).__name__, self.loss_metric, self.threshold_value))
+            self.log("Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")

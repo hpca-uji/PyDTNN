@@ -17,34 +17,22 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
+
+from . import LRScheduler
 
 
-class LRScheduler(ABC):
+class LRSchedulerWithLossOrMetric(LRScheduler):
     """
-    LRScheduler base class
+    LRScheduler with metric base class
     """
 
-    def __init__(self, model, verbose):
-        self.model = model
-        self.verbose = verbose
-        self.epoch_count = 0
+    def __init__(self, model, loss_or_metric, verbose):
+        super().__init__(model, verbose)
+        self.is_val_metric = "val_" == loss_or_metric[:4]
+        self.loss_or_metric = loss_or_metric[4:] if self.is_val_metric else loss_or_metric
 
-    def __str__(self):
-        return f"LRScheduler {type(self).__name__}"
-
-    def on_batch_begin(self, *args):
-        pass
-
-    def on_batch_end(self, *args):
-        pass
-
-    def on_epoch_begin(self, *args):
-        pass
-
-    def on_epoch_end(self, *args):
-        pass
-
-    def log(self, text):
-        if self.verbose and self.model.rank == 0:
-            print(f"{self}: {text}")
+    def _get_idx(self):
+        try:
+            return self.model.loss_and_metrics.index(self.loss_or_metric)
+        except ValueError:
+            raise SystemExit("{self}: loss or metric '{self.loss_or_metric}' not found in current model!")

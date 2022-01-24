@@ -19,43 +19,33 @@
 
 import numpy as np
 
-from . import LRScheduler
+from . import LRSchedulerWithLossOrMetric
 
 
-class ReduceLROnPlateau(LRScheduler):
+class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
     """
     ReduceLROnPlateau LRScheduler
     """
 
-    def __init__(self, loss_metric="", factor=0.1, patience=5, min_lr=0, verbose=True):
-        super().__init__()
-        self.loss_metric = loss_metric
-        self.is_val_metric = "val_" in self.loss_metric
-        check_val = self.loss_metric.split("_")
-        if "val" == check_val[0]:
-            self.loss_metric_ = "_".join(check_val[1:])
+    def __init__(self, model, loss_or_metric="", factor=0.1, patience=5, min_lr=0, verbose=True):
+        super().__init__(model, loss_or_metric, verbose)
         self.factor = factor
         self.patience = patience
         self.min_lr = min_lr
-        self.epoch_count = self.best_epoch = 0
-        self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_metric]
-        self.verbose = verbose
+        self.best_epoch = 0
+        self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
 
-    def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
-        try:
-            idx = loss_metrics.index(self.loss_metric_)
-        except:
-            idx = 0
+    def on_epoch_end(self, train_loss, val_loss):
+        idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_metric and loss[idx] > self.best_loss) or \
-                ("accuracy" not in self.loss_metric and loss[idx] < self.best_loss):
+        if ("accuracy" in self.loss_or_metric and loss[idx] > self.best_loss) or \
+                ("accuracy" not in self.loss_or_metric and loss[idx] < self.best_loss):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
         elif self.epoch_count - self.best_epoch >= self.patience \
-                and optimizer.learning_rate * self.factor >= self.min_lr:
-            optimizer.learning_rate *= self.factor
+                and self.model.optimizer.learning_rate * self.factor >= self.min_lr:
+            self.model.optimizer.learning_rate *= self.factor
             self.best_epoch = self.epoch_count
-            if self.verbose and rank == 0:
-                print("LRScheduler %s: metric %s did not improve for %d epochs, setting learning rate to %.8f" %
-                      (type(self).__name__, self.loss_metric, self.patience, optimizer.learning_rate))
+            self.log("Metric '{}' did not improve for {} epochs, setting learning rate to {:.8f}."
+                     .format(self.loss_or_metric, self.patience, self.model.optimizer.learning_rate))

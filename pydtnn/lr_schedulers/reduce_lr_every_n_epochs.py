@@ -25,17 +25,14 @@ class ReduceLREveryNEpochs(LRScheduler):
     ReduceLREveryNEpochs LRScheduler
     """
 
-    def __init__(self, factor=0.1, nepochs=5, min_lr=0, verbose=True):
-        super().__init__()
+    def __init__(self, model, factor=0.1, nepochs=5, min_lr=0, verbose=True):
+        super().__init__(model, verbose)
         self.factor = factor
         self.nepochs = nepochs
         self.min_lr = min_lr
-        self.epoch_count = 0
-        self.verbose = verbose
 
-    def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
+    def on_epoch_end(self, train_loss, val_loss):
         self.epoch_count += 1
-        if self.epoch_count % self.nepochs == 0 and optimizer.learning_rate * self.factor >= self.min_lr:
-            optimizer.learning_rate *= self.factor
-            if self.verbose and rank == 0:
-                print("LRScheduler %s: setting learning rate to %.8f" % (type(self).__name__, optimizer.learning_rate))
+        if self.epoch_count % self.nepochs == 0 and self.model.optimizer.learning_rate * self.factor >= self.min_lr:
+            self.model.optimizer.learning_rate *= self.factor
+            self.log(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}!")

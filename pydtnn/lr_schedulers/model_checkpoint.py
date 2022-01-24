@@ -22,47 +22,36 @@ import time
 
 import numpy as np
 
-from . import LRScheduler
+from . import LRSchedulerWithLossOrMetric
 
 
-class ModelCheckpoint(LRScheduler):
+class ModelCheckpoint(LRSchedulerWithLossOrMetric):
     """
     ModelCheckpoint LRScheduler
     """
 
-    def __init__(self, loss_metric="", epoch_save_frequency=1, verbose=True):
-        super().__init__()
-        self.loss_metric = loss_metric
-        self.is_val_metric = "val_" in self.loss_metric
-        check_val = self.loss_metric.split("_")
-        if "val" == check_val[0]:
-            self.loss_metric_ = "_".join(check_val[1:])
+    def __init__(self, model, loss_or_metric="", epoch_save_frequency=1, verbose=True):
+        super().__init__(model, loss_or_metric, verbose)
         self.epoch_save_frequency = epoch_save_frequency
         self.epoch_count = self.best_epoch = 0
-        self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_metric]
-        self.last_filename = ""
-        self.verbose = verbose
+        self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
         # Attributes that will be properly defined elsewhere
         self.filename = None
+        self.last_filename = None
 
-    def on_epoch_end(self, model, optimizer, loss_metrics, train_loss, val_loss, rank):
-        try:
-            idx = loss_metrics.index(self.loss_metric)
-        except:
-            idx = 0
+    def on_epoch_end(self, train_loss, val_loss):
+        idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_metric and loss[idx] > self.best_loss) or \
-                ("accuracy" not in self.loss_metric and loss[idx] < self.best_loss):
+        if ("accuracy" in self.loss_or_metric and loss[idx] > self.best_loss) or \
+                ("accuracy" not in self.loss_or_metric and loss[idx] < self.best_loss):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
             if self.epoch_count % self.epoch_save_frequency == 0:
-                self.filename = "./model-%s-epoch-%d-%s.npz" % \
-                                (model.model_name, self.epoch_count, time.strftime("%Y%m%d"))
-                model.store_weights_and_bias(self.filename)
-                if self.verbose and rank == 0:
-                    print("LRScheduler %s: saving model weights and bias in %s" %
-                          (type(self).__name__, self.filename))
-                if model.rank == 0 and self.last_filename:
+                self.filename = "./model-{}-epoch-{}-{}.npz" \
+                    .format(self.model.model_name, self.epoch_count, time.strftime("%Y%m%d"))
+                self.model.store_weights_and_bias(self.filename)
+                self.log(f"Saving model weights and bias in '{self.filename}'.")
+                if self.model.rank == 0 and self.last_filename is not None:
                     os.remove(self.last_filename)
                 self.last_filename = self.filename

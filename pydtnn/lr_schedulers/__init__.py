@@ -27,6 +27,7 @@ If you want to add a new LR Scheduler:
 #
 
 from .lr_scheduler import LRScheduler
+from .lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
 from .early_stopping import EarlyStopping
 from .model_checkpoint import ModelCheckpoint
 from .reduce_lr_every_n_epochs import ReduceLREveryNEpochs
@@ -52,26 +53,32 @@ def get_lr_schedulers(model):
     lr_schedulers = []
     for lr_sched in model.lr_schedulers_names.split(","):
         if lr_sched == "warm_up":
-            lrs = WarmUpLRScheduler(model.warm_up_epochs,
-                                    model.learning_rate / model.mpi_processes,
+            lrs = WarmUpLRScheduler(model,
+                                    model.warm_up_epochs,
+                                    model.learning_rate / model.nprocs,
                                     model.learning_rate)
         elif lr_sched == "early_stopping":
-            lrs = EarlyStopping(model.early_stopping_metric,
+            lrs = EarlyStopping(model,
+                                model.early_stopping_metric,
                                 model.early_stopping_patience)
         elif lr_sched == "reduce_lr_on_plateau":
-            lrs = ReduceLROnPlateau(model.reduce_lr_on_plateau_metric,
+            lrs = ReduceLROnPlateau(model,
+                                    model.reduce_lr_on_plateau_metric,
                                     model.reduce_lr_on_plateau_factor,
                                     model.reduce_lr_on_plateau_patience,
                                     model.reduce_lr_on_plateau_min_lr)
         elif lr_sched == "reduce_lr_every_nepochs":
-            lrs = ReduceLREveryNEpochs(model.reduce_lr_every_nepochs_factor,
+            lrs = ReduceLREveryNEpochs(model,
+                                       model.reduce_lr_every_nepochs_factor,
                                        model.reduce_lr_every_nepochs_nepochs,
                                        model.reduce_lr_every_nepochs_min_lr)
         elif lr_sched == "stop_at_loss":
-            lrs = StopAtLoss(model.stop_at_loss_metric,
+            lrs = StopAtLoss(model,
+                             model.stop_at_loss_metric,
                              model.stop_at_loss_threshold)
         elif lr_sched == "model_checkpoint":
-            lrs = ModelCheckpoint(model.model_checkpoint_metric,
+            lrs = ModelCheckpoint(model,
+                                  model.model_checkpoint_metric,
                                   model.model_checkpoint_save_freq)
         else:
             raise SystemExit(f"LRScheduler '{model.optimizer}' not supported yet!")
