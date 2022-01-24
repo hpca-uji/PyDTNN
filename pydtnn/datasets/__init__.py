@@ -20,25 +20,19 @@
 import importlib
 import sys
 
+from .cifar10 import CIFAR10
+from .custom_dataset import CustomDataset
+from .imagenet import ImageNet
+from .mnist import MNIST
+
 
 def get_dataset(model):
     try:
         dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet"}
-        dataset_mod = importlib.import_module("pydtnn.datasets.dataset")
+        dataset_mod = importlib.import_module("pydtnn.datasets")
         dataset_obj = getattr(dataset_mod, dataset_name[model.dataset_name])
-        dataset = dataset_obj(train_path=model.dataset_train_path,
-                              test_path=model.dataset_test_path,
-                              model=model.model_name,
-                              test_as_validation=model.test_as_validation,
-                              flip_images=model.flip_images,
-                              flip_images_prob=model.flip_images_prob,
-                              crop_images=model.crop_images,
-                              crop_images_size=model.crop_images_size,
-                              crop_images_prob=model.crop_images_prob,
-                              dtype=model.dtype,
-                              use_synthetic_data=model.use_synthetic_data,
-                              tensor_format=model.tensor_format)
-    except Exception as e:
+        dataset = dataset_obj(model)
+    except Exception:
         import traceback
         print(traceback.format_exc())
         sys.exit(-1)
