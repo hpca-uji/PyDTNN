@@ -77,4 +77,6 @@ def get_optimizer(model):
                          dtype=model.dtype)
     else:
         raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
+    if model.enable_cudnn:
+        opt.set_gpudirect(model.gpudirect)
     return opt
