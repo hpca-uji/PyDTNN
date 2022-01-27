@@ -5,7 +5,7 @@ Python interface to the NVIDIA cuDNN library
 # 
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 # 
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 # 
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
