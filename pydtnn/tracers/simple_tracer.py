@@ -79,5 +79,5 @@ class SimpleTracer(Tracer):
                     for value, (_calls, _times) in events.items():
                         _times.sort()
                         total_time = sum(_times)
-                        mean_of_times = _times[int(len(_times)/2)]
+                        mean_of_times = _times[len(_times) // 2]
                         f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{total_time};{mean_of_times}\n")

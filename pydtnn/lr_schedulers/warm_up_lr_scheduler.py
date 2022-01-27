@@ -32,7 +32,7 @@ class WarmUpLRScheduler(LRScheduler):
         self.batch_count = 0
 
     def on_batch_begin(self):
-        warmup_batches = int(self.model.steps_per_epoch) * self.warmup_epochs
+        warmup_batches = self.model.steps_per_epoch * self.warmup_epochs
         if self.batch_count <= warmup_batches:
             self.model.optimizer.learning_rate = self.base_lr \
                                                  + self.batch_count * ((self.init_lr - self.base_lr) / warmup_batches)

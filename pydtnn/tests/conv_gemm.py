@@ -263,8 +263,8 @@ class ConvGemmTestCase(unittest.TestCase):
         d = D()
         weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        ho = int(math.floor((d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) / d.vstride + 1))
-        wo = int(math.floor((d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) / d.hstride + 1))
+        ho = (d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
+        wo = (d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
         biases = np.random.rand(d.kn, d.b * ho * wo).astype(np.float32, order='C')
         conv_gemm_result, im2col_mm_result = _conv_gemm_and_im2col_mm(weights, x, biases=biases,
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,

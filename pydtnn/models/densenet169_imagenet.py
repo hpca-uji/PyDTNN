@@ -52,7 +52,7 @@ def create_densenet169_imagenet(model):
         num_planes += nblocks * growth_rate
 
         if i < len(blocks) - 1:
-            num_planes = int(math.floor(num_planes * reduction))
+            num_planes = int(num_planes * reduction)
             _(BatchNormalization())
             _(Relu())
             _(
