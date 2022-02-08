@@ -142,7 +142,7 @@ SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"
 #--------------------------------------------------------------------------------
 # Do not launch the experiment if the same experiment has already been completed
 #--------------------------------------------------------------------------------
-if [ ${NUM_EPOCHS} == 0 ]; then
+if [ ${EVALUATE_ONLY} == "True" ] || [ ${EVALUATE_ONLY} == "true" ]; then
   SEARCH_TEXT="Testing maximum memory"
 else
   SEARCH_TEXT="Training maximum memory"
