@@ -19,8 +19,9 @@ from copy import deepcopy
 import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.tools import print_with_header
+from .common import verbose_test, D
+from .pydtnn_test_case import PyDTNNTestCase
+from .tools import print_with_header
 from ..model import Model, TRAIN_MODE
 
 
@@ -64,7 +65,7 @@ def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     return conv2d_i2c, conv2d_cg
 
 
-class Conv2DConvGemmTestCase(unittest.TestCase):
+class Conv2DConvGemmTestCase(PyDTNNTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T
     """

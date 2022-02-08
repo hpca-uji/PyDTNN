@@ -16,19 +16,19 @@ import unittest
 import warnings
 
 import numpy as np
-from rich.console import Console
 
 from pydtnn import losses
 from pydtnn.model import Model, TRAIN_MODE
-from pydtnn.tests.common import verbose_test
-from pydtnn.tests.tools import print_with_header
+from .common import verbose_test
+from .pydtnn_test_case import PyDTNNTestCase
+from .tools import print_with_header
 
 
 class Params:
     pass
 
 
-class CheckConvGemmModels(unittest.TestCase):
+class CheckConvGemmModels(PyDTNNTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
@@ -71,9 +71,9 @@ class CheckConvGemmModels(unittest.TestCase):
             params_dict.update(overwrite_params)
         model1 = Model(**params_dict)
         # loss function
-        loss = model1.loss_func
+        loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
-        loss_func = getattr(losses, loss)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
+        loss_func = getattr(losses, loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
         return model1, loss_func
 
     @staticmethod
@@ -203,41 +203,39 @@ class CheckConvGemmModels(unittest.TestCase):
         """
         Compares results between a model that uses I2C and other that uses ConvGemm
         """
-        console = Console(force_terminal=not verbose_test())
-        with console.status("", spinner="dots"):
 
-            # Model 1 forward
-            model1, loss_func1 = self.get_model1_and_loss_func(model_name)
-            model1.mode = TRAIN_MODE
-            if verbose_test():
-                print()
-                print_with_header(f"Model {model1.model_name} 1 forward pass")
-            x1 = self.do_model1_forward_pass(model1)
+        # Model 1 forward
+        model1, loss_func1 = self.get_model1_and_loss_func(model_name)
+        model1.mode = TRAIN_MODE
+        if verbose_test():
+            print()
+            print_with_header(f"Model {model1.model_name} 1 forward pass")
+        x1 = self.do_model1_forward_pass(model1)
 
-            # Model 2 forward
-            model2 = self.get_model2(model_name)
-            model2.mode = TRAIN_MODE
-            self.copy_weights_and_biases(model1, model2)
-            if verbose_test():
-                print_with_header(f"Model {model2.model_name} 2 forward pass")
-            x2 = self.do_model2_forward_pass(model2, x1)
+        # Model 2 forward
+        model2 = self.get_model2(model_name)
+        model2.mode = TRAIN_MODE
+        self.copy_weights_and_biases(model1, model2)
+        if verbose_test():
+            print_with_header(f"Model {model2.model_name} 2 forward pass")
+        x2 = self.do_model2_forward_pass(model2, x1)
 
-            # Compare forward results
-            self.compare_forward(model1, x1, model2, x2)
+        # Compare forward results
+        self.compare_forward(model1, x1, model2, x2)
 
-            # Model 1 backward
-            if verbose_test():
-                print_with_header(f"Model {model1.model_name} 1 backward pass")
-            first_dx = self.get_first_dx(model1, loss_func1, x1[-1])
-            dx1 = self.do_model1_backward_pass(model1, first_dx)
+        # Model 1 backward
+        if verbose_test():
+            print_with_header(f"Model {model1.model_name} 1 backward pass")
+        first_dx = self.get_first_dx(model1, loss_func1, x1[-1])
+        dx1 = self.do_model1_backward_pass(model1, first_dx)
 
-            # Model 2 backward
-            if verbose_test():
-                print_with_header(f"Model {model2.model_name} 2 backward pass")
-            dx2 = self.do_model2_backward_pass(model2, dx1)
+        # Model 2 backward
+        if verbose_test():
+            print_with_header(f"Model {model2.model_name} 2 backward pass")
+        dx2 = self.do_model2_backward_pass(model2, dx1)
 
-            # Compare backward results
-            self.compare_backward(model1, dx1, model2, dx2)
+        # Compare backward results
+        self.compare_backward(model1, dx1, model2, dx2)
 
     def test_alexnet(self):
         f"""
