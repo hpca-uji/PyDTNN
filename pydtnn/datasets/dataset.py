@@ -131,7 +131,7 @@ class Dataset:
         if self.flip_images:
             x_data = do_flip_images(x_data, self.flip_images_prob)
         if self.crop_images:
-            x_data = do_crop_images(x_data, self.crop_images_size, self.crop_images_prob)
+            x_data = do_crop_images(x_data, self.crop_images_size, self.crop_images_prob, self.tensor_format)
         yield x_data, y_data
 
     def val_data_generator(self, batch_size):
@@ -572,7 +572,7 @@ class ImageNet(Dataset):
                     if self.flip_images and op == "train":
                         x_buffer = do_flip_images(x_buffer, self.flip_images_prob)
                     if self.crop_images and op == "train":
-                        x_buffer = do_crop_images(x_buffer, self.crop_images_size, self.crop_images_prob)
+                        x_buffer = do_crop_images(x_buffer, self.crop_images_size, self.crop_images_prob, self.tensor_format)
                     yield x_buffer[:batch_size, ...], y_buffer[:batch_size, ...]
                     x_buffer = x_buffer[batch_size:, ...]
                     y_buffer = y_buffer[batch_size:, ...]
@@ -598,7 +598,7 @@ class ImageNet(Dataset):
                 if self.flip_images and op == "train":
                     x_data = do_flip_images(x_data, self.flip_images_prob)
                 if self.crop_images and op == "train":
-                    x_data = do_crop_images(x_data, self.crop_images_size, self.crop_images_prob)
+                    x_data = do_crop_images(x_data, self.crop_images_size, self.crop_images_prob, self.tensor_format)
                 yield x_data, y_data
                 gc.collect()
 
