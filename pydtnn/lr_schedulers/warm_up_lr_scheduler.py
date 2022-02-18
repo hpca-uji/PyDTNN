@@ -24,7 +24,7 @@ class WarmUpLRScheduler(LRScheduler):
     WarmUpLRScheduler
     """
 
-    def __init__(self, model, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=True):
+    def __init__(self, model, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=False):
         super().__init__(model, verbose)
         self.warmup_epochs = warmup_epochs
         self.base_lr = base_lr
