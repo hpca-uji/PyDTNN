@@ -32,10 +32,9 @@ BATCH_SIZE=${BATCH_SIZE:-64}
 ENABLE_BEST_OF=${ENABLE_BEST_OF:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-False}
 ENABLE_CONV_WINOGRAD=${ENABLE_CONV_WINOGRAD:-False}
+ENABLE_CONV_DIRECT=${ENABLE_CONV_DIRECT:-False}
 ENABLE_MEMORY_CACHE=${ENABLE_MEMORY_CACHE:-False}
 NODES=${NODES:-1}
-
-
 
 #--------------------------
 # Evaluation parameters
@@ -109,17 +108,31 @@ SCRIPT_PATH="$(
 # File name for output files
 #----------------------------
 FILE_NAME="${MODEL}"
+CONV_DIRECT_METHOD=${CONV_DIRECT_METHOD:-UNKNOWN}
+if [ "${CONV_DIRECT_METHOD}" == "convdirect_block_blis_nhwc_blis" ]; then
+  CDM="bbb"
+elif [ "${CONV_DIRECT_METHOD}" == "convdirect_block_blis_nhwc_8x12" ]; then
+  CDM="bb8x12"
+elif [ "${CONV_DIRECT_METHOD}" == "convdirect_block_blis_nhwc_4x20" ]; then
+  CDM="bb4x20"
+else
+  CDM="${CONV_DIRECT_METHOD}"
+fi
 if [ "${ENABLE_BEST_OF}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_bo"
 elif [ "${ENABLE_CONV_WINOGRAD}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_wg"
   if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
     FILE_NAME="${FILE_NAME}-cg"
+  elif [ "${ENABLE_CONV_DIRECT}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}-cd-${CDM}"
   else
     FILE_NAME="${FILE_NAME}-i2c-mm"
   fi
 elif [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_cg"
+elif [ "${ENABLE_CONV_DIRECT}" == "True" ]; then
+  FILE_NAME="${FILE_NAME}_cd-${CDM}"
 else
   FILE_NAME="${FILE_NAME}_i2c-mm"
 fi
@@ -133,7 +146,7 @@ FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS}")t"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${BATCH_SIZE}")bs"
 FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
 # Get machine name and remove any trailing numbers
-MACHINE="$( uname -n | sed -e 's/[0-9]*$//' )"
+MACHINE="$(uname -n | sed -e 's/[0-9]*$//')"
 FILE_NAME="${MACHINE}_${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
 HISTORY_FILENAME="${FILE_NAME}.history"
 OUTPUT_FILENAME="${FILE_NAME}.out"
@@ -238,8 +251,12 @@ function run_benchmark() {
     --evaluate_only="${EVALUATE_ONLY}" \
     --test_as_validation="${TEST_AS_VALIDATION}" \
     --enable_best_of="${ENABLE_BEST_OF}" \
+    --enable_conv_i2c="${ENABLE_CONV_I2C:-"True"}" \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --enable_conv_winograd="${ENABLE_CONV_WINOGRAD}" \
+    --enable_conv_direct="${ENABLE_CONV_DIRECT}" \
+    --conv_direct_method="${CONV_DIRECT_METHOD:-""}" \
+    --conv_direct_methods_for_best_of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
     --enable_memory_cache="${ENABLE_MEMORY_CACHE}" \
     --history="${HISTORY_FILENAME}" \
     ${MODEL_FLAGS} |
