@@ -79,7 +79,7 @@ def main():
     # Print parameters
     if model.rank == 0:
         print('**** Parameters:')
-        show_options(params)
+        parser.print_args()
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
         if model.rank == 0:
