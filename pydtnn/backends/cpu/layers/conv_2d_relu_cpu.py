@@ -20,13 +20,11 @@
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DRelu
 from pydtnn.model import TRAIN_MODE
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM, \
-    PYDTNN_OPS_FORWARD_RESHAPE_Y
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM
 
 
-# Next no inspection due to Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
+# Next no inspection is because Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
 # noinspection PyAbstractClass
-from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
 class Conv2DReluCPU(LayerCPU, Conv2DRelu):
@@ -55,10 +53,10 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                biases_vector=biases_vector, relu=True)
+                                     vpadding=self.vpadding, hpadding=self.hpadding,
+                                     vstride=self.vstride, hstride=self.hstride,
+                                     vdilation=self.vdilation, hdilation=self.hdilation,
+                                     biases_vector=biases_vector, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return res
 
@@ -72,10 +70,10 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                biases_vector=biases_vector, relu=True)
+                                     vpadding=self.vpadding, hpadding=self.hpadding,
+                                     vstride=self.vstride, hstride=self.hstride,
+                                     vdilation=self.vdilation, hdilation=self.hdilation,
+                                     biases_vector=biases_vector, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return res
 
@@ -89,10 +87,10 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
         y = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                relu=True)
+                                       vpadding=self.vpadding, hpadding=self.hpadding,
+                                       vstride=self.vstride, hstride=self.hstride,
+                                       vdilation=self.vdilation, hdilation=self.hdilation,
+                                       relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return y
