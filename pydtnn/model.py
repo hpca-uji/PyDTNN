@@ -43,6 +43,7 @@ from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDT
     SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
     PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
 from .utils.best_of import BestOf
+from .utils.memory_cache import MemoryCache
 from .utils.performance_counter import PerformanceCounter
 
 supported_gpu = False
@@ -119,7 +120,7 @@ class Model:
         self.kwargs.update(kwargs)
         # Set performance counter
         self.perf_counter = PerformanceCounter()
-        # Layers attributes
+        # Layers' attributes
         self.layers = []
         self.layer_id = _layer_id_generator()
         # In data parallel, we assume that file weights are stored in a nfs mounted directory.
@@ -128,6 +129,11 @@ class Model:
         self.matmul = getattr(utils, "matmul")
         # Set current mode to unspecified
         self.mode = UNSPECIFIED_MODE
+        # Memory cache optimization
+        if self.enable_memory_cache:
+            MemoryCache.enable()
+        else:
+            MemoryCache.disable()
         # Initialize the total number of params of the model
         self.nparams = 0
         # Execution attributes
