@@ -180,7 +180,8 @@ function set_model_flags() {
   # 1) Get column for model
   # model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet;...
   models_line=$(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep model)
-  for i in 2 3 4 5 6 7 8 9 10 11; do
+  nmodels=$(echo "${models_line}" | sed -e 's/[^;]//g' | wc -c)
+  for i in $(seq 2 "${nmodels}"); do
     if [ "$(echo "${models_line}" | cut -d ";" -f ${i})" = "${MODEL}" ]; then
       model_column=${i}
       break
