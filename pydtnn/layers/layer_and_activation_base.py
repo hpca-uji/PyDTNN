@@ -95,6 +95,9 @@ class LayerAndActivationBase(ABC):
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
 
+    def print_in_convdirect_format(self):
+        pass
+
     @property
     def children(self):
         children = []

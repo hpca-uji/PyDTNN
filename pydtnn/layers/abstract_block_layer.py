@@ -59,3 +59,8 @@ class AbstractBlockLayer(Layer, ABC):
         for p in self.paths:
             for layer in p:
                 layer.reduce_weights_sync()
+
+    def print_in_convdirect_format(self):
+        for p in self.paths:
+            for layer in p:
+                layer.print_in_convdirect_format()

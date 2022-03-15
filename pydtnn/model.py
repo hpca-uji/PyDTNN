@@ -318,6 +318,12 @@ class Model:
               f"{'':19s} {'':37s}|")
         print(line)
 
+    def print_in_convdirect_format(self):
+        line = "#l\tkn\two\tho\tt\tkh\tkw\tci\twi\thi"
+        print(line)
+        for layer in self.layers:
+            layer.print_in_convdirect_format()
+
     def add(self, layer):
         layer.set_model(self)
         need_dx = layer.id > 1
