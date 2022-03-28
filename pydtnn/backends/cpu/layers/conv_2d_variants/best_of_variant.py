@@ -67,12 +67,19 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
             self._best_fw = BestOf(
                 name="Conv2DCPU only forward",
                 alternatives=alternatives_fw,
-                get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
+                get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
+                                               + (args[0].vstride,
+                                                  args[0].hstride,
+                                                  args[0].vdilation,
+                                                  args[0].hdilation),
             )
             self._best_fw_bw_pipeline = BestOf(
                 name="Conv2DCPU forward backward",
                 alternatives=alternatives_fw_bw_pipeline,
-                get_problem_size=lambda *args: tuple(list(args[0].shape) + list(args[0].weights.shape)),
+                get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
+                                               + (args[0].vpadding, args[0].hpadding,
+                                                  args[0].vstride, args[0].hstride,
+                                                  args[0].vdilation, args[0].hdilation),
             )
 
     def _get_class_forward_and_backward(self, variant) -> List[Callable]:
