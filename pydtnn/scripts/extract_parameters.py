@@ -5,30 +5,25 @@
 Extracts parameters from PyDTNN run_model_dataset.sh files.
 """
 
-###########################################################################
-#  extract_parameters.py                                                  #
-#  ---------------------------------------------------------------------  #
-#    copyright            : (C) 2021 by Sergio Barrachina Mir             #
-#    email                : barrachi@uji.es                               #
-###########################################################################
+#
+#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
+#
+#  Copyright (C) 2022 Universitat Jaume I
+#
+#  PyDTNN is free software: you can redistribute it and/or modify it under the
+#  terms of the GNU General Public License as published by the Free Software
+#  Foundation, either version 3 of the License, or (at your option) any later
+#  version.
+#
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
+#  License for more details.
+#
+#  You should have received a copy of the GNU General Public License along
+#  with this program. If not, see <https://www.gnu.org/licenses/>.
+#
 
-###########################################################################
-#                                                                         #
-#  This program is free software; you can redistribute it and/or modify   #
-#  it under the terms of the GNU General Public License as published by   #
-#  the Free Software Foundation; either version 2 of the License, or      #
-#  (at your option) any later version.                                    #
-#                                                                         #
-#  This program is distributed in the hope that it will be useful, but    #
-#  WITHOUT ANY WARRANTY; without even the implied warranty of             #
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      #
-#  General Public License for more details.                               #
-#                                                                         #
-###########################################################################
-
-###########################################################################
-# IMPORTS                                                                 #
-###########################################################################
 import getopt
 import os
 import pathlib
@@ -41,13 +36,8 @@ from rich.console import Console
 from rich.table import Table
 
 
-###########################################################################
-# MISCELLANEOUS FUNCTIONS                                                 #
-###########################################################################
-
-
 def my_help():
-    """Print the the command line usage help."""
+    """Print the command line usage help."""
     print("""Usage: extract_parameters.py [OPTION]...
 
 Extracts parameters from run_model_dataset.sh files
@@ -90,9 +80,6 @@ def get_opts():
             VERBOSE = 1
 
 
-###########################################################################
-# APPLICATION SPECIFIC FUNCTIONS                                          #
-###########################################################################
 def extract_parameters():
     models_files = {'alexnet_cifar10': 'run_alexnet_cifar10.sh',
                     'alexnet_imagenet': 'run_alexnet_imagenet.sh',
