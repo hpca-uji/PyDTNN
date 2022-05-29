@@ -99,14 +99,14 @@ class ConvWinograd:
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
-                    routine_name = f"conv_winograd_{m}x{m}_{r}x{r}_neon_fp32_{self.tensor_format_str}"
+                    routine_names = [("neon", f"conv_winograd_{m}x{m}_{r}x{r}_neon_fp32_{self.tensor_format_str}")]
                 else:
                     raise NotImplementedError(
                         f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
-                    routine_name = f"conv_winograd_{m}x{m}_{r}x{r}_sse_fp32_{self.tensor_format_str}"
-                    # routine_name = f"conv_winograd_nchw_fp32"
+                    routine_names = [(intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format_str}") \
+                                       for intr in ["sse", "avx", "avx512"]]
                 else:
                     raise NotImplementedError(
                         f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
@@ -114,20 +114,25 @@ class ConvWinograd:
                 raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
 
             try:
-                funcs = (self._conv_winograd_c, getattr(self.__class__.lib_cw, routine_name))
+                funcs = [(rn[0], (self._conv_winograd_c, \
+                          getattr(self.__class__.lib_cw, f"{rn[1]}_pre"), \
+                          getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
             except AttributeError:
                 print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
-                funcs = (self._conv_winograd_numpy, None)
+                funcs = [(self._conv_winograd_numpy, None, None)]
 
-            self.alternatives[r].append((f"winograd_{m}x{m}_{r}x{r}",
-                                         lambda *args, **kwargs: funcs[0](m, r, g, bt, at, funcs[1], *args, **kwargs)))
+            for intr, f in funcs:
+                self.alternatives[r].append((f"cw{m}{r}{intr}",
+                                         lambda *args, **kwargs: f[0](m, r, g, bt, at, f[1], f[2], *args, **kwargs)))
 
         # Parent layer
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
+            self.evaluate_only = self.get_parent_layer().model.evaluate_only
             enable_best_of = self.get_parent_layer().model.enable_best_of
         else:
             enable_best_of = False
+            self.evaluate_only = True
 
         if isinstance(dtype, type):
             self.dtype = dtype
@@ -232,16 +237,43 @@ class ConvWinograd:
         if r not in self.alternatives:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
 
-        # The x_padded and output matrices are also cached, but only on the current instance
-        # self.x_padded_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        try:
+            self.conv_winograd_workspace_alloc_pre = \
+                getattr(self.__class__.lib_cw, f"conv_winograd_workspace_alloc_pre")
+            self.conv_winograd_workspace_alloc_kernel = \
+                getattr(self.__class__.lib_cw, f"conv_winograd_workspace_alloc_kernel")
+        except AttributeError:
+            print(f"Winograd conv_winograd_workspace_alloc_pre/kernel routines not found.")
+            self.conv_winograd_workspace_alloc_pre = None
+            self.conv_winograd_workspace_alloc_kernel = None
+
+        def winograd_workspace_alloc_pre(m, r, k, c):
+            _u = ctypes.POINTER(ctypes.c_float)()
+            self.conv_winograd_workspace_alloc_pre(ctypes.c_uint(m), ctypes.c_uint(r),
+                ctypes.c_uint(k), ctypes.c_uint(c), ctypes.byref(_u))
+            return np.array([False]), _u
+
+        def winograd_workspace_alloc_kernel(m, r, n, k, c, hi, wi, kh, kw, vpadding, hpadding):
+            _v = ctypes.POINTER(ctypes.c_float)()
+            _m = ctypes.POINTER(ctypes.c_float)()
+            self.conv_winograd_workspace_alloc_kernel(ctypes.c_uint(m), ctypes.c_uint(r),
+                ctypes.c_uint(n), ctypes.c_uint(k), ctypes.c_uint(c),
+                ctypes.c_uint(hi), ctypes.c_uint(wi), ctypes.c_uint(kh), ctypes.c_uint(kw),
+                ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), ctypes.byref(_v), ctypes.byref(_m))
+            return _v, _m
+
+        self.cw_cache_pre = MemoryCache(lambda args: winograd_workspace_alloc_pre(*args))
+        self.cw_cache_kernel = MemoryCache(lambda args: winograd_workspace_alloc_kernel(*args))
         self.y_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.u_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.v_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.m_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
         self.d_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
 
         # Debug
         self.debug = debug
+
+        self._reuse_processed_weights = False
+        if self.evaluate_only:
+            self._reuse_processed_weights = True
+        self._weights_already_processed = False
 
         if enable_best_of and len(self.alternatives[r]) > 1:
             setattr(self, f"conv_winograd_{self.tensor_format_str}", BestOf(
@@ -252,7 +284,7 @@ class ConvWinograd:
         else:
             setattr(self, f"conv_winograd_{self.tensor_format_str}", self.alternatives[r][0][1])
 
-    def _conv_winograd_numpy(self, m, r, g, bt, at, x_winograd_nchw,
+    def _conv_winograd_numpy(self, m, r, g, bt, at, x_winograd_nchw_pre, x_winograd_nchw_kernel,
                              weights, x, biases=None, vpadding=0, hpadding=0,
                              vstride=1, hstride=1, vdilation=1, hdilation=1,
                              relu=False, bn=False, running_mean=None, inv_std=None,
@@ -393,7 +425,7 @@ class ConvWinograd:
 
         return y
 
-    def _conv_winograd_c(self, m, r, g, bt, at, x_winograd,
+    def _conv_winograd_c(self, m, r, g, bt, at, x_winograd_pre, x_winograd_kernel,
                          weights, x, biases=None, vpadding=0, hpadding=0,
                          vstride=1, hstride=1, vdilation=1, hdilation=1,
                          relu=False, bn=False, running_mean=None, inv_std=None,
@@ -424,12 +456,8 @@ class ConvWinograd:
         ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
         wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-        tile_h = math.ceil((hi + 2 * vpadding - t) / s) + 1
-        tile_w = math.ceil((wi + 2 * hpadding - t) / s) + 1
-
-        u = self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
-        v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
-        m1 = self.m_cache[(t, t, co, (n * tile_h * tile_w))]
+        _weights_already_processed, _u, = self.cw_cache_pre[(m, r, co, ci)]
+        _v, _m = self.cw_cache_kernel[(m, r, n, co, ci, hi, wi, kh, kw, vpadding, hpadding)]
 
         if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
             y = self.y_cache[(n, co, ho, wo)]  # Output
@@ -442,18 +470,22 @@ class ConvWinograd:
             ld_f1, ld_f2, ld_f3 = kh * kw * co, kw * co, co
             ld_y1, ld_y2, ld_y3 = ho * wo * co, wo * co, co
 
-        x_winograd(ctypes.c_uint(m), ctypes.c_uint(r),
+        if not self._reuse_processed_weights or not _weights_already_processed[0]:
+            x_winograd_pre(ctypes.c_uint(m), ctypes.c_uint(r),
+                   ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
+                   ctypes.c_uint(kh), ctypes.c_uint(kw),
+                   ctypes.c_void_p(weights.ctypes.data),
+                   ctypes.c_uint(ld_f1), ctypes.c_uint(ld_f2), ctypes.c_uint(ld_f3), _u)
+            _weights_already_processed[0] = True
+
+        x_winograd_kernel(ctypes.c_uint(m), ctypes.c_uint(r),
                    ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
                    ctypes.c_uint(hi), ctypes.c_uint(wi),
                    ctypes.c_uint(kh), ctypes.c_uint(kw),
                    ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
                    ctypes.c_void_p(x.ctypes.data), ctypes.c_uint(ld_d1), ctypes.c_uint(ld_d2), ctypes.c_uint(ld_d3),
-                   ctypes.c_void_p(weights.ctypes.data),
-                   ctypes.c_uint(ld_f1), ctypes.c_uint(ld_f2), ctypes.c_uint(ld_f3),
                    ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ld_y1), ctypes.c_uint(ld_y2), ctypes.c_uint(ld_y3),
-                   ctypes.c_void_p(None if biases is None else biases.ctypes.data),
-                   ctypes.c_void_p(bt.ctypes.data), ctypes.c_void_p(g.ctypes.data), ctypes.c_void_p(at.ctypes.data),
-                   ctypes.c_void_p(u.ctypes.data), ctypes.c_void_p(v.ctypes.data), ctypes.c_void_p(m1.ctypes.data),
+                   ctypes.c_void_p(None if biases is None else biases.ctypes.data), _u, _v, _m,
                    ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
                    ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
                    ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
