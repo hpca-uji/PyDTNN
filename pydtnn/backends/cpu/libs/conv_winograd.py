@@ -118,7 +118,7 @@ class ConvWinograd:
                           getattr(self.__class__.lib_cw, f"{rn[1]}_pre"), \
                           getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
             except AttributeError:
-                print(f"Winograd {routine_name} routine not found. Fallback to numpy version!")
+                print(f"Winograd {routine_names} routine not found. Fallback to numpy version!")
                 funcs = [(self._conv_winograd_numpy, None, None)]
 
             for intr, f in funcs:
