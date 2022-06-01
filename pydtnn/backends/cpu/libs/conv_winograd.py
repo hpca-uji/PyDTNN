@@ -26,6 +26,7 @@ import math
 import platform
 import weakref
 from collections import defaultdict
+from functools import partial
 
 import numpy as np
 
@@ -122,8 +123,7 @@ class ConvWinograd:
                 funcs = [(self._conv_winograd_numpy, None, None)]
 
             for intr, f in funcs:
-                self.alternatives[r].append((f"cw{m}{r}{intr}",
-                                         lambda *args, **kwargs: f[0](m, r, g, bt, at, f[1], f[2], *args, **kwargs)))
+                self.alternatives[r].append((f"cw{m}{r}{intr}", partial(f[0], m, r, g, bt, at, f[1], f[2])))
 
         # Parent layer
         if parent_layer is not None:
