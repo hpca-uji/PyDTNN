@@ -31,16 +31,16 @@ _LINE_SETSIZE = 16
 _N_LINE_BITS = 128
 
 
-class _PMLibServer(ctypes.Structure):
+class PMLibServer(ctypes.Structure):
     _fields_ = [("server_ip", ctypes.c_char * _SERVER_IP_LEN),
                 ("port", ctypes.c_int)]
 
 
-class _PMLibLines(ctypes.Structure):
+class PMLibLines(ctypes.Structure):
     _fields_ = [("__bits", ctypes.c_char * _LINE_SETSIZE)]
 
 
-class _PMLibMeasures(ctypes.Structure):
+class PMLibMeasures(ctypes.Structure):
     _fields_ = [("watts_size", ctypes.c_int),
                 ("watts_sets_size", ctypes.c_int),
                 ("watts_sets", ctypes.POINTER(ctypes.c_int)),
@@ -48,19 +48,19 @@ class _PMLibMeasures(ctypes.Structure):
                 ("lines_len", ctypes.c_int)]
 
 
-class _PMLibMeasuresWT(ctypes.Structure):
+class PMLibMeasuresWT(ctypes.Structure):
     _fields_ = [("next_timing", ctypes.c_int),
                 ("timing", ctypes.POINTER(ctypes.c_double)),
-                ("energy", _PMLibMeasures)]
+                ("energy", PMLibMeasures)]
 
 
 class _PMLibCounter(ctypes.Structure):
     _fields_ = [("sock", ctypes.c_int),
                 ("aggregate", ctypes.c_int),
-                ("lines", _PMLibLines),
+                ("lines", PMLibLines),
                 ("num_lines", ctypes.c_int),
                 ("interval", ctypes.c_int),
-                ("measures", _PMLibMeasuresWT)]
+                ("measures", PMLibMeasuresWT)]
 
 
 class PMLibException(Exception):
@@ -78,48 +78,38 @@ class PMLib:
     def __init__(self):
         if self._pmlib is None:
             self._pmlib = load_library("pmlib")
-
-        # Helper functions
-
-        # # int pm_set_server( char *ip, int port, server_t *pm_server);
-        #self._pmlib.pm_set_server.restype = int
-        #self._pmlib.pm_set_server.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(_PMLibServer)]
-
-        # # int pm_set_lines( char *lines_string ,line_t *lines );
-        # self._pmlib.pm_set_lines.restype = int
-        # self._pmlib.pm_set_lines.argtypes = [ctypes.c_char_p, ctypes.POINTER(PMLibLines)]
-
-        # # int pm_create_counter(char *pm_id, line_t lines, int aggregate, int interval, server_t pm_server,
-        # #                       counter_t *pm_counter);
-        # self._pmlib.pm_create_counter.restype = int
-        # self._pmlib.pm_create_counter.argtypes = [ctypes.c_char_p, PMLibLines, ctypes.c_int, ctypes.c_int,
-        #                                           PMLibServer, ctypes.POINTER(PMLibCounter)]
-
-        # # int pm_start_counter( counter_t *pm_counter );
-        # self._pmlib.pm_start_counter.restype = int
-        # self._pmlib.pm_start_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
-
-        # # int pm_stop_counter( counter_t *pm_counter );
-        # self._pmlib.pm_stop_counter.restype = int
-        # self._pmlib.pm_stop_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
-
-        # # int pm_get_counter_data( counter_t *pm_counter );
-        # self._pmlib.pm_get_counter_data.restype = int
-        # self._pmlib.pm_get_counter_data.argtypes = [ctypes.POINTER(PMLibCounter)]
-
-        # # int pm_print_data_text(char *file_name,  counter_t pm_counter, line_t lines, int set);
-        # self._pmlib.pm_print_data_text.restype = int
-        # self._pmlib.pm_print_data_text.argtypes = [ctypes.c_char_p, PMLibCounter, PMLibLines, ctypes.c_int]
-
-        # # int pm_get_counter_data( counter_t *pm_counter );
-        # self._pmlib.pm_finalize_counter.restype = int
-        # self._pmlib.pm_finalize_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
+        # int pm_set_server( char *ip, int port, server_t *pm_server);
+        self._pmlib.pm_set_server.restype = int
+        self._pmlib.pm_set_server.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(PMLibServer)]
+        # int pm_set_lines( char *lines_string ,line_t *lines );
+        self._pmlib.pm_set_lines.restype = int
+        self._pmlib.pm_set_lines.argtypes = [ctypes.c_char_p, ctypes.POINTER(PMLibLines)]
+        # int pm_create_counter(char *pm_id, line_t lines, int aggregate, int interval, server_t pm_server,
+        #                       counter_t *pm_counter);
+        self._pmlib.pm_create_counter.restype = int
+        self._pmlib.pm_create_counter.argtypes = [ctypes.c_char_p, PMLibLines, ctypes.c_int, ctypes.c_int,
+                                                  PMLibServer, ctypes.POINTER(_PMLibCounter)]
+        # int pm_start_counter( counter_t *pm_counter );
+        self._pmlib.pm_start_counter.restype = int
+        self._pmlib.pm_start_counter.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        # int pm_stop_counter( counter_t *pm_counter );
+        self._pmlib.pm_stop_counter.restype = int
+        self._pmlib.pm_stop_counter.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        # int pm_get_counter_data( counter_t *pm_counter );
+        self._pmlib.pm_get_counter_data.restype = int
+        self._pmlib.pm_get_counter_data.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        # int pm_print_data_text(char *file_name,  counter_t pm_counter, line_t lines, int set);
+        self._pmlib.pm_print_data_text.restype = int
+        self._pmlib.pm_print_data_text.argtypes = [ctypes.c_char_p, _PMLibCounter, PMLibLines, ctypes.c_int]
+        # int pm_get_counter_data( counter_t *pm_counter );
+        self._pmlib.pm_finalize_counter.restype = int
+        self._pmlib.pm_finalize_counter.argtypes = [ctypes.POINTER(_PMLibCounter)]
 
     def pm_create_server(self, server_ip, port):
         """
         -------
         """
-        server = _PMLibServer()
+        server = PMLibServer()
         status = self._pmlib.pm_set_server(server_ip.encode('utf-8'), port, ctypes.byref(server))
         if status == 0:
             return server
@@ -130,7 +120,7 @@ class PMLib:
         """
         -------
         """
-        lines = _PMLibLines()
+        lines = PMLibLines()
         status = self._pmlib.pm_set_lines(lines_string.encode('utf-8'), ctypes.byref(lines))
         if status == 0:
             return lines
