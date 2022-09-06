@@ -31,16 +31,18 @@ PYDTNN_TENSOR_FORMATS = 2
 (PYDTNN_TENSOR_FORMAT_NHWC,
  PYDTNN_TENSOR_FORMAT_NCHW) = range(PYDTNN_TENSOR_FORMATS)
 
+
 def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-        return (shape[2], shape[0], shape[1])
-    else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+        return shape[2], shape[0], shape[1]
+    else:  # Assuming PYDTNN_TENSOR_FORMAT_NHWC
         return shape
+
 
 def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-        return (shape[1], shape[2], shape[0])
-    else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+        return shape[1], shape[2], shape[0]
+    else:  # Assuming PYDTNN_TENSOR_FORMAT_NHWC
         return shape
 
 
@@ -210,7 +212,6 @@ def matmul_mkl(a, b, c=None):
 
 def matmul_blis(a, b, c=None):
     return _matmul_xgemm("matmul_blis", blis(), a, b, c)
-
 
 ###############################################################
 # The next functions have been deprecated - use them with care!
