@@ -21,6 +21,7 @@ import ctypes
 import inspect
 import math
 import os
+import sys
 from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
@@ -66,7 +67,15 @@ def load_library(name):
     """
     path = find_library(name)
     if path is None:
-        full_name = f"lib{name}.so"
+        if sys.platform in ('linux2', 'linux'):
+            full_name = f"lib{name}.so"
+        elif sys.platform == 'darwin':
+            full_name = f"lib{name}.dylib"
+        elif sys.platform == 'win32':
+            full_name = f"lib{name}.dll"
+        else:
+            raise SystemExit(f"Trying to load '{name}' library, but platform '{sys.platform}' is not yet supported!")
+
         for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
             if os.path.exists(os.path.join(current_path, full_name)):
                 path = os.path.join(current_path, full_name)

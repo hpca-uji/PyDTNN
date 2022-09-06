@@ -1,3 +1,6 @@
+"""
+Poer meters module
+"""
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
@@ -17,11 +20,4 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from . model import Model
-
-from . import activations
-from . import backends
-
-from . import power_meters
-
-
+from . pmlib import PMLib
