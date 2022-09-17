@@ -87,7 +87,9 @@ class Model:
     """
 
     def __init__(self, parallel="sequential", non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
-                 enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs):
+                 enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="",
+                 tracer_pmlib_server="127.0.0.1", tracer_pmlib_port=6526, tracer_pmlib_device="",
+                 **kwargs):
         # Attributes related to the given arguments
         self.parallel = parallel
         self.blocking_mpi = not non_blocking_mpi
@@ -108,13 +110,19 @@ class Model:
         else:
             raise SystemExit(f"Parallel option '{parallel}' not recognized.")
         # Set tracer
-        if tracer_output == "" and not enable_gpu:
+        if tracer_output == "":
             self.tracer = ExtraeTracer(tracing)
-        elif enable_gpu:
-            from .tracers import SimpleTracerGPU
-            self.tracer = SimpleTracerGPU(tracing, tracer_output, self.comm)
         else:
-            self.tracer = SimpleTracer(tracing, tracer_output, self.comm)
+            if enable_gpu:
+                from .tracers import SimpleTracerGPU
+                self.tracer = SimpleTracerGPU(tracing, tracer_output, self.comm)
+            else:
+                if tracer_pmlib_device != "":
+                    from .tracers import SimpleTracerPMLib
+                    self.tracer = SimpleTracerPMLib(tracing, tracer_output, self.comm,
+                                                    tracer_pmlib_server, tracer_pmlib_port, tracer_pmlib_device)
+                else:
+                    self.tracer = SimpleTracer(tracing, tracer_output, self.comm)
         # Get default values from parser and update them from the received kwargs
         self.kwargs = vars(parser.parse_args([]))
         self.kwargs.update(kwargs)

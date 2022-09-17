@@ -235,6 +235,9 @@ _pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default
 _tr_group = parser.add_argument_group("Tracing options")
 _tr_group.add_argument('--tracing', type=bool_lambda, default=False)
 _tr_group.add_argument('--tracer_output', type=str, default="")
+_tr_group.add_argument('--tracer_pmlib_server', type=str, default="127.0.0.1")
+_tr_group.add_argument('--tracer_pmlib_port', type=int, default=6526)
+_tr_group.add_argument('--tracer_pmlib_device', type=str, default="")
 _tr_group.add_argument('--profile', type=bool_lambda, default=False)
 
 # Performance modeling options (argparse.SUPPRESS is used to avoid showing them on the message)

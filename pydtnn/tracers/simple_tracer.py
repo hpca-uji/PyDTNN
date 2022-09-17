@@ -65,6 +65,18 @@ class SimpleTracer(Tracer):
         for evt_type_val, evt_val in zipped_list:
             self.emit_event(evt_type_val, evt_val)
 
+    def _output_header(self):
+        return "Event type;Event value;Event name;Calls;Total time;Median of times"
+
+    def _output_row(self, event_type_value, event_value):
+        event_type = self.event_types[event_type_value]
+        event_type_name = event_type.name
+        _calls, _times = self.events[event_type_value][event_value]
+        _times.sort()
+        total_time = sum(_times)
+        mean_of_times = _times[len(_times) // 2]
+        return f"{event_type_name};{event_value};{event_type[event_value]};{_calls};{total_time};{mean_of_times}"
+
     def _write_output(self):
         """This method will be called at exit only if tracing has been enabled at any time"""
         if self.rank == 0:
@@ -72,12 +84,7 @@ class SimpleTracer(Tracer):
                 print("Warning: finishing simple tracer while there are pending events to be marked as finished.")
             print(f"Writing simple tracer output to '{self.output_filename}'...")
             with open(self.output_filename, 'w') as f:
-                f.write("Event type;Event value;Event name;Calls;Total time;Median of times\n")
-                for event_type_key, events in self.events.items():
-                    event_type = self.event_types[event_type_key]
-                    event_type_name = event_type.name
-                    for value, (_calls, _times) in events.items():
-                        _times.sort()
-                        total_time = sum(_times)
-                        mean_of_times = _times[len(_times) // 2]
-                        f.write(f"{event_type_name};{value};{event_type[value]};{_calls};{total_time};{mean_of_times}\n")
+                f.write(self._output_header() + "\n")
+                for event_type_value, events in self.events.items():
+                    for event_value in events.keys():
+                        f.write(self._output_row(event_type_value, event_value) + "\n")

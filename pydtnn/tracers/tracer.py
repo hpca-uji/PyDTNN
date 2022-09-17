@@ -52,7 +52,14 @@ class EventType:
         return self._events.items()
 
 
-class Tracer(ABC):
+class PostInitCaller(type):
+    def __call__(cls, *args, **kwargs):
+        obj = type.__call__(cls, *args, **kwargs)
+        obj.__post_init__()
+        return obj
+
+
+class Tracer(metaclass=PostInitCaller):
     """
     Tracer base class
     """
@@ -62,7 +69,11 @@ class Tracer(ABC):
             PYDTNN_MDL_EVENT: EventType("Model"),
             PYDTNN_OPS_EVENT: EventType("Operations"),
         }
-        if tracing:
+        self.tracing = tracing
+
+    def __post_init__(self):
+        "This method will be called AFTER all the derived classes __init__ methods are called"
+        if self.tracing:
             self.enable_tracing()
             self.enable_print_memory_usage()
         else:
@@ -127,7 +138,8 @@ class Tracer(ABC):
             for (name, val) in mdl_constants:
                 mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.canonical_name_with_id}_{name[11:].lower()}"
             for (name, val) in ops_constants:
-                ops_event[layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.canonical_name}_{name[11:].lower()}"
+                ops_event[
+                    layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.canonical_name}_{name[11:].lower()}"
 
     @abstractmethod
     def _emit_event(self, evt_type, evt_val, stream=None):
