@@ -19,7 +19,7 @@
 
 import resource
 import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from .events import *
 
@@ -72,7 +72,11 @@ class Tracer(metaclass=PostInitCaller):
         self.tracing = tracing
 
     def __post_init__(self):
-        "This method will be called AFTER all the derived classes __init__ methods are called"
+        """
+        This method will be called AFTER all the derived classes __init__ methods are completed.
+        By proceeding in this way, when the derived classes enable/disable methods are called, all the attributes
+        they require will already have been defined on their corresponding __init__ methods.
+        """
         if self.tracing:
             self.enable_tracing()
             self.enable_print_memory_usage()
