@@ -22,6 +22,9 @@ Python interface to the PMLib library
 
 import ctypes
 import ctypes.util
+import functools
+
+import numpy as np
 
 from pydtnn.utils import load_library
 
@@ -54,13 +57,13 @@ class PMLibMeasuresWT(ctypes.Structure):
                 ("energy", PMLibMeasures)]
 
 
-class _PMLibCounter(ctypes.Structure):
+class PMLibCounter(ctypes.Structure):
     _fields_ = [("sock", ctypes.c_int),
                 ("aggregate", ctypes.c_int),
                 ("lines", PMLibLines),
                 ("num_lines", ctypes.c_int),
                 ("interval", ctypes.c_int),
-                ("measures", PMLibMeasuresWT)]
+                ("measures", ctypes.POINTER(PMLibMeasuresWT))]
 
 
 class PMLibException(Exception):
@@ -72,12 +75,26 @@ class PMLibException(Exception):
         return f'{self.error}'
 
 
+def check_pmlib_returned_status(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        status = func(*args, **kwargs)
+        if status != 0:
+            raise PMLibException(f"Call to '{func.__name__}' failed!") from None
+        return None
+
+    return wrapper
+
+
 class PMLib:
     _pmlib = None
 
-    def __init__(self):
+    def __init__(self, server_ip, port):
         if self._pmlib is None:
             self._pmlib = load_library("pmlib")
+        # ----------------
+        # Helper functions
+        # ----------------
         # int pm_set_server( char *ip, int port, server_t *pm_server);
         self._pmlib.pm_set_server.restype = int
         self._pmlib.pm_set_server.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(PMLibServer)]
@@ -88,91 +105,131 @@ class PMLib:
         #                       counter_t *pm_counter);
         self._pmlib.pm_create_counter.restype = int
         self._pmlib.pm_create_counter.argtypes = [ctypes.c_char_p, PMLibLines, ctypes.c_int, ctypes.c_int,
-                                                  PMLibServer, ctypes.POINTER(_PMLibCounter)]
+                                                  PMLibServer, ctypes.POINTER(PMLibCounter)]
         # int pm_start_counter( counter_t *pm_counter );
         self._pmlib.pm_start_counter.restype = int
-        self._pmlib.pm_start_counter.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        self._pmlib.pm_start_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
         # int pm_stop_counter( counter_t *pm_counter );
         self._pmlib.pm_stop_counter.restype = int
-        self._pmlib.pm_stop_counter.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        self._pmlib.pm_stop_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
         # int pm_get_counter_data( counter_t *pm_counter );
         self._pmlib.pm_get_counter_data.restype = int
-        self._pmlib.pm_get_counter_data.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        self._pmlib.pm_get_counter_data.argtypes = [ctypes.POINTER(PMLibCounter)]
         # int pm_print_data_text(char *file_name,  counter_t pm_counter, line_t lines, int set);
         self._pmlib.pm_print_data_text.restype = int
-        self._pmlib.pm_print_data_text.argtypes = [ctypes.c_char_p, _PMLibCounter, PMLibLines, ctypes.c_int]
-        # int pm_get_counter_data( counter_t *pm_counter );
+        self._pmlib.pm_print_data_text.argtypes = [ctypes.c_char_p, PMLibCounter, PMLibLines, ctypes.c_int]
+        # int pm_finalize_counter( counter_t *pm_counter );
         self._pmlib.pm_finalize_counter.restype = int
-        self._pmlib.pm_finalize_counter.argtypes = [ctypes.POINTER(_PMLibCounter)]
+        self._pmlib.pm_finalize_counter.argtypes = [ctypes.POINTER(PMLibCounter)]
+        # -----------------------
+        # Connect with the server
+        # -----------------------
+        self.server = PMLibServer()
+        self.lines = PMLibLines()
+        self.counter = PMLibCounter()
+        self.set_server(server_ip, port)
+        self.create_lines("0-15")
+        # -----------------------
+        # Class properties that will be initialized later
+        # -----------------------
+        self.counter_start_time = None
+        self.counter_end_time = None
+        self.period = None
+        self.len_samples = None
+        self.times = None
+        self.watts = None
 
-    def pm_create_server(self, server_ip, port):
-        """
-        -------
-        """
-        server = PMLibServer()
-        status = self._pmlib.pm_set_server(server_ip.encode('utf-8'), port, ctypes.byref(server))
-        if status == 0:
-            return server
+    @check_pmlib_returned_status
+    def set_server(self, server_ip, port):
+        return self._pmlib.pm_set_server(server_ip.encode('utf-8'), port, ctypes.byref(self.server))
+
+    @check_pmlib_returned_status
+    def create_lines(self, lines_string):
+        return self._pmlib.pm_set_lines(lines_string.encode('utf-8'), ctypes.byref(self.lines))
+
+    @check_pmlib_returned_status
+    def create_counter(self, counter_string, aggregate=1, interval=0):
+        return self._pmlib.pm_create_counter(counter_string.encode('utf-8'), self.lines, aggregate, interval,
+                                             self.server, ctypes.byref(self.counter))
+
+    @check_pmlib_returned_status
+    def start_counter(self):
+        return self._pmlib.pm_start_counter(ctypes.byref(self.counter))
+
+    @check_pmlib_returned_status
+    def stop_counter(self):
+        return self._pmlib.pm_stop_counter(ctypes.byref(self.counter))
+
+    @check_pmlib_returned_status
+    def _get_counter_data(self):
+        return self._pmlib.pm_get_counter_data(ctypes.byref(self.counter))
+
+    @check_pmlib_returned_status
+    def print_data_text(self, output_string, set_value):
+        return self._pmlib.pm_print_data_text(output_string.encode('utf-8'), self.counter, self.lines, set_value)
+
+    @check_pmlib_returned_status
+    def finalize_counter(self):
+        return self._pmlib.pm_finalize_counter(ctypes.byref(self.counter))
+
+    def get_counter_data(self):
+        self._get_counter_data()
+        self.counter_start_time, self.counter_end_time = np.ctypeslib.as_array(
+            (ctypes.c_double * 2).from_address(ctypes.addressof(self.counter.measures.contents.timing.contents)))
+        self.len_samples = self.counter.measures.contents.energy.watts_size
+        self.period = (self.counter_end_time - self.counter_start_time) / (self.len_samples - 1)
+        self.times = np.array([self.counter_start_time + x * self.period for x in range(self.len_samples)])
+        self.watts = np.ctypeslib.as_array(
+            (ctypes.c_double * self.len_samples).from_address(
+                ctypes.addressof(self.counter.measures.contents.energy.watts.contents)))
+
+    def _next_sample_from_start(self, start_time):
+        return min(self.len_samples - 1, int((start_time - self.times[0]) / self.period) + 1)
+
+    def _previous_sample_from_end(self, end_time):
+        return max(0, int(np.ceil((end_time - self.times[0]) / self.period)) - 1)
+
+    def get_number_of_intermediate_samples(self, start_time, end_time):
+        # Next and previous samples from start_time and end_time, respectively
+        next_sample_from_start = self._next_sample_from_start(start_time)
+        previous_sample_from_end = self._previous_sample_from_end(end_time)
+        return max(0, previous_sample_from_end + 1 - next_sample_from_start)
+
+    def get_joules(self, start_time, end_time, debug=False):
+        # Check boundaries
+        if start_time >= end_time:
+            raise ValueError("End time must be greater than start time")
+        if start_time < self.times[0]:
+            raise ValueError("Given start time is lesser than the counter first time")
+        if end_time > self.times[-1]:
+            raise ValueError("Given end time is greater than the counter last time")
+        # Next and previous samples from start_time and end_time, respectively
+        next_sample_from_start = self._next_sample_from_start(start_time)
+        previous_sample_from_end = self._previous_sample_from_end(end_time)
+        if debug:
+            print(f">> {next_sample_from_start=}")
+            print(f">> {previous_sample_from_end=}")
+        # Interpolate watts for start and end time
+        watts_on_start_time, watts_on_end_time = np.interp([start_time, end_time], self.times, self.watts)
+        if debug:
+            print(f">> {watts_on_start_time=} ({self.watts[next_sample_from_start]=})")
+            print(f">> {watts_on_end_time=} ({self.watts[previous_sample_from_end]=})")
+        # Integrate the energy
+        if next_sample_from_start > previous_sample_from_end:
+            # Integrate the energy between the two interpolated samples
+            joules = ((watts_on_start_time + watts_on_end_time) / 2) * (end_time - start_time)
         else:
-            raise PMLibException("pm_create_server failed!")
-
-    def pm_create_lines(self, lines_string):
-        """
-        -------
-        """
-        lines = PMLibLines()
-        status = self._pmlib.pm_set_lines(lines_string.encode('utf-8'), ctypes.byref(lines))
-        if status == 0:
-            return lines
-        else:
-            raise PMLibException("pm_create_lines failed!")
-
-    def pm_create_counter(self, counter_string, lines, aggregate, interval, server):
-        """
-        -------
-        """
-        counter = _PMLibCounter()
-        status = self._pmlib.pm_create_counter(counter_string.encode('utf-8'), lines, aggregate, interval, server,
-                                               ctypes.byref(counter))
-        if status == 0:
-            return counter
-        else:
-            raise PMLibException("pm_create_counter failed!")
-
-    def pm_start_counter(self, counter):
-        """
-        ----------
-        """
-        status = self._pmlib.pm_start_counter(ctypes.byref(counter))
-        return status
-
-    def pm_stop_counter(self, counter):
-        """
-        ----------
-        """
-        status = self._pmlib.pm_stop_counter(ctypes.byref(counter))
-        return status
-
-    def pm_get_counter_data(self, counter):
-        """
-        ----------
-        """
-        status = self._pmlib.pm_get_counter_data(ctypes.byref(counter))
-        return status
-
-    def pm_print_data_text(self, output_string, counter, lines, set_value):
-        """
-        -------
-        """
-        status = self._pmlib.pm_print_data_text(output_string.encode('utf-8'), counter, lines, set_value)
-        return status
-
-    def pm_finalize_counter(self, counter):
-        """
-        ----------
-        """
-        status = self._pmlib.pm_finalize_counter(ctypes.byref(counter))
-        if status == 0:
-            return status
-        else:
-            raise PMLibException("pm_finalize_counter failed!")
+            joules = 0
+            # Integrate the energy between start_time and times[next_sample_from_start]
+            elapsed_time = self.times[next_sample_from_start] - start_time
+            if elapsed_time > 0:
+                joules += ((watts_on_start_time + self.watts[next_sample_from_start]) / 2) * elapsed_time
+            # Integrate the energy between times[previous_sample_from_end] and end_time
+            elapsed_time = end_time - self.times[previous_sample_from_end]
+            if elapsed_time > 0:
+                joules += ((self.watts[previous_sample_from_end] + watts_on_end_time) / 2) * elapsed_time
+            # Integrate the energy between next_sample_from_start and previous_sample_from_end
+            elapsed_time = self.times[previous_sample_from_end] - self.times[next_sample_from_start]
+            if elapsed_time > 0:
+                joules += np.mean(self.watts[next_sample_from_start:previous_sample_from_end + 1]) * elapsed_time
+        return joules
