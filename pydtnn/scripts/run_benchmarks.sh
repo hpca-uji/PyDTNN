@@ -34,6 +34,7 @@ ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-False}
 ENABLE_CONV_WINOGRAD=${ENABLE_CONV_WINOGRAD:-False}
 ENABLE_CONV_DIRECT=${ENABLE_CONV_DIRECT:-False}
 ENABLE_MEMORY_CACHE=${ENABLE_MEMORY_CACHE:-False}
+TRACER_PMLIB_DEVICE=${TRACER_PMLIB_DEVICE:-""}
 NODES=${NODES:-1}
 
 #--------------------------
@@ -248,6 +249,7 @@ function run_benchmark() {
     --dataset_test_path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \
     --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
+    --tracer_pmlib_device="${TRACER_PMLIB_DEVICE}" \
     --evaluate="${EVALUATE}" \
     --evaluate_only="${EVALUATE_ONLY}" \
     --test_as_validation="${TEST_AS_VALIDATION}" \
