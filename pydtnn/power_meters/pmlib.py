@@ -89,9 +89,10 @@ def check_pmlib_returned_status(func):
 class PMLib:
     _pmlib = None
 
-    def __init__(self, server_ip, port):
+    def __init__(self, server_ip, port, verbose=False):
         if self._pmlib is None:
             self._pmlib = load_library("pmlib")
+        self.verbose = verbose
         # ----------------
         # Helper functions
         # ----------------
@@ -139,37 +140,49 @@ class PMLib:
         self.times = None
         self.watts = None
 
+    def info(self, msg):
+        if self.verbose is True:
+            print("[PMLib]:", msg)
+
     @check_pmlib_returned_status
     def set_server(self, server_ip, port):
+        self.info("Setting server...")
         return self._pmlib.pm_set_server(server_ip.encode('utf-8'), port, ctypes.byref(self.server))
 
     @check_pmlib_returned_status
     def create_lines(self, lines_string):
+        self.info("Setting lines...")
         return self._pmlib.pm_set_lines(lines_string.encode('utf-8'), ctypes.byref(self.lines))
 
     @check_pmlib_returned_status
     def create_counter(self, counter_string, aggregate=1, interval=0):
+        self.info("Creating counter...")
         return self._pmlib.pm_create_counter(counter_string.encode('utf-8'), self.lines, aggregate, interval,
                                              self.server, ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def start_counter(self):
+        self.info("Starting counter...")
         return self._pmlib.pm_start_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def stop_counter(self):
+        self.info("Stopping counter...")
         return self._pmlib.pm_stop_counter(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def _get_counter_data(self):
+        self.info("Getting counter data...")
         return self._pmlib.pm_get_counter_data(ctypes.byref(self.counter))
 
     @check_pmlib_returned_status
     def print_data_text(self, output_string, set_value):
+        self.info(f"Writing data to '{output_string}' file...")
         return self._pmlib.pm_print_data_text(output_string.encode('utf-8'), self.counter, self.lines, set_value)
 
     @check_pmlib_returned_status
     def finalize_counter(self):
+        self.info("Finalizing counter...")
         return self._pmlib.pm_finalize_counter(ctypes.byref(self.counter))
 
     def get_counter_data(self):

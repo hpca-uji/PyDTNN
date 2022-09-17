@@ -31,7 +31,7 @@ class SimpleTracerPMLib(SimpleTracer):
     def __init__(self, tracing, output_filename, comm, pmlib_server_ip, pmlib_port, pmlib_device):
         super().__init__(tracing, output_filename, comm)
         if self.rank == 0:
-            self.pmlib = PMLib(pmlib_server_ip, pmlib_port)
+            self.pmlib = PMLib(pmlib_server_ip, pmlib_port, verbose=True)
             self.pmlib_device = pmlib_device
         self.times = defaultdict(lambda: defaultdict(lambda: []))
         self.pending_times = []
