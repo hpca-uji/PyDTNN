@@ -136,6 +136,7 @@ class PMLib:
         self.counter_start_time = None
         self.counter_end_time = None
         self.period = None
+        self.len_lines = None
         self.len_samples = None
         self.times = None
         self.watts = None
@@ -155,7 +156,7 @@ class PMLib:
         return self._pmlib.pm_set_lines(lines_string.encode('utf-8'), ctypes.byref(self.lines))
 
     @check_pmlib_returned_status
-    def create_counter(self, counter_string, aggregate=1, interval=0):
+    def create_counter(self, counter_string, aggregate=0, interval=0):
         self.info("Creating counter...")
         return self._pmlib.pm_create_counter(counter_string.encode('utf-8'), self.lines, aggregate, interval,
                                              self.server, ctypes.byref(self.counter))
@@ -189,12 +190,18 @@ class PMLib:
         self._get_counter_data()
         self.counter_start_time, self.counter_end_time = np.ctypeslib.as_array(
             (ctypes.c_double * 2).from_address(ctypes.addressof(self.counter.measures.contents.timing.contents)))
-        self.len_samples = self.counter.measures.contents.energy.watts_size
+        self.len_lines = 1 if self.counter.aggregate == 1 else self.counter.measures.contents.energy.lines_len
+        self.len_samples = self.counter.measures.contents.energy.watts_size // self.len_lines
         self.period = (self.counter_end_time - self.counter_start_time) / (self.len_samples - 1)
         self.times = np.array([self.counter_start_time + x * self.period for x in range(self.len_samples)])
-        self.watts = np.ctypeslib.as_array(
-            (ctypes.c_double * self.len_samples).from_address(
-                ctypes.addressof(self.counter.measures.contents.energy.watts.contents)))
+        self.watts = np.ctypeslib \
+            .as_array((ctypes.c_double * self.len_samples * self.len_lines).from_address(
+            ctypes.addressof(self.counter.measures.contents.energy.watts.contents))) \
+            .reshape((self.len_lines, self.len_samples))
+        if self.counter.aggregate == 0:
+            _sum = np.sum(self.watts, axis=0).reshape(1, -1)
+            self.watts = np.concatenate((_sum, self.watts))
+            self.len_lines += 1
 
     def _next_sample_from_start(self, start_time):
         return min(self.len_samples - 1, int((start_time - self.times[0]) / self.period) + 1)
@@ -223,10 +230,17 @@ class PMLib:
             print(f">> {next_sample_from_start=}")
             print(f">> {previous_sample_from_end=}")
         # Interpolate watts for start and end time
-        watts_on_start_time, watts_on_end_time = np.interp([start_time, end_time], self.times, self.watts)
+        watts_on_start_time, watts_on_end_time = [], []
+        for watts in self.watts:
+            a, b = np.interp([start_time, end_time], self.times, watts)
+            watts_on_start_time.append(a)
+            watts_on_end_time.append(b)
+        # Promote watts_on_start_time and watts_on_end_time to np.arrays
+        watts_on_start_time = np.array(watts_on_start_time)
+        watts_on_end_time = np.array(watts_on_end_time)
         if debug:
-            print(f">> {watts_on_start_time=} ({self.watts[next_sample_from_start]=})")
-            print(f">> {watts_on_end_time=} ({self.watts[previous_sample_from_end]=})")
+            print(f">> {watts_on_start_time[0]=} ({self.watts[0, next_sample_from_start]=})")
+            print(f">> {watts_on_end_time[0]=} ({self.watts[0, previous_sample_from_end]=})")
         # Integrate the energy
         if next_sample_from_start > previous_sample_from_end:
             # Integrate the energy between the two interpolated samples
@@ -236,13 +250,14 @@ class PMLib:
             # Integrate the energy between start_time and times[next_sample_from_start]
             elapsed_time = self.times[next_sample_from_start] - start_time
             if elapsed_time > 0:
-                joules += ((watts_on_start_time + self.watts[next_sample_from_start]) / 2) * elapsed_time
+                joules += ((watts_on_start_time + self.watts[:, next_sample_from_start]) / 2) * elapsed_time
             # Integrate the energy between times[previous_sample_from_end] and end_time
             elapsed_time = end_time - self.times[previous_sample_from_end]
             if elapsed_time > 0:
-                joules += ((self.watts[previous_sample_from_end] + watts_on_end_time) / 2) * elapsed_time
+                joules += ((self.watts[:, previous_sample_from_end] + watts_on_end_time) / 2) * elapsed_time
             # Integrate the energy between next_sample_from_start and previous_sample_from_end
             elapsed_time = self.times[previous_sample_from_end] - self.times[next_sample_from_start]
             if elapsed_time > 0:
-                joules += np.mean(self.watts[next_sample_from_start:previous_sample_from_end + 1]) * elapsed_time
+                joules += np.mean(self.watts[:, next_sample_from_start:previous_sample_from_end + 1], axis=1) \
+                          * elapsed_time
         return joules

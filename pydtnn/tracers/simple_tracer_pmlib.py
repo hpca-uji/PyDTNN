@@ -19,6 +19,8 @@
 import time
 from collections import defaultdict
 
+import numpy as np
+
 from . import SimpleTracer
 from ..power_meters import PMLib
 
@@ -55,18 +57,22 @@ class SimpleTracerPMLib(SimpleTracer):
 
     def _output_header(self):
         output = super()._output_header()
-        return output + ";Joules;Mean of intermediate power samples"
+        output += ";Joules"
+        for i in range(1, self.pmlib.len_lines):
+            output += f";Line{i - 1}"
+        return output + ";Mean of intermediate power samples"
 
     def _output_row(self, event_type_value, event_value):
-        output = super()._output_row(event_type_value, event_value)
-        joules = 0
+        output = super()._output_row(event_type_value, event_value) + ";"
+        joules = np.zeros(self.pmlib.len_lines)
         intermediate_samples = 0
         for start_time, end_time in self.times[event_type_value][event_value]:
             joules += self.pmlib.get_joules(start_time, end_time)
             intermediate_samples += self.pmlib.get_number_of_intermediate_samples(start_time, end_time)
         if len(self.times[event_type_value][event_value]) > 0:
             intermediate_samples = intermediate_samples / len(self.times[event_type_value][event_value])
-        return output + f";{joules};{intermediate_samples}"
+        output += ";".join([f"{x}" for x in joules])
+        return output + f";{intermediate_samples}"
 
     def _write_output(self):
         """This method will be called at exit only if tracing has been enabled at any time"""
@@ -74,4 +80,16 @@ class SimpleTracerPMLib(SimpleTracer):
             self.pmlib.stop_counter()
             self.pmlib.get_counter_data()
             super()._write_output()
+            watts_filename = self.output_filename + ".watts"
+            print(f"Writing watts output to '{watts_filename}'...")
+            with open(watts_filename, 'w') as f:
+                header = "Time"
+                header += ";Joules"
+                for i in range(1, self.pmlib.len_lines):
+                    header += f";Line{i - 1}"
+                f.write(header + "\n")
+                elapsed_times = self.pmlib.times - self.pmlib.times[0]
+                elapsed_times_watts = np.concatenate((elapsed_times.reshape(1, -1), self.pmlib.watts)).transpose()
+                for row in elapsed_times_watts:
+                    f.write(";".join(f"{x}" for x in row) + "\n")
             self.pmlib.finalize_counter()

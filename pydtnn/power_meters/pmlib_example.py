@@ -48,6 +48,7 @@ print(f"{pmlib.counter.measures.contents.energy.lines_len=}")
 print()
 print(f"{pmlib.times=}")
 print(f"{pmlib.watts=}")
+print(f"{pmlib.counter.measures.contents.energy.lines_len=}")
 print()
 
 print("Storing output on 'pmlib_example_output.txt'")
