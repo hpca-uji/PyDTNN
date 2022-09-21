@@ -91,8 +91,9 @@ volta)
   elif hostname | grep -q cmts; then
     export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 2 3 4 5 6 7 8 9 10 11 12 13 14 15 1 0}"
   else
-    export OMP_PLACES="cores"
-    export OMP_PROC_BIND="close"
+    export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-}"
+    export OMP_PLACES="${OMP_PLACES:-cores}"
+    export OMP_PROC_BIND="${OMP_PROC_BIND:-close}"
   fi
   ;;
 esac
