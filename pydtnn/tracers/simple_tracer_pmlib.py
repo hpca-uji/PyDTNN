@@ -84,7 +84,7 @@ class SimpleTracerPMLib(SimpleTracer):
             print(f"Writing watts output to '{watts_filename}'...")
             with open(watts_filename, 'w') as f:
                 header = "Time"
-                header += ";Joules"
+                header += ";Watts"
                 for i in range(1, self.pmlib.len_lines):
                     header += f";Line{i - 1}"
                 f.write(header + "\n")
