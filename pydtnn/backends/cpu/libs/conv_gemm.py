@@ -32,7 +32,7 @@ from pydtnn.utils import load_library
 try:
     load_library("convGemm")
     is_conv_gemm_available = True
-except ImportError:
+except (ImportError, ModuleNotFoundError, OSError):
     is_conv_gemm_available = False
 
 
