@@ -67,12 +67,11 @@ available at: '{_scripts_path}'."""
 
 
 def _get_mpi_processes():
-    mpi_processes = 1
     try:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
         from mpi4py import MPI
-    except ModuleNotFoundError:
-        pass
+    except (ImportError, ModuleNotFoundError):
+        mpi_processes = 1
     else:
         mpi_processes = MPI.COMM_WORLD.Get_size()
     return mpi_processes
