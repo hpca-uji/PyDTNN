@@ -100,7 +100,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         """
         for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             layer2.weights = layer1.weights.copy()
-            layer2.biases = layer1.biases.copy()
+            layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
 
     @staticmethod
     def get_first_dx(model, loss_func, x):
