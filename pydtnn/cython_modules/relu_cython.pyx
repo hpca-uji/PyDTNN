@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-23 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,47 +22,41 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
+# Declare fused type npDT (to be used with template functions)
+ctypedef fused npDT:
+    np.int8_t
+    np.float32_t
+    np.float64_t
+
 def relu_cython(x):
+    # Warning: the keys in the next dictionary need to be the given strings
+    # (i.e., for np.int8, neither np.int8, nor str(np.int8) work as a valid key)
+    fake_arg = {'int8': <np.int8_t> 0,
+                'float32': <np.float32_t> 0.0,
+                'float64': <np.float64_t> 0.0}
+    try:
+        return relu_cython_template(x, fake_arg[str(x.dtype)])
+    except KeyError:
+        raise TypeError(f"Type '{x.dtype}' is not supported by relu_cython!")
+
+# The fake argument is used to generate specialized versions of this function
+def relu_cython_template(x, npDT fake_arg):
     shape = x.shape
-    cdef np.ndarray max = np.zeros((np.prod(shape)), dtype=x.dtype)
-    cdef np.ndarray mask = np.zeros((np.prod(shape)), dtype=np.int8)
-
-    if x.dtype == np.int8:
-        relu_cython_inner_int8(x.reshape(-1), max, mask)
-    elif x.dtype == np.float32:
-        relu_cython_inner_float32(x.reshape(-1), max, mask)
-    elif x.dtype == np.float64:
-        relu_cython_inner_float64(x.reshape(-1), max, mask)
-    else:
-        raise TypeError("Type '{}' is not supported by relu_cython!" % (str(x.dtype)))
-
+    size = np.prod(shape)
+    cdef:
+        np.ndarray max = np.zeros((size,), dtype=x.dtype)
+        np.ndarray mask = np.zeros((size,), dtype=np.int8)
+        npDT[:] x_view = x.reshape(-1)
+        npDT[:] max_view = max
+        np.int8_t[:] mask_view = mask
+    relu_cython_inner(x_view, max_view, mask_view)
     return max.reshape(shape), mask.reshape(shape)
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef relu_cython_inner_int8(np.ndarray[np.int8_t, ndim=1] x,
-                            np.ndarray[np.int8_t, ndim=1] max,
-                            np.ndarray[np.int8_t, ndim=1] mask):
-    cdef int i
-    for i in prange(x.shape[0], nogil=True):
-        if x[i] > 0:
-            max[i], mask[i] = x[i], 1
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef relu_cython_inner_float32(np.ndarray[np.float32_t, ndim=1] x,
-                               np.ndarray[np.float32_t, ndim=1] max,
-                               np.ndarray[np.int8_t, ndim=1] mask):
-    cdef int i
-    for i in prange(x.shape[0], nogil=True):
-        if x[i] > 0:
-            max[i], mask[i] = x[i], 1
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef relu_cython_inner_float64(np.ndarray[np.float64_t, ndim=1] x,
-                               np.ndarray[np.float64_t, ndim=1] max,
-                               np.ndarray[np.int8_t, ndim=1] mask):
+cdef relu_cython_inner(npDT[:] x,
+                       npDT[:] max,
+                       np.int8_t[:] mask):
     cdef int i
     for i in prange(x.shape[0], nogil=True):
         if x[i] > 0:
