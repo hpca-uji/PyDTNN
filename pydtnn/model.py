@@ -524,7 +524,7 @@ class Model:
             x, y_targ = x_batch, y_batch
         return x, y_targ
 
-    def _train_batch(self, x_batch, y_batch, current_batch_size):
+    def _train_batch(self, x_batch, y_batch, current_batch_size, current_batch):
 
         self.mode = TRAIN_MODE
         for lr_sched in self.lr_schedulers:
@@ -561,7 +561,7 @@ class Model:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.layers[i].reduce_weights_sync()
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[i].update_weights(self.optimizer)
+                self.layers[i].update_weights(self.optimizer, current_batch=current_batch)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
         else:
             # Non-blocking MPI
@@ -644,9 +644,9 @@ class Model:
             for lr_sched in self.lr_schedulers:
                 lr_sched.on_epoch_begin(self, self.rank)
 
-            for x_batch, y_batch, batch_size in train_batch_generator:
+            for batch_index, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
                 tic = timer()
-                train_batch_loss = self._train_batch(x_batch, y_batch, batch_size)
+                train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, batch_index)
                 toc = timer()
                 train_total_loss, train_batch_count, string = \
                     self._update_running_average(train_batch_loss, train_total_loss,
