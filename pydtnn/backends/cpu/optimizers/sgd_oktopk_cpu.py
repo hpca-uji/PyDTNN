@@ -271,9 +271,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         # All procs perform topk selection in all acc
         local_topk = np.zeros_like(acc, dtype=acc.dtype)
         local_topk_indexes = np.where(np.abs(acc) >= local_th)[0]
-        print(1)
         local_topk[local_topk_indexes] = acc[local_topk_indexes]
-        print(2)
 
         # 2. Balance split and reduce
         # TODO: Para simplificar de momento: Allreduce
