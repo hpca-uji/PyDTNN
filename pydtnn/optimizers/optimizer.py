@@ -28,5 +28,5 @@ class Optimizer(PromoteToBackendMixin, ABC):
     """
 
     @abstractmethod
-    def update(self, layer):
+    def update(self, layer, **kwargs):
         pass

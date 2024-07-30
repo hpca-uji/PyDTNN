@@ -40,10 +40,10 @@ class AbstractBlockLayer(Layer, ABC):
     def initialize_block_layer(self):
         pass
 
-    def update_weights(self, optimizer):
+    def update_weights(self, optimizer, **kwargs):
         for p in self.paths:
             for layer in p:
-                layer.update_weights(optimizer)
+                layer.update_weights(optimizer, **kwargs)
 
     def reduce_weights_async(self):
         for p in self.paths:

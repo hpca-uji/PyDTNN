@@ -25,7 +25,7 @@ from pydtnn.optimizers import Nadam
 
 class NadamCPU(OptimizerCPU, Nadam):
 
-    def update(self, layer):
+    def update(self, layer, **kwargs):
         lr = self.learning_rate
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)

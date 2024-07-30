@@ -64,7 +64,7 @@ class AdamGPU(OptimizerGPU, Adam):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
                                              ).get_function("Adam_kernel")
 
-    def update(self, layer):
+    def update(self, layer, **kwargs):
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)
 
