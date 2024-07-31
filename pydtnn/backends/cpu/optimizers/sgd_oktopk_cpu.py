@@ -53,7 +53,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
     def _update_residuals(self, acc, indexes):
         """
-        Returns the residuals: set acc values if not in indexes, else acc value is set.
+        Returns the residuals: set zero value if it is in indexes, else acc value is set.
 
         Parameters:
             - acc: gradient matrix accumalation values
@@ -73,7 +73,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
-    def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=64):
+    def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
         """
         Performs the Ok-Topk sparse allreduce operation. 
         This method executes the Ok-Topk sparse allreduce algorithm, which 
@@ -86,8 +86,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - acc: Gradient matrix accumulation values.
             - t: Current iteration number.
             - k: Number of top-k gradient values to select.
-            - space_repartition_t: Interval of iterations for space repartitioning, by default 64.
-            - thresholds_re_evaluation_t: Interval of iterations for threshold re-evaluation, by default 128.
+            - space_repartition_t: Interval of iterations for space repartitioning.
+            - thresholds_re_evaluation_t: Interval of iterations for threshold re-evaluation.
 
         Returns:
             - u: The updated gradient values after sparse allreduce.
@@ -132,14 +132,112 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return threshold
 
 
+    def _space_repartition(self, acc, local_th):
+        """
+        Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
+        
+        TODO: Currently, the distribution of space is not balanced, 
+        but static: the matrix is divided into P equal regions.
+        The regions should not be static, they should be distributed 
+        in a balance way regarding to topk values locations.
+
+        Parameters:
+            - acc: gradient matrix values
+            - local_th: local process gradient threshold
+
+        Returns:
+            - boundaries: { proc_id : (row_start, row_end) }
+                where row_start is included and row_end is excluded.
+        """
+
+        boundaries = {}
+        total_rows = acc.shape[0]
+        region_size = total_rows // self.nprocs
+
+        for proc in range(self.nprocs):
+            row_start = proc * region_size
+            row_end = row_start + region_size
+            if proc == self.nprocs - 1:  
+                row_end = total_rows
+            boundaries[proc] = (row_start, row_end)
+        return boundaries
+
+
+    def _split_and_reduce(self, acc, local_th, boundaries):
+        """
+        Split the gradients into partitions and reduce them by selecting top-k values.
+        Each worker receives sparse regions from the other workers and and then conducts
+        the reduction locally. 
+
+        TODO: To simplify the implementation, boundaries are not used, instead: allreduce
+        TODO: To simplify the implementation, destination rotation and bucketing,
+        is not yet implemented.
+
+        Parameters:
+
+            - acc: Gradient matrix accumulation values.
+            - local_th: Local threshold for selecting top-k values.
+            - boundaries: Boundaries for partitioning the gradient space: { proc_id : (row_start, row_end) }.
+
+         Returns:
+            - reduced_topk: The reduced top-k gradient values.
+            - local_topk_indexes: The indices of the top-k gradient values selected locally.
+        """
+        # 1. Local topk values selection: 
+        # All procs perform topk selection in all acc
+        local_topk, local_topk_indexes = self._topk_selection(acc, local_th)
+
+        # 2. Balance split and reduce
+        # TODO: Para simplificar de momento: Allreduce
+        # TODO: Convert to COO for allreduce
+        #  local_topk_coo = self._convert_to_coo_format(local_topk, "offset")
+        reduced_topk = self._allreduce(local_topk)
+        return reduced_topk, local_topk_indexes
+
+
+    def _balance_and_allgather(self, reduced_topk, global_th):
+        # 1. Global topk selection
+        global_topk, global_topk_indexes = self._topk_selection(reduced_topk, global_th)
+
+        # 2. Data packaging
+        # TODO
+
+        # 3. Data balancing
+        # TODO
+
+        # 4. Allgatherv using recursive doubling
+        # Como antes hemos hecho un allreduce, creo que no hace falta allgather
+        # TODO 
+
+        return global_topk, global_topk_indexes
+
     def _topk(self, tensor, k):
         """
-            Implementation of shingan li
+            Implementation of Li and Hoefler
         """
         indexes = np.abs(tensor).argsort()[-k:]
         return indexes, tensor[indexes]
 
+
+    def _topk_selection(self, data, threshold):
+        """
+        Selects top-k elements from the data array that are greater than or equal to the threshold.
         
+        Parameters:
+            - data: The input array from which to select elements.
+            - threshold (float): The threshold value to compare against the absolute values of the data elements.
+        
+        Returns:
+            - topk: An array of the same shape as `data`, where elements that meet the threshold condition
+                        are retained, and all other elements are set to zero.
+            - topk_indexes: 
+        """
+        topk = np.zeros_like(data, dtype=data.dtype)
+        topk_indexes = np.where(np.abs(data) >= threshold)[0]
+        topk[topk_indexes] = data[topk_indexes]
+        return topk, topk_indexes
+        
+
     def _convert_to_coo_format(self, data, storage_format="offset"):
         """
         Returns a sparse array in coo format 
@@ -171,8 +269,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             coo_data = {index: value for index, value in zip(indexes, values)}
 
         return coo_data
-
-
 
 
     def _convert_from_coo_format(self, coo_data, shape, storage_format="offset"):
@@ -212,93 +308,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         return dense_matrix
         
-
-
-    def _space_repartition(self, acc, local_th):
-        """
-        Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
-        
-        TODO: Currently, the distribution of space is not balanced, 
-        but static: the matrix is divided into P equal regions.
-        The regions should not be static, they should be distributed 
-        in a balance way regarding to topk values locations.
-
-        Parameters:
-            - acc: gradient matrix values
-            - local_th: local process gradient threshold
-
-        Returns:
-            - boundaries: { proc_id : (row_start, row_end) }
-                where row_start is included and row_end is excluded.
-        """
-
-        boundaries = {}
-        total_rows = acc.shape[0]
-        region_size = total_rows // self.nprocs
-
-        for proc in range(self.nprocs):
-            row_start = proc * region_size
-            row_end = row_start + region_size
-            if proc == self.nprocs - 1:  
-                row_end = total_rows
-            boundaries[proc] = (row_start, row_end)
-        return boundaries
-
-
-
-
-    def _split_and_reduce(self, acc, local_th, boundaries):
-        """
-        Split the gradients into partitions and reduce them by selecting top-k values.
-        Each worker receives sparse regions from the other workers and and then conducts
-        the reduction locally. 
-
-        TODO: To simplify the implementation, boundaries are not used, instead: allreduce
-        TODO: To simplify the implementation, destination rotation and bucketing,
-        is not yet implemented.
-
-        Parameters:
-
-            - acc: Gradient matrix accumulation values.
-            - local_th: Local threshold for selecting top-k values.
-            - boundaries: Boundaries for partitioning the gradient space: { proc_id : (row_start, row_end) }.
-
-         Returns:
-            - reduced_topk: The reduced top-k gradient values.
-            - local_topk_indexes: The indices of the top-k gradient values selected locally.
-        """
-        # 1. Local topk values selection: 
-        # All procs perform topk selection in all acc
-        local_topk = np.zeros_like(acc, dtype=acc.dtype)
-        local_topk_indexes = np.where(np.abs(acc) >= local_th)[0]
-        local_topk[local_topk_indexes] = acc[local_topk_indexes]
-
-        # 2. Balance split and reduce
-        # TODO: Para simplificar de momento: Allreduce
-        # TODO: Convert to COO for allreduce
-        #  local_topk_coo = self._convert_to_coo_format(local_topk, "offset")
-        reduced_topk = self._allreduce(local_topk)
-        return reduced_topk, local_topk_indexes
-
-
-    def _balance_and_allgather(self, reduced_topk, global_th):
-        # 1. Global topk selection
-        global_topk = np.zeros_like(reduced_topk)
-        global_topk_indexes = np.where(np.abs(reduced_topk) >= global_th)[0]
-        global_topk[global_topk_indexes] = reduced_topk[global_topk_indexes]
-
-        # 2. Data packaging
-        # TODO
-
-        # 3. Data balancing
-        # TODO
-
-        # 4. Allgatherv using recursive doubling
-        # Como antes hemos hecho un allreduce, creo que no hace falta allgather
-        # TODO 
-
-        return global_topk, global_topk_indexes
-
 
     def _allgather(self, data):
         if self.nprocs == 1:
