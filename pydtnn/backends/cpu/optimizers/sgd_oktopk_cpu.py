@@ -19,6 +19,7 @@
 
 import numpy as np
 
+from pydtnn.cython_modules import topk_selection_cython, flattened_topk_selection_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD_OkTopk
 
@@ -51,26 +52,28 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             setattr(layer, w_, w)
 
 
-    def _update_residuals(self, acc, indexes):
+    def _update_residuals(self, acc, indexes, method="naive"):
         """
         Returns the residuals: set zero value if it is in indexes, else acc value is set.
 
         Parameters:
-            - acc: gradient matrix accumalation values
-            - indexes: topk indexes
+            - acc: gradient matrix accumulation values (can be multi-dimensional)
+            - indexes: set of tuples representing multi-dimensional topk indexes
 
         Returns:
             - residuals
         
         Example:
-            - acc = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-            - indexes = [2, 5, 9]
-            - output: [1 2 0 4 5 0 7 8 9 0]
+            - acc = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+            - indexes = (array([0, 2]), array([2, 1]))
+            - output: [[1, 2, 0], [4, 5, 6], [7, 0, 9]]
         """
-        residuals = np.zeros_like(acc, dtype=acc.dtype)
-        if len(indexes) > 0:
+
+        if method == "naive":
+            residuals = np.array(acc)
             residuals[indexes] = 0
-        return residuals
+            return residuals
+
 
     
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
@@ -107,8 +110,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.global_th = self._th_re_evaluate(all_reduced_topk, k)
 
         u, global_topk_indexes = self._balance_and_allgather(reduced_topk, self.global_th)
-        local_topk_indexes_set, global_topk_indexes_set = set(local_topk_indexes), set(global_topk_indexes)
-        indexes = np.array(list(local_topk_indexes_set.intersection(global_topk_indexes_set)))
+        indexes = self.intersect_indexes(local_topk_indexes, global_topk_indexes, acc.shape)
         return u, indexes
 
 
@@ -211,6 +213,36 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         return global_topk, global_topk_indexes
 
+
+    def intersect_indexes(self, local_indexes_tuple, global_indexes_tuple, shape, method="test"):
+        """
+        Calculates the intersection of two sets of indices of any dimension.
+
+        Parameters:
+            - local_indexes_tuple: (array([0, 1]), array([1, 1]))
+            - global_indexes_tuple: (array([0, 1]), array([1, 1]))
+        
+        Returns:
+            - Set of tuples representing the common indices in all dimensions.
+        
+        Example:
+            - local_indexes_tuple = (array([0, 1]), array([1, 1]))
+            - global_indexes_tuple = (array([0, 2]), array([2, 1]))
+            - output: (array([0, 1]), array([1, 1]))
+        """
+        if method == "naive":
+            return local_indexes_tuple
+        
+        elif method == "test":
+            # No funciona
+            dims = shape
+            local_flattened_indexes = np.ravel_multi_index(local_indexes_tuple, dims=dims)
+            global_flattened_indexes = np.ravel_multi_index(global_indexes_tuple, dims=dims)
+            flattened_intersection = np.intersect1d(local_flattened_indexes, global_flattened_indexes)
+            unravel_intersection = np.unravel_index(flattened_intersection, shape=dims)
+            return unravel_intersection
+            
+
     def _topk(self, tensor, k):
         """
             Implementation of Li and Hoefler
@@ -219,12 +251,12 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return indexes, tensor[indexes]
 
 
-    def _topk_selection(self, data, threshold):
+    def _topk_selection(self, data, threshold, method="numpy_naive"):
         """
-        Selects top-k elements from the data array that are greater than or equal to the threshold.
+        Selects top-k elements from the data that are greater than or equal to the threshold.
         
         Parameters:
-            - data: The input array from which to select elements.
+            - data: The input tensor from which to select elements.
             - threshold (float): The threshold value to compare against the absolute values of the data elements.
         
         Returns:
@@ -232,9 +264,21 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                         are retained, and all other elements are set to zero.
             - topk_indexes: 
         """
-        topk = np.zeros_like(data, dtype=data.dtype)
-        topk_indexes = np.where(np.abs(data) >= threshold)[0]
-        topk[topk_indexes] = data[topk_indexes]
+        topk, topk_indexes = None, None
+
+        if method == "numpy_naive":
+            topk = np.zeros_like(data, dtype=data.dtype)
+            topk_indexes = np.where(np.abs(data) >= threshold)
+            topk[topk_indexes] = data[topk_indexes]
+
+        elif method == "cython":
+            topk, topk_indexes = topk_selection_cython(data, threshold)
+
+        elif method == "cython_flattening":
+            topk, topk_indexes = flattened_topk_selection_cython(data.flatten(), threshold)
+            topk = np.reshape(topk, data.shape)
+            topk_indexes = np.unravel_index(topk_indexes, data.shape)
+
         return topk, topk_indexes
         
 
