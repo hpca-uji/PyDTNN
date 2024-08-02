@@ -52,7 +52,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             setattr(layer, w_, w)
 
 
-    def _update_residuals(self, acc, indexes, method="naive"):
+    def _update_residuals(self, acc, indexes, method="numpy"):
         """
         Returns the residuals: set zero value if it is in indexes, else acc value is set.
 
@@ -69,7 +69,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - output: [[1, 2, 0], [4, 5, 6], [7, 0, 9]]
         """
 
-        if method == "naive":
+        if method == "numpy":
             residuals = np.array(acc)
             residuals[indexes] = 0
             return residuals
@@ -214,32 +214,28 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return global_topk, global_topk_indexes
 
 
-    def intersect_indexes(self, local_indexes_tuple, global_indexes_tuple, shape, method="test"):
+    def intersect_indexes(self, local_indexes_tuple, global_indexes_tuple, shape, method="numpy"):
         """
         Calculates the intersection of two sets of indices of any dimension.
 
         Parameters:
-            - local_indexes_tuple: (array([0, 1]), array([1, 1]))
+            - local_indexes_tuple: (array([0, 3, 1]), array([1, 2, 1]))
             - global_indexes_tuple: (array([0, 1]), array([1, 1]))
         
         Returns:
             - Set of tuples representing the common indices in all dimensions.
         
         Example:
-            - local_indexes_tuple = (array([0, 1]), array([1, 1]))
+            - local_indexes_tuple = (array([0, 3, 1]), array([1, 2, 1]))
             - global_indexes_tuple = (array([0, 2]), array([2, 1]))
             - output: (array([0, 1]), array([1, 1]))
         """
-        if method == "naive":
-            return local_indexes_tuple
         
-        elif method == "test":
-            # No funciona
-            dims = shape
-            local_flattened_indexes = np.ravel_multi_index(local_indexes_tuple, dims=dims)
-            global_flattened_indexes = np.ravel_multi_index(global_indexes_tuple, dims=dims)
+        if method == "numpy":
+            local_flattened_indexes = np.ravel_multi_index(local_indexes_tuple, dims=shape)
+            global_flattened_indexes = np.ravel_multi_index(global_indexes_tuple, dims=shape)
             flattened_intersection = np.intersect1d(local_flattened_indexes, global_flattened_indexes)
-            unravel_intersection = np.unravel_index(flattened_intersection, shape=dims)
+            unravel_intersection = np.unravel_index(flattened_intersection, shape=shape)
             return unravel_intersection
             
 
@@ -251,7 +247,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return indexes, tensor[indexes]
 
 
-    def _topk_selection(self, data, threshold, method="numpy_naive"):
+    def _topk_selection(self, data, threshold, method="numpy"):
         """
         Selects top-k elements from the data that are greater than or equal to the threshold.
         
@@ -262,11 +258,12 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         Returns:
             - topk: An array of the same shape as `data`, where elements that meet the threshold condition
                         are retained, and all other elements are set to zero.
-            - topk_indexes: 
+            - topk_indexes: a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
         """
+
         topk, topk_indexes = None, None
 
-        if method == "numpy_naive":
+        if method == "numpy":
             topk = np.zeros_like(data, dtype=data.dtype)
             topk_indexes = np.where(np.abs(data) >= threshold)
             topk[topk_indexes] = data[topk_indexes]
