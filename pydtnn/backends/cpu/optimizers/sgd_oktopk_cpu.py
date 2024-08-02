@@ -130,7 +130,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if len(sorted_acc) > k:
             threshold = sorted_acc[-k]
         else:
-            threshold = sorted_acc[0]
+            threshold = sorted_acc[-1]
         return threshold
 
 
