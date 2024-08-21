@@ -40,7 +40,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
         # TODO: This variable and the if else in the for, should be removed. Use only for testing.
-        #       "weights", "bias", "beta", "gamma" should always be trained using oktopk, not SGD
+        #       "weights", "bias", "beta", "gamma" should always be trained using oktopk, not SGD.
+        
         oktopk_trainable_params = ["weights", "bias", "beta", "gamma"] 
          
         for w_, dw_ in layer.grad_vars.items():
