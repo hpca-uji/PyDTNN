@@ -18,6 +18,7 @@
 #
 
 import numpy as np
+from scipy.sparse import coo_matrix
 
 from pydtnn.cython_modules import topk_selection_cython, flattened_topk_selection_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
@@ -38,18 +39,36 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if layer.id not in self.residuals:
             self.residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
+        # TODO: This variable and the if else in the for, should be removed. Use only for testing.
+        #       "weights", "bias", "beta", "gamma" should always be trained using oktopk, not SGD
+        oktopk_trainable_params = ["weights", "bias", "beta", "gamma"] 
+         
         for w_, dw_ in layer.grad_vars.items():
-            w, dw = getattr(layer, w_), getattr(layer, dw_)
-            if self.residuals[layer.id][dw_] is None:
-                self.residuals[layer.id][dw_] = np.zeros_like(w, dtype=layer.model.dtype)
+            if w_ in oktopk_trainable_params:
+                w, dw = getattr(layer, w_), getattr(layer, dw_)
+                if self.residuals[layer.id][dw_] is None:
+                    self.residuals[layer.id][dw_] = np.zeros_like(w, dtype=layer.model.dtype)
 
-            acc = self.residuals[layer.id][dw_] + (self.learning_rate * dw)
-            u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
-            self.residuals[layer.id][dw_] = self._update_residuals(acc, indexes)
-            w = w - u / self.nprocs
-            # w[indexes] = u[indexes] / self.nprocs
-            # w[indexes] = u / self.nprocs
-            setattr(layer, w_, w)
+                acc = self.residuals[layer.id][dw_] + (self.learning_rate * dw)
+                u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
+                self.residuals[layer.id][dw_] = self._update_residuals(acc, indexes)
+                w = w - u / self.nprocs
+                # w[indexes] = u[indexes] / self.nprocs
+                # w[indexes] = u / self.nprocs
+                setattr(layer, w_, w)
+            else:
+                lr = self.learning_rate
+                w, dw = getattr(layer, w_), getattr(layer, dw_)
+                velocity = getattr(layer, "velocity_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
+
+                velocity = self.momentum * velocity + dw
+                if self.nesterov:
+                    w -= lr * (self.decay * w + dw + self.momentum * velocity)
+                else:
+                    w -= lr * (self.decay * w + velocity)
+
+                setattr(layer, w_, w)
+                setattr(layer, "velocity_%s" % w_, velocity)
 
 
     def _update_residuals(self, acc, indexes, method="numpy"):
@@ -191,8 +210,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         # 2. Balance split and reduce
         # TODO: Para simplificar de momento: Allreduce
-        # TODO: Convert to COO for allreduce
-        #  local_topk_coo = self._convert_to_coo_format(local_topk, "offset")
         reduced_topk = self._allreduce(local_topk)
         return reduced_topk, local_topk_indexes
 
@@ -219,16 +236,17 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         Calculates the intersection of two sets of indices of any dimension.
 
         Parameters:
-            - local_indexes_tuple: (array([0, 3, 1]), array([1, 2, 1]))
-            - global_indexes_tuple: (array([0, 1]), array([1, 1]))
+            - local_indexes_tuple: a tuple of N arrays of shape M. 
+            - global_indexes_tuple: a tuple of N arrays of shape M. 
+                where N is the dimensions and M the number of indexes.
         
         Returns:
             - Set of tuples representing the common indices in all dimensions.
         
         Example:
-            - local_indexes_tuple = (array([0, 3, 1]), array([1, 2, 1]))
-            - global_indexes_tuple = (array([0, 2]), array([2, 1]))
-            - output: (array([0, 1]), array([1, 1]))
+            - local_indexes_tuple = (np.array([0, 3, 2]), np.array([2, 4, 1]), np.array([5, 1, 5]))
+            - global_indexes_tuple = (np.array([1, 2, 3]), np.array([3, 1, 4]), np.array([5, 6, 1]))
+            - output: (array([3]), array([4]), array([1]))
         """
         
         if method == "numpy":
@@ -239,12 +257,12 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return unravel_intersection
             
 
-    def _topk(self, tensor, k):
-        """
-            Implementation of Li and Hoefler
-        """
-        indexes = np.abs(tensor).argsort()[-k:]
-        return indexes, tensor[indexes]
+    # def _topk(self, tensor, k):
+    #     """
+    #         Implementation of Li and Hoefler
+    #     """
+    #     indexes = np.abs(tensor).argsort()[-k:]
+    #     return indexes, tensor[indexes]
 
 
     def _topk_selection(self, data, threshold, method="numpy"):
@@ -256,7 +274,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - threshold (float): The threshold value to compare against the absolute values of the data elements.
         
         Returns:
-            - topk: An array of the same shape as `data`, where elements that meet the threshold condition
+            - topk: A tensor of the same shape as `data`, where elements that meet the threshold condition
                         are retained, and all other elements are set to zero.
             - topk_indexes: a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
         """
@@ -279,49 +297,85 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return topk, topk_indexes
         
 
+    def _allgather(self, data, method="sparse"):
+        if self.nprocs == 1:
+            return data
+        
+        elif method == "dense":
+            # TODO: ¿Por qué funciona el siguiente allgather? 
+            # No debería dar error MPI.IN_PLACE, ya que re comunica data.size * self.nprocs
+            self.comm.Allgather(MPI.IN_PLACE, data)
+            return data
+        
+        elif method == "sparse":
+            # TODO: Funciona pero converge raro
+            indexes, values = self._convert_to_coo_format(data)
+            self.comm.Allgather(MPI.IN_PLACE, indexes)
+            self.comm.Allgather(MPI.IN_PLACE, values)
+            dense_data = self._convert_from_coo_format([indexes, values], data.shape)
+            return dense_data
+
+
+    def _allreduce(self, data, method="dense"):
+        if self.nprocs == 1:
+            return data
+
+        elif method == "dense":
+            self.comm.Allreduce(MPI.IN_PLACE, data, op=MPI.SUM)
+            return data
+        
+        elif method == "sparse":
+            indexes, values = self._convert_to_coo_format(data)
+            # TODO: Own allreduce implmentation
+            dense_data = self._convert_from_coo_format([indexes, values], data.shape)
+            return dense_data
+
+
+
     def _convert_to_coo_format(self, data, storage_format="offset"):
         """
-        Returns a sparse array in coo format 
+        Returns a sparse array in coo format for tensors of any dimension
 
         Parameters: 
-            - data: dense matrix 
+            - data: dense tensor of any dimensions
             - storage_format: "offset" (default) or "coordinate" 
         
         Returns:
-            - if "offset" storage format: { offset: non-zero value }
-            - if "coordinate" storage format: { (row, col): non-zero value}
+            - if "offset" storage format: [indexes, non-zero values]
+            - if "coordinate" storage format: [dim1 indexes, dim2 indexes, ..., non-zero values]
         """
 
-        coo_storage_formats = {"offset", "coordinate"} 
+        coo_storage_formats = {"offset", "coordinate"}
 
         if storage_format not in coo_storage_formats:
             print(f"Storage format '{storage_format}' not known. Try with: {coo_storage_formats}")
             return None
 
         if storage_format == "coordinate":
-            rows, cols = np.nonzero(data)
-            values = data[rows, cols]
-            coo_data = {(row, col): value for row, col, value in zip(rows, cols, values)}
+            indices = np.nonzero(data)
+            values = data[indices]
+            coordinates = [indices[dim] for dim in range(data.ndim)]
+            coordinates.append(values)
+            coo_data = coordinates
 
         elif storage_format == "offset":
             flattened_data = data.flatten()
             indexes = np.nonzero(flattened_data)[0]
             values = flattened_data[indexes]
-            coo_data = {index: value for index, value in zip(indexes, values)}
+            coo_data = [indexes, values]
 
         return coo_data
 
 
-    def _convert_from_coo_format(self, coo_data, shape, storage_format="offset"):
+    def _convert_from_coo_format(self, coo_data, shape, dtype=np.float32, storage_format="offset"):
         """
         Returns a dense array from sparse data 
 
         Parameters: 
-            - coo_data: depending on the storage_format, it is either:
-                - if "offset" storage format, coo_data: { offset: non-zero value }
-                - if "coordinate" storage format, coo_data: { (row, col): non-zero value}
-            - coo_data: sparse matrix [[values], [coordinates/offset]]
+            - coo_data: sparse matrix data in format [[index], [value]] for "offset" 
+                        or [[row], [col], ..., [value]] for "coordinate"
             - shape: dense matrix expected shape 
+            - dtype: data type of the output array, default is np.float32
             - storage_format: "offset" (default) or "coordinate" 
         
         Returns:
@@ -334,31 +388,19 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             print(f"Storage format '{storage_format}' not known. Try with: {coo_storage_formats}")
             return None
 
-        dense_matrix = np.zeros(shape, dtype=np.float64)
+        dense_matrix = np.zeros(shape, dtype=dtype)
 
         if storage_format == "coordinate":
-            for (row, col), value in coo_data.items():
-                dense_matrix[row, col] = value
+            coordinates = coo_data[:-1]  
+            values = coo_data[-1]  
+            for idx, value in zip(zip(*coordinates), values):
+                dense_matrix[idx] = value
 
         elif storage_format == "offset":
-            rows, cols = shape
-            for offset, value in coo_data.items():
-                row = offset // cols
-                col = offset % cols
-                dense_matrix[row, col] = value
+            indices, values = coo_data
+            total_elements = np.prod(shape)  
+            for offset, value in zip(indices, values):
+                index = np.unravel_index(offset, shape)
+                dense_matrix[index] = value
 
         return dense_matrix
-        
-
-    def _allgather(self, data):
-        if self.nprocs == 1:
-            return data
-        self.comm.Allgather(MPI.IN_PLACE, data)
-        return data
-
-
-    def _allreduce(self, data):
-        if self.nprocs == 1:
-            return data
-        self.comm.Allreduce(MPI.IN_PLACE, data, op=MPI.SUM)
-        return data
