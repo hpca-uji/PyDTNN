@@ -25,7 +25,7 @@ cimport cython
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def topk_selection_cython(cnp.ndarray[cnp.float32_t, ndim=1] data, double threshold):
+def top_threshold_selection(cnp.ndarray[cnp.float32_t, ndim=1] data, double threshold):
     cdef cnp.ndarray[cnp.float32_t, ndim=1] topk = np.zeros_like(data, dtype=np.float32)  
     cdef cnp.ndarray[cnp.int32_t, ndim=1] topk_indexes = np.empty(data.size, dtype=np.int32)  
     cdef int idx = 0
@@ -45,7 +45,7 @@ def topk_selection_cython(cnp.ndarray[cnp.float32_t, ndim=1] data, double thresh
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def flattened_topk_selection_cython(cnp.ndarray[cnp.float32_t, ndim=1] data, double threshold):
+def flattened_top_threshold_selection(cnp.ndarray[cnp.float32_t, ndim=1] data, double threshold):
     topk = np.zeros_like(data)
     topk_indexes = np.where(np.abs(data) >= threshold)[0]
     for idx in topk_indexes:

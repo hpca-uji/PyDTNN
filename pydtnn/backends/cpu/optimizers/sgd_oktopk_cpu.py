@@ -20,7 +20,7 @@
 import numpy as np
 from scipy.sparse import coo_matrix
 
-from pydtnn.cython_modules import topk_selection_cython, flattened_topk_selection_cython
+from pydtnn.cython_modules import top_threshold_selection_cython, flattened_top_threshold_selection_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD_OkTopk
 
@@ -208,7 +208,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         """
         # 1. Local topk values selection: 
         # All procs perform topk selection in all acc
-        local_topk, local_topk_indexes = self._topk_selection(acc, local_th)
+        local_topk, local_topk_indexes = self._top_threshold_selection(acc, local_th)
 
         # 2. Balance split and reduce
         # TODO: Para simplificar de momento: Allreduce
@@ -218,7 +218,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
     def _balance_and_allgather(self, reduced_topk, global_th):
         # 1. Global topk selection
-        global_topk, global_topk_indexes = self._topk_selection(reduced_topk, global_th)
+        global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th)
 
         # 2. Data packaging
         # TODO
@@ -267,7 +267,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
     #     return indexes, tensor[indexes]
 
 
-    def _topk_selection(self, data, threshold, method="numpy"):
+    def _top_threshold_selection(self, data, threshold, method="numpy"):
         """
         Selects top-k elements from the data that are greater than or equal to the threshold.
         
@@ -289,10 +289,10 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             topk[topk_indexes] = data[topk_indexes]
 
         elif method == "cython":
-            topk, topk_indexes = topk_selection_cython(data, threshold)
+            topk, topk_indexes = top_threshold_selection_cython(data, threshold)
 
         elif method == "cython_flattening":
-            topk, topk_indexes = flattened_topk_selection_cython(data.flatten(), threshold)
+            topk, topk_indexes = flattened_top_threshold_selection_cython(data.flatten(), threshold)
             topk = np.reshape(topk, data.shape)
             topk_indexes = np.unravel_index(topk_indexes, data.shape)
 
