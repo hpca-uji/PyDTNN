@@ -83,7 +83,7 @@ def get_optimizer(model):
                          dtype=model.dtype,
                          comm=model.comm,
                          rank=model.rank,
-                         k=10)
+                         k=model.k)
     else:
         raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
     if model.enable_cudnn:

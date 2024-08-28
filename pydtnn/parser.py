@@ -201,6 +201,7 @@ _op_group.add_argument('--epsilon', type=float, default=1e-7)
 _op_group.add_argument('--rho', type=float, default=0.9)
 _op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy")
 _op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
+_op_group.add_argument('--k', type=int, default=10)
 
 # Learning rate schedulers options
 _lr_group = parser.add_argument_group("Learning rate schedulers options")
