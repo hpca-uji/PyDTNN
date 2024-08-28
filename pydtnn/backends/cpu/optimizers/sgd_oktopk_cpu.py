@@ -40,9 +40,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
         # TODO: This variable and the if else in the for, should be removed. Use only for testing.
-        #       "weights", "bias", "beta", "gamma" should always be trained using oktopk, not SGD.
+        #       "weights", "biases", "beta", "gamma" should always be trained using oktopk, not SGD.
         
-        oktopk_trainable_params = ["weights", "bias", "beta", "gamma"] 
+        oktopk_trainable_params = ["weights"] 
          
         for w_, dw_ in layer.grad_vars.items():
             if w_ in oktopk_trainable_params:
@@ -150,7 +150,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if len(sorted_acc) > k:
             threshold = sorted_acc[-k]
         else:
-            threshold = sorted_acc[-1]
+            # If k is larger than the total acc: select the smallest value
+            threshold = sorted_acc[0]
         return threshold
 
 
