@@ -134,7 +134,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return u, indexes
 
 
-    def _th_re_evaluate(self, acc, k):
+    def _th_re_evaluate(self, acc, k, method="numpy"):
         """
         Return the absolute gradient threshold of acc matrix
 
@@ -146,24 +146,16 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - threshold: absolute gradient threshold k 
         """
 
-        sorted_acc = np.sort(np.abs(acc).flatten())
-        if len(sorted_acc) > k:
-            threshold = sorted_acc[-k]
-        else:
-            # If k is larger than the total acc: select the smallest value
-            threshold = sorted_acc[0]
-        return threshold
+        if method == "numpy":
+            sorted_acc = np.sort(np.abs(acc).flatten())
+            threshold = sorted_acc[max(-k, -len(sorted_acc))]
+            return threshold
 
 
-    def _space_repartition(self, acc, local_th):
+    def _space_repartition(self, acc, local_th, method="naive"):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
-        TODO: Currently, the distribution of space is not balanced, 
-        but static: the matrix is divided into P equal regions.
-        The regions should not be static, they should be distributed 
-        in a balance way regarding to topk values locations.
-
         Parameters:
             - acc: gradient matrix values
             - local_th: local process gradient threshold
@@ -172,21 +164,28 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - boundaries: [(row_start, row_end), ...]
                 where row_start is included and row_end is excluded.
         """
-
+    
         boundaries = []
-        total_rows = acc.shape[0]
-        region_size = total_rows // self.nprocs
 
-        for proc in range(self.nprocs):
-            row_start = proc * region_size
-            row_end = row_start + region_size
-            if proc == self.nprocs - 1:  
-                row_end = total_rows
-            boundaries.append((row_start, row_end))
+        if method == "naive":
+            total_rows = acc.shape[0]
+            region_size = total_rows // self.nprocs
+            for proc in range(self.nprocs):
+                row_start = proc * region_size
+                row_end = row_start + region_size
+                if proc == self.nprocs - 1:  
+                    row_end = total_rows
+                boundaries.append((row_start, row_end))
+
+        elif method == "balanced":
+            # TODO 
+            pass
+
         return boundaries
 
 
-    def _split_and_reduce(self, acc, local_th, boundaries):
+
+    def _split_and_reduce(self, acc, local_th, boundaries, method="allreduce"):
         """
         Split the gradients into partitions and reduce them by selecting top-k values.
         Each worker receives sparse regions from the other workers and and then conducts
@@ -206,13 +205,16 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - reduced_topk: The reduced top-k gradient values.
             - local_topk_indexes: The indices of the top-k gradient values selected locally.
         """
-        # 1. Local topk values selection: 
-        # All procs perform topk selection in all acc
+
         local_topk, local_topk_indexes = self._top_threshold_selection(acc, local_th)
 
-        # 2. Balance split and reduce
-        # TODO: Para simplificar de momento: Allreduce
-        reduced_topk = self._allreduce(local_topk)
+        if method == "allreduce":
+            reduced_topk = self._allreduce(local_topk)
+
+        elif method == "boundaries":
+            # TODO
+            pass
+
         return reduced_topk, local_topk_indexes
 
 
@@ -297,23 +299,34 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             topk_indexes = np.unravel_index(topk_indexes, data.shape)
 
         return topk, topk_indexes
+
+
+    def _reduce(self, data, root=0, method="dense"):
+        if self.nprocs == 1:
+            return data
+
+                
+        elif method == "dense":
+            return self.comm.reduce(data, op=MPI.SUM, root=root)
         
 
-    def _allgather(self, data, method="sparse"):
+        elif method == "sparse":
+            # TODO:
+            pass
+        
+
+    def _allgather(self, data, method="dense"):
         if self.nprocs == 1:
             return data
         
         elif method == "dense":
-            # TODO: ¿Por qué funciona el siguiente allgather? 
-            # No debería dar error MPI.IN_PLACE, ya que re comunica data.size * self.nprocs
-            self.comm.Allgather(MPI.IN_PLACE, data)
+            data = self.comm.allgather(data)
             return data
         
         elif method == "sparse":
-            # TODO: Funciona pero converge raro
             indexes, values = self._convert_to_coo_format(data)
-            self.comm.Allgather(MPI.IN_PLACE, indexes)
-            self.comm.Allgather(MPI.IN_PLACE, values)
+            indexes = self.comm.allgather(indexes)
+            values = self.comm.allgather(values)
             dense_data = self._convert_from_coo_format([indexes, values], data.shape)
             return dense_data
 
@@ -323,7 +336,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return data
 
         elif method == "dense":
-            self.comm.Allreduce(MPI.IN_PLACE, data, op=MPI.SUM)
+            data = self.comm.allreduce(data, op=MPI.SUM)
             return data
         
         elif method == "sparse":
