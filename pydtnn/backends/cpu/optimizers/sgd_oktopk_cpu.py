@@ -169,11 +169,11 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - local_th: local process gradient threshold
 
         Returns:
-            - boundaries: { proc_id : (row_start, row_end) }
+            - boundaries: [(row_start, row_end), ...]
                 where row_start is included and row_end is excluded.
         """
 
-        boundaries = {}
+        boundaries = []
         total_rows = acc.shape[0]
         region_size = total_rows // self.nprocs
 
@@ -182,7 +182,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             row_end = row_start + region_size
             if proc == self.nprocs - 1:  
                 row_end = total_rows
-            boundaries[proc] = (row_start, row_end)
+            boundaries.append((row_start, row_end))
         return boundaries
 
 
