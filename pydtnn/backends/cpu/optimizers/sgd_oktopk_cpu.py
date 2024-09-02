@@ -77,7 +77,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         Returns the residuals: set zero value if it is in indexes, else acc value is set.
 
         Parameters:
-            - acc: gradient matrix accumulation values (can be multi-dimensional)
+            - acc: gradient accumulation values (tensor)
             - indexes: set of tuples representing multi-dimensional topk indexes
 
         Returns:
@@ -93,7 +93,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             residuals = np.array(acc)
             residuals[indexes] = 0
             return residuals
-
 
     
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
@@ -136,10 +135,10 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
     def _th_re_evaluate(self, acc, k, method="numpy"):
         """
-        Return the absolute gradient threshold of acc matrix
+        Return the absolute gradient threshold of acc tensor
 
         Parameters:
-            - acc: gradient dense matrix
+            - acc: gradient dense tensor
             - k: selection values hyperparameter
 
         Returns:
@@ -191,10 +190,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         Each worker receives sparse regions from the other workers and and then conducts
         the reduction locally. 
 
-        TODO: To simplify the implementation, boundaries are not used, instead: allreduce
-        TODO: To simplify the implementation, destination rotation and bucketing,
-        is not yet implemented.
-
         Parameters:
 
             - acc: Gradient matrix accumulation values.
@@ -206,33 +201,40 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - local_topk_indexes: The indices of the top-k gradient values selected locally.
         """
 
-        local_topk, local_topk_indexes = self._top_threshold_selection(acc, local_th)
 
         if method == "allreduce":
+            local_topk, local_topk_indexes = self._top_threshold_selection(acc, local_th)
             reduced_topk = self._allreduce(local_topk)
+            return reduced_topk, local_topk_indexes
+
 
         elif method == "boundaries":
+            local_topk, local_topk_indexes = self._top_threshold_selection(acc, local_th)
+            reduced_topk = self._p2p_reduce_topk(local_topk, boundaries)
+            return reduced_topk, local_topk_indexes
+
+
+
+    def _balance_and_allgather(self, reduced_topk, global_th, method="allreduce"):
+        
+        if method == "allreduce":
+            # If split_and_reduce phase was performed with allreduce:
+            global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th)
+            return global_topk, global_topk_indexes
+
+        elif method == "boundaries":
+            # 1. Global topk selection
+            global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th)
+
+            # 2. Data packaging
             # TODO
-            pass
 
-        return reduced_topk, local_topk_indexes
+            # 3. Data balancing
+            # TODO
 
-
-    def _balance_and_allgather(self, reduced_topk, global_th):
-        # 1. Global topk selection
-        global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th)
-
-        # 2. Data packaging
-        # TODO
-
-        # 3. Data balancing
-        # TODO
-
-        # 4. Allgatherv using recursive doubling
-        # Como antes hemos hecho un allreduce, creo que no hace falta allgather
-        # TODO 
-
-        return global_topk, global_topk_indexes
+            # 4. Allgatherv using recursive doubling
+            self._allgather(data)
+            return global_topk, global_topk_indexes
 
 
     def intersect_indexes(self, local_indexes_tuple, global_indexes_tuple, shape, method="numpy"):
@@ -252,7 +254,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - global_indexes_tuple = (np.array([1, 2, 3]), np.array([3, 1, 4]), np.array([5, 6, 1]))
             - output: (array([3]), array([4]), array([1]))
         """
-        
+
         if method == "numpy":
             local_flattened_indexes = np.ravel_multi_index(local_indexes_tuple, dims=shape)
             global_flattened_indexes = np.ravel_multi_index(global_indexes_tuple, dims=shape)
@@ -261,161 +263,81 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return unravel_intersection
             
 
-    # def _topk(self, tensor, k):
-    #     """
-    #         Implementation of Li and Hoefler
-    #     """
-    #     indexes = np.abs(tensor).argsort()[-k:]
-    #     return indexes, tensor[indexes]
 
 
-    def _top_threshold_selection(self, data, threshold, method="numpy"):
+    def _top_threshold_selection(self, tensor, threshold, method="numpy"):
         """
-        Selects top-k elements from the data that are greater than or equal to the threshold.
+        Selects top-k elements from the tensor that are greater than or equal to the threshold.
         
         Parameters:
-            - data: The input tensor from which to select elements.
-            - threshold (float): The threshold value to compare against the absolute values of the data elements.
+            - tensor: The input tensor from which to select elements.
+            - threshold (float): The threshold value to compare against the absolute values of the tensor elements.
         
         Returns:
-            - topk: A tensor of the same shape as `data`, where elements that meet the threshold condition
-                        are retained, and all other elements are set to zero.
+            - topk: An array with the elements that meet the threshold condition (coo)
+                    A sparse tensor with the elements thth meet the threshold condition (not coo)
             - topk_indexes: a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
         """
 
         topk, topk_indexes = None, None
 
         if method == "numpy":
-            topk = np.zeros_like(data, dtype=data.dtype)
-            topk_indexes = np.where(np.abs(data) >= threshold)
-            topk[topk_indexes] = data[topk_indexes]
+            topk = np.zeros_like(tensor, dtype=tensor.dtype)
+            topk_indexes = np.where(np.abs(tensor) >= threshold)
+            topk[topk_indexes] = tensor[topk_indexes]
 
         elif method == "cython":
-            topk, topk_indexes = top_threshold_selection_cython(data, threshold)
+            topk, topk_indexes = top_threshold_selection_cython(tensor, threshold)
 
         elif method == "cython_flattening":
-            topk, topk_indexes = flattened_top_threshold_selection_cython(data.flatten(), threshold)
-            topk = np.reshape(topk, data.shape)
-            topk_indexes = np.unravel_index(topk_indexes, data.shape)
+            topk, topk_indexes = flattened_top_threshold_selection_cython(tensor.flatten(), threshold)
+            topk = np.reshape(topk, tensor.shape)
+            topk_indexes = np.unravel_index(topk_indexes, tensor.shape)
+        
+        elif method == "numpy_coo":
+            topk_indexes = np.where(np.abs(tensor) >= threshold)
+            topk = tensor[topk_indexes]
 
         return topk, topk_indexes
 
 
-    def _reduce(self, data, root=0, method="dense"):
+    def _p2p_reduce_topk(self, topk, boundaries, method="dense"):
+        """
+        TODO: To simplify the implementation, destination rotation and bucketing,
+        is not yet implemented.
+
+        """
+        if self.nprocs == 1:
+            return topk
+        
+        if method == "dense":
+            reduced_topk = None
+            for region, (row_start, row_end) in enumerate(boundaries):
+                if self.rank == region:
+                    reduced_topk = self.comm.reduce(topk[row_start:row_end], op=MPI.SUM, root=region)
+                else:
+                    self.comm.reduce(topk[row_start:row_end], op=MPI.SUM, root=region)
+            return reduced_topk
+
+        elif method == "sparse":
+            reduced_topk = None
+            #TODO
+            return reduced_topk 
+
+
+
+    def _allreduce(self, data, op=MPI.SUM):
         if self.nprocs == 1:
             return data
 
-                
-        elif method == "dense":
-            return self.comm.reduce(data, op=MPI.SUM, root=root)
-        
+        data = self.comm.allreduce(data, op=op)
+        return data
 
-        elif method == "sparse":
-            # TODO:
-            pass
-        
 
-    def _allgather(self, data, method="dense"):
+    def _allgather(self, data):
         if self.nprocs == 1:
             return data
         
-        elif method == "dense":
-            data = self.comm.allgather(data)
-            return data
-        
-        elif method == "sparse":
-            indexes, values = self._convert_to_coo_format(data)
-            indexes = self.comm.allgather(indexes)
-            values = self.comm.allgather(values)
-            dense_data = self._convert_from_coo_format([indexes, values], data.shape)
-            return dense_data
+        data = self.comm.allgather(data)
+        return data
 
-
-    def _allreduce(self, data, method="dense"):
-        if self.nprocs == 1:
-            return data
-
-        elif method == "dense":
-            data = self.comm.allreduce(data, op=MPI.SUM)
-            return data
-        
-        elif method == "sparse":
-            indexes, values = self._convert_to_coo_format(data)
-            # TODO: Own allreduce implmentation
-            dense_data = self._convert_from_coo_format([indexes, values], data.shape)
-            return dense_data
-
-
-
-    def _convert_to_coo_format(self, data, storage_format="offset"):
-        """
-        Returns a sparse array in coo format for tensors of any dimension
-
-        Parameters: 
-            - data: dense tensor of any dimensions
-            - storage_format: "offset" (default) or "coordinate" 
-        
-        Returns:
-            - if "offset" storage format: [indexes, non-zero values]
-            - if "coordinate" storage format: [dim1 indexes, dim2 indexes, ..., non-zero values]
-        """
-
-        coo_storage_formats = {"offset", "coordinate"}
-
-        if storage_format not in coo_storage_formats:
-            print(f"Storage format '{storage_format}' not known. Try with: {coo_storage_formats}")
-            return None
-
-        if storage_format == "coordinate":
-            indices = np.nonzero(data)
-            values = data[indices]
-            coordinates = [indices[dim] for dim in range(data.ndim)]
-            coordinates.append(values)
-            coo_data = coordinates
-
-        elif storage_format == "offset":
-            flattened_data = data.flatten()
-            indexes = np.nonzero(flattened_data)[0]
-            values = flattened_data[indexes]
-            coo_data = [indexes, values]
-
-        return coo_data
-
-
-    def _convert_from_coo_format(self, coo_data, shape, dtype=np.float32, storage_format="offset"):
-        """
-        Returns a dense array from sparse data 
-
-        Parameters: 
-            - coo_data: sparse matrix data in format [[index], [value]] for "offset" 
-                        or [[row], [col], ..., [value]] for "coordinate"
-            - shape: dense matrix expected shape 
-            - dtype: data type of the output array, default is np.float32
-            - storage_format: "offset" (default) or "coordinate" 
-        
-        Returns:
-            - dense_matrix: dense data with the provided shape
-        """
-
-        coo_storage_formats = {"offset", "coordinate"} 
-
-        if storage_format not in coo_storage_formats:
-            print(f"Storage format '{storage_format}' not known. Try with: {coo_storage_formats}")
-            return None
-
-        dense_matrix = np.zeros(shape, dtype=dtype)
-
-        if storage_format == "coordinate":
-            coordinates = coo_data[:-1]  
-            values = coo_data[-1]  
-            for idx, value in zip(zip(*coordinates), values):
-                dense_matrix[idx] = value
-
-        elif storage_format == "offset":
-            indices, values = coo_data
-            total_elements = np.prod(shape)  
-            for offset, value in zip(indices, values):
-                index = np.unravel_index(offset, shape)
-                dense_matrix[index] = value
-
-        return dense_matrix
