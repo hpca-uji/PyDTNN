@@ -183,7 +183,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return boundaries
 
 
-
     def _split_and_reduce(self, acc, local_th, boundaries, method="allreduce"):
         """
         Split the gradients into partitions and reduce them by selecting top-k values.
@@ -212,7 +211,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             local_topk, local_topk_indexes = self._top_threshold_selection(acc, local_th)
             reduced_topk = self._p2p_reduce_topk(local_topk, boundaries)
             return reduced_topk, local_topk_indexes
-
 
 
     def _balance_and_allgather(self, reduced_topk, global_th, method="allreduce"):
@@ -262,8 +260,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             unravel_intersection = np.unravel_index(flattened_intersection, shape=shape)
             return unravel_intersection
             
-
-
 
     def _top_threshold_selection(self, tensor, threshold, method="numpy"):
         """
@@ -323,7 +319,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             reduced_topk = None
             #TODO
             return reduced_topk 
-
 
 
     def _allreduce(self, data, op=MPI.SUM):
