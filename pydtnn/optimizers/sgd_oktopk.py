@@ -41,7 +41,4 @@ class SGD_OkTopk(Optimizer, ABC):
         self.comm = comm
         self.rank = rank
         self.k = k
-        # This will be initialized after, it is used on the update:
-        self.local_th = None
-        self.global_th = None
-        self.boundaries = None
+
