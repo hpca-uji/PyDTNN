@@ -41,4 +41,8 @@ class SGD_OkTopk(Optimizer, ABC):
         self.comm = comm
         self.rank = rank
         self.k = k
+        self.all_local_th = {}
+        self.all_global_th = {}
+        self.all_residuals = {}
+        self.all_boundaries = {}
 

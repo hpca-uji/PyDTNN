@@ -33,6 +33,7 @@ except (ImportError, ModuleNotFoundError):
 def custom_numpy_reduce(local, remote, datatype):
     # TODO: Se podría probar la implementación con diccionarios a ver si es más rapida
     # TODO: Comparar CSR con COO, creo que sería mejor CSR
+    # TODO: Esta implementación falla cuando local o remote no tienen elementos
     local_topk, (local_row, local_col) = local
     remote_topk, (remote_row, remote_col) = remote
     local_matrix = csr_matrix((local_topk, (local_row, local_col)))
@@ -41,6 +42,31 @@ def custom_numpy_reduce(local, remote, datatype):
     return (sum_matrix.data, (sum_matrix.row, sum_matrix.col))
 
 
+def custom_reduce(local, remote, datatype):
+    local_topk, (local_row, local_col) = local
+    remote_topk, (remote_row, remote_col) = remote
+    
+    if len(local_topk) == 0 and len(remote_topk) == 0:
+        return local
+
+    result_dict = {}
+    for value, row, col in zip(local_topk, local_row, local_col):
+        result_dict[(row, col)] = value
+            
+    for value, row, col in zip(remote_topk, remote_row, remote_col):
+        if (row, col) in result_dict:
+            result_dict[(row, col)] += value
+        else:
+            result_dict[(row, col)] = value
+    
+    sum_topk = np.array(list(result_dict.values()))
+    indices = list(result_dict.keys())
+    row, col = zip(*indices)  
+    row = np.array(row)
+    col = np.array(col)
+
+    return (sum_topk, (row, col))
+
 def custom_scipy_reduce(local, remote, datatype):
     sum_matrix = local_matrix + remote_matrix
     return sum_matrix
@@ -48,6 +74,7 @@ def custom_scipy_reduce(local, remote, datatype):
 
 op_numpy_reduce = MPI.Op.Create(custom_numpy_reduce, commute=True)
 op_scipy_reduce = MPI.Op.Create(custom_scipy_reduce, commute=True)
+op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
 
 
 
@@ -58,18 +85,14 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         current_batch = kwargs.get("current_batch", None)
 
         if current_batch == 0:
-            self.all_local_th = {}
-            self.all_global_th = {}
-            self.all_residuals = {}
-            self.all_boundaries = {}
             self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
         for w_, dw_ in layer.grad_vars.items():
-                        
-            if dw_ == "weights":
+
+            if w_ == "weights":
                 # Get layer weights and gradients
                 w, dw = getattr(layer, w_), getattr(layer, dw_)
 
@@ -80,8 +103,10 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 self.boundaries = self.all_boundaries[layer.id][dw_]
                 self.residuals = self.all_residuals[layer.id][dw_] or np.zeros_like(w, dtype=layer.model.dtype)
                     
-                # Get acc and reshape to 2D matrix if it has more than 2 dimensions
+                # Compute acc 
                 acc = self.residuals + (self.learning_rate * dw)
+                
+                # Reshape acc to 2D matrix if it has more than 2 dimensions
                 if len(self.dw_shape) > 2:
                     acc = acc.reshape(acc.shape[0], -1)
                 self.acc_shape = acc.shape
@@ -90,12 +115,17 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
 
                 # Reshape u to original dw shape
+                u = np.asarray(coo_matrix((u, indexes), shape=self.acc_shape).todense())
                 if len(self.dw_shape) > 2:
-                    u = coo_matrix((u, indexes)).todense().reshape(self.dw_shape)
-                
+                    u = u.reshape(self.dw_shape)
+                    
                 # Update residuals
                 self.residuals = self._reset_residuals(acc, indexes)
                 
+                # self.local_th and self.global_th are inmutable, so we have to set them in the dictionary
+                self.all_local_th[layer.id][dw_] = self.local_th
+                self.all_global_th[layer.id][dw_] = self.global_th
+
                 # Perform the weights update
                 w = w - u / self.nprocs
                 #? w[indexes] = u[indexes] / self.nprocs
@@ -122,7 +152,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         """
 
         residuals = np.array(acc)
-        residuals[indexes] = 0
+        if len(indexes[0]) > 0:
+            residuals[indexes] = 0
         return residuals
 
     
@@ -221,10 +252,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         Returns:
             - reduced_topk: The reduced top-k gradient values in COO format.
-            - local_topk_indexes: The indices of the top-k gradient values selected locally ([row_0, row_1], [col_0, col_n]).
+            - local_topk_indexes: The indices of the top-k gradient values selected locally ([row_0, row_1], [col_0, col_1]).
         """
         
-        print(f"split_and_recude {self.rank}: {acc}")
         topk, topk_indexes = self._top_threshold_selection(acc, local_th)
         reduced_topk = self._reduce_topk(topk, topk_indexes, boundaries)
         return reduced_topk, topk_indexes
@@ -328,22 +358,22 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         is not yet implemented.
 
         TODO: Boundaries are not being used
-
         """
-        if self.nprocs == 1:
-            return topk_coo
 
-        print(f"reduce_topk {self.rank}: {topk_indexes}")
+        if self.nprocs == 1:
+            return topk, topk_indexes
+
+        reduced_topk = None
         topk_splitted = np.array_split(topk, self.nprocs)
         row_splitted = np.array_split(topk_indexes[0], self.nprocs) 
         col_splitted = np.array_split(topk_indexes[1], self.nprocs)
-
+        
         for region in range(self.nprocs):
             region_topk = (topk_splitted[region], (row_splitted[region], col_splitted[region]))
             if self.rank == region:
-                reduced_topk = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
+                reduced_topk = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
             else:
-                self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
+                _ = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
         return reduced_topk
 
 
