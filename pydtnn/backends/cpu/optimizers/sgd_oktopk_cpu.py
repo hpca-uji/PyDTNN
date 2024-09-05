@@ -125,29 +125,26 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 u = u.reshape(self.dw_shape)
                 
             # Update residuals
-            self.residuals = self._reset_residuals(acc, indexes)
+            self._update_residuals(acc, indexes)
             
             # self.local_th and self.global_th are inmutable, so we have to set them in the dictionary
             self.all_local_th[layer.id][dw_] = self.local_th
             self.all_global_th[layer.id][dw_] = self.global_th
 
             # Perform the weights update
-            w = w - u / self.nprocs
-            #? w[indexes] = u[indexes] / self.nprocs
-            #? w[indexes] = u / self.nprocs
+            w -= (u / self.nprocs)
             setattr(layer, w_, w)
 
 
-    def _reset_residuals(self, acc, indexes):
+    def _update_residuals(self, acc, indexes):
         """
         Update self.residuals: set zero value if it is in indexes, else acc value is set.
         
         """
 
-        residuals = np.array(acc)
+        self.residuals = np.array(acc)
         if len(indexes[0]) > 0:
-            residuals[indexes] = 0
-        return residuals
+            self.residuals[indexes] = 0
 
     
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
@@ -184,7 +181,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.global_th = self._th_re_evaluate(all_reduced_topk, k, input_format="coo")
 
         u, global_topk_indexes = self._balance_and_allgather(reduced_topk, self.global_th)
-        indexes = self.intersect_indexes(local_topk_indexes, global_topk_indexes, acc.shape)
+        indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return u, indexes
 
 
@@ -287,17 +284,16 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return allgather_topk, allgather_indexes
 
 
-    def intersect_indexes(self, local_indexes, global_indexes, shape, method="flattened"):
+    def _intersect_indexes(self, local_indexes, global_indexes):
         """
         Calculates the intersection of two sets of indices of 2D.
 
         Parameters:
-            - local_indexes: a tuple of N arrays of shape M. 
-            - global_indexes: a tuple of N arrays of shape M. 
-                where N is the dimensions and M the number of indexes.
+            - local_indexes: a tuple of two arrays: row and col. 
+            - global_indexes: a tuple of two arrays: row and col. 
         
         Returns:
-            - Set of tuples representing the common indices in all dimensions.
+            - Set of tuples representing the common indices.
         
         Example:
             - local_indexes = (np.array([0, 3, 2]), np.array([2, 4, 1]))
@@ -318,26 +314,26 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
             
 
-    def _top_threshold_selection(self, tensor, threshold, input_format="dense"):
+    def _top_threshold_selection(self, matrix, threshold, input_format="dense"):
         """
-        Selects top-k elements from the tensor that are greater than or equal to the threshold.
+        Selects top-k elements from the matrix that are greater than or equal to the threshold.
         
         Parameters:
-            - tensor: The input tensor from which to select elements.
-            - threshold (float): The threshold value to compare against the absolute values of the tensor elements.
+            - matrix (np.array): The input 2D matrix from which to select elements.
+            - threshold (float): The threshold value to compare against the absolute values of the matrix elements.
         
         Returns:
-            - topk: A np.array with only the elements that meet the threshold condition 
-            - topk_indexes: a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
+            - topk (np.array): A np.array with only the elements that meet the threshold condition 
+            - topk_indexes (tuple(np.array, np.array): a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
         """
 
         if input_format == "dense":
-            topk_indexes = np.where(np.abs(tensor) >= threshold)
-            topk = tensor[topk_indexes]
+            topk_indexes = np.where(np.abs(matrix) >= threshold)
+            topk = matrix[topk_indexes]
             return topk, topk_indexes
 
         elif input_format == "coo":
-            data, (row, col) = tensor
+            data, (row, col) = matrix
             mask = np.abs(data) >= threshold
             topk = data[mask]
             topk_indexes = (row[mask], col[mask])
@@ -368,14 +364,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             else:
                 _ = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
         return reduced_topk
-
-
-    def _allreduce(self, data, op=MPI.SUM):
-        if self.nprocs == 1:
-            return data
-
-        data = self.comm.allreduce(data, op=op)
-        return data
 
 
     def _allgather(self, data, method="sparse"):
