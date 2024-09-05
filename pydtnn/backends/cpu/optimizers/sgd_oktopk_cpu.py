@@ -31,11 +31,14 @@ except (ImportError, ModuleNotFoundError):
 
 
 def custom_numpy_reduce(local, remote, datatype):
-    # TODO: Se podría probar la implementación con diccionarios a ver si es más rapida
-    # TODO: Comparar CSR con COO, creo que sería mejor CSR
-    # TODO: Esta implementación falla cuando local o remote no tienen elementos
     local_topk, (local_row, local_col) = local
     remote_topk, (remote_row, remote_col) = remote
+
+    if len(local_topk) == 0 or len(remote_topk) == 0:
+        if len(local_topk) > 0:
+            return local
+        return remote
+
     local_matrix = csr_matrix((local_topk, (local_row, local_col)))
     remote_matrix = csr_matrix((remote_topk, (remote_row, remote_col)))
     sum_matrix = (local_matrix + remote_matrix).tocoo()
@@ -67,13 +70,13 @@ def custom_reduce(local, remote, datatype):
 
     return (sum_topk, (row, col))
 
-def custom_scipy_reduce(local, remote, datatype):
+def custom_coo_reduce(local, remote, datatype):
     sum_matrix = local_matrix + remote_matrix
     return sum_matrix
 
 
 op_numpy_reduce = MPI.Op.Create(custom_numpy_reduce, commute=True)
-op_scipy_reduce = MPI.Op.Create(custom_scipy_reduce, commute=True)
+op_coo_reduce = MPI.Op.Create(custom_coo_reduce, commute=True)
 op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
 
 
@@ -371,9 +374,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         for region in range(self.nprocs):
             region_topk = (topk_splitted[region], (row_splitted[region], col_splitted[region]))
             if self.rank == region:
-                reduced_topk = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
+                reduced_topk = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
             else:
-                _ = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
+                _ = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
         return reduced_topk
 
 
