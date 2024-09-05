@@ -94,58 +94,48 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
         for w_, dw_ in layer.grad_vars.items():
+            # Get layer weights and gradients
+            w, dw = getattr(layer, w_), getattr(layer, dw_)
 
-            if w_ == "weights":
-                # Get layer weights and gradients
-                w, dw = getattr(layer, w_), getattr(layer, dw_)
-
-                # Initialize current layer-parameter values
-                self.dw_shape = dw.shape
-                self.local_th = self.all_local_th[layer.id][dw_]
-                self.global_th = self.all_global_th[layer.id][dw_]
-                self.boundaries = self.all_boundaries[layer.id][dw_]
-                self.residuals = self.all_residuals[layer.id][dw_] or np.zeros_like(w, dtype=layer.model.dtype)
-                    
-                # Compute acc 
-                acc = self.residuals + (self.learning_rate * dw)
+            # Initialize current layer-parameter values
+            self.dw_shape = dw.shape
+            self.local_th = self.all_local_th[layer.id][dw_]
+            self.global_th = self.all_global_th[layer.id][dw_]
+            self.boundaries = self.all_boundaries[layer.id][dw_]
+            self.residuals = self.all_residuals[layer.id][dw_] or np.zeros_like(w, dtype=layer.model.dtype)
                 
-                # Reshape acc to 2D matrix if it has more than 2 dimensions
-                if len(self.dw_shape) > 2:
-                    acc = acc.reshape(acc.shape[0], -1)
-                self.acc_shape = acc.shape
+            # Compute acc 
+            acc = self.residuals + (self.learning_rate * dw)
+            
+            # Reshape acc to 2D matrix 
+            if len(self.dw_shape) == 1:
+                acc = acc.reshape(-1, 2)
+            elif len(self.dw_shape) > 2:
+                acc = acc.reshape(acc.shape[0], -1)
+            self.acc_shape = acc.shape
 
-                # Main part of ok-topk: compute the values that contribute to the update and its indexes
-                u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
+            # Main part of ok-topk: compute the values that contribute to the update and its indexes
+            u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
 
-                # Reshape u to original dw shape
-                u = np.asarray(coo_matrix((u, indexes), shape=self.acc_shape).todense())
-                if len(self.dw_shape) > 2:
-                    u = u.reshape(self.dw_shape)
-                    
-                # Update residuals
-                self.residuals = self._reset_residuals(acc, indexes)
+            # Reshape u to original dw shape
+            u = np.asarray(coo_matrix((u, indexes), shape=self.acc_shape).todense())
+            if len(self.dw_shape) == 1:
+                u = u.reshape(self.dw_shape)
+            if len(self.dw_shape) > 2:
+                u = u.reshape(self.dw_shape)
                 
-                # self.local_th and self.global_th are inmutable, so we have to set them in the dictionary
-                self.all_local_th[layer.id][dw_] = self.local_th
-                self.all_global_th[layer.id][dw_] = self.global_th
+            # Update residuals
+            self.residuals = self._reset_residuals(acc, indexes)
+            
+            # self.local_th and self.global_th are inmutable, so we have to set them in the dictionary
+            self.all_local_th[layer.id][dw_] = self.local_th
+            self.all_global_th[layer.id][dw_] = self.global_th
 
-                # Perform the weights update
-                w = w - u / self.nprocs
-                #? w[indexes] = u[indexes] / self.nprocs
-                #? w[indexes] = u / self.nprocs
-                setattr(layer, w_, w)
-            else:
-                w, dw = getattr(layer, w_), getattr(layer, dw_)
-                velocity = getattr(layer, "velocity_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
-
-                velocity = self.momentum * velocity + dw
-                if self.nesterov:
-                    w -= self.learning_rate * (self.decay * w + dw + self.momentum * velocity)
-                else:
-                    w -= self.learning_rate * (self.decay * w + velocity)
-
-                setattr(layer, w_, w)
-                setattr(layer, "velocity_%s" % w_, velocity)
+            # Perform the weights update
+            w = w - u / self.nprocs
+            #? w[indexes] = u[indexes] / self.nprocs
+            #? w[indexes] = u / self.nprocs
+            setattr(layer, w_, w)
 
 
     def _reset_residuals(self, acc, indexes):
