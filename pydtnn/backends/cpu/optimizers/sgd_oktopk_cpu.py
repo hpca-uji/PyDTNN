@@ -34,10 +34,11 @@ def custom_numpy_reduce(local, remote, datatype):
     local_topk, (local_row, local_col) = local
     remote_topk, (remote_row, remote_col) = remote
 
-    if len(local_topk) == 0 or len(remote_topk) == 0:
-        if len(local_topk) > 0:
-            return local
+    if len(local_topk) == 0:
         return remote
+
+    if len(remote_topk) == 0:
+        return local
 
     local_matrix = csr_array((local_topk, (local_row, local_col)))
     remote_matrix = csr_array((remote_topk, (remote_row, remote_col)))
@@ -49,7 +50,10 @@ def custom_reduce(local, remote, datatype):
     local_topk, (local_row, local_col) = local
     remote_topk, (remote_row, remote_col) = remote
     
-    if len(local_topk) == 0 and len(remote_topk) == 0:
+    if len(local_topk) == 0:
+        return remote
+
+    if len(remote_topk) == 0:
         return local
 
     result_dict = {}
