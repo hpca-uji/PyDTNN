@@ -18,7 +18,7 @@
 #
 
 import numpy as np
-from scipy.sparse import coo_matrix, csr_matrix
+from scipy.sparse import coo_array, csr_array
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD_OkTopk
@@ -39,8 +39,8 @@ def custom_numpy_reduce(local, remote, datatype):
             return local
         return remote
 
-    local_matrix = csr_matrix((local_topk, (local_row, local_col)))
-    remote_matrix = csr_matrix((remote_topk, (remote_row, remote_col)))
+    local_matrix = csr_array((local_topk, (local_row, local_col)))
+    remote_matrix = csr_array((remote_topk, (remote_row, remote_col)))
     sum_matrix = (local_matrix + remote_matrix).tocoo()
     return (sum_matrix.data, (sum_matrix.row, sum_matrix.col))
 
@@ -108,9 +108,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             acc = self.residuals + (self.learning_rate * dw)
             
             # Reshape acc to 2D matrix 
-            if len(self.dw_shape) == 1:
-                acc = acc.reshape(-1, 2)
-            elif len(self.dw_shape) > 2:
+            if len(self.dw_shape) != 2:
                 acc = acc.reshape(acc.shape[0], -1)
             self.acc_shape = acc.shape
 
@@ -118,10 +116,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
 
             # Reshape u to original dw shape
-            u = np.asarray(coo_matrix((u, indexes), shape=self.acc_shape).todense())
-            if len(self.dw_shape) == 1:
-                u = u.reshape(self.dw_shape)
-            if len(self.dw_shape) > 2:
+            u = coo_array((u, indexes), shape=self.acc_shape).todense()
+            if len(self.dw_shape) != 2:
                 u = u.reshape(self.dw_shape)
                 
             # Update residuals
