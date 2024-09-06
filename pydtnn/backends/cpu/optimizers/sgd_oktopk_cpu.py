@@ -106,10 +106,11 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.local_th = self.all_local_th[layer.id][dw_]
             self.global_th = self.all_global_th[layer.id][dw_]
             self.boundaries = self.all_boundaries[layer.id][dw_]
-            self.residuals = self.all_residuals[layer.id][dw_] or np.zeros_like(w, dtype=layer.model.dtype)
+            if self.all_residuals[layer.id][dw_] is None:
+                self.all_residuals[layer.id][dw_] = np.zeros_like(w, dtype=layer.model.dtype)
                 
             # Compute acc 
-            acc = self.residuals + (self.learning_rate * dw)
+            acc = self.all_residuals[layer.id][dw_] + (self.learning_rate * dw)
             
             # Reshape acc to 2D matrix 
             if len(self.dw_shape) != 2:
@@ -125,7 +126,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 u = u.reshape(self.dw_shape)
                 
             # Update residuals
-            self._update_residuals(acc, indexes)
+            self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
             
             # self.local_th and self.global_th are inmutable, so we have to set them in the dictionary
             self.all_local_th[layer.id][dw_] = self.local_th
@@ -136,15 +137,20 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             setattr(layer, w_, w)
 
 
-    def _update_residuals(self, acc, indexes):
+    def _reset_residuals(self, acc, indexes):
         """
-        Update self.residuals: set zero value if it is in indexes, else acc value is set.
+        Update residuals: set zero value if it is in indexes, else acc value is set.
         
         """
 
-        self.residuals = np.array(acc)
+        residuals = np.array(acc)
         if len(indexes[0]) > 0:
-            self.residuals[indexes] = 0
+            residuals[indexes] = 0
+        
+        if len(self.dw_shape) != 2:
+            residuals = residuals.reshape(self.dw_shape)
+
+        return residuals
 
     
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
