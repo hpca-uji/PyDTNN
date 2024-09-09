@@ -256,7 +256,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return reduced_topk, topk_indexes
 
 
-    def _balance_and_allgather(self, reduced_topk, global_th, method="boundaries"):
+    def _balance_and_allgather(self, reduced_topk, global_th):
         """
         Second main phase of ok_sparse_allreduce.  
         Performs the allgather of the reduced_topk values among workers.
@@ -269,25 +269,19 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - global_topk: a sparse gradient matrix with the global topk selection (not in coo format)
             - global_topk_indexes: the indices of the top-k gradient values reduced
         """
-        
-        if method == "allreduce":
-            # If split_and_reduce phase was performed with allreduce:
-            global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th)
-            return global_topk, global_topk_indexes
 
-        elif method == "boundaries":
-            # 1. Global topk selection
-            global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th, input_format="coo")
+        # 1. Global topk selection
+        global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th, input_format="coo")
 
-            # 2. Data packaging
-            # TODO
+        # 2. Data packaging
+        # TODO
 
-            # 3. Data balancing
-            # TODO
+        # 3. Data balancing
+        # TODO
 
-            # 4. Allgatherv using recursive doubling
-            allgather_topk, allgather_indexes = self._allgather((global_topk, global_topk_indexes))
-            return allgather_topk, allgather_indexes
+        # 4. Allgatherv using recursive doubling
+        allgather_topk, allgather_indexes = self._allgather((global_topk, global_topk_indexes))
+        return allgather_topk, allgather_indexes
 
 
     def _intersect_indexes(self, local_indexes, global_indexes):
