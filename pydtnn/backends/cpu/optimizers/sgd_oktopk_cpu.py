@@ -355,7 +355,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if self.nprocs == 1:
             return topk, topk_indexes
 
-        reduced_topk = None
+        reduced_topk, reduced_indexes = None
         topk_splitted = np.array_split(topk, self.nprocs)
         row_splitted = np.array_split(topk_indexes[0], self.nprocs) 
         col_splitted = np.array_split(topk_indexes[1], self.nprocs)
@@ -363,10 +363,10 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         for region in range(self.nprocs):
             region_topk = (topk_splitted[region], (row_splitted[region], col_splitted[region]))
             if self.rank == region:
-                reduced_topk = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
+                reduced_topk, reduced_indexes = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
             else:
-                _ = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
-        return reduced_topk
+                _, _ = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
+        return reduced_topk, reduced_indexes
 
 
     def _allgather(self, data, method="sparse"):
@@ -380,6 +380,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             all_col = np.concatenate(self.comm.allgather(col))
             return all_topk, (all_row, all_col)
 
-        data = self.comm.allgather(data)
-        return data
+        if method == "dense":
+            return np.concatenate(self.comm.allgather(data))
 
