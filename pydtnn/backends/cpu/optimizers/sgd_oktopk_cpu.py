@@ -121,7 +121,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
 
             # Reshape u to original dw shape
-            u = coo_array((u, indexes), shape=self.acc_shape).todense()
+            u = coo_array(u, shape=self.acc_shape).todense()
             if len(self.dw_shape) != 2:
                 u = u.reshape(self.dw_shape)
                 
@@ -281,7 +281,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         # 4. Allgatherv using recursive doubling
         allgather_topk, allgather_indexes = self._allgather((global_topk, global_topk_indexes))
-        return allgather_topk, allgather_indexes
+        return (allgather_topk, allgather_indexes), global_topk_indexes
 
 
     def _intersect_indexes(self, local_indexes, global_indexes):
@@ -355,7 +355,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if self.nprocs == 1:
             return topk, topk_indexes
 
-        reduced_topk, reduced_indexes = None
+        reduced_topk, reduced_indexes = None, None
         topk_splitted = np.array_split(topk, self.nprocs)
         row_splitted = np.array_split(topk_indexes[0], self.nprocs) 
         col_splitted = np.array_split(topk_indexes[1], self.nprocs)
@@ -363,9 +363,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         for region in range(self.nprocs):
             region_topk = (topk_splitted[region], (row_splitted[region], col_splitted[region]))
             if self.rank == region:
-                reduced_topk, reduced_indexes = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
+                reduced_topk, reduced_indexes = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
             else:
-                _, _ = self.comm.reduce(region_topk, op=op_numpy_reduce, root=region)
+                _ = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
         return reduced_topk, reduced_indexes
 
 
