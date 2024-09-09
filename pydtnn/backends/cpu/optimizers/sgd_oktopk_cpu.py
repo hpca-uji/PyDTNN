@@ -303,14 +303,17 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         local_row, local_col = local_indexes
         global_row, global_col = global_indexes
+        intersected_indexes = np.array([]), np.array([])
+
         local_tuples = set(zip(local_row, local_col))
         global_tuples = set(zip(global_row, global_col))
         intersected_tuples = local_tuples.intersection(global_tuples)
+
         if intersected_tuples:
             intersected_row, intersected_col = zip(*intersected_tuples)
-            return np.array(intersected_row), np.array(intersected_col)
-        else:
-            return np.array([]), np.array([])
+            intersected_indexes = np.array(intersected_row), np.array(intersected_col)
+            
+        return intersected_indexes
 
             
 
