@@ -30,21 +30,6 @@ except (ImportError, ModuleNotFoundError):
     pass
 
 
-def custom_numpy_reduce(local, remote, datatype):
-    local_topk, (local_row, local_col) = local
-    remote_topk, (remote_row, remote_col) = remote
-
-    if len(local_topk) == 0:
-        return remote
-
-    if len(remote_topk) == 0:
-        return local
-
-    local_matrix = csr_array((local_topk, (local_row, local_col)))
-    remote_matrix = csr_array((remote_topk, (remote_row, remote_col)))
-    sum_matrix = (local_matrix + remote_matrix).tocoo()
-    return (sum_matrix.data, (sum_matrix.row, sum_matrix.col))
-
 
 def custom_reduce(local, remote, datatype):
     local_topk, (local_row, local_col) = local
@@ -74,13 +59,24 @@ def custom_reduce(local, remote, datatype):
 
     return (sum_topk, (row, col))
 
-def custom_coo_reduce(local, remote, datatype):
-    sum_matrix = local_matrix + remote_matrix
-    return sum_matrix
+
+def custom_numpy_reduce(local, remote, datatype):
+    local_topk, (local_row, local_col) = local
+    remote_topk, (remote_row, remote_col) = remote
+
+    if len(local_topk) == 0:
+        return remote
+
+    if len(remote_topk) == 0:
+        return local
+
+    local_matrix = csr_array((local_topk, (local_row, local_col)))
+    remote_matrix = csr_array((remote_topk, (remote_row, remote_col)))
+    sum_matrix = (local_matrix + remote_matrix).tocoo()
+    return (sum_matrix.data, (sum_matrix.row, sum_matrix.col))
 
 
 op_numpy_reduce = MPI.Op.Create(custom_numpy_reduce, commute=True)
-op_coo_reduce = MPI.Op.Create(custom_coo_reduce, commute=True)
 op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
 
 
@@ -119,12 +115,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
             u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
-
-            # Reshape u to original dw shape
-            u = coo_array(u, shape=self.acc_shape).todense()
-            if len(self.dw_shape) != 2:
-                u = u.reshape(self.dw_shape)
-                
+               
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
             
@@ -133,8 +124,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.all_global_th[layer.id][dw_] = self.global_th
 
             # Perform the weights update
-            w -= (u / self.nprocs)
-            setattr(layer, w_, w)
+            self._update_weights(layer, w_, w, u)
 
 
     def _reset_residuals(self, acc, indexes):
@@ -153,6 +143,32 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
+    def _update_weights(self, layer, w_, w, u, method="u_dense"):
+        """
+        Update weights
+
+        w -= (u / self.nprocs)
+        setattr(layer, w_, w)
+        """
+
+        if method == "u_dense":
+            u = coo_array(u, shape=self.acc_shape).todense()
+            if len(self.dw_shape) != 2:
+                u = u.reshape(self.dw_shape)
+            w -= (u / self.nprocs)
+            setattr(layer, w_, w)  
+
+        elif method == "u_sparsed":
+            w = w.reshape(w.shape[0], -1) if w.ndim != 2 else w
+            grads_to_update, indexes_to_update = u
+            if w.ndim != 2:
+                w = w.reshape(w.shape[0], -1)
+            w[indexes_to_update] -= (grads_to_update / self.nprocs)
+            if len(self.dw_shape) != 2:
+                w = w.reshape(self.dw_shape)
+            setattr(layer, w_, w)  
+
+
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
         """
         Performs the Ok-Topk sparse allreduce operation. 
@@ -314,8 +330,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             intersected_indexes = np.array(intersected_row), np.array(intersected_col)
             
         return intersected_indexes
-
-            
+          
 
     def _top_threshold_selection(self, matrix, threshold, input_format="dense"):
         """
@@ -341,7 +356,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             topk = data[mask]
             topk_indexes = (row[mask], col[mask])
             return topk, topk_indexes
-
 
 
     def _reduce_topk(self, topk, topk_indexes, boundaries):
