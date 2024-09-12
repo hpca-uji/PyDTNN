@@ -17,38 +17,64 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-
-import numpy as np
+from libc.stdlib cimport malloc, free
+from cython.parallel cimport prange
 cimport numpy as cnp
-from libc.math cimport fabsf as fabs
-cimport cython
+import numpy as np
+import cython
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def top_threshold_selection_cython(cnp.ndarray[cnp.float32_t, ndim=1] data, double threshold):
-    cdef cnp.ndarray[cnp.float32_t, ndim=1] topk = np.zeros_like(data, dtype=np.float32)  
-    cdef cnp.ndarray[cnp.int32_t, ndim=1] topk_indexes = np.empty(data.size, dtype=np.int32)  
-    cdef int idx = 0
-    cdef int total_elements = data.size
-    cdef int i
+def top_threshold_selection_cython(cnp.ndarray[cnp.float32_t, ndim=2] matrix, double threshold):
 
-    for i in range(total_elements):
-        if fabs(data[i]) >= threshold:
-            topk[i] = data[i]
-            topk_indexes[idx] = i
-            idx += 1
+    cdef int rows = matrix.shape[0]
+    cdef int cols = matrix.shape[1]
+    cdef int i, j, count = 0
 
-    topk_indexes = topk_indexes[:idx]
-    return topk, topk_indexes
+    for i in range(rows):
+        for j in range(cols):
+            if abs(matrix[i, j]) >= threshold:
+                count += 1
 
+    cdef cnp.ndarray[cnp.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
+
+    count = 0
+    for i in range(rows):
+        for j in range(cols):
+            if abs(matrix[i, j]) >= threshold:
+                top_values[count] = matrix[i, j]
+                row_indices[count] = i
+                col_indices[count] = j
+                count += 1
+
+    return top_values, (row_indices, col_indices)
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def flattened_top_threshold_selection_cython(cnp.ndarray[cnp.float32_t, ndim=1] data, double threshold):
-    topk = np.zeros_like(data)
-    topk_indexes = np.where(np.abs(data) >= threshold)[0]
-    for idx in topk_indexes:
-        topk[idx] = data[idx]
-    return topk, topk_indexes
+def top_threshold_selection_coo_cython(cnp.ndarray[cnp.float32_t, ndim=1] values, 
+                                       cnp.ndarray[cnp.int32_t, ndim=1] rows, 
+                                       cnp.ndarray[cnp.int32_t, ndim=1] cols, 
+                                       double threshold):
 
+    cdef int i, count = 0
+
+    for i in range(len(values)):
+        if abs(values[i]) >= threshold:
+            count += 1
+
+    cdef cnp.ndarray[cnp.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
+
+    count = 0
+    for i in range(len(values)):
+        if abs(values[i]) >= threshold:
+            top_values[count] = values[i]
+            row_indices[count] = rows[i]
+            col_indices[count] = cols[i]
+            count += 1
+            
+    return top_values, (row_indices, col_indices)

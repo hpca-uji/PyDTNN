@@ -35,7 +35,7 @@ from max_pool_2d_nchw_cython import max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd
 from max_pool_2d_nhwc_cython import max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython
 from pointwise_conv_cython import pointwise_conv_cython
 from relu_cython import relu_cython
-from top_selection_cython import top_threshold_selection_cython, flattened_top_threshold_selection_cython
+from top_selection_cython import top_threshold_selection_cython, top_threshold_selection_coo_cython
 from transpose_cython import \
     transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
     transpose_0312_ijk_cython, transpose_0312_ikj_cython, \

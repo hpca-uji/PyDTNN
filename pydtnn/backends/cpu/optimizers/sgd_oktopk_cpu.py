@@ -20,6 +20,7 @@
 import numpy as np
 from scipy.sparse import coo_array, csr_array
 
+from pydtnn.cython_modules import top_threshold_selection_cython, top_threshold_selection_coo_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD_OkTopk
 
@@ -332,7 +333,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return intersected_indexes
           
 
-    def _top_threshold_selection(self, matrix, threshold, input_format="dense"):
+    def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="cython"):
         """
         Selects top-k elements from the matrix that are greater than or equal to the threshold.
         
@@ -345,7 +346,16 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - topk_indexes (tuple(np.array, np.array): a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
         """
 
-        if input_format == "dense":
+        if input_format == "dense" and method == "cython":
+            topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
+            return topk, topk_indexes
+
+        elif input_format == "coo" and method == "cython":
+            data, (row, col) = matrix
+            topk, topk_indexes = top_threshold_selection_coo_cython(data, row, col, threshold)
+            return topk, topk_indexes
+
+        elif input_format == "dense":
             topk_indexes = np.where(np.abs(matrix) >= threshold)
             topk = matrix[topk_indexes]
             return topk, topk_indexes
