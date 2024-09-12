@@ -20,7 +20,7 @@
 import numpy as np
 from scipy.sparse import coo_array, csr_array
 
-from pydtnn.cython_modules import top_threshold_selection_cython, top_threshold_selection_coo_cython
+from pydtnn.cython_modules import intersect_2d_indexes_cython, top_threshold_selection_cython, top_threshold_selection_coo_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD_OkTopk
 
@@ -301,7 +301,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return (allgather_topk, allgather_indexes), global_topk_indexes
 
 
-    def _intersect_indexes(self, local_indexes, global_indexes):
+    def _intersect_indexes(self, local_indexes, global_indexes, method="numpy"):
         """
         Calculates the intersection of two sets of indices of 2D.
 
@@ -318,19 +318,25 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - output: (array([3, 2]), array([4, 1]))
         """
 
-        local_row, local_col = local_indexes
-        global_row, global_col = global_indexes
-        intersected_indexes = np.array([]), np.array([])
+        if method == "cython":
+            local_rows, local_cols = local_indexes
+            global_rows, global_cols = global_indexes
+            return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
+        
+        if method == "numpy":
+            local_row, local_col = local_indexes
+            global_row, global_col = global_indexes
+            intersected_indexes = np.array([]), np.array([])
 
-        local_tuples = set(zip(local_row, local_col))
-        global_tuples = set(zip(global_row, global_col))
-        intersected_tuples = local_tuples.intersection(global_tuples)
+            local_tuples = set(zip(local_row, local_col))
+            global_tuples = set(zip(global_row, global_col))
+            intersected_tuples = local_tuples.intersection(global_tuples)
 
-        if intersected_tuples:
-            intersected_row, intersected_col = zip(*intersected_tuples)
-            intersected_indexes = np.array(intersected_row), np.array(intersected_col)
-            
-        return intersected_indexes
+            if intersected_tuples:
+                intersected_row, intersected_col = zip(*intersected_tuples)
+                intersected_indexes = np.array(intersected_row), np.array(intersected_col)
+                
+            return intersected_indexes
           
 
     def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="cython"):
