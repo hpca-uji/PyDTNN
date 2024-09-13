@@ -17,7 +17,6 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from libc.stdlib cimport malloc, free
 from cython.parallel cimport prange
 cimport numpy as cnp
 import numpy as np
@@ -29,12 +28,15 @@ def top_threshold_selection_cython(cnp.ndarray[cnp.float32_t, ndim=2] matrix, do
 
     cdef int rows = matrix.shape[0]
     cdef int cols = matrix.shape[1]
-    cdef int i, j, count = 0
+    cdef int i, j, count, local_count = 0
 
-    for i in range(rows):
+    for i in prange(rows, nogil=True):
+        local_count = 0
         for j in range(cols):
             if abs(matrix[i, j]) >= threshold:
-                count += 1
+                local_count += 1
+        with gil:
+            count += local_count
 
     cdef cnp.ndarray[cnp.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
     cdef cnp.ndarray[cnp.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
