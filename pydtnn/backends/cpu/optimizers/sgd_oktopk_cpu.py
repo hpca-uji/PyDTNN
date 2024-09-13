@@ -144,7 +144,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, method="u_dense"):
+    def _update_weights(self, layer, w_, w, u, method="u_sparsed"):
         """
         Update weights
 
@@ -160,9 +160,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             setattr(layer, w_, w)  
 
         elif method == "u_sparsed":
-            w = w.reshape(w.shape[0], -1) if w.ndim != 2 else w
             grads_to_update, indexes_to_update = u
-            if w.ndim != 2:
+            if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             w[indexes_to_update] -= (grads_to_update / self.nprocs)
             if len(self.dw_shape) != 2:
