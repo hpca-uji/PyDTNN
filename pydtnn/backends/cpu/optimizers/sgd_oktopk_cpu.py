@@ -20,7 +20,12 @@
 import numpy as np
 from scipy.sparse import coo_array, csr_array
 
-from pydtnn.cython_modules import intersect_2d_indexes_cython, top_threshold_selection_cython, top_threshold_selection_coo_cython
+from pydtnn.cython_modules import \
+    intersect_2d_indexes_cython, \
+    top_threshold_selection_cython, \
+    top_threshold_selection_coo_cython, \
+    update_sparsed_weights_cython, \
+    update_dense_weights_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD_OkTopk
 
@@ -144,7 +149,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, method="u_sparsed"):
+    def _update_weights(self, layer, w_, w, u, u_format="dense", method="cython"):
         """
         Update weights
 
@@ -152,18 +157,37 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         setattr(layer, w_, w)
         """
 
-        if method == "u_dense":
+        if u_format == "dense" and method == "cython":
+            u = coo_array(u, shape=self.acc_shape).todense()
+            if len(self.dw_shape) != 2:
+                w = w.reshape(w.shape[0], -1)
+            w = update_dense_weights_cython(w, u, self.nprocs)
+            if len(self.dw_shape) != 2:
+                w = w.reshape(self.dw_shape)
+            setattr(layer, w_, w)  
+
+        elif u_format == "dense" and method == "numpy":
             u = coo_array(u, shape=self.acc_shape).todense()
             if len(self.dw_shape) != 2:
                 u = u.reshape(self.dw_shape)
             w -= (u / self.nprocs)
             setattr(layer, w_, w)  
 
-        elif method == "u_sparsed":
-            grads_to_update, indexes_to_update = u
+        elif u_format == "sparsed" and method == "cython":
+            grads, (rows, cols) = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
-            w[indexes_to_update] -= (grads_to_update / self.nprocs)
+            w = update_sparsed_weights_cython(w, grads, rows, cols, self.nprocs)
+            if len(self.dw_shape) != 2:
+                w = w.reshape(self.dw_shape)
+            setattr(layer, w_, w)  
+
+
+        elif u_format == "sparsed" and method == "numpy":
+            grads, indexes = u
+            if len(self.dw_shape) != 2:
+                w = w.reshape(w.shape[0], -1)
+            w[indexes] -= (grads / self.nprocs)
             if len(self.dw_shape) != 2:
                 w = w.reshape(self.dw_shape)
             setattr(layer, w_, w)  
