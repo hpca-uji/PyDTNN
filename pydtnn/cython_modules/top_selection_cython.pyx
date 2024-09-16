@@ -57,8 +57,9 @@ def top_threshold_selection_coo_cython(cnp.ndarray[cnp.float32_t, ndim=1] values
                                        cnp.ndarray[cnp.int32_t, ndim=1] cols, 
                                        double threshold):
     cdef int i, count = 0
+    cdef int len_values = len(values)
 
-    for i in range(len(values)):
+    for i in prange(len_values, nogil=True):
         if abs(values[i]) >= threshold:
             count += 1
 
@@ -67,7 +68,7 @@ def top_threshold_selection_coo_cython(cnp.ndarray[cnp.float32_t, ndim=1] values
     cdef cnp.ndarray[cnp.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
 
     count = 0
-    for i in range(len(values)):
+    for i in range(len_values):
         if abs(values[i]) >= threshold:
             top_values[count] = values[i]
             row_indices[count] = rows[i]

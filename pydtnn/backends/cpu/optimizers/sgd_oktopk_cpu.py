@@ -182,7 +182,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 w = w.reshape(self.dw_shape)
             setattr(layer, w_, w)  
 
-
         elif u_format == "sparsed" and method == "numpy":
             grads, indexes = u
             if len(self.dw_shape) != 2:
