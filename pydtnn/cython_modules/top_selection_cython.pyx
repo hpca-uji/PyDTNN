@@ -17,10 +17,11 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from cython.parallel cimport prange
-cimport numpy as cnp
-import numpy as np
 import cython
+import numpy as np
+cimport numpy as cnp
+from cython.parallel cimport prange
+
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

@@ -22,6 +22,7 @@ import numpy as np
 cimport numpy as cnp
 from cython.parallel cimport prange
 
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def update_dense_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w, 
