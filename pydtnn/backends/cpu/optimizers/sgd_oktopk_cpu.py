@@ -426,17 +426,17 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return reduced_topk, reduced_indexes
 
 
-    def _allgather(self, data, method="sparse"):
+    def _allgather(self, data, input_format="sparse"):
         if self.nprocs == 1:
             return data
         
-        if method == "sparse":
+        if input_format == "sparse":
             topk, (row, col) = data
             all_topk = np.concatenate(self.comm.allgather(topk))
             all_row = np.concatenate(self.comm.allgather(row))
             all_col = np.concatenate(self.comm.allgather(col))
             return all_topk, (all_row, all_col)
 
-        if method == "dense":
+        if input_format == "dense":
             return np.concatenate(self.comm.allgather(data))
 
