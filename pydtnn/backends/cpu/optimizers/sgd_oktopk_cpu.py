@@ -232,16 +232,21 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
     def _th_re_evaluate(self, tensor, k, input_format="dense"):
         """
-        Return the absolute gradient threshold of tensor tensor
-
+        Return the absolute gradient threshold for a given tensor.
+        
         Parameters:
-            - tensor: gradient dense tensor
-            - k: selection values hyperparameter
-
+            - tensor: A gradient tensor, expected in dense format for 'dense' input_format 
+                    or in COO format (data, (row, col)) for 'coo' input_format.
+            - k: An integer, indicating the number of top gradient values to consider.
+            - input_format: A string, either 'dense' for a dense tensor or 'coo' for a sparse tensor in COO format.
+        
         Returns:
-            - threshold: absolute gradient threshold k 
+            - threshold: The absolute gradient threshold based on the top k values.
         """
-
+        
+        if k <= 0:
+            return 0.0
+        
         if input_format == "dense":
             sorted_tensor = np.sort(np.abs(tensor).flatten())
             threshold = sorted_tensor[max(-k, -len(sorted_tensor))]
