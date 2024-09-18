@@ -32,10 +32,16 @@ def update_dense_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w,
     cdef int i, j
     cdef int rows = w.shape[0]
     cdef int cols = w.shape[1]
+    multithreading = rows>=1000
 
-    for i in prange(rows, nogil=True):
-        for j in range(cols):
-            w[i, j] = w[i, j] - (u[i, j] / nprocs)
+    if multithreading:
+        for i in prange(rows, nogil=True):
+            for j in range(cols):
+                w[i, j] = w[i, j] - (u[i, j] / nprocs)
+    else:
+        for i in range(rows):
+            for j in range(cols):
+                w[i, j] = w[i, j] - (u[i, j] / nprocs)
 
     return w
 
@@ -51,9 +57,15 @@ def update_sparsed_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w,
 
     cdef int idx, row, col
     cdef int num_updates = grads_to_update.shape[0]
+    multithreading = num_updates>=1000
 
-    for idx in prange(num_updates, nogil=True):
-        w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
+    if multithreading:
+        for idx in prange(num_updates, nogil=True):
+            w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
+
+    else:
+        for idx in range(num_updates):
+            w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
         
     return w
 

@@ -25,10 +25,10 @@ cimport numpy as cnp
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def intersect_2d_indexes_cython(cnp.ndarray[cnp.int_t, ndim=1] local_rows,
-                                cnp.ndarray[cnp.int_t, ndim=1] local_cols,
-                                cnp.ndarray[cnp.int_t, ndim=1] global_rows,
-                                cnp.ndarray[cnp.int_t, ndim=1] global_cols):
+def intersect_2d_indexes_cython(cnp.ndarray[cnp.int32_t, ndim=1] local_rows,
+                                cnp.ndarray[cnp.int32_t, ndim=1] local_cols,
+                                cnp.ndarray[cnp.int32_t, ndim=1] global_rows,
+                                cnp.ndarray[cnp.int32_t, ndim=1] global_cols):
     
     dtype = [('row', 'int32'), ('col', 'int32')]
     
