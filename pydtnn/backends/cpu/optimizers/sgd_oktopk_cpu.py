@@ -149,7 +149,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, u_format="dense", method="cython"):
+    def _update_weights(self, layer, w_, w, u, u_format="coo", method="numpy"):
         """
         Update weights
 
@@ -157,7 +157,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         setattr(layer, w_, w)
         """
 
-        if u_format == "dense" and method == "cython":
+        if u_format == "dense" and method == "cython": # 3
             u = coo_array(u, shape=self.acc_shape).todense()
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -166,14 +166,14 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 w = w.reshape(self.dw_shape)
             setattr(layer, w_, w)  
 
-        elif u_format == "dense" and method == "numpy":
+        elif u_format == "dense" and method == "numpy": # 4
             u = coo_array(u, shape=self.acc_shape).todense()
             if len(self.dw_shape) != 2:
                 u = u.reshape(self.dw_shape)
             w -= (u / self.nprocs)
             setattr(layer, w_, w)  
 
-        elif u_format == "sparsed" and method == "cython":
+        elif u_format == "coo" and method == "cython": # 2
             grads, (rows, cols) = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -182,7 +182,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 w = w.reshape(self.dw_shape)
             setattr(layer, w_, w)  
 
-        elif u_format == "sparsed" and method == "numpy":
+        elif u_format == "coo" and method == "numpy": # 1
             grads, indexes = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -328,7 +328,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return (allgather_topk, allgather_indexes), global_topk_indexes
 
 
-    def _intersect_indexes(self, local_indexes, global_indexes, method="numpy"):
+    def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
         """
         Calculates the intersection of two sets of indices of 2D.
 
@@ -389,11 +389,13 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return topk, topk_indexes
 
         elif input_format == "dense":
+            # TODO: topk_indexes dtype is int64, producing errors in intersect_indexes
             topk_indexes = np.where(np.abs(matrix) >= threshold)
             topk = matrix[topk_indexes]
             return topk, topk_indexes
 
         elif input_format == "coo":
+            # TODO: topk_indexes dtype is int64, producing errors in intersect_indexes
             data, (row, col) = matrix
             mask = np.abs(data) >= threshold
             topk = data[mask]
@@ -426,16 +428,16 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return reduced_topk, reduced_indexes
 
 
-    def _allgather(self, data, input_format="sparse"):
+    def _allgather(self, data, input_format="coo"):
         if self.nprocs == 1:
             return data
         
-        if input_format == "sparse":
-            topk, (row, col) = data
-            all_topk = np.concatenate(self.comm.allgather(topk))
+        if input_format == "coo":
+            val, (row, col) = data
+            all_val = np.concatenate(self.comm.allgather(val))
             all_row = np.concatenate(self.comm.allgather(row))
             all_col = np.concatenate(self.comm.allgather(col))
-            return all_topk, (all_row, all_col)
+            return all_val, (all_row, all_col)
 
         if input_format == "dense":
             return np.concatenate(self.comm.allgather(data))
