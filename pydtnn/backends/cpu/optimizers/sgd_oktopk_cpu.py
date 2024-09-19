@@ -348,6 +348,10 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if method == "cython":
             local_rows, local_cols = local_indexes
             global_rows, global_cols = global_indexes
+            local_rows = np.array(local_rows, dtype=np.int32)
+            local_cols = np.array(local_cols, dtype=np.int32)
+            global_rows = np.array(global_rows, dtype=np.int32)
+            global_cols = np.array(global_cols, dtype=np.int32)
             return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
         
         if method == "numpy":
@@ -389,13 +393,11 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return topk, topk_indexes
 
         elif input_format == "dense":
-            # TODO: topk_indexes dtype is int64, producing errors in intersect_indexes
             topk_indexes = np.where(np.abs(matrix) >= threshold)
             topk = matrix[topk_indexes]
             return topk, topk_indexes
 
         elif input_format == "coo":
-            # TODO: topk_indexes dtype is int64, producing errors in intersect_indexes
             data, (row, col) = matrix
             mask = np.abs(data) >= threshold
             topk = data[mask]
