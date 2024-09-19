@@ -149,7 +149,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, u_format="coo", method="numpy"):
+    def _update_weights(self, layer, w_, w, u, u_format="coo", method="cython"):
         """
         Update weights
 
