@@ -29,7 +29,9 @@ class SGD_OkTopk(Optimizer, ABC):
     SGD Ok-Topk Optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype=np.float32, nprocs=1, comm=None, rank=0, k=10):
+    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype=np.float32, \
+                 nprocs=1, comm=None, rank=0, k=10, tau=64, tau_prime=32):
+
         super().__init__()
         self.learning_rate = learning_rate
         self.momentum = momentum
@@ -41,6 +43,8 @@ class SGD_OkTopk(Optimizer, ABC):
         self.comm = comm
         self.rank = rank
         self.k = k
+        self.tau = tau
+        self.tau_prime = tau_prime
         self.all_local_th = {}
         self.all_global_th = {}
         self.all_residuals = {}

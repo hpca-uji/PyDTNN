@@ -120,7 +120,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.acc_shape = acc.shape
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
-            u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k)
+            u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k, self.tau, self.tau_prime)
                
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
@@ -192,7 +192,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             setattr(layer, w_, w)  
 
 
-    def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t=64, thresholds_re_evaluation_t=32):
+    def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t, thresholds_re_evaluation_t):
         """
         Performs the Ok-Topk sparse allreduce operation. 
         This method executes the Ok-Topk sparse allreduce algorithm, which 
