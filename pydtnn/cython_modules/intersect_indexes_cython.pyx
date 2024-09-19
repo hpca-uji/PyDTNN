@@ -21,6 +21,7 @@
 import cython
 import numpy as np
 cimport numpy as cnp
+from cython.parallel cimport prange
 
 
 @cython.boundscheck(False)
@@ -33,14 +34,22 @@ def intersect_2d_indexes_cython(cnp.ndarray[cnp.int32_t, ndim=1] local_rows,
     cdef int i, j
     cdef int local_size = local_rows.shape[0]
     cdef int global_size = global_rows.shape[0]
+    cdef int count = 0
 
-    cdef list intersection_rows = []
-    cdef list intersection_cols = []
+    for i in prange(local_size, nogil=True):
+        for j in range(global_size):
+            if local_rows[i] == global_rows[j] and local_cols[i] == global_cols[j]:
+                count += 1
 
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] intersection_rows = np.empty(count, dtype=np.int32)
+    cdef cnp.ndarray[cnp.int32_t, ndim=1] intersection_cols = np.empty(count, dtype=np.int32)
+
+    cdef int idx = 0
     for i in range(local_size):
         for j in range(global_size):
             if local_rows[i] == global_rows[j] and local_cols[i] == global_cols[j]:
-                intersection_rows.append(local_rows[i])
-                intersection_cols.append(local_cols[i])
+                intersection_rows[idx] = local_rows[i]
+                intersection_cols[idx] = local_cols[i]
+                idx += 1
 
-    return np.array(intersection_rows, dtype=np.int32), np.array(intersection_cols, dtype=np.int32)
+    return intersection_rows, intersection_cols
