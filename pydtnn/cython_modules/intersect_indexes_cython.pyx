@@ -30,14 +30,17 @@ def intersect_2d_indexes_cython(cnp.ndarray[cnp.int32_t, ndim=1] local_rows,
                                 cnp.ndarray[cnp.int32_t, ndim=1] global_rows,
                                 cnp.ndarray[cnp.int32_t, ndim=1] global_cols):
     
-    dtype = [('row', 'int32'), ('col', 'int32')]
-    
-    cdef cnp.ndarray local_indices = np.array(list(zip(local_rows, local_cols)), dtype=dtype)
-    cdef cnp.ndarray global_indices = np.array(list(zip(global_rows, global_cols)), dtype=dtype)
-    
-    cdef cnp.ndarray intersection_indices = np.intersect1d(local_indices, global_indices, assume_unique=False)
-    
-    intersection_rows = intersection_indices['row']
-    intersection_cols = intersection_indices['col']
+    cdef int i, j
+    cdef int local_size = local_rows.shape[0]
+    cdef int global_size = global_rows.shape[0]
 
-    return intersection_rows, intersection_cols
+    cdef list intersection_rows = []
+    cdef list intersection_cols = []
+
+    for i in range(local_size):
+        for j in range(global_size):
+            if local_rows[i] == global_rows[j] and local_cols[i] == global_cols[j]:
+                intersection_rows.append(local_rows[i])
+                intersection_cols.append(local_cols[i])
+
+    return np.array(intersection_rows, dtype=np.int32), np.array(intersection_cols, dtype=np.int32)
