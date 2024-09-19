@@ -50,8 +50,8 @@ def update_dense_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w,
 @cython.wraparound(False)
 def update_sparsed_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w, 
                                   cnp.ndarray[cnp.float32_t, ndim=1] grads_to_update, 
-                                  cnp.ndarray[cnp.int_t, ndim=1] rows_to_update, 
-                                  cnp.ndarray[cnp.int_t, ndim=1] cols_to_update, 
+                                  cnp.ndarray[cnp.int32_t, ndim=1] rows_to_update, 
+                                  cnp.ndarray[cnp.int32_t, ndim=1] cols_to_update, 
                                   int nprocs):
 
 
