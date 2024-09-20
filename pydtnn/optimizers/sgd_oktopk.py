@@ -45,6 +45,7 @@ class SGD_OkTopk(Optimizer, ABC):
         self.k = k
         self.tau = tau
         self.tau_prime = tau_prime
+        self.iterations = {}
         self.all_local_th = {}
         self.all_global_th = {}
         self.all_residuals = {}

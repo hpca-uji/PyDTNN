@@ -105,5 +105,5 @@ class LayerAndActivationBase(ABC):
             children += [layer for layer in path]
         return children
 
-    def update_weights(self, optimizer, **kwargs):
-        optimizer.update(self, **kwargs)
+    def update_weights(self, optimizer):
+        optimizer.update(self)

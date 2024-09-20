@@ -25,7 +25,7 @@ from pydtnn.optimizers import SGD
 
 class SGDCPU(OptimizerCPU, SGD):
 
-    def update(self, layer, **kwargs):
+    def update(self, layer):
         lr = self.learning_rate
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

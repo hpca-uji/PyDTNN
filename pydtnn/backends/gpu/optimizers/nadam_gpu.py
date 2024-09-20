@@ -65,7 +65,7 @@ class NadamGPU(OptimizerGPU, Nadam):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
                                              ).get_function("Nadam_kernel")
 
-    def update(self, layer, **kwargs):
+    def update(self, layer):
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)
 

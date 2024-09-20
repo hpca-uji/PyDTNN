@@ -58,7 +58,7 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype])
                                              ).get_function("RMSProp_kernel")
 
-    def update(self, layer, **kwargs):
+    def update(self, layer):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = getattr(layer, "cache_%s" % w_, gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))

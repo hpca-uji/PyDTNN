@@ -25,7 +25,7 @@ from pydtnn.optimizers import Adam
 
 class AdamCPU(OptimizerCPU, Adam):
 
-    def update(self, layer, **kwargs):
+    def update(self, layer):
         lr = self.learning_rate
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)

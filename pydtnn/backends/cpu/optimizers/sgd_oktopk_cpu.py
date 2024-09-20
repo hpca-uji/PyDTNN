@@ -90,13 +90,10 @@ op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
 class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
 
-    def update(self, layer, **kwargs):
-        current_step = kwargs.get("current_step", None)
-        current_epoch = kwargs.get("current_epoch", None) 
-        steps_per_epoch = kwargs.get("steps_per_epoch", 750) # TODO
-        iteration = current_step + (steps_per_epoch * current_epoch)
-
-        if iteration == 0:
+    def update(self, layer):
+       
+        if layer.id not in self.iterations:
+            self.iterations[layer.id] = 0
             self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
@@ -123,7 +120,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.acc_shape = acc.shape
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
-            u, indexes = self._ok_sparse_allreduce(acc, iteration, self.k, self.tau, self.tau_prime)
+            u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
                
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
@@ -134,6 +131,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
             # Perform the weights update
             self._update_weights(layer, w_, w, u)
+
+        self.iterations[layer.id] += 1
 
 
     def _reset_residuals(self, acc, indexes):

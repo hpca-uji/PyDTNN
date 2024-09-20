@@ -60,7 +60,7 @@ class SGDGPU(OptimizerGPU, SGD):
                                                                                         np.float64: "double"}[dtype])
                                              ).get_function("SGD_kernel")
 
-    def update(self, layer, **kwargs):
+    def update(self, layer):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity = getattr(layer, "velocity_%s" % w_, gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
