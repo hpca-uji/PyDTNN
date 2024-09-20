@@ -91,9 +91,12 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
 
     def update(self, layer, **kwargs):
-        current_batch = kwargs.get("current_batch", None)
+        current_step = kwargs.get("current_step", None)
+        current_epoch = kwargs.get("current_epoch", None) 
+        steps_per_epoch = kwargs.get("steps_per_epoch", 750) # TODO
+        iteration = current_step + (steps_per_epoch * current_epoch)
 
-        if current_batch == 0:
+        if iteration == 0:
             self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
@@ -120,7 +123,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.acc_shape = acc.shape
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
-            u, indexes = self._ok_sparse_allreduce(acc, current_batch, self.k, self.tau, self.tau_prime)
+            u, indexes = self._ok_sparse_allreduce(acc, iteration, self.k, self.tau, self.tau_prime)
                
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
