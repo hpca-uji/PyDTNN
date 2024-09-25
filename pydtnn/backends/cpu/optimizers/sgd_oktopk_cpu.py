@@ -37,61 +37,6 @@ except (ImportError, ModuleNotFoundError):
 
 
 
-def custom_reduce(local, remote, datatype):
-    local_topk, (local_row, local_col) = local
-    remote_topk, (remote_row, remote_col) = remote
-    
-    if len(local_topk) == 0:
-        return remote
-
-    if len(remote_topk) == 0:
-        return local
-
-    result_dict = {}
-    for value, row, col in zip(local_topk, local_row, local_col):
-        result_dict[(row, col)] = value
-            
-    for value, row, col in zip(remote_topk, remote_row, remote_col):
-        if (row, col) in result_dict:
-            result_dict[(row, col)] += value
-        else:
-            result_dict[(row, col)] = value
-    
-    sum_topk = np.array(list(result_dict.values()))
-    indices = list(result_dict.keys())
-    row, col = zip(*indices)  
-    row = np.array(row)
-    col = np.array(col)
-
-    return (sum_topk, (row, col))
-
-
-def numpy_reduce(local, remote, datatype):
-    local_topk, (local_row, local_col) = local
-    remote_topk, (remote_row, remote_col) = remote
-
-    if len(local_topk) == 0:
-        return remote
-
-    if len(remote_topk) == 0:
-        return local
-
-    local_matrix = csr_array((local_topk, (local_row, local_col)))
-    remote_matrix = csr_array((remote_topk, (remote_row, remote_col)))
-    sum_matrix = (local_matrix + remote_matrix).tocoo()
-    return (sum_matrix.data, (sum_matrix.row, sum_matrix.col))
-
-
-def csr_reduce(local, remote, datatype):
-    csr_sum_matrix = local + remote
-    return csr_sum_matrix
-
-
-op_numpy_reduce = MPI.Op.Create(numpy_reduce, commute=True)
-op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
-op_csr_reduce = MPI.Op.Create(csr_reduce, commute=True)
-
-
 class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
 
@@ -438,9 +383,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             row_end = boundaries[region]
             sliced_csr_matrix = csr_matrix[row_start:row_end]
             if self.rank == region:
-                reduced_csr_region = self.comm.reduce(sliced_csr_matrix, op=op_csr_reduce, root=region)
+                reduced_csr_region = self.comm.reduce(sliced_csr_matrix, op=MPI.SUM, root=region)
             else:
-                _ = self.comm.reduce(sliced_csr_matrix, op=op_csr_reduce, root=region)
+                _ = self.comm.reduce(sliced_csr_matrix, op=MPI.SUM, root=region)
         reduced_coo_region = reduced_csr_region.tocoo()
         return reduced_coo_region.data, (reduced_coo_region.row, reduced_coo_region.col)
 
