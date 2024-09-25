@@ -66,7 +66,7 @@ def custom_reduce(local, remote, datatype):
     return (sum_topk, (row, col))
 
 
-def custom_numpy_reduce(local, remote, datatype):
+def numpy_reduce(local, remote, datatype):
     local_topk, (local_row, local_col) = local
     remote_topk, (remote_row, remote_col) = remote
 
@@ -82,9 +82,14 @@ def custom_numpy_reduce(local, remote, datatype):
     return (sum_matrix.data, (sum_matrix.row, sum_matrix.col))
 
 
-op_numpy_reduce = MPI.Op.Create(custom_numpy_reduce, commute=True)
-op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
+def csr_reduce(local, remote, datatype):
+    csr_sum_matrix = local + remote
+    return csr_sum_matrix
 
+
+op_numpy_reduce = MPI.Op.Create(numpy_reduce, commute=True)
+op_custom_reduce = MPI.Op.Create(custom_reduce, commute=True)
+op_csr_reduce = MPI.Op.Create(csr_reduce, commute=True)
 
 
 class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
@@ -125,9 +130,10 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
             
-            # self.local_th and self.global_th are inmutable, so we have to set them in the dictionary
+            # Save for next updates thresholds and boundaries
             self.all_local_th[layer.id][dw_] = self.local_th
             self.all_global_th[layer.id][dw_] = self.global_th
+            self.all_boundaries[layer.id][dw_] = self.boundaries
 
             # Perform the weights update
             self._update_weights(layer, w_, w, u)
@@ -261,7 +267,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return threshold
 
 
-    def _space_repartition(self, acc, local_th):
+    def _space_repartition(self, acc, local_th, balanced=False):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
@@ -270,14 +276,19 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             - local_th: local process gradient threshold
 
         Returns:
-            - boundaries: [(row_start, row_end), ...]
-                where row_start is included and row_end is excluded.
+            - boundaries: [row_end_p0, row_end_p1, row_end_p2, ...]
         """
     
-        boundaries = []
-        # TODO
-
-        return boundaries
+        if not balanced:
+            boundaries = []
+            rows = self.dw_shape[0]
+            block_size = rows // self.nprocs
+            for i in range(1, self.nprocs + 1):
+                if i == self.nprocs:
+                    boundaries.append(rows)
+                else:
+                    boundaries.append(block_size * i)
+            return boundaries
 
 
     def _split_and_reduce(self, acc, local_th, boundaries):
@@ -290,7 +301,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         Parameters:
             - acc: 2D gradient matrix accumulation values (in dense format).
             - local_th: Local threshold for selecting top-k values.
-            - boundaries: Boundaries for partitioning the gradient space: [(row_start_0, row_end_0), ...] .
+            - boundaries: Boundaries for partitioning the gradient space: [row_end_p0, row_end_p1, row_end_p2, ...]
 
         Returns:
             - reduced_topk: The reduced top-k gradient values in COO format.
@@ -409,27 +420,29 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
     def _reduce_topk(self, topk, topk_indexes, boundaries):
         """
-        TODO: To simplify the implementation, destination rotation and bucketing,
-        is not yet implemented.
+        Reduce the topk elements in regions defined by boundaries
 
-        TODO: Boundaries are not being used
+        Parameters:
+            - topk: a np.array with the values of the topk
+            - topk_indexes: a tuple of two np.array with the row and col of topk indexes
+            - boundaries: boundaries for partitioning the gradient space: [row_end_p0, row_end_p1, row_end_p2, ...]
+
         """
 
         if self.nprocs == 1:
             return topk, topk_indexes
 
-        reduced_topk, reduced_indexes = None, None
-        topk_splitted = np.array_split(topk, self.nprocs)
-        row_splitted = np.array_split(topk_indexes[0], self.nprocs) 
-        col_splitted = np.array_split(topk_indexes[1], self.nprocs)
-        
+        row_start = 0
+        csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
         for region in range(self.nprocs):
-            region_topk = (topk_splitted[region], (row_splitted[region], col_splitted[region]))
+            row_end = boundaries[region]
+            sliced_csr_matrix = csr_matrix[row_start:row_end]
             if self.rank == region:
-                reduced_topk, reduced_indexes = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
+                reduced_csr_region = self.comm.reduce(sliced_csr_matrix, op=op_csr_reduce, root=region)
             else:
-                _ = self.comm.reduce(region_topk, op=op_custom_reduce, root=region)
-        return reduced_topk, reduced_indexes
+                _ = self.comm.reduce(sliced_csr_matrix, op=op_csr_reduce, root=region)
+        reduced_coo_region = reduced_csr_region.tocoo()
+        return reduced_coo_region.data, (reduced_coo_region.row, reduced_coo_region.col)
 
 
     def _allgather(self, data, input_format="coo"):
