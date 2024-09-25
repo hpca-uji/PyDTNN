@@ -97,6 +97,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_global_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
             self.all_residuals[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
+            self.all_boundaries[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
 
         for w_, dw_ in layer.grad_vars.items():
             # Get layer weights and gradients
@@ -106,6 +107,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             self.dw_shape = dw.shape
             self.local_th = self.all_local_th[layer.id][dw_]
             self.global_th = self.all_global_th[layer.id][dw_]
+            self.boundaries = self.all_boundaries[layer.id][dw_]
             if self.all_residuals[layer.id][dw_] is None:
                 self.all_residuals[layer.id][dw_] = np.zeros_like(w, dtype=layer.model.dtype)
                 
@@ -215,8 +217,11 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         if t % thresholds_re_evaluation_t == 0:
             self.local_th = self._th_re_evaluate(acc, k, input_format="dense")
+        
+        if t % space_repartition_t == 0:
+            self.boundaries = self._space_repartition(acc, self.local_th)
 
-        reduced_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th)
+        reduced_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
             all_reduced_topk = self._allgather(reduced_topk)
@@ -256,7 +261,26 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return threshold
 
 
-    def _split_and_reduce(self, acc, local_th):
+    def _space_repartition(self, acc, local_th):
+        """
+        Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
+        
+        Parameters:
+            - acc: gradient matrix values
+            - local_th: local process gradient threshold
+
+        Returns:
+            - boundaries: [(row_start, row_end), ...]
+                where row_start is included and row_end is excluded.
+        """
+    
+        boundaries = []
+        # TODO
+
+        return boundaries
+
+
+    def _split_and_reduce(self, acc, local_th, boundaries):
         """
         First main phase of ok_sparse_allreduce.  
         Split the gradients into partitions and reduce them by selecting top-k values.
@@ -266,6 +290,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         Parameters:
             - acc: 2D gradient matrix accumulation values (in dense format).
             - local_th: Local threshold for selecting top-k values.
+            - boundaries: Boundaries for partitioning the gradient space: [(row_start_0, row_end_0), ...] .
 
         Returns:
             - reduced_topk: The reduced top-k gradient values in COO format.
@@ -273,7 +298,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         """
         
         topk, topk_indexes = self._top_threshold_selection(acc, local_th)
-        reduced_topk = self._reduce_topk(topk, topk_indexes)
+        reduced_topk = self._reduce_topk(topk, topk_indexes, boundaries)
         return reduced_topk, topk_indexes
 
 
@@ -382,18 +407,12 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return topk, topk_indexes
 
 
-    def _reduce_topk(self, topk, topk_indexes):
+    def _reduce_topk(self, topk, topk_indexes, boundaries):
         """
-            Reduce the topk values in p regions.
+        TODO: To simplify the implementation, destination rotation and bucketing,
+        is not yet implemented.
 
-            Parameters:
-                - topk: np.array with the topk selected gradient values
-                - topk_indexes: (np.array, np.array) with the row and col locations of topk values
-
-            Returns:
-                - reduced_topk: np.array with the topk process-region reduced gradient values
-                - reduced_indexes: (np.array, np.array) with the row and col locations of reduced topk process-region values.  
-
+        TODO: Boundaries are not being used
         """
 
         if self.nprocs == 1:
