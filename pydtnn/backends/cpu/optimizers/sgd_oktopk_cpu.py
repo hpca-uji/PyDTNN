@@ -212,7 +212,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return threshold
 
 
-    def _space_repartition(self, acc, local_th, balanced=False):
+    def _space_repartition(self, acc, local_th, balanced=True):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
@@ -233,6 +233,36 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                     boundaries.append(rows)
                 else:
                     boundaries.append(block_size * i)
+            return boundaries
+        
+        if balanced:
+            _, (row, col) = self._top_threshold_selection(acc, local_th)
+            all_topk_row = self._allgather(row, input_format="dense")
+            all_topk_col = self._allgather(col, input_format="dense")
+            
+            indexes_set = set()
+            for i in range(len(all_topk_row)):
+                indexes_set.add((all_topk_row[i], all_topk_col[i]))
+
+            rows_count = np.zeros(shape=(self.acc_shape[0],), dtype=np.int32)
+            for row, _ in indexes_set:
+                rows_count[row] += 1
+                
+            boundaries = []
+            topk_counter = 0
+            topk_per_worker = np.sum(rows_count) // self.nprocs
+
+            for row, count in enumerate(rows_count):
+                if count > 0:
+                    topk_counter += count
+                
+                while topk_counter >= topk_per_worker:
+                    boundaries.append(row + 1)
+                    topk_counter -= topk_per_worker  
+
+            if not boundaries or boundaries[-1] != len(rows_count):
+                boundaries.append(len(rows_count))
+
             return boundaries
 
 
