@@ -102,7 +102,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, u_format="coo", method="cython"):
+    def _update_weights(self, layer, w_, w, u, u_format="coo", method="numpy"):
         """
         Update weights
 
@@ -212,7 +212,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return threshold
 
 
-    def _space_repartition(self, acc, local_th, balanced=True):
+    def _space_repartition(self, acc, local_th, balanced=False):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
@@ -316,7 +316,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return (allgather_topk, allgather_indexes), global_topk_indexes
 
 
-    def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
+    def _intersect_indexes(self, local_indexes, global_indexes, method="numpy"):
         """
         Calculates the intersection of two sets of indices of 2D.
 
@@ -358,7 +358,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return intersected_indexes
           
 
-    def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="cython"):
+    def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="numpy"):
         """
         Selects top-k elements from the matrix that are greater than or equal to the threshold.
         
