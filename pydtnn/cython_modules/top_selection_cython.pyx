@@ -29,24 +29,28 @@ def top_threshold_selection_cython(cnp.ndarray[cnp.float32_t, ndim=2] matrix, do
     cdef int rows = matrix.shape[0]
     cdef int cols = matrix.shape[1]
     cdef int i, j, count = 0
+    cdef cnp.ndarray[cnp.int32_t, ndim=1]  count_vector = np.zeros(rows + 1, dtype=np.int32)
 
     for i in prange(rows, nogil=True):
         for j in range(cols):
             if abs(matrix[i, j]) >= threshold:
-                count += 1
+                count_vector[i + 1] += 1
+
+    for i in range(rows):
+        count_vector[i + 1] += count_vector[i] 
+    count = count_vector[rows]
 
     cdef cnp.ndarray[cnp.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
     cdef cnp.ndarray[cnp.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
     cdef cnp.ndarray[cnp.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
 
-    count = 0
-    for i in range(rows):
+    for i in prange(rows, nogil=True):
         for j in range(cols):
             if abs(matrix[i, j]) >= threshold:
-                top_values[count] = matrix[i, j]
-                row_indices[count] = i
-                col_indices[count] = j
-                count += 1
+                top_values[count_vector[i]] = matrix[i, j]
+                row_indices[count_vector[i]] = i
+                col_indices[count_vector[i]] = j
+                count_vector[i] += 1
 
     return top_values, (row_indices, col_indices)
 
