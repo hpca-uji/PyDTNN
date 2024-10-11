@@ -200,6 +200,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if k <= 0:
             return 0.0
         
+        if input_format == "coo" and tensor[0].size == 0:
+            return 1.0
+
         if input_format == "dense":
             sorted_tensor = np.sort(np.abs(tensor).flatten())
             threshold = sorted_tensor[max(-k, -len(sorted_tensor))]
