@@ -396,7 +396,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return topk, topk_indexes
 
 
-    def _reduce_topk(self, topk, topk_indexes, boundaries, method="allreduce"):
+    def _reduce_topk(self, topk, topk_indexes, boundaries, method="reduce_region_non_blocking"):
         """
         Reduce the topk elements in regions defined by boundaries
 
@@ -421,23 +421,44 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             row = coo_region.row + row_start
             return coo_region.data, (row, coo_region.col)
-        
-        if method == "reduce_region":
+
+        if method == "reduce_region_blocking":
             row_start = 0
             csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
-            
+            reduced_regions_csr = []
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                if self.rank == region:
-                    reduced_region_csr = self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region)
-                else:
-                    _ = self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region)
+                reduced_regions_csr.append(self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region))
                 row_start = row_end
 
-            reduced_region_coo = reduced_region_csr.tocoo()
+            reduced_region_coo = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
                 reduced_region_coo.row += boundaries[self.rank - 1]
             return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
+
+        if method == "reduce_region_non_blocking":
+            requests = []
+            row_start = 0
+            recv_bufs = [None] * self.nprocs
+            reduced_regions_csr = [None] * self.nprocs
+            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
+
+            for region in range(self.nprocs):
+                row_end = boundaries[region]
+                send_buf = csr_matrix[row_start:row_end].toarray()
+                if self.rank == region:
+                    recv_bufs[region] = np.zeros_like(send_buf)
+                requests.append(self.comm.Ireduce(send_buf, recv_bufs[region], op=MPI.SUM, root=region))
+                row_start = row_end
+
+            MPI.Request.Waitall(requests)
+
+            if recv_bufs[self.rank] is not None:
+                reduced_region_coo = csr_array(recv_bufs[self.rank]).tocoo()
+                if self.rank != 0:
+                    reduced_region_coo.row += boundaries[self.rank - 1]
+                return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
+            return None, (None, None)
 
 
     def _allgather(self, data, input_format="coo"):
