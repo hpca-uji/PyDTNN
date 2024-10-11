@@ -208,7 +208,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             threshold = sorted_tensor[max(-k, -len(sorted_tensor))]
             return threshold
 
-        elif input_format == "coo":
+        if input_format == "coo":
             data, (_, _) = tensor
             sorted_data = np.sort(np.abs(data))
             threshold = sorted_data[max(-k, -len(sorted_data))]
