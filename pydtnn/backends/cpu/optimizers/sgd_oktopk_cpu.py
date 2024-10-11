@@ -396,7 +396,7 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return topk, topk_indexes
 
 
-    def _reduce_topk(self, topk, topk_indexes, boundaries):
+    def _reduce_topk(self, topk, topk_indexes, boundaries, method="allreduce"):
         """
         Reduce the topk elements in regions defined by boundaries
 
@@ -410,17 +410,34 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         if self.nprocs == 1:
             return topk, topk_indexes
 
-        row_start = 0
-        csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
-        for region in range(self.nprocs):
-            row_end = boundaries[region]
-            sliced_csr_matrix = csr_matrix[row_start:row_end]
-            if self.rank == region:
-                reduced_csr_region = self.comm.reduce(sliced_csr_matrix, op=MPI.SUM, root=region)
-            else:
-                _ = self.comm.reduce(sliced_csr_matrix, op=MPI.SUM, root=region)
-        reduced_coo_region = reduced_csr_region.tocoo()
-        return reduced_coo_region.data, (reduced_coo_region.row, reduced_coo_region.col)
+        if method == "allreduce":
+            row_start = 0
+            row_end = boundaries[self.rank]
+            if self.rank != 0:
+                row_start = boundaries[self.rank - 1]
+
+            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
+            all_reduced_csr = self.comm.allreduce(csr_matrix, op=MPI.SUM)
+            coo_region = all_reduced_csr[row_start:row_end].tocoo()
+            row = coo_region.row + row_start
+            return coo_region.data, (row, coo_region.col)
+        
+        if method == "reduce_region":
+            row_start = 0
+            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
+            
+            for region in range(self.nprocs):
+                row_end = boundaries[region]
+                if self.rank == region:
+                    reduced_region_csr = self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region)
+                else:
+                    _ = self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region)
+                row_start = row_end
+
+            reduced_region_coo = reduced_region_csr.tocoo()
+            if self.rank != 0:
+                reduced_region_coo.row += boundaries[self.rank - 1]
+            return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
 
 
     def _allgather(self, data, input_format="coo"):
