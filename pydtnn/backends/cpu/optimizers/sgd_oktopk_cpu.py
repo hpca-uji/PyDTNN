@@ -440,7 +440,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             requests = []
             row_start = 0
             recv_bufs = [None] * self.nprocs
-            reduced_regions_csr = [None] * self.nprocs
             csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
 
             for region in range(self.nprocs):
