@@ -20,36 +20,39 @@
 
 import cython
 import numpy as np
-cimport numpy as cnp
+cimport numpy as np
 from cython.parallel cimport prange
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def intersect_2d_indexes_cython(cnp.ndarray[cnp.int32_t, ndim=1] local_rows,
-                                cnp.ndarray[cnp.int32_t, ndim=1] local_cols,
-                                cnp.ndarray[cnp.int32_t, ndim=1] global_rows,
-                                cnp.ndarray[cnp.int32_t, ndim=1] global_cols):
+def intersect_2d_indexes_cython(np.ndarray local_rows,
+                                np.ndarray local_cols,
+                                np.ndarray global_rows,
+                                np.ndarray global_cols):
     
-    cdef int i, j
-    cdef int local_size = local_rows.shape[0]
-    cdef int global_size = global_rows.shape[0]
     cdef int count = 0
+    cdef int i_local_row = 0
+    cdef int i_global_row = 0
+    cdef int max_size = min(len(local_rows), len(global_rows))
+    cdef np.ndarray[np.int64_t, ndim=1] intersected_rows = np.empty(max_size, dtype=np.int64)
+    cdef np.ndarray[np.int64_t, ndim=1] intersected_cols = np.empty(max_size, dtype=np.int64)
 
-    for i in prange(local_size, nogil=True):
-        for j in range(global_size):
-            if local_rows[i] == global_rows[j] and local_cols[i] == global_cols[j]:
+    while i_local_row < len(local_rows) and i_global_row < len(global_rows):
+        local_row = local_rows[i_local_row]
+        global_row = global_rows[i_global_row]
+        if local_row < global_row:
+            i_local_row += 1
+        elif local_row > global_row:
+            i_global_row += 1
+        else:
+            local_col = local_cols[i_local_row]
+            global_col = global_cols[i_global_row]
+            if local_col == global_col:
+                intersected_rows[count] = local_row
+                intersected_cols[count] = local_col
                 count += 1
+            i_local_row += 1
+            i_global_row += 1
+    return intersected_rows[:count], intersected_cols[:count]
 
-    cdef cnp.ndarray[cnp.int32_t, ndim=1] intersection_rows = np.empty(count, dtype=np.int32)
-    cdef cnp.ndarray[cnp.int32_t, ndim=1] intersection_cols = np.empty(count, dtype=np.int32)
-
-    cdef int idx = 0
-    for i in range(local_size):
-        for j in range(global_size):
-            if local_rows[i] == global_rows[j] and local_cols[i] == global_cols[j]:
-                intersection_rows[idx] = local_rows[i]
-                intersection_cols[idx] = local_cols[i]
-                idx += 1
-
-    return intersection_rows, intersection_cols
