@@ -117,16 +117,18 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             w = update_dense_weights_cython(w, u, self.nprocs)
             if len(self.dw_shape) != 2:
                 w = w.reshape(self.dw_shape)
-            setattr(layer, w_, w)  
+            setattr(layer, w_, w)
+            return  
 
-        elif u_format == "dense" and method == "numpy": # 4
+        if u_format == "dense" and method == "numpy": # 4
             u = coo_array(u, shape=self.acc_shape).todense()
             if len(self.dw_shape) != 2:
                 u = u.reshape(self.dw_shape)
             w -= (u / self.nprocs)
             setattr(layer, w_, w)  
+            return
 
-        elif u_format == "coo" and method == "cython": # 2
+        if u_format == "coo" and method == "cython": # 2
             grads, (rows, cols) = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -134,8 +136,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             if len(self.dw_shape) != 2:
                 w = w.reshape(self.dw_shape)
             setattr(layer, w_, w)  
+            return
 
-        elif u_format == "coo" and method == "numpy": # 1
+        if u_format == "coo" and method == "numpy": # 1
             grads, indexes = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -143,6 +146,9 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             if len(self.dw_shape) != 2:
                 w = w.reshape(self.dw_shape)
             setattr(layer, w_, w)  
+            return
+
+        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t, thresholds_re_evaluation_t):
@@ -213,6 +219,8 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             sorted_data = np.sort(np.abs(data))
             threshold = sorted_data[max(-k, -len(sorted_data))]
             return threshold
+        
+        raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
 
     def _space_repartition(self, acc, local_th, balanced=False):
@@ -319,46 +327,52 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
         return (allgather_topk, allgather_indexes), global_topk_indexes
 
 
-    def _intersect_indexes(self, local_indexes, global_indexes, method="numpy"):
+    def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
         """
         Calculates the intersection of two sets of indices of 2D.
 
         Parameters:
-            - local_indexes: a tuple of two arrays: row and col. 
-            - global_indexes: a tuple of two arrays: row and col. 
+            - local_indexes: a tuple of two arrays: row and col (row is sorted). 
+            - global_indexes: a tuple of two arrays: row and col (row is sorted). 
         
         Returns:
             - Set of tuples representing the common indices.
         
         Example:
-            - local_indexes = (np.array([0, 3, 2]), np.array([2, 4, 1]))
-            - global_indexes = (np.array([1, 2, 3]), np.array([3, 1, 4]))
-            - output: (array([3, 2]), array([4, 1]))
+            - local_indexes =  (np.array([0, 2, 2, 3]), np.array([2, 4, 1, 2]))
+            - global_indexes = (np.array([2, 2, 3]),    np.array([3, 1, 2]))
+            - output: (array([2, 3]), array([1, 2]))
         """
 
         if method == "cython":
             local_rows, local_cols = local_indexes
             global_rows, global_cols = global_indexes
-            local_rows = np.array(local_rows, dtype=np.int32)
-            local_cols = np.array(local_cols, dtype=np.int32)
-            global_rows = np.array(global_rows, dtype=np.int32)
-            global_cols = np.array(global_cols, dtype=np.int32)
             return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
         
         if method == "numpy":
+            i_local_row, i_global_row = 0, 0
             local_rows, local_cols = local_indexes
             global_rows, global_cols = global_indexes
-            intersected_indexes = np.array([]), np.array([])
+            intersected_rows, intersected_cols = [], []
+            while i_local_row < len(local_rows) and i_global_row < len(global_rows):
+                local_row = local_rows[i_local_row]
+                global_row = global_rows[i_global_row]
+                if local_row < global_row:
+                    i_local_row += 1
+                elif local_row > global_row:
+                    i_global_row += 1
+                else:
+                    local_col = local_cols[i_local_row]
+                    global_col = global_cols[i_global_row]
+                    if local_col == global_col:
+                        intersected_rows.append(local_row)
+                        intersected_cols.append(local_col)
+                    i_local_row += 1
+                    i_global_row += 1                    
+            return np.array(intersected_rows), np.array(intersected_cols)
 
-            local_tuples = set(zip(local_rows, local_cols))
-            global_tuples = set(zip(global_rows, global_cols))
-            intersected_tuples = local_tuples.intersection(global_tuples)
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
-            if intersected_tuples:
-                intersected_row, intersected_col = zip(*intersected_tuples)
-                intersected_indexes = np.array(intersected_row), np.array(intersected_col)
-            return intersected_indexes
-          
 
     def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="numpy"):
         """
@@ -377,22 +391,24 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
             return topk, topk_indexes
 
-        elif input_format == "coo" and method == "cython":
+        if input_format == "coo" and method == "cython":
             data, (row, col) = matrix
             topk, topk_indexes = top_threshold_selection_coo_cython(data, row, col, threshold)
             return topk, topk_indexes
 
-        elif input_format == "dense":
+        if input_format == "dense" and method == "numpy":
             topk_indexes = np.where(np.abs(matrix) >= threshold)
             topk = matrix[topk_indexes]
             return topk, topk_indexes
 
-        elif input_format == "coo":
+        if input_format == "coo" and method == "numpy":
             data, (row, col) = matrix
             mask = np.abs(data) >= threshold
             topk = data[mask]
             topk_indexes = (row[mask], col[mask])
             return topk, topk_indexes
+
+        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
     def _reduce_topk(self, topk, topk_indexes, boundaries, method="reduce_region_non_blocking"):
@@ -414,7 +430,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-
             csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
             all_reduced_csr = self.comm.allreduce(csr_matrix, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
@@ -429,7 +444,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                 row_end = boundaries[region]
                 reduced_regions_csr.append(self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region))
                 row_start = row_end
-
             reduced_region_coo = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
                 reduced_region_coo.row += boundaries[self.rank - 1]
@@ -440,7 +454,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             row_start = 0
             recv_bufs = [None] * self.nprocs
             csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
-
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_buf = csr_matrix[row_start:row_end].toarray()
@@ -448,15 +461,15 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
                     recv_bufs[region] = np.zeros_like(send_buf)
                 requests.append(self.comm.Ireduce(send_buf, recv_bufs[region], op=MPI.SUM, root=region))
                 row_start = row_end
-
             MPI.Request.Waitall(requests)
-
             if recv_bufs[self.rank] is not None:
                 reduced_region_coo = csr_array(recv_bufs[self.rank]).tocoo()
                 if self.rank != 0:
                     reduced_region_coo.row += boundaries[self.rank - 1]
                 return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
             return None, (None, None)
+
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
 
     def _allgather(self, data, input_format="coo"):
@@ -472,4 +485,6 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
 
         if input_format == "dense":
             return np.concatenate(self.comm.allgather(data))
+
+        raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
