@@ -346,18 +346,17 @@ class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
             return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
         
         if method == "numpy":
-            local_row, local_col = local_indexes
-            global_row, global_col = global_indexes
+            local_rows, local_cols = local_indexes
+            global_rows, global_cols = global_indexes
             intersected_indexes = np.array([]), np.array([])
 
-            local_tuples = set(zip(local_row, local_col))
-            global_tuples = set(zip(global_row, global_col))
+            local_tuples = set(zip(local_rows, local_cols))
+            global_tuples = set(zip(global_rows, global_cols))
             intersected_tuples = local_tuples.intersection(global_tuples)
 
             if intersected_tuples:
                 intersected_row, intersected_col = zip(*intersected_tuples)
                 intersected_indexes = np.array(intersected_row), np.array(intersected_col)
-                
             return intersected_indexes
           
 
