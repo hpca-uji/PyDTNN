@@ -33,7 +33,7 @@ from .nadam import Nadam
 from .optimizer import Optimizer
 from .rmsprop import RMSProp
 from .sgd import SGD
-from .sgd_oktopk import SGD_OkTopk
+from .oktopk import OkTopk
 from ..utils import get_derived_classes
 
 # Search this module for Optimizer derived classes and expose them
@@ -44,7 +44,7 @@ adam = Adam
 nadam = Nadam
 rmsprop = RMSProp
 sgd = SGD
-sgd_oktopk = SGD_OkTopk
+oktopk = OkTopk
 
 
 def get_optimizer(model):
@@ -77,7 +77,7 @@ def get_optimizer(model):
                          nesterov=model.nesterov,
                          decay=model.decay,
                          dtype=model.dtype)
-    elif model.optimizer_name == "sgd_oktopk":
+    elif model.optimizer_name == "oktopk":
         opt = _optimizer(learning_rate=model.learning_rate,
                          nprocs=model.nprocs,
                          dtype=model.dtype,

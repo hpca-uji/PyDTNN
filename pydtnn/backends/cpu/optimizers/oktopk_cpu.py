@@ -27,7 +27,7 @@ from pydtnn.cython_modules import \
     update_sparsed_weights_cython, \
     update_dense_weights_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
-from pydtnn.optimizers import SGD_OkTopk
+from pydtnn.optimizers import OkTopk
 
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -37,7 +37,7 @@ except (ImportError, ModuleNotFoundError):
 
 
 
-class SGD_OkTopkCPU(OptimizerCPU, SGD_OkTopk):
+class OkTopkCPU(OptimizerCPU, OkTopk):
 
 
     def update(self, layer):

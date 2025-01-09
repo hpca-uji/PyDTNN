@@ -24,7 +24,7 @@ import numpy as np
 from .optimizer import Optimizer
 
 
-class SGD_OkTopk(Optimizer, ABC):
+class OkTopk(Optimizer, ABC):
     """
     SGD Ok-Topk Optimizer
     """

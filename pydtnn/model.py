@@ -559,7 +559,7 @@ class Model:
 
             # Weight update (WU)
             for i in range(len(self.layers) - 1, 0, -1):
-                if self.optimizer.__class__.__name__ != 'SGD_OkTopkCPU':
+                if self.optimizer.__class__.__name__ != 'OkTopkCPU':
                     self.layers[i].reduce_weights_sync()
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
