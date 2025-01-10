@@ -102,7 +102,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, u_format="coo", method="numpy"):
+    def _update_weights(self, layer, w_, w, u, u_format="coo", method="cython"):
         """
         Update weights
 
@@ -374,7 +374,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="numpy"):
+    def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="cython"):
         """
         Selects top-k elements from the matrix that are greater than or equal to the threshold.
         
