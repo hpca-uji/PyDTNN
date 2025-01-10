@@ -19,54 +19,42 @@
 
 import cython
 import numpy as np
-cimport numpy as cnp
+cimport numpy as np
 from cython.parallel cimport prange
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def update_dense_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w, 
-                                cnp.ndarray[cnp.float32_t, ndim=2] u, 
+def update_dense_weights_cython(np.ndarray[np.float32_t, ndim=2] w, 
+                                np.ndarray[np.float32_t, ndim=2] u, 
                                 int nprocs):
 
     cdef int i, j
     cdef int rows = w.shape[0]
     cdef int cols = w.shape[1]
-    multithreading = rows>=1000
 
-    if multithreading:
-        for i in prange(rows, nogil=True):
-            for j in range(cols):
-                w[i, j] = w[i, j] - (u[i, j] / nprocs)
-    else:
-        for i in range(rows):
-            for j in range(cols):
-                w[i, j] = w[i, j] - (u[i, j] / nprocs)
+    for i in prange(rows, nogil=True):
+        for j in range(cols):
+            w[i, j] = w[i, j] - (u[i, j] / nprocs)
 
     return w
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def update_sparsed_weights_cython(cnp.ndarray[cnp.float32_t, ndim=2] w, 
-                                  cnp.ndarray[cnp.float32_t, ndim=1] grads_to_update, 
-                                  cnp.ndarray[cnp.int32_t, ndim=1] rows_to_update, 
-                                  cnp.ndarray[cnp.int32_t, ndim=1] cols_to_update, 
+def update_sparsed_weights_cython(np.ndarray[np.float32_t, ndim=2] w, 
+                                  np.ndarray[np.float32_t, ndim=1] grads_to_update, 
+                                  np.ndarray[np.int32_t, ndim=1] rows_to_update, 
+                                  np.ndarray[np.int32_t, ndim=1] cols_to_update, 
                                   int nprocs):
 
 
     cdef int idx, row, col
     cdef int num_updates = grads_to_update.shape[0]
-    multithreading = num_updates>=1000
 
-    if multithreading:
-        for idx in prange(num_updates, nogil=True):
-            w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
+    for idx in prange(num_updates, nogil=True):
+        w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
 
-    else:
-        for idx in range(num_updates):
-            w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
-        
     return w
 
 
