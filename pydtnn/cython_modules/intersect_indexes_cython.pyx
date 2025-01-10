@@ -35,8 +35,8 @@ def intersect_2d_indexes_cython(np.ndarray local_rows,
     cdef int i_local_row = 0
     cdef int i_global_row = 0
     cdef int max_size = min(len(local_rows), len(global_rows))
-    cdef np.ndarray[np.int64_t, ndim=1] intersected_rows = np.empty(max_size, dtype=np.int64)
-    cdef np.ndarray[np.int64_t, ndim=1] intersected_cols = np.empty(max_size, dtype=np.int64)
+    cdef np.ndarray[np.int32_t, ndim=1] intersected_rows = np.empty(max_size, dtype=np.int32)
+    cdef np.ndarray[np.int32_t, ndim=1] intersected_cols = np.empty(max_size, dtype=np.int32)
 
     while i_local_row < len(local_rows) and i_global_row < len(global_rows):
         local_row = local_rows[i_local_row]
