@@ -26,10 +26,10 @@ from cython.parallel cimport prange
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def intersect_2d_indexes_cython(np.ndarray local_rows,
-                                np.ndarray local_cols,
-                                np.ndarray global_rows,
-                                np.ndarray global_cols):
+def intersect_2d_indexes_cython(np.ndarray [np.int32_t, ndim=1] local_rows,
+                                np.ndarray [np.int32_t, ndim=1] local_cols,
+                                np.ndarray [np.int32_t, ndim=1] global_rows,
+                                np.ndarray [np.int32_t, ndim=1] global_cols):
     
     cdef int count = 0
     cdef int i_local_row = 0
