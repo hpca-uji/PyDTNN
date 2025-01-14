@@ -425,8 +425,8 @@ using 4 OpenMP threads::
     $ python3 -Ou pydtnn_benchmark.py \
         --model=vgg16_cifar10 \
         --dataset=cifar10 \
-        --dataset_train_path=datasets/cifar-10/cifar-10-batches-bin \
-        --dataset_test_path=datasets/cifar-10/cifar-10-batches-bin \
+        --dataset_train_path=datasets/cifar10 \
+        --dataset_test_path=datasets/cifar10 \
         --evaluate_only=True \
         --batch_size=64 \
         --validation_split=0.2 \
@@ -546,8 +546,8 @@ using 4 OpenMP threads::
       enable_best_of                 : False
       dataset_name                   : cifar10
       use_synthetic_data             : False
-      dataset_train_path             : datasets/cifar-10/cifar-10-batches-bin
-      dataset_test_path              : datasets/cifar-10/cifar-10-batches-bin
+      dataset_train_path             : datasets/cifar10
+      dataset_test_path              : datasets/cifar10
       test_as_validation             : True
       flip_images                    : True
       flip_images_prob               : 0.5

@@ -5,8 +5,8 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
-  --dataset_train_path=/scratch/imagenet/np/train \
-  --dataset_test_path=/scratch/imagenet/np/validation \
+  --dataset_train_path=datasets/imagenet \
+  --dataset_test_path=datasets/imagenet \
   --use_synthetic_data=True \
   --batch_size=64 \
   --validation_split=0.2 \

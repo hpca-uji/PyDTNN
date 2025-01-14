@@ -1,11 +1,11 @@
 set -x
 
 # set -x # Debugging flag
-export PYTHONPATH=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/libexec:$PYTHONPATH
+export PYTHONPATH="$HOME/extrae-3.6.0/libexec:$PYTHONPATH"
 export EXTRAE_CONFIG_FILE=./extrae.xml
 export EXTRAE_ON=1
 
-EXTRAELIB=/mnt/beegfs/users/dolzm/install/extrae-3.6.0/lib/libmpitrace.so
+EXTRAELIB="$HOME/extrae-3.6.0/lib/libmpitrace.so"
 
 altecnodes=(2 3 4 5 7 8 10)
 
@@ -22,8 +22,8 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
   pydtnn_benchmark \
   --model=vgg11bn_cifar10 \
   --dataset=cifar10 \
-  --dataset_train_path=/mnt/beegfs/users/dolzm/datasets/cifar-10-batches-bin \
-  --dataset_test_path=/mnt/beegfs/users/dolzm/datasets/cifar-10-batches-bin \
+  --dataset_train_path=datasets/cifar10 \
+  --dataset_test_path=datasets/cifar10 \
   --test_as_validation=True \
   --batch_size=64 \
   --validation_split=0.2 \

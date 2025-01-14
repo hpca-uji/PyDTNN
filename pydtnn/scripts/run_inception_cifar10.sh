@@ -7,8 +7,8 @@ mpirun -np 2 \
   pydtnn_benchmark \
   --model=googlenet_cifar10 \
   --dataset=cifar10 \
-  --dataset_train_path=/scratch/cifar-10/cifar-10-batches-bin \
-  --dataset_test_path=/scratch/cifar-10/cifar-10-batches-bin \
+  --dataset_train_path=datasets/cifar10 \
+  --dataset_test_path=datasets/cifar10 \
   --flip_images=True \
   --crop_images=True \
   --crop_images_size=16 \
