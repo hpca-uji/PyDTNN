@@ -18,7 +18,7 @@
 #
 
 import numpy as np
-from scipy.sparse import csr_array
+from scipy.sparse import csr_array, coo_array
 
 from pydtnn.cython_modules import \
     intersect_2d_indexes_cython, \
@@ -393,7 +393,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, topk, topk_indexes, boundaries, method="reduce_region_non_blocking"):
+    def _reduce_topk(self, topk, topk_indexes, boundaries, method="reduce_region"):
         """
         Reduce the topk elements in regions defined by boundaries
 
@@ -412,15 +412,15 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-            csr_topk = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
-            all_reduced_csr = self.comm.allreduce(csr_topk, op=MPI.SUM)
+            coo_topk = coo_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             row = coo_region.row + row_start
             return coo_region.data, (row, coo_region.col)
 
         if method == "reduce_region_blocking":
             row_start = 0
-            csr_topk = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            csr_topk = coo_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype).tocsr()
             reduced_regions_csr = []
             for region in range(self.nprocs):
                 row_end = boundaries[region]
@@ -431,11 +431,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 reduced_region_coo.row += boundaries[self.rank - 1]
             return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
 
-        if method == "reduce_region_non_blocking":
+        if method == "reduce_region":
             requests = []
             row_start = 0
             recv_bufs = [None] * self.nprocs
-            csr_topk = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            csr_topk = coo_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype).tocsr()
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_buf = csr_topk[row_start:row_end].toarray()
