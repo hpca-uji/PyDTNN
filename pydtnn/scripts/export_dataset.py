@@ -1,7 +1,16 @@
+#!/usr/bin/env python3
+
+"""
+Exports a PyDTNN dataset.
+
+--dataset_raw_path
+
+"""
+
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2022 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,24 +26,10 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import importlib
-import sys
 
-from .cifar10 import CIFAR10
-from .custom_dataset import CustomDataset
-from .imagenet import ImageNet
-from .mnist import MNIST
+from pydtnn.model import Model
+from pydtnn.parser import parser
 
-CustomImport = CustomDataset.import_
-
-def get_dataset(model):
-    try:
-        dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet", "raw": "CustomImport"}
-        dataset_mod = importlib.import_module("pydtnn.datasets")
-        dataset_obj = getattr(dataset_mod, dataset_name[model.dataset_name])
-        dataset = dataset_obj(model)
-    except Exception:
-        import traceback
-        print(traceback.format_exc())
-        sys.exit(-1)
-    return dataset
+params = parser.parse_args()
+model = Model(**vars(params))
+model.dataset.export()

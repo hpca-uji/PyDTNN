@@ -18,6 +18,7 @@
 #
 
 import queue
+import itertools
 import threading
 from abc import ABC, abstractmethod
 
@@ -58,6 +59,12 @@ class Dataset(ABC):
     def __init__(self, model, train_nsamples, test_nsamples, input_shape, output_shape, max_batches_online=40,
                  force_test_as_validation=False, debug=False):
         self.model = model
+        if self.model.shared_storage:
+            self.nprocs = self.model.nprocs
+            self.rank = self.model.rank
+        else:
+            self.nprocs = 1
+            self.rank = 0
         self.max_batches_online = max_batches_online
         self.debug = debug
         self.test_as_validation = self.model.test_as_validation or force_test_as_validation
@@ -66,8 +73,8 @@ class Dataset(ABC):
         if self.test_as_validation:
             self._nsamples[VAL] = self._nsamples[TEST]
         else:
-            self._nsamples[VAL] = min(self._nsamples[TRAIN] - self.model.nprocs,
-                                      max(self.model.nprocs, int(self._nsamples[TRAIN] * self.model.validation_split)))
+            self._nsamples[VAL] = min(self._nsamples[TRAIN] - self.nprocs,
+                                      max(self.nprocs, int(self._nsamples[TRAIN] * self.model.validation_split)))
             self._nsamples[TRAIN] -= self._nsamples[VAL]
         self.input_shape = list(input_shape)
         self.output_shape = list(output_shape)
@@ -92,6 +99,39 @@ class Dataset(ABC):
             self._init_actual_data()
         if self.debug:
             self._print_report()
+
+    def export(self):
+        """Export dataset (rank specific)"""
+
+        # Data generators
+        gen_train = self._data_generator(TRAIN)
+        gen_val = self._data_generator(VAL)
+        gen_test = self._data_generator(TEST)
+
+        # Reconstruct validation split
+        if self.test_as_validation:
+            gen_test = itertools.chain(gen_test, gen_val)
+        else:
+            gen_train = itertools.chain(gen_train, gen_val)
+
+        # Array from generators
+        x_train, y_train = map(np.concat, zip(*gen_train))
+        x_test, y_test = map(np.concat, zip(*gen_test))
+
+        # Export dataset
+        np.savez_compressed(self.model.dataset_raw_path,
+                            x_train=x_train,
+                            y_train=y_train,
+                            x_test=x_test,
+                            y_test=y_test)
+
+        # Debug information
+        if self.debug:
+            print(f"Export: {self.model.dataset_raw_path}")
+            print(f"x_train: {x_train.shape}")
+            print(f"y_train: {y_train.shape}")
+            print(f"x_test: {x_test.shape}")
+            print(f"y_test: {y_test.shape}")
 
     @property
     def train_nsamples(self):
@@ -131,7 +171,7 @@ class Dataset(ABC):
     def _compute_local_workload(self, nsamples):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""
         new_nsamples = nsamples
-        global_batch_size = self.model.batch_size * self.model.nprocs
+        global_batch_size = self.model.batch_size * self.nprocs
         batches_per_worker = nsamples // global_batch_size
         remaining_samples = nsamples % global_batch_size
         if not self.model.use_synthetic_data:
@@ -139,27 +179,27 @@ class Dataset(ABC):
             # # Instead of assigning all the non-divisible part of the remaining samples to the last process,
             # # it is distributed among all the other workers (i.e, the other workers will have a bit of
             # # work more than the last one). Thus, the use of ceil instead of the integer division.
-            # last_batch_nsamples_per_worker = math.ceil(remaining_samples / self.model.nprocs)
+            # last_batch_nsamples_per_worker = math.ceil(remaining_samples / self.nprocs)
             # last_batch_nsamples_last_worker = remaining_samples \
-            #                                   - last_batch_nsamples_per_worker * (self.model.nprocs - 1)
+            #                                   - last_batch_nsamples_per_worker * (self.nprocs - 1)
             # Version 2) The very last part of the input data is trimmed to ensure an equal distribution
-            last_batch_nsamples_per_worker = remaining_samples // self.model.nprocs
+            last_batch_nsamples_per_worker = remaining_samples // self.nprocs
             last_batch_nsamples_last_worker = last_batch_nsamples_per_worker
-            new_nsamples -= remaining_samples % self.model.nprocs
+            new_nsamples -= remaining_samples % self.nprocs
         else:
             last_batch_nsamples_per_worker = 0
             last_batch_nsamples_last_worker = 0
-            new_nsamples = batches_per_worker * self.model.batch_size * self.model.nprocs
+            new_nsamples = batches_per_worker * self.model.batch_size * self.nprocs
         if batches_per_worker > self.model.steps_per_epoch > 0:
             batches_per_worker = self.model.steps_per_epoch
             last_batch_nsamples_per_worker = 0
             last_batch_nsamples_last_worker = 0
-            new_nsamples = batches_per_worker * self.model.batch_size * self.model.nprocs
+            new_nsamples = batches_per_worker * self.model.batch_size * self.nprocs
         nsamples_per_worker = batches_per_worker * self.model.batch_size + last_batch_nsamples_per_worker
-        local_offset = nsamples_per_worker * self.model.rank
+        local_offset = nsamples_per_worker * self.rank
         local_nsamples = \
             nsamples_per_worker \
-                if self.model.rank < (self.model.nprocs - 1) \
+                if self.rank < (self.nprocs - 1) \
                 else batches_per_worker * self.model.batch_size + last_batch_nsamples_last_worker
         return local_offset, local_nsamples, new_nsamples
 
@@ -237,7 +277,7 @@ class Dataset(ABC):
 
     def _batch_generator(self, part):
         local_batch_size = self.model.batch_size
-        global_batch_size = self.model.batch_size * self.model.nprocs
+        global_batch_size = self.model.batch_size * self.nprocs
         generator = self._data_generator(part)
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
@@ -264,7 +304,7 @@ class Dataset(ABC):
                 indices = s[start:end]
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
-                yield x_local_batch, y_local_batch, last_batch_size * self.model.nprocs
+                yield x_local_batch, y_local_batch, last_batch_size * self.nprocs
 
     def _do_flip_images(self, data):
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
