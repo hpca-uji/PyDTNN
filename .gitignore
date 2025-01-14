@@ -1,7 +1,7 @@
 build/
 .idea
 .venv
-.vscode*
+.vscode
 *cython.c
 *cython.cpython-*-linux-gnu.so
 *.npz
