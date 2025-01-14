@@ -1,0 +1,4 @@
+#!/bin/bash
+# Executable wrapper for pydtnn_benchmark
+self=$(realpath "$0")
+exec python "${self%/*/*}/pydtnn_benchmark.py" "$@"
