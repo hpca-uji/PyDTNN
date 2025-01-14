@@ -7,8 +7,8 @@ mpirun -np 2 \
   pydtnn_benchmark \
   --model=googlenet_imagenet \
   --dataset=imagenet \
-  --dataset_train_path=/path/to/imagenet \
-  --dataset_test_path=/path/to/imagenet \
+  --dataset_train_path=datasets/imagenet \
+  --dataset_test_path=datasets/imagenet \
   --use_synthetic_data=True \
   --test_as_validation=False \
   --flip_images=True \

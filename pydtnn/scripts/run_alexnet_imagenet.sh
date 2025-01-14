@@ -5,8 +5,8 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=alexnet_imagenet \
   --dataset=imagenet \
-  --dataset_train_path=/path/to/imagenet \
-  --dataset_test_path=/path/to/imagenet \
+  --dataset_train_path=datasets/imagenet \
+  --dataset_test_path=datasets/imagenet \
   --use_synthetic_data=True \
   --test_as_validation=False \
   --batch_size=64 \
