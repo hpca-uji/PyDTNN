@@ -55,7 +55,7 @@ gpuarray: Any = None
 
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
-    from mpi4py import MPI
+    from pydtnn.utils import MPI
 except (ImportError, ModuleNotFoundError):
     supported_mpi4py = False
 

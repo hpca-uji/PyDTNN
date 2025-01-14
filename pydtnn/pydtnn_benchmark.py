@@ -23,7 +23,7 @@ PyDTNN Benchmark script
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # from __future__ import print_function
-
+from pydtnn.utils import MPI
 import cProfile
 import os
 import pstats
