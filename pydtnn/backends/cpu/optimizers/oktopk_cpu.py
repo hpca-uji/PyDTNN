@@ -67,7 +67,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             # Reshape acc to 2D matrix 
             if len(self.dw_shape) != 2:
                 acc = acc.reshape(acc.shape[0], -1)
-            self.acc_shape = acc.shape
+            self.acc_d2_shape = acc.shape
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
             u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
@@ -111,7 +111,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         """
 
         if u_format == "dense" and method == "cython": # 3
-            u = coo_array(u, shape=self.acc_shape).todense()
+            u = coo_array(u, shape=self.acc_d2_shape).todense()
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             w = update_dense_weights_cython(w, u, self.nprocs)
@@ -121,7 +121,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return  
 
         if u_format == "dense" and method == "numpy": # 4
-            u = coo_array(u, shape=self.acc_shape).todense()
+            u = coo_array(u, shape=self.acc_d2_shape).todense()
             if len(self.dw_shape) != 2:
                 u = u.reshape(self.dw_shape)
             w -= (u / self.nprocs)
@@ -255,7 +255,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             for i in range(len(all_topk_row)):
                 indexes_set.add((all_topk_row[i], all_topk_col[i]))
 
-            rows_count = np.zeros(shape=(self.acc_shape[0],), dtype=np.int32)
+            rows_count = np.zeros(shape=(self.acc_d2_shape[0],), dtype=np.int32)
             for row, _ in indexes_set:
                 rows_count[row] += 1
                 
@@ -430,7 +430,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
+            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
             all_reduced_csr = self.comm.allreduce(csr_matrix, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             row = coo_region.row + row_start
@@ -438,7 +438,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if method == "reduce_region_blocking":
             row_start = 0
-            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
+            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
             reduced_regions_csr = []
             for region in range(self.nprocs):
                 row_end = boundaries[region]
@@ -453,7 +453,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             requests = []
             row_start = 0
             recv_bufs = [None] * self.nprocs
-            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_shape, dtype=self.dtype)
+            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_buf = csr_matrix[row_start:row_end].toarray()
