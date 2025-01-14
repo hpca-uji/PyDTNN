@@ -17,7 +17,7 @@ DATASET=${DATASET:-cifar10}
 TENSOR_FORMAT=${TENSOR_FORMAT:-NHWC}
 case "${DATASET}" in
 cifar10)
-  DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar-10-batches-bin}
+  DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar10}
   ;;
 imagenet)
   DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/imagenet}
