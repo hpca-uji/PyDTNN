@@ -18,7 +18,7 @@
 #
 
 import numpy as np
-from scipy.sparse import coo_array, csr_array
+from scipy.sparse import csr_array
 
 from pydtnn.cython_modules import \
     intersect_2d_indexes_cython, \
@@ -102,7 +102,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return residuals
 
     
-    def _update_weights(self, layer, w_, w, u, u_format="coo", method="cython"):
+    def _update_weights(self, layer, w_, w, u, method="cython"):
         """
         Update weights
 
@@ -110,25 +110,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         setattr(layer, w_, w)
         """
 
-        if u_format == "dense" and method == "cython": # 3
-            u = coo_array(u, shape=self.acc_d2_shape).todense()
-            if len(self.dw_shape) != 2:
-                w = w.reshape(w.shape[0], -1)
-            w = update_dense_weights_cython(w, u, self.nprocs)
-            if len(self.dw_shape) != 2:
-                w = w.reshape(self.dw_shape)
-            setattr(layer, w_, w)
-            return  
-
-        if u_format == "dense" and method == "numpy": # 4
-            u = coo_array(u, shape=self.acc_d2_shape).todense()
-            if len(self.dw_shape) != 2:
-                u = u.reshape(self.dw_shape)
-            w -= (u / self.nprocs)
-            setattr(layer, w_, w)  
-            return
-
-        if u_format == "coo" and method == "cython": # 2
+        if method == "cython": # 2
             grads, (rows, cols) = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -138,7 +120,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             setattr(layer, w_, w)  
             return
 
-        if u_format == "coo" and method == "numpy": # 1
+        if method == "numpy": # 1
             grads, indexes = u
             if len(self.dw_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -189,7 +171,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return u, indexes
 
 
-    def _th_re_evaluate(self, tensor, k, input_format="dense"):
+    def _th_re_evaluate(self, tensor, k, input_format=None):
         """
         Return the absolute gradient threshold for a given tensor.
         
@@ -247,7 +229,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return boundaries
         
         if balanced:
-            _, (row, col) = self._top_threshold_selection(acc, local_th)
+            _, (row, col) = self._top_threshold_selection(acc, local_th, input_format="dense")
             all_topk_row = self._allgather(row, input_format="dense")
             all_topk_col = self._allgather(col, input_format="dense")
             
@@ -294,7 +276,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - local_topk_indexes: The indices of the top-k gradient values selected locally ([row_0, row_1], [col_0, col_1]).
         """
         
-        topk, topk_indexes = self._top_threshold_selection(acc, local_th)
+        topk, topk_indexes = self._top_threshold_selection(acc, local_th, input_format="dense")
         reduced_topk = self._reduce_topk(topk, topk_indexes, boundaries)
         return reduced_topk, topk_indexes
 
@@ -374,7 +356,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _top_threshold_selection(self, matrix, threshold, input_format="dense", method="cython"):
+    def _top_threshold_selection(self, matrix, threshold, input_format=None, method="cython"):
         """
         Selects top-k elements from the matrix that are greater than or equal to the threshold.
         
@@ -430,19 +412,19 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
-            all_reduced_csr = self.comm.allreduce(csr_matrix, op=MPI.SUM)
+            csr_topk = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            all_reduced_csr = self.comm.allreduce(csr_topk, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             row = coo_region.row + row_start
             return coo_region.data, (row, coo_region.col)
 
         if method == "reduce_region_blocking":
             row_start = 0
-            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            csr_topk = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
             reduced_regions_csr = []
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                reduced_regions_csr.append(self.comm.reduce(csr_matrix[row_start:row_end], op=MPI.SUM, root=region))
+                reduced_regions_csr.append(self.comm.reduce(csr_topk[row_start:row_end], op=MPI.SUM, root=region))
                 row_start = row_end
             reduced_region_coo = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
@@ -453,10 +435,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             requests = []
             row_start = 0
             recv_bufs = [None] * self.nprocs
-            csr_matrix = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            csr_topk = csr_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                send_buf = csr_matrix[row_start:row_end].toarray()
+                send_buf = csr_topk[row_start:row_end].toarray()
                 if self.rank == region:
                     recv_bufs[region] = np.zeros_like(send_buf)
                 requests.append(self.comm.Ireduce(send_buf, recv_bufs[region], op=MPI.SUM, root=region))
