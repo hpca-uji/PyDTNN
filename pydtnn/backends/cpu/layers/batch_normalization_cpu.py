@@ -30,7 +30,7 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
 try:
     # noinspection PyUnresolvedReferences
-    from mpi4py import MPI
+    from pydtnn.utils import MPI
 except (ImportError, ModuleNotFoundError):
     pass
 
