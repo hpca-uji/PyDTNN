@@ -26,7 +26,8 @@ from pydtnn.cython_modules import \
     top_threshold_selection_cython, \
     top_threshold_selection_coo_cython, \
     update_sparsed_weights_cython, \
-    update_dense_weights_cython
+    update_dense_weights_cython, \
+    reset_residuals_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import OkTopk
 
@@ -101,17 +102,18 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _reset_residuals(self, acc, indexes, method="numpy"):
+    def _reset_residuals(self, acc, indexes, method="cython"):
         """
         Update residuals: set zero value if it is in indexes, else acc value is set.
-        
         """
 
+        if method == "cython":
+            return reset_residuals_cython(acc, indexes[0], indexes[1])
+        
         if method == "numpy":
-            residuals = np.array(acc)
             if len(indexes[0]) > 0:
-                residuals[indexes] = 0    
-            return residuals
+                acc[indexes] = 0    
+            return acc
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 

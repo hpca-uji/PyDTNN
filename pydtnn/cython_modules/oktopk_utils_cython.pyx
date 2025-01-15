@@ -166,5 +166,16 @@ def compute_dense_acc_cython(np.ndarray[np.float32_t, ndim=2] residuals,
     return dw
 
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def reset_residuals_cython(np.ndarray[np.float32_t, ndim=2] acc, 
+                           np.ndarray[np.int32_t, ndim=1] rows, 
+                           np.ndarray[np.int32_t, ndim=1] cols):
 
+    cdef int i
+
+    for i in prange(rows.shape[0], nogil=True):
+        acc[rows[i], cols[i]] = 0
+    
+    return acc
 
