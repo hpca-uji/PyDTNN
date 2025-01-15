@@ -21,6 +21,7 @@ import numpy as np
 from scipy.sparse import csr_array, coo_array
 
 from pydtnn.cython_modules import \
+    compute_dense_acc_cython, \
     intersect_2d_indexes_cython, \
     top_threshold_selection_cython, \
     top_threshold_selection_coo_cython, \
@@ -53,21 +54,21 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             # Get layer weights and gradients
             w, dw = getattr(layer, w_), getattr(layer, dw_)
 
+            # Reshape dw to 2D matrix
+            self.dw_original_shape = dw.shape
+            if len(self.dw_original_shape) != 2:
+                dw = dw.reshape(dw.shape[0], -1)
+            self.dw_2d_shape = dw.shape
+
             # Initialize current layer-parameter values
-            self.dw_shape = dw.shape
             self.local_th = self.all_local_th[layer.id][dw_]
             self.global_th = self.all_global_th[layer.id][dw_]
             self.boundaries = self.all_boundaries[layer.id][dw_]
             if self.all_residuals[layer.id][dw_] is None:
-                self.all_residuals[layer.id][dw_] = np.zeros_like(w, dtype=layer.model.dtype)
+                self.all_residuals[layer.id][dw_] = np.zeros_like(dw, dtype=layer.model.dtype)
                 
             # Compute acc 
-            acc = self.all_residuals[layer.id][dw_] + (self.learning_rate * dw)
-            
-            # Reshape acc to 2D matrix 
-            if len(self.dw_shape) != 2:
-                acc = acc.reshape(acc.shape[0], -1)
-            self.acc_d2_shape = acc.shape
+            acc = self._compute_acc(self.all_residuals[layer.id][dw_], dw)
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
             u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
@@ -86,20 +87,33 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         self.iterations[layer.id] += 1
 
 
-    def _reset_residuals(self, acc, indexes):
+    def _compute_acc(self, residuals, dw, method="cython"):
+        """
+        Compute acc = residuals + (learning_rate * dw)
+        """
+
+        if method == "cython":
+            return compute_dense_acc_cython(residuals, dw, self.learning_rate)
+        
+        if method == "numpy":
+            return residuals + (self.learning_rate * dw)
+
+        raise NotImplementedError(f"Method '{method}' not implemented")
+
+
+    def _reset_residuals(self, acc, indexes, method="numpy"):
         """
         Update residuals: set zero value if it is in indexes, else acc value is set.
         
         """
 
-        residuals = np.array(acc)
-        if len(indexes[0]) > 0:
-            residuals[indexes] = 0
-        
-        if len(self.dw_shape) != 2:
-            residuals = residuals.reshape(self.dw_shape)
+        if method == "numpy":
+            residuals = np.array(acc)
+            if len(indexes[0]) > 0:
+                residuals[indexes] = 0    
+            return residuals
 
-        return residuals
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
     
     def _update_weights(self, layer, w_, w, u, method="cython"):
@@ -110,23 +124,23 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         setattr(layer, w_, w)
         """
 
-        if method == "cython": # 2
+        if method == "cython": 
             grads, (rows, cols) = u
-            if len(self.dw_shape) != 2:
+            if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             w = update_sparsed_weights_cython(w, grads, rows, cols, self.nprocs)
-            if len(self.dw_shape) != 2:
-                w = w.reshape(self.dw_shape)
+            if len(self.dw_original_shape) != 2:
+                w = w.reshape(self.dw_original_shape)
             setattr(layer, w_, w)  
             return
 
-        if method == "numpy": # 1
+        if method == "numpy": 
             grads, indexes = u
-            if len(self.dw_shape) != 2:
+            if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             w[indexes] -= (grads / self.nprocs)
-            if len(self.dw_shape) != 2:
-                w = w.reshape(self.dw_shape)
+            if len(self.dw_original_shape) != 2:
+                w = w.reshape(self.dw_original_shape)
             setattr(layer, w_, w)  
             return
 
@@ -219,7 +233,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
     
         if not balanced:
             boundaries = []
-            rows = self.dw_shape[0]
+            rows = self.dw_original_shape[0]
             block_size = rows // self.nprocs
             for i in range(1, self.nprocs + 1):
                 if i == self.nprocs:
@@ -237,7 +251,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             for i in range(len(all_topk_row)):
                 indexes_set.add((all_topk_row[i], all_topk_col[i]))
 
-            rows_count = np.zeros(shape=(self.acc_d2_shape[0],), dtype=np.int32)
+            rows_count = np.zeros(shape=(self.dw_2d_shape[0],), dtype=np.int32)
             for row, _ in indexes_set:
                 rows_count[row] += 1
                 
@@ -412,7 +426,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-            coo_topk = coo_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype)
+            coo_topk = coo_array((topk, topk_indexes), shape=self.dw_2d_shape, dtype=self.dtype)
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             row = coo_region.row + row_start
@@ -420,7 +434,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if method == "reduce_region_blocking":
             row_start = 0
-            csr_topk = coo_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype).tocsr()
+            csr_topk = coo_array((topk, topk_indexes), shape=self.dw_2d_shape, dtype=self.dtype).tocsr()
             reduced_regions_csr = []
             for region in range(self.nprocs):
                 row_end = boundaries[region]
@@ -435,7 +449,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             requests = []
             row_start = 0
             recv_bufs = [None] * self.nprocs
-            csr_topk = coo_array((topk, topk_indexes), shape=self.acc_d2_shape, dtype=self.dtype).tocsr()
+            csr_topk = coo_array((topk, topk_indexes), shape=self.dw_2d_shape, dtype=self.dtype).tocsr()
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_buf = csr_topk[row_start:row_end].toarray()
