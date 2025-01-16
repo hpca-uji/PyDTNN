@@ -69,7 +69,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 self.all_residuals[layer.id][dw_] = np.zeros_like(dw, dtype=layer.model.dtype)
                 
             # Compute acc 
-            acc = self._compute_acc(self.all_residuals[layer.id][dw_], dw)
+            acc = self._compute_acc(self.all_residuals[layer.id][dw_], dw, self.learning_rate)
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
             u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
@@ -88,23 +88,37 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         self.iterations[layer.id] += 1
 
 
-    def _compute_acc(self, residuals, dw, method="cython"):
+    def _compute_acc(self, residuals, dw, learning_rate, method="cython"):
         """
-        Compute acc = residuals + (learning_rate * dw)
+        Compute acc, where: acc = residuals + (learning_rate * dw)
+
+        Parameters:
+            - residuals: 2D dense matrix with the current layer residuals
+            - dw: 2D dense matrix with the current layer gradients
+            - learning_rate: learning rate float value
+
+        Returns acc = residuals + (learning_rate * dw)
         """
 
         if method == "cython":
-            return compute_dense_acc_cython(residuals, dw, self.learning_rate)
+            return compute_dense_acc_cython(residuals, dw, learning_rate)
         
         if method == "numpy":
-            return residuals + (self.learning_rate * dw)
+            return residuals + (learning_rate * dw)
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
     def _reset_residuals(self, acc, indexes, method="cython"):
         """
-        Update residuals: set zero value if it is in indexes, else acc value is set.
+        Update residuals: set zero value if it is in indexes, else acc value is set
+
+        Parameters:
+            - acc: 2D dense matrix
+            - indexes: a tuple with two np.arrays (rows, cols)
+
+        Returns:
+            - residuals, which is the same as acc with the values in indexes set to zero 
         """
 
         if method == "cython":
@@ -120,10 +134,16 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
     
     def _update_weights(self, layer, w_, w, u, method="cython"):
         """
-        Update weights
+        Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_, w)
 
-        w -= (u / self.nprocs)
-        setattr(layer, w_, w)
+        Parameters:
+            - layer: layer id
+            - w_: weight param type (bias, weight, ...)
+            - w: N dimensional dense weights matrix/tensor 
+            - u: Sparse 2D gradient matrix in coo format to update w
+
+        Returns:
+            - void, instead it directly applies the result to the weight layer attribute
         """
 
         if method == "cython": 
@@ -166,8 +186,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - thresholds_re_evaluation_t: Interval of iterations for threshold re-evaluation.
 
         Returns:
-            - u: The updated gradient values after sparse allreduce.
-            - indexes: The indices of the top-k gradient values that were updated.
+            - u: The updated gradient values in coo 2D sparse format.
+            - indexes: The indices of the top-k gradient values that were updated: (row, col).
         """
 
         if t % thresholds_re_evaluation_t == 0:
@@ -228,6 +248,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Parameters:
             - acc: gradient matrix values
             - local_th: local process gradient threshold
+            - balanced: if not balanced, a static row partition is performed, 
+                        if balanced, a topk gradiend distribution is considered in the row partition  
 
         Returns:
             - boundaries: [row_end_p0, row_end_p1, row_end_p2, ...]
@@ -418,6 +440,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - topk_indexes: a tuple of two np.array with the row and col of topk indexes
             - boundaries: boundaries for partitioning the gradient space: [row_end_p0, row_end_p1, row_end_p2, ...]
 
+        Returns:
+            - The reduced topk values in coo format: (data, (row, col))
         """
 
         if self.nprocs == 1:
