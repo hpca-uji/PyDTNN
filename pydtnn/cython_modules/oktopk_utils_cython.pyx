@@ -46,28 +46,32 @@ def intersect_2d_indexes_cython(np.ndarray [np.int32_t, ndim=1] local_rows,
                                 np.ndarray [np.int32_t, ndim=1] global_cols):
     
     cdef int count = 0
-    cdef int i_local_row = 0
-    cdef int i_global_row = 0
+    cdef int i_local = 0
+    cdef int i_global = 0
     cdef int max_size = min(len(local_rows), len(global_rows))
     cdef np.ndarray[np.int32_t, ndim=1] intersected_rows = np.empty(max_size, dtype=np.int32)
     cdef np.ndarray[np.int32_t, ndim=1] intersected_cols = np.empty(max_size, dtype=np.int32)
 
-    while i_local_row < len(local_rows) and i_global_row < len(global_rows):
-        local_row = local_rows[i_local_row]
-        global_row = global_rows[i_global_row]
+    while i_local < len(local_rows) and i_global < len(global_rows):
+        local_row = local_rows[i_local]
+        global_row = global_rows[i_global]
         if local_row < global_row:
-            i_local_row += 1
+            i_local += 1
         elif local_row > global_row:
-            i_global_row += 1
+            i_global += 1
         else:
-            local_col = local_cols[i_local_row]
-            global_col = global_cols[i_global_row]
-            if local_col == global_col:
+            local_col = local_cols[i_local]
+            global_col = global_cols[i_global]
+            if local_col < global_col:
+                i_local += 1
+            elif local_col > global_col:
+                i_global += 1
+            else:
                 intersected_rows[count] = local_row
                 intersected_cols[count] = local_col
+                i_global += 1                    
+                i_local += 1
                 count += 1
-            i_local_row += 1
-            i_global_row += 1
     return intersected_rows[:count], intersected_cols[:count]
 
 

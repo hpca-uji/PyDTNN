@@ -347,42 +347,57 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return (allgather_topk, allgather_indexes), global_topk_indexes
 
 
-    def _intersect_indexes(self, local_indexes, global_indexes, method="numpy"):
+    def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
         """
         Calculates the intersection of two sets of indices of 2D.
 
         Parameters:
-            - local_indexes: a tuple of two arrays: row and col (row is sorted). 
-            - global_indexes: a tuple of two arrays: row and col (row is sorted). 
+            - local_indexes: a tuple of two arrays: row and col (Sort by rows, then columns). 
+            - global_indexes: a tuple of two arrays: row and col (Sort by rows, then columns). 
         
         Returns:
             - Set of tuples representing the common indices.
         
         Example:
-            - local_indexes =  (np.array([0, 2, 2, 3]), np.array([2, 4, 1, 2]))
-            - global_indexes = (np.array([2, 2, 3]),    np.array([3, 1, 2]))
-            - output: (array([2, 3]), array([1, 2]))
+            - local_indexes  = (np.array([0, 1, 2, 3, 3, 4]) , np.array([4, 6, 5, 1, 7, 3]))
+            - global_indexes = (np.array([0, 1, 3, 3, 3]), np.array([1, 6, 1, 5, 7]))
+            - output: (array([1, 3, 3]), array([6, 1, 7]))  
         """
 
         if method == "cython":
             local_rows, local_cols = local_indexes
             global_rows, global_cols = global_indexes
-            raise NotImplementedError("Intersect 2D indexes in cython is not yet implemented")
-            # return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
+            return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
         
         if method == "numpy":
+            count = 0
+            i_local, i_global = 0, 0
             local_rows, local_cols = local_indexes
             global_rows, global_cols = global_indexes
-            intersected_indexes = np.array([], dtype=np.int32), np.array([], dtype=np.int32)
-
-            local_tuples = set(zip(local_rows, local_cols))
-            global_tuples = set(zip(global_rows, global_cols))
-            intersected_tuples = local_tuples.intersection(global_tuples)
-
-            if intersected_tuples:
-                intersected_row, intersected_col = zip(*intersected_tuples)
-                intersected_indexes = np.array(intersected_row, dtype=np.int32), np.array(intersected_col, dtype=np.int32)
-            return intersected_indexes
+            max_size = min(len(local_rows), len(global_rows))
+            intersected_rows = np.empty(max_size, dtype=np.int32)
+            intersected_cols = np.empty(max_size, dtype=np.int32)
+            while i_local < len(local_rows) and i_global < len(global_rows):
+                local_row = local_rows[i_local]
+                global_row = global_rows[i_global]
+                if local_row < global_row:
+                    i_local += 1
+                elif local_row > global_row:
+                    i_global += 1
+                else:
+                    local_col = local_cols[i_local]
+                    global_col = global_cols[i_global]
+                    if local_col < global_col:
+                        i_local += 1
+                    elif local_col > global_col:
+                        i_global += 1
+                    else:
+                        intersected_rows[count] = local_row
+                        intersected_cols[count] = local_col
+                        i_global += 1                    
+                        i_local += 1
+                        count += 1
+            return intersected_rows[:count], intersected_cols[:count]
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
