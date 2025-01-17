@@ -72,7 +72,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             acc = self._compute_acc(self.all_residuals[layer.id][dw_], dw, self.learning_rate)
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
-            u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
+            coo_u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
                
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
@@ -83,7 +83,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             self.all_boundaries[layer.id][dw_] = self.boundaries
 
             # Perform the weights update
-            self._update_weights(layer, w_, w, u)
+            self._update_weights(layer, w_, w, coo_u)
 
         self.iterations[layer.id] += 1
 
@@ -132,7 +132,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     
-    def _update_weights(self, layer, w_, w, u, method="cython"):
+    def _update_weights(self, layer, w_, w, coo_u, method="cython"):
         """
         Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_, w)
 
@@ -147,20 +147,18 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         """
 
         if method == "cython": 
-            grads, (rows, cols) = u
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
-            w = update_sparsed_weights_cython(w, grads, rows, cols, self.nprocs)
+            w = update_sparsed_weights_cython(w, coo_u.data, coo_u.row, coo_u.col, self.nprocs)
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_, w)  
             return
 
         if method == "numpy": 
-            grads, indexes = u
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
-            w[indexes] -= (grads / self.nprocs)
+            w[coo_u.row, coo_u.col] -= (coo_u.data / self.nprocs)
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_, w)  
@@ -196,26 +194,26 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if t % space_repartition_t == 0:
             self.boundaries = self._space_repartition(acc, self.local_th)
 
-        reduced_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
+        coo_reduced_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
-            all_reduced_topk = self._allgather(reduced_topk)
-            self.global_th = self._th_re_evaluate(all_reduced_topk, k, input_format="coo")
+            coo_all_reduced_topk = self._allgather(coo_reduced_topk, input_format="coo")
+            self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
-        u, global_topk_indexes = self._balance_and_allgather(reduced_topk, self.global_th)
+        coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_topk, self.global_th)
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
-        return u, indexes
+        return coo_u, indexes
 
 
-    def _th_re_evaluate(self, tensor, k, input_format=None):
+    def _th_re_evaluate(self, matrix, k, input_format=None):
         """
-        Return the absolute gradient threshold for a given tensor.
+        Return the absolute gradient threshold for a given matrix.
         
         Parameters:
-            - tensor: A gradient tensor, expected in dense format for 'dense' input_format 
+            - matrix: A gradient matrix, expected in dense format for 'dense' input_format 
                     or in COO format (data, (row, col)) for 'coo' input_format.
             - k: An integer, indicating the number of top gradient values to consider.
-            - input_format: A string, either 'dense' for a dense tensor or 'coo' for a sparse tensor in COO format.
+            - input_format: A string, either 'dense' for a dense matrix or 'coo' for a sparse matrix in COO format.
         
         Returns:
             - threshold: The absolute gradient threshold based on the top k values.
@@ -224,17 +222,16 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if k <= 0:
             return 0.0
         
-        if input_format == "coo" and tensor[0].size == 0:
+        if input_format == "coo" and matrix.nnz == 0:
             return 1.0
 
         if input_format == "dense":
-            sorted_tensor = np.sort(np.abs(tensor).flatten())
-            threshold = sorted_tensor[max(-k, -len(sorted_tensor))]
+            sorted_matrix = np.sort(np.abs(matrix).flatten())
+            threshold = sorted_matrix[max(-k, -len(sorted_matrix))]
             return threshold
 
         if input_format == "coo":
-            data, (_, _) = tensor
-            sorted_data = np.sort(np.abs(data))
+            sorted_data = np.sort(np.abs(matrix.data))
             threshold = sorted_data[max(-k, -len(sorted_data))]
             return threshold
         
@@ -314,18 +311,18 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - local_topk_indexes: The indices of the top-k gradient values selected locally ([row_0, row_1], [col_0, col_1]).
         """
         
-        topk, topk_indexes = self._top_threshold_selection(acc, local_th, input_format="dense")
-        reduced_topk = self._reduce_topk(topk, topk_indexes, boundaries)
-        return reduced_topk, topk_indexes
+        coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
+        coo_reduced_topk = self._reduce_topk(coo_topk, boundaries)
+        return coo_reduced_topk, coo_topk.nonzero()
 
 
-    def _balance_and_allgather(self, reduced_topk, global_th):
+    def _balance_and_allgather(self, coo_reduced_topk, global_th):
         """
         Second main phase of ok_sparse_allreduce.  
-        Performs the allgather of the reduced_topk values among workers.
+        Performs the allgather of the coo_reduced_topk values among workers.
 
         Parameters:
-            - reduced_topk: a sparse gradient matrix (not in coo format)
+            - coo_reduced_topk: a sparse gradient matrix (not in coo format)
             - global_th: the global threshold (float) to perfrom top selection
 
         Returns:
@@ -334,7 +331,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         """
 
         # 1. Global topk selection
-        global_topk, global_topk_indexes = self._top_threshold_selection(reduced_topk, global_th, input_format="coo")
+        coo_global_topk = self._top_threshold_selection(coo_reduced_topk, global_th, input_format="coo")
 
         # 2. Data packaging
         # TODO
@@ -343,8 +340,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        allgather_topk, allgather_indexes = self._allgather((global_topk, global_topk_indexes))
-        return (allgather_topk, allgather_indexes), global_topk_indexes
+        coo_allgather_topk = self._allgather(coo_global_topk, input_format="coo")
+        return coo_allgather_topk, coo_global_topk.nonzero()
 
 
     def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
@@ -417,35 +414,32 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if input_format == "dense" and method == "cython":
             topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
-            return topk, topk_indexes
+            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
         if input_format == "coo" and method == "cython":
-            data, (row, col) = matrix
-            topk, topk_indexes = top_threshold_selection_coo_cython(data, row, col, threshold)
-            return topk, topk_indexes
+            topk, topk_indexes = top_threshold_selection_coo_cython(matrix.data, matrix.row, matrix.col, threshold)
+            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
         if input_format == "dense" and method == "numpy":
             topk_indexes = np.where(np.abs(matrix) >= threshold)
             topk = matrix[topk_indexes]
-            return topk, topk_indexes
+            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
         if input_format == "coo" and method == "numpy":
-            data, (row, col) = matrix
-            mask = np.abs(data) >= threshold
-            topk = data[mask]
-            topk_indexes = (row[mask], col[mask])
-            return topk, topk_indexes
+            mask = np.abs(matrix.data) >= threshold
+            topk = matrix.data[mask]
+            topk_indexes = (matrix.row[mask], matrix.col[mask])
+            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, topk, topk_indexes, boundaries, method="reduce_region"):
+    def _reduce_topk(self, coo_topk, boundaries, method="reduce_region"):
         """
         Reduce the topk elements in regions defined by boundaries
 
         Parameters:
-            - topk: a np.array with the values of the topk
-            - topk_indexes: a tuple of two np.array with the row and col of topk indexes
+            - coo_topk (coo_array): a 2D sparse array in COO format with the values and indexes of topk
             - boundaries: boundaries for partitioning the gradient space: [row_end_p0, row_end_p1, row_end_p2, ...]
 
         Returns:
@@ -453,37 +447,36 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         """
 
         if self.nprocs == 1:
-            return topk, topk_indexes
+            return coo_topk
 
         if method == "allreduce":
             row_start = 0
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-            coo_topk = coo_array((topk, topk_indexes), shape=self.dw_2d_shape, dtype=self.dtype)
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
-            row = coo_region.row + row_start
-            return coo_region.data, (row, coo_region.col)
+            coo_region.row += row_start
+            return coo_region
 
         if method == "reduce_region_blocking":
             row_start = 0
-            csr_topk = coo_array((topk, topk_indexes), shape=self.dw_2d_shape, dtype=self.dtype).tocsr()
+            csr_topk = coo_topk.tocsr()
             reduced_regions_csr = []
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 reduced_regions_csr.append(self.comm.reduce(csr_topk[row_start:row_end], op=MPI.SUM, root=region))
                 row_start = row_end
-            reduced_region_coo = reduced_regions_csr[self.rank].tocoo()
+            coo_reduced_region = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
-                reduced_region_coo.row += boundaries[self.rank - 1]
-            return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
+                coo_reduced_region.row += boundaries[self.rank - 1]
+            return coo_reduced_region
 
         if method == "reduce_region":
             requests = []
             row_start = 0
             recv_bufs = [None] * self.nprocs
-            csr_topk = coo_array((topk, topk_indexes), shape=self.dw_2d_shape, dtype=self.dtype).tocsr()
+            csr_topk = coo_topk.tocsr()
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_buf = csr_topk[row_start:row_end].toarray()
@@ -493,25 +486,27 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 row_start = row_end
             MPI.Request.Waitall(requests)
             if recv_bufs[self.rank] is not None:
-                reduced_region_coo = csr_array(recv_bufs[self.rank]).tocoo()
+                coo_reduced_region = csr_array(recv_bufs[self.rank]).tocoo()
                 if self.rank != 0:
-                    reduced_region_coo.row += boundaries[self.rank - 1]
-                return reduced_region_coo.data, (reduced_region_coo.row, reduced_region_coo.col)
-            return None, (None, None)
+                    coo_reduced_region.row += boundaries[self.rank - 1]
+                return coo_reduced_region
+            return coo_array(self.dw_2d_shape, dtype=np.float32)
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _allgather(self, data, input_format="coo"):
+    def _allgather(self, local_data, input_format=None):
         if self.nprocs == 1:
-            return data
+            return local_data
         
         if input_format == "coo":
-            val, (row, col) = data
-            all_val = np.concatenate(self.comm.allgather(val))
-            all_row = np.concatenate(self.comm.allgather(row))
-            all_col = np.concatenate(self.comm.allgather(col))
-            return all_val, (all_row, all_col)
+            all_val = np.concatenate(self.comm.allgather(local_data.data))
+            all_row = np.concatenate(self.comm.allgather(local_data.row))
+            all_col = np.concatenate(self.comm.allgather(local_data.col))
+            coo_global_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape)
+            coo_global_data.eliminate_zeros()
+            coo_global_data.sum_duplicates()
+            return coo_global_data
 
         if input_format == "dense":
             return np.concatenate(self.comm.allgather(data))
