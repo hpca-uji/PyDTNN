@@ -5,6 +5,7 @@ import enum
 import queue
 import pickle
 import numpy as np
+from pydtnn.comms.mqtt import mpi_dc
 import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
 import paho.mqtt.subscribeoptions as mqtt_subscribe
@@ -15,6 +16,9 @@ __all__ = (
     "SUM",
     "COMM_WORLD",
 )
+
+
+StreamResponse = list[mpi_dc.RecvResponse]
 
 
 def Finalize():
@@ -59,13 +63,12 @@ class Comm:
 
         # Setup environment
         self._mqtt_host = os.environ.get("MQTT_HOST", "localhost")
-        self._mqtt_topic = "/"
-        self._mqtt_queue = queue.SimpleQueue()
+        self._mqtt_queue = queue.SimpleQueue[mqtt_client.MQTTMessage]()
 
         # Client inizialization
         self._mqtt.connect(self._mqtt_host)
         self._mqtt.on_message = self._mqtt_handle_message
-        self._mqtt.subscribe(self._mqtt_topic, options=mqtt_subscribe.SubscribeOptions(qos=2))
+        self._mqtt.subscribe(f"/client/{self.rank}", options=mqtt_subscribe.SubscribeOptions(qos=2))
 
         self._mqtt.loop_start()
 
@@ -88,19 +91,30 @@ class Comm:
 
     def _send(self, obj):
         """Send object to server"""
-        self._mqtt.publish(self._mqtt_topic, self._serialize(obj))
+        req = mpi_dc.SendRequest(rank=self.rank, data=self._serialize(obj))
+        self._mqtt.publish(topic="/server", payload=self._serialize(req))
 
-    def _recv(self):
-        """Recive object to server"""
-        return next(self._recv_many(1))
-
-    def _recv_many(self, size=None):
+    def _recv_many(self, op: mpi_dc.Op):
         """Recive objects to server"""
-        if size is None:
-            size = self.size
-        for _ in range(size):
-            msg = self._mqtt_queue.get()
-            yield self._deserialize(msg.payload)
+        req = mpi_dc.RecvRequest(rank=self.rank, size=self.size, op=op)
+        while True:
+            self._mqtt.publish(topic="/server", payload=self._serialize(req))
+            while True:
+                msg = self._mqtt_queue.get()
+                res = self._deserialize(msg.payload)
+                match res:
+                    case mpi_dc.RecvResponse():
+                        yield self._deserialize(res.data)
+                    case mpi_dc.SteamEnd():
+                        return
+                    case mpi_dc.UnavailableError():
+                        break
+                    case _:
+                        raise mpi_dc.CommunicationError(f"Unknown response type {type(res)}")
+
+    def _recv(self, op: mpi_dc.Op):
+        """Recive object to server"""
+        return next(self._recv_many(op))
 
     def Disconnect(self) -> None:
         """Disconnect from a communicator."""
@@ -125,7 +139,7 @@ class Comm:
         """Broadcast."""
         if rank == self.rank:
             self._send(obj)
-        return self._recv()
+        return self._recv(op=mpi_dc.Op.BCAST)
 
     def Barrier(self) -> None:
         """Barrier synchronization."""
@@ -133,12 +147,10 @@ class Comm:
 
     def allgather(self, obj):
         """Gather to All."""
-        rank_obj = (self.rank, obj)
-        self._send(rank_obj)
-        rank_objs = sorted(self._recv_many())
-        return list(zip(*rank_objs))[1]
+        self._send(obj)
+        return list(self._recv_many(op=mpi_dc.Op.ALLGATHER))
 
-    def Allreduce(self, sendbuf, recvbuf, op=Op.SUM):
+    def Allreduce(self, sendbuf, recvbuf, op=Op.SUM) -> None:
         """Reduce to All."""
         if sendbuf is InPlace.IN_PLACE:
             sendbuf = recvbuf
@@ -152,7 +164,7 @@ class Comm:
             raise NotImplementedError("op with not SUM")
 
         self._send(sendbuf)
-        recvbuf[:] = sum(self._recv_many())
+        recvbuf[:] = self._recv(op=mpi_dc.Op.ALLREDUCE)
 
     def Iallreduce(self, sendbuf, recvbuf, op=Op.SUM):
         """Nonblocking Reduce to All."""
