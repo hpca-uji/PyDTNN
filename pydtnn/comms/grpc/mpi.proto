@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+service MPI {
+    rpc send (SendRequest) returns (SendResponse) {}
+    rpc recv (RecvRequest) returns (stream RecvResponse) {}
+}
+
+enum Op {
+    BCAST = 0;
+    ALLGATHER = 2;
+    ALLREDUCE = 3;
+}
+
+message SendRequest {
+    sfixed32 rank = 1;
+    bytes data = 2;
+}
+
+message SendResponse {
+}
+
+message RecvRequest {
+    sfixed32 rank = 1;
+    sfixed32 size = 2;
+    Op op = 3;
+}
+
+message RecvResponse {
+    bytes data = 1;
+}

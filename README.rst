@@ -83,14 +83,20 @@ can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
 
     $ pip install -e .
 
-Optionally, if you are going to use either MPI or CUDA, you should have
+Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
     $ pip install -r requirements_mpi.txt       # If MPI is going to be used
+    $ pip install -r requirements_grpc.txt      # If gRPC is going to be used
+    $ pip install -r requirements_mqtt.txt      # If MQTT is going to be used
+
+Optionally, if you are going to use CUDA, you should have
+installed the corresponding system libraries, and install the required Python
+packages with::
+
     $ pip install -r requirements_cuda_1.txt    # If CUDA is going to be used
     $ pip install -r requirements_cuda_2.txt
-
 
 Launcher options
 ----------------
