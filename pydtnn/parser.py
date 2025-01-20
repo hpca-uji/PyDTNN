@@ -60,6 +60,7 @@ def np_dtype(x):
 _this_file_path = os.path.dirname(os.path.realpath(__file__))
 _scripts_path = os.path.join(_this_file_path, "scripts")
 _default_dataset_path = os.path.join(_this_file_path, "datasets/mnist")
+_default_raw_dataset_path = os.path.join(_default_dataset_path, "dataset.npz")
 _desc = "Trains or evaluates a neural network using PyDTNN."
 _epilogue = f"""Example scripts that call this program for training
 and evaluating different neural network models with different datasets are
@@ -152,7 +153,7 @@ parser.add_argument('--evaluate', dest="evaluate_on_train", default=False, type=
 parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
 parser.add_argument('--weights_and_bias_filename', type=str, default=None)
 parser.add_argument('--history_file', type=str, default=None)
-parser.add_argument('--shared_storage', default=False, type=bool_lambda)
+parser.add_argument('--shared_storage', default=True, type=bool_lambda)
 parser.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
 parser.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
 parser.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
@@ -165,6 +166,7 @@ _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default="mnis
 _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
 _ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path)
 _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path)
+_ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path)
 _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda)
 _ds_group.add_argument('--flip_images', default=False, type=bool_lambda)
 _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5)

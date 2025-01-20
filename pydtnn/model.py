@@ -131,8 +131,7 @@ class Model:
         # Layers' attributes
         self.layers = []
         self.layer_id = _layer_id_generator()
-        # In data parallel, we assume that file weights are stored in a nfs mounted directory.
-        self.shared_storage = True
+        self.shared_storage = self.kwargs["shared_storage"]
         # Matmul
         self.matmul = getattr(utils, "matmul")
         # Set current mode to unspecified
@@ -292,6 +291,10 @@ class Model:
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
             self._read_model(self.model_name)
+
+    @property
+    def dataset_raw_path(self):
+        return self.kwargs["dataset_raw_path"].format(rank=self.rank)
 
     def __getattr__(self, item):
         try:
