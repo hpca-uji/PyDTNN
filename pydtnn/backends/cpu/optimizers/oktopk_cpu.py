@@ -345,9 +345,40 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return coo_allgather_topk, coo_global_topk.nonzero()
 
 
-    def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
+    def _are_indixes_sorted(self, indexes):
+        """
+        Check if indexes are sorted by row and then by column (COO canonical format)
+
+        This function is computationaly expensive and therefore should only be used for devoloping/debugging purposes
+
+        Parameters:
+            - indexes: a tuple of two arrays: row and col
+
+        Returns:
+            - True if indexes are sorted, False if not. 
+        """
+
+        rows, cols = indexes
+        if len(rows) == 0:
+            return True
+
+        if not np.all(rows[:-1] <= rows[1:]):
+            return False
+
+        for i in range(len(rows) - 1):
+            current_row = rows[i]
+            current_col = cols[i + 1]
+            next_row = rows[i]
+            next_col = cols[i + 1]
+            if current_row == next_row and current_col > next_col:
+                return False
+        return True
+
+
+    def _intersect_indexes(self, local_indexes, global_indexes, method="cython", check_indexes=False):
         """
         Calculates the intersection of two sets of indices of 2D.
+        Check_indexes should only be used for debugging/devolopment purposes to assert that indexes are correct.
 
         Parameters:
             - local_indexes: a tuple of two arrays: row and col (Sort by rows, then columns). 
@@ -361,6 +392,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - global_indexes = (np.array([0, 1, 3, 3, 3]), np.array([1, 6, 1, 5, 7]))
             - output: (array([1, 3, 3]), array([6, 1, 7]))  
         """
+
+        if check_indexes:
+            assert(self._are_indixes_sorted(local_indexes) and self._are_indixes_sorted(global_indexes)) 
 
         if method == "cython":
             local_rows, local_cols = local_indexes
@@ -504,8 +538,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             all_row = np.concatenate(self.comm.allgather(local_data.row))
             all_col = np.concatenate(self.comm.allgather(local_data.col))
             coo_global_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape)
-            coo_global_data.eliminate_zeros()
-            coo_global_data.sum_duplicates()
             return coo_global_data
 
         if input_format == "dense":
