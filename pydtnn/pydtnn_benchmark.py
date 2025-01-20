@@ -23,7 +23,7 @@ PyDTNN Benchmark script
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # from __future__ import print_function
-from pydtnn.utils import MPI
+
 import cProfile
 import os
 import pstats
@@ -37,6 +37,10 @@ import numpy as np
 from pydtnn.model import Model
 from pydtnn.parser import parser
 from pydtnn.utils.best_of import BestOf
+
+ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
+if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdout_rank:
+    sys.stdout = sys.stderr = open(os.devnull, "w")
 
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
