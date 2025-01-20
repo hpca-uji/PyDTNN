@@ -140,7 +140,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - layer: layer id
             - w_: weight param type (bias, weight, ...)
             - w: N dimensional dense weights matrix/tensor 
-            - u: Sparse 2D gradient matrix in coo format to update w
+            - u: Sparse 2D gradient matrix in COO format to update w
 
         Returns:
             - void, instead it directly applies the result to the weight layer attribute
@@ -177,14 +177,14 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         gradient space to maintain efficiency and accuracy.
 
         Parameters:
-            - acc: Gradient matrix accumulation values.
+            - acc: 2D dense gradient matrix accumulation values.
             - t: Current iteration number.
             - k: Number of top-k gradient values to select.
             - space_repartition_t: Interval of iterations for space repartitioning.
             - thresholds_re_evaluation_t: Interval of iterations for threshold re-evaluation.
 
         Returns:
-            - u: The updated gradient values in coo 2D sparse format.
+            - u: The updated gradient values in 2D sparse format (coo_array).
             - indexes: The indices of the top-k gradient values that were updated: (row, col).
         """
 
@@ -210,8 +210,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Return the absolute gradient threshold for a given matrix.
         
         Parameters:
-            - matrix: A gradient matrix, expected in dense format for 'dense' input_format 
-                    or in COO format (data, (row, col)) for 'coo' input_format.
+            - matrix: A 2D gradient matrix:
+                - In dense format for 'dense' input_format 
+                - Or, in COO format (coo_array) for 'coo' input_format.
             - k: An integer, indicating the number of top gradient values to consider.
             - input_format: A string, either 'dense' for a dense matrix or 'coo' for a sparse matrix in COO format.
         
@@ -243,7 +244,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
         Parameters:
-            - acc: gradient matrix values
+            - acc: 2D dense gradient matrix values
             - local_th: local process gradient threshold
             - balanced: if not balanced, a static row partition is performed, 
                         if balanced, a topk gradiend distribution is considered in the row partition  
@@ -302,7 +303,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         the reduction locally. 
 
         Parameters:
-            - acc: 2D gradient matrix accumulation values (in dense format).
+            - acc: 2D gradient matrix accumulation values in dense format.
             - local_th: Local threshold for selecting top-k values.
             - boundaries: Boundaries for partitioning the gradient space: [row_end_p0, row_end_p1, row_end_p2, ...]
 
@@ -322,11 +323,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Performs the allgather of the coo_reduced_topk values among workers.
 
         Parameters:
-            - coo_reduced_topk: a sparse gradient matrix (not in coo format)
+            - coo_reduced_topk: a 2D sparse gradient matrix (coo_array)
             - global_th: the global threshold (float) to perfrom top selection
 
         Returns:
-            - global_topk: a sparse gradient matrix with the global topk selection (not in coo format)
+            - coo_allgather_topk: a 2D sparse gradient matrix with the global topk selection (coo_array)
             - global_topk_indexes: the indices of the top-k gradient values reduced
         """
 
@@ -404,12 +405,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Selects top-k elements from the matrix that are greater than or equal to the threshold.
         
         Parameters:
-            - matrix (np.array): The input 2D matrix from which to select elements.
+            - matrix (np.array o coo_array): The input 2D matrix from which to select elements.
             - threshold (float): The threshold value to compare against the absolute values of the matrix elements.
         
         Returns:
-            - topk (np.array): A np.array with only the elements that meet the threshold condition 
-            - topk_indexes (tuple(np.array, np.array): a tuple of np.arrays with the indexes, e.g (array([0, 1]), array([1, 1]))
+            - A sparse 2D gradient matrix topk in COO (coo_array)
         """
 
         if input_format == "dense" and method == "cython":
@@ -443,7 +443,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - boundaries: boundaries for partitioning the gradient space: [row_end_p0, row_end_p1, row_end_p2, ...]
 
         Returns:
-            - The reduced topk values in coo format: (data, (row, col))
+            - coo_reduced_region: The reduced topk values in COO format (coo_array)
         """
 
         if self.nprocs == 1:
