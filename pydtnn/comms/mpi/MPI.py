@@ -1,8 +1,11 @@
-"""Message Passing Interface."""
+"""Message Passing Interface (self-contained)"""
 
-import importlib
+import sys as _sys
+from mpi4py import MPI as _module
 
-_module = importlib.import_module("mpi4py.MPI")
+
+# Replace module
+_sys.modules[__name__] = _module
 
 
 def __getattr__(key):

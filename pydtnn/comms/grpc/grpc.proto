@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+service gRPC {
+    rpc _syc (Message) returns (Message) {}
+    rpc _c2s (Message) returns (Message) {}
+    rpc _s2c (Message) returns (Message) {}
+    rpc _fin (Message) returns (Message) {}
+}
+
+message Message {
+    bytes data = 1;
+}

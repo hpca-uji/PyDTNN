@@ -1,10 +1,12 @@
-"""Message Passing Interface."""
+"""Message Passing Interface"""
 
-import os
-import importlib
+import importlib as _importlib
+from pydtnn.comms import PROTOCOL as _PROTOCOL
 
-_implementation = os.environ.get("PYDTNN_MPI", "mpi")
-_module = importlib.import_module(f"pydtnn.comms.{_implementation}.MPI")
+try:  # Specific implementation
+    _module = _importlib.import_module(f"pydtnn.comms.{_PROTOCOL}.MPI")
+except ModuleNotFoundError:  # Client implementation
+    from pydtnn.comms import mpi_client as _module
 
 
 def __getattr__(key):
