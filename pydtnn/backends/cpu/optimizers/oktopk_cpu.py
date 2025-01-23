@@ -239,7 +239,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
 
-    def _space_repartition(self, acc, local_th, balanced=False):
+    def _space_repartition(self, acc, local_th, balanced=True):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
@@ -254,44 +254,41 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         """
     
         if not balanced:
-            boundaries = []
-            rows = self.dw_original_shape[0]
-            block_size = rows // self.nprocs
-            for i in range(1, self.nprocs + 1):
-                if i == self.nprocs:
-                    boundaries.append(rows)
-                else:
-                    boundaries.append(block_size * i)
+            boundaries = np.zeros(self.nprocs, dtype=np.int32)
+            total_rows = self.dw_original_shape[0]
+            block_size = total_rows // self.nprocs
+            for i in range(0, self.nprocs - 1):
+                boundaries[i] = block_size * (i + 1)
+            boundaries[self.nprocs - 1] = total_rows
             return boundaries
-        
+
         if balanced:
-            _, (row, col) = self._top_threshold_selection(acc, local_th, input_format="dense")
-            all_topk_row = self._allgather(row, input_format="dense")
-            all_topk_col = self._allgather(col, input_format="dense")
-            
-            indexes_set = set()
-            for i in range(len(all_topk_row)):
-                indexes_set.add((all_topk_row[i], all_topk_col[i]))
+            coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
+            all_coo_topk = self._allgather(coo_topk, input_format="coo")
+            all_coo_topk.sum_duplicates()
 
-            rows_count = np.zeros(shape=(self.dw_2d_shape[0],), dtype=np.int32)
-            for row, _ in indexes_set:
-                rows_count[row] += 1
-                
-            boundaries = []
-            topk_counter = 0
-            topk_per_worker = np.sum(rows_count) // self.nprocs
+            current_row = 0
+            current_proc = 0
+            rows = all_coo_topk.row 
+            topk_in_current_proc = 0
+            total_rows = all_coo_topk.shape[0]
+            boundaries = np.zeros(self.nprocs, dtype=np.int32)
+            topk_per_proc = all_coo_topk.count_nonzero() // self.nprocs
+            topk_per_row = np.zeros(total_rows, dtype=np.int32)
+            np.add.at(topk_per_row, rows, 1)
 
-            for row, count in enumerate(rows_count):
-                if count > 0:
-                    topk_counter += count
-                
-                while topk_counter >= topk_per_worker:
-                    boundaries.append(row + 1)
-                    topk_counter -= topk_per_worker  
-
-            if not boundaries or boundaries[-1] != len(rows_count):
-                boundaries.append(len(rows_count))
-
+            while current_proc < self.nprocs - 1:
+                if current_row < total_rows:
+                    topk_in_current_proc += topk_per_row[current_row]
+                    if topk_in_current_proc >= topk_per_proc:
+                        boundaries[current_proc] = current_row 
+                        topk_in_current_proc = 0
+                        current_proc += 1
+                    current_row += 1
+                else:
+                    boundaries[current_proc] = current_row 
+                    current_proc += 1
+            boundaries[self.nprocs - 1] = total_rows
             return boundaries
 
 
