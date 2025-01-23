@@ -23,7 +23,7 @@ class Server(Base):
         # State
         self._lock = threading.Lock()
         self._requests = SimpleQueue[grpc_pb2.Message]()
-        self._responses = dict[int, SimpleQueue[grpc_pb2.Message]]()
+        self._responses = dict[str, SimpleQueue[grpc_pb2.Message]]()
 
         # gRPC
         thread_pool = ThreadPoolExecutor(max_workers=1)
