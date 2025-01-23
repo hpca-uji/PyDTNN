@@ -239,7 +239,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
 
-    def _space_repartition(self, acc, local_th, balanced=False):
+    def _space_repartition(self, acc, local_th, balanced=True):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
@@ -481,11 +481,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return coo_topk
 
         if method == "allreduce":
+            all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0
             row_end = boundaries[self.rank]
             if self.rank != 0:
                 row_start = boundaries[self.rank - 1]
-            all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             coo_region.row += row_start
             return coo_region
