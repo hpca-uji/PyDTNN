@@ -87,16 +87,32 @@ Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install -r requirements_mpi.txt       # If MPI is going to be used
-    $ pip install -r requirements_grpc.txt      # If gRPC is going to be used
-    $ pip install -r requirements_mqtt.txt      # If MQTT is going to be used
+    $ pip install -r requirements_mpi.txt
 
 Optionally, if you are going to use CUDA, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install -r requirements_cuda_1.txt    # If CUDA is going to be used
+    $ pip install -r requirements_cuda_1.txt
     $ pip install -r requirements_cuda_2.txt
+
+Optionally, if you are going to use gRPC, you should install the required Python
+packages, and enable the protocol with::
+
+    $ pip install -r requirements_grpc.txt
+    $ export PYDTNN_COMM=grpc
+
+Optionally, if you are going to use MQTT, you should have
+installed a MQTT broker server, install the required Python
+packages, and enable the protocol with::
+
+    $ pip install -r requirements_mqtt.txt
+    $ export PYDTNN_COMM=mqtt
+
+Alternative commuications also require and active server,
+you should launch one with::
+
+    $ python libs/mpi/server.py    # If MPI is going to be used
 
 Launcher options
 ----------------
