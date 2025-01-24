@@ -22,9 +22,9 @@ __all__ = (
 # Modules
 class Protocol(enum.StrEnum):
     """Comunication protocol"""
-    MPI = "mpi"
-    GRPC = "grpc"
-    MQTT = "mqtt"
+    MPI = enum.auto()
+    GRPC = enum.auto()
+    MQTT = enum.auto()
 
 
 # MPI
@@ -78,10 +78,12 @@ class Communication(abc.ABC):
         """Deserialize object from comunication"""
         return pickle.loads(data)
 
+    @abc.abstractmethod
     def get(self):
         """Get data from peer"""
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def put(self, obj) -> None:
         """Publish data to peer"""
         raise NotImplementedError()
@@ -107,7 +109,7 @@ Client: type[Communication]
 def __getattr__(key):
     """Proxy all attributes to implementation"""
     try:
-        _module = importlib.import_module(f"pydtnn.comms.{PROTOCOL}.comm")
+        module = importlib.import_module(f"pydtnn.comms.{PROTOCOL}.comm")
     except ModuleNotFoundError:
         raise AttributeError(key)
-    return getattr(_module, key)
+    return getattr(module, key)

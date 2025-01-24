@@ -43,6 +43,7 @@ setup(
     keywords=s.keywords,
     # distutils parameters
     scripts=s.scripts,
+    python_requires=s.python_requires,
     packages=find_packages(exclude=['build', 'dist', 'distfiles']),
     package_data=s.package_data,
     data_files=s.data_files,
