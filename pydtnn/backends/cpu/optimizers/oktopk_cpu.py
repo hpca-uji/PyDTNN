@@ -239,7 +239,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
 
-    def _space_repartition(self, acc, local_th, balanced=True):
+    def _space_repartition(self, acc, local_th, balanced=False):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
