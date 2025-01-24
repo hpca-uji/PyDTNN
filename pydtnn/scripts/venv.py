@@ -4,6 +4,7 @@
 import sys
 sys.path.pop(0)
 
+# flake8: noqa
 import venv
 import shlex
 import argparse
