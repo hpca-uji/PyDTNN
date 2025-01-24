@@ -1,9 +1,9 @@
 """MQTT communication"""
 
 from queue import SimpleQueue
-from pydtnn.comms.mqtt import Base
 import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
+from pydtnn.comms.mqtt import Protocol
 
 
 __all__ = (
@@ -12,7 +12,7 @@ __all__ = (
 )
 
 
-class Server(Base):
+class Server(Protocol):
     """MQTT server"""
 
     def __init__(self) -> None:
@@ -54,7 +54,7 @@ class Server(Base):
         super().close()
 
 
-class Client(Base):
+class Client(Protocol):
     """MQTT client"""
 
     def __init__(self) -> None:

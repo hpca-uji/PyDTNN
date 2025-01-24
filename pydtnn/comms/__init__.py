@@ -6,14 +6,12 @@ import enum
 import pickle
 import importlib
 import functools
-from dataclasses import dataclass
 
 
 __all__ = (
     "PROTOCOL",
-    "MPI_OP",
-    "MPI_Request",
-    "MPI_Response",
+    "Protocol",
+    "Communication",
     "Server",
     "Client"
 )
@@ -22,32 +20,8 @@ __all__ = (
 # Modules
 class Protocol(enum.StrEnum):
     """Comunication protocol"""
-    MPI = enum.auto()
     GRPC = enum.auto()
     MQTT = enum.auto()
-
-
-# MPI
-class MPI_OP(enum.Enum):
-    """MPI operation type"""
-    BROADCAST = enum.auto()
-    GATHER = enum.auto()
-    REDUCE = enum.auto()
-
-
-@dataclass(frozen=True, slots=True)
-class MPI_Request:
-    """MPI operation request"""
-    rank: int
-    size: int
-    op: MPI_OP
-    obj: ...
-
-
-@dataclass(frozen=True, slots=True)
-class MPI_Response:
-    """MPI operation response"""
-    obj: ...
 
 
 class Communication(abc.ABC):
@@ -100,14 +74,20 @@ class Communication(abc.ABC):
 
 
 # Exports
-PROTOCOL = Protocol(os.environ.get("PYDTNN_COMM", Protocol.MPI))
-
 Server: type[Communication]
 Client: type[Communication]
+
+PROTOCOL: Protocol | None
+if _env_protocol := os.environ.get("PYDTNN_COMM"):
+    PROTOCOL = Protocol(_env_protocol)
+else:
+    PROTOCOL = None
 
 
 def __getattr__(key):
     """Proxy all attributes to implementation"""
+    if not PROTOCOL:
+        raise AttributeError(key)
     try:
         module = importlib.import_module(f"pydtnn.comms.{PROTOCOL}.comm")
     except ModuleNotFoundError:

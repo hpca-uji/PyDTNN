@@ -5,6 +5,7 @@ import enum
 import functools
 import numpy as np
 from pydtnn import comms
+from pydtnn.libs.mpi import comm as mpi_comm
 
 
 __all__ = (
@@ -58,9 +59,9 @@ class Comm:
         # Lazily initialized to prevent module imports execution
         return comms.Client()
 
-    def _send(self, op: comms.MPI_OP, obj) -> None:
+    def _send(self, operation: mpi_comm.Operation, obj) -> None:
         """Send object to server"""
-        request = comms.MPI_Request(rank=self.rank, size=self.size, op=op, obj=obj)
+        request = mpi_comm.Request(rank=self.rank, size=self.size, operation=operation, obj=obj)
         self._comm.put(request)
 
     def _recv_many(self, size=None):
@@ -69,7 +70,7 @@ class Comm:
             size = self.size
 
         for _ in range(size):
-            response: comms.MPI_Response = self._comm.get()
+            response: mpi_comm.Response = self._comm.get()
             yield response.obj
 
     def _recv(self):
@@ -99,7 +100,7 @@ class Comm:
     def bcast(self, obj, rank=0):
         """Broadcast."""
         if rank == self.rank:
-            self._send(op=comms.MPI_OP.BROADCAST, obj=obj)
+            self._send(operation=mpi_comm.Operation.BROADCAST, obj=obj)
         return self._recv()
 
     def Barrier(self) -> None:
@@ -108,7 +109,7 @@ class Comm:
 
     def allgather(self, obj):
         """Gather to All."""
-        self._send(op=comms.MPI_OP.GATHER, obj=obj)
+        self._send(operation=mpi_comm.Operation.GATHER, obj=obj)
         return list(self._recv_many())
 
     def Allreduce(self, sendbuf, recvbuf, op=Op.SUM) -> None:
@@ -124,7 +125,7 @@ class Comm:
         if op is not Op.SUM:
             raise NotImplementedError("op with not SUM")
 
-        self._send(op=comms.MPI_OP.REDUCE, obj=sendbuf)
+        self._send(operation=mpi_comm.Operation.REDUCE, obj=sendbuf)
         recvbuf[:] = self._recv()
 
     def Iallreduce(self, sendbuf, recvbuf, op=Op.SUM) -> Request:

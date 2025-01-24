@@ -5,6 +5,7 @@ import threading
 import functools
 from pydtnn import comms
 from queue import SimpleQueue
+from pydtnn.libs.mpi import comm as mpi_comm
 from argparse import ArgumentParser, Namespace
 from concurrent.futures import ThreadPoolExecutor
 
@@ -34,7 +35,7 @@ class Server:
         # State
         self._pool = thead_pool
         self._lock = threading.Lock()
-        self._queue = SimpleQueue[comms.MPI_Request]()
+        self._queue = SimpleQueue[mpi_comm.Request]()
 
     @functools.cached_property
     def _comm(self) -> comms.Communication:
@@ -42,16 +43,16 @@ class Server:
         # Lazily initialized to prevent module imports execution
         return comms.Server()
 
-    def _get(self) -> comms.MPI_Request:
+    def _get(self) -> mpi_comm.Request:
         """Get request from clients"""
         return self._queue.get()
 
     def _put(self, obj) -> None:
         """Publish response to clients"""
-        response = comms.MPI_Response(obj)
+        response = mpi_comm.Response(obj)
         self._comm.put(response)
 
-    def _handle(self, request: comms.MPI_Request) -> None:
+    def _handle(self, request: mpi_comm.Request) -> None:
         """Client request handler"""
         # Store data
         self._queue.put(request)
@@ -60,7 +61,7 @@ class Server:
         if not self._lock.acquire(blocking=False):
             return
         try:
-            name = request.op.name.lower()
+            name = request.operation.name.lower()
             handler = getattr(self, name)
             handler(request)
         finally:
@@ -87,11 +88,11 @@ class Server:
         except:  # noqa: E722
             pass
 
-    def broadcast(self, context: comms.MPI_Request) -> None:
+    def broadcast(self, context: mpi_comm.Request) -> None:
         """Broadcast."""
         self._put(self._get().obj)
 
-    def gather(self, context: comms.MPI_Request) -> None:
+    def gather(self, context: mpi_comm.Request) -> None:
         """Gather to All."""
         reqs = sorted(
             (self._get() for _ in range(context.size)),
@@ -101,7 +102,7 @@ class Server:
         for req in reqs:
             self._put(req.obj)
 
-    def reduce(self, context: comms.MPI_Request) -> None:
+    def reduce(self, context: mpi_comm.Request) -> None:
         """Reduce to All."""
         self._put(sum(self._get().obj for _ in range(context.size)))
 

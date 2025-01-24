@@ -70,7 +70,7 @@ available at: '{_scripts_path}'."""
 def _get_mpi_processes():
     try:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
-        from pydtnn.comms import MPI
+        from pydtnn.libs.mpi import MPI
     except (ImportError, ModuleNotFoundError):
         mpi_processes = 1
     else:

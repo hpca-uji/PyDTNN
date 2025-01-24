@@ -4,7 +4,7 @@ import grpc
 import threading
 from queue import Empty, SimpleQueue
 from concurrent.futures import ThreadPoolExecutor
-from pydtnn.comms.grpc import Base, grpc_pb2, grpc_pb2_grpc
+from pydtnn.comms.grpc import Protocol, grpc_pb2, grpc_pb2_grpc
 
 
 __all__ = (
@@ -13,7 +13,7 @@ __all__ = (
 )
 
 
-class Server(Base):
+class Server(Protocol):
     """gRPC server"""
 
     def __init__(self) -> None:
@@ -80,7 +80,7 @@ class Server(Base):
         super().close()
 
 
-class Client(Base):
+class Client(Protocol):
     """gRPC client"""
 
     def __init__(self) -> None:

@@ -5,7 +5,12 @@ from pydtnn import comms
 import paho.mqtt.client as mqtt_client
 
 
-class Base(comms.Communication):
+__all__ = (
+    "Protocol",
+)
+
+
+class Protocol(comms.Communication):
     """Shared base MQTT implementation"""
 
     _qos = 0

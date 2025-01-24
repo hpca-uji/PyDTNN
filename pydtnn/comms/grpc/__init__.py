@@ -11,7 +11,12 @@ finally:
     sys.path.insert(0, _pkg)
 
 
-class Base(comms.Communication):
+__all__ = (
+    "Protocol",
+)
+
+
+class Protocol(comms.Communication):
     """Shared base gRPC implementation"""
     _protocol_port = 8080
     _compression = grpc.Compression.NoCompression

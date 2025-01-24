@@ -23,7 +23,7 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
 
 try:
     # noinspection PyUnresolvedReferences
-    from pydtnn.comms import MPI
+    from pydtnn.libs.mpi import MPI
 except (ImportError, ModuleNotFoundError):
     pass
 
