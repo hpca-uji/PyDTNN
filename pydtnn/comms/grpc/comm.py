@@ -37,8 +37,10 @@ class Server(Protocol):
 
     def _syc(self, request: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
         """Client connection startup"""
+        peer = context.peer()
+        queue = SimpleQueue()
         with self._lock:
-            self._responses[context.peer()] = SimpleQueue()
+            self._responses[peer] = queue
         return grpc_pb2.Message()
 
     def _c2s(self, request: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
@@ -48,16 +50,19 @@ class Server(Protocol):
 
     def _s2c(self, request: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
         """Server to client communication"""
+        peer = context.peer()
+        queue = self._responses[peer]
         try:
-            return self._responses[context.peer()].get_nowait()
+            return queue.get_nowait()
         except Empty:
             context.set_code(grpc.StatusCode.UNAVAILABLE)
             return grpc_pb2.Message()
 
     def _fin(self, request: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
         """Client connection finalizer"""
+        peer = context.peer()
         with self._lock:
-            del self._responses[context.peer()]
+            del self._responses[peer]
         return grpc_pb2.Message()
 
     def get(self):
@@ -71,8 +76,9 @@ class Server(Protocol):
         data = self._serialize(obj)
         msg = grpc_pb2.Message(data=data)
         with self._lock:
-            for queue in self._responses.values():
-                queue.put(msg)
+            queues = list(self._responses.values())
+        for queue in queues:
+            queue.put(msg)
 
     def close(self) -> None:
         """Close the server"""
