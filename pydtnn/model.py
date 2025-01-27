@@ -261,8 +261,14 @@ class Model:
         # Disable BestOf globally if not enabled
         if self.kwargs['enable_best_of'] is False:
             BestOf.use_always_the_first_alternative()
+        # Batch size
+        if self.kwargs['batch_size'] and self.kwargs['global_batch_size']:
+            raise SystemExit("Can not define 'batch_size' and 'global_batch_size' simultaneously")
+        elif self.kwargs['global_batch_size']:
+            self.batch_size = self.kwargs['global_batch_size'] / self.nprocs
+        else:
+            self.batch_size = self.kwargs['batch_size']
         # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
-        self.batch_size = self.kwargs['batch_size']
         self.steps_per_epoch = self.kwargs['steps_per_epoch']
         self.cpu_speed = self.kwargs['cpu_speed']
         self.memory_bw = self.kwargs['memory_bw']
