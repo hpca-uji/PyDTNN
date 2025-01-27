@@ -205,7 +205,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return coo_u, indexes
 
 
-    def _th_re_evaluate(self, matrix, k, input_format=None):
+    def _th_re_evaluate(self, matrix, k, input_format=None, method="numpy_sort"):
         """
         Return the absolute gradient threshold for a given matrix.
         
@@ -226,17 +226,31 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if input_format == "coo" and matrix.nnz == 0:
             return 1.0
 
-        if input_format == "dense":
+        if input_format == "dense" and method == "numpy_sort":
             sorted_matrix = np.sort(np.abs(matrix).flatten())
             threshold = sorted_matrix[max(-k, -len(sorted_matrix))]
             return threshold
 
-        if input_format == "coo":
+        if input_format == "coo" and method == "numpy_sort":
             sorted_data = np.sort(np.abs(matrix.data))
             threshold = sorted_data[max(-k, -len(sorted_data))]
             return threshold
-        
-        raise NotImplementedError(f"Input format '{input_format}' not implemented")
+
+        if input_format == "dense" and method == "numpy_partition":
+            flat_matrix = np.abs(matrix).flatten()
+            if k > len(flat_matrix):
+                return flat_matrix.min()
+            threshold = np.partition(flat_matrix, -k)[-k]
+            return threshold
+
+        if input_format == "coo" and method == "numpy_partition":
+            flat_matrix = np.abs(matrix.data)
+            if k > len(flat_matrix):
+                return flat_matrix.min()
+            threshold = np.partition(flat_matrix, -k)[-k]
+            return threshold
+
+        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
     def _space_repartition(self, acc, local_th, balanced=False):
