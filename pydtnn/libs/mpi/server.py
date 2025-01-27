@@ -21,7 +21,7 @@ arg_parser = ArgumentParser(
     description="MPI server"
 )
 arg_parser.add_argument("-np", dest="size", type=int, default=4)
-arg_parser.add_argument("-a", dest="addr", type=str, default="localhost")
+arg_parser.add_argument("-a", dest="addr", type=str, default=None)
 arg_parser.add_argument("-p", dest="port", type=str, default=None)
 
 
@@ -119,7 +119,8 @@ def main(*args: str) -> None:
     """Application entrypoint"""
     config = arg_parser.parse_args(args)
     config = typing.cast(Namespace, config)
-    comms.Server._addr = config.addr  # type: ignore
+    if config.addr:
+        comms.Server._addr = config.addr
     if config.port:
         comms.Server._port = config.port
     with ThreadPoolExecutor(max_workers=config.size) as pool:
