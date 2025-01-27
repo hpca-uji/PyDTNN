@@ -37,6 +37,14 @@ class Server:
         self._lock = threading.Lock()
         self._queue = SimpleQueue[mpi_comm.Request]()
 
+    def __enter__(self):
+        """Context manager start"""
+        return self
+
+    def __exit__(self, cls, exc, tb):
+        """Context manager exit"""
+        self.close()
+
     @functools.cached_property
     def _comm(self) -> comms.Communication:
         """Communication connection"""
@@ -111,11 +119,12 @@ def main(*args: str) -> None:
     """Application entrypoint"""
     config = arg_parser.parse_args(args)
     config = typing.cast(Namespace, config)
-    thread_pool = ThreadPoolExecutor(max_workers=config.size)
     comms.Server._addr = config.addr  # type: ignore
     if config.port:
         comms.Server._port = config.port
-    Server(thread_pool).serve_forever()
+    with ThreadPoolExecutor(max_workers=config.size) as pool:
+        with Server(pool) as server:
+            server.serve_forever()
 
 
 if __name__ == "__main__":

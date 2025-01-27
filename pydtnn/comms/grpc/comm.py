@@ -26,9 +26,9 @@ class Server(Protocol):
         self._responses = dict[str, SimpleQueue[grpc_pb2.Message]]()
 
         # gRPC
-        thread_pool = ThreadPoolExecutor(max_workers=1)
+        self._pool = ThreadPoolExecutor(max_workers=1)
         self._server = grpc.server(
-            thread_pool=thread_pool,
+            thread_pool=self._pool,
             compression=self._compression
         )
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
@@ -77,6 +77,7 @@ class Server(Protocol):
     def close(self) -> None:
         """Close the server"""
         self._server.stop(grace=None)
+        self._pool.shutdown(cancel_futures=True)
         super().close()
 
 

@@ -29,6 +29,14 @@ class Communication(abc.ABC):
     _pickle_protocol = 5
     _protocol_port = 50000
 
+    def __enter__(self):
+        """Context manager start"""
+        return self
+
+    def __exit__(self, cls, exc, tb):
+        """Context manager exit"""
+        self.close()
+
     @property
     def _netloc(self):
         """Service network location (address + port)"""
