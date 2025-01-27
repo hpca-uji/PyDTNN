@@ -45,12 +45,12 @@ class Communication(abc.ABC):
     @functools.cached_property
     def _addr(self) -> str:
         """Service address"""
-        return os.environ.get("PYDTNN_COMM_ADDR", "localhost")
+        return os.environ.get("PYDTNN_COMM_ADDR") or "localhost"
 
     @functools.cached_property
     def _port(self) -> int:
         """Service port"""
-        return int(os.environ.get("PYDTNN_COMM_PORT", f"{self._protocol_port}"))
+        return int(os.environ.get("PYDTNN_COMM_PORT") or self._protocol_port)
 
     def _serialize(self, obj) -> bytes:
         """Serialize object for comunication"""
