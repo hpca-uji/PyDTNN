@@ -7,7 +7,7 @@ mpirun -np 4 \
   pydtnn_benchmark \
   --model=simplecnn \
   --dataset=raw \
-  --dataset_raw_path="datasets/mnist/dataset.{rank}.npz" \
+  --dataset_raw_path='datasets/mnist/dataset.${rank}.npz' \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \

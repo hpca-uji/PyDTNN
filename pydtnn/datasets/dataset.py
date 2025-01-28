@@ -24,7 +24,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW, string_substitute
 
 
 class _BackgroundGenerator(threading.Thread):
@@ -100,8 +100,12 @@ class Dataset(ABC):
         if self.debug:
             self._print_report()
 
-    def export(self):
-        """Export dataset (rank specific)"""
+    def export(self, split_weights: list[float] | None = None):
+        """Export dataset (possibly split and rank specific)"""
+
+        # Get split weights
+        if split_weights is None:
+            split_weights = list(map(float, self.model.dataset_export_split_weights.split(",")))
 
         # Data generators
         gen_train = self._data_generator(TRAIN)
@@ -118,20 +122,35 @@ class Dataset(ABC):
         x_train, y_train = map(np.concat, zip(*gen_train))
         x_test, y_test = map(np.concat, zip(*gen_test))
 
-        # Export dataset
-        np.savez_compressed(self.model.dataset_raw_path,
-                            x_train=x_train,
-                            y_train=y_train,
-                            x_test=x_test,
-                            y_test=y_test)
+        # Calculate percentage splits
+        total = sum(split_weights)
+        split_percentage = [weight / total for weight in itertools.accumulate(split_weights)]
 
-        # Debug information
-        if self.debug:
-            print(f"Export: {self.model.dataset_raw_path}")
-            print(f"x_train: {x_train.shape}")
-            print(f"y_train: {y_train.shape}")
-            print(f"x_test: {x_test.shape}")
-            print(f"y_test: {y_test.shape}")
+        # Split arrays
+        np_splits = np.array(split_percentage[:-1])
+        x_train = np.split(x_train, (len(x_train) * np_splits).astype(int))
+        y_train = np.split(y_train, (len(y_train) * np_splits).astype(int))
+        x_test = np.split(x_test, (len(x_test) * np_splits).astype(int))
+        y_test = np.split(y_test, (len(y_test) * np_splits).astype(int))
+
+        # Save arrays
+        for split, (x_train, y_train, x_test, y_test) in enumerate(zip(x_train, y_train, x_test, y_test)):
+            path = string_substitute(self.model.dataset_raw_path, split=split)
+
+            # Export dataset
+            np.savez_compressed(path,
+                                x_train=x_train,
+                                y_train=y_train,
+                                x_test=x_test,
+                                y_test=y_test)
+
+            # Debug information
+            if self.debug:
+                print(f"Export: {path}")
+                print(f"x_train: {x_train.shape}")
+                print(f"y_train: {y_train.shape}")
+                print(f"x_test: {x_test.shape}")
+                print(f"y_test: {y_test.shape}")
 
     @property
     def train_nsamples(self):

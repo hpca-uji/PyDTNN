@@ -1,14 +1,17 @@
 #!/bin/bash
 
+self=$(realpath "$0")
+dir="${self%/*}"
+
 export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-mpirun -np 4 \
-  python3 export_dataset.py \
+python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
-  --dataset_raw_path="datasets/mnist/dataset.{rank}.npz" \
-  --parallel=data \
+  --dataset_export_split_weights=1,1,1,1 \
+  --dataset_raw_path='datasets/mnist/dataset.${split}.npz' \
+  --parallel=sequential \
   --shared_storage=True

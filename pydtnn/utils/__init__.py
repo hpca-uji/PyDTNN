@@ -22,6 +22,7 @@ import inspect
 import math
 import os
 import sys
+import string
 from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
@@ -221,6 +222,12 @@ def matmul_mkl(a, b, c=None):
 
 def matmul_blis(a, b, c=None):
     return _matmul_xgemm("matmul_blis", blis(), a, b, c)
+
+
+def string_substitute(template, /, **mappings):
+    """Shell-like opportunistic substitution"""
+    return string.Template(template).safe_substitute(mappings)
+
 
 ###############################################################
 # The next functions have been deprecated - use them with care!

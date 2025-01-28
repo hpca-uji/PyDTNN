@@ -302,7 +302,8 @@ class Model:
 
     @property
     def dataset_raw_path(self):
-        return self.kwargs["dataset_raw_path"].format(rank=self.rank)
+        """Raw dataset path with rank substituted"""
+        return utils.string_substitute(self.kwargs["dataset_raw_path"], rank=self.rank)
 
     def __getattr__(self, item):
         try:
