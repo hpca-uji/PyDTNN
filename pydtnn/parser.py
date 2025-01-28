@@ -143,7 +143,7 @@ parser = PydtnnArgumentParser(description=_desc, epilog=_epilogue)
 
 # Model
 parser.add_argument('--model', dest="model_name", type=str, default="simplecnn")
-parser.add_argument('--batch_size', type=int, default=64)
+parser.add_argument('--batch_size', type=int, default=None)
 parser.add_argument('--global_batch_size', type=int, default=None)
 parser.add_argument('--dtype', type=np_dtype, default=np.float32)
 parser.add_argument('--num_epochs', type=int, default=1)
