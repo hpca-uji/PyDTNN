@@ -165,7 +165,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             setattr(layer, w_, w)  
             return
 
-        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
 
     def _ok_sparse_allreduce(self, acc, t, k, space_repartition_t, thresholds_re_evaluation_t):
@@ -551,7 +551,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return coo_global_data
 
         if input_format == "dense":
-            return np.concatenate(self.comm.allgather(data))
+            return np.concatenate(self.comm.allgather(local_data))
 
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
