@@ -83,9 +83,9 @@ def get_optimizer(model):
                          dtype=model.dtype,
                          comm=model.comm,
                          rank=model.rank,
-                         k=model.k,
                          tau=model.tau,
-                         tau_prime=model.tau_prime)
+                         tau_prime=model.tau_prime,
+                         density=model.density)
     else:
         raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
     if model.enable_cudnn:

@@ -61,6 +61,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 dw = dw.reshape(dw.shape[0], -1)
             self.dw_2d_shape = dw.shape
 
+            # Compute k from: layer_params / self.density
+            k = int(np.prod(self.dw_original_shape) * self.density)
+
             # Initialize current layer-parameter values
             self.local_th = self.all_local_th[layer.id][dw_]
             self.global_th = self.all_global_th[layer.id][dw_]
@@ -72,7 +75,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             acc = self._compute_acc(self.all_residuals[layer.id][dw_], dw, self.learning_rate)
 
             # Main part of ok-topk: compute the values that contribute to the update and its indexes
-            coo_u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], self.k, self.tau, self.tau_prime)
+            coo_u, indexes = self._ok_sparse_allreduce(acc, self.iterations[layer.id], k, self.tau, self.tau_prime)
                
             # Update residuals
             self.all_residuals[layer.id][dw_] = self._reset_residuals(acc, indexes)
