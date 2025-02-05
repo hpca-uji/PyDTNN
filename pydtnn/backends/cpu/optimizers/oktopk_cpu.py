@@ -18,7 +18,7 @@
 #
 
 import numpy as np
-from scipy.sparse import csr_array, coo_array
+from scipy.sparse import coo_array
 
 from pydtnn.cython_modules import \
     compute_dense_acc_cython, \
@@ -26,7 +26,6 @@ from pydtnn.cython_modules import \
     top_threshold_selection_cython, \
     top_threshold_selection_coo_cython, \
     update_sparsed_weights_cython, \
-    update_dense_weights_cython, \
     reset_residuals_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import OkTopk
@@ -61,7 +60,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 dw = dw.reshape(dw.shape[0], -1)
             self.dw_2d_shape = dw.shape
 
-            # Compute k from: layer_params / self.density
+            # Compute k from: layer_params * self.density
             k = int(np.prod(self.dw_original_shape) * self.density)
 
             # Initialize current layer-parameter values
