@@ -1,16 +1,23 @@
 """Communications package"""
 
+# NOTE: Implement TCP communication
+# NOTE: Review Apache Kafka
+
 import os
 import abc
+import uuid
 import enum
 import pickle
 import importlib
 import functools
+from dataclasses import dataclass
 
 
 __all__ = (
     "PROTOCOL",
     "Protocol",
+    "Message",
+    "ResourceClosed",
     "Communication",
     "Server",
     "Client"
@@ -24,10 +31,27 @@ class Protocol(enum.StrEnum):
     MQTT = enum.auto()
 
 
-class Communication(abc.ABC):
+@dataclass(slots=True)
+class Message[T]:
+    """Message object"""
+    obj: T
+    peer: uuid.UUID
+
+
+class ResourceClosed(RuntimeError):
+    """Resource closed"""
+
+
+class Communication[T](abc.ABC):
     """Base communication implementation"""
     _pickle_protocol = 5
     _protocol_port = 50000
+
+    def __init__(self) -> None:
+        """Communication initialization"""
+        super().__init__()
+        self.id = uuid.uuid4()
+        self.closed = False
 
     def __enter__(self):
         """Context manager start"""
@@ -61,17 +85,23 @@ class Communication(abc.ABC):
         return pickle.loads(data)
 
     @abc.abstractmethod
-    def get(self):
+    def get(self, *peers: uuid.UUID) -> Message[T]:
         """Get data from peer"""
-        raise NotImplementedError()
+        if self.closed:
+            raise ResourceClosed()
 
     @abc.abstractmethod
-    def put(self, obj) -> None:
+    def put(self, obj, *peers: uuid.UUID) -> None:
         """Publish data to peer"""
-        raise NotImplementedError()
+        if self.closed:
+            raise ResourceClosed()
 
     def close(self) -> None:
         """Close the connection"""
+        if self.closed:
+            raise ResourceClosed()
+        else:
+            self.closed = True
 
     def __del__(self) -> None:
         """Best effort finalizer"""

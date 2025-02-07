@@ -81,7 +81,7 @@ class Settings:
         'Programming Language :: Python :: 3',
     ]
     keywords = ['Deep neural networks', 'Distributed parallel training', 'Python']
-    python_requires = ">=3.11"
+    python_requires = ">=3.12"
     install_requires = ['numpy>=1.17.2']
     ext_modules = [
         Extension(

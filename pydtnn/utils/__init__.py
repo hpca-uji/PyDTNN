@@ -19,6 +19,8 @@
 
 import ctypes
 import inspect
+import functools
+import threading
 import math
 import os
 import sys
@@ -227,6 +229,30 @@ def matmul_blis(a, b, c=None):
 def string_substitute(template, /, **mappings):
     """Shell-like opportunistic substitution"""
     return string.Template(template).safe_substitute(mappings)
+
+
+def funcdebug(func):
+    """Wraps a functions and traces the calls"""
+    log = print
+    # log = lambda msg: None  # noqa: E731
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwds):
+        header = "DEBUG"
+        frame = inspect.stack()[1]
+        context = f"{func.__qualname__}{args!r}{kwds!r} from {frame.frame.f_globals["__name__"]}.{frame.function}:{frame.lineno} from {os.getpid()}:{threading.get_native_id()}"
+        del frame
+        log(f"{header}: Call {context}")
+        try:
+            result = func(*args, **kwds)
+        except BaseException as exc:
+            log(f"{header}: Exc. {context} = {exc!r}")
+            raise
+        else:
+            log(f"{header}: Ret. {context} = {result!r}")
+            return result
+
+    return wrapper
 
 
 ###############################################################

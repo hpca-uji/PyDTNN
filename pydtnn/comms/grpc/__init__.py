@@ -1,6 +1,7 @@
 """gRPC communications"""
 
 import sys
+
 from pydtnn import comms
 
 # Make sure global package is not confused with current package
