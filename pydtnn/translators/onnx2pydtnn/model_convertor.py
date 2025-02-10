@@ -55,7 +55,7 @@ def extract_attributes(node: onnx.NodeProto) -> Dict[str, Any]:
             for attribute in node.attribute}
 # --- END extract_attributes --- #
 
-def get_lists_operations(info: Dict[str, Any], operations: Dict[str, Tuple[LayerAndActivationBase, List[str] ]])-> List[List[LayerAndActivationBase]]:
+def get_lists_operations_and_outputs(info: Dict[str, Any], operations: Dict[str, Tuple[LayerAndActivationBase, List[str] ]])-> Tuple[List[List[LayerAndActivationBase]], List[str]]:
 
     # NOTE: It is assumed that the model will by a feed-forward netowork 
     dict_branch = {}
@@ -68,13 +68,15 @@ def get_lists_operations(info: Dict[str, Any], operations: Dict[str, Tuple[Layer
         while input_search is not None:
             #operations: {[output_name]: ([operation], [inputs])}
             op, inp = operations[input_search]
+            output = input_search
+
             if inp is None:
                 # case: root layer.                
-                dict_branch[inpt][input_search] = op
+                dict_branch[inpt][input_search] = (op, output)
                 input_search = None
             else:
                 input_search = inp[0] # The inputs list should have only one input.
-                dict_branch[inpt][input_search] = op
+                dict_branch[inpt][input_search] = (op, output)
 
     # Searching the first coincidence
 
@@ -87,19 +89,25 @@ def get_lists_operations(info: Dict[str, Any], operations: Dict[str, Tuple[Layer
     for i in range(1, len(info[CONST_INPUTS])):
         coincidences.intersection(set(enumerate(list(dict_branch[info[CONST_INPUTS][i]].keys())[::-1])))
 
-    # "Unenumerating" and sorting the intersection and getting the first coincidence.
+    # "Unenumerating" and sorting the intersection, and getting the first coincidence layer.
     #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
     coincidence = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])][0]
 
     # Trimming the lists from that element (first coincidence)
     lists_operations = list()
+    lists_outputs = list()
     for inpt in info[CONST_INPUTS]:
         _values = list(dict_branch[inpt].values())
-        lists_operations.append(_values[:_values.index(operations[coincidence][0])])
+        layers = [elem[0] for elem in _values]
+        outputs = [elem[1] for elem in _values]
 
-    return lists_operations
+        trimming_index = (layers.index(operations[coincidence][0]))        
+        lists_operations.append(layers[:trimming_index]) # Remember: list of lists
+        lists_outputs.extend(outputs[:trimming_index]) # Remember: list of string
 
-# --- END get_lists_operations --- #
+    return (lists_operations, lists_outputs)
+
+# --- END get_lists_operations_and_outputs --- #
 
 
 def get_actual_inputs(list_inputs: List[str], weights_names: List[str])-> List[str]:
@@ -116,7 +124,11 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: 
                 CONST_ATTRIBUTES: extract_attributes(node=node) # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
                 }
         if len(info[CONST_INPUTS]) > 1:
-            info[CONST_LISTS_NODES] = get_lists_operations(info, operations)
+            info[CONST_LISTS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
+            # Due the way the add/concatention layer works, those must to be removed from the operations (they will be inside the other operation)
+            for operation in operations_to_remove:
+                del operations[operation]
+
         operations[info[CONST_OUPTUS]] = tuple(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
@@ -132,19 +144,6 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
     #    operations.append(SWITCH_ONNX_TO_PYDTNN[node](node, parameters))
 
     # TODO: implementar las funciones necesarias del "Switch"
-    # TODO: Hay outputs que se pueden pasar como inputs capas posteriores ==> Mirar cómo conectar las cosas.
-    #   ==> Tal vez hacer un diccionario de [nombres de salidas, capa] para que, cuando una capa tenga como entrada ese nombre, pueda relacionarlo rápidamente.
-    
-    # Si una operación tiene "n" entradas hay que (asumiendo que no hay redes recursivas):
-    # - Identificar en qué punto se hacen las n separaciones (el nodo raíz que se divide en "n" ramas)
-    # -> Para esto:
-    # ==> Para cada entrada:
-    #   ==> Se accede en el diccionario a la entrada de el input para formar la ruta desde el nodo input del add hasta llegar al nodo raíz.
-    # ==> Una vez se tienen ambas ramas, desde el add hasta el nodo raíz, se mira cual es el primer inptu que coincide (esto indica donde se separan las ramas).
-    # - Guardar cada rama en una lista y todas las listas en una lista de listas para pasar a la capa (creo que esto solo lo permite operaciones como "add")    
-    # -> Tras eso:
-    # ==> Para cada nodo, habrá que hacer una lista con los nodos entre el que tiene varias entradas y el que tiene una salida que va a varios nodos (sin incluirlo)
-    # ==> Asumiendo que el Add es la única capa que tiene entradas múltiples (o que todas siguen su formato), hay que pasarlas como el parámetro y eliminarlas de la lista de operaciones que añadir (ya están añadidas implícitamente)
     
     # It is expected to have at least one layer.
     num_operations = len(onnx_model.graph.node)
