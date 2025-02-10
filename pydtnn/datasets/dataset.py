@@ -17,6 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+import math
 import queue
 import itertools
 import threading
@@ -198,12 +199,11 @@ class Dataset(ABC):
             # # Instead of assigning all the non-divisible part of the remaining samples to the last process,
             # # it is distributed among all the other workers (i.e, the other workers will have a bit of
             # # work more than the last one). Thus, the use of ceil instead of the integer division.
-            # last_batch_nsamples_per_worker = math.ceil(remaining_samples / self.nprocs)
-            # last_batch_nsamples_last_worker = remaining_samples \
-            #                                   - last_batch_nsamples_per_worker * (self.nprocs - 1)
+            last_batch_nsamples_per_worker = math.ceil(remaining_samples / self.nprocs)
+            last_batch_nsamples_last_worker = remaining_samples - last_batch_nsamples_per_worker * (self.nprocs - 1)
             # Version 2) The very last part of the input data is trimmed to ensure an equal distribution
-            last_batch_nsamples_per_worker = remaining_samples // self.nprocs
-            last_batch_nsamples_last_worker = last_batch_nsamples_per_worker
+            # last_batch_nsamples_per_worker = remaining_samples // self.nprocs
+            # last_batch_nsamples_last_worker = last_batch_nsamples_per_worker
             new_nsamples -= remaining_samples % self.nprocs
         else:
             last_batch_nsamples_per_worker = 0
@@ -319,7 +319,7 @@ class Dataset(ABC):
             last_batch_size = local_nsamples % local_batch_size
             if last_batch_size > 0:
                 start = end
-                end = local_nsamples  # = start + last_batch_size
+                end = start + last_batch_size  # = local_nsamples
                 indices = s[start:end]
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
