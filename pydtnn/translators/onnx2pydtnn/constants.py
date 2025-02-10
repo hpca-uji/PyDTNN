@@ -31,6 +31,9 @@ CONST_NODE = "node"
 CONST_OPSET = "opset_version"
 CONST_OUPTUS = "outputs"
 CONST_ATTRIBUTES = "attributes"
+CONST_INPUTS = "inputs"
+CONST_LISTS_NODES = "lists_nodes"
+
 
 # This values are from: "onnx.TensorProto.DataType()"
 # Para pasar de tipo de datos de onnx a numpy se hace uso de la función "onnx.numpy_helper.to_array()"
@@ -83,6 +86,13 @@ SWTICH_ONNX_DATA_TYPES = {
     21  : "UINT4",
     22  : "INT4",
 }
+
+# Operations to do:
+# DenseNet169 - {'Conv', 'BatchNormalization', 'Unsqueeze', 'Add', 'Mul', 'Relu', 'MaxPool', 'AveragePool', 'GlobalAveragePool', 'Concat'}
+# ResNet50 - {'Conv', 'MaxPool', 'Relu', 'Add', 'BatchNormalization', 'GlobalAveragePool', 'Gemm', 'Flatten'}
+# VGG19 - {'Dropout', 'Gemm', 'Flatten', 'Relu', 'MaxPool', 'BatchNormalization', 'Conv'}
+
+# Union - {'Add', 'AveragePool', 'BatchNormalization', 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool', 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
 
 SWITCH_OPERATION_ONNX_TO_PYDTNN = {
     "Abs" : Abs,

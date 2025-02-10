@@ -6,7 +6,7 @@ import numpy as np
 # Operations/transformations related
 import onnx
 from model import Model as PyDTNN_Model
-from constants import SWITCH_OPERATION_ONNX_TO_PYDTNN, CONST_NODE, CONST_OPSET, CONST_OUPTUS, CONST_ATTRIBUTES
+from constants import SWITCH_OPERATION_ONNX_TO_PYDTNN, CONST_NODE, CONST_OPSET, CONST_OUPTUS, CONST_ATTRIBUTES, CONST_INPUTS, CONST_LISTS_NODES
 from pydtnn.layers import Input
 
 # ////////////////////////////////////////////////////
@@ -55,6 +55,73 @@ def extract_attributes(node: onnx.NodeProto) -> Dict[str, Any]:
             for attribute in node.attribute}
 # --- END extract_attributes --- #
 
+def get_lists_operations(info: Dict[str, Any], operations: Dict[str, Tuple[LayerAndActivationBase, List[str] ]])-> List[List[LayerAndActivationBase]]:
+
+    # NOTE: It is assumed that the model will by a feed-forward netowork 
+    dict_branch = {}
+
+    # Making the "path" of layers for every input
+    for inpt in info[CONST_INPUTS]:
+        dict_branch[inpt] = dict() 
+        
+        input_search = inpt
+        while input_search is not None:
+            #operations: {[output_name]: ([operation], [inputs])}
+            op, inp = operations[input_search]
+            if inp is None:
+                # case: root layer.                
+                dict_branch[inpt][input_search] = op
+                input_search = None
+            else:
+                input_search = inp[0] # The inputs list should have only one input.
+                dict_branch[inpt][input_search] = op
+
+    # Searching the first coincidence
+
+    # Sets are not ordered by insertion ==> keep order with enumerate ==>
+    #   ==> braches have different sizes, then the same node may have different order in different branches ==> 
+    #   ==> that's true from bottom to top, from top to bottom the "intersection layers" (the ones to be searched) should have the same position.
+    enumerated_reversed_inputs = enumerate(list(dict_branch[info[CONST_INPUTS][0]].keys())[::-1])
+
+    coincidences = set(enumerated_reversed_inputs)
+    for i in range(1, len(info[CONST_INPUTS])):
+        coincidences.intersection(set(enumerate(list(dict_branch[info[CONST_INPUTS][i]].keys())[::-1])))
+
+    # "Unenumerating" and sorting the intersection and getting the first coincidence.
+    #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
+    coincidence = [elem[1] for elem in sorted(coincidences, key=lambda x: -x[0])][0]
+
+    # Trimming the lists from that element (first coincidence)
+    lists_operations = list()
+    for inpt in info[CONST_INPUTS]:
+        _values = list(dict_branch[inpt].values())
+        lists_operations.append(_values[:_values.index(operations[coincidence][0])])
+
+    return lists_operations
+
+# --- END get_lists_operations --- #
+
+
+def get_actual_inputs(list_inputs: List[str], weights_names: List[str])-> List[str]:
+    # This function' objective is to remove non layer-to-layer onnx inputs (e.g.: the weigth [_weight], the bias [_bias], etc. ).
+    #   To do that, only the inputs that end with the accepted ending remains.
+    return list(filter(lambda _input: _input not in weights_names, list_inputs))
+# --- END get_actual_inputs --- #
+
+def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], output: str|None = None)->None:
+        info = {CONST_NODE : node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
+                CONST_OPSET : opset_version,    # Version of the onnx operation
+                CONST_INPUTS: get_actual_inputs(node.input),   # node's inputs names
+                CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
+                CONST_ATTRIBUTES: extract_attributes(node=node) # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
+                }
+        if len(info[CONST_INPUTS]) > 1:
+            info[CONST_LISTS_NODES] = get_lists_operations(info, operations)
+        operations[info[CONST_OUPTUS]] = tuple(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[CONST_INPUTS])
+
+    # return Nothing: the output is stored in the dictionary
+# --- END _get_and_put_operation --- #
+
 def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[str, np.shape], 
                    outputs: Dict[str, np.shape]) -> List[LayerAndActivationBase]:
 
@@ -64,22 +131,35 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
     #    parameters = [weights[par_name] for par_name in node.input if par_name in weights]
     #    operations.append(SWITCH_ONNX_TO_PYDTNN[node](node, parameters))
 
-    # TODO: implementar las funciones del "Switch"
+    # TODO: implementar las funciones necesarias del "Switch"
+    # TODO: Hay outputs que se pueden pasar como inputs capas posteriores ==> Mirar cómo conectar las cosas.
+    #   ==> Tal vez hacer un diccionario de [nombres de salidas, capa] para que, cuando una capa tenga como entrada ese nombre, pueda relacionarlo rápidamente.
     
-    operations = [Input(shape=inputs)]
-    for i in range( len(onnx_model.graph.node) - 1 ):
-        node = onnx_model.graph.node[i]
-        info = {CONST_NODE : node, CONST_OPSET : opset_version,
-                 CONST_ATTRIBUTES: extract_attributes(node=node)}
-        operations.append(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info))
+    # Si una operación tiene "n" entradas hay que (asumiendo que no hay redes recursivas):
+    # - Identificar en qué punto se hacen las n separaciones (el nodo raíz que se divide en "n" ramas)
+    # -> Para esto:
+    # ==> Para cada entrada:
+    #   ==> Se accede en el diccionario a la entrada de el input para formar la ruta desde el nodo input del add hasta llegar al nodo raíz.
+    # ==> Una vez se tienen ambas ramas, desde el add hasta el nodo raíz, se mira cual es el primer inptu que coincide (esto indica donde se separan las ramas).
+    # - Guardar cada rama en una lista y todas las listas en una lista de listas para pasar a la capa (creo que esto solo lo permite operaciones como "add")    
+    # -> Tras eso:
+    # ==> Para cada nodo, habrá que hacer una lista con los nodos entre el que tiene varias entradas y el que tiene una salida que va a varios nodos (sin incluirlo)
+    # ==> Asumiendo que el Add es la única capa que tiene entradas múltiples (o que todas siguen su formato), hay que pasarlas como el parámetro y eliminarlas de la lista de operaciones que añadir (ya están añadidas implícitamente)
+    
+    # It is expected to have at least one layer.
+    num_operations = len(onnx_model.graph.node)
+    assert num_operations > 0
 
-    # It is assumed that the last layer always has the "shape" attribute and that is relevant in order to make the network's output.
-    node = onnx_model.graph.node[-1]
-    info = {CONST_NODE : node, CONST_OPSET : opset_version, 
-            CONST_OUPTUS: outputs, CONST_ATTRIBUTES: extract_attributes(node=node)}
-    operations.append(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info))
+    # operations: {[output_name]: ([operation], [inputs])}
+    output_first_layer = get_actual_inputs(onnx_model.graph.node[0].input)
+    operations = {output_first_layer : (Input(shape=inputs), [None])}
 
-    return operations
+    for i in range(num_operations - 1):
+        _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations)
+    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, output=outputs)
+
+    # The list of layers is returned.
+    return list(map(lambda x: x[0], operations.values()))
 # --- END get_operations --- #
 
 def load_layers(model:PyDTNN_Model, operations:List[LayerAndActivationBase]) -> None:
