@@ -284,7 +284,7 @@ class Client(Protocol):
             else:
                 break
 
-        return Message(obj=obj, peer=self._server)
+        return Message(peer=self._server, obj=obj)
 
     def close(self) -> None:
         """Close the client"""

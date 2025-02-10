@@ -33,8 +33,8 @@ class Protocol(enum.StrEnum):
 @dataclass(slots=True)
 class Message[T]:
     """Message object"""
-    obj: T
     peer: uuid.UUID
+    obj: T
 
 
 class ResourceClosed(RuntimeError):

@@ -185,7 +185,7 @@ class Client(Protocol):
             raise ResourceClosed()
 
         obj = self._deserialize(data)
-        return Message(obj=obj, peer=self._server)
+        return Message(peer=self._server, obj=obj)
 
     def close(self) -> None:
         """Close the client"""
