@@ -1,7 +1,7 @@
 """Communications package"""
 
 # NOTE: Implement TCP communication
-# NOTE: Review Apache Kafka
+# NOTE: Review Apache Kafka communication
 
 import os
 import abc
@@ -24,7 +24,6 @@ __all__ = (
 )
 
 
-# Modules
 class Protocol(enum.StrEnum):
     """Comunication protocol"""
     GRPC = enum.auto()
