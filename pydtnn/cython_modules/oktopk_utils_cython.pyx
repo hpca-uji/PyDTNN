@@ -30,12 +30,13 @@ def compute_dense_acc_cython(np.ndarray[np.float32_t, ndim=2] residuals,
                              float learning_rate):
 
     cdef int i, j
+    cdef np.ndarray[np.float32_t, ndim=2] result = np.empty_like(dw)
 
     for i in prange(dw.shape[0], nogil=True):
         for j in range(dw.shape[1]):
-            dw[i, j] = residuals[i, j] + (learning_rate * dw[i, j])
+            result[i, j] = residuals[i, j] + (learning_rate * dw[i, j])
     
-    return dw
+    return result
 
 
 @cython.boundscheck(False)
@@ -152,8 +153,7 @@ def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def update_dense_weights_cython(np.ndarray[np.float32_t, ndim=2] w, 
-                                np.ndarray[np.float32_t, ndim=2] u, 
-                                int nprocs):
+                                np.ndarray[np.float32_t, ndim=2] u):
 
     cdef int i, j
     cdef int rows = w.shape[0]
@@ -161,7 +161,7 @@ def update_dense_weights_cython(np.ndarray[np.float32_t, ndim=2] w,
 
     for i in prange(rows, nogil=True):
         for j in range(cols):
-            w[i, j] = w[i, j] - (u[i, j] / nprocs)
+            w[i, j] = w[i, j] - u[i, j]
 
     return w
 

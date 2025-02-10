@@ -125,6 +125,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         """
 
         if method == "cython":
+            assert(self._has_canonical_format(indexes))
             return reset_residuals_cython(acc, indexes[0], indexes[1])
         
         if method == "numpy":
@@ -152,7 +153,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if method == "cython": 
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
-            w = update_sparsed_weights_cython(w, coo_u.data, coo_u.row, coo_u.col, self.nprocs)
+            w = update_sparsed_weights_cython(w, coo_u.data, coo_u.row, coo_u.col)
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_, w)  
@@ -161,7 +162,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if method == "numpy": 
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
-            w[coo_u.row, coo_u.col] -= (coo_u.data / self.nprocs)
+            w[coo_u.row, coo_u.col] -= coo_u.data
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_, w)  
@@ -480,13 +481,15 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="reduce_region"):
+    def _reduce_topk(self, coo_topk, boundaries, method="reduce_region_blocking"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
         Parameters:
             coo_topk (coo_array): a 2D sparse array in COO format with the values and indexes of topk.
             boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...]
+
+        TODO: Method 'reduce_region' does not provide the same output as 'reduce_region_blocking' or 'allreduce'.
 
         Returns:
             coo_reduced_region (coo_array): The reduced topk values in COO format.
