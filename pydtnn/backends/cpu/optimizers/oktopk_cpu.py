@@ -512,10 +512,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if method == "reduce_region_blocking":
             row_start = 0
             csr_topk = coo_topk.tocsr()
-            reduced_regions_csr = []
+            reduced_regions_csr = [None] * self.nprocs
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                reduced_regions_csr.append(self.comm.reduce(csr_topk[row_start:row_end], op=MPI.SUM, root=region))
+                reduced_regions_csr[region] = self.comm.reduce(csr_topk[row_start:row_end], op=MPI.SUM, root=region)
                 row_start = row_end
             coo_reduced_region = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
@@ -523,24 +523,23 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return coo_reduced_region
 
         if method == "reduce_region":
-            requests = []
             row_start = 0
+            requests = [None] * self.nprocs
             recv_bufs = [None] * self.nprocs
             csr_topk = coo_topk.tocsr()
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_buf = csr_topk[row_start:row_end].toarray()
-                if self.rank == region:
-                    recv_bufs[region] = np.zeros_like(send_buf)
-                requests.append(self.comm.Ireduce(send_buf, recv_bufs[region], op=MPI.SUM, root=region))
+                recv_bufs[region] = np.zeros_like(send_buf) if self.rank == region else None
+                requests[region] = self.comm.Ireduce(send_buf, recv_bufs[region], op=MPI.SUM, root=region)
                 row_start = row_end
             MPI.Request.Waitall(requests)
             if recv_bufs[self.rank] is not None:
-                coo_reduced_region = coo_array(recv_bufs[self.rank])
+                coo_reduced_region = coo_array(recv_bufs[self.rank], dtype=np.float32)
                 if self.rank != 0:
                     coo_reduced_region.row += boundaries[self.rank - 1]
                 return coo_reduced_region
-            return coo_array(self.dw_2d_shape, dtype=np.float32)
+            return coo_array((np.array([]), (np.array([]), np.array([]))), shape=self.dw_2d_shape, dtype=np.float32)
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
