@@ -30,13 +30,13 @@ def compute_dense_acc_cython(np.ndarray[np.float32_t, ndim=2] residuals,
                              float learning_rate):
 
     cdef int i, j
-    cdef np.ndarray[np.float32_t, ndim=2] result = np.empty_like(dw)
+    cdef np.ndarray[np.float32_t, ndim=2] acc = np.empty_like(dw)
 
     for i in prange(dw.shape[0], nogil=True):
         for j in range(dw.shape[1]):
-            result[i, j] = residuals[i, j] + (learning_rate * dw[i, j])
+            acc[i, j] = residuals[i, j] + (learning_rate * dw[i, j])
     
-    return result
+    return acc
 
 
 @cython.boundscheck(False)
@@ -92,7 +92,9 @@ def reset_residuals_cython(np.ndarray[np.float32_t, ndim=2] acc,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def top_threshold_selection_cython(np.ndarray[np.float32_t, ndim=2] matrix, double threshold):
+def top_threshold_selection_cython(np.ndarray[np.float32_t, ndim=2] matrix, 
+                                   float threshold):
+    
     cdef int rows = matrix.shape[0]
     cdef int cols = matrix.shape[1]
     cdef int i, j, count = 0
@@ -127,7 +129,7 @@ def top_threshold_selection_cython(np.ndarray[np.float32_t, ndim=2] matrix, doub
 def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values, 
                                        np.ndarray[np.int32_t, ndim=1] rows, 
                                        np.ndarray[np.int32_t, ndim=1] cols, 
-                                       double threshold):
+                                       float threshold):
     cdef int i, count = 0
     cdef int len_values = len(values)
 
