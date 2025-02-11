@@ -171,14 +171,13 @@ def update_dense_weights_cython(np.ndarray[np.float32_t, ndim=2] w,
 def update_sparsed_weights_cython(np.ndarray[np.float32_t, ndim=2] w, 
                                   np.ndarray[np.float32_t, ndim=1] grads_to_update, 
                                   np.ndarray[np.int32_t, ndim=1] rows_to_update, 
-                                  np.ndarray[np.int32_t, ndim=1] cols_to_update, 
-                                  int nprocs):
+                                  np.ndarray[np.int32_t, ndim=1] cols_to_update):
 
 
     cdef int idx, row, col
     cdef int num_updates = grads_to_update.shape[0]
 
     for idx in prange(num_updates, nogil=True):
-        w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx] / nprocs
+        w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx]
 
     return w
