@@ -6,7 +6,7 @@ from inspect import stack # This is only in order to get the function's name
 # Functionality imports
 # EMPTY (for now)
 
-def Where(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Where(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Where --- #

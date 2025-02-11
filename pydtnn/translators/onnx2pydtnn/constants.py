@@ -33,7 +33,8 @@ CONST_OUPTUS = "outputs"
 CONST_ATTRIBUTES = "attributes"
 CONST_INPUTS = "inputs"
 CONST_LISTS_NODES = "lists_nodes"
-
+CONST_WEIGHTS = "weights"
+CONST_PREV_LAYERS = "previous_layers"
 
 # This values are from: "onnx.TensorProto.DataType()"
 # Para pasar de tipo de datos de onnx a numpy se hace uso de la función "onnx.numpy_helper.to_array()"

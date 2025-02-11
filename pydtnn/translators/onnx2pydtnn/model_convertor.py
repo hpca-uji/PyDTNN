@@ -6,7 +6,7 @@ import numpy as np
 # Operations/transformations related
 import onnx
 from model import Model as PyDTNN_Model
-from constants import SWITCH_OPERATION_ONNX_TO_PYDTNN, CONST_NODE, CONST_OPSET, CONST_OUPTUS, CONST_ATTRIBUTES, CONST_INPUTS, CONST_LISTS_NODES
+from constants import SWITCH_OPERATION_ONNX_TO_PYDTNN, CONST_NODE, CONST_OPSET, CONST_OUPTUS, CONST_ATTRIBUTES, CONST_INPUTS, CONST_LISTS_NODES, CONST_WEIGHTS, CONST_PREV_LAYERS
 from pydtnn.layers import Input
 
 # ////////////////////////////////////////////////////
@@ -116,26 +116,30 @@ def get_actual_inputs(list_inputs: List[str], weights_names: List[str])-> List[s
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 # --- END get_actual_inputs --- #
 
-def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], output: str|None = None)->None:
-        info = {CONST_NODE : node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
-                CONST_OPSET : opset_version,    # Version of the onnx operation
-                CONST_INPUTS: get_actual_inputs(node.input),   # node's inputs names
-                CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
-                CONST_ATTRIBUTES: extract_attributes(node=node) # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
-                }
-        if len(info[CONST_INPUTS]) > 1:
-            info[CONST_LISTS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
-            # Due the way the add/concatention layer works, those must to be removed from the operations (they will be inside the other operation)
-            for operation in operations_to_remove:
-                del operations[operation]
+def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], 
+                            weights: Dict[str, np.ndarray], output: str|None = None)->None:
 
-        operations[info[CONST_OUPTUS]] = tuple(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[CONST_INPUTS])
+    info = {CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
+            CONST_OPSET: opset_version,    # Version of the onnx operation
+            CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),   # node's inputs names
+            CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
+            CONST_ATTRIBUTES: extract_attributes(node=node), # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
+            CONST_WEIGHTS: weights,
+            CONST_PREV_LAYERS: operations
+            }
+    if len(info[CONST_INPUTS]) > 1:
+        info[CONST_LISTS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
+        # Due the way the add/concatention layer works, those must to be removed from the operations (they will be inside the other operation)
+        for operation in operations_to_remove:
+            del operations[operation]
+
+    operations[info[CONST_OUPTUS]] = tuple(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
 # --- END _get_and_put_operation --- #
 
 def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[str, np.shape], 
-                   outputs: Dict[str, np.shape]) -> List[LayerAndActivationBase]:
+                   weights:Dict[str, np.ndarray], outputs: Dict[str, np.shape]) -> List[LayerAndActivationBase]:
 
     # TODO: meter otros parámetros que se puedan necesitar
     #operations = list()
@@ -150,12 +154,12 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
     assert num_operations > 0
 
     # operations: {[output_name]: ([operation], [inputs])}
-    output_first_layer = get_actual_inputs(onnx_model.graph.node[0].input)
+    output_first_layer = get_actual_inputs(list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys()))
     operations = {output_first_layer : (Input(shape=inputs), [None])}
 
     for i in range(num_operations - 1):
-        _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations)
-    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, output=outputs)
+        _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
+    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=outputs)
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))
@@ -164,14 +168,8 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
 def load_layers(model:PyDTNN_Model, operations:List[LayerAndActivationBase]) -> None:
     
     for operation in operations:
-        # This is done this way because sometimes a ONNX operation can be a list of PyDTNN operations.
-        #if not isinstance(operation, list):
-        #    operation = [operation]
-        #else: Nothing special.
-
-        # Actually adding the layers to the model.
-        for op in operation:
-            model.add(op)
+        # TODO: Check if this is correct.
+        model.add(operation)
 
     return # None (No value is returned)
 # --- END load_layers --- #
@@ -188,7 +186,7 @@ def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, 
     opset_version = onnx_model.opset_import[0].version
     
     # Obtaining the operations (layes, activations, etc.).
-    operations = get_operations(onnx_model=onnx_model, opset_version=opset_version, inputs=inputs, outputs=outputs)
+    operations = get_operations(onnx_model=onnx_model, opset_version=opset_version, inputs=inputs, outputs=outputs, weights=weights)
     # Asigning the operations to the model.
     load_layers(model=model, operations=operations)
 

@@ -6,37 +6,37 @@ from inspect import stack # This is only in order to get the function's name
 # Functionality imports
 # EMPTY (for now)
 
-def Einsum(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Einsum(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Einsum --- #
  
-def Elu(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Elu(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Elu --- #
  
-def Equal(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Equal(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Equal --- #
  
-def Erf(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Erf(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Erf --- #
  
-def Exp(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Exp(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Exp --- #
  
-def Expand(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Expand(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Expand --- #
  
-def EyeLike(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def EyeLike(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END EyeLike --- #

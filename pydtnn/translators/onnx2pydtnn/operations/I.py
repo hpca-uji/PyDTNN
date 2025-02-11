@@ -6,32 +6,32 @@ from inspect import stack # This is only in order to get the function's name
 # Functionality imports
 # EMPTY (for now)
 
-def Identity(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Identity(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Identity --- #
 
-def If(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def If(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END If --- #
 
-def ImageDecoder(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def ImageDecoder(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ImageDecoder --- #
 
-def InstanceNormalization(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def InstanceNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END InstanceNormalization --- #
 
-def IsInf(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def IsInf(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END IsInf --- #
 
-def IsNaN(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def IsNaN(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END IsNaN --- #

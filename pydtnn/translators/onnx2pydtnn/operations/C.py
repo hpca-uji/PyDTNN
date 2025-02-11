@@ -4,96 +4,132 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
-# EMPTY (for now)
+import pydtnn.layers as layer
+from constants import CONST_ATTRIBUTES, CONST_LISTS_NODES
 
-def Cast(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Cast(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Cast --- #
 
-def CastLike(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def CastLike(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END CastLike --- #
 
-def Ceil(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Ceil(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Ceil --- #
 
-def Celu(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Celu(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Celu --- #
 
-def CenterCropPad(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def CenterCropPad(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END CenterCropPad --- #
 
-def Clip(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Clip(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Clip --- #
 
-def Col2Im(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Col2Im(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Col2Im --- #
 
-def Compress(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Compress(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Compress --- #
 
-def Concat(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Concat(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
-    raise NotImplementedError("Not implemented")
-    # ConcatenationBlock
+    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Concat.html#l-onnx-doc-concat
+    ONNX_AXIS = "axis"
+    # There are no PyDTNN attributes names from ConcatenationBlock class.
+    
+    # TODO: Check if this class is correct
+    list_concat_nodes = info[CONST_LISTS_NODES]
+
+    return layer.ConcatenationBlock(list_concat_nodes)   
 # --- END Concat --- #
 
-def ConcatFromSequence(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def ConcatFromSequence(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConcatFromSequence --- #
 
-def Constant(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Constant(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Constant --- #
 
-def ConstantOfShape(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def ConstantOfShape(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConstantOfShape --- #
 
-def Conv(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
+    
     print(f"{stack()[0].function()} args received: {info}")
-    raise NotImplementedError("Not implemented")
-    #Conv2D
+
+    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Conv.html#l-onnx-doc-conv
+    ONNX_COUNT_DILATATIONS = "dilations"
+    ONNX_GROUP = "group" 
+    ONNX_KERNEL_SHAPE = "kernel_shape"
+    ONNX_PADS = "pads"
+    ONNX_STRIDES = "strides"
+    # PyDTNN attributes names from Conv2D class.
+    PYDTNN_DILATION = "dilation"
+    PYDTNN_NFILTERS = "nfilters"
+    PYDTNN_FILTER_SHAPE = "filter_shape"
+    PYDTNN_PADDING = "padding"
+    PYDTNN_STRIDE = "stride"    
+    
+    args = dict()
+    dict_attributes = info[CONST_ATTRIBUTES]
+
+    if ONNX_COUNT_DILATATIONS in info:
+        args[PYDTNN_DILATION] = dict_attributes[ONNX_COUNT_DILATATIONS]
+    if ONNX_GROUP in info:
+        # TODO: Check if this is correct:
+        args[PYDTNN_NFILTERS] = dict_attributes[ONNX_GROUP]
+    if ONNX_KERNEL_SHAPE in info:
+        args[PYDTNN_FILTER_SHAPE] = dict_attributes[ONNX_KERNEL_SHAPE]
+    if ONNX_PADS in info:
+        args[PYDTNN_PADDING] = dict_attributes[ONNX_PADS]
+    if ONNX_STRIDES in info:
+        args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
+
+    return layer.Conv2D(*args)
 # --- END Conv --- #
 
-def ConvInteger(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def ConvInteger(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConvInteger --- #
 
-def ConvTranspose(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def ConvTranspose(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConvTranspose --- #
 
-def Cos(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Cos(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Cos --- #
 
-def Cosh(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def Cosh(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Cosh --- #
 
-def CumSum(info: Dict[str, Any]) -> List[LayerAndActivationBase]:
+def CumSum(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END CumSum --- #
