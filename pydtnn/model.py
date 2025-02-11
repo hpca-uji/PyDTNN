@@ -300,6 +300,12 @@ class Model:
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
             self._read_model(self.model_name)
+        # Which rank shoud be logging
+        if self.comm:
+            train_nsamples = self.comm.allgather(self.dataset.train_nsamples)
+            self.logger_rank = max(enumerate(train_nsamples), key=lambda item: item[1])[0]
+        else:
+            self.logger_rank = self.rank
 
     @property
     def dataset_raw_path(self):
@@ -657,7 +663,7 @@ class Model:
             train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
             val_total_loss, val_batch_count = np.zeros(len(self.loss_and_metrics)), 0
 
-            if self.rank == 0:
+            if self.rank == self.logger_rank:
                 fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
                 pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width,
@@ -683,13 +689,13 @@ class Model:
                 train_total_loss, train_batch_count, string = \
                     self._update_running_average(train_batch_loss, train_total_loss,
                                                  train_batch_count, batch_size)
-                if self.rank == 0:
+                if self.rank == self.logger_rank:
                     # noinspection PyUnboundLocalVariable
                     pbar.set_postfix_str(s=string, refresh=True)
                     pbar.update(batch_size)
                     self.perf_counter.add_training_time_and_batch_size(epoch, toc - tic, batch_size)
 
-            if self.rank == 0:
+            if self.rank == self.logger_rank:
                 pbar.close()
                 for c in range(len(self.loss_and_metrics)):
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
@@ -708,10 +714,10 @@ class Model:
                 val_total_loss, val_batch_count, string = \
                     self._update_running_average(val_batch_loss, val_total_loss,
                                                  val_batch_count, batch_size, prefix="val_")
-                if self.rank == 0:
+                if self.rank == self.logger_rank:
                     print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
-            if self.rank == 0:
+            if self.rank == self.logger_rank:
                 for c in range(len(self.loss_and_metrics)):
                     self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
@@ -762,7 +768,7 @@ class Model:
 
         test_batch_generator = self.dataset.get_test_generator()
 
-        if self.rank == 0:
+        if self.rank == self.logger_rank:
             test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
             pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
@@ -781,7 +787,7 @@ class Model:
             if batch_size <= 0:
                 continue
 
-            if self.rank == 0:
+            if self.rank == self.logger_rank:
                 # noinspection PyUnboundLocalVariable
                 test_total_loss, test_batch_count, string = \
                     self._update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size,
@@ -794,7 +800,7 @@ class Model:
         # Increment self._evaluate_round
         self._evaluate_round += 1
 
-        if self.rank == 0:
+        if self.rank == self.logger_rank:
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
