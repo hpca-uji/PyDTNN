@@ -29,6 +29,7 @@ from timeit import default_timer as timer
 from typing import Any
 
 from tqdm import tqdm
+import numpy as np
 
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
@@ -504,11 +505,15 @@ class Model:
 
     def _compute_metrics_funcs(self, y_pred, y_targ, loss, blocking=True):
         loss_req = None
-        if self.enable_cudnn:
-            _losses = np.array([loss] + [func(y_pred.ary, y_targ.ary) for func in self.metrics_funcs],
-                               dtype=np.float32) / self.nprocs
+        if y_targ.shape[0] > 0:
+            if self.enable_cudnn:
+                _losses = np.array([loss] + [func(y_pred.ary, y_targ.ary) for func in self.metrics_funcs],
+                                   dtype=np.float32) / self.nprocs
+            else:
+                _losses = np.array([loss] + [func(y_pred, y_targ) for func in self.metrics_funcs],
+                                   dtype=np.float32) / self.nprocs
         else:
-            _losses = np.array([loss] + [func(y_pred, y_targ) for func in self.metrics_funcs],
+            _losses = np.array([0] + [0 for func in self.metrics_funcs],
                                dtype=np.float32) / self.nprocs
         if self.comm is not None and blocking:
             self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
@@ -536,6 +541,9 @@ class Model:
             x, y_targ = x_batch, y_batch
         return x, y_targ
 
+    def _neutral_dx(self, y):
+        return np.zeros_like(y, shape=(1,) + y.shape[1:])
+
     def _train_batch(self, x_batch, y_batch, current_batch_size):
 
         self.mode = TRAIN_MODE
@@ -548,12 +556,15 @@ class Model:
             return self.total_metrics
 
         # Forward pass (FP)
-        for i in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
-            x = self.layers[i].forward(x)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+        if current_batch_size > 0:
+            for i in range(1, len(self.layers)):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                x = self.layers[i].forward(x)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-        loss, dx = self.loss_func(x, y_targ, self.batch_size)
+            loss, dx = self.loss_func(x, y_targ, self.batch_size)
+        else:
+            loss, dx = 0.0, self._neutral_dx(y_targ)
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss)
 
         if self.blocking_mpi:
@@ -657,9 +668,18 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for x_batch, y_batch, batch_size in train_batch_generator:
+                epoch_done = 0 if batch_size else 1
+                global_epoch_done = self.comm.allreduce(epoch_done, MPI.SUM) if self.comm else epoch_done
+                if global_epoch_done >= self.nprocs:
+                    break
+
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size)
                 toc = timer()
+
+                if batch_size <= 0:
+                    continue
+
                 train_total_loss, train_batch_count, string = \
                     self._update_running_average(train_batch_loss, train_total_loss,
                                                  train_batch_count, batch_size)
@@ -675,7 +695,16 @@ class Model:
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for x_batch, y_batch, batch_size in val_batch_generator:
+                epoch_done = 0 if batch_size else 1
+                global_epoch_done = self.comm.allreduce(epoch_done, MPI.SUM) if self.comm else epoch_done
+                if global_epoch_done >= self.nprocs:
+                    break
+
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
+
+                if batch_size <= 0:
+                    continue
+
                 val_total_loss, val_batch_count, string = \
                     self._update_running_average(val_batch_loss, val_total_loss,
                                                  val_batch_count, batch_size, prefix="val_")
@@ -706,13 +735,17 @@ class Model:
             return self.total_metrics
 
         # Forward pass (FP)
-        for i in range(1, len(self.layers)):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
-            x = self.layers[i].forward(x)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+        if current_batch_size > 0:
+            for i in range(1, len(self.layers)):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                x = self.layers[i].forward(x)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
         y_pred = self.layers[-1].y
-        loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
+        if current_batch_size > 0:
+            loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
+        else:
+            loss, _ = 0.0, self._neutral_dx(y_targ)
         self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss)
         return self.total_metrics
 
@@ -736,9 +769,18 @@ class Model:
                         desc="Testing", unit=" samples")
 
         for x_batch, y_batch, batch_size in test_batch_generator:
+            epoch_done = 0 if batch_size else 1
+            global_epoch_done = self.comm.allreduce(epoch_done, MPI.SUM) if self.comm else epoch_done
+            if global_epoch_done >= self.nprocs:
+                break
+
             tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
             toc = timer()
+
+            if batch_size <= 0:
+                continue
+
             if self.rank == 0:
                 # noinspection PyUnboundLocalVariable
                 test_total_loss, test_batch_count, string = \

@@ -324,6 +324,8 @@ class Dataset(ABC):
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
                 yield x_local_batch, y_local_batch, last_batch_size * self.nprocs
+        while True:
+            yield x_local_batch[:0], y_local_batch[:0], 0
 
     def _do_flip_images(self, data):
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
