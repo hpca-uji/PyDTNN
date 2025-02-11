@@ -62,6 +62,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
             # Compute k from: layer_params * self.density
             k = int(np.prod(self.dw_original_shape) * self.density)
+            k = self.min_k_layer if k < self.min_k_layer else k
 
             # Initialize current layer-parameter values
             self.local_th = self.all_local_th[layer.id][dw_]

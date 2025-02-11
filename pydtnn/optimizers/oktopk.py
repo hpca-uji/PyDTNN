@@ -30,7 +30,7 @@ class OkTopk(Optimizer, ABC):
     """
 
     def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype=np.float32, \
-                 nprocs=1, comm=None, rank=0, tau=64, tau_prime=32, density=0.01):
+                 nprocs=1, comm=None, rank=0, tau=64, tau_prime=32, density=0.01, min_k_layer=10):
 
         super().__init__()
         self.learning_rate = learning_rate
@@ -45,6 +45,7 @@ class OkTopk(Optimizer, ABC):
         self.tau = tau
         self.tau_prime = tau_prime
         self.density = density
+        self.min_k_layer = min_k_layer
         self.iterations = {}
         self.all_local_th = {}
         self.all_global_th = {}
