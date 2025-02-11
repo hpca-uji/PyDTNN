@@ -482,7 +482,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="reduce_region_blocking"):
+    def _reduce_topk(self, coo_topk, boundaries, method="reduce_region"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
