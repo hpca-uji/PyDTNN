@@ -69,8 +69,8 @@ class Intracomm:
         # NOTE: Lazily initialized, prevent module imports execution
         return mpi_comm.get_rank()
 
-    def _recive_one(self):
-        """Recive one response from communication"""
+    def _comm_get(self):
+        """Get one response from communication"""
         assert self._lock.locked(), "Modifing state without lock"
         response = self._comm.get().obj
 
@@ -139,7 +139,7 @@ class Intracomm:
                 try:
                     response = queue.get_nowait()
                 except Empty:
-                    self._recive_one()
+                    self._comm_get()
                 else:
                     break
 
