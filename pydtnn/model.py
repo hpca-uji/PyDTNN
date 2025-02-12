@@ -303,6 +303,22 @@ class Model:
         # Communications sample sizes
         self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
         self.max_nsamples_rank = max(enumerate(self.comm_nsamples), key=lambda item: item[1])[0]
+        # Process weights
+        proc_weight = self.kwargs["proc_weight"]
+        match proc_weight:
+            case "equal":
+                self.rank_weight = 1.0
+            case "mean":
+                avg_comm_nsamples = sum(self.comm_nsamples) / self.nprocs
+                self.rank_weight = self.dataset.train_nsamples / avg_comm_nsamples
+            case "boost":
+                avg_comm_nsamples = sum(self.comm_nsamples) / self.nprocs
+                self.rank_weight = avg_comm_nsamples / self.dataset.train_nsamples
+            case "max":
+                max_comm_nsamples = max(self.comm_nsamples)
+                self.rank_weight = self.dataset.train_nsamples / max_comm_nsamples
+            case _:
+                raise SystemExit(f"Process weight option '{proc_weight}' not recognized.")
 
     @property
     def dataset_raw_path(self):
@@ -516,8 +532,9 @@ class Model:
                 _losses = np.array([loss] + [func(y_pred, y_targ) for func in self.metrics_funcs],
                                    dtype=np.float32) / self.nprocs
         else:
-            _losses = np.array([0] + [0 for func in self.metrics_funcs],
-                               dtype=np.float32) / self.nprocs
+            _losses = self.total_metrics.copy()
+            _losses[0] = loss
+            _losses /= self.nprocs
         if self.comm is not None and blocking:
             self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
         elif self.comm is not None and not blocking:
@@ -544,7 +561,7 @@ class Model:
             x, y_targ = x_batch, y_batch
         return x, y_targ
 
-    def _neutral_dx(self, y):
+    def _zero_dx(self, y):
         return np.zeros_like(y, shape=(1,) + y.shape[1:])
 
     def _train_batch(self, x_batch, y_batch, current_batch_size):
@@ -567,8 +584,9 @@ class Model:
 
             loss, dx = self.loss_func(x, y_targ, self.batch_size)
         else:
-            loss, dx = 0.0, self._neutral_dx(y_targ)
+            loss, dx = 0.0, self._zero_dx(y_targ)
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss)
+        dx *= self.rank_weight
 
         if self.blocking_mpi:
             # Blocking MPI
@@ -746,10 +764,11 @@ class Model:
 
         y_pred = self.layers[-1].y
         if current_batch_size > 0:
-            loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
+            loss, dx = self.loss_func(y_pred, y_targ, self.batch_size)
         else:
-            loss, _ = 0.0, self._neutral_dx(y_targ)
+            loss, dx = 0.0, self._zero_dx(y_targ)
         self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss)
+        dx *= self.rank_weight
         return self.total_metrics
 
     def evaluate(self, x_test, y_test, bar_width=110):

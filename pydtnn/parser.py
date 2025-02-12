@@ -232,6 +232,7 @@ _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default=True)
+_pe_group.add_argument('--proc_weight', type=str, default="equal")
 
 # Tracing and profiling
 _tr_group = parser.add_argument_group("Tracing options")

@@ -11,7 +11,7 @@ python3 "${dir:?}/export_dataset.py" \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
-  --dataset_export_split_weights=1,1.5,1.2,1.1 \
+  --dataset_export_split_weights=10,1,1,1 \
   --dataset_raw_path='datasets/mnist/dataset.${split}.npz' \
   --parallel=sequential \
   --shared_storage=True
