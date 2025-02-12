@@ -294,7 +294,7 @@ class Dataset(ABC):
     def _actual_data_generator(self, part):
         yield self._x[part], self._y[part]
 
-    def _batch_generator(self, part):
+    def _actual_batch_generator(self, part):
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.nprocs
         generator = self._data_generator(part)
@@ -324,8 +324,34 @@ class Dataset(ABC):
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
                 yield x_local_batch, y_local_batch, last_batch_size * self.nprocs
-        while True:
-            yield x_local_batch[:0], y_local_batch[:0], 0
+
+    def _batch_generator(self, part):
+        match self.model.sampling_method:
+            case "normal":
+                nbatches = max(self.model.comm_nsamples[part]) / self.model.batch_size
+                for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
+                    yield x_batch, y_batch, batch_size
+                    nbatches -= 1
+                while nbatches > 0:
+                    yield x_batch[:0], y_batch[:0], 0
+                    nbatches -= 1
+
+            case "over":
+                nbatches = max(self.model.comm_nsamples[part]) / self.model.batch_size
+                while nbatches > 0:
+                    for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
+                        yield x_batch, y_batch, batch_size
+                        nbatches -= 1
+                        if nbatches <= 0:
+                            break
+
+            case "under":
+                nbatches = min(self.model.comm_nsamples[part]) / self.model.batch_size
+                for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
+                    yield x_batch, y_batch, batch_size
+                    nbatches -= 1
+                    if nbatches <= 0:
+                        break
 
     def _do_flip_images(self, data):
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:

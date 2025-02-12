@@ -9,6 +9,7 @@ mpirun -np 4 \
   --dataset=raw \
   --dataset_raw_path='datasets/mnist/dataset.${rank}.npz' \
   --proc_weight=equal \
+  --sampling_method=normal \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \

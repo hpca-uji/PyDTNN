@@ -301,21 +301,35 @@ class Model:
         if self.model_name:
             self._read_model(self.model_name)
         # Communications sample sizes
-        self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
-        self.max_nsamples_rank = max(enumerate(self.comm_nsamples), key=lambda item: item[1])[0]
+        self.comm_nsamples = [
+            self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples],
+            self.comm.allgather(self.dataset.val_nsamples) if self.comm else [self.dataset.val_nsamples],
+            self.comm.allgather(self.dataset.test_nsamples) if self.comm else [self.dataset.test_nsamples]
+        ]
+        # Prefered logger rank
+        sampling_method = self.kwargs["sampling_method"]
+        match sampling_method:
+            case "normal":
+                self.logger_rank = max(enumerate(self.comm_nsamples[0]), key=lambda item: item[1])[0]
+            case "over":
+                self.logger_rank = max(enumerate(self.comm_nsamples[0]), key=lambda item: item[1])[0]
+            case "under":
+                self.logger_rank = min(enumerate(self.comm_nsamples[0]), key=lambda item: item[1])[0]
+            case _:
+                raise SystemExit(f"Sampling option '{sampling_method}' not recognized.")
         # Process weights
         proc_weight = self.kwargs["proc_weight"]
         match proc_weight:
             case "equal":
                 self.rank_weight = 1.0
             case "mean":
-                avg_comm_nsamples = sum(self.comm_nsamples) / self.nprocs
+                avg_comm_nsamples = sum(self.comm_nsamples[0]) / self.nprocs
                 self.rank_weight = self.dataset.train_nsamples / avg_comm_nsamples
             case "boost":
-                avg_comm_nsamples = sum(self.comm_nsamples) / self.nprocs
+                avg_comm_nsamples = sum(self.comm_nsamples[0]) / self.nprocs
                 self.rank_weight = avg_comm_nsamples / self.dataset.train_nsamples
             case "max":
-                max_comm_nsamples = max(self.comm_nsamples)
+                max_comm_nsamples = max(self.comm_nsamples[0])
                 self.rank_weight = self.dataset.train_nsamples / max_comm_nsamples
             case _:
                 raise SystemExit(f"Process weight option '{proc_weight}' not recognized.")
@@ -678,7 +692,7 @@ class Model:
             train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
             val_total_loss, val_batch_count = np.zeros(len(self.loss_and_metrics)), 0
 
-            if self.rank == self.max_nsamples_rank:
+            if self.rank == self.logger_rank:
                 fmt = "%%%dd" % (len(str(self.num_epochs)))
                 epoch_string = "Epoch %s/%s" % (fmt, fmt)
                 pbar = tqdm(total=self.dataset.train_nsamples, ncols=bar_width,
@@ -689,11 +703,6 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for x_batch, y_batch, batch_size in train_batch_generator:
-                epoch_done = 0 if batch_size else 1
-                global_epoch_done = self.comm.allreduce(epoch_done, MPI.SUM) if self.comm else epoch_done
-                if global_epoch_done >= self.nprocs:
-                    break
-
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size)
                 toc = timer()
@@ -704,23 +713,18 @@ class Model:
                 train_total_loss, train_batch_count, string = \
                     self._update_running_average(train_batch_loss, train_total_loss,
                                                  train_batch_count, batch_size)
-                if self.rank == self.max_nsamples_rank:
+                if self.rank == self.logger_rank:
                     # noinspection PyUnboundLocalVariable
                     pbar.set_postfix_str(s=string, refresh=True)
                     pbar.update(batch_size)
                     self.perf_counter.add_training_time_and_batch_size(epoch, toc - tic, batch_size)
 
-            if self.rank == self.max_nsamples_rank:
+            if self.rank == self.logger_rank:
                 pbar.close()
                 for c in range(len(self.loss_and_metrics)):
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for x_batch, y_batch, batch_size in val_batch_generator:
-                epoch_done = 0 if batch_size else 1
-                global_epoch_done = self.comm.allreduce(epoch_done, MPI.SUM) if self.comm else epoch_done
-                if global_epoch_done >= self.nprocs:
-                    break
-
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
 
                 if batch_size <= 0:
@@ -729,10 +733,10 @@ class Model:
                 val_total_loss, val_batch_count, string = \
                     self._update_running_average(val_batch_loss, val_total_loss,
                                                  val_batch_count, batch_size, prefix="val_")
-                if self.rank == self.max_nsamples_rank:
+                if self.rank == self.logger_rank:
                     print("\033[A\033[%dC\b, %s]" % (bar_width, string))
 
-            if self.rank == self.max_nsamples_rank:
+            if self.rank == self.logger_rank:
                 for c in range(len(self.loss_and_metrics)):
                     self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
@@ -784,18 +788,13 @@ class Model:
 
         test_batch_generator = self.dataset.get_test_generator()
 
-        if self.rank == self.max_nsamples_rank:
+        if self.rank == self.logger_rank:
             test_total_loss, test_batch_count = np.zeros(len(self.loss_and_metrics)), 0
             pbar = tqdm(total=self.dataset.test_nsamples, ncols=bar_width,
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
         for x_batch, y_batch, batch_size in test_batch_generator:
-            epoch_done = 0 if batch_size else 1
-            global_epoch_done = self.comm.allreduce(epoch_done, MPI.SUM) if self.comm else epoch_done
-            if global_epoch_done >= self.nprocs:
-                break
-
             tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
             toc = timer()
@@ -803,7 +802,7 @@ class Model:
             if batch_size <= 0:
                 continue
 
-            if self.rank == self.max_nsamples_rank:
+            if self.rank == self.logger_rank:
                 # noinspection PyUnboundLocalVariable
                 test_total_loss, test_batch_count, string = \
                     self._update_running_average(test_batch_loss, test_total_loss, test_batch_count, batch_size,
@@ -816,7 +815,7 @@ class Model:
         # Increment self._evaluate_round
         self._evaluate_round += 1
 
-        if self.rank == self.max_nsamples_rank:
+        if self.rank == self.logger_rank:
             pbar.close()
             # Sleep for half a second to allow pbar to write its output before returning
             time.sleep(.5)
