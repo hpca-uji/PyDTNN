@@ -8,37 +8,37 @@ import pydtnn.layers as layer
 import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def DFT(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END DFT --- #
 
 def DeformConv(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END DeformConv --- #
 
 def DepthToSpace(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END DepthToSpace --- #
 
 def DequantizeLinear(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END DequantizeLinear --- #
 
 def Det(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Det --- #
 
 def Div(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Div --- #
 
 def Dropout(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Dropout.html#l-onnx-doc-dropout
     ONNX_SEED = "seed" # TODO: Check if the random seed it's important. If it is, check how to set it.
     # PyDTNN attributes names from Dropout class.
@@ -63,6 +63,6 @@ def Dropout(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Dropout --- #
 
 def DynamicQuantizeLinear(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END DynamicQuantizeLinear --- #

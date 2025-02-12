@@ -8,66 +8,66 @@ import pydtnn.layers as layer
 import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def Abs(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Abs --- #
 
 def Acos(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Acos --- #
 
 def Acosh(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Acosh --- #
 
 def Add(info: Dict[str, Any]) -> LayerAndActivationBase:
 
     # TODO: from print to "log - debug" or somthing like that.
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     list_adding_nodes = info[cons.CONST_LISTS_NODES]
 
     return layer.AdditionBlock(list_adding_nodes)
 # --- END Add --- #
 
 def AffineGrid(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END AffineGrid --- #
 
 def And(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END And --- #
 
 def ArgMax(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ArgMax --- #
 
 def ArgMin(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ArgMin --- #
 
 def Asin(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Asin --- #
 
 def Asinh(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Asinh --- #
 
 def Atan(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Atan --- #
 
 def Atanh(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Atanh --- #
 
@@ -85,7 +85,7 @@ def AveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     PYDTNN_STRIDE = "stride"    
 
     
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     
     dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()

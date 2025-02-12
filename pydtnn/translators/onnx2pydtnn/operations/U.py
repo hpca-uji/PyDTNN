@@ -8,13 +8,13 @@ import pydtnn.translators.onnx2pydtnn.constants as cons
 import pydtnn.layers as layer
 
 def Unique(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Unique --- #
 
 def Unsqueeze(info: Dict[str, Any]) -> LayerAndActivationBase:
     # Onnx information: https://onnx.ai/onnx/operators/onnx__Unsqueeze.html
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     ONNX_AXES = "axes"
 
     PYDTNN_AXES = "axis"
@@ -59,6 +59,6 @@ def Unsqueeze(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Unsqueeze --- #
 
 def Upsample(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Upsample --- #

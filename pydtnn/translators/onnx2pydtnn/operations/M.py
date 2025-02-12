@@ -8,22 +8,22 @@ import pydtnn.layers as layer
 import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def MatMul(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END MatMul --- #
 
 def MatMulInteger(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END MatMulInteger --- #
 
 def Max(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Max --- #
 
 def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool
     ONNX_COUNT_DILATATIONS = "dilations"
@@ -36,7 +36,7 @@ def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
     PYDTNN_PADDING = "padding"
     PYDTNN_STRIDE = "stride"    
 
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     
     dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()
@@ -54,47 +54,47 @@ def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END MaxPool --- #
 
 def MaxRoiPool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END MaxRoiPool --- #
 
 def MaxUnpool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END MaxUnpool --- #
 
 def Mean(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Mean --- #
 
 def MeanVarianceNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END MeanVarianceNormalization --- #
 
 def MelWeightMatrix(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END MelWeightMatrix --- #
 
 def Min(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Min --- #
 
 def Mish(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Mish --- #
 
 def Mod(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Mod --- #
 
 def Mul(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
 
     # TODO: Move it to a file and do it in the right way.
 
@@ -148,6 +148,6 @@ def Mul(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Mul --- #
 
 def Multinomial(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Multinomial --- #

@@ -7,26 +7,26 @@ from inspect import stack # This is only in order to get the function's name
 # EMPTY (for now)
 
 def Neg(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Neg --- #
 
 def NegativeLogLikelihoodLoss(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END NegativeLogLikelihoodLoss --- #
 
 def NonMaxSuppression(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END NonMaxSuppression --- #
 
 def NonZero(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END NonZero --- #
 
 def Not(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Not --- #

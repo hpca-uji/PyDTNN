@@ -8,33 +8,33 @@ import pydtnn.layers as layer
 import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def GRU(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GRU --- #
 
 def Gather(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Gather --- #
 
 def GatherElements(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GatherElements --- #
 
 def GatherND(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GatherND --- #
 
 def Gelu(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Gelu --- #
 
 def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
 
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     # Onnx documentation: https://onnx.ai/onnx/operators/onnx__Gemm.html
     ONNX_ALPHA = "alpha"
     ONNX_BETA = "beta"
@@ -93,14 +93,14 @@ def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Gemm --- #
 
 def GlobalAveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     # 1.- Onnx documentation: https://onnx.ai/onnx/operators/onnx__GlobalAveragePool.html
     
     # PyDTNN attributes names from AbstractPool2DLayer class.
     PYDTNN_POOL_SHAPE = "pool_shape"
     PYDTNN_STRIDE = "stride"
 
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     args = dict()
 
     operations = info[cons.CONST_PREV_LAYERS]
@@ -116,31 +116,31 @@ def GlobalAveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END GlobalAveragePool --- #
 
 def GlobalLpPool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GlobalLpPool --- #
 
 def GlobalMaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GlobalMaxPool --- #
 
 def Greater(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Greater --- #
 
 def GreaterOrEqual(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GreaterOrEqual --- #
 
 def GridSample(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GridSample --- #
 
 def GroupNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function()} args received: {info}")
+    print(f"{stack()[0].function} args received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END GroupNormalization --- #
