@@ -94,6 +94,16 @@ def _get_gpus_per_node():
     return gpus_per_node
 
 
+def _get_comm_protocol():
+    from pydtnn.comms import PROTOCOL
+    if PROTOCOL is None and _get_mpi_processes() > 1:
+        return "mpi"
+    elif PROTOCOL is None:
+        return "none"
+    else:
+        return str(PROTOCOL)
+
+
 class PydtnnArgumentParser(argparse.ArgumentParser):
     lines = []
 
@@ -107,6 +117,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         result.threads_per_process = _get_threads_per_process()
         # 3) gpus_per_node
         result.gpus_per_node = _get_gpus_per_node()
+        # 3) comm_protocol
+        result.comm_protocol = _get_comm_protocol()
         # Populate self.lines (for self.print_args())
         if len(self.lines) == 0:
             lines = []
@@ -256,3 +268,4 @@ _re_group = parser.add_argument_group("Runtime parallel execution options")
 _re_group.add_argument('--mpi_processes', type=int, default=-1, help=argparse.SUPPRESS)
 _re_group.add_argument('--threads_per_process', type=int, default=-1, help=argparse.SUPPRESS)
 _re_group.add_argument('--gpus_per_node', type=int, default=-1, help=argparse.SUPPRESS)
+_re_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
