@@ -62,8 +62,9 @@ def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
 
     # TODO: make this programming terrorism into an actual class or classes
     pseudo_gemm = layer.FC()
-    
-    other_inputs = set(info[cons.CONST_WEIGHTS].keys()) - set(info[cons.CONST_INPUTS])
+
+    _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(enumerate(info[cons.CONST_INPUTS]))
+    other_inputs = [elem[1] for elem in sorted(_other_inputs, key=lambda x: x[0])]
 
     if len(other_inputs) == 1:
         b = info[cons.CONST_WEIGHTS][other_inputs[0]]

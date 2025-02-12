@@ -25,32 +25,34 @@ def Max(info: Dict[str, Any]) -> LayerAndActivationBase:
 def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"Operation: {stack()[0].function}\nargs received: {info}")
     
-    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool
-    ONNX_COUNT_DILATATIONS = "dilations"
+    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool    
     ONNX_KERNEL_SHAPE = "kernel_shape"
     ONNX_PADS = "pads"
     ONNX_STRIDES = "strides"
-    # PyDTNN attributes names from AbstractPool2DLayer class.
-    PYDTNN_DILATION = "dilation"
+    # PyDTNN attributes names from AbstractPool2DLayer class.    
     PYDTNN_POOL_SHAPE = "pool_shape"
     PYDTNN_PADDING = "padding"
     PYDTNN_STRIDE = "stride"    
+    PYDTNN_DILATION = "dilation"
+    ONNX_COUNT_DILATATIONS = "dilations"
 
     print(f"Operation: {stack()[0].function}\nargs received: {info}")
     
     dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()
 
-    if ONNX_COUNT_DILATATIONS in dict_attributes:
-        args[PYDTNN_POOL_SHAPE] = dict_attributes[ONNX_KERNEL_SHAPE]
-    if ONNX_KERNEL_SHAPE in dict_attributes:
-        args[PYDTNN_PADDING] = dict_attributes[ONNX_PADS]
-    if ONNX_PADS in dict_attributes:
+    if ONNX_COUNT_DILATATIONS in dict_attributes: 
+        args[PYDTNN_DILATION] = dict_attributes[ONNX_COUNT_DILATATIONS]        
+    if ONNX_KERNEL_SHAPE in dict_attributes: 
+        args[PYDTNN_POOL_SHAPE] = dict_attributes[ONNX_KERNEL_SHAPE]        
+    if ONNX_PADS in dict_attributes: 
+        print(f"dict_attributes[ONNX_PADS]: {dict_attributes[ONNX_PADS]}")
+        args[PYDTNN_PADDING] = cons.pads_from_onnx_to_pydttn(pads = dict_attributes[ONNX_PADS])
+        print(f"args[PYDTNN_PADDING]: {args[PYDTNN_PADDING]}")
+    if ONNX_STRIDES in dict_attributes: 
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
-    if ONNX_STRIDES in dict_attributes:
-        args[PYDTNN_DILATION] = dict_attributes[ONNX_COUNT_DILATATIONS]
-
-    return layer.MaxPool2D(*args)
+    
+    return layer.MaxPool2D(**args)
 # --- END MaxPool --- #
 
 def MaxRoiPool(info: Dict[str, Any]) -> LayerAndActivationBase:

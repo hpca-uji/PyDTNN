@@ -117,11 +117,12 @@ def get_actual_inputs(list_inputs: List[str], weights_names: List[str])-> List[s
 # --- END get_actual_inputs --- #
 
 def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], 
-                            weights: Dict[str, np.ndarray], output: str|None = None)->None:
+                            weights: Dict[str, np.ndarray], output: List[str]|None = None)->None:
 
-    info = {cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
+    info = {#cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
             cons.CONST_OPSET: opset_version,    # Version of the onnx operation
             cons.CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),   # node's inputs names
+            cons.CONST_ALL_INPUTS: node.input,   # ALL node's inputs names (including weights and biases)
             cons.CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
             cons.CONST_ATTRIBUTES: extract_attributes(node=node), # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
             cons.CONST_WEIGHTS: weights,
@@ -133,7 +134,7 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: 
         for operation in operations_to_remove:
             del operations[operation]
 
-    operations[info[cons.CONST_OUPTUS]] = tuple(cons.SWITCH_OPERATION_ONNX_TO_PYDTNN[node.op_type](info), info[cons.CONST_INPUTS])
+    operations[info[cons.CONST_OUPTUS][0]] = (cons.SWITCH_OPERATION_ONNX_TO_PYDTNN[node.op_type](info), info[cons.CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
 # --- END _get_and_put_operation --- #
@@ -159,7 +160,7 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
 
     for i in range(num_operations - 1):
         _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
-    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=outputs)
+    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))
@@ -190,7 +191,10 @@ def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, 
     # Asigning the operations to the model.
     load_layers(model=model, operations=operations)
 
-    # TODO: Faltaría comprobar cómo se conectan las entradas entre ellas
+    # TODO: BORRAR
+    print(f"model: {model}")
+    # TODO: BORRAR lo anterior
+
     # TODO: Faltaría comprobar el formato de los pesos (y hacer la traducción, si fuese necesario)
 
     # Loading the weights into the model.

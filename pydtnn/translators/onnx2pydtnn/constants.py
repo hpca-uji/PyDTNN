@@ -32,17 +32,29 @@ CONST_OPSET = "opset_version"
 CONST_OUPTUS = "outputs"
 CONST_ATTRIBUTES = "attributes"
 CONST_INPUTS = "inputs"
+CONST_ALL_INPUTS = "all_inputs"
 CONST_LISTS_NODES = "lists_nodes"
 CONST_WEIGHTS = "weights"
 CONST_PREV_LAYERS = "previous_layers"
 
-# TODO: 
 # Operations to do:
 # DenseNet169 - {'Conv', 'BatchNormalization', 'Unsqueeze', 'Add', 'Mul', 'Relu', 'MaxPool', 'AveragePool', 'GlobalAveragePool', 'Concat'}
 # ResNet50 - {'Conv', 'MaxPool', 'Relu', 'Add', 'BatchNormalization', 'GlobalAveragePool', 'Gemm', 'Flatten'}
 # VGG19 - {'Dropout', 'Gemm', 'Flatten', 'Relu', 'MaxPool', 'BatchNormalization', 'Conv'}
+# Union of the ones before - {'Add', 'AveragePool', 'BatchNormalization', 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool', 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
 
-# Union - {'Add', 'AveragePool', 'BatchNormalization', 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool', 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
+def pads_from_onnx_to_pydttn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple[int, int]]:
+        # "pads format should be as follow [x1_begin, x2_begin…x1_end, x2_end,…]" from, for example, https://onnx.ai/onnx/operators/onnx__AveragePool.html
+        # Onnx: [x1_begin, x2_begin, ..., x1_end, x2_end, ...] ==> "PyDTNN: [(x1_begin, x1_end), (x2_end, x2_begin), ...]"
+        # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
+
+        num_pads = len(pads)//2
+        _pads = [(0,0)] * (num_pads)
+        for i in range(num_pads):
+            _pads[i] = (pads[i], pads[i + num_pads])
+
+        return _pads
+# --- END pads_from_onnx_to_pydttn --- #
 
 SWITCH_OPERATION_ONNX_TO_PYDTNN = {
     "Abs" : Abs,

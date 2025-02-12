@@ -50,16 +50,19 @@ def Dropout(info: Dict[str, Any]) -> LayerAndActivationBase:
     # Droput can receive 3 inputs: the previous layer output [Tensor], 
     #   the ratio (of random dropout) [Float] and if it's in training mode [bool]
     # Then if it has more than one input and it's not a bool or the previous layer output, it is the ratio.
-    other_inputs = set(info[cons.CONST_WEIGHTS].keys()) - set(info[cons.CONST_INPUTS])
+    _other_inputs = set(enumerate(info[cons.CONST_ALL_INPUTS])) - set(enumerate(info[cons.CONST_INPUTS]))
+    other_inputs = [elem[1] for elem in sorted(_other_inputs, key=lambda x: x[0])]
         
     if len(other_inputs) > 0: 
         for k in other_inputs:
-            elem = info[cons.CONST_WEIGHTS][k]
+            elem = info[cons.CONST_WEIGHTS][other_inputs[k]]
             if not isinstance(elem, bool):
                 args[PYDTNN_RATE] = elem
                 break
 
-    return layer.Dropout(*args)
+    print(f"==> args: {args}")
+
+    return layer.Dropout(**args)
 # --- END Dropout --- #
 
 def DynamicQuantizeLinear(info: Dict[str, Any]) -> LayerAndActivationBase:
