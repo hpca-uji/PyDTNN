@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_INPUTS, CONST_ATTRIBUTES, CONST_PREV_LAYERS
+from constants import CONST_ATTRIBUTES, CONST_LISTS_NODES #, CONST_INPUTS, CONST_PREV_LAYERS
 
 def MatMul(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -95,8 +95,56 @@ def Mod(info: Dict[str, Any]) -> LayerAndActivationBase:
 
 def Mul(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
-    # TODO: Let's see how to do it.
-    raise NotImplementedError("Not implemented")
+
+    # TODO: Move it to a file and do it in the right way.
+
+    from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, \
+    PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_BACKWARD_ELTW_SUM, PYDTNN_OPS_FORWARD_ELTW_SUM
+    from numpy import multiply
+    from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
+
+    class _Mul(AbstractBlockLayer):
+        def initialize_block_layer(self):
+            super().initialize_block_layer()
+            assert all([o == self.out_shapes[0] for o in self.out_shapes])
+            self.shape = self.out_shapes[0]
+        # - END initialize_block_layer - #
+
+        def forward(self, x):
+            x = [x] * len(self.paths)
+            for i, p in enumerate(self.paths):
+                for layer in p:
+                    self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                    x[i] = layer.forward(x[i])
+                    self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                
+                if i > 0:
+                    self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
+                    # TODO: do it with Cython.
+                    x[0] = multiply(x[0], x[i])
+                    self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            return x[0]
+        # - END forward - #
+
+        def backward(self, dy):
+            dx = [dy] * len(self.paths)
+            for i, p in enumerate(self.paths):
+                for layer in reversed(p):
+                    self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                    dx[i] = layer.backward(dx[i])
+                    self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                if i > 0:
+                    self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                                    self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
+                    # TODO: do it with Cython adn chekc if it's correct.
+                    dx[0] = multiply(dx[0], dx[i])
+                    self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            return dx[0]
+        # - END backward - #
+    # -- END _Mul -- #
+
+    return _Mul(info[CONST_LISTS_NODES])
 # --- END Mul --- #
 
 def Multinomial(info: Dict[str, Any]) -> LayerAndActivationBase:

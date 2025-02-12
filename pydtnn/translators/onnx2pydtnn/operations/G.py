@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_INPUTS, CONST_ATTRIBUTES, CONST_PREV_LAYERS
+from constants import CONST_INPUTS, CONST_ATTRIBUTES, CONST_PREV_LAYERS, CONST_WEIGHTS
 
 def GRU(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -33,14 +33,68 @@ def Gelu(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Gelu --- #
 
 def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
+
     print(f"{stack()[0].function()} args received: {info}")
-    raise NotImplementedError("Not implemented")
-    # FC,   # TODO: Revisar
+    # Onnx documentation: https://onnx.ai/onnx/operators/onnx__Gemm.html
+    ONNX_ALPHA = "alpha"
+    ONNX_BETA = "beta"
+    ONNX_TRANS_A = "transA"
+    ONNX_TRANS_B = "transB"
+
+    # FC' PyDTNN0' implementation:
+    #   res = self.model.matmul(x, self.weights)
+    #   self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+    #   return res + self.biases if self.use_bias else 0
+
+    # ONNX Gemm implementation:
+    #   A’ = transpose(A) if transA else A
+    #   B’ = transpose(B) if transB else B
+    #   Y = alpha * A’ * B’ + beta * C
+    # B: PyDTNN's weights
+    # C: PyDTNN's bias    
+
+    attributes = info[CONST_ATTRIBUTES]
+
+    alpha = attributes[ONNX_ALPHA] if ONNX_ALPHA in attributes else 1.0
+    beta = attributes[ONNX_BETA] if ONNX_BETA in attributes else 1.0
+    transA = attributes[ONNX_TRANS_A] if ONNX_TRANS_A in attributes else None
+    transB = attributes[ONNX_TRANS_B] if ONNX_TRANS_B in attributes else None
+
+    # TODO: make this programming terrorism into an actual class or classes
+    pseudo_gemm = layer.FC()
+    
+    other_inputs = set(info[CONST_WEIGHTS].keys()) - set(info[CONST_INPUTS])
+
+    if len(other_inputs) == 1:
+        b = info[CONST_WEIGHTS][other_inputs[0]]
+        c = None
+    else: 
+        b = info[CONST_WEIGHTS][other_inputs[0]]
+        c = info[CONST_WEIGHTS][other_inputs[1]]
+
+    original_fw = pseudo_gemm.forward
+
+    def _weights_initializer(*to_ignore):
+        return b.T if transB is not None else b
+
+    def _biases_initializer(*to_ignore):
+        return beta * c
+
+    def _mod_forward(x):
+        x = alpha * (x.T if transA is not None else x)
+        original_fw(x)
+
+    pseudo_gemm.weights_initializer = _weights_initializer # (lambda *x: b.T if transB is not None else b) 
+    if c is not None:
+        pseudo_gemm.biases_initializer = _biases_initializer 
+    pseudo_gemm.forward = _mod_forward
+
+    return pseudo_gemm
 # --- END Gemm --- #
 
 def GlobalAveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
-    # 1.- Onnx Information: https://onnx.ai/onnx/operators/onnx__GlobalAveragePool.html
+    # 1.- Onnx documentation: https://onnx.ai/onnx/operators/onnx__GlobalAveragePool.html
     
     # PyDTNN attributes names from AbstractPool2DLayer class.
     PYDTNN_POOL_SHAPE = "pool_shape"

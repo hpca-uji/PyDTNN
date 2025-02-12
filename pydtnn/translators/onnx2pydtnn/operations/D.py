@@ -50,7 +50,7 @@ def Dropout(info: Dict[str, Any]) -> LayerAndActivationBase:
     # Droput can receive 3 inputs: the previous layer output [Tensor], 
     #   the ratio (of random dropout) [Float] and if it's in training mode [bool]
     # Then if it has more than one input and it's not a bool or the previous layer output, it is the ratio.
-    other_inputs = set(info[CONST_INPUTS]) - set(info[CONST_WEIGHTS].keys())
+    other_inputs = set(info[CONST_WEIGHTS].keys()) - set(info[CONST_INPUTS])
         
     if len(other_inputs) > 0: 
         for k in other_inputs:

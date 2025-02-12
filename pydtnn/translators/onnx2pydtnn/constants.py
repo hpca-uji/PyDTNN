@@ -36,58 +36,7 @@ CONST_LISTS_NODES = "lists_nodes"
 CONST_WEIGHTS = "weights"
 CONST_PREV_LAYERS = "previous_layers"
 
-# This values are from: "onnx.TensorProto.DataType()"
-# Para pasar de tipo de datos de onnx a numpy se hace uso de la función "onnx.numpy_helper.to_array()"
-SWTICH_ONNX_DATA_TYPES = {
-    "UNDEFINED" : 0,
-    "FLOAT" : 1,
-    "UINT8" : 2,
-    "INT8" : 3,
-    "UINT16" : 4,
-    "INT16" : 5,
-    "INT32" : 6,
-    "INT64" : 7,
-    "STRING" : 8,
-    "BOOL" : 9,
-    "FLOAT16" : 10,
-    "DOUBLE" : 11,
-    "UINT32" : 12,
-    "UINT64" : 13,
-    "COMPLEX64" : 14,
-    "COMPLEX128" : 15,
-    "BFLOAT16" : 16,
-    "FLOAT8E4M3FN" : 17,
-    "FLOAT8E4M3FNUZ" : 18,
-    "FLOAT8E5M2" : 19,
-    "FLOAT8E5M2FNUZ" : 20,
-    "UINT4" : 21,
-    "INT4" : 22, 
-    # -------------- # 
-    0   : "UNDEFINED",
-    1   : "FLOAT",
-    2   : "UINT8",
-    3   : "INT8",
-    4   : "UINT16",
-    5   : "INT16",
-    6   : "INT32",
-    7   : "INT64",
-    8   : "STRING",
-    9   : "BOOL",
-    10  : "FLOAT16",
-    11  : "DOUBLE",
-    12  : "UINT32",
-    13  : "UINT64",
-    14  : "COMPLEX64",
-    15  : "COMPLEX128",
-    16  : "BFLOAT16",
-    17  : "FLOAT8E4M3FN",
-    18  : "FLOAT8E4M3FNUZ",
-    19  : "FLOAT8E5M2",
-    20  : "FLOAT8E5M2FNUZ",
-    21  : "UINT4",
-    22  : "INT4",
-}
-
+# TODO: 
 # Operations to do:
 # DenseNet169 - {'Conv', 'BatchNormalization', 'Unsqueeze', 'Add', 'Mul', 'Relu', 'MaxPool', 'AveragePool', 'GlobalAveragePool', 'Concat'}
 # ResNet50 - {'Conv', 'MaxPool', 'Relu', 'Add', 'BatchNormalization', 'GlobalAveragePool', 'Gemm', 'Flatten'}
