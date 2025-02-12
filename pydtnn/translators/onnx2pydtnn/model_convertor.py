@@ -133,7 +133,7 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: 
         for operation in operations_to_remove:
             del operations[operation]
 
-    operations[info[cons.CONST_OUPTUS]] = tuple(cons.SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[cons.CONST_INPUTS])
+    operations[info[cons.CONST_OUPTUS]] = tuple(cons.SWITCH_OPERATION_ONNX_TO_PYDTNN[node.op_type](info), info[cons.CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
 # --- END _get_and_put_operation --- #
@@ -154,7 +154,7 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
     assert num_operations > 0
 
     # operations: {[output_name]: ([operation], [inputs])}
-    output_first_layer = get_actual_inputs(list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys()))
+    output_first_layer = get_actual_inputs(list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys()))[0]
     operations = {output_first_layer : (Input(shape=inputs), [None])}
 
     for i in range(num_operations - 1):
