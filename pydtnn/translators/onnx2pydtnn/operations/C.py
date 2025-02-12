@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_ATTRIBUTES, CONST_LISTS_NODES
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def Cast(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -54,7 +54,7 @@ def Concat(info: Dict[str, Any]) -> LayerAndActivationBase:
     # There are no PyDTNN attributes names from ConcatenationBlock class.
     
     # TODO: Check if this class is correct
-    list_concat_nodes = info[CONST_LISTS_NODES]
+    list_concat_nodes = info[cons.CONST_LISTS_NODES]
 
     return layer.ConcatenationBlock(list_concat_nodes)   
 # --- END Concat --- #
@@ -92,7 +92,7 @@ def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
     PYDTNN_STRIDE = "stride"    
     
     args = dict()
-    dict_attributes = info[CONST_ATTRIBUTES]
+    dict_attributes = info[cons.CONST_ATTRIBUTES]
 
     if ONNX_COUNT_DILATATIONS in info:
         args[PYDTNN_DILATION] = dict_attributes[ONNX_COUNT_DILATATIONS]

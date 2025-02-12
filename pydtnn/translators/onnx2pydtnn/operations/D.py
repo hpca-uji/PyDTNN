@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_ATTRIBUTES, CONST_WEIGHTS, CONST_INPUTS
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def DFT(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -50,11 +50,11 @@ def Dropout(info: Dict[str, Any]) -> LayerAndActivationBase:
     # Droput can receive 3 inputs: the previous layer output [Tensor], 
     #   the ratio (of random dropout) [Float] and if it's in training mode [bool]
     # Then if it has more than one input and it's not a bool or the previous layer output, it is the ratio.
-    other_inputs = set(info[CONST_WEIGHTS].keys()) - set(info[CONST_INPUTS])
+    other_inputs = set(info[cons.CONST_WEIGHTS].keys()) - set(info[cons.CONST_INPUTS])
         
     if len(other_inputs) > 0: 
         for k in other_inputs:
-            elem = info[CONST_WEIGHTS][k]
+            elem = info[cons.CONST_WEIGHTS][k]
             if not isinstance(elem, bool):
                 args[PYDTNN_RATE] = elem
                 break

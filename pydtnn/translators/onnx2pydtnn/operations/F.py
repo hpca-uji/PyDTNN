@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_ATTRIBUTES, CONST_WEIGHTS, CONST_INPUTS
+#import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def Flatten(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")

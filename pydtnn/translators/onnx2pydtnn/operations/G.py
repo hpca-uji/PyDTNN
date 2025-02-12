@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_INPUTS, CONST_ATTRIBUTES, CONST_PREV_LAYERS, CONST_WEIGHTS
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def GRU(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -53,7 +53,7 @@ def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
     # B: PyDTNN's weights
     # C: PyDTNN's bias    
 
-    attributes = info[CONST_ATTRIBUTES]
+    attributes = info[cons.CONST_ATTRIBUTES]
 
     alpha = attributes[ONNX_ALPHA] if ONNX_ALPHA in attributes else 1.0
     beta = attributes[ONNX_BETA] if ONNX_BETA in attributes else 1.0
@@ -63,14 +63,14 @@ def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
     # TODO: make this programming terrorism into an actual class or classes
     pseudo_gemm = layer.FC()
     
-    other_inputs = set(info[CONST_WEIGHTS].keys()) - set(info[CONST_INPUTS])
+    other_inputs = set(info[cons.CONST_WEIGHTS].keys()) - set(info[cons.CONST_INPUTS])
 
     if len(other_inputs) == 1:
-        b = info[CONST_WEIGHTS][other_inputs[0]]
+        b = info[cons.CONST_WEIGHTS][other_inputs[0]]
         c = None
     else: 
-        b = info[CONST_WEIGHTS][other_inputs[0]]
-        c = info[CONST_WEIGHTS][other_inputs[1]]
+        b = info[cons.CONST_WEIGHTS][other_inputs[0]]
+        c = info[cons.CONST_WEIGHTS][other_inputs[1]]
 
     original_fw = pseudo_gemm.forward
 
@@ -103,8 +103,8 @@ def GlobalAveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
     args = dict()
 
-    operations = info[CONST_PREV_LAYERS]
-    _input = info[CONST_INPUTS][0] # It should be a list with only one input
+    operations = info[cons.CONST_PREV_LAYERS]
+    _input = info[cons.CONST_INPUTS][0] # It should be a list with only one input
 
     # TODO: check if this is correct.
 

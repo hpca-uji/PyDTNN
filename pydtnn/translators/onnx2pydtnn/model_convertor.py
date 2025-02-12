@@ -5,8 +5,8 @@ import numpy as np
 
 # Operations/transformations related
 import onnx
-from model import Model as PyDTNN_Model
-from constants import SWITCH_OPERATION_ONNX_TO_PYDTNN, CONST_NODE, CONST_OPSET, CONST_OUPTUS, CONST_ATTRIBUTES, CONST_INPUTS, CONST_LISTS_NODES, CONST_WEIGHTS, CONST_PREV_LAYERS
+from pydtnn.model import Model as PyDTNN_Model
+import pydtnn.translators.onnx2pydtnn.constants as cons 
 from pydtnn.layers import Input
 
 # ////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ def get_lists_operations_and_outputs(info: Dict[str, Any], operations: Dict[str,
     dict_branch = {}
 
     # Making the "path" of layers for every input
-    for inpt in info[CONST_INPUTS]:
+    for inpt in info[cons.CONST_INPUTS]:
         dict_branch[inpt] = dict() 
         
         input_search = inpt
@@ -83,11 +83,11 @@ def get_lists_operations_and_outputs(info: Dict[str, Any], operations: Dict[str,
     # Sets are not ordered by insertion ==> keep order with enumerate ==>
     #   ==> braches have different sizes, then the same node may have different order in different branches ==> 
     #   ==> that's true from bottom to top, from top to bottom the "intersection layers" (the ones to be searched) should have the same position.
-    enumerated_reversed_inputs = enumerate(list(dict_branch[info[CONST_INPUTS][0]].keys())[::-1])
+    enumerated_reversed_inputs = enumerate(list(dict_branch[info[cons.CONST_INPUTS][0]].keys())[::-1])
 
     coincidences = set(enumerated_reversed_inputs)
-    for i in range(1, len(info[CONST_INPUTS])):
-        coincidences.intersection(set(enumerate(list(dict_branch[info[CONST_INPUTS][i]].keys())[::-1])))
+    for i in range(1, len(info[cons.CONST_INPUTS])):
+        coincidences.intersection(set(enumerate(list(dict_branch[info[cons.CONST_INPUTS][i]].keys())[::-1])))
 
     # "Unenumerating" and sorting the intersection, and getting the first coincidence layer.
     #   ==> NOTE: Due the list was sorting in reverse before, now it is necessary to sort it be reverse again (that's why the "-x[0]").
@@ -96,7 +96,7 @@ def get_lists_operations_and_outputs(info: Dict[str, Any], operations: Dict[str,
     # Trimming the lists from that element (first coincidence)
     lists_operations = list()
     lists_outputs = list()
-    for inpt in info[CONST_INPUTS]:
+    for inpt in info[cons.CONST_INPUTS]:
         _values = list(dict_branch[inpt].values())
         layers = [elem[0] for elem in _values]
         outputs = [elem[1] for elem in _values]
@@ -119,21 +119,21 @@ def get_actual_inputs(list_inputs: List[str], weights_names: List[str])-> List[s
 def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], 
                             weights: Dict[str, np.ndarray], output: str|None = None)->None:
 
-    info = {CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
-            CONST_OPSET: opset_version,    # Version of the onnx operation
-            CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),   # node's inputs names
-            CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
-            CONST_ATTRIBUTES: extract_attributes(node=node), # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
-            CONST_WEIGHTS: weights,
-            CONST_PREV_LAYERS: operations
+    info = {cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
+            cons.CONST_OPSET: opset_version,    # Version of the onnx operation
+            cons.CONST_INPUTS: get_actual_inputs(list_inputs=node.input, weights_names=list(weights.keys())),   # node's inputs names
+            cons.CONST_OUPTUS: node.output if output is None else output,  # node's outputs names or the model's output (TODO: Check if a operation can have multiple outputs)
+            cons.CONST_ATTRIBUTES: extract_attributes(node=node), # dictionary with the node's attributes names and respective values (e.g. the shape of a kernel)
+            cons.CONST_WEIGHTS: weights,
+            cons.CONST_PREV_LAYERS: operations
             }
-    if len(info[CONST_INPUTS]) > 1:
-        info[CONST_LISTS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
+    if len(info[cons.CONST_INPUTS]) > 1:
+        info[cons.CONST_LISTS_NODES], operations_to_remove = get_lists_operations_and_outputs(info, operations)
         # Due the way the add/concatention layer works, those must to be removed from the operations (they will be inside the other operation)
         for operation in operations_to_remove:
             del operations[operation]
 
-    operations[info[CONST_OUPTUS]] = tuple(SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[CONST_INPUTS])
+    operations[info[cons.CONST_OUPTUS]] = tuple(cons.SWITCH_OPERATION_ONNX_TO_PYDTNN[node.name](info), info[cons.CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
 # --- END _get_and_put_operation --- #

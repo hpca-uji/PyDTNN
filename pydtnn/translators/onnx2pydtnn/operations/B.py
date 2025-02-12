@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_ATTRIBUTES
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def BatchNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -18,7 +18,7 @@ def BatchNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
     PYDTNN_MOMENTUM = "momentum"
     
     args = dict()
-    dict_attributes = info[CONST_ATTRIBUTES]
+    dict_attributes = info[cons.CONST_ATTRIBUTES]
 
     if ONNX_EPSILON in dict_attributes: 
         args[PYDTNN_EPSILON] = dict_attributes[ONNX_EPSILON]

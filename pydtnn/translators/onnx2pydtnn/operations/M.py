@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_ATTRIBUTES, CONST_LISTS_NODES #, CONST_INPUTS, CONST_PREV_LAYERS
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def MatMul(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -38,7 +38,7 @@ def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
 
     print(f"{stack()[0].function()} args received: {info}")
     
-    dict_attributes = info[CONST_ATTRIBUTES]
+    dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()
 
     if ONNX_COUNT_DILATATIONS in dict_attributes:
@@ -144,7 +144,7 @@ def Mul(info: Dict[str, Any]) -> LayerAndActivationBase:
         # - END backward - #
     # -- END _Mul -- #
 
-    return _Mul(info[CONST_LISTS_NODES])
+    return _Mul(info[cons.CONST_LISTS_NODES])
 # --- END Mul --- #
 
 def Multinomial(info: Dict[str, Any]) -> LayerAndActivationBase:

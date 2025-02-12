@@ -4,7 +4,7 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
-from constants import CONST_ATTRIBUTES
+import pydtnn.translators.onnx2pydtnn.constants as cons
 import pydtnn.layers as layer
 
 def Unique(info: Dict[str, Any]) -> LayerAndActivationBase:
@@ -18,7 +18,7 @@ def Unsqueeze(info: Dict[str, Any]) -> LayerAndActivationBase:
     ONNX_AXES = "axes"
 
     PYDTNN_AXES = "axis"
-    dict_attributes = info[CONST_ATTRIBUTES]
+    dict_attributes = info[cons.CONST_ATTRIBUTES]
     
     args = {}
 

@@ -5,7 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.layers as layer
-from constants import CONST_LISTS_NODES, CONST_ATTRIBUTES
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def Abs(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"{stack()[0].function()} args received: {info}")
@@ -26,7 +26,7 @@ def Add(info: Dict[str, Any]) -> LayerAndActivationBase:
 
     # TODO: from print to "log - debug" or somthing like that.
     print(f"{stack()[0].function()} args received: {info}")
-    list_adding_nodes = info[CONST_LISTS_NODES]
+    list_adding_nodes = info[cons.CONST_LISTS_NODES]
 
     return layer.AdditionBlock(list_adding_nodes)
 # --- END Add --- #
@@ -87,7 +87,7 @@ def AveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     
     print(f"{stack()[0].function()} args received: {info}")
     
-    dict_attributes = info[CONST_ATTRIBUTES]
+    dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()
 
     if ONNX_COUNT_DILATATIONS in dict_attributes:
