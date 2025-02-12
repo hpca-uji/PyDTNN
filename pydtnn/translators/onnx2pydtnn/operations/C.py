@@ -8,47 +8,47 @@ import pydtnn.layers as layer
 import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def Cast(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Cast --- #
 
 def CastLike(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END CastLike --- #
 
 def Ceil(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Ceil --- #
 
 def Celu(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Celu --- #
 
 def CenterCropPad(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END CenterCropPad --- #
 
 def Clip(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Clip --- #
 
 def Col2Im(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Col2Im --- #
 
 def Compress(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Compress --- #
 
 def Concat(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Concat.html#l-onnx-doc-concat
     ONNX_AXIS = "axis"
     # There are no PyDTNN attributes names from ConcatenationBlock class.
@@ -60,23 +60,23 @@ def Concat(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Concat --- #
 
 def ConcatFromSequence(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConcatFromSequence --- #
 
 def Constant(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Constant --- #
 
 def ConstantOfShape(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConstantOfShape --- #
 
 def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
     
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Conv.html#l-onnx-doc-conv
     ONNX_COUNT_DILATATIONS = "dilations"
@@ -110,26 +110,26 @@ def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Conv --- #
 
 def ConvInteger(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConvInteger --- #
 
 def ConvTranspose(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END ConvTranspose --- #
 
 def Cos(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Cos --- #
 
 def Cosh(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Cosh --- #
 
 def CumSum(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"{stack()[0].function} args received: {info}")
+    print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END CumSum --- #
