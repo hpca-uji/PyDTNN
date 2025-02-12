@@ -99,9 +99,13 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             residuals (np.array): 2D dense matrix with the current layer residuals
             dw (np.array): 2D dense matrix with the current layer gradients
             learning_rate (float): learning rate float value
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
 
-        Returns 
-            acc (np.array) 
+        Warning:
+            'cython' method does not provide the same exact accuracy as 'numpy'.
+            
+        Returns:
+            acc (np.array): 2D dense matrix with the updated residuals
         """
 
         if method == "cython":
@@ -115,14 +119,15 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
     def _reset_residuals(self, acc, indexes, method="cython"):
         """
-        Update residuals: set zero value if it is in indexes, else acc value is set
+        Update residuals: set zero value if it is in indexes, else acc value is set.
 
         Parameters:
             acc (np.array): 2D dense matrix
             indexes (tuple(np.array, np.array)): a tuple with rows and cols
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
 
         Returns:
-            residuals (np.array), which is the same as acc with the values in indexes set to zero 
+            residuals (np.array): which is the same as acc with the values in indexes set to zero.
         """
 
         if method == "cython":
@@ -137,18 +142,19 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     
-    def _update_weights(self, layer, w_, w, coo_u, method="cython"):
+    def _update_weights(self, layer, w_type, w, coo_u, method="cython"):
         """
-        Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_, w)
+        Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_type, w)
 
         Parameters:
             layer (int): layer id
-            w_ (string): weight param type (bias, weight, ...)
+            w_type (string): weight param type (bias, weight, ...)
             w (np.array): N dimensional dense weights matrix/tensor 
             coo_u (coo_array): Sparse 2D gradient matrix in COO format to update w
+            method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
 
         Returns:
-            void, instead it directly applies the result to the weight layer attribute
+            (void): instead it directly applies the result to the weight layer attribute
         """
 
         if method == "cython": 
@@ -157,7 +163,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             w = update_sparsed_weights_cython(w, coo_u.data, coo_u.row, coo_u.col)
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
-            setattr(layer, w_, w)  
+            setattr(layer, w_type, w)  
             return
 
         if method == "numpy": 
@@ -166,7 +172,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             w[coo_u.row, coo_u.col] -= coo_u.data
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
-            setattr(layer, w_, w)  
+            setattr(layer, w_type, w)  
             return
 
         raise NotImplementedError(f"Method '{method}' not implemented")
@@ -184,13 +190,14 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Parameters:
             acc (np.array): 2D dense gradient matrix accumulation values.
             t (int): Current iteration number.
-            k (int): Number of top-k gradient values to select.
+            k (int): Number of top-k gradient values to select in the current layer.
             space_repartition_t (int): Interval of iterations for space repartitioning.
             thresholds_re_evaluation_t (int): Interval of iterations for threshold re-evaluation.
 
         Returns:
-            coo_u (coo_array): The updated gradient values in 2D sparse format.
-            indexes (tuple(np.array, np.array)): The indices of the top-k gradient values that were updated.
+            out (tuple with two elements:):
+                - coo_u (coo_array): The updated gradient values in 2D sparse format.
+                - indexes (tuple(np.array, np.array)): The indices of the top-k gradient values that were updated.
         """
 
         if t % thresholds_re_evaluation_t == 0:
@@ -215,14 +222,14 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Return the absolute gradient threshold for a given matrix.
         
         Parameters:
-            matrix: A 2D gradient matrix:
-                - (np.array)  in dense format for 'dense' input_format 
-                - (coo_array) in sparse format (COO) for 'coo' input_format.
+            matrix (np.array or coo_array): A 2D gradient matrix, in np.array for 'dense' input_format or 
+                                            coo_array for 'coo' input_format.
             k (int): Indicating the number of top gradient values to consider.
             input_format (string): Either 'dense' for a dense matrix or 'coo' for a sparse matrix in COO format.
+            method (string, optional): The method to use for threshold selection. It can be 'numpy_sort' or 'numpy_partition'.
         
         Returns:
-            threshold: The absolute gradient threshold based on the top k values.
+            threshold (float): The absolute gradient threshold based on the top k values.
         """
         
         if k <= 0:
@@ -265,8 +272,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Parameters:
             acc (np.array): 2D dense gradient matrix values
             local_th (float): local process gradient threshold
-            balanced (boolean): if not balanced, a static row partition is performed, 
-                                if balanced, a topk gradiend distribution is considered in the row partition  
+            balanced (boolean, optional): if not balanced a static row partition is performed, 
+                                          if balanced a topk gradiend distribution is considered in the row partition  
+
+        Warning:
+            Balanced space repartition does not provide the same exact accuracy as static space repartition.
 
         Returns:
             boundaries (np.array): [row_end_p0, row_end_p1, row_end_p2, ...]
@@ -323,8 +333,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             boundaries (np.array): Boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...]
 
         Returns:
-            reduced_topk (coo_array): The reduced top-k gradient values in COO format.
-            local_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values selected locally.
+            out (tuple with two elements:):
+                - reduced_topk (coo_array): The reduced top-k gradient values in COO format.
+                - local_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values selected locally.
         """
         
         coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
@@ -342,8 +353,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             global_th (float): the global threshold to perfrom top selection.
 
         Returns:
-            coo_allgather_topk (coo_array): a 2D sparse gradient matrix with the global topk selection.
-            global_topk_indexes (tuple(np.array, np.array)): the indices of the top-k gradient values reduced.
+            out (tuple with two elements:):
+                - coo_allgather_topk (coo_array): A 2D sparse gradient matrix with the global top-k selection.
+                - global_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values reduced.
         """
 
         # 1. Global topk selection
@@ -363,7 +375,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
     def _has_canonical_format(self, indexes):
         """
         Check if indexes are sorted by row and then by column (COO canonical format)
-        This function is computationaly expensive and therefore should only be used for devoloping/debugging purposes.
+        This function is computationally expensive and therefore should only be used for developing/debugging purposes.
         This function should only be used in developement to assert that sparse matrices have canonical format. 
 
         Parameters:
@@ -390,22 +402,22 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
     def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
         """
         Calculates the intersection of two sets of indices of 2D.
-        The assertion sentence is only performed when optimized mode (python3 -O script.py) is not activated.
-        Remember that '_has_canonical_format' should only be used for debugging/devolopment purposes to assert that indexes are correct.
+        The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
+        Remember that '_has_canonical_format' should only be used for debugging/development purposes to assert that indexes are correct.
         Indexes in scipy are usually in canonical format, so it should not be necessary to evaluate the indexes format. 
         When optimized mode is enabled (python3 -O script.py), the assert sentences are not computed. 
 
         Parameters:
-            local_indexes (tuple(np.array, np.array)): a tuple row and col, sorted by rows, then by columns. 
-            global_indexes (tuple(np.array, np.array)): a tuple of row and col, sorted by rows, then by columns. 
+            local_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices, sorted by rows, then by columns. 
+            global_indexes (tuple(np.array, np.array)): a tuple of two numpy arrays representing row and column indices, sorted by rows, then by columns. 
         
         Returns:
-            Set of tuples representing the common indices.
+            intersected_indexes (tuple(np.array, np.array)): Set of tuples representing the common indices.
         
         Example:
-            local_indexes  = (np.array([0, 1, 2, 3, 3, 4]) , np.array([4, 6, 5, 1, 7, 3]))
-            global_indexes = (np.array([0, 1, 3, 3, 3]), np.array([1, 6, 1, 5, 7]))
-            output: (array([1, 3, 3]), array([6, 1, 7]))  
+            - local_indexes  = (np.array([0, 1, 2, 3, 3, 4]) , np.array([4, 6, 5, 1, 7, 3]))
+            - global_indexes = (np.array([0, 1, 3, 3, 3]), np.array([1, 6, 1, 5, 7]))
+            - output: (array([1, 3, 3]), array([6, 1, 7]))  
         """
 
         assert(self._has_canonical_format(local_indexes) and self._has_canonical_format(global_indexes)) 
@@ -455,9 +467,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Parameters:
             matrix (np.array o coo_array): The input 2D matrix from which to select elements.
             threshold (float): The threshold value to compare against the absolute values of the matrix elements.
+            input_format (str): The format of the input matrix. It can be 'dense' for numpy arrays or 'coo' for sparse COO arrays.
+            method (str, optional): The method to use for selection. It can be "cython" or "numpy". Default is "cython".
         
         Returns:
-            topk (coo_array): A sparse 2D gradient matrix topk in COO (coo_array).
+            topk (coo_array): A sparse 2D gradient matrix topk in COO.
         """
 
         if input_format == "dense" and method == "cython":
@@ -488,9 +502,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         Parameters:
             coo_topk (coo_array): a 2D sparse array in COO format with the values and indexes of topk.
-            boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...]
+            boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...].
 
-        TODO: Method 'reduce_region' does not provide the same output as 'reduce_region_blocking' or 'allreduce'.
+        Warning:
+            Method 'reduce_region' does not provide the same exact accuracy as 'reduce_region_blocking' or 'allreduce'.
 
         Returns:
             coo_reduced_region (coo_array): The reduced topk values in COO format.
@@ -545,6 +560,16 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
 
     def _allgather(self, local_data, input_format=None):
+        """
+        Gathers data from all processes and concatenates it into a single array.
+        
+        Parameters:
+            local_data (numpy.ndarray or scipy.sparse.coo_array): The local data to be gathered.
+            input_format (str): The format of the input data. Supported formats are "coo" for 
+                                coordinate format sparse matrices and "dense" for dense arrays.
+        Returns:
+            gathered_data (numpy.ndarray or scipy.sparse.coo_array): The gathered global data in the specified format.
+        """
         if self.nprocs == 1:
             return local_data
         
