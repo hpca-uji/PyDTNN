@@ -168,7 +168,7 @@ SWITCH_OPERATION_ONNX_TO_PYDTNN = {
     "NonZero" : NonZero,
     "Not" : Not,
     "OneHot" : OneHot,
-    "Optional" : Optional,
+    "Optional" : Optional_layer,
     "OptionalGetElement" : OptionalGetElement,
     "OptionalHasElement" : OptionalHasElement,
     "Or" : Or,

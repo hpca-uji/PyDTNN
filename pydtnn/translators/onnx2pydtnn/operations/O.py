@@ -11,7 +11,7 @@ def OneHot(info: Dict[str, Any]) -> LayerAndActivationBase:
     raise NotImplementedError("Not implemented")
 # --- END OneHot --- #
 
-def _Optional(info: Dict[str, Any]) -> LayerAndActivationBase:
+def Optional_layer(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"Operation: {stack()[0].function}\nargs received: {info}")
     raise NotImplementedError("Not implemented")
 # --- END Optional --- #
