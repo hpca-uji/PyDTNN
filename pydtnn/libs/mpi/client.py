@@ -11,6 +11,7 @@ import enum
 import atexit
 import functools
 import threading
+import itertools
 from queue import Empty, SimpleQueue
 
 import numpy as np
@@ -29,6 +30,7 @@ __all__ = (
 
 def Finalize() -> None:
     """Terminate the MPI execution environment."""
+    COMM_WORLD.Disconnect()
 
 
 class InPlace(enum.Enum):
@@ -43,19 +45,15 @@ class Request:
         """Wait for a non-blocking operation to complete."""
 
 
-class Exception(RuntimeError):
-    """Exception class."""
-
-
 class Intracomm:
     """Intracommunicator."""
 
     def __init__(self) -> None:
         """Communicator initialization"""
         self._closed = False
-        self._lock = threading.Lock()
-        self._state = dict[frozenset[mpi_comm.Rank], SimpleQueue[mpi_comm.OperationResponse | None]]()
-        atexit.register(self.Disconnect)
+        self._comm_lock = threading.Lock()
+        self._state_lock = threading.Lock()
+        self._state = dict[mpi_comm.RankGroup, SimpleQueue[mpi_comm.OperationResponse | None]]()
 
     @functools.cached_property
     def size(self) -> int:
@@ -69,9 +67,20 @@ class Intracomm:
         # NOTE: Lazily initialized, prevent module imports execution
         return mpi_comm.get_rank()
 
+    @functools.cached_property
+    def _comm(self) -> comms.Communication:
+        """Communication connection"""
+        # NOTE: Lazily initialized, prevent module imports execution
+        with self._comm_lock:
+            if comm := self.__dict__.get("_comm"):
+                pass
+            else:
+                self._comm = comm = self._new_comm()
+        return comm
+
     def _comm_get(self):
         """Get one response from communication"""
-        assert self._lock.locked(), "Modifing state without lock"
+        assert self._state_lock.locked(), "Modifing state without lock"
         response = self._comm.get().obj
 
         match response:
@@ -80,59 +89,50 @@ class Intracomm:
             case _:
                 raise RuntimeError(f"Unknown response {response}")
 
-        queue = self._state.setdefault(response.group, SimpleQueue())
+        queue = self._state.setdefault(response.dst, SimpleQueue())
         queue.put(response)
 
-    @functools.cached_property
-    def _comm(self) -> comms.Communication:
-        """Communication connection"""
-        # NOTE: Lazily initialized, prevent module imports execution
-        comm = comms.Client()
-        self._handle_init(comm)
+    def _new_comm(self) -> comms.Communication:
+        """Create a new communication and inizialize it"""
+        addr = mpi_comm.get_addr()
+        port = mpi_comm.get_port()
+        comm = comms.Client(addr=addr, port=port)
+        request = mpi_comm.InitRequest(rank=self.rank, size=self.size)
+        comm.put(request)
+        comm.get()
         return comm
 
-    def _handle_init(self, comm: comms.Communication) -> None:
-        """Handle communication initialization"""
-        # NOTE: Communicator pass to ensure _comm cached_property lock is hit
-        msg = mpi_comm.InitRequest(rank=self.rank, size=self.size)
-        comm.put(msg)
+    def _close_comm(self, comm: comms.Communication) -> None:
+        """Fianlize a communication object"""
+        request = mpi_comm.FinalizeRequest()
+        comm.put(request)
         comm.get()
-
-    def _handle_finalize(self, comm: comms.Communication) -> None:
-        """Handle communication finalization"""
-        # NOTE: Communicator pass to ensure _comm cached_property lock is hit
-        msg = mpi_comm.FinalizeRequest()
-        comm.put(msg)
-        comm.get()
+        comm.close()
 
     def Disconnect(self) -> None:
         """Disconnect from a communicator."""
         # Atomicly get and remove communicator
         if comm := self.__dict__.pop("_comm", None):
-            self._handle_finalize(comm)
-            comm.close()
+            self._close_comm(comm)
 
         if self._closed:
-            raise Exception()
+            return
         self._closed = True
 
-        atexit.unregister(self.Disconnect)
-        with self._lock:
+        with self._state_lock:
             for queue in self._state.values():
                 queue.put(None)
 
-    def _get_many(self, group: frozenset[int], size=None):
-        """Recive objects to server"""
-        if size is None:
-            size = self.size
+    def _put(self, request: mpi_comm.OperationRequest) -> None:
+        """Publish object to server"""
+        if self.rank in request.comm.src:
+            self._comm.put(request)
 
-        for _ in range(size):
-            yield self._get(group)
+    def _get(self, request: mpi_comm.OperationRequest):
+        """Get object from server"""
+        group = request.comm.dst
 
-    def _get(self, group: frozenset[int]):
-        """Recive object to server"""
-
-        with self._lock:
+        with self._state_lock:
             queue = self._state.setdefault(group, SimpleQueue())
 
             while True:
@@ -160,12 +160,9 @@ class Intracomm:
 
     def bcast(self, obj, root: mpi_comm.Rank = 0):
         """Broadcast."""
-        request = mpi_comm.BroadcastRequest(obj=obj, root=root)
-        group = request.response_requirements(size=self.size)
-
-        if self.rank == root:
-            self._comm.put(request)
-        return self._get(group)
+        request = mpi_comm.BroadcastRequest(rank=self.rank, size=self.size, obj=obj, root=root)
+        self._put(request)
+        return self._get(request)
 
     def barrier(self) -> None:
         """Barrier synchronization."""
@@ -173,22 +170,30 @@ class Intracomm:
 
     def allgather(self, obj):
         """Gather to All."""
-        request = mpi_comm.AllGatherRequest(obj=obj)
-        group = request.response_requirements(size=self.size)
-
-        self._comm.put(request)
-        return list(self._get_many(group))
+        request = mpi_comm.AllGatherRequest(rank=self.rank, size=self.size, obj=obj)
+        self._put(request)
+        return list(self._get(request) for _ in range(self.size))
 
     def allreduce(self, obj, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM):
         """Reduce to All."""
         if op is not mpi_comm.ReduceOperation.SUM:
             raise NotImplementedError("op with not SUM")
 
-        request = mpi_comm.AllReduceRequest(obj=obj, op=op)
-        group = request.response_requirements(size=self.size)
+        request = mpi_comm.AllReduceRequest(rank=self.rank, size=self.size, obj=obj, op=op)
+        self._put(request)
+        return self._get(request)
 
-        self._comm.put(request)
-        return self._get(group)
+    def _phased_allreduce(self, obj, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM):
+        """Reduce to All (with steps)."""
+        if op is not mpi_comm.ReduceOperation.SUM:
+            raise NotImplementedError("op with not SUM")
+
+        for phase in itertools.count():
+            request = mpi_comm.AllPhasedReduceRequest(rank=self.rank, size=self.size, obj=obj, op=op, phase=phase)
+            self._put(request)
+            obj = self._get(request)
+            if len(request.comm.dst) == self.size:
+                return obj
 
     def Get_rank(self) -> int:
         """Return the rank of this process in a communicator."""
@@ -219,7 +224,7 @@ class Intracomm:
 
     def Iallreduce(self, sendbuf, recvbuf, op=mpi_comm.ReduceOperation.SUM) -> Request:
         """Nonblocking Reduce to All."""
-        # FIXME: Implement async variants
+        # FIXME: Implement async communications
         self.Allreduce(sendbuf, recvbuf, op)
         return Request()
 
@@ -230,3 +235,5 @@ IN_PLACE = InPlace.IN_PLACE
 SUM = mpi_comm.ReduceOperation.SUM
 
 COMM_WORLD = Intracomm()
+
+atexit.register(Finalize)

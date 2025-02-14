@@ -36,9 +36,9 @@ END_COMM = b""
 class Server(Protocol):
     """MQTT server"""
 
-    def __init__(self) -> None:
+    def __init__(self, addr: str, port: int) -> None:
         """Server initialization"""
-        super().__init__()
+        super().__init__(addr, port)
 
         # State
         self._lock = threading.Lock()
@@ -148,9 +148,9 @@ class Server(Protocol):
 class Client(Protocol):
     """MQTT client"""
 
-    def __init__(self) -> None:
+    def __init__(self, addr: str, port: int) -> None:
         """Client initialization"""
-        super().__init__()
+        super().__init__(addr, port)
 
         # State
         self._responses = SimpleQueue[bytes]()

@@ -4,7 +4,7 @@
 #
 # Communications are lazily initialized to prevent module imports execution
 
-# TODO: Optimize lock usage
+# TODO: Revise sending lock usage, could only lock per commuincaiton group
 
 import uuid
 import functools
@@ -32,21 +32,12 @@ arg_parser = ArgumentParser(
     description="MPI server"
 )
 arg_parser.add_argument("-np", dest="size", type=int, default=4)
-arg_parser.add_argument("-a", dest="addr", type=str, default=None)
-arg_parser.add_argument("-p", dest="port", type=str, default=None)
-
-
-@dataclass(slots=True, frozen=True)
-class CommmunicationGroup:
-    """Communication group"""
-    src: frozenset[mpi_comm.Rank]
-    dst: frozenset[mpi_comm.Rank]
 
 
 @dataclass(slots=True)
 class Operation[T: mpi_comm.OperationRequest]:
     """MPI Operation"""
-    group: CommmunicationGroup = dataclasses.field()
+    comm: mpi_comm.CommmunicationGroup
     requests: dict[mpi_comm.Rank, T] = dataclasses.field(default_factory=dict)
     responses: list | None = None
 
@@ -54,23 +45,24 @@ class Operation[T: mpi_comm.OperationRequest]:
         return request is self.requests.setdefault(rank, request)
 
     def full(self) -> bool:
-        return len(self.requests) == len(self.group.src)
+        return len(self.requests) == len(self.comm.src)
 
 
 class Server:
     """MPI server"""
 
-    def __init__(self) -> None:
+    def __init__(self, thread_pool: ThreadPoolExecutor) -> None:
         """Server initialization"""
         super().__init__()
 
         # State
         self._shutdown = False
-        self._send_lock = threading.Lock()
-        self._pool = ThreadPoolExecutor(max_workers=4)
+        self._pool = thread_pool
+        self._comm_lock = threading.Lock()
+        self._response_count = threading.Semaphore(value=0)
 
         self._state_lock = threading.Lock()
-        self._state = dict[CommmunicationGroup, deque[Operation]]()
+        self._state = dict[mpi_comm.CommmunicationGroup, deque[Operation]]()
 
         self._peers_lock = threading.Lock()
         self._peers = bidict[mpi_comm.Rank, uuid.UUID]()
@@ -80,9 +72,46 @@ class Server:
         """Get the approximate number of clients"""
         return len(self._peers)
 
+    def _submit(self, fn, /, *args, **kwargs):
+        """Process in the pool with exception handeling"""
+        future = self._pool.submit(fn, *args, **kwargs)
+        future.add_done_callback(lambda future: future.result())
+        return future
+
+    @functools.cached_property
+    def _comm(self) -> comms.Communication:
+        """Communication connection"""
+        # NOTE: Lazily initialized, prevent module imports execution
+        with self._comm_lock:
+            if comm := self.__dict__.get("_comm"):
+                pass
+            else:
+                addr = mpi_comm.get_addr()
+                port = mpi_comm.get_port()
+                comm = comms.Server(addr=addr, port=port)
+                self._comm = comm
+        return comm
+
+    def __enter__(self):
+        """Context manager start"""
+        return self
+
+    def __exit__(self, cls, exc, tb):
+        """Context manager exit"""
+        self.shutdown()
+
+    def __del__(self) -> None:
+        """Best effort finalizer"""
+        try:
+            self.shutdown()
+        except:  # noqa: E722
+            pass
+
     def serve_forever(self) -> None:
         """Handle requests forever"""
-        while True:
+        self._submit(self._handle_operations_responses)
+
+        while not self._shutdown:
             message = self._comm.get()
             request = message.obj
 
@@ -100,136 +129,11 @@ class Server:
 
         match request:
             case mpi_comm.InitRequest():
-                self._handle_init(message)  # type: ignore (not inferred my typecheker)
+                self._handle_init(message)  # type: ignore (not inferred by typecheker)
             case mpi_comm.FinalizeRequest():
-                self._handle_finalize(message)  # type: ignore (not inferred my typecheker)
+                self._handle_finalize(message)  # type: ignore (not inferred by typecheker)
             case _:
                 raise RuntimeError(f"Unknown state type {request}")
-
-    def _handle_operation_request(self, message: comms.Message[mpi_comm.OperationRequest]) -> None:
-        """Handle an operation request"""
-        # Operation context
-        peer = message.peer
-        request = message.obj
-        rank = self._peers.inverse[peer]
-        src = request.request_requirements(size=self._size)
-        dst = request.response_requirements(size=self._size)
-        group = CommmunicationGroup(src=src, dst=dst)
-
-        # Queue operation
-        with self._state_lock:
-            queue = self._state.setdefault(group, deque())
-
-            for operation in queue:
-                if operation.put(rank, request):
-                    break
-            else:
-                operation = Operation(group=group)
-                operation.put(rank, request)
-                queue.append(operation)
-
-        # Start operation
-        if operation.full():
-            future = self._pool.submit(self._handle_operation, operation)
-            future.add_done_callback(lambda _: self._handle_operation_responses())
-
-    def _pop_responded_operations(self) -> list[Operation]:
-        """Get and remove responded operations from state"""
-        assert self._send_lock.locked(), "Send lock not held, message order could be lost"
-        operations = list[Operation]()
-
-        with self._state_lock:
-            groups = list[CommmunicationGroup]()
-
-            for group, queue in self._state.items():
-                for operation in queue:
-                    if operation.responses is not None:
-                        operations.append(operation)
-                    else:
-                        break
-
-                for operation in operations:
-                    queue.popleft()
-
-                if len(queue) == 0:
-                    groups.append(group)
-
-            for group in groups:
-                del self._state[group]
-
-        return operations
-
-    def _handle_operation_responses(self) -> None:
-        """Cleanup responded operations from state"""
-        # Try to send, if nobody else
-        if not self._send_lock.acquire(blocking=False):
-            return
-        try:
-            for operation in self._pop_responded_operations():
-                self._send_operation(operation)
-        finally:
-            self._send_lock.release()
-
-    def _send_operation(self, operation: Operation) -> None:
-        """Send a operation response to the clients"""
-        assert self._send_lock.locked(), "Send lock not held, message order could be lost"
-        assert operation.responses is not None, f"Sending in progress operation {operation}"
-
-        for obj in operation.responses:
-            response = mpi_comm.OperationResponse(group=operation.group.dst, obj=obj)
-            peers = [
-                self._peers[rank]
-                for rank in operation.group.dst
-            ]
-            self._comm.put(response, *peers)
-
-    def _handle_operation(self, operation: Operation) -> None:
-        """Dispatch operation to relevant handler"""
-        context = operation.requests[0]
-
-        match context:
-            case mpi_comm.BroadcastRequest():
-                handler = self._handle_broadcast
-            case mpi_comm.AllGatherRequest():
-                handler = self._handle_allgather
-            case mpi_comm.AllReduceRequest():
-                handler = self._handle_allreduce
-            case _:
-                raise RuntimeError(f"Unknown operation type {context}")
-
-        handler(operation)
-
-    def __enter__(self):
-        """Context manager start"""
-        return self
-
-    def __exit__(self, cls, exc, tb):
-        """Context manager exit"""
-        self.shutdown()
-
-    @functools.cached_property
-    def _comm(self) -> comms.Communication:
-        """Communication connection"""
-        # NOTE: Lazily initialized, prevent module imports execution
-        return comms.Server()
-
-    def shutdown(self) -> None:
-        """Close the server"""
-        if comm := self.__dict__.pop("_comm", None):
-            comm.close()
-
-        if self._shutdown:
-            raise comms.ResourceClosed()
-        self._shutdown = True
-
-        self._pool.shutdown()
-
-    def __del__(self) -> None:
-        """Best effort finalizer"""
-        try:
-            self.shutdown()
-        except:  # noqa: E722
-            pass
 
     def _handle_init(self, message: comms.Message[mpi_comm.InitRequest]) -> None:
         """Initialize."""
@@ -261,6 +165,91 @@ class Server:
         if self._size == 0:
             self._comm.put(None)
 
+    def _handle_operation_request(self, message: comms.Message[mpi_comm.OperationRequest]) -> None:
+        """Handle an operation request"""
+        # Operation context
+        peer = message.peer
+        request = message.obj
+        rank = self._peers.inverse[peer]
+
+        # Queue operation
+        with self._state_lock:
+            queue = self._state.setdefault(request.comm, deque())
+
+            for operation in queue:
+                if operation.put(rank, request):
+                    break
+            else:
+                operation = Operation(comm=request.comm)
+                put = operation.put(rank, request)
+                assert put, "Failed to put on a empty operation"
+                queue.append(operation)
+
+        # Start operation
+        if operation.full():
+            self._submit(self._handle_operation, operation)
+
+    def _handle_operations_responses(self) -> None:
+        """Handle responses forever"""
+        while not self._shutdown:
+            # Wait for any response
+            self._response_count.acquire()
+            self._response_count.release()
+
+            # Send and consume
+            for operation in self._pop_operations_responded():
+                aquired = self._response_count.acquire(blocking=False)
+                assert aquired, "Response counter consumed but not the response objects"
+                self._send_operation(operation)
+
+    def _pop_operations_responded(self) -> list[Operation]:
+        """Get and remove responded operations from state"""
+        operations = list[Operation]()
+
+        with self._state_lock:
+            for group, queue in list(self._state.items()):
+                for operation in list(queue):
+                    if operation.responses is not None:
+                        queue.remove(operation)
+                        operations.append(operation)
+                    else:
+                        break
+
+                if len(queue) == 0:
+                    del self._state[group]
+
+        return operations
+
+    def _send_operation(self, operation: Operation) -> None:
+        """Send a operation response to the clients"""
+        assert operation.responses is not None, f"Sending in progress operation {operation}"
+
+        for obj in operation.responses:
+            response = mpi_comm.OperationResponse(dst=operation.comm.dst, obj=obj)
+            self._comm.put(response, *(
+                self._peers[rank]
+                for rank in operation.comm.dst
+            ))
+
+    def _handle_operation(self, operation: Operation[mpi_comm.OperationRequest]) -> None:
+        """Dispatch operation to relevant handler"""
+        context = next(iter(operation.requests.values()))
+
+        match context:
+            case mpi_comm.BroadcastRequest():
+                handler = self._handle_broadcast
+            case mpi_comm.AllGatherRequest():
+                handler = self._handle_allgather
+            case mpi_comm.AllReduceRequest():
+                handler = self._handle_allreduce
+            case mpi_comm.AllPhasedReduceRequest():
+                handler = self._handle_allphasedreduce
+            case _:
+                raise RuntimeError(f"Unknown operation type {context}")
+
+        handler(operation)  # type: ignore (not inferred by typecheker)
+        self._response_count.release()
+
     def _handle_broadcast(self, operation: Operation[mpi_comm.BroadcastRequest]) -> None:
         """Broadcast."""
         response = operation.requests[0].obj
@@ -283,17 +272,28 @@ class Server:
         response = sum(msg.obj for msg in operation.requests.values())
         operation.responses = [response]
 
+    def _handle_allphasedreduce(self, operation: Operation[mpi_comm.AllReduceRequest]) -> None:
+        """Reduce to All (with steps)."""
+        response = sum(msg.obj for msg in operation.requests.values())
+        operation.responses = [response]
+
+    def shutdown(self) -> None:
+        """Close the server"""
+        if comm := self.__dict__.pop("_comm", None):
+            comm.close()
+
+        if self._shutdown:
+            return
+        self._shutdown = True
+
+        self._response_count.release()
+
 
 def main(config: Namespace) -> None:
     """Application entrypoint"""
-    if config.addr:
-        comms.Server._addr = config.addr
-
-    if config.port:
-        comms.Server._port = config.port
-
-    with Server() as server:
-        server.serve_forever()
+    with ThreadPoolExecutor(max_workers=config.size) as pool:
+        with Server(pool) as server:
+            server.serve_forever()
 
 
 if __name__ == "__main__":

@@ -25,9 +25,9 @@ class Protocol(comms.Communication):
     _protocol_port = 1883
     _protocol = mqtt_client.MQTTv5
 
-    def __init__(self) -> None:
+    def __init__(self, addr: str, port: int) -> None:
         """Communication initialization"""
-        super().__init__()
+        super().__init__(addr, port)
 
         # MQTT
         self._client = mqtt_client.Client(

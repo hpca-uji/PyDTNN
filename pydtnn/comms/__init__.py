@@ -9,7 +9,6 @@ import uuid
 import enum
 import pickle
 import importlib
-import functools
 from dataclasses import dataclass
 
 
@@ -44,12 +43,13 @@ class ResourceClosed(RuntimeError):
 class Communication[T](abc.ABC):
     """Base communication implementation"""
     _pickle_protocol = 5
-    _protocol_port = 50000
 
-    def __init__(self) -> None:
+    def __init__(self, addr: str, port: int) -> None:
         """Communication initialization"""
         super().__init__()
         self.id = uuid.uuid4()
+        self._addr = addr
+        self._port = port
         self.closed = False
 
     def __enter__(self):
@@ -64,16 +64,6 @@ class Communication[T](abc.ABC):
     def _netloc(self):
         """Service network location (address + port)"""
         return f"{self._addr}:{self._port}"
-
-    @functools.cached_property
-    def _addr(self) -> str:
-        """Service address"""
-        return os.environ.get("PYDTNN_COMM_ADDR") or "localhost"
-
-    @functools.cached_property
-    def _port(self) -> int:
-        """Service port"""
-        return int(os.environ.get("PYDTNN_COMM_PORT") or self._protocol_port)
 
     def _serialize(self, obj) -> bytes:
         """Serialize object for comunication"""
@@ -98,9 +88,8 @@ class Communication[T](abc.ABC):
     def close(self) -> None:
         """Close the connection"""
         if self.closed:
-            raise ResourceClosed()
-        else:
-            self.closed = True
+            return
+        self.closed = True
 
     def __del__(self) -> None:
         """Best effort finalizer"""

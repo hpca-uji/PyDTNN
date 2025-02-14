@@ -53,9 +53,9 @@ class Server(Protocol):
     """gRPC server"""
     _shutdown_grace = 15.0
 
-    def __init__(self) -> None:
+    def __init__(self, addr: str, port: int) -> None:
         """Server initialization"""
-        super().__init__()
+        super().__init__(addr, port)
 
         # State
         self._lock = threading.Lock()
@@ -225,9 +225,9 @@ class Client(Protocol):
     """gRPC client"""
     _backoff_initial_exponent = -10
 
-    def __init__(self) -> None:
+    def __init__(self, addr: str, port: int) -> None:
         """Client initialization"""
-        super().__init__()
+        super().__init__(addr, port)
 
         self._channel = grpc.insecure_channel(
             target=self._netloc,
