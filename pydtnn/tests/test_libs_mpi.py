@@ -24,9 +24,11 @@ parser.add_argument("--delay", type=float, default=3.0)
 def server(config: Namespace):
     """Server mode"""
     from pydtnn.libs.mpi.server import Server
+    from concurrent.futures import ThreadPoolExecutor
 
-    with Server() as server:
-        server.serve_forever()
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        with Server(pool) as server:
+            server.serve_forever()
 
 
 def client(config):
