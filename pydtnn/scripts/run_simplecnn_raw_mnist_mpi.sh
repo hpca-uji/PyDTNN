@@ -12,7 +12,7 @@ mpirun -np 4 \
   --flip_images=True \
   --batch_size=64 \
   --validation_split=0.2 \
-  --num_epochs=1 \
+  --num_epochs=50 \
   --evaluate=True \
   --optimizer=adam \
   --learning_rate=0.01 \
