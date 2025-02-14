@@ -1,5 +1,23 @@
 """MQTT communications"""
 
+# NOTE: Module considerations
+#
+# MQTT broker implementations are not common, so the server provided here is
+# actually another client. Therefore the address and port provided to both,
+# the client and server, should be the one of the actual broker, not where this
+# server is running.
+#
+# Low level comunications are handled single-threaded and are limited to pushing
+# or pulling data to queues without blocking, so all operations are minimal
+# and fast.
+#
+# Expensive operations, such as serialization and blocking, are done at at the
+# public's API callers thread.
+
+# TODO: Peer-specific and global comunications are topic optimized, but peer groups
+# are not. This could be implemented using grouping requests that generate new
+# UUID per group. This would reduce also reduce load on the broker.
+
 import uuid
 
 import paho.mqtt.enums as mqtte_enum
@@ -22,7 +40,6 @@ class Protocol(comms.Communication):
 
     _qos = 0
     _transport = "tcp"
-    _protocol_port = 1883
     _protocol = mqtt_client.MQTTv5
 
     def __init__(self, addr: str, port: int) -> None:

@@ -115,7 +115,7 @@ def __getattr__(key):
     if not PROTOCOL:
         raise AttributeError(key)
     try:
-        module = importlib.import_module(f"pydtnn.comms.{PROTOCOL}.comm")
+        module = importlib.import_module(f"pydtnn.comms.{PROTOCOL}.{key.lower()}")
     except ModuleNotFoundError:
         raise AttributeError(key)
     return getattr(module, key)
