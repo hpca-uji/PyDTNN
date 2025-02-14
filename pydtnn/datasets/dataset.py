@@ -326,12 +326,16 @@ class Dataset(ABC):
                 yield x_local_batch, y_local_batch, last_batch_size * self.nprocs
 
     def _batch_generator(self, part):
+        yield from self._actual_batch_generator(part)
+        return  # FIXME: Sampling broken, bypass for now
+
         match self.model.sampling_method:
             case "normal":
                 nbatches = max(self.model.comm_nsamples[part]) / self.model.batch_size
                 for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
                     yield x_batch, y_batch, batch_size
                     nbatches -= 1
+                print(f"R{self.rank} = SHOULD BE DONE {nbatches}")
                 while nbatches > 0:
                     yield x_batch[:0], y_batch[:0], 0
                     nbatches -= 1
