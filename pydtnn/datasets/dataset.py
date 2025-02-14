@@ -327,6 +327,7 @@ class Dataset(ABC):
 
     def _batch_generator(self, part):
         global_batch_size = self.model.batch_size * self.nprocs
+
         match self.model.sampling_method:
             case "normal":
                 nbatches = math.ceil(max(self.model.comm_nsamples[part]) / global_batch_size)
