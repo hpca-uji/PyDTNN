@@ -67,19 +67,35 @@ class Client(Protocol):
         if self.closed:
             return
 
-        data = connection.get()
-        self._responses.put(data)
+        try:
+            connection.recv()
+        except ResourceClosed:
+            return
+
+        while True:
+            try:
+                data = connection.get_nowait()
+            except Empty:
+                break
+
+            self._responses.put(data)
 
     def _c2s(self, connection: Connection) -> None:
         if self.closed:
             return
 
-        try:
-            data = self._requests.get_nowait()
-        except Empty:
-            return
+        while True:
+            try:
+                data = self._requests.get_nowait()
+            except Empty:
+                break
 
-        connection.put(data)
+            connection.put_nowait(data)
+
+        try:
+            connection.send()
+        except ResourceClosed:
+            return
 
     def put(self, obj, *peers: uuid.UUID) -> None:
         """Publish data to server"""

@@ -57,8 +57,7 @@ class Server(Protocol):
                 callback(key.fileobj, mask)
 
     def _new_connection(self, connection: Connection, event) -> None:
-        socket, _ = connection._socket.accept()
-        connection = Connection(socket)
+        connection = Connection(connection._socket.accept()[0])
         self._syc(connection)
 
     def _handle_connection(self, connection: Connection, event) -> None:
@@ -69,7 +68,7 @@ class Server(Protocol):
             self._s2c(connection)
 
     def _syc(self, connection: Connection) -> None:
-        tcp_peer = connection._netloc
+        tcp_peer = connection.peer()
         data = connection.get()
         peer = self._deserialize(data)
         data = self._serialize(self.id)
@@ -83,43 +82,52 @@ class Server(Protocol):
         self._selector.register(connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
 
     def _c2s(self, connection: Connection) -> None:
-        tcp_peer = connection._netloc
-
+        tcp_peer = connection.peer()
         try:
             peer = self._peers.inverse[tcp_peer]
         except KeyError:
             return
+        queue = self._requests[peer]
 
         try:
-            data = connection.get()
+            connection.recv()
         except ResourceClosed:
             self._fin(connection)
-        else:
-            self._requests[peer].put(data)
+            return
+
+        while True:
+            try:
+                data = connection.get_nowait()
+            except Empty:
+                break
+
+            queue.put(data)
             self._request_count.release()
 
     def _s2c(self, connection: Connection) -> None:
-        tcp_peer = connection._netloc
-
+        tcp_peer = connection.peer()
         try:
             peer = self._peers.inverse[tcp_peer]
         except KeyError:
             return
-
         queue = self._responses[peer]
 
-        try:
-            data = queue.get_nowait()
-        except Empty:
-            return
+        while True:
+            try:
+                data = queue.get_nowait()
+            except Empty:
+                break
+
+            connection.put_nowait(data)
 
         try:
-            connection.put(data)
+            connection.send()
         except ResourceClosed:
             self._fin(connection)
+            return
 
     def _fin(self, connection: Connection) -> None:
-        tcp_peer = connection._netloc
+        tcp_peer = connection.peer()
         peer = self._peers.inverse[tcp_peer]
 
         self._selector.unregister(connection)
