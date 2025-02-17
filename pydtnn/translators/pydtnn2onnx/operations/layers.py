@@ -1,19 +1,39 @@
 # Typing-related imports
 from typing import *
-from onnx import NodeProto
 from inspect import stack # This is only in order to get the function's name
 
 # Funtionality imports
-# Empty (for now)
+from onnx import NodeProto
+from onnx.helper import make_node
+import constants as cons
 
 def AdditionBlock(info: dict[str, Any]) -> NodeProto:
     print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    
+    # TODO: Esta capa tiene un atributo "paths" que contiene una lista de adds.
+    info[cons.CONST_LAYER] = pass
+
     raise NotImplementedError("Not implemented")
 # --- END AdditionBlock --- #
 
 def AveragePool2D(info: dict[str, Any]) -> NodeProto:
     print(f"Operation: {stack()[0].function}\nargs received: {info}")
-    raise NotImplementedError("Not implemented")
+    
+    op_name = info[cons.CONST_OP_NAME]
+    num_operation = info[cons.CONST_NUM_OPERATION]
+    inputs = info[cons.CONST_INPUTS]
+    outputs = cons.make_output_name(op_name, num_operation)
+
+    attribute = {"dilations": 1, 
+                 "kernel_shape": 1,
+                 "pads": 1,
+                 "strides": 1,
+                 }
+
+    return make_node(op_type="Softmax", 
+                     inputs=inputs, outputs=outputs, name=outputs, 
+                     doc_string="Read https://onnx.ai/onnx/operators/onnx__Softmax.html and https://github.com/hpca-uji/PyDTNN for more information.",
+                     kwargs=attribute)
 # --- END AveragePool2D --- #
 
 def BatchNormalizationRelu(info: dict[str, Any]) -> NodeProto:

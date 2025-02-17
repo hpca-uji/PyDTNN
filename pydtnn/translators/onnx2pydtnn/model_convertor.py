@@ -28,7 +28,11 @@ def extract_shape(data: onnx.ValueInfoProto) -> np.shape:
     #   [==>] Alternativamente, como, por lo que he visto hasta ahora, son más el número de entradas/salidas que van a haber, saltarlas.
     #   ==> TODO: cuando todo esté más o menos claro, preguntárselo a Manel 
     #   (En cualquier caso, tenerlo en cuenta para la conversión en el sentido opuesto)
-    return tuple([elem.dim_value for elem in data.type.tensor_type.shape.dim if elem.dim_value != 0])
+    #   Parece ser que se guarda como "1" ==> viendo cómo va PyDTNN, lo mejor es que, si detecto que hay una "N" (como la de arriba), eliminarla
+    #   Ahora no consigo encontrar desde dónde ví que la entrada valía "N" ==> Se va a sumir que el primero es el "N"
+    shape = [elem.dim_value for elem in data.type.tensor_type.shape.dim if elem.dim_value != 0]
+    del shape[0]
+    return tuple(shape)
 # --- extract_shape --- #
 
 def get_relevant_data(model_graph:onnx.GraphProto) -> Tuple[Dict[str, np.shape], Dict[str, np.shape], Dict[str, np.ndarray]]:
@@ -156,7 +160,9 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
 
     # operations: {[output_name]: ([operation], [inputs])}
     output_first_layer = get_actual_inputs(list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys()))[0]
-    operations = {output_first_layer : (Input(shape=inputs), [None])}
+
+    # "[None]" indicates that it has no previous layers.
+    operations = {output_first_layer : (Input(shape=inputs[list(inputs.keys())[0]]), [None])}
 
     for i in range(num_operations - 1):
         _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
@@ -168,9 +174,11 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
 
 def load_layers(model:PyDTNN_Model, operations:List[LayerAndActivationBase]) -> None:
     
+    print(f"Loading layers: {operations}")
     for operation in operations:
-        # TODO: Check if this is correct.
+        print(f"=> Layer: {operation}")
         model.add(operation)
+    print(f"Layers loaded")
 
     return # None (No value is returned)
 # --- END load_layers --- #
@@ -190,10 +198,6 @@ def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, 
     operations = get_operations(onnx_model=onnx_model, opset_version=opset_version, inputs=inputs, outputs=outputs, weights=weights)
     # Asigning the operations to the model.
     load_layers(model=model, operations=operations)
-
-    # TODO: BORRAR
-    print(f"model: {model}")
-    # TODO: BORRAR lo anterior
 
     # TODO: Faltaría comprobar el formato de los pesos (y hacer la traducción, si fuese necesario)
 
