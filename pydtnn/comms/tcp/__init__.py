@@ -43,11 +43,10 @@ class Connection:
             return
 
         size = self._socket.send(self._send_buffer)
-
-        if len(self._recv_buffer) == 0 and size == 0:
-            raise comms.ResourceClosed()
-
         self._send_buffer = self._send_buffer[size:]
+
+        if len(self._send_buffer) == 0 and size == 0:
+            raise comms.ResourceClosed()
 
     def get_nowait(self) -> bytes:
         # Try size
