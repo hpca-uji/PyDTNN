@@ -126,6 +126,9 @@ class Server(Protocol):
 
     def close(self) -> None:
         """Close the server"""
+        if self.closed:
+            return
         super().close()
-        for queue in self._requests.values():
-            queue.put(END_COMM)
+        with self._lock:
+            for queue in self._requests.values():
+                queue.put(END_COMM)

@@ -86,6 +86,8 @@ class Client(Protocol):
 
     def close(self) -> None:
         """Close the client"""
+        if self.closed:
+            return
         super().close()
         self._call("_fin")
         self._channel.close()

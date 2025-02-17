@@ -186,8 +186,11 @@ class Server(Protocol):
 
     def close(self) -> None:
         """Close the server"""
+        if self.closed:
+            return
         super().close()
         self._server.stop(grace=self._shutdown_grace)
-        for queue in self._requests.values():
-            queue.put(END_COMM)
+        with self._lock:
+            for queue in self._requests.values():
+                queue.put(END_COMM)
         self._pool.shutdown()

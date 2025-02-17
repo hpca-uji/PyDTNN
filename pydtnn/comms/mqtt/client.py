@@ -62,7 +62,8 @@ class Client(Protocol):
 
     def close(self) -> None:
         """Close the client"""
-        if not self.closed:
-            self._publish(topic=f"fin/{self.id}")
+        if self.closed:
+            return
+        self._publish(topic=f"fin/{self.id}")
         super().close()
         self._responses.put(END_COMM)
