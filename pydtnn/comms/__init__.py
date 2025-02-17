@@ -27,6 +27,7 @@ class Protocol(enum.StrEnum):
     """Comunication protocol"""
     GRPC = enum.auto()
     MQTT = enum.auto()
+    TCP = enum.auto()
 
 
 @dataclass(slots=True)
