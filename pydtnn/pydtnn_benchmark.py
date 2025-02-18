@@ -74,13 +74,14 @@ def main():
     # Create model
     model = Model(**vars(params))
     # Gather processes allocated on hosts
-    rank_host = f"P{model.rank} allocated on {platform.node()}"
+    rank_host = f"P{model.rank} on {platform.node()}"
     gathered_rank_host = model.comm.allgather(rank_host)
     # Print model
     if model.rank == 0:
+        print(f'**** Processes allocation:')
         for rank_host in gathered_rank_host:
             print(rank_host)
-        print(f'**** {model.model_name} model...')
+        print(f'**** {model.model_name} model:')
         model.show()
     # Print parameters
     if model.rank == 0:
