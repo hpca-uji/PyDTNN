@@ -32,7 +32,7 @@ class Server(Protocol):
         # State
         self._lock = threading.Lock()
         self._peers = bidict[uuid.UUID, str]()
-        self._pool = ThreadPoolExecutor(max_workers=1)
+        self._pool = ThreadPoolExecutor(max_workers=2)
         self._request_count = threading.Semaphore(value=0)
         self._response_count = threading.Semaphore(value=0)
         self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
@@ -50,11 +50,15 @@ class Server(Protocol):
         future.add_done_callback(lambda future: future.result())
         return future
 
+    def _handle_select(self, event: tuple[selectors.SelectorKey, int]) -> None:
+        key, mask = event
+        callback = key.data
+        callback(key.fileobj, mask)
+
     def _serve_forever(self):
         while not self.closed:
-            for key, mask in self._selector.select(self._poll_interval):
-                callback = key.data
-                callback(key.fileobj, mask)
+            for _ in self._pool.map(self._handle_select, self._selector.select(self._poll_interval)):
+                pass
 
     def _new_connection(self, connection: Connection, event) -> None:
         connection = Connection(connection._socket.accept()[0])
@@ -68,7 +72,7 @@ class Server(Protocol):
             self._s2c(connection)
 
     def _syc(self, connection: Connection) -> None:
-        tcp_peer = connection.peer()
+        tcp_peer = connection.peer
         data = connection.get()
         peer = self._deserialize(data)
         data = self._serialize(self.id)
@@ -79,10 +83,10 @@ class Server(Protocol):
             self._requests[peer] = SimpleQueue()
             self._responses[peer] = SimpleQueue()
 
-        self._selector.register(connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
+            self._selector.register(connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
 
     def _c2s(self, connection: Connection) -> None:
-        tcp_peer = connection.peer()
+        tcp_peer = connection.peer
         try:
             peer = self._peers.inverse[tcp_peer]
         except KeyError:
@@ -105,7 +109,7 @@ class Server(Protocol):
             self._request_count.release()
 
     def _s2c(self, connection: Connection) -> None:
-        tcp_peer = connection.peer()
+        tcp_peer = connection.peer
         try:
             peer = self._peers.inverse[tcp_peer]
         except KeyError:
@@ -127,12 +131,12 @@ class Server(Protocol):
             return
 
     def _fin(self, connection: Connection) -> None:
-        tcp_peer = connection.peer()
+        tcp_peer = connection.peer
         peer = self._peers.inverse[tcp_peer]
 
-        self._selector.unregister(connection)
-
         with self._lock:
+            self._selector.unregister(connection)
+
             del self._peers[peer]
             del self._requests[peer]
             del self._responses[peer]
@@ -198,6 +202,7 @@ class Server(Protocol):
         if self.closed:
             return
         super().close()
+        self._selector.close()
         self._pool.shutdown()
         self._server.close()
         with self._lock:

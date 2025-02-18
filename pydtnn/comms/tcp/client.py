@@ -122,6 +122,7 @@ class Client(Protocol):
         if self.closed:
             return
         super().close()
+        self._selector.close()
         self._pool.shutdown()
         self._connection.close()
         self._requests.put(END_COMM)

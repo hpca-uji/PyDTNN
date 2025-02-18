@@ -4,7 +4,6 @@
 #
 # Experimental
 
-import io
 import struct
 import socket
 import functools
@@ -22,20 +21,22 @@ __all__ = (
 class Connection:
     _format_size = "!i"
     _sizeof_size = struct.calcsize(_format_size)
-    _buffer_size = io.DEFAULT_BUFFER_SIZE
+    _buffer_size = 2 ** 20  # 1 MB
 
-    def __init__(self, socket: socket.socket) -> None:
+    def __init__(self, sock: socket.socket) -> None:
         self.closed = False
-        self._socket = socket
+        self._socket = sock
         self._send_buffer = bytearray()
         self._recv_buffer = bytearray()
+        self._temp_buffer = bytearray(self._buffer_size)
 
     def recv(self) -> None:
-        data = self._socket.recv(self._buffer_size)
-        if data:
-            self._recv_buffer.extend(data)
+        size = self._socket.recv_into(self._temp_buffer)
+        if size > 0:
+            with memoryview(self._temp_buffer) as view:
+                self._recv_buffer.extend(view[:size])
 
-        if len(self._recv_buffer) == 0 and len(data) == 0:
+        if len(self._recv_buffer) == 0 and size == 0:
             raise comms.ResourceClosed()
 
     def send(self) -> None:
@@ -43,7 +44,7 @@ class Connection:
             return
 
         size = self._socket.send(self._send_buffer)
-        self._send_buffer = self._send_buffer[size:]
+        del self._send_buffer[:size]
 
         if len(self._send_buffer) == 0 and size == 0:
             raise comms.ResourceClosed()
@@ -60,8 +61,10 @@ class Connection:
             raise Empty()
 
         # Save message
-        data = self._recv_buffer[self._sizeof_size:size]
-        self._recv_buffer = self._recv_buffer[size:]
+        with memoryview(self._recv_buffer) as view:
+            data = view[self._sizeof_size:size].tobytes()
+        del self._recv_buffer[:size]
+
         return data
 
     def get(self) -> bytes:
@@ -92,7 +95,7 @@ class Connection:
         self._socket.shutdown(socket.SHUT_WR)
         self._socket.close()
 
-    @functools.cache
+    @functools.cached_property
     def peer(self) -> str:
         return "{}:{}".format(*self._socket.getpeername())
 
