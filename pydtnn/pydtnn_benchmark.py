@@ -31,6 +31,7 @@ import random
 import sys
 import time
 from io import StringIO
+import platform
 
 import numpy as np
 
@@ -72,8 +73,13 @@ def main():
     np.random.seed(0)
     # Create model
     model = Model(**vars(params))
+    # Gather processes allocated on hosts
+    rank_host = f"P{model.rank} allocated on {platform.node()}"
+    gathered_rank_host = model.comm.allgather(rank_host)
     # Print model
     if model.rank == 0:
+        for rank_host in gathered_rank_host:
+            print(rank_host)
         print(f'**** {model.model_name} model...')
         model.show()
     # Print parameters
