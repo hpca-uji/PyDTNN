@@ -195,7 +195,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 dw = dw.reshape(self.dw_original_shape)
             velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
             velocity = self.momentum * velocity + dw
-            w -= self.learning_rate * velocity * self.nprocs
+            w -= velocity * self.nprocs
             setattr(layer, w_type, w)
             setattr(layer, "velocity_%s" % w_type, velocity)
             return
