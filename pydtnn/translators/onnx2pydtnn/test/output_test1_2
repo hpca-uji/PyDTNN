@@ -1,0 +1,1496 @@
+Starting
+inputs: {'data': [1, 3, 224, 224]}
+outputs: {'vgg0_dense2_fwd': [1, 1000]}
+['vgg0_conv0_weight', 'vgg0_conv0_bias', 'vgg0_batchnorm0_gamma', 'vgg0_batchnorm0_beta', 'vgg0_batchnorm0_running_mean', 'vgg0_batchnorm0_running_var', 'vgg0_conv1_weight', 'vgg0_conv1_bias', 'vgg0_batchnorm1_gamma', 'vgg0_batchnorm1_beta', 'vgg0_batchnorm1_running_mean', 'vgg0_batchnorm1_running_var', 'vgg0_conv2_weight', 'vgg0_conv2_bias', 'vgg0_batchnorm2_gamma', 'vgg0_batchnorm2_beta', 'vgg0_batchnorm2_running_mean', 'vgg0_batchnorm2_running_var', 'vgg0_conv3_weight', 'vgg0_conv3_bias', 'vgg0_batchnorm3_gamma', 'vgg0_batchnorm3_beta', 'vgg0_batchnorm3_running_mean', 'vgg0_batchnorm3_running_var', 'vgg0_conv4_weight', 'vgg0_conv4_bias', 'vgg0_batchnorm4_gamma', 'vgg0_batchnorm4_beta', 'vgg0_batchnorm4_running_mean', 'vgg0_batchnorm4_running_var', 'vgg0_conv5_weight', 'vgg0_conv5_bias', 'vgg0_batchnorm5_gamma', 'vgg0_batchnorm5_beta', 'vgg0_batchnorm5_running_mean', 'vgg0_batchnorm5_running_var', 'vgg0_conv6_weight', 'vgg0_conv6_bias', 'vgg0_batchnorm6_gamma', 'vgg0_batchnorm6_beta', 'vgg0_batchnorm6_running_mean', 'vgg0_batchnorm6_running_var', 'vgg0_conv7_weight', 'vgg0_conv7_bias', 'vgg0_batchnorm7_gamma', 'vgg0_batchnorm7_beta', 'vgg0_batchnorm7_running_mean', 'vgg0_batchnorm7_running_var', 'vgg0_conv8_weight', 'vgg0_conv8_bias', 'vgg0_batchnorm8_gamma', 'vgg0_batchnorm8_beta', 'vgg0_batchnorm8_running_mean', 'vgg0_batchnorm8_running_var', 'vgg0_conv9_weight', 'vgg0_conv9_bias', 'vgg0_batchnorm9_gamma', 'vgg0_batchnorm9_beta', 'vgg0_batchnorm9_running_mean', 'vgg0_batchnorm9_running_var', 'vgg0_conv10_weight', 'vgg0_conv10_bias', 'vgg0_batchnorm10_gamma', 'vgg0_batchnorm10_beta', 'vgg0_batchnorm10_running_mean', 'vgg0_batchnorm10_running_var', 'vgg0_conv11_weight', 'vgg0_conv11_bias', 'vgg0_batchnorm11_gamma', 'vgg0_batchnorm11_beta', 'vgg0_batchnorm11_running_mean', 'vgg0_batchnorm11_running_var', 'vgg0_conv12_weight', 'vgg0_conv12_bias', 'vgg0_batchnorm12_gamma', 'vgg0_batchnorm12_beta', 'vgg0_batchnorm12_running_mean', 'vgg0_batchnorm12_running_var', 'vgg0_conv13_weight', 'vgg0_conv13_bias', 'vgg0_batchnorm13_gamma', 'vgg0_batchnorm13_beta', 'vgg0_batchnorm13_running_mean', 'vgg0_batchnorm13_running_var', 'vgg0_conv14_weight', 'vgg0_conv14_bias', 'vgg0_batchnorm14_gamma', 'vgg0_batchnorm14_beta', 'vgg0_batchnorm14_running_mean', 'vgg0_batchnorm14_running_var', 'vgg0_conv15_weight', 'vgg0_conv15_bias', 'vgg0_batchnorm15_gamma', 'vgg0_batchnorm15_beta', 'vgg0_batchnorm15_running_mean', 'vgg0_batchnorm15_running_var', 'vgg0_dense0_weight', 'vgg0_dense0_bias', 'vgg0_dense1_weight', 'vgg0_dense1_bias', 'vgg0_dense2_weight', 'vgg0_dense2_bias']
+Conv
+ - input: ['data', 'vgg0_conv0_weight', 'vgg0_conv0_bias']
+data: -
+vgg0_conv0_weight: [64, 3, 3, 3]
+vgg0_conv0_bias: [64]
+ - output: ['vgg0_conv0_fwd']
+vgg0_conv0_fwd: -
+ - name: vgg0_conv0_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv0_fwd', 'vgg0_batchnorm0_gamma', 'vgg0_batchnorm0_beta', 'vgg0_batchnorm0_running_mean', 'vgg0_batchnorm0_running_var']
+vgg0_conv0_fwd: -
+vgg0_batchnorm0_gamma: [64]
+vgg0_batchnorm0_beta: [64]
+vgg0_batchnorm0_running_mean: [64]
+vgg0_batchnorm0_running_var: [64]
+ - output: ['vgg0_batchnorm0_fwd']
+vgg0_batchnorm0_fwd: -
+ - name: vgg0_batchnorm0_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm0_fwd']
+vgg0_batchnorm0_fwd: -
+ - output: ['vgg0_relu0_fwd']
+vgg0_relu0_fwd: -
+ - name: vgg0_relu0_fwd
+Conv
+ - input: ['vgg0_relu0_fwd', 'vgg0_conv1_weight', 'vgg0_conv1_bias']
+vgg0_relu0_fwd: -
+vgg0_conv1_weight: [64, 64, 3, 3]
+vgg0_conv1_bias: [64]
+ - output: ['vgg0_conv1_fwd']
+vgg0_conv1_fwd: -
+ - name: vgg0_conv1_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv1_fwd', 'vgg0_batchnorm1_gamma', 'vgg0_batchnorm1_beta', 'vgg0_batchnorm1_running_mean', 'vgg0_batchnorm1_running_var']
+vgg0_conv1_fwd: -
+vgg0_batchnorm1_gamma: [64]
+vgg0_batchnorm1_beta: [64]
+vgg0_batchnorm1_running_mean: [64]
+vgg0_batchnorm1_running_var: [64]
+ - output: ['vgg0_batchnorm1_fwd']
+vgg0_batchnorm1_fwd: -
+ - name: vgg0_batchnorm1_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm1_fwd']
+vgg0_batchnorm1_fwd: -
+ - output: ['vgg0_relu1_fwd']
+vgg0_relu1_fwd: -
+ - name: vgg0_relu1_fwd
+MaxPool
+ - input: ['vgg0_relu1_fwd']
+vgg0_relu1_fwd: -
+ - output: ['vgg0_pool0_fwd']
+vgg0_pool0_fwd: -
+ - name: vgg0_pool0_fwd
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [0, 0, 0, 0]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+Conv
+ - input: ['vgg0_pool0_fwd', 'vgg0_conv2_weight', 'vgg0_conv2_bias']
+vgg0_pool0_fwd: -
+vgg0_conv2_weight: [128, 64, 3, 3]
+vgg0_conv2_bias: [128]
+ - output: ['vgg0_conv2_fwd']
+vgg0_conv2_fwd: -
+ - name: vgg0_conv2_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv2_fwd', 'vgg0_batchnorm2_gamma', 'vgg0_batchnorm2_beta', 'vgg0_batchnorm2_running_mean', 'vgg0_batchnorm2_running_var']
+vgg0_conv2_fwd: -
+vgg0_batchnorm2_gamma: [128]
+vgg0_batchnorm2_beta: [128]
+vgg0_batchnorm2_running_mean: [128]
+vgg0_batchnorm2_running_var: [128]
+ - output: ['vgg0_batchnorm2_fwd']
+vgg0_batchnorm2_fwd: -
+ - name: vgg0_batchnorm2_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm2_fwd']
+vgg0_batchnorm2_fwd: -
+ - output: ['vgg0_relu2_fwd']
+vgg0_relu2_fwd: -
+ - name: vgg0_relu2_fwd
+Conv
+ - input: ['vgg0_relu2_fwd', 'vgg0_conv3_weight', 'vgg0_conv3_bias']
+vgg0_relu2_fwd: -
+vgg0_conv3_weight: [128, 128, 3, 3]
+vgg0_conv3_bias: [128]
+ - output: ['vgg0_conv3_fwd']
+vgg0_conv3_fwd: -
+ - name: vgg0_conv3_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv3_fwd', 'vgg0_batchnorm3_gamma', 'vgg0_batchnorm3_beta', 'vgg0_batchnorm3_running_mean', 'vgg0_batchnorm3_running_var']
+vgg0_conv3_fwd: -
+vgg0_batchnorm3_gamma: [128]
+vgg0_batchnorm3_beta: [128]
+vgg0_batchnorm3_running_mean: [128]
+vgg0_batchnorm3_running_var: [128]
+ - output: ['vgg0_batchnorm3_fwd']
+vgg0_batchnorm3_fwd: -
+ - name: vgg0_batchnorm3_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm3_fwd']
+vgg0_batchnorm3_fwd: -
+ - output: ['vgg0_relu3_fwd']
+vgg0_relu3_fwd: -
+ - name: vgg0_relu3_fwd
+MaxPool
+ - input: ['vgg0_relu3_fwd']
+vgg0_relu3_fwd: -
+ - output: ['vgg0_pool1_fwd']
+vgg0_pool1_fwd: -
+ - name: vgg0_pool1_fwd
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [0, 0, 0, 0]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+Conv
+ - input: ['vgg0_pool1_fwd', 'vgg0_conv4_weight', 'vgg0_conv4_bias']
+vgg0_pool1_fwd: -
+vgg0_conv4_weight: [256, 128, 3, 3]
+vgg0_conv4_bias: [256]
+ - output: ['vgg0_conv4_fwd']
+vgg0_conv4_fwd: -
+ - name: vgg0_conv4_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv4_fwd', 'vgg0_batchnorm4_gamma', 'vgg0_batchnorm4_beta', 'vgg0_batchnorm4_running_mean', 'vgg0_batchnorm4_running_var']
+vgg0_conv4_fwd: -
+vgg0_batchnorm4_gamma: [256]
+vgg0_batchnorm4_beta: [256]
+vgg0_batchnorm4_running_mean: [256]
+vgg0_batchnorm4_running_var: [256]
+ - output: ['vgg0_batchnorm4_fwd']
+vgg0_batchnorm4_fwd: -
+ - name: vgg0_batchnorm4_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm4_fwd']
+vgg0_batchnorm4_fwd: -
+ - output: ['vgg0_relu4_fwd']
+vgg0_relu4_fwd: -
+ - name: vgg0_relu4_fwd
+Conv
+ - input: ['vgg0_relu4_fwd', 'vgg0_conv5_weight', 'vgg0_conv5_bias']
+vgg0_relu4_fwd: -
+vgg0_conv5_weight: [256, 256, 3, 3]
+vgg0_conv5_bias: [256]
+ - output: ['vgg0_conv5_fwd']
+vgg0_conv5_fwd: -
+ - name: vgg0_conv5_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv5_fwd', 'vgg0_batchnorm5_gamma', 'vgg0_batchnorm5_beta', 'vgg0_batchnorm5_running_mean', 'vgg0_batchnorm5_running_var']
+vgg0_conv5_fwd: -
+vgg0_batchnorm5_gamma: [256]
+vgg0_batchnorm5_beta: [256]
+vgg0_batchnorm5_running_mean: [256]
+vgg0_batchnorm5_running_var: [256]
+ - output: ['vgg0_batchnorm5_fwd']
+vgg0_batchnorm5_fwd: -
+ - name: vgg0_batchnorm5_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm5_fwd']
+vgg0_batchnorm5_fwd: -
+ - output: ['vgg0_relu5_fwd']
+vgg0_relu5_fwd: -
+ - name: vgg0_relu5_fwd
+Conv
+ - input: ['vgg0_relu5_fwd', 'vgg0_conv6_weight', 'vgg0_conv6_bias']
+vgg0_relu5_fwd: -
+vgg0_conv6_weight: [256, 256, 3, 3]
+vgg0_conv6_bias: [256]
+ - output: ['vgg0_conv6_fwd']
+vgg0_conv6_fwd: -
+ - name: vgg0_conv6_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv6_fwd', 'vgg0_batchnorm6_gamma', 'vgg0_batchnorm6_beta', 'vgg0_batchnorm6_running_mean', 'vgg0_batchnorm6_running_var']
+vgg0_conv6_fwd: -
+vgg0_batchnorm6_gamma: [256]
+vgg0_batchnorm6_beta: [256]
+vgg0_batchnorm6_running_mean: [256]
+vgg0_batchnorm6_running_var: [256]
+ - output: ['vgg0_batchnorm6_fwd']
+vgg0_batchnorm6_fwd: -
+ - name: vgg0_batchnorm6_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm6_fwd']
+vgg0_batchnorm6_fwd: -
+ - output: ['vgg0_relu6_fwd']
+vgg0_relu6_fwd: -
+ - name: vgg0_relu6_fwd
+Conv
+ - input: ['vgg0_relu6_fwd', 'vgg0_conv7_weight', 'vgg0_conv7_bias']
+vgg0_relu6_fwd: -
+vgg0_conv7_weight: [256, 256, 3, 3]
+vgg0_conv7_bias: [256]
+ - output: ['vgg0_conv7_fwd']
+vgg0_conv7_fwd: -
+ - name: vgg0_conv7_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv7_fwd', 'vgg0_batchnorm7_gamma', 'vgg0_batchnorm7_beta', 'vgg0_batchnorm7_running_mean', 'vgg0_batchnorm7_running_var']
+vgg0_conv7_fwd: -
+vgg0_batchnorm7_gamma: [256]
+vgg0_batchnorm7_beta: [256]
+vgg0_batchnorm7_running_mean: [256]
+vgg0_batchnorm7_running_var: [256]
+ - output: ['vgg0_batchnorm7_fwd']
+vgg0_batchnorm7_fwd: -
+ - name: vgg0_batchnorm7_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm7_fwd']
+vgg0_batchnorm7_fwd: -
+ - output: ['vgg0_relu7_fwd']
+vgg0_relu7_fwd: -
+ - name: vgg0_relu7_fwd
+MaxPool
+ - input: ['vgg0_relu7_fwd']
+vgg0_relu7_fwd: -
+ - output: ['vgg0_pool2_fwd']
+vgg0_pool2_fwd: -
+ - name: vgg0_pool2_fwd
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [0, 0, 0, 0]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+Conv
+ - input: ['vgg0_pool2_fwd', 'vgg0_conv8_weight', 'vgg0_conv8_bias']
+vgg0_pool2_fwd: -
+vgg0_conv8_weight: [512, 256, 3, 3]
+vgg0_conv8_bias: [512]
+ - output: ['vgg0_conv8_fwd']
+vgg0_conv8_fwd: -
+ - name: vgg0_conv8_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv8_fwd', 'vgg0_batchnorm8_gamma', 'vgg0_batchnorm8_beta', 'vgg0_batchnorm8_running_mean', 'vgg0_batchnorm8_running_var']
+vgg0_conv8_fwd: -
+vgg0_batchnorm8_gamma: [512]
+vgg0_batchnorm8_beta: [512]
+vgg0_batchnorm8_running_mean: [512]
+vgg0_batchnorm8_running_var: [512]
+ - output: ['vgg0_batchnorm8_fwd']
+vgg0_batchnorm8_fwd: -
+ - name: vgg0_batchnorm8_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm8_fwd']
+vgg0_batchnorm8_fwd: -
+ - output: ['vgg0_relu8_fwd']
+vgg0_relu8_fwd: -
+ - name: vgg0_relu8_fwd
+Conv
+ - input: ['vgg0_relu8_fwd', 'vgg0_conv9_weight', 'vgg0_conv9_bias']
+vgg0_relu8_fwd: -
+vgg0_conv9_weight: [512, 512, 3, 3]
+vgg0_conv9_bias: [512]
+ - output: ['vgg0_conv9_fwd']
+vgg0_conv9_fwd: -
+ - name: vgg0_conv9_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv9_fwd', 'vgg0_batchnorm9_gamma', 'vgg0_batchnorm9_beta', 'vgg0_batchnorm9_running_mean', 'vgg0_batchnorm9_running_var']
+vgg0_conv9_fwd: -
+vgg0_batchnorm9_gamma: [512]
+vgg0_batchnorm9_beta: [512]
+vgg0_batchnorm9_running_mean: [512]
+vgg0_batchnorm9_running_var: [512]
+ - output: ['vgg0_batchnorm9_fwd']
+vgg0_batchnorm9_fwd: -
+ - name: vgg0_batchnorm9_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm9_fwd']
+vgg0_batchnorm9_fwd: -
+ - output: ['vgg0_relu9_fwd']
+vgg0_relu9_fwd: -
+ - name: vgg0_relu9_fwd
+Conv
+ - input: ['vgg0_relu9_fwd', 'vgg0_conv10_weight', 'vgg0_conv10_bias']
+vgg0_relu9_fwd: -
+vgg0_conv10_weight: [512, 512, 3, 3]
+vgg0_conv10_bias: [512]
+ - output: ['vgg0_conv10_fwd']
+vgg0_conv10_fwd: -
+ - name: vgg0_conv10_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv10_fwd', 'vgg0_batchnorm10_gamma', 'vgg0_batchnorm10_beta', 'vgg0_batchnorm10_running_mean', 'vgg0_batchnorm10_running_var']
+vgg0_conv10_fwd: -
+vgg0_batchnorm10_gamma: [512]
+vgg0_batchnorm10_beta: [512]
+vgg0_batchnorm10_running_mean: [512]
+vgg0_batchnorm10_running_var: [512]
+ - output: ['vgg0_batchnorm10_fwd']
+vgg0_batchnorm10_fwd: -
+ - name: vgg0_batchnorm10_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm10_fwd']
+vgg0_batchnorm10_fwd: -
+ - output: ['vgg0_relu10_fwd']
+vgg0_relu10_fwd: -
+ - name: vgg0_relu10_fwd
+Conv
+ - input: ['vgg0_relu10_fwd', 'vgg0_conv11_weight', 'vgg0_conv11_bias']
+vgg0_relu10_fwd: -
+vgg0_conv11_weight: [512, 512, 3, 3]
+vgg0_conv11_bias: [512]
+ - output: ['vgg0_conv11_fwd']
+vgg0_conv11_fwd: -
+ - name: vgg0_conv11_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv11_fwd', 'vgg0_batchnorm11_gamma', 'vgg0_batchnorm11_beta', 'vgg0_batchnorm11_running_mean', 'vgg0_batchnorm11_running_var']
+vgg0_conv11_fwd: -
+vgg0_batchnorm11_gamma: [512]
+vgg0_batchnorm11_beta: [512]
+vgg0_batchnorm11_running_mean: [512]
+vgg0_batchnorm11_running_var: [512]
+ - output: ['vgg0_batchnorm11_fwd']
+vgg0_batchnorm11_fwd: -
+ - name: vgg0_batchnorm11_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm11_fwd']
+vgg0_batchnorm11_fwd: -
+ - output: ['vgg0_relu11_fwd']
+vgg0_relu11_fwd: -
+ - name: vgg0_relu11_fwd
+MaxPool
+ - input: ['vgg0_relu11_fwd']
+vgg0_relu11_fwd: -
+ - output: ['vgg0_pool3_fwd']
+vgg0_pool3_fwd: -
+ - name: vgg0_pool3_fwd
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [0, 0, 0, 0]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+Conv
+ - input: ['vgg0_pool3_fwd', 'vgg0_conv12_weight', 'vgg0_conv12_bias']
+vgg0_pool3_fwd: -
+vgg0_conv12_weight: [512, 512, 3, 3]
+vgg0_conv12_bias: [512]
+ - output: ['vgg0_conv12_fwd']
+vgg0_conv12_fwd: -
+ - name: vgg0_conv12_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv12_fwd', 'vgg0_batchnorm12_gamma', 'vgg0_batchnorm12_beta', 'vgg0_batchnorm12_running_mean', 'vgg0_batchnorm12_running_var']
+vgg0_conv12_fwd: -
+vgg0_batchnorm12_gamma: [512]
+vgg0_batchnorm12_beta: [512]
+vgg0_batchnorm12_running_mean: [512]
+vgg0_batchnorm12_running_var: [512]
+ - output: ['vgg0_batchnorm12_fwd']
+vgg0_batchnorm12_fwd: -
+ - name: vgg0_batchnorm12_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm12_fwd']
+vgg0_batchnorm12_fwd: -
+ - output: ['vgg0_relu12_fwd']
+vgg0_relu12_fwd: -
+ - name: vgg0_relu12_fwd
+Conv
+ - input: ['vgg0_relu12_fwd', 'vgg0_conv13_weight', 'vgg0_conv13_bias']
+vgg0_relu12_fwd: -
+vgg0_conv13_weight: [512, 512, 3, 3]
+vgg0_conv13_bias: [512]
+ - output: ['vgg0_conv13_fwd']
+vgg0_conv13_fwd: -
+ - name: vgg0_conv13_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv13_fwd', 'vgg0_batchnorm13_gamma', 'vgg0_batchnorm13_beta', 'vgg0_batchnorm13_running_mean', 'vgg0_batchnorm13_running_var']
+vgg0_conv13_fwd: -
+vgg0_batchnorm13_gamma: [512]
+vgg0_batchnorm13_beta: [512]
+vgg0_batchnorm13_running_mean: [512]
+vgg0_batchnorm13_running_var: [512]
+ - output: ['vgg0_batchnorm13_fwd']
+vgg0_batchnorm13_fwd: -
+ - name: vgg0_batchnorm13_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm13_fwd']
+vgg0_batchnorm13_fwd: -
+ - output: ['vgg0_relu13_fwd']
+vgg0_relu13_fwd: -
+ - name: vgg0_relu13_fwd
+Conv
+ - input: ['vgg0_relu13_fwd', 'vgg0_conv14_weight', 'vgg0_conv14_bias']
+vgg0_relu13_fwd: -
+vgg0_conv14_weight: [512, 512, 3, 3]
+vgg0_conv14_bias: [512]
+ - output: ['vgg0_conv14_fwd']
+vgg0_conv14_fwd: -
+ - name: vgg0_conv14_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv14_fwd', 'vgg0_batchnorm14_gamma', 'vgg0_batchnorm14_beta', 'vgg0_batchnorm14_running_mean', 'vgg0_batchnorm14_running_var']
+vgg0_conv14_fwd: -
+vgg0_batchnorm14_gamma: [512]
+vgg0_batchnorm14_beta: [512]
+vgg0_batchnorm14_running_mean: [512]
+vgg0_batchnorm14_running_var: [512]
+ - output: ['vgg0_batchnorm14_fwd']
+vgg0_batchnorm14_fwd: -
+ - name: vgg0_batchnorm14_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm14_fwd']
+vgg0_batchnorm14_fwd: -
+ - output: ['vgg0_relu14_fwd']
+vgg0_relu14_fwd: -
+ - name: vgg0_relu14_fwd
+Conv
+ - input: ['vgg0_relu14_fwd', 'vgg0_conv15_weight', 'vgg0_conv15_bias']
+vgg0_relu14_fwd: -
+vgg0_conv15_weight: [512, 512, 3, 3]
+vgg0_conv15_bias: [512]
+ - output: ['vgg0_conv15_fwd']
+vgg0_conv15_fwd: -
+ - name: vgg0_conv15_fwd
+	atribute.name: dilations
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+	atribute.name: group
+	atribute.type: 2
+	get_node_attr_value: 1
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [3, 3]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [1, 1, 1, 1]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [1, 1]
+BatchNormalization
+ - input: ['vgg0_conv15_fwd', 'vgg0_batchnorm15_gamma', 'vgg0_batchnorm15_beta', 'vgg0_batchnorm15_running_mean', 'vgg0_batchnorm15_running_var']
+vgg0_conv15_fwd: -
+vgg0_batchnorm15_gamma: [512]
+vgg0_batchnorm15_beta: [512]
+vgg0_batchnorm15_running_mean: [512]
+vgg0_batchnorm15_running_var: [512]
+ - output: ['vgg0_batchnorm15_fwd']
+vgg0_batchnorm15_fwd: -
+ - name: vgg0_batchnorm15_fwd
+	atribute.name: epsilon
+	atribute.type: 1
+	get_node_attr_value: 9.999999747378752e-06
+	atribute.name: momentum
+	atribute.type: 1
+	get_node_attr_value: 0.8999999761581421
+	atribute.name: spatial
+	atribute.type: 2
+	get_node_attr_value: 0
+Relu
+ - input: ['vgg0_batchnorm15_fwd']
+vgg0_batchnorm15_fwd: -
+ - output: ['vgg0_relu15_fwd']
+vgg0_relu15_fwd: -
+ - name: vgg0_relu15_fwd
+MaxPool
+ - input: ['vgg0_relu15_fwd']
+vgg0_relu15_fwd: -
+ - output: ['vgg0_pool4_fwd']
+vgg0_pool4_fwd: -
+ - name: vgg0_pool4_fwd
+	atribute.name: kernel_shape
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+	atribute.name: pads
+	atribute.type: 7
+	get_node_attr_value: [0, 0, 0, 0]
+	atribute.name: strides
+	atribute.type: 7
+	get_node_attr_value: [2, 2]
+Flatten
+ - input: ['vgg0_pool4_fwd']
+vgg0_pool4_fwd: -
+ - output: ['flatten_152']
+flatten_152: -
+ - name: flatten_152
+Gemm
+ - input: ['flatten_152', 'vgg0_dense0_weight', 'vgg0_dense0_bias']
+flatten_152: -
+vgg0_dense0_weight: [4096, 25088]
+vgg0_dense0_bias: [4096]
+ - output: ['vgg0_dense0_fwd']
+vgg0_dense0_fwd: -
+ - name: vgg0_dense0_fwd
+	atribute.name: alpha
+	atribute.type: 1
+	get_node_attr_value: 1.0
+	atribute.name: beta
+	atribute.type: 1
+	get_node_attr_value: 1.0
+	atribute.name: transA
+	atribute.type: 2
+	get_node_attr_value: 0
+	atribute.name: transB
+	atribute.type: 2
+	get_node_attr_value: 1
+Relu
+ - input: ['vgg0_dense0_fwd']
+vgg0_dense0_fwd: -
+ - output: ['vgg0_dense0_relu_fwd']
+vgg0_dense0_relu_fwd: -
+ - name: vgg0_dense0_relu_fwd
+Dropout
+ - input: ['vgg0_dense0_relu_fwd']
+vgg0_dense0_relu_fwd: -
+ - output: ['vgg0_dropout0_fwd']
+vgg0_dropout0_fwd: -
+ - name: vgg0_dropout0_fwd
+	atribute.name: ratio
+	atribute.type: 1
+	get_node_attr_value: 0.5
+Flatten
+ - input: ['vgg0_dropout0_fwd']
+vgg0_dropout0_fwd: -
+ - output: ['flatten_157']
+flatten_157: -
+ - name: flatten_157
+Gemm
+ - input: ['flatten_157', 'vgg0_dense1_weight', 'vgg0_dense1_bias']
+flatten_157: -
+vgg0_dense1_weight: [4096, 4096]
+vgg0_dense1_bias: [4096]
+ - output: ['vgg0_dense1_fwd']
+vgg0_dense1_fwd: -
+ - name: vgg0_dense1_fwd
+	atribute.name: alpha
+	atribute.type: 1
+	get_node_attr_value: 1.0
+	atribute.name: beta
+	atribute.type: 1
+	get_node_attr_value: 1.0
+	atribute.name: transA
+	atribute.type: 2
+	get_node_attr_value: 0
+	atribute.name: transB
+	atribute.type: 2
+	get_node_attr_value: 1
+Relu
+ - input: ['vgg0_dense1_fwd']
+vgg0_dense1_fwd: -
+ - output: ['vgg0_dense1_relu_fwd']
+vgg0_dense1_relu_fwd: -
+ - name: vgg0_dense1_relu_fwd
+Dropout
+ - input: ['vgg0_dense1_relu_fwd']
+vgg0_dense1_relu_fwd: -
+ - output: ['vgg0_dropout1_fwd']
+vgg0_dropout1_fwd: -
+ - name: vgg0_dropout1_fwd
+	atribute.name: ratio
+	atribute.type: 1
+	get_node_attr_value: 0.5
+Flatten
+ - input: ['vgg0_dropout1_fwd']
+vgg0_dropout1_fwd: -
+ - output: ['flatten_162']
+flatten_162: -
+ - name: flatten_162
+Gemm
+ - input: ['flatten_162', 'vgg0_dense2_weight', 'vgg0_dense2_bias']
+flatten_162: -
+vgg0_dense2_weight: [1000, 4096]
+vgg0_dense2_bias: [1000]
+ - output: ['vgg0_dense2_fwd']
+vgg0_dense2_fwd: -
+ - name: vgg0_dense2_fwd
+	atribute.name: alpha
+	atribute.type: 1
+	get_node_attr_value: 1.0
+	atribute.name: beta
+	atribute.type: 1
+	get_node_attr_value: 1.0
+	atribute.name: transA
+	atribute.type: 2
+	get_node_attr_value: 0
+	atribute.name: transB
+	atribute.type: 2
+	get_node_attr_value: 1
+
+----
+
+pool_shape: (2, 2)
+padding: 0
+stride: 2
+dilation: 1
+pool_shape: (2, 2)
+padding: 0
+stride: 2
+dilation: 1
+Input: (3, 224, 224)
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+------
+Operation: MaxPool
+attributes: {'kernel_shape': [2, 2], 'pads': [0, 0, 0, 0], 'strides': [2, 2]}
+DEBUG
+pads: [0, 0, 0, 0]
+_pads: [(0, 0), (0, 0)]
+args[pool_shape]: <class 'list'> | [2, 2]
+args[padding]: <class 'tuple'> | (0, 0)
+args[stride]: <class 'list'> | [2, 2]
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+------
+Operation: MaxPool
+attributes: {'kernel_shape': [2, 2], 'pads': [0, 0, 0, 0], 'strides': [2, 2]}
+DEBUG
+pads: [0, 0, 0, 0]
+_pads: [(0, 0), (0, 0)]
+args[pool_shape]: <class 'list'> | [2, 2]
+args[padding]: <class 'tuple'> | (0, 0)
+args[stride]: <class 'list'> | [2, 2]
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+------
+Operation: MaxPool
+attributes: {'kernel_shape': [2, 2], 'pads': [0, 0, 0, 0], 'strides': [2, 2]}
+DEBUG
+pads: [0, 0, 0, 0]
+_pads: [(0, 0), (0, 0)]
+args[pool_shape]: <class 'list'> | [2, 2]
+args[padding]: <class 'tuple'> | (0, 0)
+args[stride]: <class 'list'> | [2, 2]
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+------
+Operation: MaxPool
+attributes: {'kernel_shape': [2, 2], 'pads': [0, 0, 0, 0], 'strides': [2, 2]}
+DEBUG
+pads: [0, 0, 0, 0]
+_pads: [(0, 0), (0, 0)]
+args[pool_shape]: <class 'list'> | [2, 2]
+args[padding]: <class 'tuple'> | (0, 0)
+args[stride]: <class 'list'> | [2, 2]
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+Operation: Conv
+attributes: {'dilations': [1, 1], 'group': 1, 'kernel_shape': [3, 3], 'pads': [1, 1, 1, 1], 'strides': [1, 1]}
+pads: [1, 1, 1, 1]
+_pads: [(1, 1), (1, 1)]
+CONVOLUCION
+args[dilation]: <class 'list'> | [1, 1]
+args[nfilters]: <class 'int'> | 1
+args[filter_shape]: <class 'list'> | [3, 3]
+args[padding]: <class 'tuple'> | (1, 1)
+args[stride]: <class 'list'> | [1, 1]
+
+Operation: BatchNormalization
+attributes: {'epsilon': 9.999999747378752e-06, 'momentum': 0.8999999761581421, 'spatial': 0}
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+epsilon: 9.999999747378752e-06
+momentum: 0.8999999761581421
+
+Operation: Relu
+attributes: {}
+
+------
+Operation: MaxPool
+attributes: {'kernel_shape': [2, 2], 'pads': [0, 0, 0, 0], 'strides': [2, 2]}
+DEBUG
+pads: [0, 0, 0, 0]
+_pads: [(0, 0), (0, 0)]
+args[pool_shape]: <class 'list'> | [2, 2]
+args[padding]: <class 'tuple'> | (0, 0)
+args[stride]: <class 'list'> | [2, 2]
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+pool_shape: [2, 2]
+padding: (0, 0)
+stride: [2, 2]
+dilation: 1
+
+Operation: Flatten
+attributes: {}
+
+Operation: Gemm
+attributes: {'alpha': 1.0, 'beta': 1.0, 'transA': 0, 'transB': 1}
+
+Operation: Relu
+attributes: {}
+
+Operation: Dropout
+attributes: {'ratio': 0.5}
+==> args: {}
+
+Operation: Flatten
+attributes: {}
+
+Operation: Gemm
+attributes: {'alpha': 1.0, 'beta': 1.0, 'transA': 0, 'transB': 1}
+
+Operation: Relu
+attributes: {}
+
+Operation: Dropout
+attributes: {'ratio': 0.5}
+==> args: {}
+
+Operation: Flatten
+attributes: {}
+
+Operation: Gemm
+attributes: {'alpha': 1.0, 'beta': 1.0, 'transA': 0, 'transB': 1}
+Loading layers: [InputCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, MaxPool2DCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, MaxPool2DCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, MaxPool2DCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, MaxPool2DCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, Conv2DCPU, BatchNormalizationCPU, ReluCPU, MaxPool2DCPU, FlattenCPU, FCCPU, ReluCPU, DropoutCPU, FlattenCPU, FCCPU, ReluCPU, DropoutCPU, FlattenCPU, FCCPU]
+=> Layer: InputCPU
+=> Layer shape pre-add: (3, 224, 224)
+=> Layer shape: (3, 224, 224)
+=> Layer: Conv2DCPU
+=> Layer shape pre-add: ()
+=> Layer shape: (3, 224, 1)
+=> Layer: BatchNormalizationCPU
+=> Layer shape pre-add: ()
+BatchNormalizationCPU - initialize - self.shape: (3, 224, 1) 
+BatchNormalizationCPU - initialize - self.prev_shape: (3, 224, 1) 
+=> Layer shape: (3, 224, 1)
+=> Layer: ReluCPU
+=> Layer shape pre-add: (1,)
+=> Layer shape: (3, 224, 1)
+=> Layer: Conv2DCPU
+=> Layer shape pre-add: ()
+=> Layer shape: (3, 224, 1)
+=> Layer: BatchNormalizationCPU
+=> Layer shape pre-add: ()
+BatchNormalizationCPU - initialize - self.shape: (3, 224, 1) 
+BatchNormalizationCPU - initialize - self.prev_shape: (3, 224, 1) 
+=> Layer shape: (3, 224, 1)
+=> Layer: ReluCPU
+=> Layer shape pre-add: (1,)
+=> Layer shape: (3, 224, 1)
+=> Layer: MaxPool2DCPU
+=> Layer shape pre-add: ()
+=> Layer shape: (1, 112, 1)
+=> Layer: Conv2DCPU
+=> Layer shape pre-add: ()
+=> Layer shape: (1, 112, 1)
+=> Layer: BatchNormalizationCPU
+=> Layer shape pre-add: ()
+BatchNormalizationCPU - initialize - self.shape: (1, 112, 1) 
+BatchNormalizationCPU - initialize - self.prev_shape: (1, 112, 1) 
+=> Layer shape: (1, 112, 1)
+=> Layer: ReluCPU
+=> Layer shape pre-add: (1,)
+=> Layer shape: (1, 112, 1)
+=> Layer: Conv2DCPU
+=> Layer shape pre-add: ()
+=> Layer shape: (1, 112, 1)
+=> Layer: BatchNormalizationCPU
+=> Layer shape pre-add: ()
+BatchNormalizationCPU - initialize - self.shape: (1, 112, 1) 
+BatchNormalizationCPU - initialize - self.prev_shape: (1, 112, 1) 
+=> Layer shape: (1, 112, 1)
+=> Layer: ReluCPU
+=> Layer shape pre-add: (1,)
+=> Layer shape: (1, 112, 1)
+=> Layer: MaxPool2DCPU
+=> Layer shape pre-add: ()
+Traceback (most recent call last):
+  File "/home/usuario/Documentos/CIBER_CAFE/PyDTNN-FL/test.py", line 37, in <module>
+    converted_model = convert_model(onnx_model=onnx_model)
+  File "/home/usuario/Documentos/CIBER_CAFE/PyDTNN-FL/pydtnn/translators/onnx2pydtnn/model_convertor.py", line 208, in convert_model
+    load_layers(model=model, operations=operations)
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/usuario/Documentos/CIBER_CAFE/PyDTNN-FL/pydtnn/translators/onnx2pydtnn/model_convertor.py", line 185, in load_layers
+    model.add(operation)
+    ~~~~~~~~~^^^^^^^^^^^
+  File "/home/usuario/Documentos/CIBER_CAFE/PyDTNN-FL/pydtnn/model.py", line 277, in add
+    layer.initialize(prev_shape, need_dx)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/usuario/Documentos/CIBER_CAFE/PyDTNN-FL/pydtnn/backends/cpu/layers/abstract_pool_2d_layer_cpu.py", line 32, in initialize
+    super().initialize(prev_shape, need_dx)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/home/usuario/Documentos/CIBER_CAFE/PyDTNN-FL/pydtnn/layers/abstract_pool_2d_layer.py", line 63, in initialize
+    assert self.ho > 0 and self.wo > 0, "Output dimensions must be greater than 0"
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Output dimensions must be greater than 0
