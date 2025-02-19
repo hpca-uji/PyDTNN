@@ -174,6 +174,31 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_type, w)  
             return
+        
+        if method == "like_sgd_from_dense_dw":
+            """"Use only for debugging purposes"""
+            dw = coo_u
+            self.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            if len(self.dw_original_shape) != 2:
+                dw = dw.reshape(self.dw_original_shape)
+            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
+            velocity = self.momentum * velocity + dw
+            w -= self.learning_rate * velocity 
+            setattr(layer, w_type, w)
+            setattr(layer, "velocity_%s" % w_type, velocity)
+            return
+
+        if method == "like_sgd_from_coo_u":
+            """"Use only for debugging purposes"""
+            dw = coo_u.toarray()
+            if len(self.dw_original_shape) != 2:
+                dw = dw.reshape(self.dw_original_shape)
+            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
+            velocity = self.momentum * velocity + dw
+            w -= self.learning_rate * velocity * self.nprocs
+            setattr(layer, w_type, w)
+            setattr(layer, "velocity_%s" % w_type, velocity)
+            return
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
