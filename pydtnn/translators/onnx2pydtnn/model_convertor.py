@@ -8,6 +8,8 @@ import onnx
 from pydtnn.model import Model as PyDTNN_Model
 import pydtnn.translators.onnx2pydtnn.constants as cons 
 from pydtnn.layers import Input
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+
 
 # ////////////////////////////////////////////////////
 # In order to made some parts of this code, I used other converors' code (specially the "onnx2pytorch" library)
@@ -160,12 +162,14 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
 
     # operations: {[output_name]: ([operation], [inputs])}
     output_first_layer = get_actual_inputs(list_inputs=onnx_model.graph.node[0].input, weights_names=list(weights.keys()))[0]
+    print(f"Input: {inputs[list(inputs.keys())[0]]}")
 
     # "[None]" indicates that it has no previous layers.
     operations = {output_first_layer : (Input(shape=inputs[list(inputs.keys())[0]]), [None])}
 
     for i in range(num_operations - 1):
         _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
+        print("") # TODO: Borrar
     _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))
 
     # The list of layers is returned.
@@ -177,7 +181,9 @@ def load_layers(model:PyDTNN_Model, operations:List[LayerAndActivationBase]) -> 
     print(f"Loading layers: {operations}")
     for operation in operations:
         print(f"=> Layer: {operation}")
+        print(f"=> Layer shape pre-add: {operation.shape}")        
         model.add(operation)
+        print(f"=> Layer shape: {operation.shape}") 
     print(f"Layers loaded")
 
     return # None (No value is returned)
@@ -186,9 +192,11 @@ def load_layers(model:PyDTNN_Model, operations:List[LayerAndActivationBase]) -> 
 def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
     
+    if "tensor_format" not in kwargs:
+        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NCHW
     # Output model.
     model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
-                 enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
+                 enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)    
 
     # Obtaining the relevant data (inputs, outputs, weights, ...) from the onnx model.
     inputs, outputs, weights = get_relevant_data(onnx_model.graph)

@@ -25,7 +25,8 @@ def Acosh(info: Dict[str, Any]) -> LayerAndActivationBase:
 def Add(info: Dict[str, Any]) -> LayerAndActivationBase:
 
     # TODO: from print to "log - debug" or somthing like that.
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     list_adding_nodes = info[cons.CONST_LISTS_NODES]
 
     return layer.AdditionBlock(list_adding_nodes)
@@ -83,9 +84,9 @@ def AveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     PYDTNN_POOL_SHAPE = "pool_shape"
     PYDTNN_PADDING = "padding"
     PYDTNN_STRIDE = "stride"    
-
     
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     
     dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()
@@ -99,5 +100,5 @@ def AveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     if ONNX_STRIDES in dict_attributes: 
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
 
-    return layer.AveragePool2D(*args)
+    return layer.AveragePool2D(**args)
 # --- END AveragePool --- #

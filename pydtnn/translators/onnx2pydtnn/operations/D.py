@@ -38,7 +38,8 @@ def Div(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Div --- #
 
 def Dropout(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Dropout.html#l-onnx-doc-dropout
     ONNX_SEED = "seed" # TODO: Check if the random seed it's important. If it is, check how to set it.
     # PyDTNN attributes names from Dropout class.

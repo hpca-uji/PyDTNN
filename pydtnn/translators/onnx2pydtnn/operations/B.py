@@ -8,7 +8,8 @@ import pydtnn.layers as layer
 import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def BatchNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__BatchNormalization.html#l-onnx-doc-batchnormalization
     ONNX_EPSILON = "epsilon"
@@ -25,7 +26,7 @@ def BatchNormalization(info: Dict[str, Any]) -> LayerAndActivationBase:
     if ONNX_MOMENTUM in dict_attributes: 
         args[PYDTNN_MOMENTUM] = dict_attributes[ONNX_MOMENTUM]
 
-    return layer.BatchNormalization(*args)    
+    return layer.BatchNormalization(**args)    
 # --- END BatchNormalization --- #
 
 def Bernoulli(info: Dict[str, Any]) -> LayerAndActivationBase:

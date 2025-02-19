@@ -34,7 +34,8 @@ def Gelu(info: Dict[str, Any]) -> LayerAndActivationBase:
 
 def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
 
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx documentation: https://onnx.ai/onnx/operators/onnx__Gemm.html
     ONNX_ALPHA = "alpha"
     ONNX_BETA = "beta"
@@ -53,12 +54,12 @@ def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
     # B: PyDTNN's weights
     # C: PyDTNN's bias    
 
-    attributes = info[cons.CONST_ATTRIBUTES]
+    dict_attributes = info[cons.CONST_ATTRIBUTES]
 
-    alpha = attributes[ONNX_ALPHA] if ONNX_ALPHA in attributes else 1.0
-    beta = attributes[ONNX_BETA] if ONNX_BETA in attributes else 1.0
-    transA = attributes[ONNX_TRANS_A] if ONNX_TRANS_A in attributes else None
-    transB = attributes[ONNX_TRANS_B] if ONNX_TRANS_B in attributes else None
+    alpha = dict_attributes[ONNX_ALPHA] if ONNX_ALPHA in dict_attributes else 1.0
+    beta = dict_attributes[ONNX_BETA] if ONNX_BETA in dict_attributes else 1.0
+    transA = dict_attributes[ONNX_TRANS_A] if ONNX_TRANS_A in dict_attributes else None
+    transB = dict_attributes[ONNX_TRANS_B] if ONNX_TRANS_B in dict_attributes else None
 
     # TODO: make this programming terrorism into an actual class or classes
     pseudo_gemm = layer.FC()
@@ -94,7 +95,8 @@ def Gemm(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Gemm --- #
 
 def GlobalAveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # 1.- Onnx documentation: https://onnx.ai/onnx/operators/onnx__GlobalAveragePool.html
     
     # PyDTNN attributes names from AbstractPool2DLayer class.
@@ -113,7 +115,7 @@ def GlobalAveragePool(info: Dict[str, Any]) -> LayerAndActivationBase:
     args[PYDTNN_POOL_SHAPE] = operations[_input].shape
     args[PYDTNN_STRIDE] = 1
     
-    return layer.AveragePool2D(*args)
+    return layer.AveragePool2D(**args)
 # --- END GlobalAveragePool --- #
 
 def GlobalLpPool(info: Dict[str, Any]) -> LayerAndActivationBase:

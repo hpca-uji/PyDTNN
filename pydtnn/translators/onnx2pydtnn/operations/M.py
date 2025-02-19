@@ -23,20 +23,22 @@ def Max(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Max --- #
 
 def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print("------")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     
-    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool    
+    # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__MaxPool.html#l-onnx-doc-maxpool        
     ONNX_KERNEL_SHAPE = "kernel_shape"
     ONNX_PADS = "pads"
     ONNX_STRIDES = "strides"
+    ONNX_COUNT_DILATATIONS = "dilations"
     # PyDTNN attributes names from AbstractPool2DLayer class.    
     PYDTNN_POOL_SHAPE = "pool_shape"
     PYDTNN_PADDING = "padding"
-    PYDTNN_STRIDE = "stride"    
+    PYDTNN_STRIDE = "stride"
     PYDTNN_DILATION = "dilation"
-    ONNX_COUNT_DILATATIONS = "dilations"
 
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print("DEBUG") # TODO: ¡¡BORRAR!!  
     
     dict_attributes = info[cons.CONST_ATTRIBUTES]
     args = dict()
@@ -46,12 +48,14 @@ def MaxPool(info: Dict[str, Any]) -> LayerAndActivationBase:
     if ONNX_KERNEL_SHAPE in dict_attributes: 
         args[PYDTNN_POOL_SHAPE] = dict_attributes[ONNX_KERNEL_SHAPE]        
     if ONNX_PADS in dict_attributes: 
-        print(f"dict_attributes[ONNX_PADS]: {dict_attributes[ONNX_PADS]}")
         args[PYDTNN_PADDING] = cons.pads_from_onnx_to_pydttn(pads = dict_attributes[ONNX_PADS])
-        print(f"args[PYDTNN_PADDING]: {args[PYDTNN_PADDING]}")
     if ONNX_STRIDES in dict_attributes: 
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
-    
+        
+    for k in args.keys():
+        print(f"args[{k}]: {type(args[k])} | {args[k]}")
+        a = args[k]
+
     return layer.MaxPool2D(**args)
 # --- END MaxPool --- #
 
@@ -96,7 +100,8 @@ def Mod(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Mod --- #
 
 def Mul(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # TODO: Move it to a file and do it in the right way.
 

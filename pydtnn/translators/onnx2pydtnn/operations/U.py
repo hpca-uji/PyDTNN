@@ -14,7 +14,8 @@ def Unique(info: Dict[str, Any]) -> LayerAndActivationBase:
 
 def Unsqueeze(info: Dict[str, Any]) -> LayerAndActivationBase:
     # Onnx information: https://onnx.ai/onnx/operators/onnx__Unsqueeze.html
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     ONNX_AXES = "axes"
 
     PYDTNN_AXES = "axis"
@@ -52,9 +53,9 @@ def Unsqueeze(info: Dict[str, Any]) -> LayerAndActivationBase:
 
         def forward(self, x):
             return expand_dims(x, axis=self.axis)
-    # -- END _Mul -- #
+    # -- END _Unsqueeze -- #
 
-    return _Unsqueeze(*args)
+    return _Unsqueeze(**args)
     
 # --- END Unsqueeze --- #
 

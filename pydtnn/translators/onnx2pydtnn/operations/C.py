@@ -48,7 +48,8 @@ def Compress(info: Dict[str, Any]) -> LayerAndActivationBase:
 # --- END Compress --- #
 
 def Concat(info: Dict[str, Any]) -> LayerAndActivationBase:
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Concat.html#l-onnx-doc-concat
     ONNX_AXIS = "axis"
     # There are no PyDTNN attributes names from ConcatenationBlock class.
@@ -76,7 +77,8 @@ def ConstantOfShape(info: Dict[str, Any]) -> LayerAndActivationBase:
 
 def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
     
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
 
     # Onnx attributes names from: https://onnx.ai/onnx/operators/onnx__Conv.html#l-onnx-doc-conv
     ONNX_COUNT_DILATATIONS = "dilations"
@@ -94,19 +96,26 @@ def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
     args = dict()
     dict_attributes = info[cons.CONST_ATTRIBUTES]
 
-    if ONNX_COUNT_DILATATIONS in info:
+    if ONNX_COUNT_DILATATIONS in dict_attributes:
         args[PYDTNN_DILATION] = dict_attributes[ONNX_COUNT_DILATATIONS]
-    if ONNX_GROUP in info:
+    if ONNX_GROUP in dict_attributes:
         # TODO: Check if this is correct:
         args[PYDTNN_NFILTERS] = dict_attributes[ONNX_GROUP]
-    if ONNX_KERNEL_SHAPE in info:
+    if ONNX_KERNEL_SHAPE in dict_attributes:
         args[PYDTNN_FILTER_SHAPE] = dict_attributes[ONNX_KERNEL_SHAPE]
-    if ONNX_PADS in info:
+    if ONNX_PADS in dict_attributes:
         args[PYDTNN_PADDING] = cons.pads_from_onnx_to_pydttn(pads = dict_attributes[ONNX_PADS])
-    if ONNX_STRIDES in info:
+    if ONNX_STRIDES in dict_attributes:
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
+    
+    # TODO: Look if it's necessary to set the Bias here.
 
-    return layer.Conv2D(*args)
+    # TODO: Borrar
+    print("CONVOLUCION")
+    for k in args.keys():
+        print(f"args[{k}]: {type(args[k])} | {args[k]}")
+
+    return layer.Conv2D(**args)
 # --- END Conv --- #
 
 def ConvInteger(info: Dict[str, Any]) -> LayerAndActivationBase:

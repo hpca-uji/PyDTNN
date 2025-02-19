@@ -5,6 +5,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 import pydtnn.activations as activation
+import pydtnn.translators.onnx2pydtnn.constants as cons
 
 def RNN(info: Dict[str, Any]) -> LayerAndActivationBase:
     print(f"Operation: {stack()[0].function}\nargs received: {info}")
@@ -98,7 +99,8 @@ def RegexFullMatch(info: Dict[str, Any]) -> LayerAndActivationBase:
 
 def Relu(info: Dict[str, Any]) -> LayerAndActivationBase:
     # ONNX info: https://onnx.ai/onnx/operators/onnx__Relu.html
-    print(f"Operation: {stack()[0].function}\nargs received: {info}")
+    print(f"Operation: {stack()[0].function}")
+    print(f"attributes: {info[cons.CONST_ATTRIBUTES]}")
     return activation.Relu()
 # --- END Relu --- #
 

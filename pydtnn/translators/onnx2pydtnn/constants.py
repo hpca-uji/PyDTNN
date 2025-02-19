@@ -48,12 +48,14 @@ def pads_from_onnx_to_pydttn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple
         # Onnx: [x1_begin, x2_begin, ..., x1_end, x2_end, ...] ==> "PyDTNN: [(x1_begin, x1_end), (x2_end, x2_begin), ...]"
         # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
 
+        print(f"pads: {pads}") # TODO: Borrar
         num_pads = len(pads)//2
         _pads = [(0,0)] * (num_pads)
         for i in range(num_pads):
-            _pads[i] = (pads[i], pads[i + num_pads])
+            _pads[i] = (int(pads[i]), int(pads[i + num_pads]))
+        print(f"_pads: {_pads}") # TODO: Borrar
 
-        return _pads
+        return _pads[0]
 # --- END pads_from_onnx_to_pydttn --- #
 
 SWITCH_OPERATION_ONNX_TO_PYDTNN = {
