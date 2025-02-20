@@ -10,7 +10,8 @@ Also, there are some special operations that has their own script (but they aren
 Problem:
 - As it is possible to see at the end of the file "output_test1_2" (translators/onnx2pydtnn/test/output_test1_2), the construction fails. This can be produced because, in at least one layer, some attributes aren't being translated in a proper way.
 
-
 **pydtnn2onnx**: 
 - Basically, it doesn't works. There are only some functions with some work, but not too much.
 
+[--------]
+Interesting tool: https://netron.app/
