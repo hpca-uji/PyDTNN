@@ -20,7 +20,7 @@ def make_output_name(op_name: str, num_operations: int) -> str:
     return "_".join([op_name, str(num_operations)])
 # --- END make_output_name --- #
 
-def pads_from_onnx_to_pydttn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple[int, int]]:
+def pads_from_onnx_to_pydtnn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple[int, int]]:
         # "pads format should be as follow [x1_begin, x2_begin…x1_end, x2_end,…]" from, for example, https://onnx.ai/onnx/operators/onnx__AveragePool.html
         # Onnx: [x1_begin, x2_begin, ..., x1_end, x2_end, ...] ==> "PyDTNN: [(x1_begin, x1_end), (x2_end, x2_begin), ...]"
         # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
@@ -31,7 +31,7 @@ def pads_from_onnx_to_pydttn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple
             _pads[i] = (pads[i], pads[i + num_pads])
 
         return _pads
-# --- END pads_from_onnx_to_pydttn --- #
+# --- END pads_from_onnx_to_pydtnn --- #
 
 def get_layer_name_and_id(name: str) -> Tuple[str, int]:
     TYPE_DEVICE = ["GPU", "CPU"]

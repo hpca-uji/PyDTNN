@@ -43,7 +43,7 @@ CONST_PREV_LAYERS = "previous_layers"
 # VGG19 - {'Dropout', 'Gemm', 'Flatten', 'Relu', 'MaxPool', 'BatchNormalization', 'Conv'}
 # Union of the ones before - {'Add', 'AveragePool', 'BatchNormalization', 'Concat', 'Conv', 'Dropout', 'Flatten', 'Gemm', 'GlobalAveragePool', 'MaxPool', 'Mul', 'Relu', 'Unsqueeze'}
 
-def pads_from_onnx_to_pydttn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple[int, int]]:
+def pads_from_onnx_to_pydtnn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple[int, int]]:
         # "pads format should be as follow [x1_begin, x2_begin…x1_end, x2_end,…]" from, for example, https://onnx.ai/onnx/operators/onnx__AveragePool.html
         # Onnx: [x1_begin, x2_begin, ..., x1_end, x2_end, ...] ==> "PyDTNN: [(x1_begin, x1_end), (x2_end, x2_begin), ...]"
         # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
@@ -56,7 +56,7 @@ def pads_from_onnx_to_pydttn(pads: List[int]) -> Tuple[int, int]: #-> List[Tuple
         print(f"_pads: {_pads}") # TODO: Borrar
 
         return _pads[0]
-# --- END pads_from_onnx_to_pydttn --- #
+# --- END pads_from_onnx_to_pydtnn --- #
 
 SWITCH_OPERATION_ONNX_TO_PYDTNN = {
     "Abs" : Abs,

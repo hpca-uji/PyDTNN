@@ -104,7 +104,7 @@ def Conv(info: Dict[str, Any]) -> LayerAndActivationBase:
     if ONNX_KERNEL_SHAPE in dict_attributes:
         args[PYDTNN_FILTER_SHAPE] = dict_attributes[ONNX_KERNEL_SHAPE]
     if ONNX_PADS in dict_attributes:
-        args[PYDTNN_PADDING] = cons.pads_from_onnx_to_pydttn(pads = dict_attributes[ONNX_PADS])
+        args[PYDTNN_PADDING] = cons.pads_from_onnx_to_pydtnn(pads = dict_attributes[ONNX_PADS])
     if ONNX_STRIDES in dict_attributes:
         args[PYDTNN_STRIDE] = dict_attributes[ONNX_STRIDES]
     
