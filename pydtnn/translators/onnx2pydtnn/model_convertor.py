@@ -23,15 +23,11 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
 
 def extract_shape(data: onnx.ValueInfoProto) -> np.shape:
     # The shape of the inputs/ouputs is more or less a list quite hidden.
-    #   Note: ONNX allows to have shapes of undefined value, for example: (N, 3, 224, 224), 
-    #       and, if it is not defined, that dimension is stored as 0. I will assume that every loaded model has declared all theirs values.
-    # TODO: Mirar qué hacer en caso de que no se haya definido alguna dimensión ==> 
-    #   ==> Puesto que entiendo que solo son entradas y salidas, se podría pasar como parámetro
-    #   [==>] Alternativamente, como, por lo que he visto hasta ahora, son más el número de entradas/salidas que van a haber, saltarlas.
-    #   ==> TODO: cuando todo esté más o menos claro, preguntárselo a Manel 
-    #   (En cualquier caso, tenerlo en cuenta para la conversión en el sentido opuesto)
+    #   NOTE: ONNX allows to have shapes of undefined value, e.g.: (N, 3, 224, 224), 
+    #       and, if it is not defined, that dimension is stored as 1. It's assumed that it is not relevant data and it will be removed, since "N" are the number of samples.
+    #   NOTA:
     #   Parece ser que se guarda como "1" ==> viendo cómo va PyDTNN, lo mejor es que, si detecto que hay una "N" (como la de arriba), eliminarla
-    #   Ahora no consigo encontrar desde dónde ví que la entrada valía "N" ==> Se va a sumir que el primero es el "N"
+    #   ==> Se va a sumir que el primer elemento es el "N" ==> TODO: Hacer esto bien.
     shape = [elem.dim_value for elem in data.type.tensor_type.shape.dim if elem.dim_value != 0]
     del shape[0]
     return tuple(shape)
@@ -122,7 +118,7 @@ def get_actual_inputs(list_inputs: List[str], weights_names: List[str])-> List[s
     return list(filter(lambda _input: _input not in weights_names, list_inputs))
 # --- END get_actual_inputs --- #
 
-def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], 
+def _get_and_put_layer(node: onnx.NodeProto, opset_version:int, operations: Dict[str, Tuple[LayerAndActivationBase, List[str]]], 
                             weights: Dict[str, np.ndarray], output: List[str]|None = None)->None:
 
     info = {#cons.CONST_NODE: node, # Refererence to the model itself (TODO: see if it's necessary. If not ==> delete)
@@ -143,9 +139,9 @@ def _get_and_put_operation(node: onnx.NodeProto, opset_version:int, operations: 
     operations[info[cons.CONST_OUPTUS][0]] = (cons.SWITCH_OPERATION_ONNX_TO_PYDTNN[node.op_type](info), info[cons.CONST_INPUTS])
 
     # return Nothing: the output is stored in the dictionary
-# --- END _get_and_put_operation --- #
+# --- END _get_and_put_layer --- #
 
-def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[str, np.shape], 
+def get_layers(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[str, np.shape], 
                    weights:Dict[str, np.ndarray], outputs: Dict[str, np.shape]) -> List[LayerAndActivationBase]:
 
     # TODO: meter otros parámetros que se puedan necesitar
@@ -168,13 +164,13 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
     operations = {output_first_layer : (Input(shape=inputs[list(inputs.keys())[0]]), [None])}
 
     for i in range(num_operations - 1):
-        _get_and_put_operation(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
+        _get_and_put_layer(node=onnx_model.graph.node[i], opset_version=opset_version, operations=operations, weights=weights)
         print("") # TODO: Borrar
-    _get_and_put_operation(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))
+    _get_and_put_layer(node=onnx_model.graph.node[-1], opset_version=opset_version, operations=operations, weights=weights, output=list(outputs.keys()))
 
     # The list of layers is returned.
     return list(map(lambda x: x[0], operations.values()))
-# --- END get_operations --- #
+# --- END get_layers --- #
 
 def load_layers(model:PyDTNN_Model, operations:List[LayerAndActivationBase]) -> None:
     
@@ -208,7 +204,7 @@ def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, 
     opset_version = onnx_model.opset_import[0].version
     
     # Obtaining the operations (layes, activations, etc.).
-    operations = get_operations(onnx_model=onnx_model, opset_version=opset_version, inputs=inputs, outputs=outputs, weights=weights)
+    operations = get_layers(onnx_model=onnx_model, opset_version=opset_version, inputs=inputs, outputs=outputs, weights=weights)
     # Asigning the operations to the model.
     load_layers(model=model, operations=operations)
 
