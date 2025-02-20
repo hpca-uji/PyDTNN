@@ -149,7 +149,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     
-    def _update_weights(self, layer, w_type, w, coo_u, method="cython"):
+    def _update_weights(self, layer, w_type, w, coo_u, method="numpy_with_vel_and_momentum"):
         """
         Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_type, w)
 
@@ -181,7 +181,20 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_type, w)  
             return
-        
+
+        if method == "numpy_with_vel_and_momentum": 
+            if len(self.dw_original_shape) != 2:
+                w = w.reshape(w.shape[0], -1)
+            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
+            velocity[coo_u.row, coo_u.col] += coo_u.data
+            velocity *= self.momentum
+            w[coo_u.row, coo_u.col] -= velocity[coo_u.row, coo_u.col]
+            if len(self.dw_original_shape) != 2:
+                w = w.reshape(self.dw_original_shape)
+            setattr(layer, w_type, w)  
+            setattr(layer, "velocity_%s" % w_type, velocity)
+            return
+
         if method == "like_sgd":
             """Use only for debugging purposes"""
             warnings.warn("This function should be used only in case of debugging for performance reasons.")
