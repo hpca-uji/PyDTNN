@@ -1,16 +1,17 @@
 """TCP server"""
 
+import typing
 import uuid
 import socket
 import selectors
 import threading
 from queue import Empty, SimpleQueue
-from concurrent.futures import ThreadPoolExecutor
 
 from bidict import bidict
 
 from pydtnn.comms import ResourceClosed, Message
-from pydtnn.comms.tcp import Connection, Protocol
+from pydtnn.comms.tcp import Protocol
+from pydtnn.comms.tcp.connection import Connection
 
 
 __all__ = (
@@ -32,39 +33,23 @@ class Server(Protocol):
         # State
         self._lock = threading.Lock()
         self._peers = bidict[uuid.UUID, str]()
-        self._pool = ThreadPoolExecutor(max_workers=2)
         self._request_count = threading.Semaphore(value=0)
         self._response_count = threading.Semaphore(value=0)
         self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
         self._responses = dict[uuid.UUID, SimpleQueue[bytes]]()
 
         # TCP
-        self._selector = selectors.DefaultSelector()
         self._server = Connection(socket.create_server((self._addr, self._port), reuse_port=True))
         self._selector.register(self._server, selectors.EVENT_READ, self._new_connection)
-        self._submit(self._serve_forever)
-
-    def _submit(self, fn, /, *args, **kwargs):
-        """Process in the pool with exception handeling"""
-        future = self._pool.submit(fn, *args, **kwargs)
-        future.add_done_callback(lambda future: future.result())
-        return future
-
-    def _handle_select(self, event: tuple[selectors.SelectorKey, int]) -> None:
-        key, mask = event
-        callback = key.data
-        callback(key.fileobj, mask)
-
-    def _serve_forever(self):
-        while not self.closed:
-            for _ in self._pool.map(self._handle_select, self._selector.select(self._poll_interval)):
-                pass
+        self._submit(self._handle_selector)
 
     def _new_connection(self, connection: Connection, event) -> None:
+        """Handle new incomming connections"""
         connection = Connection(connection._socket.accept()[0])
         self._syc(connection)
 
     def _handle_connection(self, connection: Connection, event) -> None:
+        """Handle connection states"""
         if event & selectors.EVENT_READ:
             self._c2s(connection)
 
@@ -72,12 +57,15 @@ class Server(Protocol):
             self._s2c(connection)
 
     def _syc(self, connection: Connection) -> None:
+        """Client connection startup"""
+        # NOTE: communication thead
         tcp_peer = connection.peer
         data = connection.get()
         peer = self._deserialize(data)
         data = self._serialize(self.id)
         connection.put(data)
 
+        # Thread-safe client setup
         with self._lock:
             self._peers[peer] = tcp_peer
             self._requests[peer] = SimpleQueue()
@@ -85,20 +73,48 @@ class Server(Protocol):
 
             self._selector.register(connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
 
+    def _fin(self, connection: Connection) -> None:
+        """Client connection finalizer"""
+        # NOTE: communication thead
+        tcp_peer = connection.peer
+        peer = self._peers.inverse[tcp_peer]
+
+        # Thread-safe client taredown
+        with self._lock:
+            self._selector.unregister(connection)
+
+            del self._peers[peer]
+            requests = self._requests.pop(peer)
+            responses = self._responses.pop(peer)
+
+        connection.close()
+
+        # Drain queues and update counts
+        for _ in range(requests.qsize()):
+            self._request_count.acquire()
+        for _ in range(responses.qsize()):
+            self._response_count.acquire()
+
     def _c2s(self, connection: Connection) -> None:
+        """Client to server communication"""
+        # NOTE: communication thead
+
+        # Acquire peer (if not disconnected)
         tcp_peer = connection.peer
         try:
             peer = self._peers.inverse[tcp_peer]
+            queue = self._requests[peer]
         except KeyError:
             return
-        queue = self._requests[peer]
 
+        # Recive incoming data
         try:
             connection.recv()
         except ResourceClosed:
             self._fin(connection)
             return
 
+        # Queue up all recived messages
         while True:
             try:
                 data = connection.get_nowait()
@@ -109,6 +125,10 @@ class Server(Protocol):
             self._request_count.release()
 
     def _s2c(self, connection: Connection) -> None:
+        """Server to client communication"""
+        # NOTE: communication thead
+
+        # Acquire peer (if not disconnected)
         tcp_peer = connection.peer
         try:
             peer = self._peers.inverse[tcp_peer]
@@ -116,6 +136,7 @@ class Server(Protocol):
             return
         queue = self._responses[peer]
 
+        # Queue up all send messages
         while True:
             try:
                 data = queue.get_nowait()
@@ -124,24 +145,12 @@ class Server(Protocol):
 
             connection.put_nowait(data)
 
+        # Send outgoing data
         try:
             connection.send()
         except ResourceClosed:
             self._fin(connection)
             return
-
-    def _fin(self, connection: Connection) -> None:
-        tcp_peer = connection.peer
-        peer = self._peers.inverse[tcp_peer]
-
-        with self._lock:
-            self._selector.unregister(connection)
-
-            del self._peers[peer]
-            del self._requests[peer]
-            del self._responses[peer]
-
-        connection.close()
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
@@ -201,12 +210,14 @@ class Server(Protocol):
         """Close the server"""
         if self.closed:
             return
-        super().close()
-        self._selector.close()
-        self._pool.shutdown()
+        connections = [
+            typing.cast(Connection, key.fileobj)
+            for key in self._selector.get_map().values()
+        ]
         self._server.close()
+        super().close()
         with self._lock:
             for queue in self._requests.values():
                 queue.put(END_COMM)
-            for key in self._selector.get_map().values():
-                key.fileobj.close()  # type: ignore
+            for connection in connections:
+                connection.close()

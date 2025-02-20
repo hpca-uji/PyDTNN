@@ -31,9 +31,12 @@ class Client(Protocol):
         # MQTT
         self._register_handler(topic="s2c", handler=self._s2c)
         self._register_handler(topic=f"s2c/{self.id}", handler=self._s2c)
+        self._syc()
+
+    def _syc(self) -> None:
         self._publish(topic=f"syc/{self.id}")
         data = self._responses.get()
-        self._server = self._deserialize(data)
+        self.server = self._deserialize(data)
 
     def _s2c(self, client: mqtt_client.Client, userdata, message: mqtt_client.MQTTMessage) -> None:
         """Server message handler"""
@@ -58,7 +61,7 @@ class Client(Protocol):
             raise ResourceClosed()
 
         obj = self._deserialize(data)
-        return Message(peer=self._server, obj=obj)
+        return Message(peer=self.server, obj=obj)
 
     def close(self) -> None:
         """Close the client"""

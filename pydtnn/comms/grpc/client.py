@@ -28,11 +28,11 @@ class Client(Protocol):
         super().__init__(addr, port)
 
         self._channel = grpc.insecure_channel(
-            target=self._netloc,
+            target=f"{self._addr}:{self._port}",
             compression=self._compression
         )
         self._client = grpc_pb2_grpc.gRPCStub(self._channel)
-        self._server: uuid.UUID = self._call("_syc", obj=self.id)
+        self.server: uuid.UUID = self._call("_syc", obj=self.id)
 
     def _call(self, method: str, obj=ARG_MISSING):
         """Generic gRPC call"""
@@ -82,7 +82,7 @@ class Client(Protocol):
             else:
                 break
 
-        return Message(peer=self._server, obj=obj)
+        return Message(peer=self.server, obj=obj)
 
     def close(self) -> None:
         """Close the client"""

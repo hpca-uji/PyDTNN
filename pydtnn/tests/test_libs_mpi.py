@@ -18,7 +18,7 @@ class Mode(enum.StrEnum):
 # Argument pasrser
 parser = ArgumentParser(prog="test_libs_mpi", description="MPI server-client test")
 parser.add_argument("mode", choices=list(Mode))
-parser.add_argument("--delay", type=float, default=3.0)
+parser.add_argument("--start-delay", type=float, default=3.0)
 
 
 def server(config: Namespace):
@@ -33,7 +33,7 @@ def server(config: Namespace):
 
 def client(config):
     """Client mode"""
-    time.sleep(config.delay)
+    time.sleep(config.start_delay)
 
     from pydtnn.libs.mpi import client as MPI
 

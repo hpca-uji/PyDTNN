@@ -44,7 +44,7 @@ class Server(Protocol):
             compression=self._compression
         )
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
-        self._server.add_insecure_port(address=self._netloc)
+        self._server.add_insecure_port(address=f"{self._addr}:{self._port}")
         self._server.start()
 
     @property

@@ -1,7 +1,7 @@
 """Communications package"""
 
-# NOTE: Implement TCP communication
 # NOTE: Review Apache Kafka communication
+# TODO: Extract serialzization and only accept bytes
 
 import os
 import abc
@@ -60,11 +60,6 @@ class Communication[T](abc.ABC):
     def __exit__(self, cls, exc, tb):
         """Context manager exit"""
         self.close()
-
-    @property
-    def _netloc(self):
-        """Service network location (address + port)"""
-        return f"{self._addr}:{self._port}"
 
     def _serialize(self, obj) -> bytes:
         """Serialize object for comunication"""

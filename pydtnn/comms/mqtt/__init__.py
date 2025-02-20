@@ -60,9 +60,9 @@ class Protocol(comms.Communication):
         self._client.message_callback_add(sub=topic, callback=handler)
         self._client.subscribe(topic=topic, qos=self._qos)
 
-    def _peer(self, msg: mqtt_client.MQTTMessage) -> uuid.UUID:
+    def _peer(self, message: mqtt_client.MQTTMessage) -> uuid.UUID:
         """Get peer from a mesage"""
-        return uuid.UUID(msg.topic.split("/", 1)[1])
+        return uuid.UUID(message.topic.split("/", 1)[1])
 
     def _publish(self, topic: str, data=None) -> None:
         """Generic MQTT publish"""
