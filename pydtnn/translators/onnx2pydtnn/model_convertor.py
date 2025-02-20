@@ -193,10 +193,15 @@ def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, 
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
     
     if "tensor_format" not in kwargs:
-        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NCHW
+        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NHWC# PYDTNN_TENSOR_FORMAT_NCHW #PYDTNN_TENSOR_FORMAT_NHWC
     # Output model.
+    # NOTE: ¡¡¡¡IMPORTANT!!!!! Be sure that the "parser.model_name" from pydtnn.parser import parser is None!!!!!!!!.
     model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
                  enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)    
+
+    print("TEST")
+    print(model.layers)
+    print("TEST")
 
     # Obtaining the relevant data (inputs, outputs, weights, ...) from the onnx model.
     inputs, outputs, weights = get_relevant_data(onnx_model.graph)

@@ -166,7 +166,7 @@ def get_operations(onnx_model:onnx.ModelProto, opset_version:int, inputs: Dict[s
     return list(map(lambda x: x[0], operations.values()))
 # --- END get_operations --- #
 
-def get_nodes(pydtnn_model:PyDTNN_Model,) -> List[onnx.NodeProto]:
+def get_layers(pydtnn_model:PyDTNN_Model) -> List[onnx.NodeProto]:
 
     node_list = list()
     for layer in pydtnn_model.layers:
@@ -179,7 +179,7 @@ def get_nodes(pydtnn_model:PyDTNN_Model,) -> List[onnx.NodeProto]:
 
         node = cons.SWITCH_OPERATION_PYDTNN_TO_ONNX[name](info)
 
-        node_list.append()
+        node_list.append(node)
 
 
     return node_list
@@ -191,7 +191,7 @@ def convert_model(pydtnn_model:PyDTNN_Model, ir_version:int = 1, producer_name:s
                   doc_string:str = "https://github.com/hpca-uji/PyDTNN",                 
                  ) -> onnx.ModelProto:
     
-    nodes = get_nodes(pydtnn_model, )
+    nodes = get_layers(pydtnn_model)
 
     # TODO: 
     model = onnx.helper.make_model()
