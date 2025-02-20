@@ -17,6 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+import warnings
 import numpy as np
 from scipy.sparse import coo_array
 
@@ -120,7 +121,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
     def _reset_residuals(self, acc, indexes, method="cython"):
         """
         Update residuals: set zero value if it is in indexes, else acc value is set.
-
+        If density is 100% and some gradients are zero, scipy will be removing those indexes even if no sparsity is applied.
+        Thus, to simulate 100% density, residuals must be always zero.
+        This means that a slightly sparse factor will may remove more values because the gradients are already zero. 
+        
         Parameters:
             acc (np.array): 2D dense matrix
             indexes (tuple(np.array, np.array)): a tuple with rows and cols
@@ -129,6 +133,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             residuals (np.array): which is the same as acc with the values in indexes set to zero.
         """
+
+        if self.density == 1:
+            return np.zeros_like(acc)
 
         if method == "cython":
             assert(self._has_canonical_format(indexes))
@@ -175,27 +182,15 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             setattr(layer, w_type, w)  
             return
         
-        if method == "like_sgd_from_dense_dw":
-            """"Use only for debugging purposes"""
-            dw = coo_u
-            self.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
-            if len(self.dw_original_shape) != 2:
-                dw = dw.reshape(self.dw_original_shape)
-            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
-            velocity = self.momentum * velocity + dw
-            w -= self.learning_rate * velocity 
-            setattr(layer, w_type, w)
-            setattr(layer, "velocity_%s" % w_type, velocity)
-            return
-
-        if method == "like_sgd_from_coo_u":
-            """"Use only for debugging purposes"""
+        if method == "like_sgd":
+            """Use only for debugging purposes"""
+            warnings.warn("This function should be used only in case of debugging for performance reasons.")
             dw = coo_u.toarray()
             if len(self.dw_original_shape) != 2:
                 dw = dw.reshape(self.dw_original_shape)
             velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
             velocity = self.momentum * velocity + dw
-            w -= velocity * self.nprocs
+            w -= velocity # Oktopk already computes acc with learning_rate
             setattr(layer, w_type, w)
             setattr(layer, "velocity_%s" % w_type, velocity)
             return
@@ -365,7 +360,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         
         coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
         coo_reduced_topk = self._reduce_topk(coo_topk, boundaries)
-        return coo_reduced_topk, coo_topk.nonzero()
+        return coo_reduced_topk, (coo_topk.row, coo_topk.col)
 
 
     def _balance_and_allgather(self, coo_reduced_topk, global_th):
@@ -394,7 +389,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         # 4. Allgatherv using recursive doubling
         coo_allgather_topk = self._allgather(coo_global_topk, input_format="coo")
-        return coo_allgather_topk, coo_global_topk.nonzero()
+        return coo_allgather_topk, (coo_global_topk.row, coo_global_topk.col) 
 
 
     def _has_canonical_format(self, indexes):
@@ -409,7 +404,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             has_canonical_format (boolean): True if indexes are in canonical format, False if not. 
         """
-
+        
+        warnings.warn("This function ('_has_canonical_format') should be used only in case of debugging for performance reasons.")
+        
         rows, cols = indexes
 
         if len(rows) == 0:
@@ -499,20 +496,20 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             topk (coo_array): A sparse 2D gradient matrix topk in COO.
         """
 
-        if input_format == "dense" and method == "cython":
+        if method == "cython" and input_format == "dense":
             topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
             return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
-        if input_format == "coo" and method == "cython":
+        if method == "cython" and input_format == "coo":
             topk, topk_indexes = top_threshold_selection_coo_cython(matrix.data, matrix.row, matrix.col, threshold)
             return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
-        if input_format == "dense" and method == "numpy":
+        if method == "numpy" and input_format == "dense":
             topk_indexes = np.where(np.abs(matrix) >= threshold)
             topk = matrix[topk_indexes]
             return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
 
-        if input_format == "coo" and method == "numpy":
+        if method == "numpy" and input_format == "coo":
             mask = np.abs(matrix.data) >= threshold
             topk = matrix.data[mask]
             topk_indexes = (matrix.row[mask], matrix.col[mask])
@@ -541,10 +538,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if method == "allreduce":
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
-            row_start = 0
+            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
             row_end = boundaries[self.rank]
-            if self.rank != 0:
-                row_start = boundaries[self.rank - 1]
             coo_region = all_reduced_csr[row_start:row_end].tocoo()
             coo_region.row += row_start
             return coo_region
@@ -589,11 +584,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Gathers data from all processes and concatenates it into a single array.
         
         Parameters:
-            local_data (numpy.ndarray or scipy.sparse.coo_array): The local data to be gathered.
+            local_data (numpy.ndarray or coo_array): The local data to be gathered.
             input_format (str): The format of the input data. Supported formats are "coo" for 
                                 coordinate format sparse matrices and "dense" for dense arrays.
         Returns:
-            gathered_data (numpy.ndarray or scipy.sparse.coo_array): The gathered global data in the specified format.
+            gathered_data (numpy.ndarray or coo_array): The gathered global data in the specified format.
         """
         if self.nprocs == 1:
             return local_data
@@ -602,8 +597,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             all_val = np.concatenate(self.comm.allgather(local_data.data))
             all_row = np.concatenate(self.comm.allgather(local_data.row))
             all_col = np.concatenate(self.comm.allgather(local_data.col))
-            coo_global_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape)
-            return coo_global_data
+            coo_gathered_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape, dtype=np.float32)
+            return coo_gathered_data
 
         if input_format == "dense":
             return np.concatenate(self.comm.allgather(local_data))
