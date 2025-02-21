@@ -34,7 +34,7 @@ from im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
 from max_pool_2d_nchw_cython import max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd_nchw_cython
 from max_pool_2d_nhwc_cython import max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython
 from oktopk_utils_cython import \
-    update_dense_weights_cython, update_sparsed_weights_cython, \
+    update_dense_weights_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython, \
     top_threshold_selection_cython, top_threshold_selection_coo_cython, \
     intersect_2d_indexes_cython, compute_dense_acc_cython, reset_residuals_cython
 from pointwise_conv_cython import pointwise_conv_cython

@@ -27,6 +27,7 @@ from pydtnn.cython_modules import \
     top_threshold_selection_cython, \
     top_threshold_selection_coo_cython, \
     update_sparsed_weights_cython, \
+    update_sparsed_weights_mv_cython, \
     reset_residuals_cython
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import OkTopk
@@ -149,7 +150,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     
-    def _update_weights(self, layer, w_type, w, coo_u, method="numpy_with_vel_and_momentum"):
+    def _update_weights(self, layer, w_type, w, coo_u, method="cython_with_vel_and_momentum"):
         """
         Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_type, w)
 
@@ -171,6 +172,17 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
             setattr(layer, w_type, w)  
+            return
+
+        if method == "cython_with_vel_and_momentum": 
+            if len(self.dw_original_shape) != 2:
+                w = w.reshape(w.shape[0], -1)
+            velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
+            w, velocity = update_sparsed_weights_mv_cython(w, coo_u.data, coo_u.row, coo_u.col, velocity, self.momentum)
+            if len(self.dw_original_shape) != 2:
+                w = w.reshape(self.dw_original_shape)
+            setattr(layer, w_type, w)  
+            setattr(layer, "velocity_%s" % w_type, velocity)
             return
 
         if method == "numpy": 

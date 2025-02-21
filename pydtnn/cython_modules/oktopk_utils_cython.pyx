@@ -176,10 +176,31 @@ def update_sparsed_weights_cython(np.ndarray[np.float32_t, ndim=2] w,
                                   np.ndarray[np.int32_t, ndim=1] cols_to_update):
 
 
-    cdef int idx, row, col
-    cdef int num_updates = grads_to_update.shape[0]
-
-    for idx in prange(num_updates, nogil=True):
-        w[rows_to_update[idx], cols_to_update[idx]] -= grads_to_update[idx]
+    cdef int i
+    
+    for i in prange(grads_to_update.shape[0], nogil=True):
+        w[rows_to_update[i], cols_to_update[i]] -= grads_to_update[i]
 
     return w
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def update_sparsed_weights_mv_cython(np.ndarray[np.float32_t, ndim=2] w, 
+                                     np.ndarray[np.float32_t, ndim=1] grads_to_update, 
+                                     np.ndarray[np.int32_t, ndim=1] rows_to_update, 
+                                     np.ndarray[np.int32_t, ndim=1] cols_to_update, 
+                                     np.ndarray[np.float32_t, ndim=2] velocity,
+                                     float momentum):
+
+    cdef int i, j
+
+    for i in prange(velocity.shape[0], nogil=True):
+        for j in range(velocity.shape[1]):
+            velocity[i, j] *= momentum
+
+    for i in prange(grads_to_update.shape[0], nogil=True):
+        velocity[rows_to_update[i], cols_to_update[i]] += grads_to_update[i]
+        w[rows_to_update[i], cols_to_update[i]] -= velocity[rows_to_update[i], cols_to_update[i]]
+
+    return w, velocity
