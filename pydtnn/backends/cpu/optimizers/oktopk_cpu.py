@@ -186,8 +186,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
-            velocity[coo_u.row, coo_u.col] += coo_u.data
             velocity *= self.momentum
+            velocity[coo_u.row, coo_u.col] += coo_u.data
             w[coo_u.row, coo_u.col] -= velocity[coo_u.row, coo_u.col]
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(self.dw_original_shape)
