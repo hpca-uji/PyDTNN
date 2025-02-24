@@ -619,9 +619,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return local_data
         
         if input_format == "coo":
-            all_val = np.concatenate(self.comm.allgather(local_data.data))
-            all_row = np.concatenate(self.comm.allgather(local_data.row))
-            all_col = np.concatenate(self.comm.allgather(local_data.col))
+            local_tuple = (local_data.data, local_data.row, local_data.col)
+            gathered = self.comm.allgather(local_tuple)
+            all_val = np.concatenate([t[0] for t in gathered])
+            all_row = np.concatenate([t[1] for t in gathered])
+            all_col = np.concatenate([t[2] for t in gathered])
             coo_gathered_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape, dtype=np.float32)
             return coo_gathered_data
 
