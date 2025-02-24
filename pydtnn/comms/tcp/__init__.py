@@ -4,8 +4,7 @@
 #
 # None
 
-# FIXME: Use file descriptor to wakeup selector insted of polling
-
+import socket
 import selectors
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,14 +16,24 @@ __all__ = (
 )
 
 
+# Sentinel objects
+END_COMM = b"\0"
+
+
 class Protocol(comms.Communication):
     """Shared base TCP implementation"""
-    _poll_interval = 1.0
 
     def __init__(self, addr: str, port: int) -> None:
         super().__init__(addr, port)
         self._selector = selectors.DefaultSelector()
         self._pool = ThreadPoolExecutor(max_workers=2)
+        self._notify_close, wait_close = socket.socketpair()
+        self._selector.register(wait_close, selectors.EVENT_READ, self._handle_close)
+
+    def _handle_close(self, sock: socket.socket, event) -> None:
+        """Handle close notification"""
+        sock.recv(len(END_COMM))
+        sock.close()
 
     def _submit(self, fn, /, *args, **kwargs):
         """Process in the pool with exception handeling"""
@@ -35,7 +44,7 @@ class Protocol(comms.Communication):
     def _handle_selector(self):
         """Handle selector loop"""
         while not self.closed:
-            for _ in self._pool.map(self._handle_selector_event, self._selector.select(self._poll_interval)):
+            for _ in self._pool.map(self._handle_selector_event, self._selector.select()):
                 pass
 
     def _handle_selector_event(self, event: tuple[selectors.SelectorKey, int]) -> None:
@@ -49,5 +58,7 @@ class Protocol(comms.Communication):
         if self.closed:
             return
         super().close()
+        self._notify_close.sendall(END_COMM)
+        self._notify_close.close()
         self._selector.close()
         self._pool.shutdown()
