@@ -40,8 +40,8 @@ import numpy as np
 
 
 def bool_lambda(x):
-    """Returns True if command line value is any of true, 1, or yes"""
-    return str(x).lower() in ['true', '1', 'yes']
+    """Returns True if command line value is a truthy value"""
+    return str(x).lower() in ['true', '1', 'yes', 'y', 't']
 
 
 def factor(x):
