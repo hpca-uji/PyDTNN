@@ -79,15 +79,15 @@ class LayerAndActivationBase(ABC):
         pass
 
     @abstractmethod
-    def reduce_weights_async(self):
+    def reduce_weights_async(self, gradient=True):
         pass
 
     @abstractmethod
-    def wait_allreduce_async(self):
+    def wait_allreduce_async(self, gradient=True):
         pass
 
     @abstractmethod
-    def reduce_weights_sync(self):
+    def reduce_weights_sync(self, gradient=True, comm=True):
         pass
 
     def show(self, attrs=""):

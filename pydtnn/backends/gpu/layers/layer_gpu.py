@@ -61,7 +61,7 @@ class LayerGPU(Layer, ABC):
         self.x = x  # Must be before super().initialize()
         super().initialize(prev_shape, need_dx)
 
-    def reduce_weights_async(self):
+    def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
             return
         self.reqs_allred = {}
@@ -73,10 +73,13 @@ class LayerGPU(Layer, ABC):
         #        self.stream_2.synchronize()
 
         for w_, dw_ in self.grad_vars.items():
+            dw_ = dw_ if gradient else w_
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
                 self.model.stream.synchronize()
+                if not gradient:
+                    dw /= self.model.nprocs
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                    stream=self.stream_2.handle)
@@ -112,14 +115,17 @@ class LayerGPU(Layer, ABC):
                     self.model.stream.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
+                if not gradient:
+                    dw_cpu /= self.model.nprocs
                 req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 self.reqs_allred[dw_] = req
 
-    def wait_allreduce_async(self):
+    def wait_allreduce_async(self, gradient=True):
         if not self.model.comm or self.model.enable_nccl:
             return
 
         for w_, dw_ in self.grad_vars.items():
+            dw_ = dw_ if gradient else w_
             self.reqs_allred[dw_].wait()
 
             # # Hierarchical mode NCCL + MPI
@@ -145,11 +151,12 @@ class LayerGPU(Layer, ABC):
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.ary.set_async(dw_cpu, self.stream_2)
 
-    def reduce_weights_sync(self):
+    def reduce_weights_sync(self, gradient=True, comm=True):
         if not self.model.comm:
             return
 
         for w_, dw_ in self.grad_vars.items():
+            dw_ = dw_ if gradient else w_
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
@@ -157,9 +164,14 @@ class LayerGPU(Layer, ABC):
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
-                                   nccl.RedOp.Sum, comm=self.model.nccl_comm,
-                                   stream=self.stream_2.handle)
+                if not gradient:
+                    dw /= self.model.nprocs
+                if comm:
+                    nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                                       nccl.RedOp.Sum, comm=self.model.nccl_comm,
+                                       stream=self.stream_2.handle)
+                else:
+                    dw *= self.model.nprocs
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -196,7 +208,12 @@ class LayerGPU(Layer, ABC):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                if not gradient:
+                    dw_cpu /= self.model.nprocs
+                if comm:
+                    self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                else:
+                    dw_cpu *= self.model.nprocs
 
                 if not self.model.gpudirect:
                     dw.ary.set_async(dw_cpu, self.stream_2)

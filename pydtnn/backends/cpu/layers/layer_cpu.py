@@ -35,29 +35,39 @@ class LayerCPU(Layer, ABC):
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
 
-    def reduce_weights_async(self):
+    def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
             return
         self.reqs_allred = {}
 
         for w_, dw_ in self.grad_vars.items():
+            dw_ = dw_ if gradient else w_
             dw = getattr(self, dw_)
+            if not gradient:
+                dw /= self.model.nprocs
             req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             self.reqs_allred[dw_] = req
 
-    def wait_allreduce_async(self):
+    def wait_allreduce_async(self, gradient=True):
         if not self.model.comm or self.model.enable_nccl:
             return
         for w_, dw_ in self.grad_vars.items():
+            dw_ = dw_ if gradient else w_
             self.reqs_allred[dw_].wait()
 
-    def reduce_weights_sync(self):
+    def reduce_weights_sync(self, gradient=True, comm=True):
         if not self.model.comm:
             return
         for w_, dw_ in self.grad_vars.items():
+            dw_ = dw_ if gradient else w_
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
             dw = getattr(self, dw_)
-            self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            if not gradient:
+                dw /= self.model.nprocs
+            if comm:
+                self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            else:
+                dw *= self.model.nprocs
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
