@@ -115,12 +115,12 @@ class Server:
             self.serve_util_finalize()
 
     def serve_util_finalize(self) -> None:
-        """Handle until clients call finalize"""
+        """Handle until finalized"""
         self._submit(self._handle_operations_responses)
         self._handle_requests()
 
     def _handle_requests(self) -> None:
-        """Handle requests forever"""
+        """Handle requests until finalized"""
 
         while not self._shutdown:
             message = self._comm.get()
@@ -206,7 +206,7 @@ class Server:
             self._submit(self._handle_operation, operation)
 
     def _handle_operations_responses(self) -> None:
-        """Handle responses forever"""
+        """Handle responses until finalized"""
         while not self._shutdown:
             # Wait for any response
             self._response_count.acquire()
