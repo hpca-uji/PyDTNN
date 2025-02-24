@@ -117,7 +117,7 @@ class Server(Protocol):
         super().put(obj, *peers)
         data = self._serialize(obj)
 
-        if not peers:
+        if not peers or len(peers) == len(self._requests):
             self._publish(topic="s2c", data=data)
         else:
             # TODO: Optimize peer groups
