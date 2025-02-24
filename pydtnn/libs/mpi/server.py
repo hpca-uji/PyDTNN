@@ -126,6 +126,7 @@ class Server:
             message = self._comm.get()
             request = message.obj
 
+            # Handle request
             match request:
                 case mpi_comm.StateRequest():
                     self._handle_state_request(message)
@@ -134,6 +135,7 @@ class Server:
                 case _:
                     raise RuntimeError(f"Unknown request type {request}")
 
+            # Finish if idle
             if self._size == 0:
                 break
 
@@ -178,7 +180,6 @@ class Server:
         # Syncronize clients when all ready
         if self._size == 0:
             self._comm.put(None)
-            self.shutdown()
 
     def _handle_operation_request(self, message: comms.Message[mpi_comm.OperationRequest]) -> None:
         """Handle an operation request"""
@@ -216,6 +217,7 @@ class Server:
                 self._response_count.acquire()
                 self._send_operation(operation)
 
+            # Finish if idle
             if self._size == 0:
                 break
 
@@ -311,8 +313,15 @@ def start_local_server() -> None:
     from threading import Thread
     pool = ThreadPoolExecutor(max_workers=mpi_comm.get_size())
     server = Server(pool)
-    server._comm  # ensure connection is setup
-    Thread(target=server.serve_util_finalize).start()
+
+    # Ensure connection is setup
+    server._comm
+
+    # Serve and finalize handler
+    def serve_oneshot():
+        server.serve_util_finalize()
+        server.shutdown()
+    Thread(target=serve_oneshot).start()
 
 
 def main(config: Namespace) -> None:
