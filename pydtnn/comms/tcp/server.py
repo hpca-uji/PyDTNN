@@ -41,7 +41,7 @@ class Server(Protocol):
         # TCP
         self._server = Connection(socket.create_server((self._addr, self._port), reuse_port=True))
         self._selector.register(self._server, selectors.EVENT_READ, self._new_connection)
-        self._submit(self._handle_selector)
+        self._start_loop()
 
     def _new_connection(self, connection: Connection, event) -> None:
         """Handle new incomming connections"""

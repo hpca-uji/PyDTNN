@@ -36,7 +36,7 @@ class Client(Protocol):
         self._connection = Connection(socket.create_connection((self._addr, self._port)))
         self._selector.register(self._connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
         self._syc()
-        self._submit(self._handle_selector)
+        self._start_loop()
 
     def _handle_connection(self, connection: Connection, event) -> None:
         """Handle connection states"""

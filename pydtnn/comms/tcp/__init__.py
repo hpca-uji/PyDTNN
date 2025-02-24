@@ -6,6 +6,7 @@
 
 import socket
 import selectors
+from threading import Thread
 from concurrent.futures import ThreadPoolExecutor
 
 from pydtnn import comms
@@ -26,9 +27,13 @@ class Protocol(comms.Communication):
     def __init__(self, addr: str, port: int) -> None:
         super().__init__(addr, port)
         self._selector = selectors.DefaultSelector()
-        self._pool = ThreadPoolExecutor(max_workers=2)
+        self._pool = ThreadPoolExecutor(max_workers=1)
         self._notify_close, wait_close = socket.socketpair()
         self._selector.register(wait_close, selectors.EVENT_READ, self._handle_close)
+
+    def _start_loop(self) -> None:
+        """Start connection handling loop"""
+        Thread(target=self._handle_selector).start()
 
     def _handle_close(self, sock: socket.socket, event) -> None:
         """Handle close notification"""
