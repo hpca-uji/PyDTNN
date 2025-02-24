@@ -96,6 +96,10 @@ packages with::
     $ pip install -r requirements_cuda_1.txt
     $ pip install -r requirements_cuda_2.txt
 
+Optionally, if you are going to use TCP, you should enable the protocol with::
+
+    $ export PYDTNN_COMM=tcp
+
 Optionally, if you are going to use gRPC, you should install the required Python
 packages, and enable the protocol with::
 
@@ -108,11 +112,6 @@ packages, and enable the protocol with::
 
     $ pip install -r requirements_mqtt.txt
     $ export PYDTNN_COMM=mqtt
-
-Alternative commuications also require and active server,
-you should launch one with::
-
-    $ python libs/mpi/server.py    # If MPI is going to be used
 
 Launcher options
 ----------------
