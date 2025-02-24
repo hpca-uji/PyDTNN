@@ -17,24 +17,10 @@ class Mode(enum.StrEnum):
 
 # Argument pasrser
 parser = ArgumentParser(prog="test_libs_mpi", description="MPI server-client test")
-parser.add_argument("mode", choices=list(Mode))
-parser.add_argument("--start-delay", type=float, default=3.0)
 
 
-def server(config: Namespace):
-    """Server mode"""
-    from pydtnn.libs.mpi.server import Server
-    from concurrent.futures import ThreadPoolExecutor
-
-    with ThreadPoolExecutor(max_workers=4) as pool:
-        with Server(pool) as server:
-            server.serve_forever()
-
-
-def client(config):
-    """Client mode"""
-    time.sleep(config.start_delay)
-
+def main(config: Namespace):
+    """Application entrypoint"""
     from pydtnn.libs.mpi import client as MPI
 
     comm = MPI.COMM_WORLD
@@ -57,14 +43,7 @@ def client(config):
     print(f"R{rank}: allreduce {res}/{ref}")
     assert res == ref, f"allreduce error; got {res}, expect {ref}"
 
-    comm.Disconnect()
-
-
-def main(config: Namespace):
-    """Application entrypoint"""
-    self = sys.modules[__name__]
-    handler = getattr(self, config.mode)
-    handler(config)
+    MPI.Finalize()
 
 
 if __name__ == "__main__":

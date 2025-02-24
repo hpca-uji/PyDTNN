@@ -9,6 +9,17 @@ from pydtnn import comms as _comms
 match _comms.PROTOCOL:
     case _comms.Protocol():
         from pydtnn.libs.mpi import client as _module
+        from pydtnn.libs.mpi import comm as _comm
+
+        # If requested, start a local server
+        if _comm.get_init():
+            if _comm.get_rank() == 0:
+                from pydtnn.libs.mpi.server import start_local_server as _start_local_server
+                _start_local_server()
+            else:
+                # Allow some time for server startup
+                from time import sleep as _sleep
+                _sleep(0.5)
 
     case _:
         from mpi4py import MPI as _module

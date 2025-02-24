@@ -23,6 +23,7 @@ from pydtnn.libs.mpi import comm as mpi_comm
 
 __all__ = (
     "Server",
+    "start_local_server"
 )
 
 
@@ -32,6 +33,7 @@ arg_parser = ArgumentParser(
     description="MPI server"
 )
 arg_parser.add_argument("-np", dest="size", type=int, default=4)
+arg_parser.add_argument("--oneshot", action="store_true")
 
 
 @dataclass(slots=True)
@@ -108,8 +110,17 @@ class Server:
             pass
 
     def serve_forever(self) -> None:
-        """Handle requests forever"""
+        """Handle until shutdown"""
+        while self._shutdown:
+            self.serve_util_finalize()
+
+    def serve_util_finalize(self) -> None:
+        """Handle until clients call finalize"""
         self._submit(self._handle_operations_responses)
+        self._handle_requests()
+
+    def _handle_requests(self) -> None:
+        """Handle requests forever"""
 
         while not self._shutdown:
             message = self._comm.get()
@@ -122,6 +133,9 @@ class Server:
                     self._handle_operation_request(message)
                 case _:
                     raise RuntimeError(f"Unknown request type {request}")
+
+            if self._size == 0:
+                break
 
     def _handle_state_request(self, message: comms.Message[mpi_comm.StateRequest]) -> None:
         """Handle an state request"""
@@ -164,6 +178,7 @@ class Server:
         # Syncronize clients when all ready
         if self._size == 0:
             self._comm.put(None)
+            self.shutdown()
 
     def _handle_operation_request(self, message: comms.Message[mpi_comm.OperationRequest]) -> None:
         """Handle an operation request"""
@@ -198,9 +213,11 @@ class Server:
 
             # Send and consume
             for operation in self._pop_operations_responded():
-                aquired = self._response_count.acquire(blocking=False)
-                assert aquired, "Response counter consumed but not the response objects"
+                self._response_count.acquire()
                 self._send_operation(operation)
+
+            if self._size == 0:
+                break
 
     def _pop_operations_responded(self) -> list[Operation]:
         """Get and remove responded operations from state"""
@@ -289,11 +306,23 @@ class Server:
         self._response_count.release()
 
 
+def start_local_server() -> None:
+    """Start a local background server"""
+    from threading import Thread
+    pool = ThreadPoolExecutor(max_workers=mpi_comm.get_size())
+    server = Server(pool)
+    server._comm  # ensure connection is setup
+    Thread(target=server.serve_util_finalize).start()
+
+
 def main(config: Namespace) -> None:
     """Application entrypoint"""
     with ThreadPoolExecutor(max_workers=config.size) as pool:
         with Server(pool) as server:
-            server.serve_forever()
+            if config.oneshot:
+                server.serve_util_finalize()
+            else:
+                server.serve_forever()
 
 
 if __name__ == "__main__":

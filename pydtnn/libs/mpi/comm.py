@@ -20,10 +20,11 @@ from intbitset import intbitset
 __all__ = (
     "Rank",
     "RankGroup",
-    "get_size",
-    "get_rank",
+    "get_init",
     "get_addr",
     "get_port",
+    "get_size",
+    "get_rank",
     "CommmunicationGroup",
     "ReduceOperation",
     "StateRequest",
@@ -41,16 +42,9 @@ type Rank = int
 type RankGroup = intbitset
 
 
-def get_size() -> int:
-    """Communication size"""
-    # NOTE: Lazily initialized, prevent module imports execution
-    return int(os.environ["OMPI_COMM_WORLD_SIZE"])
-
-
-def get_rank() -> Rank:
-    """Communication identifier"""
-    # NOTE: Lazily initialized, prevent module imports execution
-    return int(os.environ["OMPI_COMM_WORLD_RANK"])
+def get_init() -> bool:
+    """Should service auto initialize"""
+    return bool(os.environ.get("PYDTNN_MPI_ADDR") or True)
 
 
 def get_addr() -> str:
@@ -61,6 +55,18 @@ def get_addr() -> str:
 def get_port() -> int:
     """Service port"""
     return int(os.environ.get("PYDTNN_MPI_PORT") or 50000)
+
+
+def get_size() -> int:
+    """Communication size"""
+    # NOTE: Lazily initialized, prevent module imports execution
+    return int(os.environ["OMPI_COMM_WORLD_SIZE"])
+
+
+def get_rank() -> Rank:
+    """Communication identifier"""
+    # NOTE: Lazily initialized, prevent module imports execution
+    return int(os.environ["OMPI_COMM_WORLD_RANK"])
 
 
 @dataclass(slots=True, frozen=True)
@@ -104,8 +110,8 @@ class OperationRequest(abc.ABC):
         # NOTE: abc.abstractmethod, dataclass.__post_init__ combination not inferred by typecheker
         """Inizialize communication group"""
         comm = CommmunicationGroup(
-            src=intbitset(src),
-            dst=intbitset(dst),
+            src=intbitset(src),  # type: ignore (not inferred by typecheker)
+            dst=intbitset(dst),  # type: ignore (not inferred by typecheker)
         )
 
         # NOTE: Frozen dataclasess must use object.__setattr__ during __init__
