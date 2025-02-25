@@ -29,16 +29,14 @@ class OkTopk(Optimizer, ABC):
     SGD Ok-Topk Optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype=np.float32, \
+    def __init__(self, learning_rate=1e-2, momentum=0.9, dtype=np.float32, \
                  nprocs=1, comm=None, rank=0, tau=64, tau_prime=32, density=0.01, min_k_layer=10):
 
         super().__init__()
         self.learning_rate = learning_rate
         self.momentum = momentum
-        self.nesterov = nesterov
         self.nprocs = nprocs
         self.residuals = {} 
-        self.decay = decay
         self.dtype = dtype
         self.comm = comm
         self.rank = rank

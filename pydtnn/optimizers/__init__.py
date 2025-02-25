@@ -79,6 +79,7 @@ def get_optimizer(model):
                          dtype=model.dtype)
     elif model.optimizer_name == "oktopk":
         opt = _optimizer(learning_rate=model.learning_rate,
+                         momentum=model.momentum,
                          nprocs=model.nprocs,
                          dtype=model.dtype,
                          comm=model.comm,
