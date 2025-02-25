@@ -92,10 +92,10 @@ class Connection:
         """Get a message (possibly blocking)"""
         # Process recive request until a message is available
         while True:
-            self.recv()
             try:
                 data = self.get_nowait()
             except Empty:
+                self.recv()
                 continue
             else:
                 break
