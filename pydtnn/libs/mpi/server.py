@@ -310,6 +310,7 @@ class Server:
 
 def start_local_server() -> None:
     """Start a local background server"""
+    from time import sleep
     from threading import Thread
     pool = ThreadPoolExecutor(max_workers=mpi_comm.get_size())
     server = Server(pool)
@@ -320,6 +321,7 @@ def start_local_server() -> None:
     # Serve and finalize handler
     def serve_oneshot():
         server.serve_util_finalize()
+        sleep(0.5)  # Allow some time for client taredown
         server.shutdown()
     Thread(target=serve_oneshot).start()
 
