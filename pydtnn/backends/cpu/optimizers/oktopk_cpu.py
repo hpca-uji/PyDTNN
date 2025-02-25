@@ -175,6 +175,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return
 
         if method == "cython_with_vel_and_momentum": 
+            if self.momentum == 0:
+                warnings.warn("If momentum is 0 use 'cython' method, it produces the same output but it is faster")
+
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
@@ -195,6 +198,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return
 
         if method == "numpy_with_vel_and_momentum": 
+            if self.momentum == 0:
+                warnings.warn("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster")
+
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
             velocity = getattr(layer, "velocity_%s" % w_type, np.zeros_like(w, dtype=layer.model.dtype))
@@ -210,6 +216,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if method == "like_sgd":
             """Use only for debugging purposes"""
             warnings.warn("This function should be used only in case of debugging for performance reasons.")
+
             dw = coo_u.toarray()
             if len(self.dw_original_shape) != 2:
                 dw = dw.reshape(self.dw_original_shape)
