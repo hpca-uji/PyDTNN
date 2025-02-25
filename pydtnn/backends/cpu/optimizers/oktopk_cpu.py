@@ -345,16 +345,14 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if balanced:
             coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
-            all_coo_topk = self._allgather(coo_topk, input_format="coo")
-            all_coo_topk.sum_duplicates()
-
+            
             current_row = 0
             current_proc = 0
-            rows = all_coo_topk.row 
+            rows = coo_topk.row 
             topk_in_current_proc = 0
-            total_rows = all_coo_topk.shape[0]
+            total_rows = coo_topk.shape[0]
             boundaries = np.zeros(self.nprocs, dtype=np.int32)
-            topk_per_proc = all_coo_topk.count_nonzero() // self.nprocs
+            topk_per_proc = coo_topk.count_nonzero() // self.nprocs
             topk_per_row = np.zeros(total_rows, dtype=np.int32)
             np.add.at(topk_per_row, rows, 1)
 
@@ -370,7 +368,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                     boundaries[current_proc] = current_row 
                     current_proc += 1
             boundaries[self.nprocs - 1] = total_rows
-            return boundaries
+
+            global_boundaries = self.comm.allreduce(boundaries, op=MPI.SUM) // self.nprocs
+            
+            return global_boundaries
 
 
     def _split_and_reduce(self, acc, local_th, boundaries):
