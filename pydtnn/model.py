@@ -600,7 +600,6 @@ class Model:
         else:
             loss, dx = 0.0, self._zero_dx(y_targ)
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss)
-        dx *= self.rank_weight
 
         if self.blocking_mpi:
             # Blocking MPI
@@ -619,7 +618,7 @@ class Model:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                self.layers[i].reduce_weights_sync(gradient=True, comm=self.shared_gradient)
+                self.layers[i].reduce_weights_sync(gradient=True, comm=self.share_gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
@@ -637,7 +636,7 @@ class Model:
                 dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-            if self.shared_gradient:
+            if self.share_gradient:
                 for i in range(len(self.layers) - 1, 0, -1):
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
@@ -737,7 +736,7 @@ class Model:
             for x_batch, y_batch, batch_size in train_batch_generator:
                 batch_count += 1
                 tic = timer()
-                sync_weights = self.shared_weight_sync_freq > 0 and batch_count % self.shared_weight_sync_freq == 0
+                sync_weights = self.share_weight_freq > 0 and batch_count % self.share_weight_freq == 0
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_weights=sync_weights)
                 toc = timer()
 
@@ -802,11 +801,10 @@ class Model:
 
         y_pred = self.layers[-1].y
         if current_batch_size > 0:
-            loss, dx = self.loss_func(y_pred, y_targ, self.batch_size)
+            loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
         else:
-            loss, dx = 0.0, self._zero_dx(y_targ)
+            loss = 0.0
         self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss)
-        dx *= self.rank_weight
         return self.total_metrics
 
     def evaluate(self, x_test, y_test, bar_width=110):

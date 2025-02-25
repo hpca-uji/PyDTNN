@@ -47,8 +47,11 @@ class ActivationCPU(Activation, ABC):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             dw = getattr(self, dw_)
-            if not gradient:
+            if gradient:
+                pass  # done at loss function
+            else:
                 dw /= self.model.nprocs
+            dw *= self.model.rank_weight
             req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             self.reqs_allred[dw_] = req
 
@@ -68,8 +71,11 @@ class ActivationCPU(Activation, ABC):
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
             dw = getattr(self, dw_)
-            if not gradient:
+            if gradient:
+                pass  # done at loss function
+            else:
                 dw /= self.model.nprocs
+            dw *= self.model.rank_weight
             if comm:
                 self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             else:

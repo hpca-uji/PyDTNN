@@ -102,12 +102,12 @@ def _get_comm_protocol():
         return str(PROTOCOL)
 
 
-def _get_mpi_comm_server():
+def _get_mpi_server():
     from pydtnn.libs.mpi.comm import get_addr
     return get_addr()
 
 
-def _get_mpi_comm_port():
+def _get_mpi_port():
     from pydtnn.libs.mpi.comm import get_port
     return get_port()
 
@@ -123,8 +123,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         result.threads_per_process = _get_threads_per_process()
         result.gpus_per_node = _get_gpus_per_node()
         result.comm_protocol = _get_comm_protocol()
-        result.mpi_comm_server = _get_mpi_comm_server()
-        result.mpi_comm_port = _get_mpi_comm_port()
+        result.mpi_server = _get_mpi_server()
+        result.mpi_port = _get_mpi_port()
         # Populate self.lines (for self.print_args())
         if len(self.lines) == 0:
             lines = []
@@ -172,8 +172,8 @@ parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
 parser.add_argument('--weights_and_bias_filename', type=str, default=None)
 parser.add_argument('--history_file', type=str, default=None)
 parser.add_argument('--shared_storage', default=True, type=bool_lambda)
-parser.add_argument('--shared_gradient', default=True, type=bool_lambda)
-parser.add_argument('--shared_weight_sync_freq', type=int, default=0)
+parser.add_argument('--share_gradient', default=True, type=bool_lambda)
+parser.add_argument('--share_weight_freq', type=int, default=0)
 parser.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
 parser.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
 parser.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
@@ -281,5 +281,5 @@ _re_group.add_argument('--gpus_per_node', type=int, default=-1, help=argparse.SU
 # Add Communication options (not actual parameters)
 _cm_group = parser.add_argument_group("Communication options")
 _cm_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
-_cm_group.add_argument('--mpi_comm_server', type=str, default="", help=argparse.SUPPRESS)
-_cm_group.add_argument('--mpi_comm_port', type=int, default=-1, help=argparse.SUPPRESS)
+_cm_group.add_argument('--mpi_server', type=str, default="", help=argparse.SUPPRESS)
+_cm_group.add_argument('--mpi_port', type=int, default=-1, help=argparse.SUPPRESS)
