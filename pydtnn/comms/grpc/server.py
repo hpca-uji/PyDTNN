@@ -32,8 +32,7 @@ class Server(Protocol):
         # State
         self._lock = threading.Lock()
         self._peers = bidict[uuid.UUID, str]()
-        self._request_count = threading.Semaphore(value=0)
-        self._response_count = threading.Semaphore(value=0)
+        self._request_queue = SimpleQueue[uuid.UUID]()
         self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
         self._responses = dict[uuid.UUID, SimpleQueue[bytes]]()
 
@@ -82,13 +81,18 @@ class Server(Protocol):
         with self._lock:
             del self._peers[peer]
             requests = self._requests.pop(peer)
-            responses = self._responses.pop(peer)
+            del self._responses[peer]
 
-        # Drain queues and update counts
-        for _ in range(requests.qsize()):
-            self._request_count.acquire()
-        for _ in range(responses.qsize()):
-            self._response_count.acquire()
+        # Drain queue
+        while requests:
+            try:
+                request_peer = self._request_queue.get_nowait()
+            except Empty:
+                break
+            if request_peer == peer:
+                requests.get_nowait()
+            else:
+                self._request_queue.put(request_peer)
 
         return grpc_pb2.Message()
 
@@ -99,7 +103,7 @@ class Server(Protocol):
         data = message.data
 
         self._requests[peer].put(data)
-        self._request_count.release()
+        self._request_queue.put(peer)
 
         return grpc_pb2.Message()
 
@@ -108,20 +112,17 @@ class Server(Protocol):
         # NOTE: communication thead
         peer = self._peer(context)
 
-        # Try reduce notifications
-        if self._response_count.acquire(blocking=False):
+        # Try reduce responses
+        try:
+            data = self._responses[peer].get_nowait()
 
-            # Try reduce responses
-            try:
-                data = self._responses[peer].get_nowait()
+        # Response not found, revet notification and abort
+        except Empty:
+            pass
 
-            # Response not found, revet notification and abort
-            except Empty:
-                self._response_count.release()
-
-            # Response found, respond
-            else:
-                return grpc_pb2.Message(data=data)
+        # Response found, respond
+        else:
+            return grpc_pb2.Message(data=data)
 
         # Signal "no response, retry later"
         max_backoff = self._size
@@ -133,35 +134,24 @@ class Server(Protocol):
         """Get data from a client"""
         # NOTE: peers could be missing or disconnect creating infinite wait, which is an expected state during startup
         super().get(*peers)
+        assert len(peers) == 0, "Server can not get from specific client"
 
         while True:
             # Wait for a request
-            # FIXME: if peers is defined and other peers have messages this is a busy-wait
-            self._request_count.acquire()
+            peer = self._request_queue.get()
 
-            # Acquire peers
-            if peers:
-                _peers = peers
-            else:
-                with self._lock:
-                    _peers = tuple(self._requests)
-
-            # Search for a request
-            for peer in _peers:
-                try:
-                    data = self._requests[peer].get_nowait()
-                except (KeyError, Empty):
-                    continue
-                else:
-                    break
+            # Get request
+            try:
+                data = self._requests[peer].get_nowait()
 
             # Request not found, revert notification and retry
-            else:
-                self._request_count.release()
+            except (KeyError, Empty):
+                self._request_queue.put(peer)
                 continue
 
             # Request found, continue
-            break
+            else:
+                break
 
         # Exit signaled
         if data == END_COMM:
@@ -182,7 +172,6 @@ class Server(Protocol):
 
         for peer in peers:
             self._responses[peer].put(data)
-            self._response_count.release()
 
     def close(self) -> None:
         """Close the server"""

@@ -28,7 +28,7 @@ class Server(Protocol):
 
         # State
         self._lock = threading.Lock()
-        self._request_count = threading.Semaphore(value=0)
+        self._request_queue = SimpleQueue[uuid.UUID]()
         self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
 
         # MQTT
@@ -58,9 +58,16 @@ class Server(Protocol):
         with self._lock:
             requests = self._requests.pop(peer)
 
-        # Drain queues and update counts
-        for _ in range(requests.qsize()):
-            self._request_count.acquire()
+        # Drain queue
+        while requests:
+            try:
+                request_peer = self._request_queue.get_nowait()
+            except Empty:
+                break
+            if request_peer == peer:
+                requests.get_nowait()
+            else:
+                self._request_queue.put(request_peer)
 
     def _c2s(self, client: mqtt_client.Client, userdata, mqtt_message: mqtt_client.MQTTMessage) -> None:
         """Client message handler"""
@@ -69,41 +76,30 @@ class Server(Protocol):
         data = mqtt_message.payload
 
         self._requests[peer].put(data)
-        self._request_count.release()
+        self._request_queue.put(peer)
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
         # NOTE: peers could be missing or disconnect creating infinite wait, which is an expected state during startup
         super().get(*peers)
+        assert len(peers) == 0, "Server can not get from specific client"
 
         while True:
             # Wait for a request
-            # FIXME: if peers is defined and other peers have messages this is a busy-wait
-            self._request_count.acquire()
+            peer = self._request_queue.get()
 
-            # Acquire peers
-            if peers:
-                _peers = peers
-            else:
-                with self._lock:
-                    _peers = tuple(self._requests)
-
-            # Search for a request
-            for peer in _peers:
-                try:
-                    data = self._requests[peer].get_nowait()
-                except (KeyError, Empty):
-                    continue
-                else:
-                    break
+            # Get request
+            try:
+                data = self._requests[peer].get_nowait()
 
             # Request not found, revert notification and retry
-            else:
-                self._request_count.release()
+            except (KeyError, Empty):
+                self._request_queue.put(peer)
                 continue
 
             # Request found, continue
-            break
+            else:
+                break
 
         # Exit signaled
         if data == END_COMM:

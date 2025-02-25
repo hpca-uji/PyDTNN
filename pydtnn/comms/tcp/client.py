@@ -34,7 +34,7 @@ class Client(Protocol):
 
         # TCP
         self._connection = Connection(socket.create_connection((self._addr, self._port)))
-        self._selector.register(self._connection, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
+        self._selector.register(self._connection, selectors.EVENT_READ, self._handle_connection)
         self._syc()
         self._start_loop()
 
@@ -76,6 +76,8 @@ class Client(Protocol):
         if self.closed:
             return
 
+        self._modify_selector(self._connection, selectors.EVENT_READ)
+
         while True:
             try:
                 data = self._requests.get_nowait()
@@ -95,6 +97,7 @@ class Client(Protocol):
         assert len(peers) == 0, "Client can not publish to another client"
         data = self._serialize(obj)
         self._requests.put(data)
+        self._modify_selector(self._connection, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get server data"""

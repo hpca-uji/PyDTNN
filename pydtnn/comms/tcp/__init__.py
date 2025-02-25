@@ -31,39 +31,44 @@ class Protocol(comms.Communication):
         self._pool = ThreadPoolExecutor(max_workers=1)
         self._selector_notifier = socket.socketpair()
         self._selector.register(self._selector_notifier[0], selectors.EVENT_READ, self._handle_selector_notify)
+        self._selector_thread = Thread(target=self._handle_selector)
 
     def _submit(self, fn, /, *args, **kwargs):
         """Process in the pool with exception handeling"""
-        try:
-            future = self._pool.submit(fn, *args, **kwargs)
-        except RuntimeError:
-            return None
+        future = self._pool.submit(fn, *args, **kwargs)
         future.add_done_callback(lambda future: future.result())
         return future
 
     def _start_loop(self) -> None:
         """Start connection handling loop"""
-        Thread(target=self._handle_selector).start()
+        self._selector_thread.start()
 
     def _notify_selector(self) -> None:
         """Interrupt selector loop"""
-        self._selector_notifier[1].sendall(NOTIFY_SELECT)
+        self._selector_notifier[1].send(NOTIFY_SELECT)
+
+    def _modify_selector(self, fileobj, events) -> None:
+        """Modify registered events"""
+        key = self._selector.get_key(fileobj)
+        self._selector.modify(fileobj, events, key.data)
+        self._notify_selector()
 
     def _handle_selector_notify(self, sock: socket.socket, event) -> None:
         """Handle selector notification"""
-        sock.recv(len(NOTIFY_SELECT))
+        self._selector_notifier[0].recv(len(NOTIFY_SELECT))
 
     def _handle_selector(self):
         """Handle selector loop"""
         while not self.closed:
-            futures.wait(filter(None, [
-                self._submit(key.data, key.fileobj, mask)
-                for key, mask in self._selector.select()
-            ]))
-
-        self._selector_notifier[0].close()
-        self._selector_notifier[1].close()
-        self._selector.close()
+            pending = []
+            for key, mask in self._selector.select():
+                try:
+                    future = self._submit(key.data, key.fileobj, mask)
+                except RuntimeError:
+                    break
+                else:
+                    pending.append(future)
+            futures.wait(pending)
 
     def close(self) -> None:
         """Close the communication"""
@@ -71,4 +76,8 @@ class Protocol(comms.Communication):
             return
         super().close()
         self._notify_selector()
+        self._selector_notifier[1].close()
+        self._selector_thread.join()
+        self._selector_notifier[0].close()
+        self._selector.close()
         self._pool.shutdown()
