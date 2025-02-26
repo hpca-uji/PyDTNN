@@ -215,7 +215,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if method == "like_sgd":
             """Use only for debugging purposes"""
-            warnings.warn("This function should be used only in case of debugging for performance reasons.")
+            warnings.warn("This method should be used only in case of debugging for performance reasons.")
 
             dw = coo_u.toarray()
             if len(self.dw_original_shape) != 2:
@@ -387,32 +387,32 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         Returns:
             out (tuple with two elements:):
-                - reduced_topk (coo_array): The reduced top-k gradient values in COO format.
+                - coo_reduced_region_topk (coo_array): The reduced top-k gradient values in COO format.
                 - local_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values selected locally.
         """
         
         coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
-        coo_reduced_topk = self._reduce_topk(coo_topk, boundaries)
-        return coo_reduced_topk, (coo_topk.row, coo_topk.col)
+        coo_reduced_region_topk = self._reduce_topk(coo_topk, boundaries)
+        return coo_reduced_region_topk, (coo_topk.row, coo_topk.col)
 
 
-    def _balance_and_allgather(self, coo_reduced_topk, global_th):
+    def _balance_and_allgather(self, coo_reduced_region_topk, global_th):
         """
         Second main phase of ok_sparse_allreduce.  
-        Performs the allgather of the coo_reduced_topk values among workers.
+        Performs the allgather of the coo_reduced_region_topk values among workers.
 
         Parameters:
-            coo_reduced_topk (coo_array): a 2D sparse gradient matrix.
+            coo_reduced_region_topk (coo_array): a 2D sparse gradient matrix.
             global_th (float): the global threshold to perfrom top selection.
 
         Returns:
             out (tuple with two elements:):
                 - coo_allgather_topk (coo_array): A 2D sparse gradient matrix with the global top-k selection.
-                - global_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values reduced.
+                - reduced_region_global_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values region reduced.
         """
 
         # 1. Global topk selection
-        coo_global_topk = self._top_threshold_selection(coo_reduced_topk, global_th, input_format="coo")
+        coo_reduced_region_global_topk = self._top_threshold_selection(coo_reduced_region_topk, global_th, input_format="coo")
 
         # 2. Data packaging
         # TODO
@@ -421,8 +421,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        coo_allgather_topk = self._allgather(coo_global_topk, input_format="coo")
-        return coo_allgather_topk, (coo_global_topk.row, coo_global_topk.col) 
+        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk, input_format="coo")
+        return coo_allgather_topk, (coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col) 
 
 
     def _has_canonical_format(self, indexes):
@@ -560,7 +560,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...].
 
         Warning:
-            Method 'reduce_region' does not provide the same exact accuracy as 'reduce_region_blocking' or 'allreduce'.
+            Method 'reduce_region' does not provide the same exact accuracy as 'reduce_region_blocking' or 'allreduce_then_slice'.
 
         Returns:
             coo_reduced_region (coo_array): The reduced topk values in COO format.
@@ -569,13 +569,13 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return coo_topk
 
-        if method == "allreduce":
+        if method == "allreduce_then_slice":
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
             row_end = boundaries[self.rank]
-            coo_region = all_reduced_csr[row_start:row_end].tocoo()
-            coo_region.row += row_start
-            return coo_region
+            coo_reduced_region = all_reduced_csr[row_start:row_end].tocoo()
+            coo_reduced_region.row += row_start
+            return coo_reduced_region
 
         if method == "reduce_region_blocking":
             row_start = 0
