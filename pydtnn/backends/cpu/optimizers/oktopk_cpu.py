@@ -258,13 +258,13 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if t % space_repartition_t == 0:
             self.boundaries = self._space_repartition(acc, self.local_th)
 
-        coo_reduced_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
+        coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
-            coo_all_reduced_topk = self._allgather(coo_reduced_topk, input_format="coo")
+            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk, input_format="coo")
             self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
-        coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_topk, self.global_th)
+        coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_region_topk, self.global_th)
         indexes = self._intersect_indexes(local_topk_indexes, global_topk_indexes)
         return coo_u, indexes
 
