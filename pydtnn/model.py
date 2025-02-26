@@ -665,7 +665,7 @@ class Model:
                 for i in range(len(self.layers) - 1, 0, -1):
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                    self.layers[i].reduce_weights_async(gradient=False, comm=True)
+                    self.layers[i].reduce_weights_async(gradient=False)
                     self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
                 # Weight update (WU)
