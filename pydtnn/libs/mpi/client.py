@@ -166,7 +166,7 @@ class Intracomm:
 
     def barrier(self) -> None:
         """Barrier synchronization."""
-        self.allgather(None)
+        self.allreduce(0)
 
     def allgather(self, obj):
         """Gather to All."""
