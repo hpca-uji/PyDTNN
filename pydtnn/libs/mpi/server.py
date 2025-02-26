@@ -7,6 +7,7 @@
 # TODO: Revise sending lock usage, could only lock per commuincaiton group
 
 import uuid
+import typing
 import functools
 import threading
 import dataclasses
@@ -41,7 +42,7 @@ class Operation[T: mpi_comm.OperationRequest]:
     """MPI Operation"""
     comm: mpi_comm.CommmunicationGroup
     requests: dict[mpi_comm.Rank, T] = dataclasses.field(default_factory=dict)
-    responses: list | None = None
+    response: typing.Any | None = None
 
     @property
     def context(self) -> T:
@@ -201,6 +202,7 @@ class Server:
                     break
             else:
                 operation = Operation(comm=request.comm)
+                # Notify dsts of op init
                 put = operation.put(rank, request)
                 assert put, "Failed to put on a empty operation"
                 queue.append(operation)
@@ -232,7 +234,7 @@ class Server:
         with self._state_lock:
             for group, queue in list(self._state.items()):
                 for operation in list(queue):
-                    if operation.responses is not None:
+                    if operation.response is not None:
                         queue.remove(operation)
                         operations.append(operation)
                     else:
@@ -245,14 +247,13 @@ class Server:
 
     def _send_operation(self, operation: Operation) -> None:
         """Send a operation response to the clients"""
-        assert operation.responses is not None, f"Sending in progress operation {operation}"
+        assert operation.response is not None, f"Sending in progress operation {operation}"
 
-        for obj in operation.responses:
-            response = mpi_comm.OperationResponse(dst=operation.comm.dst, obj=obj)
-            self._comm.put(response, *(
-                self._peers[rank]
-                for rank in operation.comm.dst
-            ))
+        response = mpi_comm.OperationResponse(dst=operation.comm.dst, obj=operation.response)
+        self._comm.put(response, *(
+            self._peers[rank]
+            for rank in operation.comm.dst
+        ))
 
     def _handle_operation(self, operation: Operation[mpi_comm.OperationRequest]) -> None:
         """Dispatch operation to relevant handler"""
@@ -276,7 +277,7 @@ class Server:
     def _handle_broadcast(self, operation: Operation[mpi_comm.BroadcastRequest]) -> None:
         """Broadcast."""
         response = operation.context.obj
-        operation.responses = [response]
+        operation.response = response
 
     def _handle_allgather(self, operation: Operation[mpi_comm.AllGatherRequest]) -> None:
         """Gather to All."""
@@ -285,7 +286,7 @@ class Server:
             key=lambda rank_request: rank_request[0]
         )
 
-        operation.responses = [
+        operation.response = [
             request.obj
             for _, request in rank_requests
         ]
@@ -293,12 +294,12 @@ class Server:
     def _handle_allreduce(self, operation: Operation[mpi_comm.AllReduceRequest]) -> None:
         """Reduce to All."""
         response = sum(msg.obj for msg in operation.requests.values())
-        operation.responses = [response]
+        operation.response = response
 
     def _handle_allphasedreduce(self, operation: Operation[mpi_comm.AllReduceRequest]) -> None:
         """Reduce to All (with steps)."""
         response = sum(msg.obj for msg in operation.requests.values())
-        operation.responses = [response]
+        operation.response = response
 
     def shutdown(self) -> None:
         """Close the server"""

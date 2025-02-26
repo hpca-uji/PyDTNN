@@ -172,7 +172,7 @@ class Intracomm:
         """Gather to All."""
         request = mpi_comm.AllGatherRequest(rank=self.rank, size=self.size, obj=obj)
         self._put(request)
-        return list(self._get(request) for _ in range(self.size))
+        return self._get(request)
 
     def allreduce(self, obj, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM):
         """Reduce to All."""
