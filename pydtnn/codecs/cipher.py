@@ -29,10 +29,10 @@ class Ciphertext[T]:
 class Codec:
     """Ciphertext codec"""
 
-    def encode(self, obj) -> Ciphertext:
+    def encode[T](self, obj: T) -> Ciphertext[T]:
         """Encode object to ciphertext"""
         return Ciphertext(obj)
 
-    def decode(self, obj: Ciphertext):
+    def decode[T](self, obj: Ciphertext[T]) -> T:
         """Decode cypertext to object"""
         return obj.plain
