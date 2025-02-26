@@ -43,6 +43,10 @@ class Operation[T: mpi_comm.OperationRequest]:
     requests: dict[mpi_comm.Rank, T] = dataclasses.field(default_factory=dict)
     responses: list | None = None
 
+    @property
+    def context(self) -> T:
+        return next(iter(self.requests.values()))
+
     def put(self, rank: mpi_comm.Rank, request: T) -> bool:
         return request is self.requests.setdefault(rank, request)
 
@@ -252,7 +256,7 @@ class Server:
 
     def _handle_operation(self, operation: Operation[mpi_comm.OperationRequest]) -> None:
         """Dispatch operation to relevant handler"""
-        context = next(iter(operation.requests.values()))
+        context = operation.context
 
         match context:
             case mpi_comm.BroadcastRequest():
@@ -271,7 +275,7 @@ class Server:
 
     def _handle_broadcast(self, operation: Operation[mpi_comm.BroadcastRequest]) -> None:
         """Broadcast."""
-        response = operation.requests[0].obj
+        response = operation.context.obj
         operation.responses = [response]
 
     def _handle_allgather(self, operation: Operation[mpi_comm.AllGatherRequest]) -> None:
@@ -310,10 +314,13 @@ class Server:
 
 def start_local_server() -> None:
     """Start a local background server"""
+    import atexit
     from time import sleep
     from threading import Thread
     pool = ThreadPoolExecutor(max_workers=mpi_comm.get_size())
     server = Server(pool)
+    atexit.register(server.shutdown)
+    atexit.register(pool.shutdown)
 
     # Ensure connection is setup
     server._comm
