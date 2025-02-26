@@ -588,6 +588,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             coo_reduced_region = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
                 coo_reduced_region.row += boundaries[self.rank - 1]
+            # Another coo_array conversion is needed to set shape as dw_2d_shape 
+            coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
 
         if method == "reduce_region":
@@ -606,6 +608,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 coo_reduced_region = coo_array(recv_bufs[self.rank], dtype=np.float32)
                 if self.rank != 0:
                     coo_reduced_region.row += boundaries[self.rank - 1]
+                # Another coo_array conversion is needed to set shape as dw_2d_shape 
+                coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
                 return coo_reduced_region
             return coo_array((np.array([]), (np.array([]), np.array([]))), shape=self.dw_2d_shape, dtype=np.float32)
 
