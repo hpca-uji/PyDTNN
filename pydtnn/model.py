@@ -35,6 +35,7 @@ import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 from . import losses, metrics
 from . import utils
+from . import codecs
 from .datasets import CustomDataset, get_dataset
 from .lr_schedulers import get_lr_schedulers
 from .optimizers import get_optimizer
@@ -307,8 +308,7 @@ class Model:
             self.comm.allgather(self.dataset.test_nsamples) if self.comm else [self.dataset.test_nsamples]
         ]
         # Prefered logger rank
-        sampling_method = self.kwargs["sampling_method"]
-        match sampling_method:
+        match self.sampling_method:
             case "normal":
                 self.logger_rank = max(enumerate(self.comm_nsamples[0]), key=lambda item: item[1])[0]
             case "over":
@@ -316,10 +316,9 @@ class Model:
             case "under":
                 self.logger_rank = min(enumerate(self.comm_nsamples[0]), key=lambda item: item[1])[0]
             case _:
-                raise SystemExit(f"Sampling option '{sampling_method}' not recognized.")
+                raise SystemExit(f"Sampling option '{self.sampling_method}' not recognized.")
         # Process weights
-        proc_weight = self.kwargs["proc_weight"]
-        match proc_weight:
+        match self.proc_weight:
             case "equal":
                 self.rank_weight = 1.0
             case "mean":
@@ -332,7 +331,15 @@ class Model:
                 max_comm_nsamples = max(self.comm_nsamples[0])
                 self.rank_weight = self.dataset.train_nsamples / max_comm_nsamples
             case _:
-                raise SystemExit(f"Process weight option '{proc_weight}' not recognized.")
+                raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+        # Communications codec
+        match self.comm_codec:
+            case "plain":
+                self.comm_codec = codecs.ident.Codec()
+            case "fhe":
+                self.comm_codec = codecs.fhe.Codec()
+            case _:
+                raise SystemExit(f"Communication codec '{self.comm_codec}' not recognized.")
 
     @property
     def dataset_raw_path(self):

@@ -158,6 +158,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
 
 # Parser and the supported arguments with their default values
+# (argparse.SUPPRESS is used to avoid showing them on the message)
 parser = PydtnnArgumentParser(description=_desc, epilog=_epilogue)
 
 # Model
@@ -264,7 +265,7 @@ _tr_group.add_argument('--tracer_pmlib_port', type=int, default=6526)
 _tr_group.add_argument('--tracer_pmlib_device', type=str, default="")
 _tr_group.add_argument('--profile', type=bool_lambda, default=False)
 
-# Performance modeling options (argparse.SUPPRESS is used to avoid showing them on the message)
+# Performance modeling options
 _pm_group = parser.add_argument_group("Performance modeling options")
 _pm_group.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
 _pm_group.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)
@@ -272,14 +273,15 @@ _pm_group.add_argument('--network_bw', type=float, default=1e9, help=argparse.SU
 _pm_group.add_argument('--network_lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
 _pm_group.add_argument('--network_alg', type=str, default="vdg", help=argparse.SUPPRESS)
 
-# Add Runtime parallel execution options (not actual parameters)
+# Add Runtime parallel execution options
 _re_group = parser.add_argument_group("Runtime parallel execution options")
 _re_group.add_argument('--mpi_processes', type=int, default=-1, help=argparse.SUPPRESS)
 _re_group.add_argument('--threads_per_process', type=int, default=-1, help=argparse.SUPPRESS)
 _re_group.add_argument('--gpus_per_node', type=int, default=-1, help=argparse.SUPPRESS)
 
-# Add Communication options (not actual parameters)
+# Add Communication options
 _cm_group = parser.add_argument_group("Communication options")
+_cm_group.add_argument('--comm_codec', type=str, default="plain")
 _cm_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
 _cm_group.add_argument('--mpi_server', type=str, default="", help=argparse.SUPPRESS)
 _cm_group.add_argument('--mpi_port', type=int, default=-1, help=argparse.SUPPRESS)
