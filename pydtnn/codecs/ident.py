@@ -1,4 +1,4 @@
-"""Identidy codec"""
+"""Identity codec"""
 
 
 __all__ = (
