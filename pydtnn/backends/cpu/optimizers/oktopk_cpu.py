@@ -551,7 +551,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="reduce_region"):
+    def _reduce_topk(self, coo_topk, boundaries, method="collective_reduce_region"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -569,7 +569,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return coo_topk
 
-        if method == "allreduce_then_slice":
+        if method == "collective_allreduce_then_slice":
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
             row_end = boundaries[self.rank]
@@ -577,7 +577,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             coo_reduced_region.row += row_start
             return coo_reduced_region
 
-        if method == "reduce_region_blocking":
+        if method == "collective_reduce_region_blocking":
             row_start = 0
             csr_topk = coo_topk.tocsr()
             reduced_regions_csr = [None] * self.nprocs
@@ -592,7 +592,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
 
-        if method == "reduce_region":
+        if method == "collective_reduce_region":
             """Warning: Do not remove send_bufs list, because reusing the same buffer for sending may produce different outputs for Ireduce"""
             row_start = 0
             requests = [None] * self.nprocs
@@ -613,6 +613,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             # Another coo_array conversion is needed to set shape as dw_2d_shape 
             coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
+
+        if method == "p2p_reduce_region":
+            # TODO:
+            pass
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
