@@ -593,15 +593,18 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return coo_reduced_region
 
         if method == "reduce_region":
+            """Warning: Do not remove send_bufs list, because reusing the same buffer for sending may produce different outputs for Ireduce"""
             row_start = 0
             requests = [None] * self.nprocs
             recv_bufs = [None] * self.nprocs
+            send_bufs = [None] * self.nprocs
             csr_topk = coo_topk.tocsr()
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                send_buf = csr_topk[row_start:row_end].toarray()
-                recv_bufs[region] = np.zeros_like(send_buf) if self.rank == region else None
-                requests[region] = self.comm.Ireduce(send_buf, recv_bufs[region], op=MPI.SUM, root=region)
+                # TODO: Send in sparse format!!
+                send_bufs[region] = csr_topk[row_start:row_end].toarray()
+                recv_bufs[region] = np.zeros_like(send_bufs[region]) if self.rank == region else None
+                requests[region] = self.comm.Ireduce(send_bufs[region], recv_bufs[region], op=MPI.SUM, root=region)
                 row_start = row_end
             MPI.Request.Waitall(requests)
             coo_reduced_region = coo_array(recv_bufs[self.rank], dtype=np.float32)
