@@ -150,7 +150,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
     
-    def _update_weights(self, layer, w_type, w, coo_u, method="cython_with_vel_and_momentum"):
+    def _update_weights(self, layer, w_type, w, coo_u, method="cython"):
         """
         Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_type, w)
 
@@ -261,7 +261,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
-            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk, input_format="coo")
+            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk)
             self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
         coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_region_topk, self.global_th)
@@ -421,7 +421,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk, input_format="coo")
+        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
         return coo_allgather_topk, (coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col) 
 
 
@@ -622,7 +622,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 sending_tuple = (coo_region_topk.data, coo_region_topk.row, coo_region_topk.col)
                 gathered[region] = self.comm.gather(sending_tuple, root=region) # TODO: Lo ideal puede que sea communicación no bloqueante...
                 row_start = row_end
-
             all_val = np.concatenate([t[0] for t in gathered[self.rank]])
             all_row = np.concatenate([t[1] for t in gathered[self.rank]])
             all_col = np.concatenate([t[2] for t in gathered[self.rank]])
@@ -635,13 +634,13 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _allgather(self, local_data, input_format=None):
+    def _allgather(self, local_data, method="coo"):
         """
         Gathers data from all processes and concatenates it into a single array.
         
         Parameters:
             local_data (numpy.ndarray or coo_array): The local data to be gathered.
-            input_format (str): The format of the input data. Supported formats are "coo" for 
+            method (str): The format of the input data. Supported formats are "coo" for 
                                 coordinate format sparse matrices and "dense" for dense arrays.
         Returns:
             gathered_data (numpy.ndarray or coo_array): The gathered global data in the specified format.
@@ -649,17 +648,23 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return local_data
         
-        if input_format == "coo":
-            local_tuple = (local_data.data, local_data.row, local_data.col)
-            gathered = self.comm.allgather(local_tuple)
+        if method == "coo":
+            gathered = self.comm.allgather((local_data.data, local_data.row, local_data.col))
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
             coo_gathered_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape, dtype=np.float32)
             return coo_gathered_data
 
-        if input_format == "dense":
+        if method == "coo_array":
+            warnings.warn("Use 'coo' method instead of 'coo_array', it is faster")
+            gathered = self.comm.allgather(local_data)
+            coo_gathered_data = sum(gathered).tocoo()
+            return coo_gathered_data
+
+        if method == "dense":
+            warnings.warn("Try to avoid dense communications!")
             return np.concatenate(self.comm.allgather(local_data))
 
-        raise NotImplementedError(f"Input format '{input_format}' not implemented")
+        raise NotImplementedError(f"Method '{method}' not implemented")
 
