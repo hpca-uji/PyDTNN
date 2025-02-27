@@ -610,26 +610,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             # Another coo_array conversion is needed to set shape as dw_2d_shape 
             coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
-        
-        if method == "reduce_region_sparse":
-            row_start = 0
-            gathered = [None] * self.nprocs
-            csr_topk = coo_topk.tocsr()
-            for region in range(self.nprocs):
-                row_end = boundaries[region]
-                # TODO: Lo ideal sería enviar en CSR, evitamos conversión y reducimos el volumen de comunicaciones
-                coo_region_topk = csr_topk[row_start:row_end].tocoo()
-                sending_tuple = (coo_region_topk.data, coo_region_topk.row, coo_region_topk.col)
-                gathered[region] = self.comm.gather(sending_tuple, root=region) # TODO: Lo ideal puede que sea communicación no bloqueante...
-                row_start = row_end
-            all_val = np.concatenate([t[0] for t in gathered[self.rank]])
-            all_row = np.concatenate([t[1] for t in gathered[self.rank]])
-            all_col = np.concatenate([t[2] for t in gathered[self.rank]])
-            coo_reduced_region = coo_array((all_val, (all_row, all_col)), dtype=np.float32, shape=self.dw_2d_shape)
-            coo_reduced_region.sum_duplicates()
-            if self.rank != 0:
-                coo_reduced_region.row += boundaries[self.rank - 1]
-            return coo_reduced_region
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
