@@ -614,7 +614,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _allgather(self, local_data, method="coo"):
+    def _allgather(self, local_data, input_format="coo", method="tuple"):
         """
         Gathers data from all processes and concatenates it into a single array.
         
