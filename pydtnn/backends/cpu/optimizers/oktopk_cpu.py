@@ -551,7 +551,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="collective_reduce_region"):
+    def _reduce_topk(self, coo_topk, boundaries, method="collective_reduce_region_dense"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -592,7 +592,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
 
-        if method == "collective_reduce_region":
+        if method == "collective_reduce_region_dense":
             """Warning: Do not remove send_bufs list, because reusing the same buffer for sending may produce different outputs for Ireduce"""
             row_start = 0
             requests = [None] * self.nprocs
@@ -613,6 +613,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             # Another coo_array conversion is needed to set shape as dw_2d_shape 
             coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
+
+        if method == "collective_reduce_region_sparse":
+            """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
+            pass
 
         if method == "p2p_reduce_region":
             # TODO:
