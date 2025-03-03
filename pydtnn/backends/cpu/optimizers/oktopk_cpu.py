@@ -551,7 +551,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="collective_reduce_region_non_blocking_dense"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_destination_rotation"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -618,9 +618,52 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
             pass
 
-        if method == "p2p_reduce_region":
-            # TODO:
-            pass
+        if method == "p2p_reduce_region_non_blocking":
+
+            # Send all regions except mine, in a non-blocking way 
+            region = self.rank + 1
+            csr_topk = coo_topk.tocsr()
+            requests = [None] * self.nprocs
+            for _ in range(self.nprocs - 1):
+                region = 0 if region == self.nprocs else region + 1
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                self.comm.isend(csr_topk[row_start:row_end], dest=region)
+
+            # Receive regions and perform partial sums
+            for _ in range(self.nprocs -1):
+                pass
+                # MPI_probe to get size and origin (region)
+                
+                # MPI_Recv from any source 
+                # Compute partial sum
+            
+            # MPIw wait all request
+            return None
+
+        if method == "p2p_reduce_region_destination_rotation":
+            csr_topk = coo_topk.tocsr()
+            csr_region_partial_sum = [None] * self.nprocs
+            for region in range(self.nprocs):
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                csr_region_partial_sum[region] = csr_topk[row_start:row_end]
+
+            for comm_step in range(1, self.nprocs):
+                destination = (self.rank + 1) % self.nprocs
+                receive_from = (self.rank - 1) % self.nprocs
+                region_to_send = (self.rank - comm_step) % self.nprocs
+                region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
+
+                recv_req = self.comm.irecv(source=receive_from)
+                self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
+                received_data = recv_req.wait()
+                csr_region_partial_sum[region_to_recv] += received_data 
+            coo_reduced_region = csr_region_partial_sum[self.rank].tocoo()
+            if self.rank != 0:
+                coo_reduced_region.row += boundaries[self.rank - 1]
+            coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
+            return coo_reduced_region
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
