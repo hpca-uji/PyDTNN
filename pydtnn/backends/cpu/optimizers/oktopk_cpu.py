@@ -642,6 +642,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return None
 
         if method == "p2p_reduce_region_destination_rotation":
+            # Prepare a vector region for storing the partial sums
             csr_topk = coo_topk.tocsr()
             csr_region_partial_sum = [None] * self.nprocs
             for region in range(self.nprocs):
@@ -649,21 +650,24 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 row_end = boundaries[region]
                 csr_region_partial_sum[region] = csr_topk[row_start:row_end]
 
+            # Overlaps comm. steps with computation (sparse sum)
+            # On comm_step i: P{rank} sends to P{rank + 1} region{rank + i % nprocs}. 
             for comm_step in range(1, self.nprocs):
                 destination = (self.rank + 1) % self.nprocs
                 receive_from = (self.rank - 1) % self.nprocs
-                region_to_send = (self.rank - comm_step) % self.nprocs
-                region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
+                region_to_send = (self.rank + comm_step) % self.nprocs
+                region_to_recv = (self.rank + comm_step - 1) % self.nprocs 
 
                 recv_req = self.comm.irecv(source=receive_from)
                 self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
-                received_data = recv_req.wait()
-                csr_region_partial_sum[region_to_recv] += received_data 
+                csr_region_received = recv_req.wait()
+                csr_region_partial_sum[region_to_recv] += csr_region_received 
+
+            # Convert into coo format and fix sliced rows to original values  
             coo_reduced_region = csr_region_partial_sum[self.rank].tocoo()
             if self.rank != 0:
                 coo_reduced_region.row += boundaries[self.rank - 1]
-            coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
-            return coo_reduced_region
+            return coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
