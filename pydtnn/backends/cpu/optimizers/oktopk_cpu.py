@@ -93,6 +93,13 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         self.iterations[layer.id] += 1
 
 
+    def _show_message_only_once(self, message):
+        if self.rank == 0:
+            if message not in self.info_messages:
+                self.info_messages.add(message)
+                print(message)
+
+
     def _compute_acc(self, residuals, dw, learning_rate, method="cython"):
         """
         Compute acc, where: acc = residuals + (learning_rate * dw)
@@ -109,6 +116,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             acc (np.array): 2D dense matrix with the updated residuals
         """
+
+        self._show_message_only_once(f"\nIn '_compute_acc', the method that it is being used is '{method}'")
 
         if method == "cython":
             return compute_dense_acc_cython(residuals, dw, learning_rate)
@@ -134,6 +143,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             residuals (np.array): which is the same as acc with the values in indexes set to zero.
         """
+
+        self._show_message_only_once(f"In '_reset_residuals', the method that it is being used is '{method}'")
 
         if self.density == 1:
             return np.zeros_like(acc)
@@ -164,6 +175,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             (void): instead it directly applies the result to the weight layer attribute
         """
+
+        self._show_message_only_once(f"In '_update_weights', the method that it is being used is '{method}'")
 
         if method == "cython": 
             if len(self.dw_original_shape) != 2:
@@ -283,6 +296,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             threshold (float): The absolute gradient threshold based on the top k values.
         """
+
+        if self.rank == 0:
+            self._show_message_only_once(f"In '_th_re_evaluate', the method that it is being used is '{method}'")
         
         if k <= 0:
             return 0.0
@@ -334,6 +350,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             boundaries (np.array): [row_end_p0, row_end_p1, row_end_p2, ...]
         """
     
+        if self.rank == 0:
+            self._show_message_only_once(f"In '_space_repartition', balanced = '{balanced}' is being used")
+
         if not balanced:
             boundaries = np.zeros(self.nprocs, dtype=np.int32)
             total_rows = self.dw_original_shape[0]
@@ -477,6 +496,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         assert(self._has_canonical_format(local_indexes) and self._has_canonical_format(global_indexes)) 
 
+        if self.rank == 0:
+            self._show_message_only_once(f"In '_intersect_indexes', the method that it is being used is '{method}'")
+
         if method == "cython":
             local_rows, local_cols = local_indexes
             global_rows, global_cols = global_indexes
@@ -529,6 +551,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             topk (coo_array): A sparse 2D gradient matrix topk in COO.
         """
 
+        if self.rank == 0:
+            self._show_message_only_once(f"In '_top_threshold_selection', the method that it is being used is '{method}'")
+
         if method == "cython" and input_format == "dense":
             topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
             return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
@@ -569,6 +594,9 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         if self.nprocs == 1:
             return coo_topk
+
+        if self.rank == 0:
+            self._show_message_only_once(f"In 'reduce_topk', the method that it is being used is '{method}'")
 
         if method == "collective_allreduce_then_slice":
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
