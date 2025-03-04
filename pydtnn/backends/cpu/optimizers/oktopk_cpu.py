@@ -680,11 +680,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Gathers data from all processes and concatenates it into a single array.
         
         Parameters:
-            local_data (numpy.ndarray or coo_array): The local data to be gathered.
-            method (str): The format of the input data. Supported formats are "coo" for 
-                                coordinate format sparse matrices and "dense" for dense arrays.
+            local_data (np.ndarray or coo_array): The local data to be gathered.
+            method (str): The format of the input data. 
         Returns:
-            gathered_data (numpy.ndarray or coo_array): The gathered global data in the specified format.
+            gathered_data (np.ndarray or coo_array): The gathered global data in the specified format.
         """
         if self.nprocs == 1:
             return local_data
