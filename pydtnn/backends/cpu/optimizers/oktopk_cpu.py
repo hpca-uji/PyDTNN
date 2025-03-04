@@ -558,6 +558,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Parameters:
             coo_topk (coo_array): a 2D sparse array in COO format with the values and indexes of topk.
             boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...].
+            method (str, optional): The method to use for reduce topk
 
         Warning:
             Method 'reduce_region' does not provide the same exact accuracy as 'reduce_region_blocking' or 'allreduce_then_slice'.
@@ -661,10 +662,12 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 receive_from = (self.rank - 1) % self.nprocs
                 region_to_send = (self.rank - comm_step) % self.nprocs
                 region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
-                recv_req = self.comm.irecv(source=receive_from)
-                self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
-                csr_region_received = recv_req.wait()
-                csr_region_partial_sum[region_to_recv] += csr_region_received 
+                # recv_req = self.comm.irecv(source=receive_from)
+                # self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
+                # csr_region_partial_sum[region_to_recv] += recv_req.wait() 
+                csr_region_partial_sum[region_to_recv] += self.comm.sendrecv(csr_region_partial_sum[region_to_send], 
+                                                                             dest=destination, 
+                                                                             source=receive_from)
 
             # Convert into coo format and fix sliced rows to original values  
             coo_reduced_region = csr_region_partial_sum[self.rank].tocoo()
@@ -681,10 +684,12 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         
         Parameters:
             local_data (np.ndarray or coo_array): The local data to be gathered.
-            method (str): The format of the input data. 
+            input_format (str, optional): The format of the input data.
+            method (str, optional): The method to perform _allgather
         Returns:
             gathered_data (np.ndarray or coo_array): The gathered global data in the specified format.
         """
+        
         if self.nprocs == 1:
             return local_data
         
