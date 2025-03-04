@@ -551,7 +551,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_non_blocking"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_destination_rotation"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -655,13 +655,12 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 csr_region_partial_sum[region] = csr_topk[row_start:row_end]
 
             # Overlaps comm. steps with computation (sparse sum)
-            # On comm_step i: P{rank} sends to P{rank + 1} region{rank + i % nprocs}. 
+            # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}. 
             for comm_step in range(1, self.nprocs):
                 destination = (self.rank + 1) % self.nprocs
                 receive_from = (self.rank - 1) % self.nprocs
-                region_to_send = (self.rank + comm_step) % self.nprocs
-                region_to_recv = (self.rank + comm_step - 1) % self.nprocs 
-
+                region_to_send = (self.rank - comm_step) % self.nprocs
+                region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
                 recv_req = self.comm.irecv(source=receive_from)
                 self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
                 csr_region_received = recv_req.wait()
