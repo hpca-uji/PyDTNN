@@ -49,4 +49,5 @@ class OkTopk(Optimizer, ABC):
         self.all_global_th = {}
         self.all_residuals = {}
         self.all_boundaries = {}
+        self.info_messages = set()
 
