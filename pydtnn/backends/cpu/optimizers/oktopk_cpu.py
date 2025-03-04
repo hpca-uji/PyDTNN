@@ -551,7 +551,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_destination_rotation"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_non_blocking"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -619,27 +619,31 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             pass
 
         if method == "p2p_reduce_region_non_blocking":
-
             # Send all regions except mine, in a non-blocking way 
-            region = self.rank + 1
+            req_count = 0
+            region = (self.rank + 1) % self.nprocs
             csr_topk = coo_topk.tocsr()
-            requests = [None] * self.nprocs
+            requests = [None] * (self.nprocs - 1)
             for _ in range(self.nprocs - 1):
-                region = 0 if region == self.nprocs else region + 1
                 row_start = 0 if region == 0 else boundaries[region - 1]
                 row_end = boundaries[region]
-                self.comm.isend(csr_topk[row_start:row_end], dest=region)
+                requests[req_count] = self.comm.isend(csr_topk[row_start:row_end], dest=region)
+                region = 0 if region == self.nprocs -1 else region + 1
+                req_count += 1
 
             # Receive regions and perform partial sums
+            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
+            row_end = boundaries[self.rank]
+            csr_reduced_region = csr_topk[row_start:row_end]
             for _ in range(self.nprocs -1):
-                pass
-                # MPI_probe to get size and origin (region)
-                
-                # MPI_Recv from any source 
-                # Compute partial sum
-            
-            # MPIw wait all request
-            return None
+                csr_reduced_region += self.comm.recv()
+
+            # Wait all requests, convert into coo format and fix sliced rows to original values  
+            MPI.Request.Waitall(requests)
+            coo_reduced_region = csr_reduced_region.tocoo()
+            if self.rank != 0:
+                coo_reduced_region.row += boundaries[self.rank - 1]
+            return coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
 
         if method == "p2p_reduce_region_destination_rotation":
             # Prepare a vector region for storing the partial sums
