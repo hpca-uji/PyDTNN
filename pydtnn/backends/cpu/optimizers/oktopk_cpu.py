@@ -591,7 +591,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return coo_topk
 
-        self._show_message_only_once(f"In 'reduce_topk', the method that it is being used is '{method}'")
+        self._show_message_only_once(f"In '_reduce_topk', the method that it is being used is '{method}'")
 
         if method == "collective_allreduce_then_slice":
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
