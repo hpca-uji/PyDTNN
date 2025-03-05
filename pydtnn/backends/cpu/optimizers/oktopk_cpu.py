@@ -19,7 +19,7 @@
 
 import warnings
 import numpy as np
-from scipy.sparse import coo_array
+from scipy.sparse import coo_array, csr_array
 
 from pydtnn.cython_modules import \
     compute_dense_acc_cython, \
@@ -274,7 +274,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
-            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk)
+            coo_all_reduced_topk = self._allgather((coo_reduced_region_topk.data, coo_reduced_region_topk.row, coo_reduced_region_topk.col))
             self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
         coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_region_topk, self.global_th)
@@ -297,8 +297,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             threshold (float): The absolute gradient threshold based on the top k values.
         """
 
-        if self.rank == 0:
-            self._show_message_only_once(f"In '_th_re_evaluate', the method that it is being used is '{method}'")
+        self._show_message_only_once(f"In '_th_re_evaluate', the method that it is being used is '{method}'")
         
         if k <= 0:
             return 0.0
@@ -350,8 +349,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             boundaries (np.array): [row_end_p0, row_end_p1, row_end_p2, ...]
         """
     
-        if self.rank == 0:
-            self._show_message_only_once(f"In '_space_repartition', balanced = '{balanced}' is being used")
+        self._show_message_only_once(f"In '_space_repartition', balanced = '{balanced}' is being used")
 
         if not balanced:
             boundaries = np.zeros(self.nprocs, dtype=np.int32)
@@ -440,7 +438,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
+        coo_allgather_topk = self._allgather((coo_reduced_region_global_topk.data, coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col))
         return coo_allgather_topk, (coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col) 
 
 
@@ -496,8 +494,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         assert(self._has_canonical_format(local_indexes) and self._has_canonical_format(global_indexes)) 
 
-        if self.rank == 0:
-            self._show_message_only_once(f"In '_intersect_indexes', the method that it is being used is '{method}'")
+        self._show_message_only_once(f"In '_intersect_indexes', the method that it is being used is '{method}'")
 
         if method == "cython":
             local_rows, local_cols = local_indexes
@@ -551,8 +548,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             topk (coo_array): A sparse 2D gradient matrix topk in COO.
         """
 
-        if self.rank == 0:
-            self._show_message_only_once(f"In '_top_threshold_selection', the method that it is being used is '{method}'")
+        self._show_message_only_once(f"In '_top_threshold_selection', the method that it is being used is '{method}'")
 
         if method == "cython" and input_format == "dense":
             topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
@@ -595,8 +591,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return coo_topk
 
-        if self.rank == 0:
-            self._show_message_only_once(f"In 'reduce_topk', the method that it is being used is '{method}'")
+        self._show_message_only_once(f"In 'reduce_topk', the method that it is being used is '{method}'")
 
         if method == "collective_allreduce_then_slice":
             all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
@@ -694,8 +689,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 # self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
                 # csr_region_partial_sum[region_to_recv] += recv_req.wait() 
                 csr_region_partial_sum[region_to_recv] += self.comm.sendrecv(csr_region_partial_sum[region_to_send], 
-                                                                             dest=destination, 
-                                                                             source=receive_from)
+                                                                             dest=destination, source=receive_from)
 
             # Convert into coo format and fix sliced rows to original values  
             coo_reduced_region = csr_region_partial_sum[self.rank].tocoo()
