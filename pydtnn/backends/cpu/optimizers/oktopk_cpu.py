@@ -706,14 +706,13 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _allgather(self, local_data, input_format="coo", method="tuple"):
+    def _allgather(self, local_data, input_format="coo_tuple"):
         """
-        Gathers data from all processes and concatenates it into a single array.
+        Gathers data from all processes.
         
         Parameters:
-            local_data (np.ndarray or coo_array): The local data to be gathered.
+            local_data (tuple, np.ndarray or coo_array): The local data to be gathered.
             input_format (str, optional): The format of the input data.
-            method (str, optional): The method to perform _allgather
         Returns:
             gathered_data (np.ndarray or coo_array): The gathered global data in the specified format.
         """
@@ -721,44 +720,37 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return local_data
         
-        if input_format == "coo" and method == "tuple":
-            gathered = self.comm.allgather((local_data.data, local_data.row, local_data.col))
+        if input_format == "coo_tuple":
+            assert(type(local_data) == tuple)
+            gathered = self.comm.allgather(local_data)
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
             coo_gathered_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape, dtype=np.float32)
             return coo_gathered_data
 
-        if input_format == "csr" and method == "tuple":
+        if input_format == "csr_tuple":
+            assert(type(local_data) == tuple)
             pass
-            # local_tuple = (local_data.data, local_data.indices, local_data.indptr)
-            # gathered = self.comm.allgather(local_tuple)
-            # # if self.rank == 0:
-            # #     np.savetxt("0_local_indptr", local_data.indptr, fmt="%d")
-            # all_val  = np.concatenate([t[0] for t in gathered])
-            # all_ind = np.concatenate([t[1] for t in gathered])
-            # all_ptr  = np.concatenate([t[2] for t in gathered])
-            # # if self.rank == 0:
-            # #     np.savetxt("0_gather_indptr", all_ptr, fmt="%d")
-            # # FIXME: index pointer size (516) should be (129)
-            # csr_gathered_data = csr_array((all_val, all_ind, all_ptr), shape=self.dw_2d_shape, dtype=np.float32)
-            # return  csr_gathered_data
 
-        if input_format == "csr" and method == "original":
-            warnings.warn("Use 'tuple' method instead of 'original', it is faster")
-            gathered = self.comm.allgather(local_data)
-            csr_gathered_data = sum(gathered)
-            return csr_gathered_data
-
-        if input_format == "coo" and method == "original":
-            warnings.warn("Use 'tuple' method instead of 'original', it is faster")
+        if input_format == "coo_array":
+            assert(type(local_data) == coo_array)
+            warnings.warn("Use 'coo_tuple' as input_format. It is faster!")
             gathered = self.comm.allgather(local_data)
             coo_gathered_data = sum(gathered).tocoo()
             return coo_gathered_data
 
+        if input_format == "csr_array":
+            assert(type(local_data) == csr_array)
+            warnings.warn("Use 'csr_tuple' as input_format. It is faster!")
+            gathered = self.comm.allgather(local_data)
+            csr_gathered_data = sum(gathered)
+            return csr_gathered_data
+
         if input_format == "dense":
+            assert(type(local_data) == np.ndarray)
             warnings.warn("Try to avoid dense communications!")
             return np.concatenate(self.comm.allgather(local_data))
 
-        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
+        raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
