@@ -240,8 +240,10 @@ def funcdebug(func):
     def wrapper(*args, **kwds):
         header = "DEBUG"
         frame = inspect.stack()[1]
-        context = f"{func.__qualname__}{args!r}{kwds!r} from {frame.frame.f_globals["__name__"]}.{frame.function}:{frame.lineno} from {os.getpid()}:{threading.get_native_id()}"
-        del frame
+        try:
+            context = f"{func.__qualname__}{args!r}{kwds!r} from {frame.frame.f_globals["__name__"]}.{frame.function}:{frame.lineno} from {os.getpid()}:{threading.get_native_id()}"
+        finally:
+            del frame
         log(f"{header}: Call {context}")
         try:
             result = func(*args, **kwds)
