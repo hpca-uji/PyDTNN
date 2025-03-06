@@ -9,8 +9,7 @@ mpirun -np 4 \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
-  --share_gradient=False \
-  --share_weight_freq=64 \
+  --train_sync_freq=64 \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \
