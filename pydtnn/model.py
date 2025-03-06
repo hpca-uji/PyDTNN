@@ -543,7 +543,7 @@ class Model:
 
         return total_time
 
-    def _compute_metrics_funcs(self, y_pred, y_targ, loss, blocking=True):
+    def _compute_metrics_funcs(self, y_pred, y_targ, loss, blocking=True, comm=True):
         loss_req = None
         if y_targ.shape[0] > 0:
             if self.enable_cudnn:
@@ -557,9 +557,15 @@ class Model:
             _losses[0] = loss
             _losses /= self.nprocs
         if self.comm is not None and blocking:
-            self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
+            if comm:
+                self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
+            else:
+                _losses += self.nprocs
         elif self.comm is not None and not blocking:
-            loss_req = self.comm.Iallreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
+            if comm:
+                loss_req = self.comm.Iallreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
+            else:
+                raise NotImplementedError("can not compute metrics non-blocking locally")
         return _losses, loss_req
 
     def _update_running_average(self, curr, total, count, batch_size, prefix=""):
@@ -585,7 +591,7 @@ class Model:
     def _zero_dx(self, y):
         return np.zeros_like(y, shape=(1,) + y.shape[1:])
 
-    def _train_batch(self, x_batch, y_batch, current_batch_size, sync_weights=False):
+    def _train_batch(self, x_batch, y_batch, current_batch_size, sync_model=False):
 
         self.mode = TRAIN_MODE
         for lr_sched in self.lr_schedulers:
@@ -606,7 +612,7 @@ class Model:
             loss, dx = self.loss_func(x, y_targ, self.batch_size)
         else:
             loss, dx = 0.0, self._zero_dx(y_targ)
-        self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss)
+        self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
 
         if self.blocking_mpi:
             # Blocking MPI
@@ -625,12 +631,12 @@ class Model:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                self.layers[i].reduce_weights_sync(gradient=True, comm=self.share_gradient)
+                self.layers[i].reduce_weights_sync(gradient=True, comm=self.train_sync_freq <= 0)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-                if sync_weights:
+                if self.train_sync_freq > 0 and sync_model:
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
                     self.layers[i].reduce_weights_sync(gradient=False, comm=True)
@@ -643,7 +649,7 @@ class Model:
                 dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-            if self.share_gradient:
+            if self.train_sync_freq <= 0:
                 for i in range(len(self.layers) - 1, 0, -1):
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
@@ -668,7 +674,7 @@ class Model:
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-            if sync_weights:
+            if self.train_sync_freq > 0 and sync_model:
                 for i in range(len(self.layers) - 1, 0, -1):
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
@@ -722,7 +728,8 @@ class Model:
 
         terminate = False
 
-        batch_count = 0
+        train_sync_count = 0
+        val_sync_count = 0
         for epoch in range(self.num_epochs):
 
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
@@ -741,10 +748,10 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for x_batch, y_batch, batch_size in train_batch_generator:
-                batch_count += 1
+                train_sync_count += 1
                 tic = timer()
-                sync_weights = self.share_weight_freq > 0 and batch_count % self.share_weight_freq == 0
-                train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_weights=sync_weights)
+                sync_model = (self.train_sync_freq <= 0) or (train_sync_count % self.train_sync_freq == 0)
+                train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
                 toc = timer()
 
                 if batch_size <= 0:
@@ -765,7 +772,9 @@ class Model:
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for x_batch, y_batch, batch_size in val_batch_generator:
-                val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
+                val_sync_count += 1
+                sync_model = (self.val_sync_freq <= 0) or (val_sync_count % self.val_sync_freq == 0)
+                val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
 
                 if batch_size <= 0:
                     continue
@@ -791,7 +800,7 @@ class Model:
         self.tracer.define_event_types(self)
         return self.history
 
-    def _evaluate_batch(self, x_batch, y_batch, current_batch_size):
+    def _evaluate_batch(self, x_batch, y_batch, current_batch_size, sync_model=True):
         self.mode = EVALUATE_MODE
 
         try:
@@ -811,7 +820,7 @@ class Model:
             loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
         else:
             loss = 0.0
-        self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss)
+        self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
         return self.total_metrics
 
     def evaluate(self, x_test, y_test, bar_width=110):
@@ -833,9 +842,12 @@ class Model:
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
+        test_sync_count = 0
         for x_batch, y_batch, batch_size in test_batch_generator:
+            test_sync_count += 1
             tic = timer()
-            test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size)
+            sync_model = (self.test_sync_freq <= 0) or (test_sync_count % self.test_sync_freq == 0)
+            test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
             toc = timer()
 
             if batch_size <= 0:
