@@ -59,7 +59,7 @@ def extract_attributes(node: onnx.NodeProto) -> Dict[str, Any]:
 
 def get_lists_operations_and_outputs(info: Dict[str, Any], operations: Dict[str, Tuple[LayerAndActivationBase, List[str] ]])-> Tuple[List[List[LayerAndActivationBase]], List[str]]:
 
-    # NOTE: It is assumed that the model will by a feed-forward netowork 
+    # NOTE: It is assumed that the model will by a feed-forward network 
     dict_branch = {}
 
     # Making the "path" of layers for every input
@@ -108,7 +108,6 @@ def get_lists_operations_and_outputs(info: Dict[str, Any], operations: Dict[str,
         lists_outputs.extend(outputs[:trimming_index]) # Remember: list of string
 
     return (lists_operations, lists_outputs)
-
 # --- END get_lists_operations_and_outputs --- #
 
 

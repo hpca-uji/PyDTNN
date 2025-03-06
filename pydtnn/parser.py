@@ -60,7 +60,8 @@ available at: '{_scripts_path}'."""
 parser = argparse.ArgumentParser(description=_desc, epilog=_epilogue)
 
 # Model
-parser.add_argument('--model', dest="model_name", type=str, default="simplecnn")
+#parser.add_argument('--model', dest="model_name", type=str, default="simplecnn") # TODO: dejar como antes
+parser.add_argument('--model', dest="model_name", type=str, default=None)
 parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--global_batch_size', type=int, default=None)
 parser.add_argument('--dtype', type=np_dtype, default=np.float32)
