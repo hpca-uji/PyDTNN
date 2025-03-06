@@ -65,8 +65,9 @@ class Connection:
         size = self._socket.send(self._send_queue)
         del self._send_queue[:size]
 
-        # Empty send signals EOF, but wait for queue
-        if len(self._send_queue) == 0 and size == 0:
+        # Empty send signals EOF, queue is lost
+        if size == 0:
+            del self._send_queue[:]
             raise comms.ResourceClosed()
 
     def get_nowait(self) -> bytes:
@@ -110,6 +111,10 @@ class Connection:
     def put(self, data: bytes) -> None:
         """Publish a message and ensure it is send (possibly blocking)"""
         self.put_nowait(data)
+        self._flush()
+
+    def _flush(self) -> None:
+        """Flush send queue"""
         while self._send_queue:
             self.send()
 
@@ -118,6 +123,7 @@ class Connection:
         if self.closed:
             return
         self.closed = True
+        self._flush()
         self._socket.close()
 
     @functools.cached_property

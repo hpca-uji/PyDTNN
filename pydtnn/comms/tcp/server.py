@@ -44,11 +44,13 @@ class Server(Protocol):
 
     def _new_connection(self, sock: socket.socket, event) -> None:
         """Handle new incomming connections"""
+        # NOTE: communication thead
         connection = Connection(self._server.accept()[0])
         self._syc(connection)
 
     def _handle_connection(self, connection: Connection, event) -> None:
         """Handle connection states"""
+        # NOTE: communication thead
         if event & selectors.EVENT_READ:
             self._c2s(connection)
 
@@ -138,9 +140,9 @@ class Server(Protocol):
         tcp_peer = connection.peer
         try:
             peer = self._peers.inverse[tcp_peer]
+            queue = self._responses[peer]
         except KeyError:
             return
-        queue = self._responses[peer]
 
         self._modify_selector(connection, selectors.EVENT_READ)
 
@@ -208,10 +210,23 @@ class Server(Protocol):
         """Close the server"""
         if self.closed:
             return
-        self._server.close()
         super().close()
+        self._server.close()
+
+        # Unlock inflight external API
         with self._lock:
             for queue in self._requests.values():
                 queue.put(END_COMM)
+
+        # Bootstrap backoff generator
+        backoff = self._new_backoff()
+        next(backoff)
+
+        # Wait peers to drain
+        while self._requests:
+            backoff.send(1.0)
+
+        # Close resources
+        with self._lock:
             for connection in self._connections.values():
                 connection.close()

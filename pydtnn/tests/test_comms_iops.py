@@ -31,43 +31,41 @@ parser.add_argument("--reps", type=int, default=1_000_000)
 
 def server(config: Namespace):
     """Server mode"""
-    server = comms.Server(addr=config.addr, port=config.port)
-    server.get()
+    with comms.Server(addr=config.addr, port=config.port) as server:
+        server.get()
 
-    time.sleep(config.delay)
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        msg = server.get().obj
-    print()
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        server.put(msg)
-    print()
+        time.sleep(config.delay)
+        for i in range(config.reps):
+            print(i, end="\r", flush=True)
+            msg = server.get().obj
+        print()
+        for i in range(config.reps):
+            print(i, end="\r", flush=True)
+            server.put(msg)
+        print()
 
-    time.sleep(config.end_delay)
-    server.close()
+        time.sleep(config.end_delay)
 
 
 def client(config: Namespace):
     """Client mode"""
     time.sleep(config.start_delay)
     put_msg = os.urandom(config.size)
-    client = comms.Client(addr=config.addr, port=config.port)
-    client.put(None)
 
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        client.put(put_msg)
-    print()
-    time.sleep(config.delay)
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        get_msg = client.get().obj
-        assert len(put_msg) == len(get_msg), "Lost message data"
-    assert put_msg == get_msg, "Corrupted message data"
-    print()
+    with comms.Client(addr=config.addr, port=config.port) as client:
+        client.put(None)
 
-    client.close()
+        for i in range(config.reps):
+            print(i, end="\r", flush=True)
+            client.put(put_msg)
+        print()
+        time.sleep(config.delay)
+        for i in range(config.reps):
+            print(i, end="\r", flush=True)
+            get_msg = client.get().obj
+            assert len(put_msg) == len(get_msg), "Lost message data"
+        assert put_msg == get_msg, "Corrupted message data"
+        print()
 
 
 def main(config: Namespace):

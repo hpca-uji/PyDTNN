@@ -27,7 +27,7 @@ def main(*args: str) -> None:
 
     for rank in range(config.size):
         environment = os.environ.copy()
-        environment.update({"OMPI_COMM_WORLD_RANK": str(rank), "OMPI_COMM_WORLD_SIZE": str(config.size)})
+        environment.update({"PMI_RANK": str(rank), "PMI_SIZE": str(config.size)})
         subprocess.Popen(args=program, env=environment)
 
 

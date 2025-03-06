@@ -23,7 +23,6 @@ END_COMM = b""
 
 class Server(Protocol):
     """gRPC server"""
-    _shutdown_grace = 15.0
 
     def __init__(self, addr: str, port: int) -> None:
         """Server initialization"""
@@ -37,7 +36,7 @@ class Server(Protocol):
         self._responses = dict[uuid.UUID, SimpleQueue[bytes]]()
 
         # gRPC
-        self._pool = ThreadPoolExecutor(max_workers=1)
+        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
             compression=self._compression
@@ -45,6 +44,12 @@ class Server(Protocol):
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
         self._server.add_insecure_port(address=f"{self._addr}:{self._port}")
         self._server.start()
+
+    def _submit(self, fn, /, *args, **kwargs):
+        """Process in the pool with exception handeling"""
+        future = self._pool.submit(fn, *args, **kwargs)
+        future.add_done_callback(lambda future: future.result())
+        return future
 
     @property
     def _size(self) -> int:
@@ -59,6 +64,10 @@ class Server(Protocol):
     def _syc(self, message: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
         """Client connection startup"""
         # NOTE: communication thead
+        if self.closed:
+            context.set_code(grpc.StatusCode.ABORTED)
+            return grpc_pb2.Message()
+
         grpc_peer = context.peer()
         peer = self._deserialize(message.data)
 
@@ -81,7 +90,7 @@ class Server(Protocol):
         with self._lock:
             del self._peers[peer]
             requests = self._requests.pop(peer)
-            del self._responses[peer]
+            responses = self._responses.pop(peer)
 
         # Drain queue
         while requests:
@@ -116,7 +125,7 @@ class Server(Protocol):
         try:
             data = self._responses[peer].get_nowait()
 
-        # Response not found, revet notification and abort
+        # Response not found, abort
         except Empty:
             pass
 
@@ -178,8 +187,20 @@ class Server(Protocol):
         if self.closed:
             return
         super().close()
-        self._server.stop(grace=self._shutdown_grace)
+
+        # Unlock inflight external API
         with self._lock:
             for queue in self._requests.values():
                 queue.put(END_COMM)
+
+        # Bootstrap backoff generator
+        backoff = self._new_backoff()
+        next(backoff)
+
+        # Wait peers to drain
+        while self._peers:
+            backoff.send(1.0)
+
+        # Close resources
+        self._server.stop(grace=None)
         self._pool.shutdown()

@@ -1,18 +1,14 @@
 """Message Passing Interface (server)"""
 
-# NOTE: Module considerations
-#
-# Communications are lazily initialized to prevent module imports execution
+# NOTE: Communications are lazily initialized to prevent module imports execution
 
-# TODO: Revise sending lock usage, could only lock per commuincaiton group
+# FIXME: serve_until_... exit when no clients, not when no clients and no operations
 
 import uuid
 import typing
 import functools
 import threading
-import dataclasses
-from collections import deque
-from dataclasses import dataclass
+from concurrent.futures import Future
 from argparse import ArgumentParser, Namespace
 from concurrent.futures import ThreadPoolExecutor
 
@@ -37,22 +33,38 @@ arg_parser.add_argument("-np", dest="size", type=int, default=4)
 arg_parser.add_argument("--oneshot", action="store_true")
 
 
-@dataclass(slots=True)
-class Operation[T: mpi_comm.OperationRequest]:
+class Operation:
     """MPI Operation"""
-    comm: mpi_comm.CommmunicationGroup
-    requests: dict[mpi_comm.Rank, T] = dataclasses.field(default_factory=dict)
-    response: typing.Any | None = None
+
+    def __init__(self, comm: mpi_comm.CommmunicationGroup) -> None:
+        self.id = uuid.uuid4()
+        self.comm = comm
+        self.compute: Future[None] | None = None
+        self.requests = dict[mpi_comm.Rank, mpi_comm.OperationRequest]()
+
+    def put(self, rank: mpi_comm.Rank, request: mpi_comm.OperationRequest) -> bool:
+        return request.comm == self.comm and request is self.requests.setdefault(rank, request)
 
     @property
-    def context(self) -> T:
-        return next(iter(self.requests.values()))
+    def context(self) -> mpi_comm.OperationContext:
+        request = self.requests[self.comm.root]
+        assert request.context is not None, "Root request has no context"
+        return request.context
 
-    def put(self, rank: mpi_comm.Rank, request: T) -> bool:
-        return request is self.requests.setdefault(rank, request)
+    @property
+    def src_ready(self) -> bool:
+        return set(self.comm.src).issubset(self.requests)
 
-    def full(self) -> bool:
-        return len(self.requests) == len(self.comm.src)
+    @property
+    def dst_ready(self) -> bool:
+        return set(self.comm.dst).issubset(self.requests)
+
+    @property
+    def objs(self) -> dict[mpi_comm.Rank, typing.Any]:
+        return {
+            rank: self.requests[rank].obj
+            for rank in self.comm.src
+        }
 
 
 class Server:
@@ -66,10 +78,9 @@ class Server:
         self._shutdown = False
         self._pool = thread_pool
         self._comm_lock = threading.Lock()
-        self._response_count = threading.Semaphore(value=0)
 
         self._state_lock = threading.Lock()
-        self._state = dict[mpi_comm.CommmunicationGroup, deque[Operation]]()
+        self._state = list[Operation]()
 
         self._peers_lock = threading.Lock()
         self._peers = bidict[mpi_comm.Rank, uuid.UUID]()
@@ -95,8 +106,7 @@ class Server:
             else:
                 addr = mpi_comm.get_addr()
                 port = mpi_comm.get_port()
-                comm = comms.Server(addr=addr, port=port)
-                self._comm = comm
+                comm = self.__dict__["_comm"] = comms.Server(addr=addr, port=port)
         return comm
 
     def __enter__(self):
@@ -121,11 +131,6 @@ class Server:
 
     def serve_util_finalize(self) -> None:
         """Handle until finalized"""
-        self._submit(self._handle_operations_responses)
-        self._handle_requests()
-
-    def _handle_requests(self) -> None:
-        """Handle requests until finalized"""
 
         while not self._shutdown:
             message = self._comm.get()
@@ -149,30 +154,28 @@ class Server:
         request = message.obj
 
         match request:
-            case mpi_comm.InitRequest():
+            case mpi_comm.RankInit():
                 self._handle_init(message)  # type: ignore (not inferred by typecheker)
-            case mpi_comm.FinalizeRequest():
+            case mpi_comm.RankFinalize():
                 self._handle_finalize(message)  # type: ignore (not inferred by typecheker)
             case _:
                 raise RuntimeError(f"Unknown state type {request}")
 
-    def _handle_init(self, message: comms.Message[mpi_comm.InitRequest]) -> None:
+    def _handle_init(self, message: comms.Message[mpi_comm.RankInit]) -> None:
         """Initialize."""
         # Request context
         peer = message.peer
         request = message.obj
         rank = request.rank
-        size = request.size
 
         # Thread-safe client setup
         with self._peers_lock:
             self._peers[rank] = peer
 
-        # Syncronize clients when all ready
-        if self._size == size:
-            self._comm.put(None)
+        # Inform clients of state change
+        self._comm.put(mpi_comm.StateResponse(size=self._size))
 
-    def _handle_finalize(self, message: comms.Message[mpi_comm.FinalizeRequest]) -> None:
+    def _handle_finalize(self, message: comms.Message[mpi_comm.RankFinalize]) -> None:
         """Terminate."""
         # Request context
         peer = message.peer
@@ -182,9 +185,9 @@ class Server:
         with self._peers_lock:
             del self._peers[rank]
 
-        # Syncronize clients when all ready
-        if self._size == 0:
-            self._comm.put(None)
+        # Inform clients of state change
+        state = mpi_comm.StateResponse(size=self._size)
+        self._comm.put(state)
 
     def _handle_operation_request(self, message: comms.Message[mpi_comm.OperationRequest]) -> None:
         """Handle an operation request"""
@@ -193,113 +196,45 @@ class Server:
         request = message.obj
         rank = self._peers.inverse[peer]
 
-        # Queue operation
-        with self._state_lock:
-            queue = self._state.setdefault(request.comm, deque())
-
-            for operation in queue:
-                if operation.put(rank, request):
-                    break
-            else:
-                operation = Operation(comm=request.comm)
-                # Notify dsts of op init
-                put = operation.put(rank, request)
-                assert put, "Failed to put on a empty operation"
-                queue.append(operation)
-
-        # Start operation
-        if operation.full():
-            self._submit(self._handle_operation, operation)
-
-    def _handle_operations_responses(self) -> None:
-        """Handle responses until finalized"""
-        while not self._shutdown:
-            # Wait for any response
-            self._response_count.acquire()
-            self._response_count.release()
-
-            # Send and consume
-            for operation in self._pop_operations_responded():
-                self._response_count.acquire()
-                self._send_operation(operation)
-
-            # Finish if idle
-            if self._size == 0:
+        for operation in self._state:
+            if operation.put(rank, request):
                 break
+        else:
+            operation = Operation(comm=request.comm)
+            pushed = operation.put(rank, request)
+            assert pushed, "Could not inset request into empty operation"
+            self._state.append(operation)
 
-    def _pop_operations_responded(self) -> list[Operation]:
-        """Get and remove responded operations from state"""
-        operations = list[Operation]()
+        # Send proxy response
+        if rank in request.comm.dst:
+            self._comm.put(mpi_comm.OperationResponse(id=request.id, obj=operation.id), peer)
 
-        with self._state_lock:
-            for group, queue in list(self._state.items()):
-                for operation in list(queue):
-                    if operation.response is not None:
-                        queue.remove(operation)
-                        operations.append(operation)
-                    else:
-                        break
+        # Start operation compute
+        if operation.compute is None and operation.src_ready:
+            operation.compute = self._submit(self._handle_operation, operation)
 
-                if len(queue) == 0:
-                    del self._state[group]
+        # Operation queuing finished
+        if operation.src_ready and operation.dst_ready:
+            self._state.remove(operation)
 
-        return operations
+    def _handle_operation(self, operation: Operation) -> None:
+        """Dispatch operation to relevant handler"""
+        # Setup compute
+        context = operation.context
+        objs = operation.objs
 
-    def _send_operation(self, operation: Operation) -> None:
-        """Send a operation response to the clients"""
-        assert operation.response is not None, f"Sending in progress operation {operation}"
+        # Compute result
+        try:
+            result = context.apply(objs)
+        except Exception as exc:
+            result = mpi_comm.RemoteException.from_exception(exc)
 
-        response = mpi_comm.OperationResponse(dst=operation.comm.dst, obj=operation.response)
+        # Send result
+        response = mpi_comm.OperationResponse(id=operation.id, obj=result)
         self._comm.put(response, *(
             self._peers[rank]
             for rank in operation.comm.dst
         ))
-
-    def _handle_operation(self, operation: Operation[mpi_comm.OperationRequest]) -> None:
-        """Dispatch operation to relevant handler"""
-        context = operation.context
-
-        match context:
-            case mpi_comm.BroadcastRequest():
-                handler = self._handle_broadcast
-            case mpi_comm.AllGatherRequest():
-                handler = self._handle_allgather
-            case mpi_comm.AllReduceRequest():
-                handler = self._handle_allreduce
-            case mpi_comm.AllPhasedReduceRequest():
-                handler = self._handle_allphasedreduce
-            case _:
-                raise RuntimeError(f"Unknown operation type {context}")
-
-        handler(operation)  # type: ignore (not inferred by typecheker)
-        self._response_count.release()
-
-    def _handle_broadcast(self, operation: Operation[mpi_comm.BroadcastRequest]) -> None:
-        """Broadcast."""
-        response = operation.context.obj
-        operation.response = response
-
-    def _handle_allgather(self, operation: Operation[mpi_comm.AllGatherRequest]) -> None:
-        """Gather to All."""
-        rank_requests = sorted(
-            operation.requests.items(),
-            key=lambda rank_request: rank_request[0]
-        )
-
-        operation.response = [
-            request.obj
-            for _, request in rank_requests
-        ]
-
-    def _handle_allreduce(self, operation: Operation[mpi_comm.AllReduceRequest]) -> None:
-        """Reduce to All."""
-        response = sum(msg.obj for msg in operation.requests.values())
-        operation.response = response
-
-    def _handle_allphasedreduce(self, operation: Operation[mpi_comm.AllReduceRequest]) -> None:
-        """Reduce to All (with steps)."""
-        response = sum(msg.obj for msg in operation.requests.values())
-        operation.response = response
 
     def shutdown(self) -> None:
         """Close the server"""
@@ -310,33 +245,37 @@ class Server:
             return
         self._shutdown = True
 
-        self._response_count.release()
-
 
 def start_local_server() -> None:
     """Start a local background server"""
-    import atexit
     from time import sleep
-    from threading import Thread
-    pool = ThreadPoolExecutor(max_workers=mpi_comm.get_size())
+    pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix=f"{__name__}:local")
     server = Server(pool)
-    atexit.register(server.shutdown)
-    atexit.register(pool.shutdown)
 
     # Ensure connection is setup
     server._comm
 
     # Serve and finalize handler
+    # should clouse as clients should close
     def serve_oneshot():
         server.serve_util_finalize()
-        sleep(0.5)  # Allow some time for client taredown
+
+        # NOTE: Allow some time for communications to flush
+        sleep(0.5)
+
         server.shutdown()
-    Thread(target=serve_oneshot).start()
+
+        # NOTE: Can not wait for pool shutdown from inside pool,
+        # however since serve_util_finalize waits until all clients
+        # disconnect, there should not any active threads anyway.
+        pool.shutdown(wait=False)
+    future = pool.submit(serve_oneshot)
+    future.add_done_callback(lambda future: future.result())
 
 
 def main(config: Namespace) -> None:
     """Application entrypoint"""
-    with ThreadPoolExecutor(max_workers=config.size) as pool:
+    with ThreadPoolExecutor(max_workers=config.size, thread_name_prefix=f"{__name__}.main") as pool:
         with Server(pool) as server:
             if config.oneshot:
                 server.serve_util_finalize()

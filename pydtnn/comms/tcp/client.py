@@ -1,5 +1,7 @@
 """TCP client"""
 
+# TODO: Revise if communication thread should ignore ResouceClosed exceptions
+
 import uuid
 import socket
 import selectors
@@ -100,7 +102,7 @@ class Client(Protocol):
         self._modify_selector(self._connection, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
     def get(self, *peers: uuid.UUID) -> Message:
-        """Get server data"""
+        """Get from the server"""
         super().get(*peers)
         assert len(peers) == 0, "Client can not get from another client"
         data = self._responses.get()
@@ -118,4 +120,6 @@ class Client(Protocol):
             return
         super().close()
         self._connection.close()
+
+        # Unlock inflight external API
         self._requests.put(END_COMM)

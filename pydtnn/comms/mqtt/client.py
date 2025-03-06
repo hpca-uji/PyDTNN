@@ -29,6 +29,7 @@ class Client(Protocol):
         self._responses = SimpleQueue[bytes]()
 
         # MQTT
+        self._start_loop()
         self._register_handler(topic="s2c", handler=self._s2c)
         self._register_handler(topic=f"s2c/{self.id}", handler=self._s2c)
         self._syc()
@@ -51,7 +52,7 @@ class Client(Protocol):
         self._publish(topic=f"c2s/{self.id}", data=data)
 
     def get(self, *peers: uuid.UUID) -> Message:
-        """Get server data"""
+        """Get from the server"""
         super().get(*peers)
         assert len(peers) == 0, "Client can not get from another client"
         data = self._responses.get()
@@ -67,6 +68,14 @@ class Client(Protocol):
         """Close the client"""
         if self.closed:
             return
-        self._publish(topic=f"fin/{self.id}")
         super().close()
+        self._publish(topic=f"fin/{self.id}")
+
+        # Unlock inflight external API
         self._responses.put(END_COMM)
+
+        # Request loop thread to stop
+        self._client.disconnect()
+
+        # Close resources
+        self._pool.shutdown()

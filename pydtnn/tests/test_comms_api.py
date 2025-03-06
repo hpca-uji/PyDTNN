@@ -28,43 +28,43 @@ parser.add_argument("--size", type=int, default=1)
 
 def server(config: Namespace):
     """Server mode"""
-    server = comms.Server(addr=config.addr, port=config.port)
     messages = []
 
-    for _ in range(config.size):
-        client_msg = server.get()
-        print(f"server[{server.id}]-c2s: {client_msg}")
-        messages.append(client_msg)
+    with comms.Server(addr=config.addr, port=config.port) as server:
 
-    server_msg = server.id
-    print(f"server[{server.id}]-s2c-global: {server_msg}")
-    server.put(obj=server_msg)
+        for _ in range(config.size):
+            client_msg = server.get()
+            print(f"server[{server.id}]-c2s: {client_msg}")
+            messages.append(client_msg)
 
-    for server_msg in messages:
-        print(f"server[{server.id}]-s2c-local: {server_msg}")
-        server.put(server_msg.obj, server_msg.peer)
+        server_msg = server.id
+        print(f"server[{server.id}]-s2c-global: {server_msg}")
+        server.put(obj=server_msg)
 
-    time.sleep(config.end_delay)
-    server.close()
+        for server_msg in messages:
+            print(f"server[{server.id}]-s2c-local: {server_msg}")
+            server.put(server_msg.obj, server_msg.peer)
+
+        time.sleep(config.end_delay)
 
 
 def client(config: Namespace):
     """Client mode"""
     time.sleep(config.start_delay)
-    client = comms.Client(addr=config.addr, port=config.port)
 
-    put_msg = client.id
-    print(f"client[{client.id}]-c2s: {put_msg}")
-    client.put(put_msg)
+    with comms.Client(addr=config.addr, port=config.port) as client:
 
-    get_msg = client.get()
-    print(f"client[{client.id}]-s2c-global: {get_msg}")
-    assert client.server == get_msg.obj, "Corrupted message data"  # type: ignore
+        put_msg = client.id
+        print(f"client[{client.id}]-c2s: {put_msg}")
+        client.put(put_msg)
 
-    get_msg = client.get()
-    print(f"client[{client.id}]-s2c-local: {get_msg}")
-    assert put_msg == get_msg.obj, "Corrupted message data"
-    client.close()
+        get_msg = client.get()
+        print(f"client[{client.id}]-s2c-global: {get_msg}")
+        assert client.server == get_msg.obj, "Corrupted message data"  # type: ignore
+
+        get_msg = client.get()
+        print(f"client[{client.id}]-s2c-local: {get_msg}")
+        assert put_msg == get_msg.obj, "Corrupted message data"
 
 
 def main(config: Namespace):

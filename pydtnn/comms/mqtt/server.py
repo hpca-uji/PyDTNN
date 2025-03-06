@@ -32,6 +32,7 @@ class Server(Protocol):
         self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
 
         # MQTT
+        self._start_loop()
         self._register_handler(topic="syc/+", handler=self._syc)
         self._register_handler(topic="fin/+", handler=self._fin)
         self._register_handler(topic="c2s/+", handler=self._c2s)
@@ -125,6 +126,20 @@ class Server(Protocol):
         if self.closed:
             return
         super().close()
+
+        # Unlock inflight external API
         with self._lock:
             for queue in self._requests.values():
                 queue.put(END_COMM)
+
+        # Bootstrap backoff generator
+        backoff = self._new_backoff()
+        next(backoff)
+
+        # Wait peers to drain
+        while self._requests:
+            backoff.send(1.0)
+
+        # Close resources
+        self._client.disconnect()
+        self._pool.shutdown()

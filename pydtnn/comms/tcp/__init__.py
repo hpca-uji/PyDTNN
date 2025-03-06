@@ -1,12 +1,10 @@
 """TCP communications"""
 
-# NOTE: Module considerations
-#
-# None
+# FIXME: On connection disconnect dont purge client, just unregister socket,
+# this would allow client reconnections and facilitates other comms.
 
 import socket
 import selectors
-from threading import Thread
 from concurrent import futures
 from concurrent.futures import ThreadPoolExecutor
 
@@ -28,10 +26,9 @@ class Protocol(comms.Communication):
     def __init__(self, addr: str, port: int) -> None:
         super().__init__(addr, port)
         self._selector = selectors.DefaultSelector()
-        self._pool = ThreadPoolExecutor(max_workers=1)
         self._selector_notifier = socket.socketpair()
+        self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._selector.register(self._selector_notifier[0], selectors.EVENT_READ, self._handle_selector_notify)
-        self._selector_thread = Thread(target=self._handle_selector)
 
     def _submit(self, fn, /, *args, **kwargs):
         """Process in the pool with exception handeling"""
@@ -41,7 +38,7 @@ class Protocol(comms.Communication):
 
     def _start_loop(self) -> None:
         """Start connection handling loop"""
-        self._selector_thread.start()
+        self._submit(self._handle_selector)
 
     def _notify_selector(self) -> None:
         """Interrupt selector loop"""
@@ -57,7 +54,7 @@ class Protocol(comms.Communication):
         """Handle selector notification"""
         self._selector_notifier[0].recv(len(NOTIFY_SELECT))
 
-    def _handle_selector(self):
+    def _handle_selector(self) -> None:
         """Handle selector loop"""
         while not self.closed:
             pending = []
@@ -76,8 +73,7 @@ class Protocol(comms.Communication):
             return
         super().close()
         self._notify_selector()
+        self._pool.shutdown()
         self._selector_notifier[1].close()
-        self._selector_thread.join()
         self._selector_notifier[0].close()
         self._selector.close()
-        self._pool.shutdown()
