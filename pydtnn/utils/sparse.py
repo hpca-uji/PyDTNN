@@ -46,6 +46,29 @@ class SparseMatrixCOO:
 
 
     @classmethod
+    def from_dense(cls, dense_array):
+        """
+        Alternative constructor to create a SparseMatrixCOO from a dense array.
+        Only stores non-zero values!
+
+        Parameters:
+            dense_array (np.ndarray): A 2D dense matrix.
+        
+        Returns:
+            SparseMatrixCOO: The sparse matrix in COO format
+        """
+
+        if len(dense_array.shape) != 2:
+            raise AssertionError("Dense array must be 2D.")
+        
+        warnings.warn("From dense constructor should be used only in case of debugging for performance reasons.")
+
+        row, col = np.where(dense_array != 0)
+        data = dense_array[row, col]
+        return cls(data, row, col, dense_array.shape, has_canonical_format=True)
+    
+
+    @classmethod
     def from_dense_top_selection(cls, dense_array, threshold):
         """
         Alternative constructor to create a SparseMatrixCOO from a dense array,
@@ -127,6 +150,21 @@ class SparseMatrixCOO:
         
         return SparseMatrixCOO(sliced_data, sliced_row, sliced_col, self.shape, self.has_canonical_format)
 
+
+    def to_dense(self):
+        """
+        Convert to dense np.array
+        
+        Returns:
+            dense_matrix: (np.array): a dense matrix
+        """
+
+        warnings.warn("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
+
+        dense_matrix = np.zeros(shape=self.shape, dtype=np.float32)
+        dense_matrix[self.row, self.col] = self.data
+        return dense_matrix
+    
 
     def __add__(self, other):
         """
