@@ -31,7 +31,8 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     for elem in to_remove:
         del dict_layers[elem]
 
-    return (layers.AdditionBlock(list_layers), input_layer_name)
+    # AdditionBlock expects every "branch" (layer list) as a different argument.
+    return (layers.AdditionBlock(*list_layers), input_layer_name)
 # --- END Add --- #
 
 def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
@@ -39,24 +40,18 @@ def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     
     print(f"Layer: {stack()[0].function}")
 
-    print(f"args: {args}")
     parameters:List[str] = args[cons.PARAMETERS].split("],")
-    print(f"parameters: {parameters}")
     params = parameters.pop(0) # Since PyDTNN always concatenate in the same dimensions, the rest of the PyTorch parameters can be ignored    
-    print(f"params: {params}")
     params = cons.separate_function_params(params)
-    print(f"params: {params}")
+    
     dict_layers:Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
-
-    print(f"dict_layers: {dict_layers}")
-
     list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
-
     # The removed layers will be accesed through the AdditionBlock.
     for elem in to_remove:
         del dict_layers[elem]
 
-    return (layers.ConcatenationBlock(list_layers), input_layer_name)
+    # ConcatenationBlock expects every "branch" (layer list) as a different argument.
+    return (layers.ConcatenationBlock(*list_layers), input_layer_name)
 # --- END Concat --- #
 
 def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:

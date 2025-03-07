@@ -15,6 +15,7 @@ def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase]) -> Non
     # TODO: Check if there are more operations to do.
     #   If not ==> Move to the main function.
     for layer in layers:
+        print(layer)
         model.add(layer)
 # --- END load_layers --- #
 
@@ -63,11 +64,9 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
     TORCH_FUNC_REQ = "torch."
     # -- END CONSTANTS -- #
 
-    print("AAAAAAA") # TODO: BORRAR
     for line in filter(lambda x: not(FIRST_LINE in x or LAST_LINE in x) , 
                        filter(lambda x: len(x)!=0, 
                         [elem.lstrip(PSEUDO_INDENTATION) for elem in graph.code.split(BY_LINES)])):
-        print(line) # TODO: BORRAR
         # NOTE: seems that there are situations that the line does not have the value.
         line = line.split(SEPARATOR_FUNCTION_VALUE)[0] # [line, debug's input's value]            
         operation = line.split(SEPARATOR_ASSIGNATION)  # [output, function+args]
@@ -84,13 +83,11 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
 
         func = None # It will be assigned in the following if-else statement
         if len(operation) > 1:
-            # Normal case. Examples: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)', 'self.avgpool(features_36)'
-            print(f"AAA: {operation}")            
+            # Normal case. Examples: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)', 'self.avgpool(features_36)'       
             if any(MODEL_LAYER_REQ in part for part in operation):                
                 # Case: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)'
                 args = operation.pop().replace(PARAMETER_ENDING, "") # [function, ...n..., function], args
                 operation = PARAMETERS_BEGINING.join(operation) # Reasembling the operation without the arguments.
-                print(f"operation: {operation}")
                 operation = operation.replace(MODEL_LAYER_REQ, MODEL_FUNCT_ARG_NAME) 
                 func = eval(operation) # Getting the layer object.
             else: 
@@ -101,16 +98,16 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
                 # NOTE: The first argument is always a previous layer
                 # --
                 # TORCH_FUNC_REQ --> Case: function. Example: torch.cat()
-                print(f"operation: {operation}")
                 _operation = operation.pop(0) # _operation = something like "torch.cat"; operation= [arg1, arg2) arg3 etc.)] [list[str]]
                 args = PARAMETERS_BEGINING.join(operation)[:-1] # _operation = "torch.cat"; operation= arg1 (arg2) arg3 etc. [str] | [:-1] to remove the final ")"
                 operation = _operation
 
-                print(f"args: {args}")
-                print(f"operation: {operation}")
+                if operation in cons.SPECIAL_CASES:
+                    # TODO [possible future FIXME]: See what to do with the special cases.
+                    continue
+
                 for pattern in [TORCH_LAYER_REQ, TORCH_FUNC_REQ]:
                     if pattern in operation:
-                        print(f"pattern: {pattern}")
                         func = operation.replace(pattern, "") #operation = "adaptive_avg_pool2d" | "cat"
                         break
                     # else: Never happens. One of the patterns *must* be in operation
@@ -129,87 +126,98 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
     return relations_dic
 # --- END extract_layers_relations --- #
 
-def convert_layers_and_get_weights_and_biases(layers:Dict[str, Tuple[Union[str|torch.nn.Module], str]]) -> Tuple[List[LayerAndActivationBase], Dict[str, np.array], Dict[str, np.array]]:
+def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Dict[str, Tuple[Union[str|torch.nn.Module], str]]) -> Tuple[List[LayerAndActivationBase], Dict[str, np.array], Dict[str, np.array]]:
 
-    converted_layers = dict()
+    converted_layers: Dict[str, LayerAndActivationBase] = dict()
 
-    # Constants - state_dicts keys. 
+    # Constants 
+    # - state_dicts keys. 
     LAYER_WEIGHTS = "weight"
     LAYER_BIASES = "bias"
+
+    # - initalizers
+    PYDTNN_WEIGHTS_INITIALIZER = "weights_initializer"
+    PYDTNN_BIASES_INITIALIZER = "biases_initializer"
     # -----
-    print(f"layers: {layers}")
 
-    # TODO: Hacer bien.
-    # TODO: Check if there is another way.
-    # TODO: Handle situations where there are no input shape.
+    # NOTE: I didn't find a way to find the input shape from a PyTorch model ==> it became a parameter set by the user.
     layer_var_names = list(layers.keys())
-    #first_layer_weights_bias = layers[layer_keys[0]].state_dict()
-    #if LAYER_WEIGHTS in first_layer_weights_bias:
-    #    first_layer_shape = layers[layer_keys[0]].state_dict()[LAYER_WEIGHTS].shape
-    #else:
-    #    first_layer_shape = (1,)   
 
-    print(f"layer_var_names: {layer_var_names}")
     fst_layer = layer_var_names[0]
-    print(f"fst_layer: {fst_layer}")
     _input = layers[fst_layer][1]
-    # TODO: Extrat 1st layer in the proper way.
-    first_layer_shape = (1,)
-
-    converted_layers[_input] = ((Input(first_layer_shape), None))
-
-    # TODO: Remove this:
-    from pprint import pprint
+    converted_layers[_input] = ((Input(input_shape), None))
 
     dict_weights = dict()
     dict_biases = dict()
     # layer_var_names: {value's variable (str): ([function (str) or layer (nn.Module)], arguments (str))}
     for operation_variable in layer_var_names:
-        pprint(converted_layers, sort_dicts=False)
         operation, params = layers[operation_variable]
-        print(f"operation: {operation}")
-        print(f"params: {params}")
-
-        # TODO:     
-        # if ADD in name: 
-        # TypeError: argument of type 'NoneType' is not iterable
 
         if isinstance(operation, torch.nn.Module):
-                     
             layer = operation 
             layer_var = operation_variable 
 
             name = layer._get_name()
-            state_dict = layer.state_dict()
-            # There are layers without weight nor biases
-            if LAYER_WEIGHTS in state_dict:
-                # The weights are "torch.Tensor": torch.Tensor.cpu().detach().numpy() ==> weigths as np.array
-                dict_weights[name] = state_dict[LAYER_WEIGHTS].cpu().detach().numpy()
-            if LAYER_BIASES in state_dict: 
-                dict_biases[name] = state_dict[LAYER_BIASES].cpu().detach().numpy()
         
             args = {cons.ARGUMENTS: vars(layer)}
             # In this context, params are the input layers.
-            converted_layers[layer_var] = (cons.switch_pytorch_pydtnn(name)(args), params)
+            converted_layer = cons.switch_pytorch_pydtnn(name)(args)           
+
+            # -- Loading the weigths and the biases into the converted layer -- #
+            # TODO: Check if there is another way to do this.
+            def weights_initializer(*args_to_ignore):
+                return dict_weights[operation]
+            # - END weights_initializer - #
+
+            # TODO: Check if there is another way to do this.
+            def biases_initializer(*args_to_ignore):
+                return dict_biases[operation]
+            # - END weights_initializer - #
+
+            state_dict = layer.state_dict()
+                        
+            # There are layers without weight nor biases
+            if LAYER_WEIGHTS in state_dict:                        
+                # The weights are "torch.Tensor": torch.Tensor.cpu().detach().numpy() ==> weigths as np.array
+                dict_weights[operation] = state_dict[LAYER_WEIGHTS].cpu().detach().numpy()
+                if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
+                    converted_layer.weights_initializer = weights_initializer
+                else:
+                    converted_layer.weights = dict_weights[operation]
+            # else: Nothing special
+
+            if LAYER_BIASES in state_dict: 
+                dict_biases[operation] = state_dict[LAYER_BIASES].cpu().detach().numpy()                
+                if hasattr(converted_layer, PYDTNN_BIASES_INITIALIZER):
+                    converted_layer.biases_initializer = biases_initializer
+                else:
+                    converted_layer.biases = dict_biases[operation]
+            # else: Nothing special
+
+            # -- Loading the weigths and the biases into the converted layer -- #
+
+            converted_layers[layer_var] = (converted_layer, params)
 
         else: #is intance of string (the name of a function or an operation)
             # Here, params are the input layers and other arguments.            
             args = {cons.PARAMETERS: params, cons.LAYERS: converted_layers}
             converted_layers[operation_variable] = cons.function_operation_to_pydtnn(operation)(args)
+            # NOTE: Remember, originally theese were functions, then they does not have weights nor biases.
+            # TODO: Check if it is necessary to set/unset in the class something (like the weigths update) in order to make it work like a function.
         
-    return (converted_layers, dict_weights, dict_biases)
+    list_layers = [layer for layer, _input in converted_layers.values()]
+    return (list_layers, dict_weights, dict_biases)
 # --- END convert_layers --- #
 
-def convert_model(model:torch.nn.Module, omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
+def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
     
     if "tensor_format" not in kwargs:
-        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NHWC # PYDTNN_TENSOR_FORMAT_NCHW #PYDTNN_TENSOR_FORMAT_NHWC
+        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NHWC #PYDTNN_TENSOR_FORMAT_NCHW #PYDTNN_TENSOR_FORMAT_NHWC
     if "model_name" not in kwargs:
         kwargs["model_name"] = None
 
     # Output model.
-    # NOTE: ¡¡¡¡IMPORTANT!!!!! Be sure that the "parser.model_name" from "pydtnn.parser" is None!!!!!!!!.
     converted_model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
                     enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)    
 
@@ -217,13 +225,10 @@ def convert_model(model:torch.nn.Module, omm=None, non_blocking_mpi=False, enabl
     dict_layers = extract_layers_relations(model = model)
 
     # Obtaining the PyDTNN equivalent
-    layers, weights, biases = convert_layers_and_get_weights_and_biases(dict_layers)
+    layers, weights, biases = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
 
     # Asigning the layers/operations to the converted model.
     load_layers(model=converted_model, layers=layers)
-
-    # Loading the weights into the model.
-    converted_model.load_store_path(layers = converted_model.layers, d = weights, mode = "load")
         
     return converted_model
 # --- END convert_model --- #      
