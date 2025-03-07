@@ -322,7 +322,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
 
 
-    def _space_repartition(self, acc, local_th, balanced=False):
+    def _space_repartition(self, acc, local_th, balanced=True):
         """
         Returns the boundaries of the regions of the gradient matrix for the split and reduce phase.
         
@@ -351,7 +351,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return boundaries
 
         if balanced:
-            coo_topk = SparseMatrixCOO(acc, local_th)
+            coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
             
             current_row = 0
             current_proc = 0
@@ -359,7 +359,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             topk_in_current_proc = 0
             total_rows = coo_topk.shape[0]
             boundaries = np.zeros(self.nprocs, dtype=np.int32)
-            topk_per_proc = coo_topk.count_nonzero() // self.nprocs
+            topk_per_proc = coo_topk.nnz // self.nprocs
             topk_per_row = np.zeros(total_rows, dtype=np.int32)
             np.add.at(topk_per_row, rows, 1)
 
