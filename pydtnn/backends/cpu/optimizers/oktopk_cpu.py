@@ -657,7 +657,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if not np.all(row[:-1] <= row[1:]):
             return False
 
-        for i in range(row - 1):
+        for i in range(len(row) - 1):
             if row[i] == row[i + 1] and col[i] >= col[i + 1]:
                 return False
         return True
