@@ -491,7 +491,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             reduced_regions_coo = [None] * self.nprocs
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                reduced_regions_coo[region] = self.comm.reduce(coo_topk(row_start, row_end), op=MPI.SUM, root=region)
+                reduced_regions_coo[region] = self.comm.reduce(coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region)
                 row_start = row_end
             return reduced_regions_coo[self.rank]
 
@@ -588,7 +588,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return coo_gathered_data
 
         if input_format == "SparseMatrixCOO":
-            warnings.warn("Use 'coo_tuple' as input_format. It is faster!")
+            # TODO: check: warnings.warn("Use 'coo_tuple' as input_format. It is faster!")
             gathered = self.comm.allgather(local_data)
             coo_gathered_data = sum(gathered).tocoo()
             return coo_gathered_data
