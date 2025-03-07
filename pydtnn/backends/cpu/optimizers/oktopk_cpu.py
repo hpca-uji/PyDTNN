@@ -480,49 +480,36 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         self._show_message_only_once(f"In '_reduce_topk', the method that it is being used is '{method}'")
 
         if method == "collective_allreduce_then_slice":
-            all_reduced_csr = self.comm.allreduce(coo_topk, op=MPI.SUM)
+            warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
+            all_reduced_coo = self.comm.allreduce(coo_topk, op=MPI.SUM)
             row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
             row_end = boundaries[self.rank]
-            coo_reduced_region = all_reduced_csr[row_start:row_end].tocoo()
-            coo_reduced_region.row += row_start
-            return coo_reduced_region
+            return all_reduced_coo.slice(row_start, row_end)
 
         if method == "collective_reduce_region_blocking":
             row_start = 0
-            csr_topk = coo_topk.tocsr()
-            reduced_regions_csr = [None] * self.nprocs
+            reduced_regions_coo = [None] * self.nprocs
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                reduced_regions_csr[region] = self.comm.reduce(csr_topk[row_start:row_end], op=MPI.SUM, root=region)
+                reduced_regions_coo[region] = self.comm.reduce(coo_topk(row_start, row_end), op=MPI.SUM, root=region)
                 row_start = row_end
-            coo_reduced_region = reduced_regions_csr[self.rank].tocoo()
-            if self.rank != 0:
-                coo_reduced_region.row += boundaries[self.rank - 1]
-            # Another SparseMatrixCOO conversion is needed to set shape as dw_2d_shape 
-            coo_reduced_region = SparseMatrixCOO((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
-            return coo_reduced_region
+            return reduced_regions_coo[self.rank]
 
         if method == "collective_reduce_region_non_blocking_dense":
             """Warning: Do not remove send_bufs list, because reusing the same buffer for sending may produce different outputs for Ireduce"""
+            warnings.warn("This reduce_topk method ('collective_reduce_region_non_blocking_dense') should be used only in case of debugging for performance reasons.")
             row_start = 0
             requests = [None] * self.nprocs
             recv_bufs = [None] * self.nprocs
             send_bufs = [None] * self.nprocs
-            csr_topk = coo_topk.tocsr()
             for region in range(self.nprocs):
                 row_end = boundaries[region]
-                # TODO: Send in sparse format!!
-                send_bufs[region] = csr_topk[row_start:row_end].toarray()
+                send_bufs[region] = coo_topk.slice(row_start, row_end).to_dense()
                 recv_bufs[region] = np.zeros_like(send_bufs[region]) if self.rank == region else None
                 requests[region] = self.comm.Ireduce(send_bufs[region], recv_bufs[region], op=MPI.SUM, root=region)
                 row_start = row_end
             MPI.Request.Waitall(requests)
-            coo_reduced_region = SparseMatrixCOO(recv_bufs[self.rank], dtype=np.float32)
-            if self.rank != 0:
-                coo_reduced_region.row += boundaries[self.rank - 1]
-            # Another SparseMatrixCOO conversion is needed to set shape as dw_2d_shape 
-            coo_reduced_region = SparseMatrixCOO((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
-            return coo_reduced_region
+            return SparseMatrixCOO.from_dense(recv_bufs[self.rank])
 
         if method == "collective_reduce_region_non_blocking_sparse":
             """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
