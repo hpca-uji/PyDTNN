@@ -116,6 +116,16 @@ class SparseMatrixCOO:
             return SparseMatrixCOO(topk, topk_row, topk_col, self.shape, self.has_canonical_format)
         
 
+    def get_indexes(self):
+        """
+        Returns the row and col
+
+        Returns:
+            tuple (tuple): row and col
+        """
+        return self.row, self.col
+
+
     def get_triplet(self):
         """
         Returns the data, row, col triplet
@@ -161,7 +171,7 @@ class SparseMatrixCOO:
 
         warnings.warn("This function ('to_sparse') should be used only in case of debugging for performance reasons.")
 
-        dense_matrix = np.zeros(shape=self.shape, dtype=np.float32)
+        dense_matrix = np.zeros(self.shape, dtype=np.float32)
         dense_matrix[self.row, self.col] = self.data
         return dense_matrix
     
@@ -187,6 +197,25 @@ class SparseMatrixCOO:
         summ_val, summ_row, summ_col = summ_coo_cython(self.data, self.row, self.col, other.data, other.row, other.col)
         return SparseMatrixCOO(summ_val, summ_row, summ_col, self.shape, has_canonical_format=True)
     
+
+    def __radd__(self, other):
+        """
+        Implements right-hand addition to support the built-in sum() function.
+        
+        This method allows an instance of this class to be used with sum() by handling the
+        case where the left operand is 0. If 'other' is 0, it returns the instance itself;
+        otherwise, it delegates the operation to the __add__ method.
+        
+        Parameters:
+            other (int or instance of the same class): The left-hand operand, typically 0 when used with sum().
+            
+        Returns:
+            An instance of the class representing the sum of self and other.
+        """
+        if other == 0:
+            return self
+        return self.__add__(other)
+
 
     def _has_canonical_format(self):
         """
