@@ -613,14 +613,22 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
 
-    def _show_message_only_once(self, message: str) -> None:
+    def _show_message_only_once(self, message):
+        """
+        Show information messages only once to assess the selected functions are being used.
+        
+        Parameters:
+            message (str): The message to show.
+        Returns:
+            void (None):
+        """
         if self.rank == 0:
             if message not in self.info_messages:
                 self.info_messages.add(message)
                 print(message)
 
 
-    def _has_canonical_format(self, indexes: tuple) -> bool:
+    def _has_canonical_format(self, indexes):
         """
         Check if indexes follows the COO canonical format: 
             - Indexes are sorted by row and then by column 
