@@ -92,68 +92,6 @@ def reset_residuals_cython(np.ndarray[np.float32_t, ndim=2] acc,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def top_threshold_selection_cython(np.ndarray[np.float32_t, ndim=2] matrix, 
-                                   float threshold):
-    
-    cdef int rows = matrix.shape[0]
-    cdef int cols = matrix.shape[1]
-    cdef int i, j, count = 0
-    cdef np.ndarray[np.int32_t, ndim=1]  count_vector = np.zeros(rows + 1, dtype=np.int32)
-
-    for i in prange(rows, nogil=True):
-        for j in range(cols):
-            if abs(matrix[i, j]) >= threshold:
-                count_vector[i + 1] += 1
-
-    for i in range(rows):
-        count_vector[i + 1] += count_vector[i] 
-    count = count_vector[rows]
-
-    cdef np.ndarray[np.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
-
-    for i in prange(rows, nogil=True):
-        for j in range(cols):
-            if abs(matrix[i, j]) >= threshold:
-                top_values[count_vector[i]] = matrix[i, j]
-                row_indices[count_vector[i]] = i
-                col_indices[count_vector[i]] = j
-                count_vector[i] += 1
-
-    return top_values, (row_indices, col_indices)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def top_threshold_selection_coo_cython(np.ndarray[np.float32_t, ndim=1] values, 
-                                       np.ndarray[np.int32_t, ndim=1] rows, 
-                                       np.ndarray[np.int32_t, ndim=1] cols, 
-                                       float threshold):
-    cdef int i, count = 0
-    cdef int len_values = len(values)
-
-    for i in prange(len_values, nogil=True):
-        if abs(values[i]) >= threshold:
-            count += 1
-
-    cdef np.ndarray[np.float32_t, ndim=1] top_values = np.empty(count, dtype=np.float32)
-    cdef np.ndarray[np.int32_t, ndim=1] row_indices = np.empty(count, dtype=np.int32)
-    cdef np.ndarray[np.int32_t, ndim=1] col_indices = np.empty(count, dtype=np.int32)
-
-    count = 0
-    for i in range(len_values):
-        if abs(values[i]) >= threshold:
-            top_values[count] = values[i]
-            row_indices[count] = rows[i]
-            col_indices[count] = cols[i]
-            count += 1
-            
-    return top_values, (row_indices, col_indices)
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def update_dense_weights_cython(np.ndarray[np.float32_t, ndim=2] w, 
                                 np.ndarray[np.float32_t, ndim=2] u):
 

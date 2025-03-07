@@ -35,10 +35,12 @@ from max_pool_2d_nchw_cython import max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd
 from max_pool_2d_nhwc_cython import max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython
 from oktopk_utils_cython import \
     update_dense_weights_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython, \
-    top_threshold_selection_cython, top_threshold_selection_coo_cython, \
     intersect_2d_indexes_cython, compute_dense_acc_cython, reset_residuals_cython
 from pointwise_conv_cython import pointwise_conv_cython
 from relu_cython import relu_cython
+from sparse_cython import \
+    summ_coo_cython, \
+    top_threshold_selection_dense_cython, top_threshold_selection_coo_cython
 from transpose_cython import \
     transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
     transpose_0312_ijk_cython, transpose_0312_ikj_cython, \

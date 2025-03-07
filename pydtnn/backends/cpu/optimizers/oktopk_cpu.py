@@ -19,13 +19,10 @@
 
 import warnings
 import numpy as np
-from scipy.sparse import coo_array, csr_array
-
+from pydtnn.utils.sparse import SparseMatrixCOO
 from pydtnn.cython_modules import \
     compute_dense_acc_cython, \
     intersect_2d_indexes_cython, \
-    top_threshold_selection_cython, \
-    top_threshold_selection_coo_cython, \
     update_sparsed_weights_cython, \
     update_sparsed_weights_mv_cython, \
     reset_residuals_cython
@@ -93,13 +90,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         self.iterations[layer.id] += 1
 
 
-    def _show_message_only_once(self, message):
-        if self.rank == 0:
-            if message not in self.info_messages:
-                self.info_messages.add(message)
-                print(message)
-
-
     def _compute_acc(self, residuals, dw, learning_rate, method="cython"):
         """
         Compute acc, where: acc = residuals + (learning_rate * dw)
@@ -163,13 +153,14 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
     
     def _update_weights(self, layer, w_type, w, coo_u, method="cython"):
         """
-        Update weights: w -= (u / self.nprocs) and set to weight layer attribute: setattr(layer, w_type, w)
+        Update weights: w -= (u / self.nprocs) 
+        and set to weight layer attribute: setattr(layer, w_type, w)
 
         Parameters:
             layer (int): layer id
             w_type (string): weight param type (bias, weight, ...)
             w (np.array): N dimensional dense weights matrix/tensor 
-            coo_u (coo_array): Sparse 2D gradient matrix in COO format to update w
+            coo_u (SparseMatrixCOO): Sparse 2D gradient matrix in COO format to update w
             method (string, optional): The method to use for updating the weights. It can be 'cython' or 'numpy'. Default is 'cython'.
 
         Returns:
@@ -261,7 +252,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         Returns:
             out (tuple with two elements:):
-                - coo_u (coo_array): The updated gradient values in 2D sparse format.
+                - coo_u (SparseMatrixCOO): The updated gradient values in 2D sparse format.
                 - indexes (tuple(np.array, np.array)): The indices of the top-k gradient values that were updated.
         """
 
@@ -287,8 +278,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Return the absolute gradient threshold for a given matrix.
         
         Parameters:
-            matrix (np.array or coo_array): A 2D gradient matrix, in np.array for 'dense' input_format or 
-                                            coo_array for 'coo' input_format.
+            matrix (np.array or SparseMatrixCOO): A 2D gradient matrix, in np.array for 'dense' input_format or SparseMatrixCOO for 'coo' input_format.
             k (int): Indicating the number of top gradient values to consider.
             input_format (string): Either 'dense' for a dense matrix or 'coo' for a sparse matrix in COO format.
             method (string, optional): The method to use for threshold selection. It can be 'numpy_sort' or 'numpy_partition'.
@@ -361,7 +351,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return boundaries
 
         if balanced:
-            coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
+            coo_topk = SparseMatrixCOO(acc, local_th)
             
             current_row = 0
             current_proc = 0
@@ -404,11 +394,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         Returns:
             out (tuple with two elements:):
-                - coo_reduced_region_topk (coo_array): The reduced top-k gradient values in COO format.
+                - coo_reduced_region_topk (SparseMatrixCOO): The reduced top-k gradient values in COO format.
                 - local_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values selected locally.
         """
         
-        coo_topk = self._top_threshold_selection(acc, local_th, input_format="dense")
+        coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
         coo_reduced_region_topk = self._reduce_topk(coo_topk, boundaries)
         return coo_reduced_region_topk, (coo_topk.row, coo_topk.col)
 
@@ -419,17 +409,17 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Performs the allgather of the coo_reduced_region_topk values among workers.
 
         Parameters:
-            coo_reduced_region_topk (coo_array): a 2D sparse gradient matrix.
+            coo_reduced_region_topk (SparseMatrixCOO): a 2D sparse gradient matrix.
             global_th (float): the global threshold to perfrom top selection.
 
         Returns:
             out (tuple with two elements:):
-                - coo_allgather_topk (coo_array): A 2D sparse gradient matrix with the global top-k selection.
+                - coo_allgather_topk (SparseMatrixCOO): A 2D sparse gradient matrix with the global top-k selection.
                 - reduced_region_global_topk_indexes (tuple(np.array, np.array)): The indices of the top-k gradient values region reduced.
         """
 
         # 1. Global topk selection
-        coo_reduced_region_global_topk = self._top_threshold_selection(coo_reduced_region_topk, global_th, input_format="coo")
+        coo_reduced_region_global_topk = coo_reduced_region_topk.top_selection(global_th, inplace=False) 
 
         # 2. Data packaging
         # TODO
@@ -438,40 +428,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        coo_allgather_topk = self._allgather((coo_reduced_region_global_topk.data, coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col))
+        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk.get_triplet())
         return coo_allgather_topk, (coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col) 
 
 
-    def _has_canonical_format(self, indexes):
-        """
-        Check if indexes are sorted by row and then by column (COO canonical format)
-        This function is computationally expensive and therefore should only be used for developing/debugging purposes.
-        This function should only be used in developement to assert that sparse matrices have canonical format. 
-
-        Parameters:
-            indexes (tuple(np.array, np.array)): a tuple of rows and cols
-
-        Returns:
-            has_canonical_format (boolean): True if indexes are in canonical format, False if not. 
-        """
-        
-        warnings.warn("This function ('_has_canonical_format') should be used only in case of debugging for performance reasons.")
-        
-        rows, cols = indexes
-
-        if len(rows) == 0:
-            return True
-
-        if not np.all(rows[:-1] <= rows[1:]):
-            return False
-
-        for i in range(len(rows) - 1):
-            if rows[i] == rows[i + 1] and cols[i] > cols[i + 1]:
-                return False
-        return True
-
-
-    def _intersect_indexes(self, local_indexes, global_indexes, method="cython"):
+    def _intersect_indexes(self, local_indexes, global_indexes):
         """
         Calculates the intersection of two sets of indices of 2D.
         The assertion statement is only executed when the script is not run in optimized mode (python3 -O script.py).
@@ -492,92 +453,17 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             - output: (array([1, 3, 3]), array([6, 1, 7]))  
         """
 
-        assert(self._has_canonical_format(local_indexes) and self._has_canonical_format(global_indexes)) 
-
-        self._show_message_only_once(f"In '_intersect_indexes', the method that it is being used is '{method}'")
-
-        if method == "cython":
-            local_rows, local_cols = local_indexes
-            global_rows, global_cols = global_indexes
-            return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
-        
-        if method == "numpy":
-            count = 0
-            i_local, i_global = 0, 0
-            local_rows, local_cols = local_indexes
-            global_rows, global_cols = global_indexes
-            max_size = min(len(local_rows), len(global_rows))
-            intersected_rows = np.empty(max_size, dtype=np.int32)
-            intersected_cols = np.empty(max_size, dtype=np.int32)
-            while i_local < len(local_rows) and i_global < len(global_rows):
-                local_row = local_rows[i_local]
-                global_row = global_rows[i_global]
-                if local_row < global_row:
-                    i_local += 1
-                elif local_row > global_row:
-                    i_global += 1
-                else:
-                    local_col = local_cols[i_local]
-                    global_col = global_cols[i_global]
-                    if local_col < global_col:
-                        i_local += 1
-                    elif local_col > global_col:
-                        i_global += 1
-                    else:
-                        intersected_rows[count] = local_row
-                        intersected_cols[count] = local_col
-                        i_global += 1                    
-                        i_local += 1
-                        count += 1
-            return intersected_rows[:count], intersected_cols[:count]
-
-        raise NotImplementedError(f"Method '{method}' not implemented")
+        local_rows, local_cols = local_indexes
+        global_rows, global_cols = global_indexes
+        return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
 
-    def _top_threshold_selection(self, matrix, threshold, input_format=None, method="cython"):
-        """
-        Selects top-k elements from the matrix that are greater than or equal to the threshold.
-        
-        Parameters:
-            matrix (np.array o coo_array): The input 2D matrix from which to select elements.
-            threshold (float): The threshold value to compare against the absolute values of the matrix elements.
-            input_format (str): The format of the input matrix. It can be 'dense' for numpy arrays or 'coo' for sparse COO arrays.
-            method (str, optional): The method to use for selection. It can be "cython" or "numpy". Default is "cython".
-        
-        Returns:
-            topk (coo_array): A sparse 2D gradient matrix topk in COO.
-        """
-
-        self._show_message_only_once(f"In '_top_threshold_selection', the method that it is being used is '{method}'")
-
-        if method == "cython" and input_format == "dense":
-            topk, topk_indexes = top_threshold_selection_cython(matrix, threshold)
-            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
-
-        if method == "cython" and input_format == "coo":
-            topk, topk_indexes = top_threshold_selection_coo_cython(matrix.data, matrix.row, matrix.col, threshold)
-            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
-
-        if method == "numpy" and input_format == "dense":
-            topk_indexes = np.where(np.abs(matrix) >= threshold)
-            topk = matrix[topk_indexes]
-            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
-
-        if method == "numpy" and input_format == "coo":
-            mask = np.abs(matrix.data) >= threshold
-            topk = matrix.data[mask]
-            topk_indexes = (matrix.row[mask], matrix.col[mask])
-            return coo_array((topk, topk_indexes), dtype=np.float32, shape=self.dw_2d_shape)
-
-        raise NotImplementedError(f"Method '{method}' with format '{input_format}' not implemented")
-
-
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_destination_rotation"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_non_blocking"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
         Parameters:
-            coo_topk (coo_array): a 2D sparse array in COO format with the values and indexes of topk.
+            coo_topk (SparseMatrixCOO): a 2D sparse array in COO format with the values and indexes of topk.
             boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...].
             method (str, optional): The method to use for reduce topk
 
@@ -585,7 +471,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             Method 'reduce_region' does not provide the same exact accuracy as 'reduce_region_blocking' or 'allreduce_then_slice'.
 
         Returns:
-            coo_reduced_region (coo_array): The reduced topk values in COO format.
+            coo_reduced_region (SparseMatrixCOO): The reduced topk values in COO format.
         """
 
         if self.nprocs == 1:
@@ -612,8 +498,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             coo_reduced_region = reduced_regions_csr[self.rank].tocoo()
             if self.rank != 0:
                 coo_reduced_region.row += boundaries[self.rank - 1]
-            # Another coo_array conversion is needed to set shape as dw_2d_shape 
-            coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
+            # Another SparseMatrixCOO conversion is needed to set shape as dw_2d_shape 
+            coo_reduced_region = SparseMatrixCOO((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
 
         if method == "collective_reduce_region_non_blocking_dense":
@@ -631,11 +517,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 requests[region] = self.comm.Ireduce(send_bufs[region], recv_bufs[region], op=MPI.SUM, root=region)
                 row_start = row_end
             MPI.Request.Waitall(requests)
-            coo_reduced_region = coo_array(recv_bufs[self.rank], dtype=np.float32)
+            coo_reduced_region = SparseMatrixCOO(recv_bufs[self.rank], dtype=np.float32)
             if self.rank != 0:
                 coo_reduced_region.row += boundaries[self.rank - 1]
-            # Another coo_array conversion is needed to set shape as dw_2d_shape 
-            coo_reduced_region = coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
+            # Another SparseMatrixCOO conversion is needed to set shape as dw_2d_shape 
+            coo_reduced_region = SparseMatrixCOO((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
             return coo_reduced_region
 
         if method == "collective_reduce_region_non_blocking_sparse":
@@ -646,37 +532,32 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             # Send all regions except mine, in a non-blocking way 
             req_count = 0
             region = (self.rank + 1) % self.nprocs
-            csr_topk = coo_topk.tocsr()
             requests = [None] * (self.nprocs - 1)
             for _ in range(self.nprocs - 1):
                 row_start = 0 if region == 0 else boundaries[region - 1]
                 row_end = boundaries[region]
-                requests[req_count] = self.comm.isend(csr_topk[row_start:row_end], dest=region)
+                requests[req_count] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
                 region = 0 if region == self.nprocs -1 else region + 1
                 req_count += 1
 
             # Receive regions and perform partial sums
             row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
             row_end = boundaries[self.rank]
-            csr_reduced_region = csr_topk[row_start:row_end]
-            for _ in range(self.nprocs -1):
-                csr_reduced_region += self.comm.recv()
+            coo_reduced_region = coo_topk.slice(row_start, row_end)
 
-            # Wait all requests, convert into coo format and fix sliced rows to original values  
+            for _ in range(self.nprocs -1):
+                coo_reduced_region += self.comm.recv()
+
             MPI.Request.Waitall(requests)
-            coo_reduced_region = csr_reduced_region.tocoo()
-            if self.rank != 0:
-                coo_reduced_region.row += boundaries[self.rank - 1]
-            return coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
+            return coo_reduced_region 
 
         if method == "p2p_reduce_region_destination_rotation":
             # Prepare a vector region for storing the partial sums
-            csr_topk = coo_topk.tocsr()
-            csr_region_partial_sum = [None] * self.nprocs
+            coo_region_partial_sum = [None] * self.nprocs
             for region in range(self.nprocs):
                 row_start = 0 if region == 0 else boundaries[region - 1]
                 row_end = boundaries[region]
-                csr_region_partial_sum[region] = csr_topk[row_start:row_end]
+                coo_region_partial_sum[region] = coo_topk.slice(row_start, row_end)
 
             # Overlaps comm. steps with computation (sparse sum)
             # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}. 
@@ -686,65 +567,90 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 region_to_send = (self.rank - comm_step) % self.nprocs
                 region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
                 # recv_req = self.comm.irecv(source=receive_from)
-                # self.comm.send(csr_region_partial_sum[region_to_send], dest=destination)
-                # csr_region_partial_sum[region_to_recv] += recv_req.wait() 
-                csr_region_partial_sum[region_to_recv] += self.comm.sendrecv(csr_region_partial_sum[region_to_send], 
+                # self.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
+                # coo_region_partial_sum[region_to_recv] += recv_req.wait() 
+                coo_region_partial_sum[region_to_recv] += self.comm.sendrecv(coo_region_partial_sum[region_to_send], 
                                                                              dest=destination, source=receive_from)
 
-            # Convert into coo format and fix sliced rows to original values  
-            coo_reduced_region = csr_region_partial_sum[self.rank].tocoo()
-            if self.rank != 0:
-                coo_reduced_region.row += boundaries[self.rank - 1]
-            return coo_array((coo_reduced_region.data, (coo_reduced_region.row, coo_reduced_region.col)), dtype=np.float32, shape=self.dw_2d_shape)
+            # Convert into coo format and fix sliced rows to original values
+            return coo_region_partial_sum[self.rank]  
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _allgather(self, local_data, input_format="coo_tuple"):
+    def _allgather(self, local_data, input_format="coo_triplet"):
         """
         Gathers data from all processes.
         
         Parameters:
-            local_data (tuple, np.ndarray or coo_array): The local data to be gathered.
+            local_data (tuple, np.ndarray or SparseMatrixCOO): The local data to be gathered.
             input_format (str, optional): The format of the input data.
         Returns:
-            gathered_data (np.ndarray or coo_array): The gathered global data in the specified format.
+            gathered_data (np.ndarray or SparseMatrixCOO): The gathered global data in the specified format.
         """
         
         if self.nprocs == 1:
             return local_data
         
-        if input_format == "coo_tuple":
-            assert(type(local_data) == tuple)
+        if input_format == "coo_triplet":
             gathered = self.comm.allgather(local_data)
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
-            coo_gathered_data = coo_array((all_val, (all_row, all_col)), shape=self.dw_2d_shape, dtype=np.float32)
+            coo_gathered_data = SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
             return coo_gathered_data
 
-        if input_format == "csr_tuple":
-            assert(type(local_data) == tuple)
-            pass
-
-        if input_format == "coo_array":
-            assert(type(local_data) == coo_array)
+        if input_format == "SparseMatrixCOO":
             warnings.warn("Use 'coo_tuple' as input_format. It is faster!")
             gathered = self.comm.allgather(local_data)
             coo_gathered_data = sum(gathered).tocoo()
             return coo_gathered_data
 
-        if input_format == "csr_array":
-            assert(type(local_data) == csr_array)
-            warnings.warn("Use 'csr_tuple' as input_format. It is faster!")
-            gathered = self.comm.allgather(local_data)
-            csr_gathered_data = sum(gathered)
-            return csr_gathered_data
-
         if input_format == "dense":
-            assert(type(local_data) == np.ndarray)
             warnings.warn("Try to avoid dense communications!")
             return np.concatenate(self.comm.allgather(local_data))
 
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
+
+    def _show_message_only_once(self, message: str) -> None:
+        if self.rank == 0:
+            if message not in self.info_messages:
+                self.info_messages.add(message)
+                print(message)
+
+
+    def _has_canonical_format(self, indexes: tuple) -> bool:
+        """
+        Check if indexes follows the COO canonical format: 
+            - Indexes are sorted by row and then by column 
+            - There are no duplicate entries
+        This function is computationally expensive and therefore should only be used for developing/debugging purposes.
+        This function should only be used in developement to assert that sparse matrices have canonical format. 
+
+        Parameters:
+            indexes (tuple(np.ndarray, np.ndarray)): indexes to check
+
+        Returns:
+            has_canonical_format (bool): True if indexes are in canonical format, False if not. 
+        """
+        
+        warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
+        
+
+        row, col = indexes
+
+        if len(row) != len(col):
+            raise AssertionError("'row' and 'col' must have the same length")
+
+        if len(row) == 0:
+            return True
+
+        if not np.all(row[:-1] <= row[1:]):
+            return False
+
+        for i in range(row - 1):
+            if row[i] == row[i + 1] and col[i] >= col[i + 1]:
+                return False
+        return True
+    
