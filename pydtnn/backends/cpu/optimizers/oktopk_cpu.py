@@ -107,7 +107,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             acc (np.array): 2D dense matrix with the updated residuals
         """
 
-        self._show_message_only_once(f"\nIn '_compute_acc', the method that it is being used is '{method}'")
+        self._show_message_only_once(f"\n\nIn '_compute_acc', the method that it is being used is '{method}'")
 
         if method == "cython":
             return compute_dense_acc_cython(residuals, dw, learning_rate)
@@ -265,7 +265,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
-            coo_all_reduced_topk = self._allgather((coo_reduced_region_topk.data, coo_reduced_region_topk.row, coo_reduced_region_topk.col))
+            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk.get_triplet())
             self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
         coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_region_topk, self.global_th)
@@ -400,7 +400,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         
         coo_topk = SparseMatrixCOO.from_dense_top_selection(acc, local_th)
         coo_reduced_region_topk = self._reduce_topk(coo_topk, boundaries)
-        return coo_reduced_region_topk, (coo_topk.row, coo_topk.col)
+        return coo_reduced_region_topk, coo_topk.get_indexes()
 
 
     def _balance_and_allgather(self, coo_reduced_region_topk, global_th):
@@ -429,7 +429,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
         # 4. Allgatherv using recursive doubling
         coo_allgather_topk = self._allgather(coo_reduced_region_global_topk.get_triplet())
-        return coo_allgather_topk, (coo_reduced_region_global_topk.row, coo_reduced_region_global_topk.col) 
+        return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
 
 
     def _intersect_indexes(self, local_indexes, global_indexes):
@@ -458,7 +458,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_non_blocking"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_destination_rotation"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -466,9 +466,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             coo_topk (SparseMatrixCOO): a 2D sparse array in COO format with the values and indexes of topk.
             boundaries (np.array): boundaries for partitioning the gradient space like [row_end_p0, row_end_p1, row_end_p2, ...].
             method (str, optional): The method to use for reduce topk
-
-        Warning:
-            Method 'reduce_region' does not provide the same exact accuracy as 'reduce_region_blocking' or 'allreduce_then_slice'.
 
         Returns:
             coo_reduced_region (SparseMatrixCOO): The reduced topk values in COO format.
@@ -496,12 +493,14 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return reduced_regions_coo[self.rank]
 
         if method == "collective_reduce_region_non_blocking_dense":
-            """Warning: Do not remove send_bufs list, because reusing the same buffer for sending may produce different outputs for Ireduce"""
             warnings.warn("This reduce_topk method ('collective_reduce_region_non_blocking_dense') should be used only in case of debugging for performance reasons.")
             row_start = 0
             requests = [None] * self.nprocs
             recv_bufs = [None] * self.nprocs
             send_bufs = [None] * self.nprocs
+            # Do not remove send_bufs list, because reusing the same buffer for sending 
+            # may produce different outputs for Ireduce
+            # FIXME: no funciona, parece que en algún momento se modifica el tipo
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_bufs[region] = coo_topk.slice(row_start, row_end).to_dense()
@@ -584,14 +583,12 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
-            coo_gathered_data = SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
-            return coo_gathered_data
+            return SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
 
         if input_format == "SparseMatrixCOO":
-            # TODO: check: warnings.warn("Use 'coo_tuple' as input_format. It is faster!")
+            # FIXME: It does not produce good accuracy as coo_triplet
             gathered = self.comm.allgather(local_data)
-            coo_gathered_data = sum(gathered).tocoo()
-            return coo_gathered_data
+            return sum(gathered)
 
         if input_format == "dense":
             warnings.warn("Try to avoid dense communications!")
