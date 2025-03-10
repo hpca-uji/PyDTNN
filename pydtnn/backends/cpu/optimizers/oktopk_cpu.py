@@ -265,7 +265,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         coo_reduced_region_topk, local_topk_indexes = self._split_and_reduce(acc, self.local_th, self.boundaries)
         
         if t % thresholds_re_evaluation_t == 0:
-            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk.get_triplet())
+            coo_all_reduced_topk = self._allgather(coo_reduced_region_topk)
             self.global_th = self._th_re_evaluate(coo_all_reduced_topk, k, input_format="coo")
 
         coo_u, global_topk_indexes = self._balance_and_allgather(coo_reduced_region_topk, self.global_th)
@@ -428,7 +428,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         # TODO
 
         # 4. Allgatherv using recursive doubling
-        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk.get_triplet())
+        coo_allgather_topk = self._allgather(coo_reduced_region_global_topk)
         return coo_allgather_topk, coo_reduced_region_global_topk.get_indexes()
 
 
@@ -564,12 +564,12 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         raise NotImplementedError(f"Method '{method}' not implemented")
 
 
-    def _allgather(self, local_data, input_format="coo_triplet"):
+    def _allgather(self, local_data, input_format="SparseMatrixCOO"):
         """
         Gathers data from all processes.
         
         Parameters:
-            local_data (tuple, np.ndarray or SparseMatrixCOO): The local data to be gathered.
+            local_data (np.ndarray or SparseMatrixCOO): The local data to be gathered.
             input_format (str, optional): The format of the input data.
         Returns:
             gathered_data (np.ndarray or SparseMatrixCOO): The gathered global data in the specified format.
@@ -578,17 +578,12 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         if self.nprocs == 1:
             return local_data
         
-        if input_format == "coo_triplet":
-            gathered = self.comm.allgather(local_data)
+        if input_format == "SparseMatrixCOO":
+            gathered = self.comm.allgather(local_data.get_triplet())
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
             return SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
-
-        if input_format == "SparseMatrixCOO":
-            # FIXME: It does not produce good accuracy as coo_triplet
-            gathered = self.comm.allgather(local_data)
-            return sum(gathered)
 
         if input_format == "dense":
             warnings.warn("Try to avoid dense communications!")
