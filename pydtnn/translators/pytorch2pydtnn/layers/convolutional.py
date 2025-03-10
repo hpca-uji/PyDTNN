@@ -16,16 +16,23 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
 
     print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
-    # Not used: in/out channels, device, dtype
+    # Not used: in channels, device, dtype
     PYTORCH_KERNEL_SIZE = "kernel_size" # INT or Tuple[INT, INT]
     PYTORCH_STRIDE = "stride" # INT or Tuple[INT, INT]
     PYTORCH_PADDING = "padding" # INT or Tuple[INT, INT]
     PYTORCH_DILATION = "dilation" # INT
     PYTORCH_GROUPS = "groups" # INT
     PYTORCH_BIAS = "bias" # BOOL
+    PYTORCH_OUPUT_CHANNELS = "out_channels"
     # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros", "reflect", "replicate", "circular"} | In PyDTNN only implemented Zeros
-    torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION, PYTORCH_GROUPS, PYTORCH_BIAS]
+    torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION, PYTORCH_GROUPS, PYTORCH_BIAS, PYTORCH_OUPUT_CHANNELS]
     # ---- #
+
+    from pprint import pprint
+    print("PATATA")
+    print("------")
+    pprint(args, sort_dicts=False)
+    print("------")
 
     # PyDTNN attributes:
     PYDTNN_FILTER_SHAPE = "filter_shape"
@@ -34,9 +41,10 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     PYDTNN_DILATION = "dilation"
     PYDTNN_NFILTERS = "nfilters"
     PYDTNN_USE_BIAS = "use_bias"
-    pydtnn_dict_keys = [PYDTNN_FILTER_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION, PYDTNN_NFILTERS, PYDTNN_USE_BIAS]
+    PYDTNN_NFILTERS = "nfilters"
+    pydtnn_dict_keys = [PYDTNN_FILTER_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION, PYDTNN_NFILTERS, PYDTNN_USE_BIAS, PYDTNN_NFILTERS]
     # Not used: "grouping" "activation" "weights_initializer" "biases_initializer"
-    # ---- #   
+    # ---- #
 
     layer_args = cons.prepare_pydtnn_arguments(arguments = args[cons.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
 

@@ -17,17 +17,24 @@ def Linear(args: Dict[str, Any]) -> layers.FC:
         
     print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
-    # Not used: in_features, out_features
+    # Not used: in_features
     PYTORCH_BIAS = "bias"
-    torch_dict_keys = [PYTORCH_BIAS]
+    PYTORCH_OUT_FEATURES = "out_features"
+    torch_dict_keys = [PYTORCH_BIAS, PYTORCH_OUT_FEATURES]
     # ---- #
 
     # PyDTNN attributes:
-    PYDTNN_BIAS = "bias"
-    pydtnn_dict_keys = [PYDTNN_BIAS]
+    # Not used: activation, weights_initializer, biases_initializer
+    PYDTNN_BIAS = "use_bias"
+    PYDTNN_SHAPE = "shape"
+    pydtnn_dict_keys = [PYDTNN_BIAS, PYDTNN_SHAPE]
     # ---- #   
 
     layer_args = cons.prepare_pydtnn_arguments(arguments = args[cons.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
+
+    # PyDTNN expects the shape as a tuple instead of an int.
+    if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):
+        layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE], )
 
     return layers.FC(**layer_args)
 # --- END Linear --- #
