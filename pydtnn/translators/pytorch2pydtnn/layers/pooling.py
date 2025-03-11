@@ -92,7 +92,7 @@ def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
     base_initialize = layer.initialize
     
     # NOTE: IMPORTANT if the base function's arguments change, it is necessary to change them here too.
-    def new_initialize(prev_shape, need_dx=True):
+    def new_initialize(prev_shape, need_dx=True, *, _output_size = _output_size, layer = layer, base_initialize = base_initialize):
         
         # Information used in order to make this function's operations:
         # https://stackoverflow.com/questions/58692476/what-is-adaptive-average-pooling-and-how-does-it-work 

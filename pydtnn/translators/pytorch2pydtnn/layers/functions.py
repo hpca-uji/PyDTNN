@@ -22,14 +22,25 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     print(f"Layer: {stack()[0].function}")
     
     # It should be prepared so the params have the following format: "[layer1,layer2]"
+    layer_name: str = args[cons.OPERATION_VAR]
+    dict_equivalent_layers = args[cons.EQUIVALENT_LAYERS]
     params = cons.separate_function_params(args[cons.PARAMETERS])
-    dict_layers:Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
+
+    params = cons.get_equivalent_layer(params, dict_equivalent_layers)
+    dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
 
     list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
+    to_remove = set(to_remove) # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
+    
     # The removed layers will be accesed through the AdditionBlock.
     for elem in to_remove:
         del dict_layers[elem]
+    
+    # The equivalences dictionary values are set
+    # NOTE: IMPORTANT not always "params == to_remove"
+    for elem in params:        
+        dict_equivalent_layers[elem] = layer_name
 
     # AdditionBlock expects every "branch" (layer list) as a different argument.
     return (layers.AdditionBlock(*list_layers), input_layer_name)
@@ -40,15 +51,32 @@ def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     
     print(f"Layer: {stack()[0].function}")
 
-    parameters:List[str] = args[cons.PARAMETERS].split("],")
+    # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
+    # También hay que haer que solo aparezca una única vez.
+    layer_name: str = args[cons.OPERATION_VAR]
+    dict_equivalent_layers: Dict[str, str] = args[cons.EQUIVALENT_LAYERS]    
+    parameters: List[str] = args[cons.PARAMETERS].split("],")
+
     params = parameters.pop(0) # Since PyDTNN always concatenate in the same dimensions, the rest of the PyTorch parameters can be ignored    
     params = cons.separate_function_params(params)
+    params = cons.get_equivalent_layer(params, dict_equivalent_layers)
     
+    # TODO: FALLO --> Parece ser que si la concatenación es de un solo elemento hace cosas raras.
+    # Ejemplo: cat de ['features_pool0'] (que es la anterior capa)
+
     dict_layers:Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
     list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
+    
+    to_remove = set(to_remove) # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
+
     # The removed layers will be accesed through the AdditionBlock.
     for elem in to_remove:
         del dict_layers[elem]
+    
+    # The equivalences dictionary values are set
+    # NOTE: IMPORTANT not always "params == to_remove"
+    for elem in params:        
+        dict_equivalent_layers[elem] = layer_name
 
     # ConcatenationBlock expects every "branch" (layer list) as a different argument.
     return (layers.ConcatenationBlock(*list_layers), input_layer_name)

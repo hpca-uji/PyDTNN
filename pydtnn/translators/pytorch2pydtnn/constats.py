@@ -18,6 +18,8 @@ from pydtnn.translators.pytorch2pydtnn.layers.linear import *
 ARGUMENTS = "arguments"
 PARAMETERS = "parameters"
 LAYERS = "layers"
+EQUIVALENT_LAYERS = "equivalent_layers" # TODO: Set a better name.
+OPERATION_VAR = "operation_var" # TODO: Set a better name.
 
 RELU = "relu"
 ADP_AVG_POOL = "adaptive_avg_pool2d"
@@ -146,5 +148,22 @@ def separate_function_params(params: str) -> List[str]:
     params = params.split(',')  
     return [param.strip() for param in params] # Removing spaces
 # --- END separate_function_params --- #
+
+# NOTE: This coversor does *not* work in the cases like the following:
+# A, B, C, D, E are layers, D and E are layers like concatenation or addition layers.
+# A →→ B → D → E
+#   ↘→ C →→↑   ↑
+#       ↘→→→→→→↑
+def get_equivalent_layer(params: List[str], dict_equivalent_layers:Dict[str, str]) -> List[str]:
+    # TODO: Check if order is important. If not: dict ==> set
+    equivalent_layers = dict()
+    for param in params:
+        layer = param    
+        while layer in dict_equivalent_layers:
+            layer = dict_equivalent_layers[layer]
+        #else: Nothing special
+        equivalent_layers[layer] = None
+    return list(equivalent_layers.keys())
+# --- END get_equivalent_layer ---#
 
 # ------------------- #

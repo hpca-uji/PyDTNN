@@ -28,12 +28,6 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION, PYTORCH_GROUPS, PYTORCH_BIAS, PYTORCH_OUPUT_CHANNELS]
     # ---- #
 
-    from pprint import pprint
-    print("PATATA")
-    print("------")
-    pprint(args, sort_dicts=False)
-    print("------")
-
     # PyDTNN attributes:
     PYDTNN_FILTER_SHAPE = "filter_shape"
     PYDTNN_STRIDE = "stride"
