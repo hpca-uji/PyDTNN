@@ -1,6 +1,8 @@
 from model_convertor import convert_model
 import torch
 from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
+from torchvision.models import VGG, AlexNet, DenseNet, ResNet, GoogLeNet
+
 
 from pydtnn.activations import *
 from pydtnn.layers import *
@@ -11,21 +13,35 @@ from pydtnn.models.densenet169_cifar10 import create_densenet169_cifar10
 from pydtnn.models.resnet50_cifar10 import create_resnet50_cifar10
 from pydtnn.models.inceptionv3_cifar10 import create_inceptionv3_cifar10
 from pydtnn.model import Model as PyDTNN_Model
-
+#54.63 MBytes    
 def main():
-    model_path = "/home/usuario/Documentos/Resultados/pesos/model_and_weighs_googlenet.pth"
-    #old_model = torch.load(model_path, map_location=torch.device('cpu') , weights_only = False)
-    #_old_model:torch.nn.Module = torch.load(model_path, map_location=torch.device('cpu') , weights_only = False)
-    #weights = _old_model.state_dict()
-    #old_model = googlenet(**{"num_classes" : 5})
-    #old_model.load_state_dict(weights, strict=False)
     old_model = googlenet()
+    
+    match old_model:
+        case VGG():
+            shape = (224, 224, 3)
+            func = create_vgg19_imagenet
+        case AlexNet():
+            shape = (227, 227, 3)
+            func = create_alexnet
+        case DenseNet():
+            shape = (32, 32, 3)
+            func = create_densenet169_cifar10
+        case ResNet():
+            shape = (32, 32, 3)
+            func = create_resnet50_cifar10
+        case GoogLeNet():
+            shape = (299, 299, 3)
+            func = create_inceptionv3_cifar10
+        case _:
+            shape = ()
+            func = (lambda x : print(f"Pick other model.\nModel:\n{x}"))
 
     kwargs = dict()
     if "model_name" not in kwargs:
         kwargs["model_name"] = None
     converted_model = PyDTNN_Model(**kwargs)
-    create_inceptionv3_cifar10(converted_model)
+    func(converted_model)
     print("PyDTNN version:")
     converted_model.show()
 
@@ -39,9 +55,11 @@ def main():
 
     print("-----\n")
 
-    new_model = convert_model(model = old_model, input_shape=(299, 299, 3))
 
-    print("new_model:")
+
+    new_model = convert_model(model = old_model, input_shape=shape)
+    
+    print("\nnew_model:")
     new_model.show()
     print("-----")
     print(f"type(new_model): {type(new_model)}")

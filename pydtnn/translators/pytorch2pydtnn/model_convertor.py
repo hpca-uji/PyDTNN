@@ -15,7 +15,7 @@ def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase]) -> Non
     # TODO: Check if there are more operations to do.
     #   If not ==> Move to the main function.
     for layer in layers:
-        print(layer)
+        #print(layer)
         model.add(layer)
 # --- END load_layers --- #
 
@@ -104,8 +104,9 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
 
                 if operation in cons.SPECIAL_CASES:
                     # TODO [possible future FIXME]: See what to do with the special cases.
-                    continue
-
+                    # continue
+                    func = cons.CONCAT # NOTE: this is a cheap fix. TODO: look what to do in this kind of situations.
+                    # "torchvision_models_googlenet_GoogLeNetOutputs": The output is a tuple.
                 for pattern in [TORCH_LAYER_REQ, TORCH_FUNC_REQ]:
                     if pattern in operation:
                         func = operation.replace(pattern, "") #operation = "adaptive_avg_pool2d" | "cat"
