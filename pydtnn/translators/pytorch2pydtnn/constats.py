@@ -130,12 +130,13 @@ def get_lists_operations_and_outputs(dict_layers: Dict[str, Tuple[LayerAndActiva
     new_previous_layer = coincidences[0] # new_previous_layer = PyDTNN concat input
     # -- Trimming the dict and storing the data to be returned -- #
     lists_operations: List[LayerAndActivationBase] = list() # List of lists (one per branch)
-    lists_outputs: List[str] = list() # List of strings (all branches in one)
+    lists_outputs: List[str] = list() # List of strings (all branches in one)    
     for inpt in layer_inputs:
         # - Trimming the dict - #
         for coincidence in coincidences:
             del dict_branch[inpt][coincidence] 
-        layers = list(dict_branch[inpt].values())
+        # NOTE: dict_branch[].values() is reversed ==> It is necesarry to un-reverse the layer
+        layers = list(dict_branch[inpt].values())[::-1]
         outputs = list(dict_branch[inpt].keys())
         lists_operations.append(layers) # Remember: List of lists (one per branch)
         lists_outputs.extend(outputs)   # Remember: List of strings (all branches in one)

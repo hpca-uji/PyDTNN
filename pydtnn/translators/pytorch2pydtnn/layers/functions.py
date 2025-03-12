@@ -29,17 +29,18 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     params = cons.get_equivalent_layer(params, dict_equivalent_layers)
     dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
 
-    list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
+    # PROBLEMA: List_layers sale al revés
+    list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params) 
 
     to_remove = set(to_remove) # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
-    
     # The removed layers will be accesed through the AdditionBlock.
     for elem in to_remove:
         del dict_layers[elem]
-    
     # The equivalences dictionary values are set
-    # NOTE: IMPORTANT not always "params == to_remove"
-    for elem in params:        
+    for elem in params:
+        dict_equivalent_layers[elem] = layer_name
+    # NOTE: Not always "params == to_remove"
+    for elem in to_remove:
         dict_equivalent_layers[elem] = layer_name
 
     # AdditionBlock expects every "branch" (layer list) as a different argument.
@@ -70,8 +71,11 @@ def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     to_remove = set(to_remove) # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
 
     # The removed layers will be accesed through the AdditionBlock.
+    for elem in params:
+        dict_equivalent_layers[elem] = layer_name
+    # NOTE: Not always "params == to_remove"
     for elem in to_remove:
-        del dict_layers[elem]
+        dict_equivalent_layers[elem] = layer_name
     
     # The equivalences dictionary values are set
     # NOTE: IMPORTANT not always "params == to_remove"
