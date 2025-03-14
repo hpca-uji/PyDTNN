@@ -40,6 +40,8 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     # Not used: "grouping" "activation" "weights_initializer" "biases_initializer"
     # ---- #
 
+    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
+
     layer_args = cons.prepare_pydtnn_arguments(arguments = args[cons.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
 
     if PYDTNN_FILTER_SHAPE in layer_args:
@@ -48,6 +50,8 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
             layer_args[PYDTNN_FILTER_SHAPE] = (pool_shape, pool_shape)
         # else: It must be a Tuple[int, int], so it's okay
     # else: Nothing special
+
+    cons.print_dict(layer_args, "layer_args")
 
     return layers.Conv2D(**layer_args)
 # --- END Conv2d --- #

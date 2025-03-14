@@ -15,7 +15,11 @@ import pydtnn.translators.pytorch2pydtnn.constats as cons
 def ReLU(args: Dict[str, Any]) -> activations.Relu:
     # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
     # Not used Pytorch's parameters: inplace.
+
+    print(f"Layer: {stack()[0].function}")
     not_used =args
+
+    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
 
     return activations.Relu()
 # --- END AdaptiveAvgPool2d --- #

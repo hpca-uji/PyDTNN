@@ -33,6 +33,9 @@ ARGS_SEPARATOR = ','
 PYTORCH_OUTPUT_SIZE = "output_size"
 
 SPECIAL_CASES = ["torchvision_models_googlenet_GoogLeNetOutputs"]
+
+# TODO: Borrar
+MODELO = None
 # -> torchvision_models_googlenet_GoogLeNetOutputs: is a named tuple. If both aux layers exist and it is not expected their outputs, the output is only the FC's one.
 # 
 # ------------------- #
@@ -166,5 +169,16 @@ def get_equivalent_layer(params: List[str], dict_equivalent_layers:Dict[str, str
         equivalent_layers[layer] = None
     return list(equivalent_layers.keys())
 # --- END get_equivalent_layer ---#
+
+
+def print_dict(dictionary: Dict[str, Any], name:str) -> None:
+    print(name)
+    for k in dictionary.keys():
+        if k == "_parameters" and "weight" in dictionary[k]:
+            print(f"\t {k}: {dictionary[k]["weight"].shape}")
+        elif not k.startswith("_"):
+            print(f"\t {k}: {dictionary[k]}")
+    print("-----")
+# --- END print_dict --- #
 
 # ------------------- #

@@ -36,5 +36,8 @@ def Linear(args: Dict[str, Any]) -> layers.FC:
     if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):
         layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE], )
 
+    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
+    cons.print_dict(layer_args, "layer_args")
+
     return layers.FC(**layer_args)
 # --- END Linear --- #

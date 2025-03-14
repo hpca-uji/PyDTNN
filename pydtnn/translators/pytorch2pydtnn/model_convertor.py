@@ -7,15 +7,32 @@ import numpy as np
 import torch
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.layers import Input
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
 import pydtnn.translators.pytorch2pydtnn.constats as cons
+from pydtnn.utils import decode_tensor
+
+def modify_forward(layer: LayerAndActivationBase) -> None:
+    old_forward = layer.forward
+
+    def new_forward(x, layer=layer, old_forward=old_forward):
+        print(f"Layer: {layer}")
+        print(f"layer.shape: {layer.shape}")
+        print(f"layer.prev_shape: {layer.prev_shape}")
+        print(f"x.shape: {x.shape}")
+        print(f"layer.weights.shape: {layer.weights.shape}")
+        print(f"layer.biases.shape: {layer.biases.shape}")
+
+        old_forward(x)
+
+    layer.forward = new_forward
 
 def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase]) -> None:
+    # TODO: REMEMBER -> Put modify_forward to False (or remove it.)
 
     # TODO: Check if there are more operations to do.
     #   If not ==> Move to the main function.
     for layer in layers:
-        #print(layer)
+        print(layer)
         model.add(layer)
 # --- END load_layers --- #
 
@@ -63,10 +80,11 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
     TORCH_LAYER_REQ = "torch.nn.functional."
     TORCH_FUNC_REQ = "torch."
     # -- END CONSTANTS -- #
-
+    print("lines:")
     for line in filter(lambda x: not(FIRST_LINE in x or LAST_LINE in x) , 
                        filter(lambda x: len(x)!=0, 
                         [elem.lstrip(PSEUDO_INDENTATION) for elem in graph.code.split(BY_LINES)])):
+        print(line)
         # NOTE: seems that there are situations that the line does not have the value.
         line = line.split(SEPARATOR_FUNCTION_VALUE)[0] # [line, debug's input's value]            
         operation = line.split(SEPARATOR_ASSIGNATION)  # [output, function+args]
@@ -83,6 +101,7 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
 
         func = None # It will be assigned in the following if-else statement
         if len(operation) > 1:
+            print(f"operation: {operation}")
             # Normal case. Examples: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)', 'self.avgpool(features_36)'       
             if any(MODEL_LAYER_REQ in part for part in operation):
                 # Case: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)'
@@ -90,6 +109,9 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
                 operation = PARAMETERS_BEGINING.join(operation) # Reasembling the operation without the arguments.
                 operation = operation.replace(MODEL_LAYER_REQ, MODEL_FUNCT_ARG_NAME) 
                 func = eval(operation) # Getting the layer object.
+                print(f"args: {args}")
+                print(f"operation: {operation}")
+                print(f"func: {func}")
             else:
                 # Cases: function or layer not defined at model's object's constructor                
                 # TORCH_LAYER_REQ --> Case: layer not defined at model's object's constructor
@@ -182,7 +204,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
             if LAYER_WEIGHTS in state_dict:                        
                 # The weights are "torch.Tensor": torch.Tensor.cpu().detach().numpy() ==> weigths as np.array                
                 weights = copy.deepcopy(state_dict[LAYER_WEIGHTS].cpu().detach().numpy())
-                
                 if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
                     # TODO: Check if there is another way to do this.
                     def weights_initializer(*args_to_ignore, pytorch_weights = weights):
@@ -233,14 +254,15 @@ def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_b
     
     # NOTE: PyTorch's weight tensors use NCHW format.
     if "tensor_format" not in kwargs:
-        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NCHW
+        kwargs["tensor_format"] = "NCHW"
     if "model_name" not in kwargs:
         kwargs["model_name"] = None
-
+    
     # Output model.
     converted_model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
-                    enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)    
+                    enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
 
+    cons.MODELO = converted_model
     # Obtaining the model's layers/operations, activations, etc.; and the relation between them.
     dict_layers = extract_layers_relations(model = model)
 
