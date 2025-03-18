@@ -8,7 +8,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 from pydtnn import layers
-import pydtnn.translators.pytorch2pydtnn.constats as cons
+import pydtnn.translators.pytorch2pydtnn.common as cm
 
 
 # ------------------ #
@@ -30,14 +30,11 @@ def Linear(args: Dict[str, Any]) -> layers.FC:
     pydtnn_dict_keys = [PYDTNN_BIAS, PYDTNN_SHAPE]
     # ---- #   
 
-    layer_args = cons.prepare_pydtnn_arguments(arguments = args[cons.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(arguments = args[cm.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
 
     # PyDTNN expects the shape as a tuple instead of an int.
     if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):
         layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE], )
-
-    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
-    cons.print_dict(layer_args, "layer_args")
 
     return layers.FC(**layer_args)
 # --- END Linear --- #

@@ -7,24 +7,7 @@ import numpy as np
 import torch
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.layers import Input
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
-import pydtnn.translators.pytorch2pydtnn.constats as cons
-from pydtnn.utils import decode_tensor
-
-def modify_forward(layer: LayerAndActivationBase) -> None:
-    old_forward = layer.forward
-
-    def new_forward(x, layer=layer, old_forward=old_forward):
-        print(f"Layer: {layer}")
-        print(f"layer.shape: {layer.shape}")
-        print(f"layer.prev_shape: {layer.prev_shape}")
-        print(f"x.shape: {x.shape}")
-        print(f"layer.weights.shape: {layer.weights.shape}")
-        print(f"layer.biases.shape: {layer.biases.shape}")
-
-        old_forward(x)
-
-    layer.forward = new_forward
+import pydtnn.translators.pytorch2pydtnn.common as cm
 
 def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase]) -> None:
     # TODO: REMEMBER -> Put modify_forward to False (or remove it.)
@@ -124,10 +107,10 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
                 args = PARAMETERS_BEGINING.join(operation)[:-1] # _operation = "torch.cat"; operation= arg1 (arg2) arg3 etc. [str] | [:-1] to remove the final ")"
                 operation = _operation
 
-                if operation in cons.SPECIAL_CASES:
+                if operation in cm.SPECIAL_CASES:
                     # TODO [possible future FIXME]: See what to do with the special cases.
                     # continue
-                    func = cons.CONCAT # NOTE: this is a cheap fix. TODO: look what to do in this kind of situations.
+                    func = cm.CONCAT # NOTE: this is a cheap fix. TODO: look what to do in this kind of situations.
                     # "torchvision_models_googlenet_GoogLeNetOutputs": The output is a tuple.
                 for pattern in [TORCH_LAYER_REQ, TORCH_FUNC_REQ]:
                     if pattern in operation:
@@ -142,7 +125,7 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
             op = operation.pop(1) # '0:layer1_2_bn3, 1:+, 2:layer1_1_relu_2            
             args = ''.join([LIST_START, LIST_SEPARATOR.join(operation), LIST_END]) #'[layer1_2_bn3, layer1_1_relu_2]' 
             # args now has the same format as other functions.
-            func = cons.switch_operation_symbols(op)
+            func = cm.switch_operation_symbols(op)
         relations_dic[output_var] = (func, args)
     # end "for line"
 
@@ -192,9 +175,9 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
 
             name = layer._get_name()
         
-            args = {cons.ARGUMENTS: vars(layer)}
+            args = {cm.ARGUMENTS: vars(layer)}
             # In this context, params are the input layers.
-            converted_layer = cons.switch_pytorch_pydtnn(name)(args)           
+            converted_layer = cm.switch_pytorch_pydtnn(name)(args)           
 
             # -- Loading the weigths and the biases into the converted layer -- #
             state_dict = layer.state_dict()
@@ -236,12 +219,12 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
 
         else: #is intance of string (the name of a function or an operation)
             # Here, params are the input layers and other arguments.            
-            args = {cons.PARAMETERS: params, 
-                    cons.LAYERS: converted_layers, 
-                    cons.EQUIVALENT_LAYERS: dict_equivalent_layer,
-                    cons.OPERATION_VAR: operation_variable}
+            args = {cm.PARAMETERS: params, 
+                    cm.LAYERS: converted_layers, 
+                    cm.EQUIVALENT_LAYERS: dict_equivalent_layer,
+                    cm.OPERATION_VAR: operation_variable}
 
-            converted_layers[operation_variable] = cons.function_operation_to_pydtnn(operation)(args)
+            converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally theese were functions, then they does not have weights nor biases.
             # TODO: Check if it is necessary to set/unset in the class something (like the weigths update) in order to make it work like a function.
 
@@ -262,21 +245,12 @@ def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_b
     converted_model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
                     enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
 
-    cons.MODELO = converted_model
     # Obtaining the model's layers/operations, activations, etc.; and the relation between them.
     dict_layers = extract_layers_relations(model = model)
 
     # Obtaining the PyDTNN equivalent
     layers, weights, biases = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
     
-    #print("weights:")
-    #for k in weights.keys():
-    #    print(f"\t{k} (type: {type(k)}): {weights[k].shape}")
-#
-    #print("biases:")
-    #for k in biases.keys():
-    #    print(f"\t{k} (type: {type(k)}): {biases[k].shape}")
- #
     # Asigning the layers/operations to the converted model.
     load_layers(model=converted_model, layers=layers)
         

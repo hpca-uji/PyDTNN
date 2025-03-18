@@ -9,7 +9,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 from pydtnn import activations
-import pydtnn.translators.pytorch2pydtnn.constats as cons
+import pydtnn.translators.pytorch2pydtnn.common as cm
 # ------------------- #
 
 def ReLU(args: Dict[str, Any]) -> activations.Relu:
@@ -19,7 +19,7 @@ def ReLU(args: Dict[str, Any]) -> activations.Relu:
     print(f"Layer: {stack()[0].function}")
     not_used =args
 
-    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
+    cm.print_dict(args[cm.ARGUMENTS], "args[cons.ARGUMENTS]")
 
     return activations.Relu()
 # --- END AdaptiveAvgPool2d --- #

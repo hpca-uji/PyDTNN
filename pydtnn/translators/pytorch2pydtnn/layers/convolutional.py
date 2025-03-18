@@ -8,7 +8,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 from pydtnn import layers
-import pydtnn.translators.pytorch2pydtnn.constats as cons
+import pydtnn.translators.pytorch2pydtnn.common as cm
 
 # ------------------ #
 def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:    
@@ -40,9 +40,7 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     # Not used: "grouping" "activation" "weights_initializer" "biases_initializer"
     # ---- #
 
-    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
-
-    layer_args = cons.prepare_pydtnn_arguments(arguments = args[cons.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(arguments = args[cm.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
 
     if PYDTNN_FILTER_SHAPE in layer_args:
         pool_shape = layer_args[PYDTNN_FILTER_SHAPE]
@@ -50,8 +48,6 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
             layer_args[PYDTNN_FILTER_SHAPE] = (pool_shape, pool_shape)
         # else: It must be a Tuple[int, int], so it's okay
     # else: Nothing special
-
-    cons.print_dict(layer_args, "layer_args")
 
     return layers.Conv2D(**layer_args)
 # --- END Conv2d --- #

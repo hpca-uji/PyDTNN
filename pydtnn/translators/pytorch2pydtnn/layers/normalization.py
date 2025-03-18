@@ -8,7 +8,7 @@ from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 from pydtnn import layers
-import pydtnn.translators.pytorch2pydtnn.constats as cons
+import pydtnn.translators.pytorch2pydtnn.common as cm
 
 # ------------------ #
 def BatchNorm2d(args: Dict[str, Any]) -> layers.BatchNormalization:
@@ -31,10 +31,7 @@ def BatchNorm2d(args: Dict[str, Any]) -> layers.BatchNormalization:
     pydtnn_dict_keys = [PYDTNN_MOMENTUM, PYDTNN_EPSILON]
     # ---- #   
 
-    layer_args = cons.prepare_pydtnn_arguments(arguments = args[cons.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
-
-    cons.print_dict(args[cons.ARGUMENTS], "args[cons.ARGUMENTS]")
-    cons.print_dict(layer_args, "layer_args")
+    layer_args = cm.prepare_pydtnn_arguments(arguments = args[cm.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
 
     return layers.BatchNormalization(**layer_args)
 # --- END BatchNorm2d --- #

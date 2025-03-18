@@ -9,7 +9,7 @@ from pydtnn import activations
 
 # Functionality imports
 from pydtnn import layers
-import pydtnn.translators.pytorch2pydtnn.constats as cons
+import pydtnn.translators.pytorch2pydtnn.common as cm
 from pydtnn.translators.pytorch2pydtnn.layers.activation import *
 from pydtnn.translators.pytorch2pydtnn.layers.pooling import *
 
@@ -22,15 +22,15 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     print(f"Function: {stack()[0].function}")
     
     # It should be prepared so the params have the following format: "[layer1,layer2]"
-    layer_name: str = args[cons.OPERATION_VAR]
-    dict_equivalent_layers = args[cons.EQUIVALENT_LAYERS]
-    params = cons.separate_function_params(args[cons.PARAMETERS])
+    layer_name: str = args[cm.OPERATION_VAR]
+    dict_equivalent_layers = args[cm.EQUIVALENT_LAYERS]
+    params = cm.separate_function_params(args[cm.PARAMETERS])
 
-    params = cons.get_equivalent_layer(params, dict_equivalent_layers)
-    dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
+    params = cm.get_equivalent_layer(params, dict_equivalent_layers)
+    dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cm.LAYERS]
 
 
-    list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params) 
+    list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params) 
 
     to_remove = set(to_remove) # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
     # The removed layers will be accesed through the AdditionBlock.
@@ -54,19 +54,19 @@ def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
     # También hay que haer que solo aparezca una única vez.
-    layer_name: str = args[cons.OPERATION_VAR]
-    dict_equivalent_layers: Dict[str, str] = args[cons.EQUIVALENT_LAYERS]    
-    parameters: List[str] = args[cons.PARAMETERS].split("],")
+    layer_name: str = args[cm.OPERATION_VAR]
+    dict_equivalent_layers: Dict[str, str] = args[cm.EQUIVALENT_LAYERS]    
+    parameters: List[str] = args[cm.PARAMETERS].split("],")
 
     params = parameters.pop(0) # Since PyDTNN always concatenate in the same dimensions, the rest of the PyTorch parameters can be ignored    
-    params = cons.separate_function_params(params)
-    params = cons.get_equivalent_layer(params, dict_equivalent_layers)
+    params = cm.separate_function_params(params)
+    params = cm.get_equivalent_layer(params, dict_equivalent_layers)
     
     # TODO: FALLO --> Parece ser que si la concatenación es de un solo elemento hace cosas raras.
     # Ejemplo: cat de ['features_pool0'] (que es la anterior capa)
 
-    dict_layers:Dict[str, Tuple[LayerAndActivationBase, str]] = args[cons.LAYERS]
-    list_layers, to_remove, input_layer_name = cons.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
+    dict_layers:Dict[str, Tuple[LayerAndActivationBase, str]] = args[cm.LAYERS]
+    list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
     to_remove = set(to_remove) # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".
     
@@ -111,8 +111,8 @@ def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # - END switch - #
 
     print(f"Function: {stack()[0].function}")
-    params = args[cons.PARAMETERS].strip()
-    dict_params = switch(params.split(cons.ARGS_SEPARATOR))
+    params = args[cm.PARAMETERS].strip()
+    dict_params = switch(params.split(cm.ARGS_SEPARATOR))
         
     return (layers.Flatten(), dict_params["input"])
 # --- END Concat --- #
@@ -128,14 +128,14 @@ def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
     dict_params = dict()
 
     # Example: torch.nn.functional.relu(features_norm5, inplace = True)
-    params = args[cons.PARAMETERS].strip().split("inplace=")
+    params = args[cm.PARAMETERS].strip().split("inplace=")
     inplace = bool(params.pop()) if len(params) > 0 else None
 
-    dict_params[cons.ARGUMENTS] = {"input": params[0].split(cons.ARGS_SEPARATOR)[0]}
+    dict_params[cm.ARGUMENTS] = {"input": params[0].split(cm.ARGS_SEPARATOR)[0]}
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (ReLU(dict_params), dict_params[cons.ARGUMENTS]["input"])
+    return (ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
 
 def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, str]:
     # It is not the layer, but the operation itself.
@@ -146,7 +146,7 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, st
 
     dict_params = dict()
     # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'
-    params:List[str] = args[cons.PARAMETERS].split(cons.ARGS_SEPARATOR)
+    params:List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
     dict_params["input"] = params.pop(0) # Situation after operation: [] or ['number'] or ['(number', 'number)']
     
@@ -161,7 +161,7 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, st
             params = [int(param.replace('(', '').replace(')', '')) for param in params]
 
     if params != None:
-        dict_params[cons.ARGUMENTS] = {cons.PYTORCH_OUTPUT_SIZE: params}
+        dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
     return (AdaptiveAvgPool2d(dict_params), dict_params["input"])
 # ------------------ #

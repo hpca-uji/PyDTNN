@@ -34,8 +34,6 @@ PYTORCH_OUTPUT_SIZE = "output_size"
 
 SPECIAL_CASES = ["torchvision_models_googlenet_GoogLeNetOutputs"]
 
-# TODO: Borrar
-MODELO = None
 # -> torchvision_models_googlenet_GoogLeNetOutputs: is a named tuple. If both aux layers exist and it is not expected their outputs, the output is only the FC's one.
 # 
 # ------------------- #
