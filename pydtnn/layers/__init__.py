@@ -44,5 +44,7 @@ from .max_pool_2d import MaxPool2D
 from .abstract_pool_2d_layer import AbstractPool2DLayer
 from ..utils import get_derived_classes
 
+from .adaptive_average_pool_2d import AdaptativeAveragePool2D
+
 # Search this module for Layer derived classes and expose them
 get_derived_classes(Layer, locals())

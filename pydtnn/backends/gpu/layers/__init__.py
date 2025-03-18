@@ -39,6 +39,7 @@ from .fc_gpu import FCGPU
 from .flatten_gpu import FlattenGPU
 from .input_gpu import InputGPU
 from .max_pool_2d_gpu import MaxPool2DGPU
+from .adaptive_average_pool_2d_gpu import AdaptativeAveragePool2DGPU
 from pydtnn.utils import get_derived_classes
 
 # Search this module for LayerGPU derived classes and expose them
