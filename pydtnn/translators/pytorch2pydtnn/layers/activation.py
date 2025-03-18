@@ -18,8 +18,5 @@ def ReLU(args: Dict[str, Any]) -> activations.Relu:
 
     print(f"Layer: {stack()[0].function}")
     not_used =args
-
-    cm.print_dict(args[cm.ARGUMENTS], "args[cons.ARGUMENTS]")
-
     return activations.Relu()
 # --- END AdaptiveAvgPool2d --- #
