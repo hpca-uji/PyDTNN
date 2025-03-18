@@ -68,8 +68,7 @@ class AdaptativeAveragePool2D(Layer, ABC):
             self.ho = self.hi
             self.wo = self.wi
         else:
-            self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape
-            output = list(output)            
+            self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape   
         self.co = self.ci
         # https://stackoverflow.com/questions/64284755/what-is-the-upsampling-method-called-area-used-for
 
