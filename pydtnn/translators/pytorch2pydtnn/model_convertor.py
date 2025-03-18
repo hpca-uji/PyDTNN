@@ -63,11 +63,11 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
     TORCH_LAYER_REQ = "torch.nn.functional."
     TORCH_FUNC_REQ = "torch."
     # -- END CONSTANTS -- #
-    print("lines:")
+
     for line in filter(lambda x: not(FIRST_LINE in x or LAST_LINE in x) , 
                        filter(lambda x: len(x)!=0, 
                         [elem.lstrip(PSEUDO_INDENTATION) for elem in graph.code.split(BY_LINES)])):
-        print(line)
+
         # NOTE: seems that there are situations that the line does not have the value.
         line = line.split(SEPARATOR_FUNCTION_VALUE)[0] # [line, debug's input's value]            
         operation = line.split(SEPARATOR_ASSIGNATION)  # [output, function+args]
@@ -84,7 +84,6 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
 
         func = None # It will be assigned in the following if-else statement
         if len(operation) > 1:
-            print(f"operation: {operation}")
             # Normal case. Examples: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)', 'self.avgpool(features_36)'       
             if any(MODEL_LAYER_REQ in part for part in operation):
                 # Case: 'getattr(self.layer1, "2").bn1(layer1_2_conv1)'
@@ -92,9 +91,6 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
                 operation = PARAMETERS_BEGINING.join(operation) # Reasembling the operation without the arguments.
                 operation = operation.replace(MODEL_LAYER_REQ, MODEL_FUNCT_ARG_NAME) 
                 func = eval(operation) # Getting the layer object.
-                print(f"args: {args}")
-                print(f"operation: {operation}")
-                print(f"func: {func}")
             else:
                 # Cases: function or layer not defined at model's object's constructor                
                 # TORCH_LAYER_REQ --> Case: layer not defined at model's object's constructor
@@ -164,10 +160,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
     # layer_var_names: {value's variable (str): ([function (str) or layer (nn.Module)], arguments (str))}
     for operation_variable in layer_var_names:
         operation, params = layers[operation_variable]
-
-        #print("converted_layers")
-        #for k in converted_layers.keys():
-        #    print(f"\t{k}: {converted_layers[k]}")
 
         if isinstance(operation, torch.nn.Module):
             layer = operation 
