@@ -75,6 +75,16 @@ class Intracomm:
             if comm := self.__dict__.get("_comm"):
                 pass
             else:
+                # If requested, start a local server
+                if mpi_comm.get_init():
+                    if self.rank == 0:
+                        from pydtnn.libs.mpi.server import background_server
+                        self._server = background_server()
+                    else:
+                        # Allow some time for server startup
+                        from time import sleep
+                        sleep(0.5)
+
                 self._comm = comm = self._new_comm()
         return comm
 

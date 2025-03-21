@@ -44,7 +44,7 @@ type RankGroup = intbitset
 
 def get_init() -> bool:
     """Should service auto initialize"""
-    return False and bool(os.environ.get("PYDTNN_MPI_ADDR") or True)
+    return bool(os.environ.get("PYDTNN_MPI_ADDR") or True)
 
 
 def get_addr() -> str:

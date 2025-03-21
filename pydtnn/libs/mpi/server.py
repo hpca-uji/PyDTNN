@@ -24,7 +24,7 @@ from pydtnn.libs.mpi import comm as mpi_comm
 
 __all__ = (
     "Server",
-    "start_local_server"
+    "background_server"
 )
 
 
@@ -313,8 +313,8 @@ class Server:
         self._response_count.release()
 
 
-def start_local_server() -> None:
-    """Start a local background server"""
+def background_server() -> threading.Thread:
+    """Start a background server"""
     import atexit
     from time import sleep
     from threading import Thread
@@ -331,7 +331,9 @@ def start_local_server() -> None:
         server.serve_util_finalize()
         sleep(0.5)  # Allow some time for client taredown
         server.shutdown()
-    Thread(target=serve_oneshot).start()
+    thread = Thread(target=serve_oneshot)
+    thread.start()
+    return thread
 
 
 def main(config: Namespace) -> None:
