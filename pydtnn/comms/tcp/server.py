@@ -4,13 +4,13 @@ import uuid
 import socket
 import selectors
 import threading
-from queue import Empty, SimpleQueue
+from queue import SimpleQueue
 
 from bidict import bidict
 
-from pydtnn.comms import ResourceClosed, Message
+from pydtnn.comms import ResourceClosed, Message, ConnectionState
 from pydtnn.comms.tcp import Protocol
-from pydtnn.comms.tcp.connection import Connection
+from pydtnn.utils.io_stream import AncillaryStream
 
 
 __all__ = (
@@ -19,7 +19,7 @@ __all__ = (
 
 
 # Sentinel objects
-END_COMM = b""
+END_COMM = object()
 
 
 class Server(Protocol):
@@ -30,137 +30,129 @@ class Server(Protocol):
         super().__init__(addr, port)
 
         # State
-        self._lock = threading.Lock()
-        self._peers = bidict[uuid.UUID, str]()
-        self._request_queue = SimpleQueue[uuid.UUID]()
-        self._connections = dict[uuid.UUID, Connection]()
-        self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
-        self._responses = dict[uuid.UUID, SimpleQueue[bytes]]()
+        self._lock = threading.Condition()
+
+        # External
+        self._get_event = SimpleQueue()
+
+        # Internal
+        self._peers = bidict[uuid.UUID, socket.socket]()
+        self._state = dict[uuid.UUID, ConnectionState]()
 
         # TCP
-        self._server = socket.create_server((self._addr, self._port), reuse_port=True)
-        self._selector.register(self._server, selectors.EVENT_READ, self._new_connection)
-        self._start_loop()
+        self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
+        self._selector.register(self._socket, selectors.EVENT_READ, self._new_connection)
+        self._notify_selector()
 
     def _new_connection(self, sock: socket.socket, event) -> None:
         """Handle new incomming connections"""
         # NOTE: communication thead
-        connection = Connection(self._server.accept()[0])
-        self._syc(connection)
+        sock = self._socket.accept()[0]
+        peer = uuid.uuid4()
 
-    def _handle_connection(self, connection: Connection, event) -> None:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
+
+        with self._lock:
+            self._peers[peer] = sock
+            self._state[peer] = ConnectionState(buffer_size=self._max_message_size)
+            self._lock.notify_all()
+
+        self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
+        self._notify_selector()
+
+    def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection states"""
         # NOTE: communication thead
-        if event & selectors.EVENT_READ:
-            self._c2s(connection)
+        peer = self._peers.inverse[sock]
+        state = self._state[peer]
+
+        if state.put_empty():
+            self._modify_selector(sock, selectors.EVENT_READ)
 
         if event & selectors.EVENT_WRITE:
-            self._s2c(connection)
+            self._s2c(sock)
 
-    def _syc(self, connection: Connection) -> None:
-        """Client connection startup"""
-        # NOTE: communication thead
-        tcp_peer = connection.peer
-        data = connection.get()
-        peer = self._deserialize(data)
-        data = self._serialize(self.id)
-        connection.put(data)
+        if event & selectors.EVENT_READ:
+            self._c2s(sock)
 
-        # Thread-safe client setup
-        with self._lock:
-            self._peers[peer] = tcp_peer
-            self._connections[peer] = connection
-            self._requests[peer] = SimpleQueue()
-            self._responses[peer] = SimpleQueue()
+        if not state.put_empty():
+            self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
-        self._selector.register(connection, selectors.EVENT_READ, self._handle_connection)
+        if state.closed and state.put_empty():
+            self._fin(sock)
 
-    def _fin(self, connection: Connection) -> None:
-        """Client connection finalizer"""
-        # NOTE: communication thead
-        tcp_peer = connection.peer
-        peer = self._peers.inverse[tcp_peer]
+    def _fin(self, sock: socket.socket) -> None:
+        peer = self._peers.inverse[sock]
+        state = self._state[peer]
+        state.close()
+        self._selector.unregister(sock)
+        sock.close()
 
-        self._selector.unregister(connection)
-
-        # Thread-safe client taredown
+        # Remove peer
         with self._lock:
             del self._peers[peer]
-            del self._connections[peer]
-            requests = self._requests.pop(peer)
-            del self._responses[peer]
+            if self._state[peer].empty():
+                del self._state[peer]
+            self._lock.notify_all()
 
-        connection.close()
+    def _c2s(self, sock: socket.socket) -> None:
+        peer = self._peers.inverse[sock]
+        state = self._state[peer]
 
-        # Drain queue
-        while requests:
+        data = sock.recv(self._max_message_size)
+
+        state.get_stream.write(data)
+
+        while True:
             try:
-                request_peer = self._request_queue.get_nowait()
-            except Empty:
+                stream = state.get_stream.unpack()
+            except AncillaryStream as ancillary:
+                with ancillary.stream as stream:
+                    id = self._serializer.load(stream)
+
+                # Client ID, INI
+                if id != self._id:
+
+                    # ACK
+                    with self._serializer.dump(self._id) as stream:
+                        state.put_stream.pack(stream, ancillary=True)
+                    state.put_flush()
+
+                    # New ID, move state from tmp ID
+                    if id not in self._peers:
+                        with self._lock:
+                            self._state[id] = state = self._state.pop(peer)
+
+                    # Change socket ID association
+                    self._peers.inverse[sock] = peer = id
+
+                # Server ID, FIN
+                else:
+
+                    # ACK
+                    state.close()
+                    state.put_flush()
+                    with self._serializer.dump(peer) as stream:
+                        state.put_stream.pack(stream, ancillary=True)
+
+            except BlockingIOError:
                 break
-            if request_peer == peer:
-                requests.get_nowait()
             else:
-                self._request_queue.put(request_peer)
+                state.get_queue.put(stream)
+                peer = self._peers.inverse[sock]
+                self._get_event.put(peer)
 
-    def _c2s(self, connection: Connection) -> None:
-        """Client to server communication"""
-        # NOTE: communication thead
+    def _s2c(self, sock: socket.socket) -> None:
+        peer = self._peers.inverse[sock]
+        state = self._state[peer]
 
-        # Acquire peer (if not disconnected)
-        tcp_peer = connection.peer
-        try:
-            peer = self._peers.inverse[tcp_peer]
-            queue = self._requests[peer]
-        except KeyError:
+        state.put_flush()
+        if state.put_stream.empty():
             return
 
-        # Recive incoming data
-        try:
-            connection.recv()
-        except ResourceClosed:
-            self._fin(connection)
-            return
-
-        # Queue up all recived messages
-        while True:
-            try:
-                data = connection.get_nowait()
-            except Empty:
-                break
-
-            queue.put(data)
-            self._request_queue.put(peer)
-
-    def _s2c(self, connection: Connection) -> None:
-        """Server to client communication"""
-        # NOTE: communication thead
-
-        # Acquire peer (if not disconnected)
-        tcp_peer = connection.peer
-        try:
-            peer = self._peers.inverse[tcp_peer]
-            queue = self._responses[peer]
-        except KeyError:
-            return
-
-        self._modify_selector(connection, selectors.EVENT_READ)
-
-        # Queue up all send messages
-        while True:
-            try:
-                data = queue.get_nowait()
-            except Empty:
-                break
-
-            connection.put_nowait(data)
-
-        # Send outgoing data
-        try:
-            connection.send()
-        except ResourceClosed:
-            self._fin(connection)
-            return
+        with state.put_read() as view:
+            sock.sendall(view)
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
@@ -168,28 +160,28 @@ class Server(Protocol):
         super().get(*peers)
         assert len(peers) == 0, "Server can not get from specific client"
 
-        while True:
-            # Wait for a request
-            peer = self._request_queue.get()
-
-            # Get request
-            try:
-                data = self._requests[peer].get_nowait()
-
-            # Request not found, revert notification and retry
-            except (KeyError, Empty):
-                self._request_queue.put(peer)
-                continue
-
-            # Request found, continue
-            else:
-                break
+        # Wait for a event
+        peer = self._get_event.get()
 
         # Exit signaled
-        if data == END_COMM:
+        if peer is self._id:
             raise ResourceClosed()
 
-        obj = self._deserialize(data)
+        state = self._state[peer]
+        get_queue = state.get_queue
+
+        # Get object
+        stream = get_queue.get_nowait()
+
+        # Remove finalized drained peer
+        if peer not in self._peers and state.empty():
+            with self._lock:
+                if peer not in self._peers and state.empty():
+                    del self._state[peer]
+
+        with stream:
+            obj = self._serializer.load(stream)
+
         return Message(peer=peer, obj=obj)
 
     def put(self, obj, *peers: uuid.UUID) -> None:
@@ -200,33 +192,38 @@ class Server(Protocol):
             with self._lock:
                 peers = tuple(self._peers)
 
-        data = self._serialize(obj)
+        errors = list[uuid.UUID]()
+        with self._serializer.dump(obj) as stream:
+            for peer in peers:
+                try:
+                    sock = self._peers[peer]
+                    state = self._state[peer]
+                except KeyError:
+                    errors.append(peer)
+                    continue
+                if state.closed:
+                    errors.append(peer)
+                    continue
+                # FIXME: RACE CONDITION put & close
+                state.put_queue.put(stream.copy())
+                self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
+        self._notify_selector()
 
-        for peer in peers:
-            self._responses[peer].put(data)
-            self._modify_selector(self._connections[peer], selectors.EVENT_READ | selectors.EVENT_WRITE)
+        if errors:
+            raise ResourceClosed(errors)
 
-    def close(self) -> None:
+    def _close(self) -> None:
         """Close the server"""
-        if self.closed:
-            return
-        super().close()
-        self._server.close()
-
-        # Unlock inflight external API
-        with self._lock:
-            for queue in self._requests.values():
-                queue.put(END_COMM)
-
-        # Bootstrap backoff generator
-        backoff = self._new_backoff()
-        next(backoff)
 
         # Wait peers to drain
-        while self._requests:
-            backoff.send(1.0)
-
-        # Close resources
         with self._lock:
-            for connection in self._connections.values():
-                connection.close()
+            while self._peers:
+                self._lock.wait()
+
+        self._socket.close()
+
+        # Unlock inflight external API
+        for _ in range(threading.active_count()):
+            self._get_event.put(self._id)
+
+        super()._close()

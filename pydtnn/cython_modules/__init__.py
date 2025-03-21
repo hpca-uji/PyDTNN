@@ -39,3 +39,4 @@ from transpose_cython import \
     transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
     transpose_0312_ijk_cython, transpose_0312_ikj_cython, \
     transpose_1023_jik_cython, transpose_1023_ijk_cython
+from memory_cython import memoryview_index

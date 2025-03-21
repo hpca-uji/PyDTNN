@@ -1,16 +1,13 @@
 """TCP client"""
 
-# TODO: Revise if communication thread should ignore ResouceClosed exceptions
-
 import uuid
 import socket
 import selectors
 import threading
-from queue import Empty, SimpleQueue
 
-from pydtnn.comms import Message, ResourceClosed
 from pydtnn.comms.tcp import Protocol
-from pydtnn.comms.tcp.connection import Connection
+from pydtnn.utils.io_stream import AncillaryStream, Stream
+from pydtnn.comms import Message, ResourceClosed, ConnectionState
 
 
 __all__ = (
@@ -19,7 +16,7 @@ __all__ = (
 
 
 # Sentinel objects
-END_COMM = b""
+END_COMM = Stream()
 
 
 class Client(Protocol):
@@ -30,96 +27,129 @@ class Client(Protocol):
         super().__init__(addr, port)
 
         # State
-        self._lock = threading.Lock()
-        self._requests = SimpleQueue[bytes]()
-        self._responses = SimpleQueue[bytes]()
+        self._lock = threading.Condition()
+        self._state = ConnectionState(buffer_size=self._max_message_size)
 
         # TCP
-        self._connection = Connection(socket.create_connection((self._addr, self._port)))
-        self._selector.register(self._connection, selectors.EVENT_READ, self._handle_connection)
-        self._syc()
-        self._start_loop()
+        self._socket = socket.create_connection((self._addr, self._port))
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
 
-    def _handle_connection(self, connection: Connection, event) -> None:
+        self._ini()
+
+    def _ini(self) -> None:
+        """Connection initialization"""
+        with self._serializer.dump(self._id) as stream:
+            self._state.put_stream.pack(stream, ancillary=True)
+        self._selector.register(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
+        self._notify_selector()
+
+    def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection states"""
-        if event & selectors.EVENT_READ:
-            self._s2c()
+        state = self._state
+
+        if state.put_empty():
+            self._modify_selector(sock, selectors.EVENT_READ)
 
         if event & selectors.EVENT_WRITE:
-            self._c2s()
+            self._c2s(sock)
 
-    def _syc(self) -> None:
-        """Client connection startup"""
-        data = self._serialize(self.id)
-        self._connection.put(data)
-        data = self._connection.get()
-        self.server = self._deserialize(data)
+        if event & selectors.EVENT_READ:
+            self._s2c(sock)
 
-    def _s2c(self) -> None:
-        """Server to client communication"""
-        if self.closed:
+        if not state.put_empty():
+            self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
+
+        if state.closed and state.put_empty():
+            self._fin(sock)
+
+    def _fin(self, sock: socket.socket) -> None:
+        self._selector.unregister(sock)
+        with self._lock:
+            sock.close()
+            del self._socket
+            self._lock.notify_all()
+
+    def _s2c(self, sock: socket.socket) -> None:
+        state = self._state
+        data = sock.recv(self._max_message_size)
+
+        if not data:
+            self._fin(sock)
             return
 
-        try:
-            self._connection.recv()
-        except ResourceClosed:
-            return
+        state.get_stream.write(data)
 
         while True:
             try:
-                data = self._connection.get_nowait()
-            except Empty:
+                stream = state.get_stream.unpack()
+            except AncillaryStream as ancillary:
+                with ancillary.stream as stream:
+                    id = self._serializer.load(stream)
+
+                # Server ID, INI
+                if id != self._id:
+
+                    # ACK
+                    with self._lock:
+                        self._server = id
+                        self._lock.notify_all()
+
+                # Client ID, FIN
+                else:
+
+                    # ACK
+                    state.close()
+
+            except BlockingIOError:
                 break
+            else:
+                state.get_queue.put(stream)
 
-            self._responses.put(data)
+    def _c2s(self, sock: socket.socket) -> None:
+        state = self._state
 
-    def _c2s(self) -> None:
-        """Client to server communication"""
-        if self.closed:
+        state.put_flush()
+        if not state.put_stream.empty():
+            pass
+        elif self._closed:
+            with self._serializer.dump(self._server) as stream:
+                state.put_stream.pack(stream, ancillary=True)
+        else:
             return
-
-        self._modify_selector(self._connection, selectors.EVENT_READ)
-
-        while True:
-            try:
-                data = self._requests.get_nowait()
-            except Empty:
-                break
-
-            self._connection.put_nowait(data)
-
-        try:
-            self._connection.send()
-        except ResourceClosed:
-            return
+        with state.put_read() as view:
+            sock.sendall(view)
 
     def put(self, obj, *peers: uuid.UUID) -> None:
         """Publish data to server"""
         super().put(obj, *peers)
         assert len(peers) == 0, "Client can not publish to another client"
-        data = self._serialize(obj)
-        self._requests.put(data)
-        self._modify_selector(self._connection, selectors.EVENT_READ | selectors.EVENT_WRITE)
+        stream = self._serializer.dump(obj)
+        self._state.put_queue.put(stream)
+        self._modify_selector(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
+        self._notify_selector()
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get from the server"""
         super().get(*peers)
         assert len(peers) == 0, "Client can not get from another client"
-        data = self._responses.get()
+        with self._state.get_queue.get() as stream:
+            if stream is END_COMM:
+                raise ResourceClosed()
+            obj = self._serializer.load(stream)
 
-        # Exit signaled
-        if data == END_COMM:
-            raise ResourceClosed()
+        return Message(peer=self._server, obj=obj)
 
-        obj = self._deserialize(data)
-        return Message(peer=self.server, obj=obj)
-
-    def close(self) -> None:
+    def _close(self) -> None:
         """Close the client"""
-        if self.closed:
-            return
-        super().close()
-        self._connection.close()
+        with self._lock:
+            while hasattr(self, "_socket"):
+                self._modify_selector(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
+                self._notify_selector()
+                self._lock.wait()
 
-        # Unlock inflight external API
-        self._requests.put(END_COMM)
+        # Unlock inflight external API:
+        for _ in range(threading.active_count()):
+            self._state.get_queue.put(END_COMM)
+
+        super()._close()

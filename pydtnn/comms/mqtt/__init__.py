@@ -5,9 +5,6 @@
 # the client and server, should be the one of the actual broker, not where the
 # server is running.
 
-# NOTE: The server can not detect when persistent clients clear their session.
-# If a fin message is not sent, clients data and queues are held indefinitely.
-#
 # NOTE: The MQTT library handles comunications single-threaded, therefore
 # operations on related callbacks are limited to pushing or pulling data from
 # queues without blocking, so all operations are minimal and fast.
@@ -16,9 +13,9 @@
 # are not. This could be implemented using grouping requests that generate new
 # UUID per group. This would reduce also reduce load on the broker.
 
-from concurrent.futures import ThreadPoolExecutor
 import uuid
-import threading
+from queue import SimpleQueue
+from concurrent.futures import ThreadPoolExecutor
 
 import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
@@ -35,27 +32,27 @@ __all__ = (
 ARG_MISSING = object()
 
 
-class Protocol(comms.Communication):
+class Protocol(comms.Communicator):
     """Shared base MQTT implementation"""
 
     _qos = 0
     _transport = "tcp"
-    _protocol = mqtt_client.MQTTv5
+    _protocol = mqtt_client.MQTTv311
+    _max_message_size = 16 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Communication initialization"""
         super().__init__(addr, port)
-
         # State
-        self._inflight = threading.Semaphore(value=0)
+        self._ack_queue = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
 
         # MQTT
         self._client = mqtt_client.Client(
             callback_api_version=mqtte_enum.CallbackAPIVersion.VERSION2,
+            client_id=self._id.hex,
             protocol=self._protocol,
             transport=self._transport  # type: ignore
         )
-        self._pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._client.connect(host=self._addr, port=self._port)
 
     def _submit(self, fn, /, *args, **kwargs):
@@ -66,7 +63,11 @@ class Protocol(comms.Communication):
 
     def _start_loop(self) -> None:
         """Start connection handling loop"""
-        self._submit(self._client.loop_forever)
+        self._client.loop_start()
+
+    def _stop_loop(self) -> None:
+        self._ack_queue.shutdown()
+        self._client.loop_stop()
 
     def _register_handler(self, topic: str, handler: mqtt_client.CallbackOnMessage) -> None:
         """Setup a topic handler"""
@@ -79,6 +80,5 @@ class Protocol(comms.Communication):
 
     def _publish(self, topic: str, data=None) -> None:
         """Generic MQTT publish"""
-        self._inflight.release()
         message = self._client.publish(topic=topic, payload=data, qos=self._qos)
-        self._submit(message.wait_for_publish)
+        self._ack_queue.submit(message.wait_for_publish).add_done_callback(lambda future: future.result())

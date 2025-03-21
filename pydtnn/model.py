@@ -375,7 +375,7 @@ class Model:
             print(line)
             layer.show()
         print(line)
-        print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size(self.nparams * bfp):^15s} "
+        print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size_bytes(self.nparams * bfp):^15s} "
               f"{'':19s} {'':37s}|")
         print(line)
 

@@ -30,9 +30,14 @@ def main(config: Namespace):
     print(f"R{rank}: allgather {res}/{ref}")
     assert res == ref, f"allgather error; got {res}, expect {ref}"
 
+    ref = sum(range(size))
+    res = comm.allreduce(rank)
+    print(f"R{rank}: allreduce {res}/{ref}")
+    assert res == ref, f"allreduce error; got {res}, expect {ref}"
+
     ref = RemoteException
     try:
-        res = comm.allreduce(None, MPI.SUM)
+        res = comm.allreduce(None)
     except RemoteException as exc:
         res = exc
     print(f"R{rank}: error handeling {type(res)}/{ref}")

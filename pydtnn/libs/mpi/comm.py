@@ -51,8 +51,7 @@ type Rank = int
 def get_init() -> bool:
     """Should service auto initialize"""
     return bool(
-        os.environ.get("PYDTNN_MPI_ADDR")
-        or True
+        not os.environ.get("PYDTNN_MPI_ADDR")
     )
 
 

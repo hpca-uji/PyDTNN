@@ -24,6 +24,8 @@
 # respone recive notifications. Current implementation, when multiple async operations
 # are inflight, could issue more recives than expected, leading to a infinite lock.
 
+# TODO: Move future callback to request, so they are runned at the clients thead.
+
 import uuid
 import enum
 import typing
@@ -65,7 +67,11 @@ class Request[T]:
 
     def wait(self) -> T:
         """Wait for a non-blocking operation to complete."""
-        return self._future.result()
+        # NOTE: only hold future for one attempt, then discard
+        if future := self.__dict__.pop("_future"):
+            return future.result()
+        else:
+            return None  # type: ignore
 
 
 class Intracomm:
@@ -124,17 +130,27 @@ class Intracomm:
         return mpi_comm.get_rank()
 
     @functools.cached_property
-    def _comm(self) -> comms.Communication:
+    def _comm(self) -> comms.Communicator:
         """Communication connection"""
         # NOTE: Lazily initialized, prevent module imports execution
         with self._comm_lock:
             if comm := self.__dict__.get("_comm"):
                 pass
             else:
+                # If requested, start a local server
+                if mpi_comm.get_init():
+                    if self.rank == 0:
+                        from pydtnn.libs.mpi.server import background_server
+                        self._server = background_server()
+
+                    # Allow some time for server startup
+                    from time import sleep
+                    sleep(0.5)
+
                 comm = self.__dict__["_comm"] = self._new_comm()
         return comm
 
-    def _new_comm(self) -> comms.Communication:
+    def _new_comm(self) -> comms.Communicator:
         """Create a new communication and inizialize it"""
         addr = mpi_comm.get_addr()
         port = mpi_comm.get_port()
@@ -148,14 +164,14 @@ class Intracomm:
                 case mpi_comm.StateResponse():
                     pass
                 case _:
-                    continue
+                    continue  # response lost
                     # raise RuntimeError(f"Unknown response {response}")
 
             if response.size == self.size:
                 break
         return comm
 
-    def _close_comm(self, comm: comms.Communication) -> None:
+    def _close_comm(self, comm: comms.Communicator) -> None:
         """Fianlize a communication object"""
         state = mpi_comm.RankFinalize()
         comm.put(state)
@@ -166,7 +182,7 @@ class Intracomm:
                 case mpi_comm.StateResponse():
                     pass
                 case _:
-                    continue
+                    continue  # response lost
                     # raise RuntimeError(f"Unknown response {response}")
 
             if response.size == 0:

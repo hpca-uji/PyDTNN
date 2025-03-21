@@ -20,7 +20,7 @@ from pydtnn.libs.mpi import comm as mpi_comm
 
 __all__ = (
     "Server",
-    "start_local_server"
+    "background_server"
 )
 
 
@@ -97,7 +97,7 @@ class Server:
         return future
 
     @functools.cached_property
-    def _comm(self) -> comms.Communication:
+    def _comm(self) -> comms.Communicator:
         """Communication connection"""
         # NOTE: Lazily initialized, prevent module imports execution
         with self._comm_lock:
@@ -246,17 +246,14 @@ class Server:
         self._shutdown = True
 
 
-def start_local_server() -> None:
-    """Start a local background server"""
+def background_server() -> Future:
+    """Start a background server"""
     from time import sleep
-    pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix=f"{__name__}:local")
+    pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix=f"{__name__}")
     server = Server(pool)
 
-    # Ensure connection is setup
-    server._comm
-
     # Serve and finalize handler
-    # should clouse as clients should close
+    # should close as clients should close
     def serve_oneshot():
         server.serve_util_finalize()
 
@@ -269,8 +266,10 @@ def start_local_server() -> None:
         # however since serve_util_finalize waits until all clients
         # disconnect, there should not any active threads anyway.
         pool.shutdown(wait=False)
+
     future = pool.submit(serve_oneshot)
     future.add_done_callback(lambda future: future.result())
+    return future
 
 
 def main(config: Namespace) -> None:

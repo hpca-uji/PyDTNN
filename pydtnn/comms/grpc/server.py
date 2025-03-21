@@ -3,11 +3,13 @@
 import uuid
 import grpc
 import threading
-from queue import Empty, SimpleQueue
+from collections import abc
+from queue import SimpleQueue
 from concurrent.futures import ThreadPoolExecutor
 
 from bidict import bidict
 
+from pydtnn.utils.io_stream import StreamSerializer
 from pydtnn.comms import ResourceClosed, Message
 from pydtnn.comms.grpc import Protocol, grpc_pb2, grpc_pb2_grpc
 
@@ -18,7 +20,7 @@ __all__ = (
 
 
 # Sentinel objects
-END_COMM = b""
+END_COMM = None
 
 
 class Server(Protocol):
@@ -29,115 +31,113 @@ class Server(Protocol):
         super().__init__(addr, port)
 
         # State
-        self._lock = threading.Lock()
+        self._lock = threading.Condition()
         self._peers = bidict[uuid.UUID, str]()
-        self._request_queue = SimpleQueue[uuid.UUID]()
-        self._requests = dict[uuid.UUID, SimpleQueue[bytes]]()
-        self._responses = dict[uuid.UUID, SimpleQueue[bytes]]()
+        self._queue = SimpleQueue[uuid.UUID]()
+        self._put_queue = bidict[uuid.UUID, SimpleQueue]()
+        self._get_queue = bidict[uuid.UUID, SimpleQueue]()
 
         # gRPC
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
-            compression=self._compression
+            compression=self._compression,
+            options=self._options
         )
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
         self._server.add_insecure_port(address=f"{self._addr}:{self._port}")
         self._server.start()
-
-    def _submit(self, fn, /, *args, **kwargs):
-        """Process in the pool with exception handeling"""
-        future = self._pool.submit(fn, *args, **kwargs)
-        future.add_done_callback(lambda future: future.result())
-        return future
-
-    @property
-    def _size(self) -> int:
-        """Get the approximate number of clients"""
-        return len(self._peers)
 
     def _peer(self, context: grpc.ServicerContext) -> uuid.UUID:
         """Get peer from a context"""
         grpc_peer = context.peer()
         return self._peers.inverse[grpc_peer]
 
-    def _syc(self, message: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
+    def _ini(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
         """Client connection startup"""
-        # NOTE: communication thead
+        # NOTE: communication thread
         if self.closed:
             context.set_code(grpc.StatusCode.ABORTED)
-            return grpc_pb2.Message()
+            return
 
+        serializer = StreamSerializer()
+
+        # Get peer
         grpc_peer = context.peer()
-        peer = self._deserialize(message.data)
+        message, = messages
+        serializer.write(message.data)
+        peer = serializer.load()
 
         # Thread-safe client setup
         with self._lock:
+            if peer not in self._peers:
+                self._put_queue[peer] = SimpleQueue()
+                self._get_queue[peer] = SimpleQueue()
             self._peers[peer] = grpc_peer
-            self._requests[peer] = SimpleQueue()
-            self._responses[peer] = SimpleQueue()
+            self._lock.notify_all()
 
         # Send server identification
-        data = self._serialize(self.id)
-        return grpc_pb2.Message(data=data)
+        size = serializer.dump(self._id)
+        with serializer.read(size) as view:
+            yield grpc_pb2.Message(data=view.tobytes())
 
-    def _fin(self, message: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
+    def _fin(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
         """Client connection finalizer"""
-        # NOTE: communication thead
+        # NOTE: communication thread
         peer = self._peer(context)
+
+        # Drain queues
+        yield from self._com(messages, context)
 
         # Thread-safe client taredown
         with self._lock:
             del self._peers[peer]
-            requests = self._requests.pop(peer)
-            responses = self._responses.pop(peer)
+            del self._put_queue[peer]
+            if self._get_queue[peer].empty():
+                del self._get_queue[peer]
+            self._lock.notify_all()
 
-        # Drain queue
-        while requests:
-            try:
-                request_peer = self._request_queue.get_nowait()
-            except Empty:
-                break
-            if request_peer == peer:
-                requests.get_nowait()
-            else:
-                self._request_queue.put(request_peer)
-
-        return grpc_pb2.Message()
-
-    def _c2s(self, message: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
+    def _com(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
         """Client to server communication"""
-        # NOTE: communication thead
+        # NOTE: communication thread
         peer = self._peer(context)
-        data = message.data
+        put_queue = self._put_queue[peer]
+        get_queue = self._get_queue[peer]
 
-        self._requests[peer].put(data)
-        self._request_queue.put(peer)
+        # Message generators
+        put_queue = self._consume_queue(put_queue)
+        balance = 0
 
-        return grpc_pb2.Message()
+        def get_generator():
+            nonlocal balance
+            for message in messages:
+                yield message
+                balance += 1
 
-    def _s2c(self, message: grpc_pb2.Message, context: grpc.ServicerContext) -> grpc_pb2.Message:
-        """Server to client communication"""
-        # NOTE: communication thead
-        peer = self._peer(context)
+        def put_generator():
+            nonlocal balance
+            for message in self._o2m(put_queue):
+                yield message
+                balance -= 1
 
-        # Try reduce responses
-        try:
-            data = self._responses[peer].get_nowait()
+        # Message streaming
+        put_messages = put_generator()
+        for obj in self._m2o(get_generator()):
 
-        # Response not found, abort
-        except Empty:
-            pass
+            # Get messages
+            get_queue.put(obj)
+            self._queue.put(peer)
 
-        # Response found, respond
-        else:
-            return grpc_pb2.Message(data=data)
+            # Publish messages
+            if balance <= 0:
+                continue
+            for message in put_messages:
+                yield message
+                if balance <= 0:
+                    break
 
-        # Signal "no response, retry later"
-        max_backoff = self._size
-        context.set_code(grpc.StatusCode.UNAVAILABLE)
-        context.set_details(str(max_backoff))
-        return grpc_pb2.Message()
+        # Drain remainder queue
+        yield from put_messages
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
@@ -145,42 +145,45 @@ class Server(Protocol):
         super().get(*peers)
         assert len(peers) == 0, "Server can not get from specific client"
 
-        while True:
-            # Wait for a request
-            peer = self._request_queue.get()
-
-            # Get request
-            try:
-                data = self._requests[peer].get_nowait()
-
-            # Request not found, revert notification and retry
-            except (KeyError, Empty):
-                self._request_queue.put(peer)
-                continue
-
-            # Request found, continue
-            else:
-                break
+        peer = self._queue.get()
 
         # Exit signaled
-        if data == END_COMM:
+        if peer == self._id:
             raise ResourceClosed()
 
-        obj = self._deserialize(data)
+        # Get response
+        get_queue = self._get_queue[peer]
+        obj = get_queue.get_nowait()
+
+        # Cleanup dead queues
+        if get_queue.empty():
+            with self._lock:
+                if peer not in self._peers and get_queue.empty():
+                    del self._get_queue[peer]
+
         return Message(peer=peer, obj=obj)
 
     def put(self, obj, *peers: uuid.UUID) -> None:
         """Publish data to clients"""
         super().put(obj, *peers)
 
+        # Get peers if not given
         if not peers:
             with self._lock:
                 peers = tuple(self._peers)
 
-        data = self._serialize(obj)
+        # Queue to as many peers as plausible
+        errors = list[uuid.UUID]()
+        with self._lock:
+            for peer in peers:
+                if queue := self._put_queue.get(peer):
+                    queue.put(obj)
+                else:
+                    errors.append(peer)
 
-        for peer in peers:
-            self._responses[peer].put(data)
+        # Check for errors
+        if errors:
+            raise ResourceClosed(errors)
 
     def close(self) -> None:
         """Close the server"""
@@ -189,18 +192,16 @@ class Server(Protocol):
         super().close()
 
         # Unlock inflight external API
-        with self._lock:
-            for queue in self._requests.values():
-                queue.put(END_COMM)
-
-        # Bootstrap backoff generator
-        backoff = self._new_backoff()
-        next(backoff)
+        for _ in range(threading.active_count()):
+            self._queue.put(self._id)
 
         # Wait peers to drain
-        while self._peers:
-            backoff.send(1.0)
+        with self._lock:
+            while self._peers:
+                self._lock.wait()
+                break
 
         # Close resources
-        self._server.stop(grace=None)
+        # Allow some time for RPC taredown
+        self._server.stop(grace=0.5)
         self._pool.shutdown()

@@ -34,15 +34,15 @@ def server(config: Namespace):
 
         for _ in range(config.size):
             client_msg = server.get()
-            print(f"server[{server.id}]-c2s: {client_msg}")
+            print(f"{server}-c2s: {client_msg}")
             messages.append(client_msg)
 
-        server_msg = server.id
-        print(f"server[{server.id}]-s2c-global: {server_msg}")
+        server_msg = server._id
+        print(f"{server}-s2c-global: {server_msg}")
         server.put(obj=server_msg)
 
         for server_msg in messages:
-            print(f"server[{server.id}]-s2c-local: {server_msg}")
+            print(f"{server}-s2c-local: {server_msg}")
             server.put(server_msg.obj, server_msg.peer)
 
         time.sleep(config.end_delay)
@@ -54,16 +54,16 @@ def client(config: Namespace):
 
     with comms.Client(addr=config.addr, port=config.port) as client:
 
-        put_msg = client.id
-        print(f"client[{client.id}]-c2s: {put_msg}")
+        put_msg = client._id
+        print(f"{client}-c2s: {put_msg}")
         client.put(put_msg)
 
         get_msg = client.get()
-        print(f"client[{client.id}]-s2c-global: {get_msg}")
-        assert client.server == get_msg.obj, "Corrupted message data"  # type: ignore
+        print(f"{client}-s2c-global: {get_msg}")
+        assert client._server == get_msg.obj, "Corrupted message data"  # type: ignore
 
         get_msg = client.get()
-        print(f"client[{client.id}]-s2c-local: {get_msg}")
+        print(f"{client}-s2c-local: {get_msg}")
         assert put_msg == get_msg.obj, "Corrupted message data"
 
 
