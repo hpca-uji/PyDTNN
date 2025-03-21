@@ -190,37 +190,27 @@ class Dataset(ABC):
 
     def _compute_local_workload(self, nsamples):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""
-        new_nsamples = nsamples
+
+        # Reduce nsamples according to steps per epoch
         global_batch_size = self.model.batch_size * self.nprocs
-        batches_per_worker = nsamples // global_batch_size
-        remaining_samples = nsamples % global_batch_size
-        if not self.model.use_synthetic_data:
-            # Version 1) All the data is distributed (which could lead to an unequal distribution)
-            # # Instead of assigning all the non-divisible part of the remaining samples to the last process,
-            # # it is distributed among all the other workers (i.e, the other workers will have a bit of
-            # # work more than the last one). Thus, the use of ceil instead of the integer division.
-            last_batch_nsamples_per_worker = math.ceil(remaining_samples / self.nprocs)
-            last_batch_nsamples_last_worker = remaining_samples - last_batch_nsamples_per_worker * (self.nprocs - 1)
-            # Version 2) The very last part of the input data is trimmed to ensure an equal distribution
-            # last_batch_nsamples_per_worker = remaining_samples // self.nprocs
-            # last_batch_nsamples_last_worker = last_batch_nsamples_per_worker
-            new_nsamples -= remaining_samples % self.nprocs
-        else:
-            last_batch_nsamples_per_worker = 0
-            last_batch_nsamples_last_worker = 0
-            new_nsamples = batches_per_worker * self.model.batch_size * self.nprocs
+        batches_per_worker = nsamples / global_batch_size
         if batches_per_worker > self.model.steps_per_epoch > 0:
             batches_per_worker = self.model.steps_per_epoch
-            last_batch_nsamples_per_worker = 0
-            last_batch_nsamples_last_worker = 0
-            new_nsamples = batches_per_worker * self.model.batch_size * self.nprocs
-        nsamples_per_worker = batches_per_worker * self.model.batch_size + last_batch_nsamples_per_worker
-        local_offset = nsamples_per_worker * self.rank
-        local_nsamples = \
-            nsamples_per_worker \
-                if self.rank < (self.nprocs - 1) \
-                else batches_per_worker * self.model.batch_size + last_batch_nsamples_last_worker
-        return local_offset, local_nsamples, new_nsamples
+            nsamples = batches_per_worker * global_batch_size
+
+        # Calculate nsamples per worker
+        nsamples_per_worker, big_workers = divmod(nsamples, self.nprocs)
+        nsamples_per_big_worker = nsamples_per_worker + 1
+
+        # Calculate local values
+        if self.rank < big_workers:
+            local_nsamples = nsamples_per_big_worker
+            local_offset = self.rank * nsamples_per_big_worker
+        else:
+            local_nsamples = nsamples_per_worker
+            local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (self.rank - big_workers)
+
+        return local_offset, local_nsamples, nsamples
 
     def _init_synthetic_data(self):
         for part in TRAIN, VAL, TEST:
@@ -296,8 +286,9 @@ class Dataset(ABC):
 
     def _actual_batch_generator(self, part):
         local_batch_size = self.model.batch_size
-        global_batch_size = self.model.batch_size * self.nprocs
+        global_nsamples = self._nsamples[part]
         generator = self._data_generator(part)
+        nsamples = 0
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
             s = memoryview(np.arange(local_nsamples))
@@ -314,7 +305,9 @@ class Dataset(ABC):
                 indices = s[start:end]
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
+                global_batch_size = local_batch_size * self.nprocs
                 yield x_local_batch, y_local_batch, global_batch_size
+                nsamples += global_batch_size
             # Generate the last batch (with size < local_batch_size)
             last_batch_size = local_nsamples % local_batch_size
             if last_batch_size > 0:
@@ -323,10 +316,15 @@ class Dataset(ABC):
                 indices = s[start:end]
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
-                yield x_local_batch, y_local_batch, last_batch_size * self.nprocs
+                global_batch_size = global_nsamples - nsamples
+                yield x_local_batch, y_local_batch, global_batch_size
+                nsamples += global_batch_size
+
 
     def _batch_generator(self, part):
         global_batch_size = self.model.batch_size * self.nprocs
+        x_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
+        y_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
 
         match self.model.sampling_method:
             case "normal":
