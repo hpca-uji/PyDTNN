@@ -17,7 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from pydtnn.layers import AdaptativeAveragePool2D
+from pydtnn.layers import AdaptiveAveragePool2D
 from .layer_gpu import LayerGPU
 
 # Import from AveragePool2DGPU
@@ -35,7 +35,7 @@ import pycuda.gpuarray as gpuarray
 # NOTE: IT IS NECESSARY TO TEST THIS!!
 # TODO: Test this layer.
 
-class AdaptativeAveragePool2DGPU(AdaptativeAveragePool2D, LayerGPU):
+class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D, LayerGPU):
     
     # Method from AveragePool2DGPU #
     def initialize(self, prev_shape, need_dx, x):
@@ -112,4 +112,4 @@ class AdaptativeAveragePool2DGPU(AdaptativeAveragePool2D, LayerGPU):
             return self.dx
     # END of methods from AbstractPool2DLayerGPU #
 
-# --- END AdaptativeAveragePool2DGPU --- #
+# --- END AdaptiveAveragePool2DGPU --- #

@@ -25,7 +25,7 @@ from .layer import Layer
 from pydtnn.utils import decode_tensor, encode_tensor
 import numpy as np
 
-class AdaptativeAveragePool2D(Layer, ABC):
+class AdaptiveAveragePool2D(Layer, ABC):
     
     # This layer will calculate the pool shape and the stride from the output shape (passed as parameter) and the previous layer shape. 
     
@@ -81,7 +81,6 @@ class AdaptativeAveragePool2D(Layer, ABC):
         print(f"self.co: {self.co}")
         print(f"self.ho: {self.ho}")
         print(f"self.wo: {self.wo}")
-
 
         # -> Getting (and setting) the pool_shape (kh, kw):
         self.vstride = self.hi // self.ho

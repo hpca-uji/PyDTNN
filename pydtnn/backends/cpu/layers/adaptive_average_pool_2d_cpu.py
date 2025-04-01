@@ -19,7 +19,7 @@
 from typing import override
 
 from abc import ABC
-from pydtnn.layers import AdaptativeAveragePool2D
+from pydtnn.layers import AdaptiveAveragePool2D
 from pydtnn.backends.cpu.layers import LayerCPU
 
 # Imports for the method from AbstractPool2DLayerCPU
@@ -33,7 +33,7 @@ from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_FORWARD_IM2COL
 import numpy as np
 
-class AdaptativeAveragePool2DCPU(AdaptativeAveragePool2D, LayerCPU, ABC):
+class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     # The backend is the same as a AveragePool2D layer.
 
     def __init__(self, *args, **kwargs):
@@ -44,7 +44,7 @@ class AdaptativeAveragePool2DCPU(AdaptativeAveragePool2D, LayerCPU, ABC):
     @override
     def initialize(self, prev_shape: tuple[int, int], need_dx:bool = True):
         # The objective is to override the AbstractPool2DLayer's initialize method and, if super is called, AbstractPool2DLayer will be called eventually.
-        AdaptativeAveragePool2D.initialize(self, prev_shape, need_dx)
+        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
         LayerCPU.initialize(self, prev_shape, need_dx)
 
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
@@ -143,4 +143,4 @@ class AdaptativeAveragePool2DCPU(AdaptativeAveragePool2D, LayerCPU, ABC):
             return dx
     # END Methods from AveragePool2DCPU
 
-# --- END AdaptativeAveragePool2DCPU --- #
+# --- END AdaptiveAveragePool2DCPU --- #
