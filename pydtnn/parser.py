@@ -215,7 +215,7 @@ _cm_group.add_argument('--conv_direct_methods_for_best_of', type=str, default=""
 _op_group = parser.add_argument_group("Optimizer options")
 _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd")
 _op_group.add_argument('--learning_rate', type=float, default=1e-2)
-_op_group.add_argument('--learning_rate_scaling', default=True, type=bool_lambda)
+_op_group.add_argument('--learning_rate_scaling', default=False, type=bool_lambda)
 _op_group.add_argument('--momentum', type=float, default=0.9)
 _op_group.add_argument('--decay', type=float, default=0.0)
 _op_group.add_argument('--nesterov', default=False, type=bool_lambda)
