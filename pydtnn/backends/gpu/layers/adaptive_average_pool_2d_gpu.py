@@ -90,6 +90,8 @@ class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D, LayerGPU):
                         dtype=self.model.dtype) if need_dx else 0
 
     def forward(self, x):
+
+        x = super().forward(x)
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,

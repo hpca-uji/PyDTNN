@@ -24,6 +24,12 @@ from .layer import Layer
 
 from pydtnn.utils import decode_tensor, encode_tensor
 import numpy as np
+from math import ceil
+
+# This function will get the next int that is multiple of inpt_dim above or equal to output_dim
+def round_for_upscaling(inpt_dim: int, output_dim: int) -> int:
+    return int(ceil(output_dim / inpt_dim) * inpt_dim)
+# --- END round_for_upscaling --- #
 
 class AdaptiveAveragePool2D(Layer, ABC):
     
@@ -36,9 +42,6 @@ class AdaptiveAveragePool2D(Layer, ABC):
         
     def __init__(self, output_shape: int | tuple[int, int] | None = None):
         super().__init__()
-        
-        print(" => AdaptativeAveragePool2D <= ")
-
         self.output_shape = output_shape
 
         self.padding = 0 
@@ -46,11 +49,16 @@ class AdaptiveAveragePool2D(Layer, ABC):
 
         self.vdilation, self.hdilation = (self.dilation, self.dilation)
         self.vpadding, self.hpadding = (self.padding, self.padding)
+
+        # This value can change in initalize:
+        self.upscaling_needed = False
         
         # The following parameters will be initialized later:
         self.stride = self.pool_shape = (0, 0)
         self.vstride = self.hstride = 0
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
+        # Theese parameters only will be used if upscaling_needed is 
+        self.extra_h = self.extra_w = 0
     # ---  END __init__ --- #
 
     @override
@@ -73,6 +81,22 @@ class AdaptiveAveragePool2D(Layer, ABC):
         # https://stackoverflow.com/questions/64284755/what-is-the-upsampling-method-called-area-used-for
 
         # Unknown values: pool_shape (kh, kw) and stride (vstride, hstride)
+
+        # TODO: Remove
+        print(f"self.hi: {self.hi}")
+        print(f"self.wi: {self.wi}")
+
+        if self.hi < self.ho:
+            self.original_hi = self.hi
+            self.hi = round_for_upscaling(inpt_dim = self.hi, output_dim = self.ho)
+            self.extra_h = self.hi // self.original_hi
+            self.upscaling_needed = True
+
+        if self.wi < self.wo:
+            self.original_wi = self.wi
+            self.wi = round_for_upscaling(inpt_dim = self.wi, output_dim = self.wo)
+            self.extra_w = self.wi // self.original_wi
+            self.upscaling_needed = True
 
         # TODO: Remove 
         print(f"self.ci: {self.ci}")
@@ -118,6 +142,21 @@ class AdaptiveAveragePool2D(Layer, ABC):
         print(f"self.n: {self.n}")
     # - END initialize - #
     
+    @override
+    def forward(self, x) -> np.ndarray:
+        if self.upscaling_needed:
+            # Lo he intentado con padding, pero el resultado no es del todo igual.
+            reshaped = np.empty((self.extra_h, self.extra_w), dtype=x.dtype)
+
+            for i in range(self.original_hi):
+                for j in range(self.original_wi):
+                    for i_o in range(self.extra_h):
+                        for j_o in range(self.extra_w):
+                            reshaped[i_o + (self.extra_h * i), j_o + (self.extra_w * j)] = x[i, j]
+            x = reshaped
+        return x
+        # The rest of the forward method will be done in the backends.
+    # --- END forward --- #
     
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format(str(self.pool_shape),

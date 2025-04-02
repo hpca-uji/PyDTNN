@@ -48,26 +48,30 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         LayerCPU.initialize(self, prev_shape, need_dx)
 
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-            setattr(self, "forward", self._forward_nchw_cython)
-            setattr(self, "backward", self._backward_nchw_cython)
+            #setattr(self, "_forward", self._forward_nchw_cython)
+            #setattr(self, "_backward", self._backward_nchw_cython)
+            self._forward = self._forward_nchw_cython
+            self._backward = self._backward_nchw_cython
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nchw_i2c)
             # setattr(self, "backward", self._backward_nchw_i2c)
         else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
-            setattr(self, "forward", self._forward_nhwc_cython)
-            setattr(self, "backward", self._backward_nhwc_cython)
+            #setattr(self, "_forward", self._forward_nhwc_cython)
+            #setattr(self, "_backward", self._backward_nhwc_cython)
+            self._forward = self._forward_nhwc_cython
+            self._backward = self._backward_nhwc_cython
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nhwc_i2c)
             # setattr(self, "backward", self._backward_nhwc_i2c)
     # -- END initialize -- #
 
-    def forward(self, x):
-        """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
-        pass
-
+    def forward(self, x):  
+        x = super().forward(x)
+        return self._forward(x)
+        
     def backward(self, dy):
-        """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
-        pass
+        super().backward(dy)
+        return self._backward(dy)
 
     # Methods from AveragePool2DCPU
     def _forward_nhwc_i2c(self, x):
