@@ -173,7 +173,7 @@ class Dataset(ABC):
         return self._batch_generator(TEST)
 
     def _print_report(self):
-        if self.model.rank == 0:
+        if self.model.comm_rank == 0:
             print(f"Initial nsamples:"
                   f" train: {self._initial_nsamples[TRAIN]} "
                   f" val: {self._initial_nsamples[VAL]} "
@@ -286,9 +286,9 @@ class Dataset(ABC):
 
     def _actual_batch_generator(self, part):
         local_batch_size = self.model.batch_size
-        global_nsamples = self._nsamples[part]
+        global_batch_size = self.model.batch_size * self.nprocs
         generator = self._data_generator(part)
-        nsamples = 0
+        nsamples = self._nsamples[part]
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
             s = memoryview(np.arange(local_nsamples))
@@ -305,9 +305,9 @@ class Dataset(ABC):
                 indices = s[start:end]
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
-                global_batch_size = local_batch_size * self.nprocs
+                global_batch_size = min(nsamples, global_batch_size)
                 yield x_local_batch, y_local_batch, global_batch_size
-                nsamples += global_batch_size
+                nsamples -= global_batch_size
             # Generate the last batch (with size < local_batch_size)
             last_batch_size = local_nsamples % local_batch_size
             if last_batch_size > 0:
@@ -316,9 +316,9 @@ class Dataset(ABC):
                 indices = s[start:end]
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
-                global_batch_size = global_nsamples - nsamples
+                global_batch_size = min(nsamples, global_batch_size)
                 yield x_local_batch, y_local_batch, global_batch_size
-                nsamples += global_batch_size
+                nsamples -= global_batch_size
 
 
     def _batch_generator(self, part):

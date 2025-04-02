@@ -77,20 +77,20 @@ def main():
     # Create model
     model = Model(**vars(params))
     # Print model
-    if model.rank == 0:
+    if model.comm_rank == 0:
         print(f'**** {model.model_name} model...')
         model.show()
     # Print parameters
-    if model.rank == 0:
+    if model.comm_rank == 0:
         print('**** Parameters:')
         parser.print_args()
     # First (or unique) evaluation
     if model.evaluate_on_train or model.evaluate_only:
-        if model.rank == 0:
+        if model.comm_rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
         _ = model.evaluate_dataset()
-        if model.rank == 0:
+        if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
@@ -104,7 +104,7 @@ def main():
     if model.parallel in ["data"]:
         model.comm.Barrier()
     # Training
-    if model.rank == 0:
+    if model.comm_rank == 0:
         # print('**** Model time: ', model.calculate_time())
         print('**** Training...')
         t1 = time.time()
@@ -120,7 +120,7 @@ def main():
     if model.parallel == "data":
         model.comm.Barrier()
     # Print performance results and evaluation history
-    if model.rank == 0:
+    if model.comm_rank == 0:
         if model.profile:
             # noinspection PyUnboundLocalVariable
             pr.disable()
@@ -144,11 +144,11 @@ def main():
                                      [('%20.4f' % history[k][v]) for k in keys]) + '\n')
     # Second (and last) evaluation
     if model.evaluate_on_train:
-        if model.rank == 0:
+        if model.comm_rank == 0:
             print('**** Evaluating on test dataset...')
             t1 = time.time()
         _ = model.evaluate_dataset()
-        if model.rank == 0:
+        if model.comm_rank == 0:
             t2 = time.time()
             # noinspection PyUnboundLocalVariable
             total_time = t2 - t1
@@ -156,7 +156,7 @@ def main():
                 print(f'Testing time: {total_time:5.4f} s')
                 print(f'Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s')
     # Print model reports
-    if model.rank == 0:
+    if model.comm_rank == 0:
         print_model_reports(model)
     # Barrier and finalize
     if model.comm is not None and model.MPI is not None:

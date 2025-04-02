@@ -52,6 +52,6 @@ class ModelCheckpoint(LRSchedulerWithLossOrMetric):
                     .format(self.model.model_name, self.epoch_count, time.strftime("%Y%m%d"))
                 self.model.store_weights_and_bias(self.filename)
                 self.log(f"Saving model weights and bias in '{self.filename}'.")
-                if self.model.rank == 0 and self.last_filename is not None:
+                if self.model.comm_rank == 0 and self.last_filename is not None:
                     os.remove(self.last_filename)
                 self.last_filename = self.filename
