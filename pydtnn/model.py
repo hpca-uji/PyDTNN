@@ -297,8 +297,11 @@ class Model:
         # Dataset
         self.dataset = get_dataset(self)
         # Optimizers and LRSchedulers
-        if self.kwargs["optimizer_name"] == "sgd" and self.kwargs["learning_rate_scaling"]:
-            self.kwargs["learning_rate"] *= self.nprocs
+        if self.kwargs["learning_rate_scaling"]:
+            # using comm_size instead of nprocs might not be appropriate,
+            # as it differs to how learning_rate is defined elsewhere,
+            # but for now it just a parser option difference that helps testing
+            self.kwargs["learning_rate"] /= self.comm_size
         self.optimizer = get_optimizer(self)
         self.lr_schedulers = get_lr_schedulers(self)
         # Metrics list
@@ -324,10 +327,10 @@ class Model:
             case "equal":
                 self.rank_weight = 1.0
             case "mean":
-                avg_comm_nsamples = sum(self.comm_nsamples[0]) / self.nprocs
+                avg_comm_nsamples = sum(self.comm_nsamples[0]) / len(self.comm_nsamples[0])
                 self.rank_weight = self.dataset.train_nsamples / avg_comm_nsamples
             case "boost":
-                avg_comm_nsamples = sum(self.comm_nsamples[0]) / self.nprocs
+                avg_comm_nsamples = sum(self.comm_nsamples[0]) / len(self.comm_nsamples[0])
                 self.rank_weight = avg_comm_nsamples / self.dataset.train_nsamples
             case "max":
                 max_comm_nsamples = max(self.comm_nsamples[0])
