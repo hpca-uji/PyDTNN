@@ -29,20 +29,21 @@ class EarlyStopping(LRSchedulerWithLossOrMetric):
     EarlyStopping LRScheduler
     """
 
-    def __init__(self, model, loss_or_metric="", patience=10, verbose=True):
+    def __init__(self, model, loss_or_metric="", patience=10, minimize=True, verbose=True):
         super().__init__(model, loss_or_metric, verbose)
         self.patience = patience
+        self.minimize = minimize
         self.best_epoch = 0
         self.stop_training = False
-        self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
+        self.best_loss = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename = None
 
     def on_epoch_end(self, train_loss, val_loss):
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
-        if ("accuracy" in self.loss_or_metric and loss[idx] > self.best_loss) or \
-                ("accuracy" not in self.loss_or_metric and loss[idx] < self.best_loss):
+        if (not self.minimize and loss[idx] > self.best_loss) or \
+                (self.minimize and loss[idx] < self.best_loss):
             self.best_loss = loss[idx]
             self.best_epoch = self.epoch_count
             # Save weights + bias

@@ -233,6 +233,7 @@ _lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
 _lr_group.add_argument('--warm_up_epochs', type=int, default=5)
 _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
 _lr_group.add_argument('--early_stopping_patience', type=int, default=10)
+_lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True)
 _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy")
 _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1)
 _lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5)
