@@ -1,8 +1,6 @@
 """MPI server-client test"""
 
-import sys
 import enum
-import time
 from argparse import ArgumentParser, Namespace
 
 
