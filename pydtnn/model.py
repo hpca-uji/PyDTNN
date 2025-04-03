@@ -594,7 +594,7 @@ class Model:
     def _zero_dx(self, y):
         return np.zeros_like(y, shape=(1,) + y.shape[1:])
 
-    def _train_batch(self, x_batch, y_batch, current_batch_size, sync_model=False):
+    def _train_batch(self, x_batch, y_batch, current_batch_size, sync_model=True):
         self.mode = TRAIN_MODE
         sync_weights = self.model_sync_freq > 0
 
