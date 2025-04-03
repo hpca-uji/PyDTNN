@@ -86,5 +86,5 @@ def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
     arguments = args[cm.ARGUMENTS]    
     output_shape = arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None 
 
-    return layers.AdaptativeAveragePool2D(output_shape=output_shape)
+    return layers.AdaptiveAveragePool2D(output_shape=output_shape)
 # --- END AdaptiveAvgPool2d --- #
