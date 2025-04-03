@@ -78,12 +78,8 @@ class LayerGPU(Layer, ABC):
 
             if self.model.enable_nccl:
                 self.model.stream.synchronize()
-                dw /= self.model.comm_groups
-                if gradient:
-                    pass  # done at loss function
-                else:
-                    dw /= self.model.nprocs
                 dw *= self.model.rank_weight
+                dw /= self.model.comm_size
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                    stream=self.stream_2.handle)
@@ -119,12 +115,8 @@ class LayerGPU(Layer, ABC):
                     self.model.stream.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                dw_cpu /= self.model.comm_groups
-                if gradient:
-                    pass  # done at loss function
-                else:
-                    dw_cpu /= self.model.nprocs
                 dw_cpu *= self.model.rank_weight
+                dw_cpu /= self.model.comm_size
                 req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 self.reqs_allred[dw_] = req
 
@@ -172,12 +164,8 @@ class LayerGPU(Layer, ABC):
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                dw /= self.model.comm_groups
-                if gradient:
-                    pass  # done at loss function
-                else:
-                    dw /= self.model.nprocs
                 dw *= self.model.rank_weight
+                dw /= self.model.comm_size
                 if comm:
                     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
@@ -220,12 +208,8 @@ class LayerGPU(Layer, ABC):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                dw_cpu /= self.model.comm_groups
-                if gradient:
-                    pass  # done at loss function
-                else:
-                    dw_cpu /= self.model.nprocs
                 dw_cpu *= self.model.rank_weight
+                dw_cpu /= self.model.comm_size
                 if comm:
                     self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 else:

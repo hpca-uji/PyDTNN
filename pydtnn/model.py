@@ -595,8 +595,9 @@ class Model:
         return np.zeros_like(y, shape=(1,) + y.shape[1:])
 
     def _train_batch(self, x_batch, y_batch, current_batch_size, sync_model=False):
-
         self.mode = TRAIN_MODE
+        sync_weights = self.model_sync_freq > 0
+
         for lr_sched in self.lr_schedulers:
             lr_sched.on_batch_begin()
 
@@ -634,12 +635,14 @@ class Model:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                self.layers[i].reduce_weights_sync(gradient=True, comm=self.model_sync_freq <= 0)
+                self.layers[i].reduce_weights_sync(gradient=True, comm=sync_model)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-                if self.model_sync_freq > 0 and sync_model:
+
+                if sync_model and sync_weights:
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
                     self.layers[i].reduce_weights_sync(gradient=False, comm=True)
@@ -652,7 +655,7 @@ class Model:
                 dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-            if self.model_sync_freq <= 0:
+            if sync_model:
                 for i in range(len(self.layers) - 1, 0, -1):
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
@@ -677,7 +680,7 @@ class Model:
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-            if self.model_sync_freq > 0 and sync_model:
+            if sync_model and sync_weights:
                 for i in range(len(self.layers) - 1, 0, -1):
                     self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                            self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
@@ -780,7 +783,7 @@ class Model:
             for x_batch, y_batch, batch_size in val_batch_generator:
                 model_sync_count += 1
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
-                val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
+                val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=False and sync_model)
 
                 if batch_size <= 0:
                     continue
