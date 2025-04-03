@@ -120,12 +120,10 @@ class AdaptiveAveragePool2D(Layer, ABC):
 
         # -> Getting (and setting) the stride (vstride, hstride):
         # Base formula: self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
-        self.kh = (self.vstride * (self.ho - 1) - self.hi -2 * self.vpadding + 1 ) // (-1 * self.vdilation )
-        # self.vstride = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // (self.ho - 1)
+        self.kh = (self.vstride * (self.ho - 1) - self.hi -2 * self.vpadding + 1 ) // (-1 * self.vdilation ) + 1    
 
         # Base formula: self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
-        self.kw = (self.hstride * (self.wo - 1) - self.wi -2 * self.hpadding + 1 ) // (-1 * self.hdilation )
-        # self.hstride = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // (self.wo - 1)
+        self.kw = (self.hstride * (self.wo - 1) - self.wi -2 * self.hpadding + 1 ) // (-1 * self.hdilation ) + 1
     
         # TODO: Remove
         print(f"self.kh: {self.kh}")
@@ -141,22 +139,6 @@ class AdaptiveAveragePool2D(Layer, ABC):
         print(f"self.shape: {self.shape}")
         print(f"self.n: {self.n}")
     # - END initialize - #
-    
-    @override
-    def forward(self, x) -> np.ndarray:
-        if self.upscaling_needed:
-            # Lo he intentado con padding, pero el resultado no es del todo igual.
-            reshaped = np.empty((self.extra_h, self.extra_w), dtype=x.dtype)
-
-            for i in range(self.original_hi):
-                for j in range(self.original_wi):
-                    for i_o in range(self.extra_h):
-                        for j_o in range(self.extra_w):
-                            reshaped[i_o + (self.extra_h * i), j_o + (self.extra_w * j)] = x[i, j]
-            x = reshaped
-        return x
-        # The rest of the forward method will be done in the backends.
-    # --- END forward --- #
     
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format(str(self.pool_shape),
