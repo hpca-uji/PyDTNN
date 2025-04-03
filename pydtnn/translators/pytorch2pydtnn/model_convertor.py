@@ -8,14 +8,14 @@ import torch
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.layers import Input
 import pydtnn.translators.pytorch2pydtnn.common as cm
+import copy
 
 def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase]) -> None:
-    # TODO: REMEMBER -> Put modify_forward to False (or remove it.)
 
-    # TODO: Check if there are more operations to do.
+    # TODO: Check if there are more operations to do during this step.
     #   If not ==> Move to the main function.
     for layer in layers:
-        print(layer)
+        print(layer) # TODO: Remove
         model.add(layer)
 # --- END load_layers --- #
 
@@ -156,7 +156,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
     # cat_2 = torch.cat([features_pool0, features_denseblock1_denselayer1_conv2, features_denseblock1_denselayer2_conv2], 1)
     # features_pool0, features_denseblock1_denselayer1_conv2 are actually "cat_1". The previous dictionary is used to make this equivalence.
 
-
     # layer_var_names: {value's variable (str): ([function (str) or layer (nn.Module)], arguments (str))}
     for operation_variable in layer_var_names:
         operation, params = layers[operation_variable]
@@ -173,42 +172,36 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
 
             # -- Loading the weigths and the biases into the converted layer -- #
             state_dict = layer.state_dict()
-
-            import copy
             # There are layers without weight nor biases
             if LAYER_WEIGHTS in state_dict:                        
-                # The weights are "torch.Tensor": torch.Tensor.cpu().detach().numpy() ==> weigths as np.array                
-                weights = copy.deepcopy(state_dict[LAYER_WEIGHTS].cpu().detach().numpy())
+                # The weights are "torch.Tensor": torch.Tensor.cpu().detach().numpy() ==> weigths as np.array
+                weights:np.ndarray = copy.deepcopy(state_dict[LAYER_WEIGHTS].cpu().detach().numpy())
+                weights = weights.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else weights
+
                 if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
                     # TODO: Check if there is another way to do this.
-                    def weights_initializer(*args_to_ignore, pytorch_weights = weights):
+                    def weights_initializer(*args_to_ignore, pytorch_weights = weights, **kwargs_to_ignore):
                         return pytorch_weights
                     # - END weights_initializer - #
                     converted_layer.weights_initializer = weights_initializer
                 else:
                     converted_layer.weights = weights
-                # Anyways:
-                dict_weights[operation] = weights # TODO: Check if this is necessary (If not ==> Remove.)
             # else: Nothing special
 
             if LAYER_BIASES in state_dict: 
-                biases = state_dict[LAYER_BIASES].cpu().detach().numpy()
+                biases = copy.deepcopy(state_dict[LAYER_BIASES].cpu().detach().numpy())
+                biases = biases.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else biases
                 if hasattr(converted_layer, PYDTNN_BIASES_INITIALIZER):
                     # TODO: Check if there is another way to do this.
-                    def biases_initializer(*args_to_ignore, pytorch_biases = biases):
+                    def biases_initializer(*args_to_ignore, pytorch_biases = biases, **kwargs_to_ignore):
                         return pytorch_biases
                     # - END weights_initializer - #
                     converted_layer.biases_initializer = biases_initializer
                 else:
                     converted_layer.biases = biases
-                # Anyways:
-                dict_biases[operation] = biases # TODO: Check if this is necessary (If not ==> Remove.)
             # else: Nothing special
 
-            # -- Storing the results -- #
-        
-            converted_layers[layer_var] = (converted_layer, params)
-
+            converted_layers[layer_var] = (converted_layer, params)        
         else: #is intance of string (the name of a function or an operation)
             # Here, params are the input layers and other arguments.            
             args = {cm.PARAMETERS: params, 
