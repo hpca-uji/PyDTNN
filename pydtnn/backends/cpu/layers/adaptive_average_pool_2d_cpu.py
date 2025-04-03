@@ -29,7 +29,8 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
                                   im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \
                                   average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython, \
-                                  average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
+                                  average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython, \
+                                  oversampling_fwd_nchw_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_FORWARD_IM2COL
 import numpy as np
 
@@ -48,29 +49,28 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         LayerCPU.initialize(self, prev_shape, need_dx)
 
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-            #setattr(self, "_forward", self._forward_nchw_cython)
-            #setattr(self, "_backward", self._backward_nchw_cython)
             self._forward = self._forward_nchw_cython
             self._backward = self._backward_nchw_cython
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nchw_i2c)
             # setattr(self, "backward", self._backward_nchw_i2c)
         else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
-            #setattr(self, "_forward", self._forward_nhwc_cython)
-            #setattr(self, "_backward", self._backward_nhwc_cython)
             self._forward = self._forward_nhwc_cython
             self._backward = self._backward_nhwc_cython
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nhwc_i2c)
             # setattr(self, "backward", self._backward_nhwc_i2c)
     # -- END initialize -- #
-
+    
+    @override
     def forward(self, x):  
-        x = super().forward(x)
+        #x = super().forward(x)
+        x = oversampling_fwd_nchw_cython(x, self.hi, self.wi, self.extra_h, self.extra_w)
         return self._forward(x)
-        
+
+    @override    
     def backward(self, dy):
-        super().backward(dy)
+        #super().backward(dy)
         return self._backward(dy)
 
     # Methods from AveragePool2DCPU
@@ -83,10 +83,13 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y.reshape(-1, self.ho, self.wo, self.co)
 
     def _forward_nhwc_cython(self, x):
+        print("_forward_nhwc_cython")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         y = average_pool_2d_fwd_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)        
+        print(f"x_rows.shape: {x.shape}")
+        print(f"y.shape: {y.shape}")
         return y
 
     def _forward_nchw_i2c(self, x):
@@ -98,10 +101,13 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y.reshape(-1, self.co, self.ho, self.wo)
 
     def _forward_nchw_cython(self, x):
+        print("_forward_nchw_cython")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         y = average_pool_2d_fwd_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)        
+        print(f"x_rows.shape: {x.shape}")
+        print(f"y.shape: {y.shape}")
         return y
 
     def _backward_nhwc_i2c(self, dy):
