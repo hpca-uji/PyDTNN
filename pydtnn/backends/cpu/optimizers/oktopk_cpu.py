@@ -470,11 +470,10 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         Returns:
             coo_reduced_region (SparseMatrixCOO): The reduced topk values in COO format.
         """
+        self._show_message_only_once(f"In '_reduce_topk', the method that it is being used is '{method}'")
 
         if self.nprocs == 1:
             return coo_topk
-
-        self._show_message_only_once(f"In '_reduce_topk', the method that it is being used is '{method}'")
 
         if method == "collective_allreduce_then_slice":
             warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
