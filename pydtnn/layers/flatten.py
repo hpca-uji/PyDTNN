@@ -27,4 +27,4 @@ class Flatten(Layer, ABC):
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
-        self.shape = (np.prod(prev_shape),)
+        self.shape = (int(np.prod(prev_shape)),)

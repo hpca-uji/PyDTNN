@@ -60,7 +60,8 @@ def get_lr_schedulers(model):
         elif lr_sched == "early_stopping":
             lrs = EarlyStopping(model,
                                 model.early_stopping_metric,
-                                model.early_stopping_patience)
+                                model.early_stopping_patience,
+                                model.early_stopping_minimize)
         elif lr_sched == "reduce_lr_on_plateau":
             lrs = ReduceLROnPlateau(model,
                                     model.reduce_lr_on_plateau_metric,

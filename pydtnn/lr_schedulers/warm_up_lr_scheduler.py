@@ -29,12 +29,10 @@ class WarmUpLRScheduler(LRScheduler):
         self.warmup_epochs = warmup_epochs
         self.base_lr = base_lr
         self.init_lr = init_lr
-        self.batch_count = 0
+        self.epoch_count = 0
 
-    def on_batch_begin(self):
-        warmup_batches = (self.model.dataset.train_nsamples // (self.model.batch_size * self.model.nprocs)) * self.warmup_epochs
-        if self.batch_count <= warmup_batches:
-            self.model.optimizer.learning_rate = self.base_lr \
-                                                 + self.batch_count * ((self.init_lr - self.base_lr) / warmup_batches)
-            self.batch_count += 1
+    def on_epoch_end(self, train_loss, val_loss):
+        if self.epoch_count < self.warmup_epochs:
+            self.model.optimizer.learning_rate = self.base_lr + ((self.epoch_count + 1) / self.warmup_epochs) * (self.init_lr - self.base_lr)
+            self.epoch_count += 1
             self.log(f"Setting learning rate to {self.model.optimizer.learning_rate:.8f}.")

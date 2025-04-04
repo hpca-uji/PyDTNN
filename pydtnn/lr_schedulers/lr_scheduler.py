@@ -46,5 +46,5 @@ class LRScheduler(ABC):
         pass
 
     def log(self, text):
-        if self.verbose and self.model.rank == 0:
+        if self.verbose and self.model.comm_rank == 0:
             print(f"{self}: {text}")

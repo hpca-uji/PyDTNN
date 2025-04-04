@@ -40,7 +40,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     def forward(self, x):
 
         def mean(data, total, comm):
-            if self.sync_stats and comm is not None:
+            if self.sync_stats and comm is not None and self.model.shared_storage:
                 _mean = np.sum(data, axis=0) / total
                 comm.Allreduce(MPI.IN_PLACE, _mean, op=MPI.SUM)
             else:
@@ -57,7 +57,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
-            if self.sync_stats and self.model.comm is not None:
+            if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
                 n = self.model.nprocs * self.model.batch_size
                 # n = np.array([x.shape[0]], dtype=self.model.dtype)
                 # self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
