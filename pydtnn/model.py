@@ -323,18 +323,16 @@ class Model:
             self.comm.allgather(self.dataset.test_nsamples) if self.comm else [self.dataset.test_nsamples]
         ]
         # Process weights
+        total_nsamples = sum(self.comm_nsamples[0])
         match self.proc_weight:
             case "equal":
                 self.rank_weight = 1.0
             case "mean":
-                avg_comm_nsamples = sum(self.comm_nsamples[0]) / len(self.comm_nsamples[0])
-                self.rank_weight = self.dataset.train_nsamples / avg_comm_nsamples
-            case "boost":
-                avg_comm_nsamples = sum(self.comm_nsamples[0]) / len(self.comm_nsamples[0])
-                self.rank_weight = avg_comm_nsamples / self.dataset.train_nsamples
-            case "max":
-                max_comm_nsamples = max(self.comm_nsamples[0])
-                self.rank_weight = self.dataset.train_nsamples / max_comm_nsamples
+                self.rank_weight = self.comm_size * (self.dataset.train_nsamples / total_nsamples)
+            case "inverse":
+                min_nsamples, max_nsamples = min(self.comm_nsamples[0]), max(self.comm_nsamples[0])
+                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
+                self.rank_weight = self.comm_size * (inverse_nsamples / total_nsamples)
             case _:
                 raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
         # Communications codec
