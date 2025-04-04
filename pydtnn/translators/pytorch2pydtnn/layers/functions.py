@@ -4,8 +4,8 @@
 
 # Typing related (or non important) imports
 from typing import *
-from inspect import stack # This is only in order to get the function's name
 from pydtnn import activations
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
 from pydtnn import layers
@@ -19,7 +19,6 @@ from pydtnn.translators.pytorch2pydtnn.layers.pooling import *
 # TODO: Check how to do this well.
 def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     # https://pytorch.org/docs/stable/generated/torch.add.html      
-    print(f"Function: {stack()[0].function}")
     
     # It should be prepared so the params have the following format: "[layer1,layer2]"
     layer_name: str = args[cm.OPERATION_VAR]
@@ -49,7 +48,6 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
 
 def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     # https://pytorch.org/docs/main/generated/torch.cat.html
-    print(f"Function: {stack()[0].function}")
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
     # También hay que haer que solo aparezca una única vez.
@@ -87,7 +85,6 @@ def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
     #from torch import flatten
     # torch.flatten(input, start_dim=0, end_dim=-1)
-    print(f"Function: {stack()[0].function}")
 
     def switch(list_params: List[str], dict_params: Dict[str, str] = dict()) -> Dict[str, str]:
         match len(list_params):
@@ -114,13 +111,10 @@ def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     return (layers.Flatten(), dict_params["input"])
 # --- END Concat --- #
 
-
 def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
     # It is not the layer, but the operation itself.
     # from torch.nn.functional import relu
     # relu(input: Tensor, inplace: bool = False)
-    
-    print(f"Function: {stack()[0].function}")
 
     dict_params = dict()
 
@@ -138,8 +132,6 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, st
     # It is not the layer, but the operation itself.
     # from torch.nn.functional import adaptive_avg_pool2d
     # adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int])
-
-    print(f"Function: {stack()[0].function}")
 
     dict_params = dict()
     # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'

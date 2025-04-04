@@ -4,7 +4,6 @@
 
 # Typing related (or non important) imports
 from typing import *
-from inspect import stack # This is only in order to get the function's name
 
 # Functionality imports
 from pydtnn import layers

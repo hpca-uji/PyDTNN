@@ -1,7 +1,6 @@
 # Typing related (or non important) imports
 from typing import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from torch.nn import Module
 
 # Functionality imports
 from pydtnn.translators.pytorch2pydtnn.layers.normalization import *
@@ -91,6 +90,7 @@ def switch_operation_symbols(op: str) -> str:
 
 # TODO: Check what to do if it's a call to a torch function (and check torch functions to implement)
 def function_operation_to_pydtnn(name:str) -> Callable[[Dict[str, Any]], Tuple[LayerAndActivationBase, str]]:
+    print(f"Function: {name}")
     if ADD in name:
         op = Add
     elif any(pattern in name for pattern in [CONCAT, CAT]):
