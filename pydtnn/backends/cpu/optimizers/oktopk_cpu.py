@@ -514,15 +514,15 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
             pass
 
-        if method == "p2p_reduce_region_non_blocking":
+        if method == "p2p_reduce_region_destination_rotation":
             # Send all regions except mine, in a non-blocking way 
             region = (self.rank + 1) % self.nprocs
             requests = [None] * (self.nprocs - 1)
-            for i in range(self.nprocs - 1):
+            for comm_step in range(self.nprocs - 1):
                 row_start = 0 if region == 0 else boundaries[region - 1]
                 row_end = boundaries[region]
-                requests[i] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
-                region = 0 if region == self.nprocs -1 else region + 1
+                requests[comm_step] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                region = (region + 1) % self.nprocs
 
             # Receive regions and perform partial sums
             row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
@@ -533,8 +533,44 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
             MPI.Request.Waitall(requests)
             return coo_reduced_region 
+        
+        if method == "p2p_reduce_region_destination_rotation_and_bucketing":
+            # Send all regions except mine, in a non-blocking way with buckets (two isend at same comm_step)
+            region = (self.rank + 1) % self.nprocs
+            requests = [None] * (self.nprocs - 1)
+            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
+            row_end = boundaries[self.rank]
+            coo_reduced_region = coo_topk.slice(row_start, row_end)
 
-        if method == "p2p_reduce_region_destination_rotation":
+            # Send and receive buckets
+            for bucket in range(0, self.nprocs - 2, 2):
+                # First isend 
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                requests[bucket] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                region = (region + 1) % self.nprocs
+                # Second isend
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                requests[bucket + 1] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                region = (region + 1) % self.nprocs                
+                # Receive and compute bucket
+                coo_reduced_region += self.comm.recv()
+                coo_reduced_region += self.comm.recv()
+
+            # If number of regions is even, an extra isend and recv is necessary
+            if self.nprocs % 2 == 0: 
+                # First and only isend of this extra bucket
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                requests[self.nprocs - 2] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                # Receive and compute extra bucket
+                coo_reduced_region += self.comm.recv()
+
+            MPI.Request.Waitall(requests)
+            return coo_reduced_region 
+
+        if method == "p2p_reduce_region_static_destination":
             # Prepare a vector region for storing the partial sums
             coo_region_partial_sum = [None] * self.nprocs
             for region in range(self.nprocs):
