@@ -58,9 +58,8 @@ def prepare_pydtnn_arguments(arguments: Dict[str, Any], torch_dict_keys: List[st
     return {pydtnn_key: arguments[torch_key] for torch_key, pydtnn_key in zip(torch_dict_keys, pydtnn_dict_keys) if torch_key in arguments}
 # --- END prepare_pydtnn_arguments --- #
 
-# TODO: Check what to do if it's a call to a torch function (and check torch functions to implement)
 def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActivationBase]:
-    print(f"Layer: {name}")
+    #print(f"Layer: {name}")
     match name:
         case "Conv2d": return Conv2d
         case "Linear": return Linear
@@ -88,9 +87,8 @@ def switch_operation_symbols(op: str) -> str:
     return op
 # --- switch_operation_symbols --- #
 
-# TODO: Check what to do if it's a call to a torch function (and check torch functions to implement)
 def function_operation_to_pydtnn(name:str) -> Callable[[Dict[str, Any]], Tuple[LayerAndActivationBase, str]]:
-    print(f"Function: {name}")
+    #print(f"Function: {name}")
     if ADD in name:
         op = Add
     elif any(pattern in name for pattern in [CONCAT, CAT]):
@@ -170,16 +168,4 @@ def get_equivalent_layer(params: List[str], dict_equivalent_layers:Dict[str, str
         equivalent_layers[layer] = None
     return list(equivalent_layers.keys())
 # --- END get_equivalent_layer ---#
-
-
-def print_dict(dictionary: Dict[str, Any], name:str) -> None:
-    print(name)
-    for k in dictionary.keys():
-        if k == "_parameters" and "weight" in dictionary[k]:
-            print(f"\t {k}: {dictionary[k]["weight"].shape}")
-        elif not k.startswith("_"):
-            print(f"\t {k}: {dictionary[k]}")
-    print("-----")
-# --- END print_dict --- #
-
 # ------------------- #

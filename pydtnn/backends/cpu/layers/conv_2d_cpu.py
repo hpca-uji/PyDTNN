@@ -263,12 +263,10 @@ class Conv2DCPU(LayerCPU, Conv2D):
 
     def _forward_nchw_i2c(self, x):
         """Version of the forward function that uses im2col and matmul"""
-
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_cols = im2col_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-
         if self.model.mode == TRAIN_MODE:
             self.x_cols = x_cols
 
