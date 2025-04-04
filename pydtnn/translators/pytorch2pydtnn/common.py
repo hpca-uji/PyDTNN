@@ -61,6 +61,7 @@ def prepare_pydtnn_arguments(arguments: Dict[str, Any], torch_dict_keys: List[st
 
 # TODO: Check what to do if it's a call to a torch function (and check torch functions to implement)
 def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActivationBase]:
+    print(f"Layer: {name}")
     match name:
         case "Conv2d": return Conv2d
         case "Linear": return Linear

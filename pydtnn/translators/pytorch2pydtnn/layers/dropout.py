@@ -14,7 +14,6 @@ import pydtnn.translators.pytorch2pydtnn.common as cm
 def Dropout(args: Dict[str, Any]) -> layers.Dropout:
     # https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html#torch.nn.Dropout
     
-    print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
     # Not used: inplace: Bool
     PYTORCH_P = "p"

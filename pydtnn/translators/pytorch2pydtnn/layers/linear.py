@@ -15,7 +15,6 @@ import pydtnn.translators.pytorch2pydtnn.common as cm
 def Linear(args: Dict[str, Any]) -> layers.FC:
     # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear
         
-    print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
     # Not used: in_features
     PYTORCH_BIAS = "bias"

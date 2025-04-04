@@ -49,7 +49,6 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
 
 def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     # https://pytorch.org/docs/main/generated/torch.cat.html
-    
     print(f"Function: {stack()[0].function}")
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
@@ -109,8 +108,6 @@ def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
             case _:
                 return dict_params
     # - END switch - #
-
-    print(f"Function: {stack()[0].function}")
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
         

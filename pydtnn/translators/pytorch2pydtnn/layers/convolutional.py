@@ -14,7 +14,6 @@ import pydtnn.translators.pytorch2pydtnn.common as cm
 def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:    
     # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
 
-    print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
     # Not used: in channels, device, dtype
     PYTORCH_KERNEL_SIZE = "kernel_size" # INT or Tuple[INT, INT]

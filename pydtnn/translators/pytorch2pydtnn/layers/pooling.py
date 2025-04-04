@@ -31,7 +31,6 @@ PYDTNN_DILATION = "dilation"
 def MaxPool2d(args: Dict[str, Any]) -> layers.MaxPool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
 
-    print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
     # Not used: return_indices, ceil_mode
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION]
@@ -56,7 +55,6 @@ def MaxPool2d(args: Dict[str, Any]) -> layers.MaxPool2D:
 def AvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:    
     # https://pytorch.org/docs/stable/generated/torch.nn.AvgPool2d.html#torch.nn.AvgPool2d    
     
-    print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
     # Not used: ceil_mode, count_include_pad, divisor_override
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION]
@@ -81,7 +79,6 @@ def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.AdaptiveAvgPool2d.html#torch.nn.AdaptiveAvgPool2d
     # from torch.nn import AdaptiveAvgPool2d    
     # NOTE: "The output is of size H x W, for any input size. The number of output features is equal to the number of input planes." Source: PyTorch.      
-    print(f"Layer: {stack()[0].function}")
 
     arguments = args[cm.ARGUMENTS]    
     output_shape = arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None 

@@ -14,7 +14,6 @@ import pydtnn.translators.pytorch2pydtnn.common as cm
 def BatchNorm2d(args: Dict[str, Any]) -> layers.BatchNormalization:
     # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html#torch.nn.BatchNorm2d
 
-    print(f"Layer: {stack()[0].function}")
     # PyTorch attributes:
     # Not used: num_features, affine, track_running_stats
     PYTORCH_EPS = "eps" #Float
