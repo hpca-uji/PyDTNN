@@ -592,10 +592,32 @@ class Model:
     def _zero_dx(self, y):
         return np.zeros_like(y, shape=(1,) + y.shape[1:])
 
+    def _weight_update(self, gradient=True, blocking=True, comm=True):
+        if blocking or not comm:
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT,
+                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
+                self.layers[i].reduce_weights_sync(gradient=gradient, comm=comm)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+
+        else:
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT,
+                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
+                self.layers[i].reduce_weights_async(gradient=gradient)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
+                                        [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW,
+                                        self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
+                self.layers[i].wait_allreduce_async(gradient=gradient)
+                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
+
     def _train_batch(self, x_batch, y_batch, current_batch_size, sync_model=True):
         self.mode = TRAIN_MODE
-        sync_weights = self.model_sync_freq > 0
 
+        # LR schedulers begin
         for lr_sched in self.lr_schedulers:
             lr_sched.on_batch_begin()
 
@@ -616,88 +638,34 @@ class Model:
             loss, dx = 0.0, self._zero_dx(y_targ)
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
 
-        if self.blocking_mpi:
-            # Blocking MPI
-            # Back propagation. Gradient computation (GC) and weights update (WU)
-            for i in range(len(self.layers) - 1, 0, -1):
-                # self.tracer.print_memory_usage(f"Layer {l:03} before backward")
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
-                dx = self.layers[i].backward(dx)
-                # self.tracer.print_memory_usage(f"Layer {l:03} after backward ")
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+        # Backward pass (BP)
+        for i in range(len(self.layers) - 1, 0, -1):
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+            dx = self.layers[i].backward(dx)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-            if self.enable_cudnn:
-                self.stream.synchronize()
+        if self.enable_cudnn:
+            self.stream.synchronize()
 
-            # Weight update (WU)
-            for i in range(len(self.layers) - 1, 0, -1):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                self.layers[i].reduce_weights_sync(gradient=True, comm=sync_model)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+        # Gradient update
+        self._weight_update(gradient=True, blocking=self.blocking_mpi, comm=sync_model)
 
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[i].update_weights(self.optimizer)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+        # Optimizer
+        for i in range(len(self.layers) - 1, 0, -1):
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
+            self.layers[i].update_weights(self.optimizer)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-                if sync_model and sync_weights:
-                    self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                           self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                    self.layers[i].reduce_weights_sync(gradient=False, comm=True)
-                    self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-        else:
-            # Non-blocking MPI
-            # Back propagation. Gradient computation (GC) and weights update (WU)
-            for i in range(len(self.layers) - 1, 0, -1):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
-                dx = self.layers[i].backward(dx)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-
-            if sync_model:
-                for i in range(len(self.layers) - 1, 0, -1):
-                    self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                           self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                    self.layers[i].reduce_weights_async(gradient=True)
-                    self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-
-                # Weight update (WU)
-                for i in range(len(self.layers) - 1, 0, -1):
-                    self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                            [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW,
-                                            self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
-                    self.layers[i].wait_allreduce_async(gradient=True)
-                    self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
-            else:
-                self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                self.layers[i].reduce_weights_sync(gradient=True, comm=False)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-
-            for i in range(len(self.layers) - 1, 0, -1):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
-                self.layers[i].update_weights(self.optimizer)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-
-            if sync_model and sync_weights:
-                for i in range(len(self.layers) - 1, 0, -1):
-                    self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                           self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
-                    self.layers[i].reduce_weights_async(gradient=False)
-                    self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-
-                # Weight update (WU)
-                for i in range(len(self.layers) - 1, 0, -1):
-                    self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                            [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW,
-                                            self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
-                    self.layers[i].wait_allreduce_async(gradient=False)
-                    self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
+        # Weight update
+        if self.model_sync_freq > 0 and sync_model:
+            self._weight_update(gradient=False, blocking=self.blocking_mpi, comm=True)
 
         if self.enable_cudnn:
             for i in range(len(self.layers) - 1, 0, -1):
                 if self.layers[i].grad_vars:
                     self.layers[i].stream_2.synchronize()
 
+        # LR schedulers end
         for lr_sched in self.lr_schedulers:
             lr_sched.on_batch_end(self)
 
@@ -735,7 +703,6 @@ class Model:
 
         model_sync_count = 0
         for epoch in range(self.num_epochs):
-
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
 
             train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
@@ -809,6 +776,10 @@ class Model:
             if terminate:
                 break
 
+        # Syncronize model
+        self._weight_update(gradient=True, blocking=self.blocking_mpi, comm=True)
+        self._weight_update(gradient=False, blocking=self.blocking_mpi, comm=True)
+
         self.tracer.define_event_types(self)
         return self.history
 
@@ -827,12 +798,13 @@ class Model:
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
 
-        y_pred = self.layers[-1].y
-        if current_batch_size > 0:
+            y_pred = self.layers[-1].y
             loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
         else:
+            y_pred = self.layers[-1].y
             loss = 0.0
         self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
+
         return self.total_metrics
 
     def evaluate(self, x_test, y_test, bar_width=BAR_WIDTH):
