@@ -458,7 +458,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_destination_rotation"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_static_destination"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
