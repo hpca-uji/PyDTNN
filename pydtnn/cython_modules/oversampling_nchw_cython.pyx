@@ -78,14 +78,14 @@ def _oversampling_nchw_cython(np.ndarray x, int new_h, int new_w,
     cdef np.ndarray oversampled_x = np.empty((n, c, new_h, new_w), dtype = x.dtype)
 
     
-    return _oversampling_float_32(oversampled_x=oversampled_x, x=x, 
+    return __oversampling_float_32(oversampled_x=oversampled_x, x=x, 
                                     n=n, c=c, h=h, w=w, 
                                     extra_h=extra_h, extra_w=extra_w)
 #--- END oversampling_nchw_cython ---#
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _oversampling_float_32(np.ndarray[np.float32_t, ndim=4] oversampled_x,
+def __oversampling_float_32(np.ndarray[np.float32_t, ndim=4] oversampled_x,
                             np.ndarray[np.float32_t, ndim=4] x,
                             int n, int c, int h, int w, 
                             int extra_h, int extra_w) -> np.ndarray:
