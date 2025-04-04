@@ -1,6 +1,7 @@
 # Typing related
 from typing import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.activations import Activation
 import numpy as np
 
 # Operations/transformations related
@@ -10,13 +11,13 @@ from pydtnn.layers import Input
 import pydtnn.translators.pytorch2pydtnn.common as cm
 import copy
 
-def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase]) -> None:
-
-    # TODO: Check if there are more operations to do during this step.
-    #   If not ==> Move to the main function.
+def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase], activation_layer: Activation) -> None:
     for layer in layers:
         print(layer) # TODO: Remove
         model.add(layer)
+    if not isinstance(layers[-1], Activation) and activation_layer is not None:
+        model.add(activation_layer)
+
 # --- END load_layers --- #
 
 def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
@@ -218,8 +219,10 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
 # --- END convert_layers --- #
 
 def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
-                 enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
-    
+                 enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", default_output_activation_layer:Activation | None = None, # pick a better name
+                 **kwargs) -> PyDTNN_Model:
+    # "default_output_activation_layer": if there is no activation layer at the end, the one in this parameter is added.
+
     # NOTE: PyTorch's weight tensors use NCHW format.
     if "tensor_format" not in kwargs:
         kwargs["tensor_format"] = "NCHW"
@@ -237,7 +240,7 @@ def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_b
     layers, weights, biases = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
     
     # Asigning the layers/operations to the converted model.
-    load_layers(model=converted_model, layers=layers)
+    load_layers(model=converted_model, layers=layers, activation_layer=default_output_activation_layer)
         
     return converted_model
 # --- END convert_model --- #      
