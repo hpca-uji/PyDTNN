@@ -67,9 +67,6 @@ class AdaptiveAveragePool2D(Layer, ABC):
         # We want to override "AbstractPool2DLayer"
         super().initialize(prev_shape, need_dx)
         
-        # TODO: Remove
-        print(f"prev_shape: {prev_shape}")
-        print(f"self.output_shape: {self.output_shape}")
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
 
         if self.output_shape is None:
@@ -78,13 +75,11 @@ class AdaptiveAveragePool2D(Layer, ABC):
         else:
             self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape   
         self.co = self.ci
+        # TODO: Remove following comments.
         # https://stackoverflow.com/questions/64284755/what-is-the-upsampling-method-called-area-used-for
-
+        # https://github.com/pytorch/pytorch/blob/ef4475f9025b3c46a13bdd054b6adfbcb5f8ab8c/aten/src/ATen/native/AdaptiveAveragePooling.cpp
+        
         # Unknown values: pool_shape (kh, kw) and stride (vstride, hstride)
-
-        # TODO: Remove
-        print(f"self.hi: {self.hi}")
-        print(f"self.wi: {self.wi}")
 
         if self.hi < self.ho:
             self.original_hi = self.hi
@@ -98,25 +93,9 @@ class AdaptiveAveragePool2D(Layer, ABC):
             self.extra_w = self.wi // self.original_wi
             self.upscaling_needed = True
 
-        # TODO: Remove 
-        print(f"self.ci: {self.ci}")
-        print(f"self.hi: {self.hi}")
-        print(f"self.wi: {self.wi}")
-        print(f"self.co: {self.co}")
-        print(f"self.ho: {self.ho}")
-        print(f"self.wo: {self.wo}")
-
         # -> Getting (and setting) the pool_shape (kh, kw):
         self.vstride = self.hi // self.ho
         self.hstride = self.wi // self.wo
-
-        # TODO: Remove
-        print(f"self.vstride: {self.vstride}")
-        print(f"self.hstride: {self.hstride}")
-        print(f"self.vpadding: {self.vpadding}")
-        print(f"self.hpadding: {self.hpadding}")
-        print(f"self.vdilation: {self.vdilation}")
-        print(f"self.hdilation: {self.hdilation}")
 
         # -> Getting (and setting) the stride (vstride, hstride):
         # Base formula: self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
@@ -124,20 +103,9 @@ class AdaptiveAveragePool2D(Layer, ABC):
 
         # Base formula: self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.kw = (self.hstride * (self.wo - 1) - self.wi -2 * self.hpadding + 1 ) // (-1 * self.hdilation ) + 1
-    
-        # TODO: Remove
-        print(f"self.kh: {self.kh}")
-        print(f"self.kw: {self.kw}")
-        print(f"self.hstride * (self.wo - 1): {self.hstride * (self.wo - 1)}")
-        print(f"self.wi -2 * self.hpadding + 1): {self.hdilation * (self.kw - 1) - 1}")
-        print(f"(self.hstride * (self.wo - 1) - self.wi -2 * self.hpadding + 1 ): {(self.hstride * (self.wo - 1) - self.wi -2 * self.hpadding + 1 )}")
 
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)        
         self.n = np.prod(self.shape)
-
-        # TODO: Remove
-        print(f"self.shape: {self.shape}")
-        print(f"self.n: {self.n}")
     # - END initialize - #
     
     def show(self, attrs=""):
