@@ -1,5 +1,7 @@
 from model_convertor import convert_model
 
+from typing import Dict
+
 from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
 from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16
 
@@ -51,6 +53,22 @@ dict_test = {
 }
 TEST = "vgg19"
 
+def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
+    # Recursive function to get the models without containers modules.    
+    def _get_model_layers(model:torch.nn.Module, name:str, dict_modules:Dict[str, torch.nn.Module]):
+        # The recursive function.
+        children = list(model.named_children())
+        if len(children) > 0:
+            for nom, module in children:
+                _get_model_layers(model=module, name=".".join([name, nom]), dict_modules=dict_modules)                
+        else:
+            dict_modules[name] = model            
+    #-- END _get_model_layers--#
+    dict_modules = {}
+    _get_model_layers(model=model, name=name, dict_modules=dict_modules)
+    return dict_modules
+# --- END get_model_layers --- #
+
 def pytorch_inference(model: torch.nn.Module, dataloader, loss_func:torch.nn.modules.loss._Loss, device:torch.device, metrics_list: list) -> None:
 
     outputs_list = list()
@@ -58,9 +76,11 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func:torch.nn.mod
     
     print(f"metrics_list: {metrics_list}")
     
-    for n, m in model.named_modules():
+    dict_layers = get_model_layers(model)
+    for n in dict_layers.keys():
+        m = dict_layers[n]
         def print_pre(module, x, *, name = n):
-            print(f"{name}:")        
+            print(f"Layer - {name}:")        
             if isinstance(x[0], list):
                 for elem in x[0]:
                     print(f"\telem.size(): {elem.size()}")    
@@ -254,7 +274,7 @@ def main():
     print("dataset:")
     print(dataset)
 
-    first_pytorch = False
+    first_pytorch = True
     old_first = None
 
     if first_pytorch:

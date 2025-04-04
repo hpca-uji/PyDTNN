@@ -13,28 +13,10 @@ import copy
 
 def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase], activation_layer: Activation) -> None:
     for layer in layers:
-        print(layer) # TODO: Remove
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
         model.add(activation_layer)
-
 # --- END load_layers --- #
-
-def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
-    # Recursive function to get the models without containers modules.    
-    def _get_model_layers(model:torch.nn.Module, name:str, dict_modules:Dict[str, torch.nn.Module]):
-        # The recursive function.
-        children = list(model.named_children())
-        if len(children) > 0:
-            for nom, module in children:
-                _get_model_layers(model=module, name=".".join([name, nom]), dict_modules=dict_modules)                
-        else:
-            dict_modules[name] = model            
-    #-- END _get_model_layers--#
-    dict_modules = {}
-    _get_model_layers(model=model, name=name, dict_modules=dict_modules)
-    return dict_modules
-# --- END get_model_layers --- #
 
 def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str|torch.nn.Module], str]]:
     # TODO: Search the way "torch.fx.symbolic_trace" generates ".code" and not extracting the data from a
@@ -129,7 +111,7 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
     return relations_dic
 # --- END extract_layers_relations --- #
 
-def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Dict[str, Tuple[Union[str|torch.nn.Module], str]]) -> Tuple[List[LayerAndActivationBase], Dict[str, np.array], Dict[str, np.array]]:
+def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Dict[str, Tuple[Union[str|torch.nn.Module], str]]) -> List[LayerAndActivationBase]:
 
     converted_layers: Dict[str, LayerAndActivationBase] = dict()
 
@@ -150,8 +132,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
     _input = layers[fst_layer][1]
     converted_layers[_input] = ((Input(input_shape), None))
 
-    dict_weights = dict()
-    dict_biases = dict()
     dict_equivalent_layer = dict() # TODO: Set a better name. # If there are two layers like the following ones:
     # cat_1 = torch.cat([features_pool0, features_denseblock1_denselayer1_conv2], 1)
     # cat_2 = torch.cat([features_pool0, features_denseblock1_denselayer1_conv2, features_denseblock1_denselayer2_conv2], 1)
@@ -215,7 +195,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
             # TODO: Check if it is necessary to set/unset in the class something (like the weigths update) in order to make it work like a function.
 
     list_layers = [layer for layer, _input in converted_layers.values()]
-    return (list_layers, dict_weights, dict_biases)
+    return list_layers
 # --- END convert_layers --- #
 
 def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
@@ -237,7 +217,7 @@ def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_b
     dict_layers = extract_layers_relations(model = model)
 
     # Obtaining the PyDTNN equivalent
-    layers, weights, biases = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
+    layers = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
     
     # Asigning the layers/operations to the converted model.
     load_layers(model=converted_model, layers=layers, activation_layer=default_output_activation_layer)
