@@ -44,7 +44,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     # Method from AbstractPool2DLayerCPU
     @override
     def initialize(self, prev_shape: tuple[int, int], need_dx:bool = True):
-        # The objective is to override the AbstractPool2DLayer's initialize method and, if super is called, AbstractPool2DLayer will be called eventually.
+        # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
         AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
         LayerCPU.initialize(self, prev_shape, need_dx)
 
@@ -67,10 +67,12 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         if self.upscaling_needed:
             x = oversampling_fwd_nchw_cython(x, self.hi, self.wi, self.extra_h, self.extra_w)
         return self._forward(x)
+    # --- END forward --- #
 
     @override    
     def backward(self, dy):
         return self._backward(dy)
+    # --- END backward --- #
 
     # Methods from AveragePool2DCPU
     def _forward_nhwc_i2c(self, x):
