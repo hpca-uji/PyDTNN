@@ -146,7 +146,6 @@ def print_model_reports(model):
 def pydtnn_inference(model: PyDTNN_Model, metrics_list = None, dataset = None) -> None:
     metrics_list = [f for f in model.metrics.replace(" ", "").split(",")] if metrics_list is None else metrics_list
     model.dataset = dataset
-    model._initialize()
     model.evaluate_dataset()
     print_model_reports(model)
 # --- END pytorch_inference --- #

@@ -16,6 +16,7 @@ def load_layers(model:PyDTNN_Model, layers: List[LayerAndActivationBase], activa
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
         model.add(activation_layer)
+    model._initialize()
 # --- END load_layers --- #
 
 def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str|torch.nn.Module], str]]:
