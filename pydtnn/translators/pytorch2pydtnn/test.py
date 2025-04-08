@@ -26,7 +26,7 @@ from pydtnn.models.resnet152_cifar10 import create_resnet152_cifar10
 from pydtnn.models.inceptionv3_cifar10 import create_inceptionv3_cifar10
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.model import optimizers
+from pydtnn.optimizers import SGD
 from pydtnn.datasets import get_dataset
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
 from pydtnn.utils.best_of import BestOf
@@ -55,7 +55,7 @@ dict_test = {
 
 # ----- EXECUTION PARAMETERS ----- #
 TEST = "vgg19"
-FIRST_PYTORCH = True
+FIRST_PYTORCH = False
 OLD_FIRST = None
 # --- END EXECUTION PARAMETERS --- #
 
@@ -145,7 +145,9 @@ def print_model_reports(model):
 
 def pydtnn_inference(model: PyDTNN_Model, metrics_list = None, dataset = None) -> None:
     metrics_list = [f for f in model.metrics.replace(" ", "").split(",")] if metrics_list is None else metrics_list
-    model.evaluate_dataset(dataset, model.batch_size, model.loss_func, metrics_list)
+    model.dataset = dataset
+    model._initialize()
+    model.evaluate_dataset()
     print_model_reports(model)
 # --- END pytorch_inference --- #
 
@@ -196,7 +198,7 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, nepochs:int=1, local_batch_size:int=32):
     history = model.train_dataset(dataset, nepochs, local_batch_size, val_split=0.2,
                       loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
-                      optimizer=optimizers.SGD(), lr_schedulers=(), bar_width=110)
+                      optimizer=SGD(), lr_schedulers=(), bar_width=110)
     print(f"history: {history}")
 # --- END pydtnn_training --- #
 
@@ -213,7 +215,7 @@ def main():
         "dataset": dataset,
         "dataset_name": dataset,
         "evaluate_only": True,
-        "parallel": False,
+        "parallel": "sequential",
         "tensor_format": "NCHW", # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
         "enable_gpu": False,
