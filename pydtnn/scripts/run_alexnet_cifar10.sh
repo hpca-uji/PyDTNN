@@ -5,8 +5,8 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
-  --dataset_train_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
-  --dataset_test_path=/Users/mdolz/Downloads/cifar-10-batches-bin/ \
+  --dataset_train_path=datasets/cifar10 \
+  --dataset_test_path=datasets/cifar10 \
   --test_as_validation=True \
   --batch_size=64 \
   --validation_split=0.2 \

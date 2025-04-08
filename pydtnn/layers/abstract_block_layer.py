@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -45,17 +45,22 @@ class AbstractBlockLayer(Layer, ABC):
             for layer in p:
                 layer.update_weights(optimizer)
 
-    def reduce_weights_async(self):
+    def reduce_weights_async(self, gradient=True):
         for p in self.paths:
             for layer in p:
-                layer.reduce_weights_async()
+                layer.reduce_weights_async(gradient=gradient)
 
-    def wait_allreduce_async(self):
+    def wait_allreduce_async(self, gradient=True):
         for p in self.paths:
             for layer in p:
-                layer.wait_allreduce_async()
+                layer.wait_allreduce_async(gradient=gradient)
 
-    def reduce_weights_sync(self):
+    def reduce_weights_sync(self, gradient=True, comm=True):
         for p in self.paths:
             for layer in p:
-                layer.reduce_weights_sync()
+                layer.reduce_weights_sync(gradient=gradient, comm=comm)
+
+    def print_in_convdirect_format(self):
+        for p in self.paths:
+            for layer in p:
+                layer.print_in_convdirect_format()

@@ -1,7 +1,7 @@
 
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -30,7 +30,7 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 
 try:
     # noinspection PyUnresolvedReferences
-    from mpi4py import MPI
+    from pydtnn.libs.mpi import MPI
 except (ImportError, ModuleNotFoundError):
     pass
 
@@ -40,7 +40,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     def forward(self, x):
 
         def mean(data, total, comm):
-            if self.sync_stats and comm is not None:
+            if self.sync_stats and comm is not None and self.model.shared_storage:
                 _mean = np.sum(data, axis=0) / total
                 comm.Allreduce(MPI.IN_PLACE, _mean, op=MPI.SUM)
             else:
@@ -57,7 +57,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             x = x.reshape(-1, self.ci)
 
         if self.model.mode == TRAIN_MODE:
-            if self.sync_stats and self.model.comm is not None:
+            if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
                 n = self.model.nprocs * self.model.batch_size
                 # n = np.array([x.shape[0]], dtype=self.model.dtype)
                 # self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
@@ -96,7 +96,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             y = bn_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         else:
-            raise ValueError("Unexpected model mode")
+            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci)

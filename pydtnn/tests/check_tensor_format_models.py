@@ -1,5 +1,5 @@
 """
-Unitary tests for GPU with different models' layers
+Unitary tests for CPU using different tensor formats
 
 For running all the tests quietly, execute the next command:
     python -um unittest pydtnn.tests.CheckTensorFormatModels

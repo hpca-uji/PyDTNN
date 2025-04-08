@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -52,7 +52,7 @@ def create_densenet_cifar10(model):
         num_planes += nblocks * growth_rate
 
         if i < len(blocks) - 1:
-            num_planes = int(math.floor(num_planes * reduction))
+            num_planes = int(num_planes * reduction)
             _(BatchNormalization())
             _(Relu())
             _(Conv2D(nfilters=num_planes, filter_shape=(1, 1), use_bias=False, weights_initializer="he_uniform"))

@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -25,8 +25,13 @@ class LRScheduler(ABC):
     LRScheduler base class
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, model, verbose):
+        self.model = model
+        self.verbose = verbose
+        self.epoch_count = 0
+
+    def __str__(self):
+        return f"LRScheduler {type(self).__name__}"
 
     def on_batch_begin(self, *args):
         pass
@@ -39,3 +44,7 @@ class LRScheduler(ABC):
 
     def on_epoch_end(self, *args):
         pass
+
+    def log(self, text):
+        if self.verbose and self.model.comm_rank == 0:
+            print(f"{self}: {text}")

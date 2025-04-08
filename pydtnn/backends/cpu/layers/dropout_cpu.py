@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,7 @@ class DropoutCPU(LayerCPU, Dropout):
         elif self.model.mode == EVALUATE_MODE:
             return x
         else:
-            raise ValueError("Unexpected model mode")
+            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
     def backward(self, dy):
         if self.need_dx:

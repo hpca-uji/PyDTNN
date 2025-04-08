@@ -5,7 +5,7 @@ Python interface to the NVIDIA NCCL library
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -33,7 +33,7 @@ elif sys.platform == 'darwin':
 elif sys.platform == 'win32':
     _libnccl_libname_list = ['libnccl.dll']
 else:
-    raise RuntimeError('unsupported platform')
+    raise SystemExit('PyDTNN NCCL: current platform is not yet supported!')
 
 _libnccl = None
 for _libnccl_libname in _libnccl_libname_list:

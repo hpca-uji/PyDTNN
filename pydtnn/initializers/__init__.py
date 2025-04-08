@@ -5,7 +5,7 @@ PyDTNN initializers
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -33,7 +33,7 @@ def _compute_fans(shape):
         fan_in = shape[1] * receptive_field
         fan_out = shape[0] * receptive_field
     else:
-        raise ValueError("The length of 'shape' must be greater or equal to 2")
+        raise ValueError(f"The length of 'shape' must be greater or equal to 2, it is {len(shape)}.")
     return fan_in, fan_out
 
 

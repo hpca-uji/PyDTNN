@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -35,7 +35,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
         """Version of the forward function that uses the BN + Relu"""
 
         if self.model.mode == TRAIN_MODE:
-            raise RuntimeError("Fused layers cannot be used in training mode!")
+            raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
@@ -52,4 +52,4 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
         return y
 
     def backward(self, x):
-        raise RuntimeError(f"Backward method of {self.__class__.__name__} should not be called")
+        raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

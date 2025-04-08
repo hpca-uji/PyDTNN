@@ -17,7 +17,7 @@ DATASET=${DATASET:-cifar10}
 TENSOR_FORMAT=${TENSOR_FORMAT:-NHWC}
 case "${DATASET}" in
 cifar10)
-  DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar-10-batches-bin}
+  DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/cifar10}
   ;;
 imagenet)
   DATASET_TRAIN_PATH=${DATASET_TRAIN_PATH:-${HOME}/opt/hpca_pydtnn/data/imagenet}
@@ -32,7 +32,9 @@ BATCH_SIZE=${BATCH_SIZE:-64}
 ENABLE_BEST_OF=${ENABLE_BEST_OF:-False}
 ENABLE_CONV_GEMM=${ENABLE_CONV_GEMM:-False}
 ENABLE_CONV_WINOGRAD=${ENABLE_CONV_WINOGRAD:-False}
+ENABLE_CONV_DIRECT=${ENABLE_CONV_DIRECT:-False}
 ENABLE_MEMORY_CACHE=${ENABLE_MEMORY_CACHE:-False}
+TRACER_PMLIB_DEVICE=${TRACER_PMLIB_DEVICE:-""}
 NODES=${NODES:-1}
 
 
@@ -91,8 +93,9 @@ volta)
   elif hostname | grep -q cmts; then
     export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 2 3 4 5 6 7 8 9 10 11 12 13 14 15 1 0}"
   else
-    export OMP_PLACES="cores"
-    export OMP_PROC_BIND="close"
+    export GOMP_CPU_AFFINITY="${GOMP_CPU_AFFINITY:-}"
+    export OMP_PLACES="${OMP_PLACES:-cores}"
+    export OMP_PROC_BIND="${OMP_PROC_BIND:-close}"
   fi
   ;;
 esac
@@ -109,17 +112,31 @@ SCRIPT_PATH="$(
 # File name for output files
 #----------------------------
 FILE_NAME="${MODEL}"
+CONV_DIRECT_METHOD=${CONV_DIRECT_METHOD:-UNKNOWN}
+if [ "${CONV_DIRECT_METHOD}" == "convdirect_block_blis_nhwc_blis" ]; then
+  CDM="bbb"
+elif [ "${CONV_DIRECT_METHOD}" == "convdirect_block_blis_nhwc_8x12" ]; then
+  CDM="bb8x12"
+elif [ "${CONV_DIRECT_METHOD}" == "convdirect_block_blis_nhwc_4x20" ]; then
+  CDM="bb4x20"
+else
+  CDM="${CONV_DIRECT_METHOD}"
+fi
 if [ "${ENABLE_BEST_OF}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_bo"
 elif [ "${ENABLE_CONV_WINOGRAD}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_wg"
   if [ "${ENABLE_CONV_GEMM}" == "True" ]; then
     FILE_NAME="${FILE_NAME}-cg"
+  elif [ "${ENABLE_CONV_DIRECT}" == "True" ]; then
+    FILE_NAME="${FILE_NAME}-cd-${CDM}"
   else
     FILE_NAME="${FILE_NAME}-i2c-mm"
   fi
 elif [ "${ENABLE_CONV_GEMM}" == "True" ]; then
   FILE_NAME="${FILE_NAME}_cg"
+elif [ "${ENABLE_CONV_DIRECT}" == "True" ]; then
+  FILE_NAME="${FILE_NAME}_cd-${CDM}"
 else
   FILE_NAME="${FILE_NAME}_i2c-mm"
 fi
@@ -133,7 +150,7 @@ FILE_NAME="${FILE_NAME}_$(printf '%02d' "${OMP_NUM_THREADS}")t"
 FILE_NAME="${FILE_NAME}_$(printf '%02d' "${BATCH_SIZE}")bs"
 FILE_NAME_NO_MACHINE_NO_DATE="${FILE_NAME}"
 # Get machine name and remove any trailing numbers
-MACHINE="$( uname -n | sed -e 's/[0-9]*$//' )"
+MACHINE="$(uname -n | sed -e 's/[0-9]*$//')"
 FILE_NAME="${MACHINE}_${FILE_NAME}-$(date +"%Y%m%d-%H_%M")"
 HISTORY_FILENAME="${FILE_NAME}.history"
 OUTPUT_FILENAME="${FILE_NAME}.out"
@@ -142,7 +159,7 @@ SIMPLE_TRACER_OUTPUT="${SIMPLE_TRACER_OUTPUT:-${FILE_NAME}.simple_tracer.csv}"
 #--------------------------------------------------------------------------------
 # Do not launch the experiment if the same experiment has already been completed
 #--------------------------------------------------------------------------------
-if [ ${NUM_EPOCHS} == 0 ]; then
+if [ ${EVALUATE_ONLY} == "True" ] || [ ${EVALUATE_ONLY} == "true" ]; then
   SEARCH_TEXT="Testing maximum memory"
 else
   SEARCH_TEXT="Training maximum memory"
@@ -167,7 +184,8 @@ function set_model_flags() {
   # 1) Get column for model
   # model;alexnet_cifar10;alexnet_imagenet;vgg16_cifar10;vgg16_imagenet;resnet34_cifar10;resnet34_imagenet;...
   models_line=$(grep ";" "${SCRIPT_PATH}"/run_benchmarks_data.csv | grep model)
-  for i in 2 3 4 5 6 7 8 9 10 11; do
+  nmodels=$(echo "${models_line}" | sed -e 's/[^;]//g' | wc -c)
+  for i in $(seq 2 "${nmodels}"); do
     if [ "$(echo "${models_line}" | cut -d ";" -f ${i})" = "${MODEL}" ]; then
       model_column=${i}
       break
@@ -234,12 +252,17 @@ function run_benchmark() {
     --dataset_test_path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \
     --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
+    --tracer_pmlib_device="${TRACER_PMLIB_DEVICE}" \
     --evaluate="${EVALUATE}" \
     --evaluate_only="${EVALUATE_ONLY}" \
     --test_as_validation="${TEST_AS_VALIDATION}" \
     --enable_best_of="${ENABLE_BEST_OF}" \
+    --enable_conv_i2c="${ENABLE_CONV_I2C:-"True"}" \
     --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
     --enable_conv_winograd="${ENABLE_CONV_WINOGRAD}" \
+    --enable_conv_direct="${ENABLE_CONV_DIRECT}" \
+    --conv_direct_method="${CONV_DIRECT_METHOD:-""}" \
+    --conv_direct_methods_for_best_of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
     --enable_memory_cache="${ENABLE_MEMORY_CACHE}" \
     --history="${HISTORY_FILENAME}" \
     ${MODEL_FLAGS} |

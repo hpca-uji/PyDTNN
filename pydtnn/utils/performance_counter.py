@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -111,7 +111,7 @@ class PerformanceCounter:
             print(" ------------------------------------")
             print("| Performance counter testing report |")
             print(" ------------------------------------")
-            print(f'Testing time (from model): {self.testing_time:5.4f} s')
+            print(f'Testing time (from model): {self.testing_time/self.num_evaluations:5.4f} s')
             print(f'Testing throughput (from model): {self.testing_throughput:5.4f} samples/s')
             print(f'Testing maximum memory allocated: ',
                   f'{self.testing_maximum_memory / 1024:.2f} MiB')

@@ -5,7 +5,7 @@ PyDTNN Tracers
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -25,4 +25,5 @@ from .events import *
 from .extrae_tracer import ExtraeTracer
 from .simple_tracer import SimpleTracer
 from .simple_tracer_gpu import SimpleTracerGPU
+from .simple_tracer_pmlib import SimpleTracerPMLib
 from .tracer import Tracer

@@ -5,7 +5,7 @@ Python interface to the NVIDIA cuDNN library
 # 
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 # 
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 # 
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -32,7 +32,7 @@ elif sys.platform == 'darwin':
 elif sys.platform == 'win32':
     _libcudnn_libname_list = ['cudnn64_6.dll']
 else:
-    raise RuntimeError('unsupported platform')
+    raise SystemExit('PyDTNN CUDNN: current platform is not yet supported!')
 
 _libcudnn = None
 for _libcudnn_libname in _libcudnn_libname_list:

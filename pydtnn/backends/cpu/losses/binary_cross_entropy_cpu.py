@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -24,10 +24,10 @@ from pydtnn.losses import BinaryCrossEntropy
 
 
 class BinaryCrossEntropyCPU(LossCPU, BinaryCrossEntropy):
-    def __call__(self, y_pred, y_targ, global_batch_size):
+    def __call__(self, y_pred, y_targ, batch_size):
         assert len(y_targ.shape) == 2
         b = y_targ.shape[0]
         loss = -np.sum(np.log(np.maximum((1 - y_targ) - y_pred, self.eps))) / b
         y_pred = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
-        dx = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / global_batch_size
+        dx = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / batch_size
         return loss, dx

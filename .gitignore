@@ -1,7 +1,10 @@
 build/
 .idea
+.venv
+.vscode
 *cython.c
 *cython.cpython-*-linux-gnu.so
 *.npz
+*.bin
 __pycache__
 pydtnn.egg-info

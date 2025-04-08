@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -79,21 +79,24 @@ class LayerAndActivationBase(ABC):
         pass
 
     @abstractmethod
-    def reduce_weights_async(self):
+    def reduce_weights_async(self, gradient=True):
         pass
 
     @abstractmethod
-    def wait_allreduce_async(self):
+    def wait_allreduce_async(self, gradient=True):
         pass
 
     @abstractmethod
-    def reduce_weights_sync(self):
+    def reduce_weights_sync(self, gradient=True, comm=True):
         pass
 
     def show(self, attrs=""):
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
+
+    def print_in_convdirect_format(self):
+        pass
 
     @property
     def children(self):

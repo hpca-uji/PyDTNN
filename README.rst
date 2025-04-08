@@ -83,14 +83,35 @@ can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
 
     $ pip install -e .
 
-Optionally, if you are going to use either MPI or CUDA, you should have
+Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install -r requirements_mpi.txt       # If MPI is going to be used
-    $ pip install -r requirements_cuda_1.txt    # If CUDA is going to be used
+    $ pip install -r requirements_mpi.txt
+
+Optionally, if you are going to use CUDA, you should have
+installed the corresponding system libraries, and install the required Python
+packages with::
+
+    $ pip install -r requirements_cuda_1.txt
     $ pip install -r requirements_cuda_2.txt
 
+Optionally, if you are going to use TCP, you should enable the protocol with::
+
+    $ export PYDTNN_COMM=tcp
+
+Optionally, if you are going to use gRPC, you should install the required Python
+packages, and enable the protocol with::
+
+    $ pip install -r requirements_grpc.txt
+    $ export PYDTNN_COMM=grpc
+
+Optionally, if you are going to use MQTT, you should have
+installed a MQTT broker server, install the required Python
+packages, and enable the protocol with::
+
+    $ pip install -r requirements_mqtt.txt
+    $ export PYDTNN_COMM=mqtt
 
 Launcher options
 ----------------
@@ -425,8 +446,8 @@ using 4 OpenMP threads::
     $ python3 -Ou pydtnn_benchmark.py \
         --model=vgg16_cifar10 \
         --dataset=cifar10 \
-        --dataset_train_path=datasets/cifar-10/cifar-10-batches-bin \
-        --dataset_test_path=datasets/cifar-10/cifar-10-batches-bin \
+        --dataset_train_path=datasets/cifar10 \
+        --dataset_test_path=datasets/cifar10 \
         --evaluate_only=True \
         --batch_size=64 \
         --validation_split=0.2 \
@@ -546,8 +567,8 @@ using 4 OpenMP threads::
       enable_best_of                 : False
       dataset_name                   : cifar10
       use_synthetic_data             : False
-      dataset_train_path             : datasets/cifar-10/cifar-10-batches-bin
-      dataset_test_path              : datasets/cifar-10/cifar-10-batches-bin
+      dataset_train_path             : datasets/cifar10
+      dataset_test_path              : datasets/cifar10
       test_as_validation             : True
       flip_images                    : True
       flip_images_prob               : 0.5

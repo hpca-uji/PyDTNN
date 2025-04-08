@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -19,8 +19,12 @@
 
 import ctypes
 import inspect
+import functools
+import threading
 import math
 import os
+import sys
+import string
 from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
@@ -31,16 +35,18 @@ PYDTNN_TENSOR_FORMATS = 2
 (PYDTNN_TENSOR_FORMAT_NHWC,
  PYDTNN_TENSOR_FORMAT_NCHW) = range(PYDTNN_TENSOR_FORMATS)
 
+
 def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-        return (shape[2], shape[0], shape[1])
-    else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+        return shape[2], shape[0], shape[1]
+    else:  # Assuming PYDTNN_TENSOR_FORMAT_NHWC
         return shape
+
 
 def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
-        return (shape[1], shape[2], shape[0])
-    else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+        return shape[1], shape[2], shape[0]
+    else:  # Assuming PYDTNN_TENSOR_FORMAT_NHWC
         return shape
 
 
@@ -64,7 +70,15 @@ def load_library(name):
     """
     path = find_library(name)
     if path is None:
-        full_name = f"lib{name}.so"
+        if sys.platform in ('linux2', 'linux'):
+            full_name = f"lib{name}.so"
+        elif sys.platform == 'darwin':
+            full_name = f"lib{name}.dylib"
+        elif sys.platform == 'win32':
+            full_name = f"lib{name}.dll"
+        else:
+            raise SystemExit(f"Trying to load '{name}' library, but platform '{sys.platform}' is not yet supported!")
+
         for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
             if os.path.exists(os.path.join(current_path, full_name)):
                 path = os.path.join(current_path, full_name)
@@ -93,7 +107,7 @@ def convert_size(size_bytes):
     if size_bytes == 0:
         return "0B"
     size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.floor(math.log(size_bytes, 1024)))
+    i = int(math.log(size_bytes, 1024))
     p = math.pow(1024, i)
     s = round(size_bytes / p, 2)
     return "%s %sytes" % (s, size_name[i])
@@ -198,7 +212,7 @@ def _matmul_xgemm(called_from, lib, a, b, c=None):
                         ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
                         ctypes.c_double(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
     else:
-        raise ValueError(f"Type '{a.dtype}' not supported by {called_from}().")
+        raise TypeError(f"Type '{a.dtype}' not supported by {called_from}().")
     return c
 
 
@@ -210,6 +224,37 @@ def matmul_mkl(a, b, c=None):
 
 def matmul_blis(a, b, c=None):
     return _matmul_xgemm("matmul_blis", blis(), a, b, c)
+
+
+def string_substitute(template, /, **mappings):
+    """Shell-like opportunistic substitution"""
+    return string.Template(template).safe_substitute(mappings)
+
+
+def funcdebug(func):
+    """Wraps a functions and traces the calls"""
+    log = print
+    # log = lambda msg: None  # noqa: E731
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwds):
+        header = "DEBUG"
+        frame = inspect.stack()[1]
+        try:
+            context = f"{func.__qualname__}{args!r}{kwds!r} from {frame.frame.f_globals["__name__"]}.{frame.function}:{frame.lineno} from {os.getpid()}:{threading.get_native_id()}"
+        finally:
+            del frame
+        log(f"{header}: Call {context}")
+        try:
+            result = func(*args, **kwds)
+        except BaseException as exc:
+            log(f"{header}: Exc. {context} = {exc!r}")
+            raise
+        else:
+            log(f"{header}: Ret. {context} = {result!r}")
+            return result
+
+    return wrapper
 
 
 ###############################################################

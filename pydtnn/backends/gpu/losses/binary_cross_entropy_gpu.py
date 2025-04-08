@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -54,12 +54,12 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy):
         """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("binary_cross_entropy")
 
-    def __call__(self, y_pred, y_targ, global_batch_size):
+    def __call__(self, y_pred, y_targ, batch_size):
         assert len(y_targ.shape) == 2
         threads = min(self.model.batch_size, 1024)
         blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ, y_pred, self.loss, self.dx.ary,
-                    self.model.batch_size, global_batch_size, self.shape[1], self.eps,
+                    self.model.batch_size, batch_size, self.shape[1], self.eps,
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
         loss = -gpuarray.sum(self.loss) / self.model.batch_size

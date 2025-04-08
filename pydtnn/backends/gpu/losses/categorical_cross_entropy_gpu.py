@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -57,11 +57,11 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
         """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("categorical_cross_entropy")
 
-    def __call__(self, y_pred, y_targ, global_batch_size):
+    def __call__(self, y_pred, y_targ, batch_size):
         threads = min(self.model.batch_size, 1024)
         blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
-                    np.int32(self.model.batch_size), np.int32(global_batch_size),
+                    np.int32(self.model.batch_size), np.int32(batch_size),
                     np.int32(self.shape[1]), np.float32(self.eps),
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
