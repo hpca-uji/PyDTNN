@@ -26,6 +26,7 @@ from pydtnn.models.resnet152_cifar10 import create_resnet152_cifar10
 from pydtnn.models.inceptionv3_cifar10 import create_inceptionv3_cifar10
 
 from pydtnn.model import Model as PyDTNN_Model
+from pydtnn.model import optimizers
 from pydtnn.datasets import get_dataset
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
 from pydtnn.utils.best_of import BestOf
@@ -51,7 +52,12 @@ dict_test = {
    "resnet152": (resnet152, create_resnet152_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None),
    "googlenet": (googlenet, create_inceptionv3_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None), #(299, 299, 3)
 }
+
+# ----- EXECUTION PARAMETERS ----- #
 TEST = "vgg19"
+FIRST_PYTORCH = True
+OLD_FIRST = None
+# --- END EXECUTION PARAMETERS --- #
 
 def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
     # Recursive function to get the models without containers modules.    
@@ -177,7 +183,7 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
             print("Pick another loss")
             assert False   
 
-    task = "multiclass"
+    task = "binary"
     num_classes = 10
     pytorch_inference(model = pytorch_model, dataloader = dataloader, loss_func = loss, device=device, 
                       metrics_list = [("Accuracy", Accuracy(task = task, num_classes = num_classes)),
@@ -186,6 +192,13 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
                                       #("F1Score", F1Score(task = task, num_classes = num_classes))
                                       ])
 #-----------------------#
+
+def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, nepochs:int=1, local_batch_size:int=32):
+    history = model.train_dataset(dataset, nepochs, local_batch_size, val_split=0.2,
+                      loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
+                      optimizer=optimizers.SGD(), lr_schedulers=(), bar_width=110)
+    print(f"history: {history}")
+# --- END pydtnn_training --- #
 
 def main():
     test = TEST
@@ -261,27 +274,29 @@ def main():
     print("== Testing Inference ==")
     print("=======================")
 
-    dataset: Dataset = get_dataset(old_model)
-    print(f"type(dataset): {type(dataset)}")
+    dataset: Dataset = get_dataset(old_model)    
 
     dataloader = list(dataset.get_test_generator())
-    #for elem in dataloader:
-    #    print(f"elem: {type(elem)} | {len(elem)}")
-    #    print(f"elem[0]:\n{elem[0]}")
-    #    print(f"elem[1]:\n{elem[1]}")
-    #    print(f"elem[2]:\n{elem[2]}")
 
     print("dataset:")
     print(dataset)
 
-    first_pytorch = True
-    old_first = None
+    if False: #check_biases_shape
+        # Both PyDTNN and PyTorch Biases have the same shape.
+        print(" NEW MODEL LAYERS BIASES")
+        for layer in new_model.layers:
+            print(layer)
+            print(f"layer.biases: {layer.biases.shape}")
+        print(" OLD MODEL LAYERS BIASES")
+        for layer in old_model.layers:
+            print(layer)
+            print(f"layer.biases: {layer.biases.shape}")
 
-    if first_pytorch:
+    if FIRST_PYTORCH:
         _pytorch_inference(pytorch_model, dataloader, kwargs, device)
         _pydtnn_inference(new_model, old_model, dataset)        
     else:
-        _pydtnn_inference(new_model, old_model, dataset, old_first=old_first)
+        _pydtnn_inference(new_model, old_model, dataset, old_first=OLD_FIRST)
         _pytorch_inference(pytorch_model, dataloader, kwargs, device)
 
 if __name__ == "__main__":
