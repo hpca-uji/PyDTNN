@@ -492,7 +492,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             return reduced_regions_coo[self.rank]
 
         if method == "collective_reduce_region_non_blocking_dense":
-            warnings.warn("This reduce_topk method ('collective_reduce_region_non_blocking_dense') should be used only in case of debugging for performance reasons.")
             row_start = 0
             requests = [None] * self.nprocs
             recv_bufs = [None] * self.nprocs
