@@ -65,6 +65,8 @@ class SparseMatrixCOO:
 
         row, col = np.where(dense_array != 0)
         data = dense_array[row, col]
+        row = row.astype(np.int32)
+        col = col.astype(np.int32)
         return cls(data, row, col, dense_array.shape, has_canonical_format=True)
     
 

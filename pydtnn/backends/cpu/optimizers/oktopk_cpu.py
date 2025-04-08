@@ -497,9 +497,8 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             requests = [None] * self.nprocs
             recv_bufs = [None] * self.nprocs
             send_bufs = [None] * self.nprocs
-            # Do not remove send_bufs list, because reusing the same buffer for sending 
-            # may produce different outputs for Ireduce
-            # FIXME: no funciona, parece que en algún momento se modifica el tipo
+            # NOTE: Do not remove send_bufs list, because reusing the same buffer for sending 
+            #       may produce different outputs for Ireduce
             for region in range(self.nprocs):
                 row_end = boundaries[region]
                 send_bufs[region] = coo_topk.slice(row_start, row_end).to_dense()
