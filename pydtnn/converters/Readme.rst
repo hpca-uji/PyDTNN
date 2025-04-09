@@ -16,6 +16,11 @@ Problem:
 **pytorch2pydtnn**: 
 - It's possible to convert a PyTorch model into a PyDTNN and to set the weights and the biases from the original model to the converted one.
 -> Note: Not all the PyTorch layers are implemented right now.
+-> NOTE: This coversor does *not* work in the cases like the following:
+    A, B, C, D, E are layers, D and E are layers like concatenation or addition layers.
+    A →→ B → D → E
+      ↘→ C →→↑   ↑
+          ↘→→→→→→↑
 - The converted model can make inferences but it's necessary to check if they have the same values
 - It's necessary to check the training.
 

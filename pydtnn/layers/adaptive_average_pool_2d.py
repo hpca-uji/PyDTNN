@@ -57,7 +57,7 @@ class AdaptiveAveragePool2D(Layer, ABC):
         self.stride = self.pool_shape = (0, 0)
         self.vstride = self.hstride = 0
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
-        # Theese parameters only will be used if upscaling_needed is 
+        # Theese parameters only will be used if upscaling_needed is True
         self.extra_h = self.extra_w = 0
     # ---  END __init__ --- #
 
@@ -75,9 +75,6 @@ class AdaptiveAveragePool2D(Layer, ABC):
         else:
             self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape   
         self.co = self.ci
-        # TODO: Remove following comments.
-        # https://stackoverflow.com/questions/64284755/what-is-the-upsampling-method-called-area-used-for
-        # https://github.com/pytorch/pytorch/blob/ef4475f9025b3c46a13bdd054b6adfbcb5f8ab8c/aten/src/ATen/native/AdaptiveAveragePooling.cpp
         
         # Unknown values: pool_shape (kh, kw) and stride (vstride, hstride)
 

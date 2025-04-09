@@ -22,7 +22,7 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     PYTORCH_GROUPS = "groups" # INT
     PYTORCH_BIAS = "bias" # BOOL
     PYTORCH_OUPUT_CHANNELS = "out_channels"
-    # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros", "reflect", "replicate", "circular"} | In PyDTNN only implemented Zeros
+    # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros", "reflect", "replicate", "circular"} | In PyDTNN "zeros" is the only implemented 
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION, PYTORCH_GROUPS, PYTORCH_BIAS, PYTORCH_OUPUT_CHANNELS]
     # ---- #
 
@@ -35,7 +35,8 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     PYDTNN_USE_BIAS = "use_bias"
     PYDTNN_NFILTERS = "nfilters"
     pydtnn_dict_keys = [PYDTNN_FILTER_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION, PYDTNN_NFILTERS, PYDTNN_USE_BIAS, PYDTNN_NFILTERS]
-    # Not used: "grouping" "activation" "weights_initializer" "biases_initializer"
+    # Not used: "grouping" "activation" 
+    # Used, but in other place: "weights_initializer", "biases_initializer"
     # ---- #
 
     layer_args = cm.prepare_pydtnn_arguments(arguments = args[cm.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)

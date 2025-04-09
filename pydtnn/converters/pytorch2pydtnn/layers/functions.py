@@ -83,22 +83,22 @@ def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
 
 def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
-    #from torch import flatten
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
     def switch(list_params: List[str], dict_params: Dict[str, str] = dict()) -> Dict[str, str]:
+        # This is a switch with "fall through".
         match len(list_params):
-            case 3 :
+            case 3:
                     var = list_params.pop().split("end_dim=")
                     dict_params["end_dim"] = int(var.pop())
                     # // fall through
                     return switch(list_params, dict_params)
-            case 2 :
+            case 2:
                     var = list_params.pop().split("start_dim=")
                     dict_params["start_dim"] = int(var.pop())
                     # // fall through
                     return switch(list_params, dict_params)
-            case 1 :
+            case 1:
                     dict_params["input"] = list_params.pop()
                     # // fall through
                     return switch(list_params, dict_params)

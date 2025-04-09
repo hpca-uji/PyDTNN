@@ -76,8 +76,7 @@ def AvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
 
 def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.AdaptiveAvgPool2d.html#torch.nn.AdaptiveAvgPool2d
-    # from torch.nn import AdaptiveAvgPool2d    
-    # NOTE: "The output is of size H x W, for any input size. The number of output features is equal to the number of input planes." Source: PyTorch.      
+    # from torch.nn import AdaptiveAvgPool2d      
 
     arguments = args[cm.ARGUMENTS]    
     output_shape = arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None 

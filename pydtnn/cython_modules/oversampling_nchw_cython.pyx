@@ -29,7 +29,7 @@ ctypedef fused supported_types_t:
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END supported_types_t -- #
 
-# NOTE: "supported_types_t[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
+# NOTE: "supported_types_t[:, :, :, :]" is a view of a 4 dimensions array-like object of one of the supported types.
 cdef _oversampling(supported_types_t[:, :, :, :] oversampled_x, 
                   const supported_types_t[:, :, :, :] x, 
                   int n, int c, int h, int w, int extra_h, int extra_w):
@@ -48,7 +48,9 @@ cdef _oversampling(supported_types_t[:, :, :, :] oversampled_x,
                             oversampled_x[nn, cc, row, column] = x[nn, cc, hi, hj]
 # --- END _oversampling --- #
 
-# This function "selects" the type among the supported data types
+# This intermediate function "selects" the data type among the supported types
+@cython.boundscheck(False)
+@cython.wraparound(False)
 def oversampling(np.ndarray[supported_types_t, ndim=4] oversampled_x, 
                  np.ndarray[supported_types_t, ndim=4] x, 
                  int n, int c, int h, int w, int extra_h, int extra_w):
@@ -74,7 +76,7 @@ def oversampling_fwd_nchw_cython(np.ndarray x, int new_h, int new_w,
         oversampling(oversampled_x, x, n, c, h, w, extra_h, extra_w)
         return oversampled_x
     except TypeError:
-        raise TypeError(f"Type '{x.dtype}' is not supported by oversampling_fwd_nchw_cython")
+        raise TypeError(f"Type '{x.dtype}' is not supported by oversampling_fwd_nchw_cython!")
 # --- END oversampling_fwd_nchw_cython --- #
 
 ###########################################################

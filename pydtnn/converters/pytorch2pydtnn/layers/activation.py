@@ -17,4 +17,4 @@ def ReLU(args: Dict[str, Any]) -> activations.Relu:
 
     not_used = args
     return activations.Relu()
-# --- END AdaptiveAvgPool2d --- #
+# --- END ReLU --- #
