@@ -16,6 +16,34 @@ from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
 # ------------------ #
 # - Torch Functions  #
 # ------------------ #
+
+def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, str]:
+    # It is not the layer, but the operation itself.
+    # from torch.nn.functional import adaptive_avg_pool2d
+    # adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int])
+
+    dict_params = dict()
+    # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'
+    params:List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
+    # removing the input layer:
+    dict_params["input"] = params.pop(0) # Situation after operation: [] or ['number'] or ['(number', 'number)']
+    
+    # Getting the arguments:
+    match len(params):
+        case 0:
+            params = None
+        case 1:
+            params = int(params[0])
+            params = (params, params) # Only 1 argument implies the weight and height are the same.
+        case greater_than_1: # len must be always >= 0
+            params = [int(param.replace('(', '').replace(')', '')) for param in params]
+
+    if params != None:
+        dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
+
+    return (AdaptiveAvgPool2d(dict_params), dict_params["input"])
+# --- END adaptive_avg_pool_2d --- #
+
 # TODO: Check how to do this well.
 def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     # https://pytorch.org/docs/stable/generated/torch.add.html      
@@ -27,7 +55,6 @@ def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
 
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
     dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cm.LAYERS]
-
 
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params) 
 
@@ -44,7 +71,7 @@ def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
 
     # AdditionBlock expects every "branch" (layer list) as a different argument.
     return (layers.AdditionBlock(*list_layers), input_layer_name)
-# --- END Add --- #
+# --- END add --- #
 
 def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     # https://pytorch.org/docs/main/generated/torch.cat.html
@@ -58,9 +85,6 @@ def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     params = parameters.pop(0) # Since PyDTNN always concatenate in the same dimensions, the rest of the PyTorch parameters can be ignored    
     params = cm.separate_function_params(params)
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
-    
-    # TODO: FALLO --> Parece ser que si la concatenación es de un solo elemento hace cosas raras.
-    # Ejemplo: cat de ['features_pool0'] (que es la anterior capa)
 
     dict_layers:Dict[str, Tuple[LayerAndActivationBase, str]] = args[cm.LAYERS]
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
@@ -79,7 +103,7 @@ def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
 
     # ConcatenationBlock expects every "branch" (layer list) as a different argument.
     return (layers.ConcatenationBlock(*list_layers), input_layer_name)
-# --- END Concat --- #
+# --- END concat --- #
 
 def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
@@ -109,9 +133,32 @@ def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
         
     return (layers.Flatten(), dict_params["input"])
-# --- END Concat --- #
+# --- END flatten --- #
+# ------------------ #
+
+# ------------------ #
+# --- Activations -- #
+# ------------------ #
+
+def log(args: Dict[str, Any]) -> activations.Log:
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.logsigmoid.html#torch.nn.functional.logsigmoid
+
+    dict_params = dict()
+
+    # Example: torch.nn.functional.relu(features_norm5, inplace = True)
+    params = args[cm.PARAMETERS].strip().split("inplace=")
+    inplace = bool(params.pop()) if len(params) > 0 else None
+
+    dict_params[cm.ARGUMENTS] = {"input": params[0].split(cm.ARGS_SEPARATOR)[0]}
+    if inplace is not None:
+        dict_params["inplace"] = inplace
+
+    return (LogSigmoid(**dict_params), dict_params["input"])
+# --- END Log --- #
 
 def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
+    
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.relu.html#torch.nn.functional.relu
     # It is not the layer, but the operation itself.
     # from torch.nn.functional import relu
     # relu(input: Tensor, inplace: bool = False)
@@ -127,30 +174,60 @@ def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
         dict_params["inplace"] = inplace
 
     return (ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
+# --- END relu --- #
 
-def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, str]:
-    # It is not the layer, but the operation itself.
-    # from torch.nn.functional import adaptive_avg_pool2d
-    # adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int])
+def sigmoid(args: Dict[str, Any]) -> activations.Sigmoid:
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.sigmoid.html#torch.nn.functional.sigmoid
+    # Not used Pytorch's parameters: inplace.
 
     dict_params = dict()
-    # Example: torch.nn.functional.adaptive_avg_pool2d(relu, (1, 1)) | args = 'relu, (1, 1)'
+
     params:List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
     # removing the input layer:
-    dict_params["input"] = params.pop(0) # Situation after operation: [] or ['number'] or ['(number', 'number)']
-    
-    # Getting the arguments:
-    match len(params):
-        case 0:
-            params = None
-        case 1:
-            params = int(params[0])
-            params = (params, params) # Only 1 argument implies the weight and height are the same.
-        case greater_than_1: # len must be always >= 0
-            params = [int(param.replace('(', '').replace(')', '')) for param in params]
+    dict_params["input"] = params.pop(0)
 
-    if params != None:
-        dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
+    return (Sigmoid(**dict_params), dict_params["input"])
+# --- END Sigmoid --- #
 
-    return (AdaptiveAvgPool2d(dict_params), dict_params["input"])
+def softmax(args: Dict[str, Any]) -> activations.Softmax:
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html#torch.nn.functional.softmax
+    # softmax(input, dim=None, _stacklevel=3, dtype=None)
+
+    def switch(list_params: List[str], dict_params: Dict[str, str] = dict()) -> Dict[str, str]:
+        # This is a switch with "fall through".
+        match len(list_params):
+            case 3:
+                    var = list_params.pop().split("dim=")
+                    dict_params["end_dim"] = int(var.pop())
+                    # // fall through
+                    return switch(list_params, dict_params)
+            case 2:
+                    var = list_params.pop().split("dtype=")
+                    dict_params["start_dim"] = int(var.pop())
+                    # // fall through
+                    return switch(list_params, dict_params)
+            case 1:
+                    dict_params["input"] = list_params.pop()
+                    # // fall through
+                    return switch(list_params, dict_params)
+            case _:
+                return dict_params
+    # - END switch - #
+    params = args[cm.PARAMETERS].strip()
+    dict_params = switch(params.split(cm.ARGS_SEPARATOR))
+        
+    return (Softmax(**dict_params), dict_params["input"])
+# --- END Softmax --- #
+
+def tanh(args: Dict[str, Any]) -> activations.Tanh:
+    # https://pytorch.org/docs/stable/generated/torch.nn.functional.tanh.html#torch.nn.functional.tanh
+    dict_params = dict()
+
+    params:List[str] = args[cm.PARAMETERS].split(cm.ARGS_SEPARATOR)
+    # removing the input layer:
+    dict_params["input"] = params.pop(0)
+
+    return (Tanh(**dict_params), dict_params["input"])
+# --- END Tanh --- #
+
 # ------------------ #

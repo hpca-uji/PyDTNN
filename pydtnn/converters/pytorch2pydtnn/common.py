@@ -29,6 +29,10 @@ ADD = "add"
 CONCAT = "concat"
 CAT = "cat"
 FLATTEN = "flatten"
+TANH = "tanh"
+SOFTMAX = "softmax"
+SIGMOID = "sigmoid"
+LOG_SIGMOID = "logsigmoid"
 
 ARGS_SEPARATOR = ','
 PYTORCH_OUTPUT_SIZE = "output_size"
@@ -57,14 +61,19 @@ def prepare_pydtnn_arguments(arguments: Dict[str, Any], torch_dict_keys: List[st
 
 def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActivationBase]:
     match name:
-        case "Conv2d": return Conv2d
-        case "Linear": return Linear
-        case "BatchNorm2d": return BatchNorm2d
-        case "ReLU": return ReLU
         case "AdaptiveAvgPool2d": return AdaptiveAvgPool2d
         case "AvgPool2d": return AvgPool2d
-        case "MaxPool2d": return MaxPool2d
+        case "BatchNorm2d": return BatchNorm2d
+        case "Conv2d": return Conv2d
         case "Dropout": return Dropout
+        case "Linear": return Linear  
+        case "MaxPool2d": return MaxPool2d
+        case "ReLU": return ReLU
+        case "LogSigmoid": return LogSigmoid
+        case "Sigmoid": return Sigmoid
+        case "Softmax": return Softmax
+        case "Tanh": return Tanh
+
         # Not actual PyTorch layers (are torch functions):
         case "Add": return add # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
         case "Concat": return concat # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.        
@@ -96,8 +105,16 @@ def function_operation_to_pydtnn(name:str) -> Callable[[Dict[str, Any]], Tuple[L
         # It is not the layer, but the relu operation itself.
         op = relu
     elif ADP_AVG_POOL in name:
-        # It is not the layer, but the adaptive average pooling operation itself.
         op = adaptive_avg_pool_2d
+    elif LOG_SIGMOID in name: 
+        op = log
+    elif SIGMOID in name:
+        # NOTE: is important that SIGMOID is after LOG_SIGMOID
+        op = sigmoid
+    elif SOFTMAX in name: 
+        op = softmax
+    elif TANH in name: 
+        op = tanh
     # NOTE: If a new function operation handler is implemented, an "elif" must be place before the followin else in order to call the handler of that operation.
     else:
         op = not_implemented(name)
