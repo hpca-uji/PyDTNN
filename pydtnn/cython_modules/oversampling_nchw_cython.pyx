@@ -30,6 +30,8 @@ ctypedef fused supported_types_t:
 # -- END supported_types_t -- #
 
 # NOTE: "supported_types_t[:, :, :, :]" is a view of a 4 dimensions array-like object of one of the supported types.
+@cython.boundscheck(False)
+@cython.wraparound(False)
 cdef _oversampling(supported_types_t[:, :, :, :] oversampled_x, 
                   const supported_types_t[:, :, :, :] x, 
                   int n, int c, int h, int w, int extra_h, int extra_w):
@@ -87,7 +89,7 @@ def oversampling_fwd_nchw_cython(np.ndarray x, int new_h, int new_w,
 
 # Version with different functions for every type of data.
 # NOTE: The performance of this version is a little bit better than the previous one, but it's necessary to make a function for every supported type while the other is generic.
-# This version: 8,998s; previous one: 9,396s | Test: n = 6000, c = 100, h_size = 7, w_size = 7, out_h = 100, out_w = 100
+# This version: 13.2493s; previous one: 13.2836s | Test: n = 60000, c = 4, h_size = 2, w_size = 2, out_h = 54, out_w = 54, repeated 20 times.
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
