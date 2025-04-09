@@ -34,9 +34,6 @@ from pydtnn.utils.best_of import BestOf
 import torch
 from torch.nn import CrossEntropyLoss
 
-DATASET_PATH = "/home/usuario/Documentos/CIBER_CAFE/Datasets/cifar-10-batches-bin"
-WEIGHTS_PATH = "/home/usuario/Documentos/Resultados/pesos/clasificacion/"
-
 dict_test = {
    "vgg11": (vgg11, create_vgg11, (32, 32, 3), "cifar10", {"num_classes": 10}, None), # (224, 224, 3)
    "vgg16": (vgg16, create_vgg16, (32, 32, 3), "cifar10", {"num_classes": 10}, None), # (224, 224, 3)
@@ -54,9 +51,11 @@ dict_test = {
 }
 
 # ----- EXECUTION PARAMETERS ----- #
-TEST = "vgg19"
+TEST = "densenet169"
 FIRST_PYTORCH = False
 OLD_FIRST = None
+DATASET_PATH = ""
+WEIGHTS_PATH = ""
 # --- END EXECUTION PARAMETERS --- #
 
 def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
@@ -195,9 +194,7 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 #-----------------------#
 
 def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, nepochs:int=1, local_batch_size:int=32):
-    history = model.train_dataset(dataset, nepochs, local_batch_size, val_split=0.2,
-                      loss="categorical_cross_entropy", metrics_list=("categorical_accuracy",),
-                      optimizer=SGD(), lr_schedulers=(), bar_width=110)
+    history = model.train_dataset()
     print(f"history: {history}")
 # --- END pydtnn_training --- #
 
@@ -222,7 +219,6 @@ def main():
         "dataset_test_path": DATASET_PATH,
     }
 
-    weight = None   # TODO: Remove.
     device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("gpu")
     if weight is not None:
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
