@@ -66,8 +66,8 @@ def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActiva
         case "MaxPool2d": return MaxPool2d
         case "Dropout": return Dropout
         # Not actual PyTorch layers (are torch functions):
-        case "Add": return Add # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
-        case "Concat": return Concat # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.        
+        case "Add": return add # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
+        case "Concat": return concat # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.        
         # Base case:
         case _: return not_implemented(name)
 # --- END switch_pytorch_pydtnn --- #
@@ -87,11 +87,11 @@ def function_operation_to_pydtnn(name:str) -> Callable[[Dict[str, Any]], Tuple[L
     
     # NOTE: I found impossible to do a switch (match-case) nor a dictionary due the name may be larger than the "key" (e.g.: name = torch.flatten(input, start_dim=0, end_dim=-1); "key" = "flatten")
     if ADD in name:
-        op = Add
+        op = add
     elif any(pattern in name for pattern in [CONCAT, CAT]):
-        op = Concat
+        op = concat
     elif FLATTEN in name:
-        op = Flatten
+        op = flatten
     elif RELU in name:
         # It is not the layer, but the relu operation itself.
         op = relu

@@ -17,7 +17,7 @@ from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
 # - Torch Functions  #
 # ------------------ #
 # TODO: Check how to do this well.
-def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
+def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     # https://pytorch.org/docs/stable/generated/torch.add.html      
     
     # It should be prepared so the params have the following format: "[layer1,layer2]"
@@ -46,7 +46,7 @@ def Add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     return (layers.AdditionBlock(*list_layers), input_layer_name)
 # --- END Add --- #
 
-def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
+def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     # https://pytorch.org/docs/main/generated/torch.cat.html
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
@@ -81,7 +81,7 @@ def Concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
     return (layers.ConcatenationBlock(*list_layers), input_layer_name)
 # --- END Concat --- #
 
-def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
+def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
