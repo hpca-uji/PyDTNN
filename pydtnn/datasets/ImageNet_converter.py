@@ -22,17 +22,17 @@ import sys
 import numpy as np
 import tensorflow as tf
 
-FLAGS = tf.app.flags.FLAGS
+FLAGS = tf.compat.v1.app.flags.FLAGS
 
-tf.app.flags.DEFINE_integer('batch_size', 32,
-                            """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_integer('image_size', 300,
-                            """Provide square images of this size.""")
-tf.app.flags.DEFINE_integer('num_preprocess_threads', 4,
-                            """Number of preprocessing threads per tower. """
-                            """Please make this a multiple of 4.""")
-tf.app.flags.DEFINE_integer('num_readers', 4,
-                            """Number of parallel readers during train.""")
+tf.compat.v1.app.flags.DEFINE_integer('batch_size', 32,
+                                      """Number of images to process in a batch.""")
+tf.compat.v1.app.flags.DEFINE_integer('image_size', 300,
+                                      """Provide square images of this size.""")
+tf.compat.v1.app.flags.DEFINE_integer('num_preprocess_threads', 4,
+                                      """Number of preprocessing threads per tower. """
+                                      """Please make this a multiple of 4.""")
+tf.compat.v1.app.flags.DEFINE_integer('num_readers', 4,
+                                      """Number of parallel readers during train.""")
 
 
 def distort_color(image, thread_id=0, scope=None):
@@ -154,8 +154,8 @@ def decode_jpeg(image_buffer, scope=None):
     Returns:
       3-D float Tensor with values ranging from [0, 1).
     """
-    with tf.name_scope(values=[image_buffer], name=scope,
-                       default_name='decode_jpeg'):
+    with tf.compat.v1.name_scope(values=[image_buffer], name=scope,
+                                 default_name='decode_jpeg'):
         # Decode the string as an RGB JPEG.
         # Note that the resulting image contains an unknown height and width
         # that is set dynamically by decode_jpeg. In other words, the height
@@ -170,16 +170,16 @@ def decode_jpeg(image_buffer, scope=None):
 
 
 def eval_image(image, height, width, scope=None):
-    with tf.name_scope(values=[image, height, width], name=scope,
-                       default_name='eval_image'):
+    with tf.compat.v1.name_scope(values=[image, height, width], name=scope,
+                                 default_name='eval_image'):
         # Crop the central region of the image with an area containing 87.5% of
         # the original image.
         image = tf.image.central_crop(image, central_fraction=0.875)
 
         # Resize the image to the original height and width.
         image = tf.expand_dims(image, 0)
-        image = tf.image.resize_bilinear(image, [height, width],
-                                         align_corners=False)
+        image = tf.compat.v1.image.resize_bilinear(image, [height, width],
+                                                   align_corners=False)
         image = tf.squeeze(image, [0])
         return image
 
@@ -243,6 +243,7 @@ def _parse_function(example_serialized):
 
 
 def load_tfrecords(srcfile, image_size, elems):
+    tf.compat.v1.disable_eager_execution()
     sess = tf.compat.v1.Session()
 
     FLAGS.image_size = image_size
@@ -251,7 +252,7 @@ def load_tfrecords(srcfile, image_size, elems):
     # dataset = dataset.repeat(2) # repeat for 2 epochs
     # dataset = dataset.batch(1) # set batch_size = 5
 
-    iterator = dataset.make_one_shot_iterator()
+    iterator = tf.compat.v1.data.make_one_shot_iterator(dataset)
     next_data = iterator.get_next()
 
     images = []
@@ -265,7 +266,7 @@ def load_tfrecords(srcfile, image_size, elems):
             if count == 10:
                 break
             # print(count)
-            if not images:
+            if not np.any(images):
                 images = np.expand_dims(np.array(image.eval(session=sess)).astype(np.uint8), axis=-1)
             else:
                 images = np.concatenate(
@@ -283,8 +284,14 @@ def load_tfrecords(srcfile, image_size, elems):
 
 
 if __name__ == "__main__":
+    from argparse import ArgumentParser
+    parser = ArgumentParser(prog="imagenet_converter", description="Converts TFRecords to NPZs")
+    parser.add_argument("--src", type=str, default="datasets/imagenet/tf/data/train/%05d.tfrecord", help="source path with %%d template")
+    parser.add_argument("--dst", type=str, default="datasets/imagenet/train/%05d.npz", help="destination path with %%d template")
+    parser.add_argument("--start", type=int, default=0, help="%%d start range")
+    parser.add_argument("--end", type=int, default=1024, help="%%d end range")
+    config = parser.parse_args()
 
-    start, end = int(sys.argv[1]), int(sys.argv[2])
-    for file in range(start, end):
-        x, y = load_tfrecords("/scratch/imagenet/train/train-%05d-01024" % file, 227, 10000)
-        np.savez_compressed("/scratch/imagenet/np/train/train-%05d-01024" % file, x=x.transpose((3, 2, 0, 1)), y=y)
+    for file in range(config.start, config.end):
+        x, y = load_tfrecords(config.src % file, 227, 10000)
+        np.savez_compressed(config.dst % file, x=x.transpose((3, 2, 0, 1)), y=y)
