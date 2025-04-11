@@ -728,7 +728,7 @@ class Model:
 
                 if batch_size <= 0:
                     if self.comm_rank == 0:
-                        pbar.set_postfix_str(s=f"{string}, peers busy…", refresh=True)
+                        pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                     continue
 
                 train_total_loss, train_batch_count, string = \
