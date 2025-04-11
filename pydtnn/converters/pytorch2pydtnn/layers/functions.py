@@ -44,7 +44,6 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, st
     return (AdaptiveAvgPool2d(dict_params), dict_params["input"])
 # --- END adaptive_avg_pool_2d --- #
 
-# TODO: Check how to do this well.
 def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
     # https://pytorch.org/docs/stable/generated/torch.add.html      
     

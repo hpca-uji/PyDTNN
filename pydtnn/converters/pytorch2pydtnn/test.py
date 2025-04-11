@@ -26,9 +26,7 @@ from pydtnn.models.resnet152_cifar10 import create_resnet152_cifar10
 from pydtnn.models.inceptionv3_cifar10 import create_inceptionv3_cifar10
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.optimizers import SGD
 from pydtnn.datasets import get_dataset
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
 from pydtnn.utils.best_of import BestOf
 
 import torch
@@ -54,8 +52,8 @@ dict_test = {
 TEST = "densenet169"
 FIRST_PYTORCH = False
 OLD_FIRST = None
-DATASET_PATH = ""
-WEIGHTS_PATH = ""
+DATASET_PATH = "/home/usuario/Documentos/CIBER_CAFE/Datasets/cifar-10-batches-bin"
+WEIGHTS_PATH = "/home/usuario/Documentos/Resultados/pesos/clasificacion/"
 # --- END EXECUTION PARAMETERS --- #
 
 def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
