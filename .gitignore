@@ -2,7 +2,6 @@
 /build/
 /.idea/
 /.venv/
-/.tf/
 /.vscode/
 /pydtnn/cython_modules/*.c
 __pycache__/
