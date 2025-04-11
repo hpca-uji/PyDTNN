@@ -55,7 +55,7 @@ def extract_layers_relations(model:torch.nn.Module) -> Dict[str, Tuple[Union[str
                         [elem.lstrip(PSEUDO_INDENTATION) for elem in graph.code.split(BY_LINES)])):
 
         # NOTE: seems that there are situations that the line does not have the value.
-        line = line.split(SEPARATOR_FUNCTION_VALUE)[0] # [line, debug's input's value]            
+        line = line.split(SEPARATOR_FUNCTION_VALUE)[0] # [line, debug's input's value]
         operation = line.split(SEPARATOR_ASSIGNATION)  # [output, function+args]
         if len(operation) > 2:
             # Case: When it is a call to a function with a keyword. Example: "cat = torch.concatenate([var], axis = 1)"
@@ -164,7 +164,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
                 # NOTE: There are some layers (like the fully connected) where the shape in PyDTNN is the transpose of the PyTorch's one.
                 weights = weights.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else weights
 
-                if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):                    
+                if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
                     def weights_initializer(*args_to_ignore, pytorch_weights = weights, **kwargs_to_ignore):
                         # NOTE [IMPORTANT]: Regarding "pytorch_weights = weights".
                         # NOTE > If "weights" are directly set as the returned value (return weights), for some reason the return will be a reference to "weights"
@@ -180,7 +180,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
                     converted_layer.weights = weights
             # else: Nothing special.
 
-            if LAYER_BIASES in state_dict: 
+            if LAYER_BIASES in state_dict:
                 biases = copy.deepcopy(state_dict[LAYER_BIASES].cpu().detach().numpy())
                 biases = biases.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else biases
                 if hasattr(converted_layer, PYDTNN_BIASES_INITIALIZER):
@@ -206,7 +206,8 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
             converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally these were functions, then they does not have weights nor biases.
             # TODO: Check if it is necessary to set/unset in the layer's class something (like the weigths update) in order to make it work like a function.
-    # "for operation_variable in layer_var_names" end. 
+            converted_layers[operation_variable].need_dx = False # TODO/possible FIXME: CHECK IF THIS IS NECESSARY !!!!
+    # "for operation_variable in layer_var_names" end.
 
     list_layers = [layer for layer, _input in converted_layers.values()]
     return list_layers
@@ -216,14 +217,14 @@ def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_b
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", default_output_activation_layer:Activation | None = None,
                  **kwargs) -> PyDTNN_Model:
     # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
-    
+
     if "tensor_format" not in kwargs:
         # NOTE: PyTorch's weight tensors use NCHW format.
         kwargs["tensor_format"] = "NCHW"
     if "model_name" not in kwargs:
         # If it's not set to "None", it's possible that other neural network is loaded.
         kwargs["model_name"] = None
-    
+
     # Output model.
     converted_model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
                                    enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
@@ -233,9 +234,9 @@ def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_b
 
     # Obtaining the PyDTNN equivalent layer for every layer and setting the weights and biases (if it's necessary)
     layers = convert_layers_and_set_weights_and_biases(input_shape=input_shape, layers=dict_layers)
-    
+
     # Assigning the layers/operations to the converted model and the default activation layer if there is none in the new model.
     load_layers(model=converted_model, layers=layers, activation_layer=default_output_activation_layer)
-        
+
     return converted_model
-# --- END convert_model --- #      
+# --- END convert_model --- #
