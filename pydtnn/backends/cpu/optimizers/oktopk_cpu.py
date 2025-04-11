@@ -567,6 +567,35 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             MPI.Request.Waitall(requests)
             return coo_reduced_region 
 
+        if method == "p2p_reduce_region_destination_rotation_and_dynamic_bucketing":
+            # There are (nprocs - 1) messages to send (excluding self)
+            total_sends = self.nprocs - 1
+            requests = [None] * total_sends
+
+            # Compute local slice of coo_topk (the "self" region)
+            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
+            row_end = boundaries[self.rank]
+            coo_reduced_region = coo_topk.slice(row_start, row_end)
+
+            # Process sends and receives in buckets.
+            bucket_size = 2  
+            region = (self.rank + 1) % self.nprocs
+            for comm_step in range(0, total_sends, bucket_size):
+                # The current bucket may have fewer messages than bucket_size (i.e. the last bucket)
+                current_bucket_size = min(bucket_size, total_sends - comm_step)
+                # Non-blocking sends for the current bucket
+                for i in range(current_bucket_size):
+                    row_start = 0 if region == 0 else boundaries[region - 1]
+                    row_end = boundaries[region]
+                    requests[comm_step + i] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                    region = (region + 1) % self.nprocs
+                # After sending the bucket, perform the receives sequentially for the same bucket.
+                for i in range(current_bucket_size):
+                    coo_reduced_region += self.comm.recv()
+
+            MPI.Request.Waitall(requests)
+            return coo_reduced_region
+
         if method == "p2p_reduce_region_static_destination":
             # Prepare a vector region for storing the partial sums
             coo_region_partial_sum = [None] * self.nprocs
