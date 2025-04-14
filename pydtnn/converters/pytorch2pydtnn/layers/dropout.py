@@ -1,5 +1,5 @@
 # _______________________________________________________________________________________________________________
-# In this file must be implemented only the translation of PyTorch Convolutional layers to its PyDTNN equivalent.
+# In this file must be implemented only the translation of PyTorch Dropout layers to its PyDTNN equivalent.
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
