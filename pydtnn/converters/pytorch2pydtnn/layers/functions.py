@@ -12,6 +12,7 @@ from pydtnn import layers
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.converters.pytorch2pydtnn.layers.activation import *
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
+from pydtnn.converters.pytorch2pydtnn.layers.utility import *
 
 # ------------------ #
 # - Torch Functions  #
@@ -130,8 +131,8 @@ def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # - END switch - #
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
-        
-    return (layers.Flatten(), dict_params["input"])
+
+    return (Flatten(dict_params), dict_params["input"])
 # --- END flatten --- #
 # ------------------ #
 

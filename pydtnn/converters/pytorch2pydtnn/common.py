@@ -3,13 +3,14 @@ from typing import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
-from pydtnn.converters.pytorch2pydtnn.layers.normalization import *
-from pydtnn.converters.pytorch2pydtnn.layers.convolutional import *
 from pydtnn.converters.pytorch2pydtnn.layers.activation import *
-from pydtnn.converters.pytorch2pydtnn.layers.functions import *
-from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
+from pydtnn.converters.pytorch2pydtnn.layers.convolutional import *
 from pydtnn.converters.pytorch2pydtnn.layers.dropout import *
+from pydtnn.converters.pytorch2pydtnn.layers.functions import *
 from pydtnn.converters.pytorch2pydtnn.layers.linear import *
+from pydtnn.converters.pytorch2pydtnn.layers.normalization import *
+from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
+from pydtnn.converters.pytorch2pydtnn.layers.utility import *
 
 # ------------------- #
 # ---- CONSTANTS ---- #
@@ -74,6 +75,7 @@ def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActiva
         case "Sigmoid": return Sigmoid
         case "Softmax": return Softmax
         case "Tanh": return Tanh
+        case "Flatten": return Flatten
 
         # Not actual PyTorch layers (are torch functions):
         case "Add": return add # Possible FIXME: if the constants ADD values are changed, change the case in order to have the same value.
