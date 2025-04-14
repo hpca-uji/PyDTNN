@@ -2,6 +2,8 @@
 
 # NOTE: Module does not provide any encryption, it is temporary placeholder
 
+# TODO: Move to libs and remove codecs
+
 import numpy
 from dataclasses import dataclass
 
