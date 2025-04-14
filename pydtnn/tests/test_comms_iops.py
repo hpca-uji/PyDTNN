@@ -30,7 +30,7 @@ parser.add_argument("peer", choices=list(Peer))
 parser.add_argument("mode", choices=list(Mode))
 parser.add_argument("--addr", type=str, default="127.0.0.1")
 parser.add_argument("--port", type=int, default=50000)
-parser.add_argument("--start-delay", type=float, default=0.5)
+parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--delay", type=float, default=0.0)
 parser.add_argument("--size", type=int, default=1_000)
 parser.add_argument("--reps", type=int, default=1_000_000)
@@ -68,11 +68,11 @@ def print_stats(config: Namespace, time: float) -> None:
 
 def server(config: Namespace):
     """Server peer"""
-    msg = numpy.arange(config.size, dtype=numpy.uint8)
+    message = numpy.arange(config.size, dtype=numpy.uint8)
 
     with comms.Server(addr=config.addr, port=config.port) as server:
-        get_thread = Thread(target=get, args=(server, msg, config.reps))
-        put_thread = Thread(target=put, args=(server, msg, config.reps))
+        get_thread = Thread(target=get, args=(server, message, config.reps))
+        put_thread = Thread(target=put, args=(server, message, config.reps))
         server.get()
         start_time = time.time()
 
@@ -88,20 +88,20 @@ def server(config: Namespace):
                 get_thread.join()
                 put_thread.join()
 
-        del msg
     end_time = time.time()
+    del message
 
     print_stats(config=config, time=end_time - start_time)
 
 
 def client(config: Namespace):
     """Client peer"""
-    msg = numpy.arange(config.size, dtype=numpy.uint8)
+    message = numpy.arange(config.size, dtype=numpy.uint8)
 
     time.sleep(config.start_delay)
     with comms.Client(addr=config.addr, port=config.port) as client:
-        get_thread = Thread(target=get, args=(client, msg, config.reps))
-        put_thread = Thread(target=put, args=(client, msg, config.reps))
+        get_thread = Thread(target=get, args=(client, message, config.reps))
+        put_thread = Thread(target=put, args=(client, message, config.reps))
         client.put(None)
         start_time = time.time()
 
@@ -117,8 +117,8 @@ def client(config: Namespace):
                 get_thread.join()
                 put_thread.join()
 
-        del msg
     end_time = time.time()
+    del message
 
     print_stats(config=config, time=end_time - start_time)
 

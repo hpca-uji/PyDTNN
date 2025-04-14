@@ -22,7 +22,6 @@ parser.add_argument("mode", choices=list(Mode))
 parser.add_argument("--addr", type=str, default="127.0.0.1")
 parser.add_argument("--port", type=int, default=50000)
 parser.add_argument("--start-delay", type=float, default=3.0)
-parser.add_argument("--end-delay", type=float, default=1.5)
 parser.add_argument("--size", type=int, default=1)
 
 
@@ -45,13 +44,10 @@ def server(config: Namespace):
             print(f"{server}-s2c-local: {server_msg}")
             server.put(server_msg.obj, server_msg.peer)
 
-        time.sleep(config.end_delay)
-
 
 def client(config: Namespace):
     """Client mode"""
     time.sleep(config.start_delay)
-
     with comms.Client(addr=config.addr, port=config.port) as client:
 
         put_msg = client._id
