@@ -59,6 +59,8 @@ class Stream(io.BufferedIOBase):
     Reader is responsible of releasing chunks.
     """
 
+    __slots__ = ("_chunks",)
+
     def __init__(self):
         """Initialize stream"""
         self._chunks = deque[memoryview]()
@@ -261,6 +263,8 @@ class Stream(io.BufferedIOBase):
 class AncillaryStream(BlockingIOError):
     """Blocked with ancillary stream (no normal stream available)"""
 
+    __slots__ = ("stream",)
+
     def __init__(self, stream: Stream, *args: object) -> None:
         """Inizialize ancillary error"""
         self.stream = stream
@@ -278,6 +282,7 @@ class PackerStream(Stream):
     Unpacks of ancillary raise AncillaryStream.
     """
 
+    __slots__ = ()
     _format_size = "!q"
     _sizeof_size = struct.calcsize(_format_size)
 
@@ -322,6 +327,8 @@ class PackerStream(Stream):
 
 class StreamSerializer:
     """Pickle-stream serializer"""
+
+    __slots__ = ()
 
     def dump(self, obj) -> Stream:
         """Transform a object into a stream"""
