@@ -163,6 +163,10 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
                 weights:np.ndarray = copy.deepcopy(state_dict[LAYER_WEIGHTS].cpu().detach().numpy())
                 # NOTE: There are some layers (like the fully connected) where the shape in PyDTNN is the transpose of the PyTorch's one.
                 weights = weights.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else weights
+                # Some layers' weights, like the Conv2D, has the weigths inside an array in PyTorch (while in PyDTNN doesn't have then in that way), so it's necessary to removed them
+                for _name, axis in cm.REMOVE_WIGHTS_DIMENSIONS:
+                    if name == _name:
+                        weights = weights.squeeze(axis)                
 
                 if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
                     def weights_initializer(*args_to_ignore, pytorch_weights = weights, **kwargs_to_ignore):

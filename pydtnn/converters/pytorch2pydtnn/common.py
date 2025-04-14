@@ -21,6 +21,7 @@ EQUIVALENT_LAYERS = "equivalent_layers" # TODO: Set a better name.
 OPERATION_VAR = "operation_var" # TODO: Set a better name.
 TRANSPOSE_WEIGHTS_LAYERS = ["Linear"] # There are layers that put the weigths in the correct order. Theese layers doesn't do it.
 TRANSPOSE_BIASES_LAYERS = [] # TODO: CHECK if it is necessary
+REMOVE_WIGHTS_DIMENSIONS = [("Conv2d", (0))] # Name of the layer, tuple of dimensions/axis to remove.
 
 RELU = "relu"
 ADP_AVG_POOL = "adaptive_avg_pool2d"
