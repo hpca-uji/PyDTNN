@@ -458,7 +458,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
         return intersect_2d_indexes_cython(local_rows, local_cols, global_rows, global_cols)
 
 
-    def _reduce_topk(self, coo_topk, boundaries, method="p2p_reduce_region_static_destination"):
+    def _reduce_topk(self, coo_topk, boundaries, method="p2p_region_wise_reduce_destination_rotation_and_bucketing"):
         """
         Reduce the topk elements in regions defined by boundaries.
 
@@ -482,7 +482,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             row_end = boundaries[self.rank]
             return all_reduced_coo.slice(row_start, row_end)
 
-        if method == "collective_reduce_region_blocking":
+        if method == "collective_region_wise_reduce_sync":
             row_start = 0
             reduced_regions_coo = [None] * self.nprocs
             for region in range(self.nprocs):
@@ -491,83 +491,11 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
                 row_start = row_end
             return reduced_regions_coo[self.rank]
 
-        if method == "collective_reduce_region_non_blocking_dense":
-            row_start = 0
-            requests = [None] * self.nprocs
-            recv_bufs = [None] * self.nprocs
-            send_bufs = [None] * self.nprocs
-            # NOTE: Do not remove send_bufs list, because reusing the same buffer for sending 
-            #       may produce different outputs for Ireduce
-            for region in range(self.nprocs):
-                row_end = boundaries[region]
-                send_bufs[region] = coo_topk.slice(row_start, row_end).to_dense()
-                recv_bufs[region] = np.zeros_like(send_bufs[region]) if self.rank == region else None
-                requests[region] = self.comm.Ireduce(send_bufs[region], recv_bufs[region], op=MPI.SUM, root=region)
-                row_start = row_end
-            MPI.Request.Waitall(requests)
-            return SparseMatrixCOO.from_dense(recv_bufs[self.rank])
-
-        if method == "collective_reduce_region_non_blocking_sparse":
+        if method == "collective_region_wise_reduce_async":
             """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
             pass
-
-        if method == "p2p_reduce_region_destination_rotation":
-            # Send all regions except mine, in a non-blocking way 
-            region = (self.rank + 1) % self.nprocs
-            requests = [None] * (self.nprocs - 1)
-            for comm_step in range(self.nprocs - 1):
-                row_start = 0 if region == 0 else boundaries[region - 1]
-                row_end = boundaries[region]
-                requests[comm_step] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
-                region = (region + 1) % self.nprocs
-
-            # Receive regions and perform partial sums
-            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
-            row_end = boundaries[self.rank]
-            coo_reduced_region = coo_topk.slice(row_start, row_end)
-            for _ in range(self.nprocs -1):
-                coo_reduced_region += self.comm.recv()
-
-            MPI.Request.Waitall(requests)
-            return coo_reduced_region 
         
-        if method == "p2p_reduce_region_destination_rotation_and_bucketing":
-            # Send all regions except mine, in a non-blocking way with buckets (two isend at same comm_step)
-            region = (self.rank + 1) % self.nprocs
-            requests = [None] * (self.nprocs - 1)
-            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
-            row_end = boundaries[self.rank]
-            coo_reduced_region = coo_topk.slice(row_start, row_end)
-
-            # Send and receive buckets
-            for bucket in range(0, self.nprocs - 2, 2):
-                # First isend 
-                row_start = 0 if region == 0 else boundaries[region - 1]
-                row_end = boundaries[region]
-                requests[bucket] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
-                region = (region + 1) % self.nprocs
-                # Second isend
-                row_start = 0 if region == 0 else boundaries[region - 1]
-                row_end = boundaries[region]
-                requests[bucket + 1] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
-                region = (region + 1) % self.nprocs                
-                # Receive and compute bucket
-                coo_reduced_region += self.comm.recv()
-                coo_reduced_region += self.comm.recv()
-
-            # If number of regions is even, an extra isend and recv is necessary
-            if self.nprocs % 2 == 0: 
-                # First and only isend of this extra bucket
-                row_start = 0 if region == 0 else boundaries[region - 1]
-                row_end = boundaries[region]
-                requests[self.nprocs - 2] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
-                # Receive and compute extra bucket
-                coo_reduced_region += self.comm.recv()
-
-            MPI.Request.Waitall(requests)
-            return coo_reduced_region 
-
-        if method == "p2p_reduce_region_destination_rotation_and_dynamic_bucketing":
+        if method == "p2p_region_wise_reduce_destination_rotation_and_bucketing":
             # There are (nprocs - 1) messages to send (excluding self)
             total_sends = self.nprocs - 1
             requests = [None] * total_sends
@@ -596,7 +524,7 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             MPI.Request.Waitall(requests)
             return coo_reduced_region
 
-        if method == "p2p_reduce_region_static_destination":
+        if method == "p2p_region_wise_reduce_static_destination":
             # Prepare a vector region for storing the partial sums
             coo_region_partial_sum = [None] * self.nprocs
             for region in range(self.nprocs):
