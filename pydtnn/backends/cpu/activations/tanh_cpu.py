@@ -26,7 +26,7 @@ from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 class TanhCPU(ActivationCPU, Tanh):
 
     def forward(self, x):
-        self.y = np.tan(x)
+        self.y = np.tanh(x)
         return self.y
 
     def backward(self, dy):
