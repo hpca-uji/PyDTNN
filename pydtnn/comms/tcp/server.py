@@ -52,10 +52,11 @@ class Server(Protocol):
 
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
+        sock.setblocking(False)
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionState(buffer_size=self._max_message_size)
+            self._state[peer] = ConnectionState(buffer_size=self._max_message_size // 2)
             self._lock.notify_all()
 
         self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
@@ -70,17 +71,19 @@ class Server(Protocol):
         if state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ)
 
-        if event & selectors.EVENT_WRITE:
-            self._s2c(sock)
-
         if event & selectors.EVENT_READ:
             self._c2s(sock)
+
+        if event & selectors.EVENT_WRITE:
+            self._s2c(sock)
 
         if not state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
         if state.closed and state.put_empty():
             self._fin(sock)
+
+        self._notify_selector()
 
     def _fin(self, sock: socket.socket) -> None:
         peer = self._peers.inverse[sock]
@@ -148,11 +151,14 @@ class Server(Protocol):
         state = self._state[peer]
 
         state.put_flush()
-        if state.put_stream.empty():
+        if not state.put_stream.empty():
+            pass
+        else:
             return
-
         with state.put_read() as view:
-            sock.sendall(view)
+            size = sock.send(view)
+            if size < len(view):
+                state.put_stream.unreadchunk(view[size:])
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
@@ -192,17 +198,17 @@ class Server(Protocol):
             with self._lock:
                 peers = tuple(self._peers)
 
-        errors = list[uuid.UUID]()
+        errors = list[ResourceClosed]()
         with self._serializer.dump(obj) as stream:
             for peer in peers:
                 try:
                     sock = self._peers[peer]
                     state = self._state[peer]
                 except KeyError:
-                    errors.append(peer)
+                    errors.append(ResourceClosed(peer))
                     continue
                 if state.closed:
-                    errors.append(peer)
+                    errors.append(ResourceClosed(peer))
                     continue
                 # FIXME: RACE CONDITION put & close
                 state.put_queue.put(stream.copy())
@@ -210,7 +216,7 @@ class Server(Protocol):
         self._notify_selector()
 
         if errors:
-            raise ResourceClosed(errors)
+            raise ExceptionGroup("Peer does not exist", errors)
 
     def _close(self) -> None:
         """Close the server"""

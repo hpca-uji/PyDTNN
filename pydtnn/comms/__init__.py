@@ -2,9 +2,9 @@
 
 # NOTE: Communication conventions:
 # - syc: connection state (generic)
-# - ini: connection start (id exchange)
+# - ini: connection start (identify)
 # - fin: connection stop  (flush)
-# - com: message exchange (duplex)
+# - com: message exchange (generic)
 # - c2s: message exchange (client -> server)
 # - s2c: message exchange (server -> client)
 
@@ -16,13 +16,21 @@
 #
 # Fin:
 # - Client flushes client queue
-# - Client sends Server ID
+# - Client sends server ID
 # - Server flushes server queue
-# - Server sends Client ID
+# - Server sends slient ID
+
+# NOTE: Communication persistency:
+# Ini:
+# - Must be done on first or changing connection
+#
+# Fin:
+# - Must be done on session end (not connection)
 
 # NOTE: Communication contract:
 # Constructor
 # - May block
+# - Only one communicator per ID
 # - Reusing ID retain server queues
 #
 # Put

@@ -28,12 +28,13 @@ class Client(Protocol):
 
         # State
         self._lock = threading.Condition()
-        self._state = ConnectionState(buffer_size=self._max_message_size)
+        self._state = ConnectionState(buffer_size=self._max_message_size // 2)
 
         # TCP
         self._socket = socket.create_connection((self._addr, self._port))
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
+        self._socket.setblocking(False)
 
         self._ini()
 
@@ -51,17 +52,19 @@ class Client(Protocol):
         if state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ)
 
-        if event & selectors.EVENT_WRITE:
-            self._c2s(sock)
-
         if event & selectors.EVENT_READ:
             self._s2c(sock)
+
+        if event & selectors.EVENT_WRITE:
+            self._c2s(sock)
 
         if not state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
         if state.closed and state.put_empty():
             self._fin(sock)
+
+        self._notify_selector()
 
     def _fin(self, sock: socket.socket) -> None:
         self._selector.unregister(sock)
@@ -115,10 +118,13 @@ class Client(Protocol):
         elif self._closed:
             with self._serializer.dump(self._server) as stream:
                 state.put_stream.pack(stream, ancillary=True)
+            print("END")
         else:
             return
         with state.put_read() as view:
-            sock.sendall(view)
+            size = sock.send(view)
+            if size < len(view):
+                state.put_stream.unreadchunk(view[size:])
 
     def put(self, obj, *peers: uuid.UUID) -> None:
         """Publish data to server"""
@@ -137,7 +143,6 @@ class Client(Protocol):
             if stream is END_COMM:
                 raise ResourceClosed()
             obj = self._serializer.load(stream)
-
         return Message(peer=self._server, obj=obj)
 
     def _close(self) -> None:
