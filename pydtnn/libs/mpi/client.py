@@ -24,7 +24,7 @@
 # respone recive notifications. Current implementation, when multiple async operations
 # are inflight, could issue more recives than expected, leading to a infinite lock.
 
-# TODO: Move future callback to request, so they are runned at the clients thead.
+# TODO: Move future callback to request, so they are runned at the clients thread.
 
 import uuid
 import enum
@@ -74,8 +74,8 @@ class Request[T]:
             return None  # type: ignore
 
 
-class Intracomm:
-    """Intracommunicator."""
+class Comm:
+    """Communicator."""
 
     def __init__(self) -> None:
         """Communicator initialization"""
@@ -305,7 +305,7 @@ IN_PLACE = InPlace.IN_PLACE
 
 SUM = mpi_comm.ReduceOperation.SUM
 
-COMM_WORLD = Intracomm()
+COMM_WORLD = Comm()
 
 # Best effort finalizer
 try:
