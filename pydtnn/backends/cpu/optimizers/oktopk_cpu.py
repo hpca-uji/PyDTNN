@@ -495,6 +495,29 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
             """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
             pass
         
+        if method == "p2p_region_wise_reduce_static_destination":
+            # Prepare a vector region for storing the partial sums
+            coo_region_partial_sum = [None] * self.nprocs
+            for region in range(self.nprocs):
+                row_start = 0 if region == 0 else boundaries[region - 1]
+                row_end = boundaries[region]
+                coo_region_partial_sum[region] = coo_topk.slice(row_start, row_end)
+
+            # Overlaps comm. steps with computation (sparse sum)
+            # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}. 
+            destination = (self.rank + 1) % self.nprocs
+            receive_from = (self.rank - 1) % self.nprocs
+            for comm_step in range(1, self.nprocs):
+                region_to_send = (self.rank - comm_step) % self.nprocs
+                region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
+                # recv_req = self.comm.irecv(source=receive_from)
+                # self.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
+                # coo_region_partial_sum[region_to_recv] += recv_req.wait() 
+                coo_region_partial_sum[region_to_recv] += self.comm.sendrecv(coo_region_partial_sum[region_to_send], 
+                                                                             dest=destination, source=receive_from)
+
+            return coo_region_partial_sum[self.rank]  
+
         if method == "p2p_region_wise_reduce_destination_rotation_and_bucketing":
             # There are (nprocs - 1) messages to send (excluding self)
             total_sends = self.nprocs - 1
@@ -523,29 +546,6 @@ class OkTopkCPU(OptimizerCPU, OkTopk):
 
             MPI.Request.Waitall(requests)
             return coo_reduced_region
-
-        if method == "p2p_region_wise_reduce_static_destination":
-            # Prepare a vector region for storing the partial sums
-            coo_region_partial_sum = [None] * self.nprocs
-            for region in range(self.nprocs):
-                row_start = 0 if region == 0 else boundaries[region - 1]
-                row_end = boundaries[region]
-                coo_region_partial_sum[region] = coo_topk.slice(row_start, row_end)
-
-            # Overlaps comm. steps with computation (sparse sum)
-            # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}. 
-            destination = (self.rank + 1) % self.nprocs
-            receive_from = (self.rank - 1) % self.nprocs
-            for comm_step in range(1, self.nprocs):
-                region_to_send = (self.rank - comm_step) % self.nprocs
-                region_to_recv = (self.rank - comm_step - 1) % self.nprocs 
-                # recv_req = self.comm.irecv(source=receive_from)
-                # self.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
-                # coo_region_partial_sum[region_to_recv] += recv_req.wait() 
-                coo_region_partial_sum[region_to_recv] += self.comm.sendrecv(coo_region_partial_sum[region_to_send], 
-                                                                             dest=destination, source=receive_from)
-
-            return coo_region_partial_sum[self.rank]  
 
         raise NotImplementedError(f"Method '{method}' not implemented")
 
