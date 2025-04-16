@@ -28,7 +28,7 @@ class Client(Protocol):
 
         # State
         self._lock = threading.Condition()
-        self._state = ConnectionState(buffer_size=self._max_message_size // 2)
+        self._state = ConnectionState(buffer_size=self._max_message_size)
 
         # TCP
         self._socket = socket.create_connection((self._addr, self._port))
@@ -40,8 +40,8 @@ class Client(Protocol):
 
     def _ini(self) -> None:
         """Connection initialization"""
-        with self._serializer.dump(self._id) as stream:
-            self._state.put_stream.pack(stream, ancillary=True)
+        stream = self._serializer.dump(self._id)
+        self._state.put(stream, ancillary=True)
         self._selector.register(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE, self._handle_connection)
         self._notify_selector()
 
@@ -85,7 +85,7 @@ class Client(Protocol):
 
         while True:
             try:
-                stream = state.get_stream.unpack()
+                stream = state.get()
             except AncillaryStream as ancillary:
                 with ancillary.stream as stream:
                     id = self._serializer.load(stream)
@@ -103,7 +103,6 @@ class Client(Protocol):
 
                     # ACK
                     state.close()
-
             except BlockingIOError:
                 break
             else:
@@ -113,13 +112,7 @@ class Client(Protocol):
         state = self._state
 
         state.put_flush()
-        if not state.put_stream.empty():
-            pass
-        elif self._closed:
-            with self._serializer.dump(self._server) as stream:
-                state.put_stream.pack(stream, ancillary=True)
-            print("END")
-        else:
+        if state.put_stream.empty():
             return
         with state.put_read() as view:
             size = sock.send(view)
@@ -131,7 +124,7 @@ class Client(Protocol):
         super().put(obj, *peers)
         assert len(peers) == 0, "Client can not publish to another client"
         stream = self._serializer.dump(obj)
-        self._state.put_queue.put(stream)
+        self._state.put(stream)
         self._modify_selector(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
         self._notify_selector()
 
@@ -147,6 +140,10 @@ class Client(Protocol):
 
     def _close(self) -> None:
         """Close the client"""
+        state = self._state
+        stream = self._serializer.dump(self._server)
+        state.put(stream, ancillary=True)
+
         with self._lock:
             while hasattr(self, "_socket"):
                 self._modify_selector(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE)

@@ -20,7 +20,7 @@ from collections import abc
 
 from pydtnn import comms
 from pydtnn.comms.grpc import grpc_pb2
-from pydtnn.utils.io_stream import StreamSerializer
+from pydtnn.utils.io_stream import Serializer
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -71,7 +71,7 @@ class Protocol(comms.Communicator):
 
     def _o2m(self, objects: abc.Iterable[typing.Any]) -> abc.Iterable[grpc_pb2.Message]:
         """Transform objects to gRPC messages"""
-        serializer = StreamSerializer()
+        serializer = Serializer()
         buffer = bytearray(self._max_data_size)
 
         # Try to generate full messages
@@ -93,7 +93,7 @@ class Protocol(comms.Communicator):
 
     def _m2o(self, messages: abc.Iterable[grpc_pb2.Message]) -> abc.Generator[typing.Any]:
         """Transform gRPC messages to objects"""
-        serializer = StreamSerializer()
+        serializer = Serializer()
 
         for message in messages:
             serializer.write(message.data)

@@ -8,5 +8,4 @@ __pycache__/
 *.so
 *.npz
 *.bin
-*.idx
-*.tfrecord
+*.tar
