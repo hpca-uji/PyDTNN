@@ -65,5 +65,6 @@ class AdaptiveAveragePool2D(Layer, ABC):
     # - END initialize - #
     
     def show(self, attrs=""):
-        super().show("|{:^19s}|{:^37s}|".format(f"inp. shape=({self.hi},{self.wi}), ",
-                                                f"out. shape=({self.ho},{self.wo})"))
+        super().show("|{:^19s}|{:^37s}|".format(f"",
+                                                f"inpt. shape=({self.hi},{self.wi}), "
+                                                f"outp. shape=({self.ho},{self.wo})"))
