@@ -30,7 +30,7 @@ from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
                                   im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \
                                   average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython, \
                                   average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython, \
-                                  oversampling_fwd_nchw_cython
+                                  adaptive_avg_pooling_fwd_nchw_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_FORWARD_IM2COL
 import numpy as np
 
@@ -60,12 +60,14 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nhwc_i2c)
             # setattr(self, "backward", self._backward_nhwc_i2c)
+        
+        if self.pooling_not_needed:
+            self._forward = self._forward_pooling_not_needed
+        #else: use the implemented ones.
     # -- END initialize -- #
     
     @override
     def forward(self, x):
-        if self.upscaling_needed:
-            x = oversampling_fwd_nchw_cython(x, self.hi, self.wi, self.extra_h, self.extra_w)
         return self._forward(x)
     # --- END forward --- #
 
@@ -74,8 +76,14 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return self._backward(dy)
     # --- END backward --- #
 
+    def _forward_pooling_not_needed(x:np.ndarray) -> np.ndarray:
+        # If the output shape is the same as the input one, there is no need to make the pooling.
+        return x
+
     # Methods from AveragePool2DCPU
     def _forward_nhwc_i2c(self, x):
+            # TODO: Implement this or adapt it to call the "_forward_nchw_cython" until is implemented
+        raise NotImplementedError("_forward_nhwc_i2c not implemented for Adaptive Average Pooling!")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_rows = im2row_1ch_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
@@ -84,6 +92,8 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y.reshape(-1, self.ho, self.wo, self.co)
 
     def _forward_nhwc_cython(self, x):
+        # TODO: Implement this or adapt it to call the "_forward_nchw_cython" until is implemented
+        raise NotImplementedError("_forward_nhwc_cython not implemented for Adaptive Average Pooling!")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         y = average_pool_2d_fwd_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
@@ -91,6 +101,8 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y
 
     def _forward_nchw_i2c(self, x):
+        # TODO: Implement this or adapt it to call the "_forward_nchw_cython" until is implemented
+        raise NotImplementedError("_forward_nchw_i2c not implemented for Adaptive Average Pooling!")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
         x_cols = im2col_1ch_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
@@ -99,9 +111,8 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y.reshape(-1, self.co, self.ho, self.wo)
 
     def _forward_nchw_cython(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
-        y = average_pool_2d_fwd_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)        
+        y = adaptive_avg_pooling_fwd_nchw_cython(x, self.ho, self.wo)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)        
         return y
 
