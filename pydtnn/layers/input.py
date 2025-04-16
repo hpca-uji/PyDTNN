@@ -33,7 +33,7 @@ class Input(Layer, ABC):
     #    self.shape = encode_tensor(self.shape, self.model.tensor_format)
 
     # Possible FIXME 0 fix:
-    def __init__(self, shape:tuple = (1,), is_shape_in_format:bool = True):
+    def __init__(self, shape:tuple = (1,), is_shape_in_format:bool = False):
         super().__init__(shape)        
         self.is_shape_in_format = is_shape_in_format
 
