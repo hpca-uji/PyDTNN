@@ -52,6 +52,7 @@ class AdaptiveAveragePool2D(Layer, ABC):
 
         if self.output_shape is None:
             self.ho, self.wo = self.hi, self.wi
+            assert (self.ho > 0 and self.wo > 0), f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}"
         else:
             self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape   
         self.co = self.ci
