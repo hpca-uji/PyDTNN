@@ -24,7 +24,9 @@ from pydtnn.layers import Input
 class InputCPU(LayerCPU, Input):
 
     def forward(self, x):
-        pass
+        # NOTE: This layer is never called.
+        return x
 
     def backward(self, dy):
-        pass
+        # NOTE: This layer is never called.
+        return dy

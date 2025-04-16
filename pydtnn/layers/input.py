@@ -24,9 +24,20 @@ from pydtnn.utils import encode_tensor
 
 class Input(Layer, ABC):
 
-    def __init__(self, shape=(1,)):
-        super().__init__(shape)
+    #def __init__(self, shape=(1,)):
+    #    super().__init__(shape)
+#
+    #def initialize(self, prev_shape, need_dx=True):
+    #    super().initialize(prev_shape, need_dx)
+    #    # FIXME 0: If the shape is in format "self.model.tensor_format", this following line will mess up the shape.
+    #    self.shape = encode_tensor(self.shape, self.model.tensor_format)
 
-    def initialize(self, prev_shape, need_dx=True):
+    # Possible FIXME 0 fix:
+    def __init__(self, shape:tuple = (1,), is_shape_in_format:bool = True):
+        super().__init__(shape)        
+        self.is_shape_in_format = is_shape_in_format
+
+    def initialize(self, prev_shape:tuple, need_dx:bool=True):
         super().initialize(prev_shape, need_dx)
-        self.shape = encode_tensor(self.shape, self.model.tensor_format)
+        if not self.is_shape_in_format:
+            self.shape = encode_tensor(self.shape, self.model.tensor_format)
