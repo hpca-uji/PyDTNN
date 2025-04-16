@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from bidict import bidict
 
-from pydtnn.utils.io_stream import StreamSerializer
+from pydtnn.utils.io_stream import Serializer
 from pydtnn.comms import ResourceClosed, Message
 from pydtnn.comms.grpc import Protocol, grpc_pb2, grpc_pb2_grpc
 
@@ -60,7 +60,7 @@ class Server(Protocol):
             context.set_code(grpc.StatusCode.ABORTED)
             return
 
-        serializer = StreamSerializer()
+        serializer = Serializer()
 
         # Get peer
         grpc_peer = context.peer()

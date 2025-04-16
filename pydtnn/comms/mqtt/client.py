@@ -8,7 +8,7 @@ import paho.mqtt.client as mqtt_client
 
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.comms import ResourceClosed, Message
-from pydtnn.utils.io_stream import StreamSerializer
+from pydtnn.utils.io_stream import Serializer
 
 
 __all__ = (
@@ -33,7 +33,7 @@ class Client(Protocol):
 
         self._get_queue = SimpleQueue()
         self._put_queue = SimpleQueue()
-        self._raw_serialzier = StreamSerializer()
+        self._raw_serialzier = Serializer()
 
         self._msg_queue = SimpleQueue[mqtt_client.MQTTMessage]()
 
@@ -68,7 +68,7 @@ class Client(Protocol):
                 pass
 
     def _c2s(self, method: str = "c2s"):
-        serializer = StreamSerializer()
+        serializer = Serializer()
         buffer = bytearray(self._max_data_size)
         objects = self._consume_queue(self._put_queue)
 

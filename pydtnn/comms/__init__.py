@@ -63,10 +63,12 @@ import uuid
 import enum
 import importlib
 import threading
+from typing import NamedTuple
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
+from concurrent.futures import Future
 
-from pydtnn.utils.io_stream import PackerStream, StreamSerializer, Stream
+from pydtnn.utils.io_stream import PackerStream, Packer, Serializer, Stream
 
 
 __all__ = (
@@ -95,19 +97,29 @@ class Message[T]:
     obj: T
 
 
+class PackedStream(NamedTuple):
+    """Packed stream"""
+    stream: Stream
+    ancillary: bool = False
+
+
 class ConnectionState:
     """Connection state data"""
     def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1) -> None:
         self.closed = False
+        self.lock = threading.Lock()
         self._buffer = memoryview(bytearray(buffer_size))
-        self.put_queue = SimpleQueue[Stream]()
+        self._packer = Packer()
+        self.put_queue = SimpleQueue[PackedStream]()
         self.get_queue = SimpleQueue[Stream]()
-        self.put_stream = PackerStream()
-        self.get_stream = PackerStream()
+        self.put_stream = Stream()
+        self.get_stream = Stream()
+        self._callbacks = {}
 
     def close(self) -> None:
         # CALLED WHEN PEER INDICATES END
-        self.closed = True
+        with self.lock:
+            self.closed = True
 
     def get_empty(self) -> bool:
         return self.get_queue.empty() and self.get_stream.empty()
@@ -118,15 +130,26 @@ class ConnectionState:
     def empty(self) -> bool:
         return self.get_empty() and self.put_empty()
 
+    def get(self) -> Stream:
+        return self._packer.unpack(self.get_stream)
+
+    def put(self, stream: Stream, ancillary: bool = False) -> Future[None]:
+        with self.lock:
+            if self.closed and not ancillary:
+                raise ResourceClosed()
+            else:
+                future = Future[None]()
+                self.put_queue.put(PackedStream(stream, ancillary))
+
     def put_flush(self) -> None:
         """Flush put queue"""
         while True:
             try:
-                stream = self.put_queue.get_nowait()
+                pack = self.put_queue.get_nowait()
             except Empty:
                 break
             else:
-                self.put_stream.pack(stream)
+                self._packer.pack(self.put_stream, *pack)
 
     def put_read(self) -> memoryview:
         """Read put stream"""
@@ -141,6 +164,9 @@ class ConnectionState:
             self.put_stream.unreadchunk(view)
             size = self.put_stream.readinto(self._buffer)
             return self._buffer[:size]
+
+    def put_commit(self, consumed: memoryview, pending: memoryview) -> None:
+
 
 
 class ResourceClosed(RuntimeError):
@@ -157,7 +183,7 @@ class Communicator[T](abc.ABC):
         self._addr = addr
         self._port = port
         self._close_lock = threading.Lock()
-        self._serializer = StreamSerializer()
+        self._serializer = Serializer()
 
     @property
     def _closed(self):
@@ -169,7 +195,7 @@ class Communicator[T](abc.ABC):
         """Get data from peer"""
 
     @abc.abstractmethod
-    def put(self, obj: T, *peers: uuid.UUID) -> None:
+    def put(self, obj: T, *peers: uuid.UUID) -> Future[None]:
         """Publish data to peer"""
         if self._closed:
             raise ResourceClosed()

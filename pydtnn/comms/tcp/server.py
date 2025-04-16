@@ -109,7 +109,7 @@ class Server(Protocol):
 
         while True:
             try:
-                stream = state.get_stream.unpack()
+                stream = state.get()
             except AncillaryStream as ancillary:
                 with ancillary.stream as stream:
                     id = self._serializer.load(stream)
@@ -118,9 +118,8 @@ class Server(Protocol):
                 if id != self._id:
 
                     # ACK
-                    with self._serializer.dump(self._id) as stream:
-                        state.put_stream.pack(stream, ancillary=True)
-                    state.put_flush()
+                    stream = self._serializer.dump(self._id)
+                    state.put(stream, ancillary=True)
 
                     # New ID, move state from tmp ID
                     if id not in self._peers:
@@ -135,9 +134,8 @@ class Server(Protocol):
 
                     # ACK
                     state.close()
-                    state.put_flush()
-                    with self._serializer.dump(peer) as stream:
-                        state.put_stream.pack(stream, ancillary=True)
+                    stream = self._serializer.dump(peer)
+                    state.put(stream, ancillary=True)
 
             except BlockingIOError:
                 break
@@ -207,12 +205,12 @@ class Server(Protocol):
                 except KeyError:
                     errors.append(ResourceClosed(peer))
                     continue
-                if state.closed:
+                try:
+                    state.put(stream.copy())
+                except ResourceClosed:
                     errors.append(ResourceClosed(peer))
-                    continue
-                # FIXME: RACE CONDITION put & close
-                state.put_queue.put(stream.copy())
-                self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
+                else:
+                    self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
         self._notify_selector()
 
         if errors:

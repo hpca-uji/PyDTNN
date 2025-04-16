@@ -5,11 +5,13 @@
 # - Size only includes stream (not itself)
 # - Negative size signifies ancillary stream
 #
-# +---------------+------------------+
+# +--------------+-------------------+
 # | Size (int64) | Stream (variable) |
-# +---------------+------------------+
+# +--------------+-------------------+
 
 # TODO: Use intvar (VLQ) insted of int64 in packer
+
+# TODO: Builtins only serializer
 
 import io
 import pickle
@@ -19,9 +21,9 @@ from collections import abc, deque
 
 __all__ = (
     "Stream",
-    "PackerStream",
+    "Packer",
     "AncillaryStream",
-    "StreamSerializer"
+    "Serializer"
 )
 
 
@@ -33,7 +35,7 @@ def byteview(b: abc.Buffer) -> memoryview:
 
 # Fast path
 try:
-    from pydtnn.cython_modules import memoryview_index
+    from pydtnn.cython_modules import memoryview_index  # type: ignore (opaque symbol)
 
 # Slow path
 except ImportError:
@@ -271,12 +273,12 @@ class AncillaryStream(BlockingIOError):
         super().__init__(*args)
 
 
-class PackerStream(Stream):
+class Packer:
     """
-    Packer stream
+    Stream packer
 
-    Packs or unpacks multiple streams into one.
-    Supports ancillary streams for control data.
+    Packs or unpacks streams into another.
+    Supports ancillary streams for control information.
 
     Operations are not thread-safe.
     Unpacks of ancillary raise AncillaryStream.
@@ -286,46 +288,46 @@ class PackerStream(Stream):
     _format_size = "!q"
     _sizeof_size = struct.calcsize(_format_size)
 
-    def unpack(self) -> Stream:
+    def unpack(self, lower: Stream) -> Stream:
         """Extracts stream from packer (raises BlockingIOError if no stream)"""
         # Check if size available
         size = self._sizeof_size
-        if self.nbytes < size:
+        if lower.nbytes < size:
             raise BlockingIOError()
 
         # Check if data available
-        chunk = self.read(size)
+        chunk = lower.read(size)
         size = struct.unpack(self._format_size, chunk)[0]
         size, ancillary = abs(size), size < 0
-        if self.nbytes < size:
-            self.unreadchunk(chunk)
+        if lower.nbytes < size:
+            lower.unreadchunk(chunk)
             raise BlockingIOError()
         else:
             chunk.release()
 
         # Ensure contained reads
-        stream = Stream()
+        upper = Stream()
         while size > 0:
-            chunk = self.read1(size)
-            stream.writechunk(chunk)
+            chunk = lower.read1(size)
+            upper.writechunk(chunk)
             size -= len(chunk)
 
         # Return stream (or ancillary stream)
         if ancillary:
-            raise AncillaryStream(stream)
-        return stream
+            raise AncillaryStream(upper)
+        return upper
 
-    def pack(self, stream: Stream, ancillary: bool = False) -> int:
+    def pack(self, lower: Stream, upper: Stream, ancillary: bool = False) -> int:
         """Inserts stream into packer, returns bytes written"""
         # Ensure contained writes
-        size = stream.nbytes
+        size = upper.nbytes
         pack = struct.pack(self._format_size, -size if ancillary else size)
-        size += self.write(pack)
-        self.writechunks(stream.readchunks())
+        size += lower.write(pack)
+        lower.writechunks(upper.readchunks())
         return size
 
 
-class StreamSerializer:
+class Serializer:
     """Pickle-stream serializer"""
 
     __slots__ = ()

@@ -18,25 +18,7 @@ type Callback = abc.Callable[[], None]
 
 
 # Sentinel objects
-NOTIFY_SELECT = b"\0"
-
-def _fileobj_to_fd(fileobj):
-    """Return a file descriptor from a file object.
-
-    Parameters:
-    fileobj -- file object or file descriptor
-
-    Returns:
-    corresponding file descriptor
-
-    Raises:
-    ValueError if the object is invalid
-    """
-    if isinstance(fileobj, int):
-        fd = fileobj
-    else:
-        fd = int(fileobj.fileno())
-    return fd
+CONTROL_EVENT = b"\0"
 
 
 class Protocol(comms.Communicator):
@@ -73,7 +55,7 @@ class Protocol(comms.Communicator):
     def _notify_selector(self) -> None:
         """Interrupt selector loop"""
         try:
-            self._control_socket[1].send(NOTIFY_SELECT)
+            self._control_socket[1].send(CONTROL_EVENT)
         except BlockingIOError:
             pass  # already notified
 
