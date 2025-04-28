@@ -57,7 +57,7 @@ class ChainFuture(Future):
         try:
             result = future.result()
         except Exception as exc:
-            if self.return_when == futures.FIRST_EXCEPTION:
+            if self.return_when == futures.FIRST_COMPLETED or self.return_when == futures.FIRST_EXCEPTION:
                 self._set_exception(exc)
         else:
             if self.return_when == futures.FIRST_COMPLETED:
