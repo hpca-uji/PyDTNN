@@ -5,11 +5,13 @@ import socket
 import selectors
 import threading
 from queue import SimpleQueue
+from concurrent.futures import Future
 
 from bidict import bidict
 
 from pydtnn.comms import ResourceClosed, Message, ConnectionState
 from pydtnn.comms.tcp import Protocol
+from pydtnn.utils.asynctools import ChainFuture
 from pydtnn.utils.io_stream import AncillaryStream
 
 
@@ -188,7 +190,7 @@ class Server(Protocol):
 
         return Message(peer=peer, obj=obj)
 
-    def put(self, obj, *peers: uuid.UUID) -> None:
+    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
         """Publish data to clients"""
         super().put(obj, *peers)
 
@@ -196,6 +198,7 @@ class Server(Protocol):
             with self._lock:
                 peers = tuple(self._peers)
 
+        futures = list[Future[None]]()
         errors = list[ResourceClosed]()
         with self._serializer.dump(obj) as stream:
             for peer in peers:
@@ -206,15 +209,18 @@ class Server(Protocol):
                     errors.append(ResourceClosed(peer))
                     continue
                 try:
-                    state.put(stream.copy())
+                    future = state.put(stream.copy())
                 except ResourceClosed:
                     errors.append(ResourceClosed(peer))
                 else:
                     self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
+                    futures.append(future)
         self._notify_selector()
 
         if errors:
             raise ExceptionGroup("Peer does not exist", errors)
+
+        return ChainFuture(futures)
 
     def _close(self) -> None:
         """Close the server"""
