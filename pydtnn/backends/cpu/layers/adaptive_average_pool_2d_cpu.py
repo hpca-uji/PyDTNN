@@ -34,14 +34,13 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_COMP_
 import numpy as np
 
 class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
-    # The backend is the same as a AveragePool2D layer.
+    # The backend is almost the same as a AveragePool2D layer.
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     # -- END __init__ -- #
         
     # Method from AbstractPool2DLayerCPU
-    @override
     def initialize(self, prev_shape: tuple[int, int], need_dx:bool = True):
         # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
         AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
@@ -59,10 +58,12 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
             # I2C-based implementations have been temporarily discarded
             # setattr(self, "forward", self._forward_nhwc_i2c)
             # setattr(self, "backward", self._backward_nhwc_i2c)
-        
+
         if self.pooling_not_needed:
-            self._forward = self._forward_pooling_not_needed
-        #else: use the implemented ones.
+            #self._forward = self._forward_pooling_not_needed # NOTE: See "self._forward_pooling_not_needed"
+            self._forward = (lambda x: x)
+        #else: Nothing special.
+
     # -- END initialize -- #
     
     @override
@@ -75,9 +76,12 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return self._backward(dy)
     # --- END backward --- #
 
-    def _forward_pooling_not_needed(x:np.ndarray) -> np.ndarray:
+    # NOTE: I dont' know why, but if you try to set a variable with "_forward_pooling_not_needed", the value is None insted of the function.
+    #   It's possible that the problem originates in "PromoteToBackendMixin"'s "__new__" method, but it's not sure the problem originates there.
+    def _forward_pooling_not_needed(self, x:np.ndarray) -> np.ndarray:
         # If the output shape is the same as the input one, there is no need to make the pooling.
         return x
+    # --- END _forward_pooling_not_needed --- #
 
     # Methods from AveragePool2DCPU
     def _forward_nhwc_i2c(self, x):

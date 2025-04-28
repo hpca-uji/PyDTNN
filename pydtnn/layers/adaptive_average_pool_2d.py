@@ -44,7 +44,6 @@ class AdaptiveAveragePool2D(Layer, ABC):
 
     @override
     def initialize(self, prev_shape: tuple[int, int], need_dx: bool = True) -> None:
-                
         # We want to override "AbstractPool2DLayer"
         super().initialize(prev_shape, need_dx)
         
@@ -52,9 +51,9 @@ class AdaptiveAveragePool2D(Layer, ABC):
 
         if self.output_shape is None:
             self.ho, self.wo = self.hi, self.wi
-            assert (self.ho > 0 and self.wo > 0), f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}"
         else:
             self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape   
+        assert (self.ho > 0 and self.wo > 0), f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}"
         self.co = self.ci
         
         # If the output and the input shapes are the same, there is no need of pooling.
