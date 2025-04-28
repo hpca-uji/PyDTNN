@@ -39,6 +39,6 @@ from transpose_cython import \
     transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
     transpose_0312_ijk_cython, transpose_0312_ikj_cython, \
     transpose_1023_jik_cython, transpose_1023_ijk_cython
-from adaptive_avg_pooling_fwd_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython
-from adaptive_avg_pooling_fwd_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython
-# from oversampling_nchw_cython import oversampling_fwd_nchw_cython # NOTE: used
+from adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython
+from adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
+# from oversampling_nchw_cython import oversampling_fwd_nchw_cython # NOTE: not used

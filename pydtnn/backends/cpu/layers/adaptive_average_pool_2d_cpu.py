@@ -28,8 +28,8 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 # Imports for the methods from AveragePool2DCPU
 from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
                                   im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \
-                                  average_pool_2d_bwd_nhwc_cython, average_pool_2d_bwd_nchw_cython, \
-                                  adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_fwd_nhwc_cython
+                                  adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython, \
+                                  adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_FORWARD_IM2COL
 import numpy as np
 
@@ -132,9 +132,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     def _backward_nhwc_cython(self, dy):
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
-            dx = average_pool_2d_bwd_nhwc_cython(dy, dy.shape[0], self.hi, self.wi, self.ci,
-                                                 self.kh, self.kw, self.vpadding, self.hpadding,
-                                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
+            dx = adaptive_avg_pooling_bwd_nhwc_cython(dy, self.ho, self.wo)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
 
@@ -153,9 +151,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     def _backward_nchw_cython(self, dy):
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
-            dx = average_pool_2d_bwd_nchw_cython(dy, dy.shape[0], self.hi, self.wi, self.ci,
-                                                 self.kh, self.kw, self.vpadding, self.hpadding,
-                                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
+            dx = adaptive_avg_pooling_bwd_nchw_cython(dy, self.ho, self.wo)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
             return dx
     # END Methods from AveragePool2DCPU
