@@ -7,7 +7,7 @@ from torchvision.models import densenet121, densenet201, resnet18, resnet34, res
 
 from torchmetrics import Accuracy, Metric
 
-from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.dataset import TRAIN, VAL, TEST, Dataset
 from pydtnn.activations import *
 from pydtnn.layers import *
 
@@ -54,6 +54,8 @@ FIRST_PYTORCH = False
 OLD_FIRST = None
 DATASET_PATH = "/home/usuario/Documentos/CIBER_CAFE/Datasets/cifar-10-batches-bin"
 WEIGHTS_PATH = "/home/usuario/Documentos/Resultados/pesos/clasificacion/"
+INFERENCE = False
+TRAINING = True
 # --- END EXECUTION PARAMETERS --- #
 
 def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
@@ -193,7 +195,8 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 #-----------------------#
 
 def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, nepochs:int=1, local_batch_size:int=32):
-    history = model.train_dataset()
+
+    history = model.train(x_train=dataset._x[TRAIN], x_val=dataset._x[VAL], y_train=dataset._y[TRAIN], y_val=dataset._y[VAL])
     print(f"history: {history}")
 # --- END pydtnn_training --- #
 
@@ -288,12 +291,16 @@ def main():
             print(layer)
             print(f"layer.biases: {layer.biases.shape}")
 
-    if FIRST_PYTORCH:
-        _pytorch_inference(pytorch_model, dataloader, kwargs, device)
-        _pydtnn_inference(new_model, old_model, dataset)        
-    else:
-        _pydtnn_inference(new_model, old_model, dataset, old_first=OLD_FIRST)
-        _pytorch_inference(pytorch_model, dataloader, kwargs, device)
+    if TRAINING: 
+        pydtnn_training(model=new_model, dataset=dataset)
+
+    if INFERENCE:
+        if FIRST_PYTORCH:
+            _pytorch_inference(pytorch_model, dataloader, kwargs, device)
+            _pydtnn_inference(new_model, old_model, dataset)        
+        else:
+            _pydtnn_inference(new_model, old_model, dataset, old_first=OLD_FIRST)
+            _pytorch_inference(pytorch_model, dataloader, kwargs, device)
 
 if __name__ == "__main__":
     main()
