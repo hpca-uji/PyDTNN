@@ -6,7 +6,7 @@ from concurrent.futures import Future
 
 
 __all__ = (
-    "chain_futures",
+    "merge_futures",
 )
 
 
