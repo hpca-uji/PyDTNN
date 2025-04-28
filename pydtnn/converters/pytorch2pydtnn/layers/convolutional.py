@@ -35,7 +35,7 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     PYDTNN_USE_BIAS = "use_bias"
     PYDTNN_NFILTERS = "nfilters"
     pydtnn_dict_keys = [PYDTNN_FILTER_SHAPE, PYDTNN_STRIDE, PYDTNN_PADDING, PYDTNN_DILATION, PYDTNN_NFILTERS, PYDTNN_USE_BIAS, PYDTNN_NFILTERS]
-    # Not used: "activation" and "grouping" (NOTE: PyTorch uses "i2c" variant, PyDTNN default grouping)
+    # Not used: "activation" and "grouping"
     # Used, but in other place: "weights_initializer", "biases_initializer"
     # ---- #
 

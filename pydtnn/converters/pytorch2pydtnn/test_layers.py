@@ -246,6 +246,10 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     are_below_threshold = are_all_below_threshold(diff, threshold)
     print(f"Are equal: {are_all_zeros(diff)} || {name}")
     print(f"Are below the threshold ({threshold}): {are_below_threshold} || {name}")
+    print(f"Min. value: {np.min(pydtnn_output)}")
+    print(f"Max. value: {np.max(pydtnn_output)}")
+    print(f"Mean of the values: {np.mean(pydtnn_output)}")
+    print(f"Median of the values: {np.median(pydtnn_output)}")
     print(f"Max. difference between outputs: {np.max(diff)}")
     if not are_below_threshold:        
         #print(f"pytorch_output.shape: {pytorch_output.shape}")
@@ -303,6 +307,9 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
     are_below_threshold = are_all_below_threshold(diff, threshold)
     print(f"Are equal: {are_all_zeros(diff)} || {name}")
     print(f"Are below the threshold ({threshold}): {are_below_threshold} || {name}")
+    print(f"Min. value: {np.min(pydtnn_output)}")
+    print(f"Max. value: {np.max(pydtnn_output)}")
+    print(f"Median of the differences between outputs: {np.median(diff)}")
     print(f"Max. difference between outputs: {np.max(diff)}")
     if not are_below_threshold:        
         #print(f"pytorch_output.shape: {pytorch_output.shape}")
