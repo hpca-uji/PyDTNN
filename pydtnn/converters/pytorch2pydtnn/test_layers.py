@@ -18,10 +18,10 @@ from math import prod
 import numpy as np
 
 # CONSANTS
-N = 2
+N = 5
 SHAPE = (3, 20, 20) # CHW
 CONV_IN_CHANNELS = SHAPE[0] # Shape format: CHW
-CONV_OUT_CHANNELS = 1 # = PyTorch's Number filters
+CONV_OUT_CHANNELS = 64 # = PyTorch's Number filters
 CONV_KERNEL_SIZE = (2,2)
 LINEAR_IN_FEATURES = SHAPE[2]
 LINEAR_OUT_FEATURES = prod((SHAPE[0], SHAPE[1]))
@@ -41,27 +41,26 @@ np.random.seed(SEED)
 THRESHOLD = 1e-4
 DTYPE = np.float32
 
-DICT_SUPPORTED_LAYERS:Dict[str, nn.Module] = {
+DICT_SUPPORTED_LAYERS:Dict[str, Tuple[nn.Module, float]] = {
     # Activations:
-    "LogSigmoid": nn.LogSigmoid(), # PyTorch is more precise ==> it can differ in elements below "e-08"
-    "ReLU": nn.ReLU(),
-    "Sigmoid": nn.Sigmoid(),
-    "Softmax": nn.Softmax(),
-    "Tanh": nn.Tanh(), 
+    "LogSigmoid": (nn.LogSigmoid(), 1e-5), # PyTorch is more precise ==> it can differ in elements below "e-08"
+    "ReLU": (nn.ReLU(), 1e-5),
+    "Sigmoid": (nn.Sigmoid(), 1e-5),
+    "Softmax": (nn.Softmax(), 1e-5),
+    "Tanh": (nn.Tanh(), 1e-5),
     # Convolutional layers:
-    "Conv2d": nn.Conv2d(CONV_IN_CHANNELS, CONV_OUT_CHANNELS, CONV_KERNEL_SIZE), # PyTorch is more precise ==> it can differ in elements below "e-03" 
+    "Conv2d": (nn.Conv2d(CONV_IN_CHANNELS, CONV_OUT_CHANNELS, CONV_KERNEL_SIZE), 2e-3), # PyTorch is more precise ==> it can differ in elements below "e-03" 
     # Dropout layers:
-    "Dropout": nn.Dropout(), # It varies due the chosen distribution. In p=0, p=1 and testing mode they have the same results.
+    "Dropout": (nn.Dropout(), 1e10), # It varies due the chosen distribution. In p=0, p=1 and testing mode they have the same results.
     # Linear layers:
-    "Linear": nn.Linear(LINEAR_IN_FEATURES, LINEAR_OUT_FEATURES), 
+    "Linear": (nn.Linear(LINEAR_IN_FEATURES, LINEAR_OUT_FEATURES), 2e-3),
     # Normalization layers:
-    "BatchNorm2d": nn.BatchNorm2d(BATCH_NORM_IN_FEATURES),
-    "Flatten": nn.Flatten(),
+    "BatchNorm2d": (nn.BatchNorm2d(BATCH_NORM_IN_FEATURES), 1e-5),
+    "Flatten": (nn.Flatten(), 1e-5),
     # Pooling layers:
-    "MaxPool2d": nn.MaxPool2d(POOL_SIZE),
-    "AvgPool2d": nn.AvgPool2d(POOL_SIZE),
-    "AdaptiveAvgPool2d": nn.AdaptiveAvgPool2d(ADAPTIVE_AVG_POOL_OUT_SHAPE),
-    # NOTE: It's also necessary to test: the addition and concatenation of layers (in torch are an operation and a function respectively)
+    "MaxPool2d": (nn.MaxPool2d(POOL_SIZE), 1e-5),
+    "AvgPool2d": (nn.AvgPool2d(POOL_SIZE), 1e-5),
+    "AdaptiveAvgPool2d": (nn.AdaptiveAvgPool2d(ADAPTIVE_AVG_POOL_OUT_SHAPE), 1e-5),
 }
 # END CONSTANTS
 
@@ -87,10 +86,10 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
 
     def __init__(self):
         super().__init__()
-        self.op0:nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"]
-        self.op1:nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"]
-        self.op2:nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"]
-        self.act:nn.Module = DICT_SUPPORTED_LAYERS["Tanh"]
+        self.op0:nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
+        self.op1:nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
+        self.op2:nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"][0]
+        self.act:nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
     
     def forward(self, x):
         dict_forwards = dict()
@@ -111,12 +110,12 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
 
     def __init__(self):
         super().__init__()
-        self.op0:nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"]
-        self.op1:nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"]
-        self.op2:nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"]
-        self.activation1:nn.Module = DICT_SUPPORTED_LAYERS["Sigmoid"]
-        self.activation2:nn.Module = DICT_SUPPORTED_LAYERS["Softmax"]
-        self.act:nn.Module = DICT_SUPPORTED_LAYERS["Tanh"]
+        self.op0:nn.Module = DICT_SUPPORTED_LAYERS["AdaptiveAvgPool2d"][0]
+        self.op1:nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
+        self.op2:nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"][0]
+        self.activation1:nn.Module = DICT_SUPPORTED_LAYERS["Sigmoid"][0]
+        self.activation2:nn.Module = DICT_SUPPORTED_LAYERS["Softmax"][0]
+        self.act:nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
     
     def forward(self, x):
         dict_forwards = dict()
@@ -153,7 +152,8 @@ def inference_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray) -> np.ndarr
 
     return (y)
 
-def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int], device: torch.device, dataset:np.ndarray) -> None:
+def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int], 
+                device: torch.device, dataset: np.ndarray, threshold: float) -> None:
 
     print(pytorch_model)
     if False: # if necessary to check PyTorch's layers parameters
@@ -172,7 +172,7 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     print("-----\n")
 
     new_model:PyDTNN_Model = convert_model(model = pytorch_model, input_shape=input_shape, kwargs=kwargs,
-                              default_output_activation_layer=None)
+                              default_output_activation_layer=None, is_input_shape_in_format=True)
     
     new_model.mode = TRAIN_MODE
     new_model.show()
@@ -243,9 +243,11 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
     
+    are_below_threshold = are_all_below_threshold(diff, threshold)
     print(f"Are equal: {are_all_zeros(diff)} || {name}")
-    print(f"Are below the threshold ({THRESHOLD}): {are_all_below_threshold(diff)} || {name}")
-    if not are_all_below_threshold(diff):
+    print(f"Are below the threshold ({threshold}): {are_below_threshold} || {name}")
+    print(f"Max. difference between outputs: {np.max(diff)}")
+    if not are_below_threshold:        
         #print(f"pytorch_output.shape: {pytorch_output.shape}")
         #print(f"pydtnn_output.shape: {pydtnn_output.shape}")
         print(f"pytorch_output:\n{pytorch_output}")
@@ -255,7 +257,8 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     print("=========================================\n")
 # --- END test_layers --- #
 
-def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int], device: torch.device, dataset:np.ndarray) -> None:
+def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int], 
+                        device: torch.device, dataset: np.ndarray, threshold: float = THRESHOLD) -> None:
 
     print(pytorch_model)
     
@@ -268,7 +271,7 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
     print("-----\n")
 
     pydtnn_model:PyDTNN_Model = convert_model(model = pytorch_model, input_shape=input_shape, kwargs=kwargs,
-                              default_output_activation_layer=None)
+                              default_output_activation_layer=None, is_input_shape_in_format=True)
     
     #pydtnn_model.mode = EVALUATE_MODE
     pydtnn_model.show()
@@ -297,8 +300,16 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
     #print(f"pytorch_output - pydtnn_output:\n{diff}")
+    are_below_threshold = are_all_below_threshold(diff, threshold)
     print(f"Are equal: {are_all_zeros(diff)} || {name}")
-    print(f"Are below the threshold ({THRESHOLD}): {are_all_below_threshold(diff)} || {name}")
+    print(f"Are below the threshold ({threshold}): {are_below_threshold} || {name}")
+    print(f"Max. difference between outputs: {np.max(diff)}")
+    if not are_below_threshold:        
+        #print(f"pytorch_output.shape: {pytorch_output.shape}")
+        #print(f"pydtnn_output.shape: {pydtnn_output.shape}")
+        print(f"pytorch_output:\n{pytorch_output}")
+        print(f"pydtnn_output:\n{pydtnn_output}")
+        print(f"pytorch_output - pydtnn_output:\n{diff}")
     print("=========================================\n")
 # --- END test_layers --- #    
 
@@ -319,10 +330,10 @@ def main():
     dataset = np.arange(prod((N, *SHAPE)), dtype=DTYPE).reshape((N, *SHAPE))
     
     for name in DICT_SUPPORTED_LAYERS.keys():
-        layer = DICT_SUPPORTED_LAYERS[name]
+        layer, threshold = DICT_SUPPORTED_LAYERS[name]
         model = TEST_PyTorch_Model(layer)
         print(f"Testing: {name}")
-        test_layers(name = name, pytorch_model = model, kwargs = kwargs, input_shape = SHAPE, device=device, dataset = deepcopy(dataset))
+        test_layers(name = name, pytorch_model = model, kwargs = kwargs, input_shape = SHAPE, device=device, dataset = deepcopy(dataset), threshold = threshold)
     print("\n\n\n========================\n TESTING ADD AND CONCAT \n========================")
     
     for name, model in [("Addition", Addition_Test_PyTorch_Model()),

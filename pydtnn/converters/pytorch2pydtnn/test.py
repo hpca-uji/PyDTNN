@@ -79,33 +79,34 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func:torch.nn.mod
     
     print(f"metrics_list: {metrics_list}")
     
-    dict_layers = get_model_layers(model)
-    for n in dict_layers.keys():
-        m = dict_layers[n]
-        def print_pre(module, x, *, name = n):
-            print(f"Layer - {name}:")        
-            if isinstance(x[0], list):
-                for elem in x[0]:
-                    print(f"\telem.size(): {elem.size()}")    
-            else:
-                print(f"\tx[0].size(): {x[0].size()}")        
-        # ----
+    if False:
+        dict_layers = get_model_layers(model)
+        for n in dict_layers.keys():
+            m = dict_layers[n]
+            def print_pre(module, x, *, name = n):
+                print(f"Layer - {name}:")        
+                if isinstance(x[0], list):
+                    for elem in x[0]:
+                        print(f"\telem.size(): {elem.size()}")    
+                else:
+                    print(f"\tx[0].size(): {x[0].size()}")        
+            # ----
 
-        def print_post(module, args, output, *, name = n):
-            print(f"{name}:")  
-            print(f"output: {output}")      
-            if isinstance(output[0], list):
-                for elem in output[0]:
-                    print(f"\toutput.size(): {elem.size()}")
-                    print(f"\toutput: {elem}")
-            else:
-                print(f"\toutput[0].size(): {output[0].size()}")
-                print(f"\toutput[0]: {output[0]}")
-        # ----
+            def print_post(module, args, output, *, name = n):
+                print(f"{name}:")  
+                #print(f"output: {output}")      
+                if isinstance(output[0], list):
+                    for elem in output[0]:
+                        print(f"\toutput.size(): {elem.size()}")
+                        #print(f"\toutput: {elem}")
+                else:
+                    print(f"\toutput[0].size(): {output[0].size()}")
+                    #print(f"\toutput[0]: {output[0]}")
+            # ----
 
-        m.register_forward_pre_hook(print_pre)
-        m.register_forward_hook(print_post)
-    # --------
+            m.register_forward_pre_hook(print_pre)
+            m.register_forward_hook(print_post)
+        # --------
 
     model.eval()
     with torch.no_grad():
@@ -117,7 +118,7 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func:torch.nn.mod
             outputs = outputs.to(device)
             #loss = loss_fn(outputs, labels)
 
-            print(f"outputs:\n{outputs}")
+            #print(f"outputs:\n{outputs}")
             outputs_list.extend(outputs)
             labels_list.extend(labels)
             for _, metric in metrics_list:
