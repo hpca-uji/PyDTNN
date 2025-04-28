@@ -26,7 +26,7 @@ def future_set_exception(future: Future, exc: BaseException) -> None:
         pass
 
 
-def chain_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> Future:
+def merge_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> Future:
     """
     Combines multiple futures
 
