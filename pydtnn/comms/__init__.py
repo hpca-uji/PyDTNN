@@ -68,7 +68,7 @@ from dataclasses import dataclass
 from queue import Empty, SimpleQueue
 from concurrent.futures import Future
 
-from pydtnn.utils.io_stream import PackerStream, Packer, Serializer, Stream
+from pydtnn.utils.io_stream import Packer, Serializer, Stream
 
 
 __all__ = (
@@ -105,7 +105,9 @@ class PackedStream(NamedTuple):
 
 class ConnectionState:
     """Connection state data"""
+
     def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1) -> None:
+        """Initialize connection state"""
         self.closed = False
         self.lock = threading.Lock()
         self._buffer = memoryview(bytearray(buffer_size))
@@ -117,29 +119,34 @@ class ConnectionState:
         self._callbacks = {}
 
     def close(self) -> None:
-        # CALLED WHEN PEER INDICATES END
+        """Mark peer indicated closed"""
         with self.lock:
             self.closed = True
 
     def get_empty(self) -> bool:
+        """Is get connection flushed"""
         return self.get_queue.empty() and self.get_stream.empty()
 
     def put_empty(self) -> bool:
+        """Is put connection flushed"""
         return self.put_queue.empty() and self.put_stream.empty()
 
     def empty(self) -> bool:
+        """Is duplex connection flushed"""
         return self.get_empty() and self.put_empty()
 
     def get(self) -> Stream:
+        """Unpack from get stream"""
         return self._packer.unpack(self.get_stream)
 
     def put(self, stream: Stream, ancillary: bool = False) -> Future[None]:
+        """Unpack from get stream"""
         with self.lock:
             if self.closed and not ancillary:
                 raise ResourceClosed()
             else:
-                future = Future[None]()
                 self.put_queue.put(PackedStream(stream, ancillary))
+                return Future[None]()
 
     def put_flush(self) -> None:
         """Flush put queue"""
@@ -164,9 +171,6 @@ class ConnectionState:
             self.put_stream.unreadchunk(view)
             size = self.put_stream.readinto(self._buffer)
             return self._buffer[:size]
-
-    def put_commit(self, consumed: memoryview, pending: memoryview) -> None:
-
 
 
 class ResourceClosed(RuntimeError):

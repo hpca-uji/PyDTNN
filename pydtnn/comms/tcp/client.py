@@ -4,6 +4,7 @@ import uuid
 import socket
 import selectors
 import threading
+from concurrent.futures import Future
 
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import AncillaryStream, Stream
@@ -119,14 +120,15 @@ class Client(Protocol):
             if size < len(view):
                 state.put_stream.unreadchunk(view[size:])
 
-    def put(self, obj, *peers: uuid.UUID) -> None:
+    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
         """Publish data to server"""
         super().put(obj, *peers)
         assert len(peers) == 0, "Client can not publish to another client"
         stream = self._serializer.dump(obj)
-        self._state.put(stream)
+        future = self._state.put(stream)
         self._modify_selector(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
         self._notify_selector()
+        return future
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get from the server"""
