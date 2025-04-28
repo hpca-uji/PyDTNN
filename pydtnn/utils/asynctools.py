@@ -6,11 +6,27 @@ from concurrent.futures import Future
 
 
 __all__ = (
-    "ChainFuture",
+    "chain_futures",
 )
 
 
-class ChainFuture(Future):
+def future_set_result(future: Future, result) -> None:
+    """Set future result (if plausible)"""
+    try:
+        future.set_result(result)
+    except futures.InvalidStateError:
+        pass
+
+
+def future_set_exception(future: Future, exc: BaseException) -> None:
+    """Set future exception (if plausible)"""
+    try:
+        future.set_exception(exc)
+    except futures.InvalidStateError:
+        pass
+
+
+def chain_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> Future:
     """
     Combines multiple futures
 
@@ -20,49 +36,33 @@ class ChainFuture(Future):
 
     When no futures are provied, returns None
     """
+    future = Future()
+    fs = frozenset(fs)
+    done = set()
 
-    def __init__(self, fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> None:
-        """Initialize chained future"""
-        super().__init__()
-        self.futures = frozenset(fs)
-        self.return_when = return_when
-        self._futures_done = set()
-
-        for future in self.futures:
-            future.add_done_callback(self._handle_done)
-
-        # Empty case
-        if len(self.futures) <= 0:
-            self._set_result(None)
-
-    def _set_result(self, result) -> None:
-        """Set result (if plausible)"""
-        try:
-            self.set_result(result)
-        except futures.InvalidStateError:
-            pass
-
-    def _set_exception(self, exc: BaseException) -> None:
-        """Set exception (if plausible)"""
-        try:
-            self.set_exception(exc)
-        except futures.InvalidStateError:
-            pass
-
-    def _handle_done(self, future: Future) -> None:
-        """Handle future done callback"""
-        self._futures_done.add(future)
+    # Callbacks
+    def handle_done(future):
+        done.add(future)
 
         # Single case
         try:
             result = future.result()
         except Exception as exc:
-            if self.return_when == futures.FIRST_COMPLETED or self.return_when == futures.FIRST_EXCEPTION:
-                self._set_exception(exc)
+            if return_when == futures.FIRST_COMPLETED or return_when == futures.FIRST_EXCEPTION:
+                future_set_exception(future, exc)
         else:
-            if self.return_when == futures.FIRST_COMPLETED:
-                self._set_result(result)
+            if return_when == futures.FIRST_COMPLETED:
+                future_set_result(future, result)
 
         # Multi case
-        if len(self._futures_done) >= len(self.futures):
-            self._set_result(None)
+        if len(done) >= len(fs):
+            future_set_result(future, None)
+
+    for future in fs:
+        future.add_done_callback(handle_done)
+
+    # Empty case
+    if len(fs) <= 0:
+        future_set_result(future, None)
+
+    return future
