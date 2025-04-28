@@ -21,11 +21,11 @@ class ChainFuture(Future):
     When no futures are provied, returns None
     """
 
-    def __init__(self, futures: abc.Iterable[Future], complete_when=futures.ALL_COMPLETED) -> None:
+    def __init__(self, fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> None:
         """Initialize chained future"""
         super().__init__()
-        self.futures = frozenset(futures)
-        self.complete_when = complete_when
+        self.futures = frozenset(fs)
+        self.return_when = return_when
         self._futures_done = set()
 
         for future in self.futures:
@@ -57,10 +57,10 @@ class ChainFuture(Future):
         try:
             result = future.result()
         except Exception as exc:
-            if self.complete_when == futures.FIRST_EXCEPTION:
+            if self.return_when == futures.FIRST_EXCEPTION:
                 self._set_exception(exc)
         else:
-            if self.complete_when == futures.FIRST_COMPLETED:
+            if self.return_when == futures.FIRST_COMPLETED:
                 self._set_result(result)
 
         # Multi case
