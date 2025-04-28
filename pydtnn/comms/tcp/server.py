@@ -10,7 +10,7 @@ from concurrent.futures import Future
 from bidict import bidict
 
 from pydtnn.comms.tcp import Protocol
-from pydtnn.utils.asynctools import chain_futures
+from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import AncillaryStream
 from pydtnn.comms import ResourceClosed, Message, ConnectionState
 
@@ -220,7 +220,7 @@ class Server(Protocol):
         if errors:
             raise ExceptionGroup("Peer does not exist", errors)
 
-        return chain_futures(futures)
+        return merge_futures(futures)
 
     def _close(self) -> None:
         """Close the server"""
