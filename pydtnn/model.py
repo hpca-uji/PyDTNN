@@ -390,7 +390,7 @@ class Model:
 
     def add(self, layer):
         layer.set_model(self)
-        need_dx = layer.id > 1
+        need_dx = layer.id > 0
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
 
         if self.enable_cudnn:
