@@ -194,9 +194,10 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
                                       ])
 #-----------------------#
 
-def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, nepochs:int=1, local_batch_size:int=32):
+def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, num_samples = 64 * 2):
 
-    history = model.train(x_train=dataset._x[TRAIN], x_val=dataset._x[VAL], y_train=dataset._y[TRAIN], y_val=dataset._y[VAL])
+    history = model.train(x_train=dataset._x[TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples], 
+                          y_train=dataset._y[TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
     print(f"history: {history}")
 # --- END pydtnn_training --- #
 
@@ -209,16 +210,15 @@ def main():
     kwargs = {
         "model_name": None,
         "comm": None,
-        "mpi_processes": 1,
         "dataset": dataset,
         "dataset_name": dataset,
         "evaluate_only": True,
-        "parallel": "sequential",
+        "parallel": "data",
         "tensor_format": "NCHW", # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
         "enable_gpu": False,
         "dataset_train_path": DATASET_PATH,
-        "dataset_test_path": DATASET_PATH,
+        "dataset_test_path": DATASET_PATH
     }
 
     device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("gpu")
