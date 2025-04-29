@@ -118,12 +118,12 @@ class Conv2DCPU(LayerCPU,
                                          dtype=self.model.dtype)
 
     def forward(self, x):
-        """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
-        pass
+        msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""
+        NotImplementedError(f"Conv2DCPU forward: {msg}")
 
     def backward(self, dy):
-        """This is a fake backward function. It will be masked on initialization by a _backward implementation"""
-        pass
+        msg = """This is a fake backward function. It must be masked on initialization by a _backward implementation"""
+        NotImplementedError(f"Conv2DCPU backward: {msg}")
 
     def print_in_convdirect_format(self):
         if self.hstride != 1 or self.vstride != 1:
