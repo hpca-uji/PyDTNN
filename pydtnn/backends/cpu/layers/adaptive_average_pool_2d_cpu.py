@@ -129,7 +129,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
             dx = dx.reshape(-1, self.hi, self.wi, self.ci)
             return dx
     # END Methods from AveragePool2DCPU
-    
+
     def _backward_nchw_i2c(self, dy):
         if self.need_dx:
             pool_size = np.prod(self.pool_shape)
@@ -152,7 +152,6 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
         if self.need_dx:
-            print(f"_backward_nchw_cython - dy.shape: {dy.shape}")
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
             dx = adaptive_avg_pooling_bwd_nchw_cython(dy, self.hi, self.wi)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
