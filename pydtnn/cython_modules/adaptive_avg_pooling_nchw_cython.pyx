@@ -124,7 +124,7 @@ cdef _backward_avg_pooling(supported_types_t[:, :, :, :] dx,
                     w_end = index_last_element(wo, w, new_w)
                     elements = elements_h * (w_end - w_start)
 
-                    delta = dy[nn, ho, wo, cc] / elements
+                    delta = dy[nn, cc, ho, wo] / elements
                     for i in range(h_start, h_end):
                         for j in range(w_start, w_end):
                                 dx[nn, cc, i, j] += delta
@@ -145,11 +145,11 @@ def backward_avg_pooling(np.ndarray[supported_types_t, ndim=4] dx,
 @cython.wraparound(False)
 def adaptive_avg_pooling_bwd_nchw_cython(np.ndarray dy, int new_h, int new_w) -> np.ndarray:
     cdef int n = dy.shape[0]
-    cdef int h = dy.shape[1]
-    cdef int w = dy.shape[2]
-    cdef int c = dy.shape[3]        
+    cdef int c = dy.shape[1] 
+    cdef int h = dy.shape[2]
+    cdef int w = dy.shape[3]           
 
-    cdef np.ndarray dx = np.empty((n, new_h, new_w, c), dtype = dy.dtype)
+    cdef np.ndarray dx = np.empty((n, c, new_h, new_w), dtype = dy.dtype)
 
     try:
         backward_avg_pooling(dx, dy, n, c, h, w, new_h, new_w)

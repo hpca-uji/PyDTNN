@@ -123,7 +123,7 @@ cdef _backward_avg_pooling(supported_types_t[:, :, :, :] dx,
                     w_end = index_last_element(wo, w, new_w)
                     elements = elements_h * (w_end - w_start)
 
-                    delta = dy[nn, cc, ho, wo] / elements
+                    delta = dy[nn, ho, wo, cc] / elements
                     for i in range(h_start, h_end):
                         for j in range(w_start, w_end):
                                 dx[nn, i, j, cc] += delta
