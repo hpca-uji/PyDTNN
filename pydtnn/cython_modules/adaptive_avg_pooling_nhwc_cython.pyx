@@ -41,7 +41,7 @@ cdef _avg_pooling(supported_types_t[:, :, :, :] pooled_x,
     cdef int h_start, h_end, w_start, w_end
     cdef int nn, cc, hi, wi, i, j
     cdef int elements_h, elements
-    cdef supported_types_t *add = <supported_types_t *> malloc(new_w * sizeof(supported_types_t))
+    cdef supported_types_t add
 
     for nn in prange(n, nogil=True):
         for cc in range(c):
@@ -54,13 +54,14 @@ cdef _avg_pooling(supported_types_t[:, :, :, :] pooled_x,
                     w_end = index_last_element(wi, w, new_w)
                     elements = elements_h * (w_end - w_start)
     
-                    add[wi] = <supported_types_t> 0.0
+                    add = <supported_types_t> 0.0
                     for i in range(h_start, h_end):
-                        for j in range(w_start, w_end):                            
-                                add[wi] += x[nn, i, j, cc]                    
-                    
-                    pooled_x[nn, hi, wi, cc] = add[wi] / elements
-    free(<void *> add)
+                        for j in range(w_start, w_end):
+                            # If it is not done in this way (e.g.: add += x[nn, cc, i, j]),
+                            #   Cython thinks that "add" is shared for all the threads and throws an error.
+                            add = add + x[nn, i, j, cc]
+
+                    pooled_x[nn, hi, wi, cc] = add / elements
 # --- END _avg_pooling --- #
 
 @cython.boundscheck(False)
