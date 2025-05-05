@@ -217,28 +217,25 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
 # --- END convert_layers --- #
 
 def check_kwargs_and_set_default(kwargs: dict) -> None:
-    if "tensor_format" not in kwargs:
-        # NOTE: PyTorch's weight tensors use NCHW format.
-        kwargs["tensor_format"] = "NCHW"
-    if "model_name" not in kwargs:
-        # If it's not set to "None", it's possible that other neural network is loaded.
-        kwargs["model_name"] = None
-    if "omm" not in kwargs:
-        omm = None
-    if "enable_gpu" not in kwargs:
-        enable_gpu = False
-    if "enable_gpudirect" not in kwargs:
-        enable_gpudirect = False
-    if "non_blocking_mpi" not in kwargs:
-        non_blocking_mpi = False
-    if "enable_nccl" not in kwargs:
-        enable_nccl = False
-    if "dtype" not in kwargs:
-        dtype = np.float32
-    if "tracing" not in kwargs:
-        tracing = False
-    if "tracer_output" not in kwargs:
-        tracer_output = ""
+
+    DICT_KWARGS_DEFAULT_VALUES = {
+        "tensor_format": "NCHW", # NOTE: PyTorch's weight tensors use NCHW format.
+        "model_name": None, # NOTE: If it's not set to "None", it's possible that other neural network is loaded.
+        "batch_size": 64,
+        # Model object parameters:
+        "omm": None,
+        "enable_gpu": False,
+        "enable_gpudirect": False,
+        "non_blocking_mpi": False,
+        "enable_nccl": False,
+        "dtype": np.float32,
+        "tracing": False,
+        "tracer_output": "",        
+    }
+    
+    for k in DICT_KWARGS_DEFAULT_VALUES.keys():
+        if k not in kwargs:
+            kwargs[k] = DICT_KWARGS_DEFAULT_VALUES[k]
 # --- END check_kwargs --- #
 
 def convert_model(model:torch.nn.Module, input_shape:Tuple[int],
