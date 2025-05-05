@@ -1,8 +1,4 @@
-"""Fully Homomorphic Encryption codec"""
-
-# NOTE: Module does not provide any encryption, it is temporary placeholder
-
-# TODO: Move to libs and remove codecs
+"""Pseudo encryption codec"""
 
 import numpy
 from dataclasses import dataclass

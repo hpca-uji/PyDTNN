@@ -281,7 +281,6 @@ _re_group.add_argument('--gpus_per_node', type=int, default=-1, help=argparse.SU
 
 # Add Communication options
 _cm_group = parser.add_argument_group("Communication options")
-_cm_group.add_argument('--comm_codec', type=str, default="plain")
 _cm_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
 _cm_group.add_argument('--mpi_server', type=str, default="", help=argparse.SUPPRESS)
 _cm_group.add_argument('--mpi_port', type=int, default=-1, help=argparse.SUPPRESS)
