@@ -14,10 +14,11 @@ __all__ = (
 )
 
 
-type Callback = abc.Callable[[], None]
+type Task = abc.Callable[[], None]
 
 
 # Sentinel objects
+CONTROL_STOP = object()
 CONTROL_EVENT = b"\0"
 
 
@@ -38,17 +39,21 @@ class Protocol(comms.Communicator):
 
         self._pool = ThreadPoolExecutor(max_workers=1 + self._max_workers, thread_name_prefix=f"{thread_prefix}")
         self._loop_thread = self._pool.submit(self._handle_selector_loop)
-        self._task_queue = SimpleQueue[Callback]()
+        # self._loop_thread.add_done_callback(lambda future: future.result())
+        self._task_queue = SimpleQueue[Task]()
 
     def _modify_selector(self, fileobj, events) -> None:
         """Modify registered events"""
-        key = self._selector.get_key(fileobj)
+        try:
+            key = self._selector.get_key(fileobj)
+        except ValueError:
+            return  # already removed
 
         def callback():
             try:
                 self._selector.modify(key.fd, events, key.data)
             except KeyError:
-                pass  # already removed
+                return  # already removed
 
         self._task_queue.put(callback)
 
@@ -59,10 +64,10 @@ class Protocol(comms.Communicator):
         except BlockingIOError:
             pass  # already notified
 
-    def _handle_control_socket(self, sock: socket.socket, mask) -> None:
+    def _handle_control_socket(self, sock: socket.socket, mask):
         """Handle selector notification"""
         if len(sock.recv(self._max_message_size)) == 0:
-            raise comms.ResourceClosed()
+            return CONTROL_STOP
 
         # Handle tasks
         while True:
@@ -73,23 +78,24 @@ class Protocol(comms.Communicator):
             else:
                 task()
 
+    def _handle_selector_event(self, event: tuple[selectors.SelectorKey, int]):
+        """Handle selector event"""
+        key, mask = event
+        callback, fileobj = key.data, key.fileobj
+        return callback(fileobj, mask)
+
     def _handle_selector_loop(self) -> None:
         """Handle selector loop"""
-        while True:
-            pending = []
-            for key, mask in self._selector.select():
-                future = self._pool.submit(key.data, key.fileobj, mask)
-                pending.append(future)
-            for future in pending:
-                future.result()
+        running = True
+        while running:
+            for result in self._pool.map(self._handle_selector_event, self._selector.select()):
+                if result is CONTROL_STOP:
+                    running = False
 
     def _close(self) -> None:
         """Close the communication"""
         self._control_socket[1].close()
-        try:
-            self._loop_thread.result()
-        except comms.ResourceClosed:
-            pass
+        self._loop_thread.result()
         self._control_socket[0].close()
         self._selector.close()
         self._pool.shutdown()

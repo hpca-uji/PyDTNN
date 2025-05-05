@@ -10,15 +10,14 @@
 
 # NOTE: Communication handshakes:
 # Ini:
-# - Client sends client ID
+# - Server & client sends ID
+# - Server & client wait for ID
 # - Server create session or continues session
-# - Server responds server ID
 #
 # Fin:
-# - Client flushes client queue
-# - Client sends server ID
-# - Server flushes server queue
-# - Server sends slient ID
+# - Server & client flushes message queue
+# - Server & client sends empty message
+# - Server & client wait for empty message
 
 # NOTE: Communication persistency:
 # Ini:
@@ -35,10 +34,10 @@
 #
 # Put
 # - Never blocks
-# - Communication will not modify the object
-# - Consumer must not modify the object after*
-# - Guarantees peer reception or raises ResouceClosed
-# - Once closed it always raises ResouceClosed
+# - Communication will not modify object
+# - Consumer must not modify object util future resolved
+# - Resolved futures acknowledge peer reception
+# - Cancelled futures indicates peer diconnected
 #
 # Get
 # - Always block
@@ -48,6 +47,12 @@
 # Close
 # - May block
 # - Server waits for peers to disconnect
+
+# FIXME: Implement put future handling
+
+# TODO: Revise connection data API
+
+# TODO: Change ResouceClosed for queue.Empty exception
 
 # TODO: Implement two-way connection expiration and keep-alives. There
 # is no reliable way to track connection drops between communication
@@ -63,11 +68,12 @@ import uuid
 import enum
 import importlib
 import threading
-from typing import NamedTuple
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
 from concurrent.futures import Future
 
+
+from pydtnn.utils import UUID_NIL
 from pydtnn.utils.io_stream import Packer, Serializer, Stream
 
 
@@ -77,7 +83,7 @@ __all__ = (
     "Message",
     "ResourceClosed",
     "Communicator",
-    "ConnectionState",
+    "ConnectionData",
     "Server",
     "Client"
 )
@@ -97,80 +103,68 @@ class Message[T]:
     obj: T
 
 
-class PackedStream(NamedTuple):
-    """Packed stream"""
-    stream: Stream
-    ancillary: bool = False
+class ConnectionState(enum.Flag):
+    """Connection state"""
+    READABLE = enum.auto()
+    WRITABLE = enum.auto()
 
 
-class ConnectionState:
-    """Connection state data"""
+class ConnectionData:
+    """Connection data"""
 
     def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1) -> None:
         """Initialize connection state"""
-        self.closed = False
-        self.lock = threading.Lock()
+        self.peer = UUID_NIL
+        self.state = ConnectionState(value=0)
+
         self._buffer = memoryview(bytearray(buffer_size))
         self._packer = Packer()
-        self.put_queue = SimpleQueue[PackedStream]()
-        self.get_queue = SimpleQueue[Stream]()
-        self.put_stream = Stream()
-        self.get_stream = Stream()
-        self._callbacks = {}
 
-    def close(self) -> None:
-        """Mark peer indicated closed"""
-        with self.lock:
-            self.closed = True
+        self.put_queue = SimpleQueue[Stream]()
+        self.get_queue = SimpleQueue[Stream]()
+        self.put_buffer = Stream()
+        self.get_buffer = Stream()
 
     def get_empty(self) -> bool:
         """Is get connection flushed"""
-        return self.get_queue.empty() and self.get_stream.empty()
+        return self.get_queue.empty() and self.get_buffer.empty()
 
     def put_empty(self) -> bool:
         """Is put connection flushed"""
-        return self.put_queue.empty() and self.put_stream.empty()
-
-    def empty(self) -> bool:
-        """Is duplex connection flushed"""
-        return self.get_empty() and self.put_empty()
+        return self.put_queue.empty() and self.put_buffer.empty()
 
     def get(self) -> Stream:
-        """Unpack from get stream"""
-        return self._packer.unpack(self.get_stream)
+        """Unpack from get buffer"""
+        return self._packer.unpack(self.get_buffer)
 
-    def put(self, stream: Stream, ancillary: bool = False) -> Future[None]:
-        """Unpack from get stream"""
-        with self.lock:
-            if self.closed and not ancillary:
-                raise ResourceClosed()
-            else:
-                self.put_queue.put(PackedStream(stream, ancillary))
-                return Future[None]()
+    def put(self, stream: Stream) -> Future[None]:
+        """Push stream to put queue"""
+        self.put_queue.put(stream)
+        return Future[None]()
+
+    def put_read(self) -> memoryview:
+        """Read put stream"""
+        view = self.put_buffer.read1(len(self._buffer))
+
+        # View if large or end chunks
+        if len(view) == len(self._buffer) or self.put_buffer.empty():
+            return view
+
+        # Buffer if multiple small chunks
+        else:
+            self.put_buffer.unreadchunk(view)
+            size = self.put_buffer.readinto(self._buffer)
+            return self._buffer[:size]
 
     def put_flush(self) -> None:
         """Flush put queue"""
         while True:
             try:
-                pack = self.put_queue.get_nowait()
+                stream = self.put_queue.get_nowait()
             except Empty:
                 break
             else:
-                self._packer.pack(self.put_stream, *pack)
-
-    def put_read(self) -> memoryview:
-        """Read put stream"""
-        view = self.put_stream.read1(len(self._buffer))
-
-        # View if large or end chunks
-        if len(view) == len(self._buffer) or self.put_stream.empty():
-            return view
-
-        # Buffer if multiple small chunks
-        else:
-            self.put_stream.unreadchunk(view)
-            size = self.put_stream.readinto(self._buffer)
-            return self._buffer[:size]
+                self._packer.pack(self.put_buffer, stream)
 
 
 class ResourceClosed(RuntimeError):
@@ -197,12 +191,12 @@ class Communicator[T](abc.ABC):
     @abc.abstractmethod
     def get(self, *peers: uuid.UUID) -> Message[T]:
         """Get data from peer"""
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def put(self, obj: T, *peers: uuid.UUID) -> Future[None]:
         """Publish data to peer"""
-        if self._closed:
-            raise ResourceClosed()
+        raise NotImplementedError()
 
     def _close(self) -> None:
         """Communicator finalizer"""
