@@ -38,7 +38,7 @@ PYDTNN_TENSOR_FORMATS = 2
 
 
 UUID_NIL = uuid.UUID(int=0)
-UUID_OMNI = uuid.UUID(int=2 ** 128 - 1)
+UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
 
 
 def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
