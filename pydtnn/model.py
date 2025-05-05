@@ -35,7 +35,6 @@ import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 from . import losses, metrics
 from . import utils
-from . import codecs
 from .datasets import CustomDataset, get_dataset
 from .lr_schedulers import get_lr_schedulers
 from .optimizers import get_optimizer
@@ -335,14 +334,6 @@ class Model:
                 self.rank_weight = self.comm_size * (inverse_nsamples / total_nsamples)
             case _:
                 raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
-        # Communications codec
-        match self.comm_codec:
-            case "plain":
-                self.comm_codec = codecs.ident.Codec()
-            case "fhe":
-                self.comm_codec = codecs.fhe.Codec()
-            case _:
-                raise SystemExit(f"Communication codec '{self.comm_codec}' not recognized.")
 
     @property
     def dataset_raw_path(self):
