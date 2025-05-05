@@ -392,7 +392,9 @@ class Model:
         layer.set_model(self)
         need_dx = layer.id > 0
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
-
+        print(f"layer: {layer}")
+        print(f"layer.id: {layer.id}")
+        print(f"self.enable_cudnn: {self.enable_cudnn}")
         if self.enable_cudnn:
             y = self.layers[-1].y if layer.id > 0 else None
             layer.initialize(prev_shape, need_dx, y)

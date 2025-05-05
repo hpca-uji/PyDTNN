@@ -216,21 +216,39 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
     return list_layers
 # --- END convert_layers --- #
 
-def convert_model(model:torch.nn.Module, input_shape:Tuple[int], omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
-                 enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", default_output_activation_layer:Activation | None = None,
-                 is_input_shape_in_format:bool = False, **kwargs) -> PyDTNN_Model:
-    # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
-
+def check_kwargs_and_set_default(kwargs: dict) -> None:
     if "tensor_format" not in kwargs:
         # NOTE: PyTorch's weight tensors use NCHW format.
         kwargs["tensor_format"] = "NCHW"
     if "model_name" not in kwargs:
         # If it's not set to "None", it's possible that other neural network is loaded.
         kwargs["model_name"] = None
+    if "omm" not in kwargs:
+        omm = None
+    if "enable_gpu" not in kwargs:
+        enable_gpu = False
+    if "enable_gpudirect" not in kwargs:
+        enable_gpudirect = False
+    if "non_blocking_mpi" not in kwargs:
+        non_blocking_mpi = False
+    if "enable_nccl" not in kwargs:
+        enable_nccl = False
+    if "dtype" not in kwargs:
+        dtype = np.float32
+    if "tracing" not in kwargs:
+        tracing = False
+    if "tracer_output" not in kwargs:
+        tracer_output = ""
+# --- END check_kwargs --- #
+
+def convert_model(model:torch.nn.Module, input_shape:Tuple[int],
+                 default_output_activation_layer:Activation | None = None,
+                 is_input_shape_in_format:bool = False, **kwargs) -> PyDTNN_Model:
+    # "default_output_activation_layer" parameter: if there is no activation layer at the end, the one in this parameter is added to the converted model.
+    check_kwargs_and_set_default(kwargs)
 
     # Output model.
-    converted_model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
-                                   enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
+    converted_model = PyDTNN_Model(**kwargs)
 
     # Obtaining the model's layers/operations, activations, etc.; and the relation between them.
     dict_layers = extract_layers_relations(model = model)
