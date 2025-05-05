@@ -24,12 +24,15 @@
 # respone recive notifications. Current implementation, when multiple async operations
 # are inflight, could issue more recives than expected, leading to a infinite lock.
 
-# TODO: Move future callback to request, so they are runned at the clients thread.
+# FIXME: Move backgroud_server logic from communicator to module. Currently it is
+# here because of import restrictions, but it will be an issue when multiple
+# communicator are open.
 
 import uuid
 import enum
 import typing
 import atexit
+import warnings
 import functools
 import threading
 import itertools
@@ -62,16 +65,23 @@ class InPlace(enum.Enum):
 
 class Request[T]:
     """Request handler."""
-    def __init__(self, future: Future[T]) -> None:
+    def __init__(self, future: Future[T], callback: abc.Callable[[T], None] | None = None) -> None:
         self._future = future
+        self._callback = callback
 
     def wait(self) -> T:
         """Wait for a non-blocking operation to complete."""
         # NOTE: only hold future for one attempt, then discard
         if future := self.__dict__.pop("_future"):
-            return future.result()
+            result = future.result()
         else:
             return None  # type: ignore
+
+        if self._callback:
+            self._callback(result)
+            return None   # type: ignore
+        else:
+            return result
 
 
 class Comm:
@@ -94,7 +104,8 @@ class Comm:
             case mpi_comm.OperationResponse():
                 pass
             case _:
-                raise RuntimeError(f"Unknown response {response}")
+                warnings.warn(f"Unknown response {response}", RuntimeWarning)
+                return
 
         self._respones[response.id] = response.obj
 
@@ -137,21 +148,22 @@ class Comm:
             if comm := self.__dict__.get("_comm"):
                 pass
             else:
-                # If requested, start a local server
-                if mpi_comm.get_init():
-                    if self.rank == 0:
-                        from pydtnn.libs.mpi.server import background_server
-                        self._server = background_server()
-
-                    # Allow some time for server startup
-                    from time import sleep
-                    sleep(0.5)
-
                 comm = self.__dict__["_comm"] = self._new_comm()
         return comm
 
     def _new_comm(self) -> comms.Communicator:
         """Create a new communication and inizialize it"""
+
+        # If requested, start a local server
+        if mpi_comm.get_init():
+            if self.rank == 0:
+                from pydtnn.libs.mpi.server import background_server
+                self._server = background_server()
+
+            # Allow some time for server startup
+            from time import sleep
+            sleep(0.5)
+
         addr = mpi_comm.get_addr()
         port = mpi_comm.get_port()
         comm = comms.Client(addr=addr, port=port)
@@ -164,8 +176,8 @@ class Comm:
                 case mpi_comm.StateResponse():
                     pass
                 case _:
+                    warnings.warn(f"Unknown response {response}", RuntimeWarning)
                     continue  # response lost
-                    # raise RuntimeError(f"Unknown response {response}")
 
             if response.size == self.size:
                 break
@@ -182,12 +194,21 @@ class Comm:
                 case mpi_comm.StateResponse():
                     pass
                 case _:
+                    warnings.warn(f"Unknown response {response}", RuntimeWarning)
                     continue  # response lost
-                    # raise RuntimeError(f"Unknown response {response}")
 
             if response.size == 0:
                 break
         comm.close()
+
+        # If requested, stop a local server
+        if mpi_comm.get_init():
+            if self.rank == 0:
+                self._server.result()
+
+            # Allow some time for server shutdown
+            from time import sleep
+            sleep(0.5)
 
     def Disconnect(self) -> None:
         """Disconnect from a communicator."""
@@ -290,14 +311,13 @@ class Comm:
         if op is not mpi_comm.ReduceOperation.SUM:
             raise NotImplementedError("op with not SUM")
 
-        def callback(future: Future[T]):
-            recvbuf[:] = future.result()
+        def callback(result):
+            recvbuf[:] = result
 
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
         future = self._submit_operation(comm=comm, obj=sendbuf, context=context)
-        future.add_done_callback(callback)
-        return Request(future)
+        return Request(future, callback)
 
 
 # Exports

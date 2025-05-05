@@ -6,6 +6,7 @@
 
 import uuid
 import typing
+import warnings
 import functools
 import threading
 from concurrent.futures import Future
@@ -143,7 +144,8 @@ class Server:
                 case mpi_comm.OperationRequest():
                     self._handle_operation_request(message)
                 case _:
-                    raise RuntimeError(f"Unknown request type {request}")
+                    warnings.warn(f"Unknown request type {request}", RuntimeWarning)
+                    continue
 
             # Finish if idle
             if self._size == 0:
@@ -159,7 +161,8 @@ class Server:
             case mpi_comm.RankFinalize():
                 self._handle_finalize(message)  # type: ignore (not inferred by typecheker)
             case _:
-                raise RuntimeError(f"Unknown state type {request}")
+                warnings.warn(f"Unknown state type {request}", RuntimeWarning)
+                return
 
     def _handle_init(self, message: comms.Message[mpi_comm.RankInit]) -> None:
         """Initialize."""

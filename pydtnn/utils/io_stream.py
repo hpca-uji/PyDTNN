@@ -3,13 +3,12 @@
 # NOTE: Packed format:
 # - Network byte order (big-endian)
 # - Size only includes stream (not itself)
-# - Negative size signifies ancillary stream
 #
-# +--------------+-------------------+
-# | Size (int64) | Stream (variable) |
-# +--------------+-------------------+
+# +---------------+-------------------+
+# | Size (uint64) | Stream (variable) |
+# +---------------+-------------------+
 
-# TODO: Use intvar (VLQ) insted of int64 in packer
+# TODO: Use uintvar (VLQ) insted of uint64 in packer
 
 # TODO: Builtins only serializer
 
@@ -22,7 +21,6 @@ from collections import abc, deque
 __all__ = (
     "Stream",
     "Packer",
-    "AncillaryStream",
     "Serializer"
 )
 
@@ -262,17 +260,6 @@ class Stream(io.BufferedIOBase):
         raise io.UnsupportedOperation()
 
 
-class AncillaryStream(BlockingIOError):
-    """Blocked with ancillary stream (no normal stream available)"""
-
-    __slots__ = ("stream",)
-
-    def __init__(self, stream: Stream, *args: object) -> None:
-        """Inizialize ancillary error"""
-        self.stream = stream
-        super().__init__(*args)
-
-
 class Packer:
     """
     Stream packer
@@ -281,7 +268,6 @@ class Packer:
     Supports ancillary streams for control information.
 
     Operations are not thread-safe.
-    Unpacks of ancillary raise AncillaryStream.
     """
 
     __slots__ = ()
@@ -298,7 +284,6 @@ class Packer:
         # Check if data available
         chunk = lower.read(size)
         size = struct.unpack(self._format_size, chunk)[0]
-        size, ancillary = abs(size), size < 0
         if lower.nbytes < size:
             lower.unreadchunk(chunk)
             raise BlockingIOError()
@@ -312,16 +297,14 @@ class Packer:
             upper.writechunk(chunk)
             size -= len(chunk)
 
-        # Return stream (or ancillary stream)
-        if ancillary:
-            raise AncillaryStream(upper)
+        # Return stream
         return upper
 
-    def pack(self, lower: Stream, upper: Stream, ancillary: bool = False) -> int:
+    def pack(self, lower: Stream, upper: Stream) -> int:
         """Inserts stream into packer, returns bytes written"""
         # Ensure contained writes
         size = upper.nbytes
-        pack = struct.pack(self._format_size, -size if ancillary else size)
+        pack = struct.pack(self._format_size, size)
         size += lower.write(pack)
         lower.writechunks(upper.readchunks())
         return size

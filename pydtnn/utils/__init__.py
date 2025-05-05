@@ -25,6 +25,7 @@ import math
 import os
 import sys
 import string
+import uuid
 from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
@@ -34,6 +35,10 @@ import numpy as np
 PYDTNN_TENSOR_FORMATS = 2
 (PYDTNN_TENSOR_FORMAT_NHWC,
  PYDTNN_TENSOR_FORMAT_NCHW) = range(PYDTNN_TENSOR_FORMATS)
+
+
+UUID_NIL = uuid.UUID(int=0)
+UUID_OMNI = uuid.UUID(int=2 ** 128 - 1)
 
 
 def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
