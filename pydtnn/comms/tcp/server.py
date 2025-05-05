@@ -12,7 +12,7 @@ from bidict import bidict
 
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_NIL, UUID_OMNI
+from pydtnn.utils import UUID_NIL, UUID_MAX
 from pydtnn.utils.asynctools import merge_futures
 from pydtnn.comms import ConnectionState, ResourceClosed, Message, ConnectionData
 
@@ -198,7 +198,7 @@ class Server(Protocol):
         peer = self._get_event.get()
 
         # Exit signaled
-        if peer == UUID_OMNI:
+        if peer == UUID_MAX:
             raise ResourceClosed()
 
         state = self._state[peer]
@@ -260,6 +260,6 @@ class Server(Protocol):
 
         # Unlock inflight external API
         for _ in range(threading.active_count()):
-            self._get_event.put(UUID_OMNI)
+            self._get_event.put(UUID_MAX)
 
         super()._close()

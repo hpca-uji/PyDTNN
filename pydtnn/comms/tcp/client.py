@@ -10,7 +10,7 @@ from concurrent.futures import Future
 
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_NIL, UUID_OMNI
+from pydtnn.utils import UUID_NIL, UUID_MAX
 from pydtnn.comms import ConnectionState, Message, ResourceClosed, ConnectionData
 
 
@@ -136,7 +136,7 @@ class Client(Protocol):
         peer = self._get_event.get()
 
         # Exit signaled
-        if peer == UUID_OMNI:
+        if peer == UUID_MAX:
             raise ResourceClosed()
 
         state = self._state
@@ -184,6 +184,6 @@ class Client(Protocol):
 
         # Unlock inflight external API:
         for _ in range(threading.active_count()):
-            self._get_event.put(UUID_OMNI)
+            self._get_event.put(UUID_MAX)
 
         super()._close()
