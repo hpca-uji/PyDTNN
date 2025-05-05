@@ -291,7 +291,10 @@ def main():
             print(layer)
             print(f"layer.biases: {layer.biases.shape}")
 
-    if TRAINING: 
+    if TRAINING:
+        print("OLD MODEL")
+        pydtnn_training(model=old_model, dataset=dataset)
+        print("NEW MODEL")
         pydtnn_training(model=new_model, dataset=dataset)
 
     if INFERENCE:

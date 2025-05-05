@@ -288,14 +288,12 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
     print(f"pydtnn_layer: {pydtnn_model}")
     print(f"pytorch_model: {pytorch_model}")
 
-    pytorch_output, pytorch_dict_outputs = pytorch_model(torch_dataset)
+    pytorch_output, _ = pytorch_model(torch_dataset)
     pytorch_output:torch.Tensor
-    pytorch_dict_outputs:dict[str, torch.Tensor]
     pydtnn_model.dataset = dataset
     pydtnn_output = inference_pydtnn_model(pydtnn_model, dataset)
     pydtnn_output:np.ndarray
     
-
     pytorch_output = pytorch_output.detach().to(device).numpy()
     #print(f"pytorch_output.shape: {pytorch_output.shape}")
     #print(f"pydtnn_output.shape: {pydtnn_output.shape}")

@@ -129,7 +129,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
             dx = dx.reshape(-1, self.hi, self.wi, self.ci)
             return dx
     # END Methods from AveragePool2DCPU
-
+    
     def _backward_nchw_i2c(self, dy):
         if self.need_dx:
             pool_size = np.prod(self.pool_shape)
