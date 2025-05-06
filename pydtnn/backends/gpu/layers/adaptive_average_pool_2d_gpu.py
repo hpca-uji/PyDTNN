@@ -39,36 +39,36 @@ import numpy as np
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 from pydtnn.model import Model
 
+DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 
 # NOTE: IT IS NECESSARY TO TEST THIS!!
 # TODO: Test this layer.
-class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D, LayerGPU):
+class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
     
-    # Method from AveragePool2DGPU #
-    def initialize(self, prev_shape, need_dx:bool, x):
-        print(f"type(x): {type(x)}")
-        super().initialize(prev_shape, need_dx, x)
-        self.cuda_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
-        self.initialize_pool_2d_gpu(prev_shape, need_dx, x)        
-    # END of mehtod from AveragePool2DGPU #
+    def initialize(self, prev_shape, need_dx:bool, x: TensorGPU) -> None:
+        LayerGPU.initialize(self, prev_shape, need_dx, x)
+        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)        
 
-    # Methods from AbstractPool2DLayerGPU #
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
+        self.cuda_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
 
+        self.initialize_pool_2d_gpu(prev_shape, need_dx, x)        
+    # --- END initialize --- #
+    
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
         self.y = None
     # --- END __init__ --- #
 
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
         
         _FUNC_NAME = "cuda_adaptive_average_pooling_fwd"
-        _T = {np.float32: "float", np.float64: "double"}[dtype] # variable Type        
+        _T = DICT_SUPPORTED_TYPES[dtype] # variable Type        
         _MACRO_INDEX_FIRST_ELEMENT = "INDEX_FIRST_ELEMENT"
         _MACRO_INDEX_LAST_ELEMENT = "INDEX_LAST_ELEMENT"
         _MACRO_SHIFT_POINTER = "SHIFT_POINTER"
-        _FULL_MACRO_SHIFT_POINTER = f"#define {_MACRO_SHIFT_POINTER}(n_idx, c_idx, c, h, w) ((idx * c + c_idx) * h * w)"
+        _FULL_MACRO_SHIFT_POINTER = f"#define {_MACRO_SHIFT_POINTER}(n_idx, c_idx, c, h, w) ((n_idx * c + c_idx) * h * w)"
         _FULL_MACRO_INDEX_FIRST_ELEMENT = f"#define {_MACRO_INDEX_FIRST_ELEMENT}(index, dim_in, dim_out) (int) ((index * dim_in) / dim_out)"
         _FULL_MACRO_INDEX_LAST_ELEMENT = f"#define {_MACRO_INDEX_LAST_ELEMENT}(index, dim_in, dim_out) (int) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)"
 
@@ -83,7 +83,7 @@ class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D, LayerGPU):
             __global__ void {func_name}(const {T}* x_p, {T}* pooled_x_p,
                                         int n, int c, int h, int w, 
                                         int new_h, int new_w) 
-            {
+            {{
                 int n_idx, c_idx;
                 int wi, hi, i, j;
                 int h_start, h_end, w_start, w_end, elements_h, elements;
@@ -98,27 +98,25 @@ class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D, LayerGPU):
                 pooled_x_p += {macro_shift_pointer}(n_idx, c_idx, c, new_h, new_w);
 
                 for(hi = 0; hi < new_h; hi++)
-                {   
+                {{
                     h_start = {macro_index_first_element}(wi, w, new_w);
                     h_end = {macro_index_last_element}(wi, w, new_w);
                     elements_h = h_end - h_start;
                     
-                    for(hi = 0; hi < new_h; hi++)
-                    {
+                    for(wi = 0; wi < new_w; wi++, pooled_x_p++)
+                    {{
                         w_start = {macro_index_first_element}(wi, w, new_w);
                         w_end = {macro_index_last_element}(wi, w, new_w);
                         elements = elements_h * (w_end - w_start);
 
-                        add = ({T}) 0.0;
                         for(i = h_start, add = ({T}) 0.0; i < h_end; i++)
-                            for(j = w_start; j < w_end; j++)
-                                add += ({T}) (x_p[i][j]);
+                            for(j = w_start; j < w_end; j++, x_p++)
+                                add += ({T}) (*x_p);
 
-                        pooled_x_p[new_h][new_w] = add / elements
-                    }
-                    
-                }
-            }
+                        (*pooled_x_p) = ({T}) (add / elements);
+                    }}                    
+                }}
+            }}
             """
             # -- END cuda_adaptive_average_pooling_fwd_nchw --
         elif self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
@@ -175,15 +173,12 @@ class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D, LayerGPU):
         else:
             NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
-        code = code.format(macro_index_first_element = _MACRO_INDEX_FIRST_ELEMENT,
-                           full_macro_index_first_element = _FULL_MACRO_INDEX_FIRST_ELEMENT,
-
-                           macro_index_last_element = _MACRO_INDEX_LAST_ELEMENT,
+        code = code.format(full_macro_index_first_element = _FULL_MACRO_INDEX_FIRST_ELEMENT,
                            full_macro_index_last_element = _FULL_MACRO_INDEX_LAST_ELEMENT,
-
-                           macro_shift_pointer = _MACRO_SHIFT_POINTER,
                            full_macro_shift_pointer = _FULL_MACRO_SHIFT_POINTER,
-
+                           macro_index_first_element = _MACRO_INDEX_FIRST_ELEMENT,
+                           macro_index_last_element = _MACRO_INDEX_LAST_ELEMENT,
+                           macro_shift_pointer = _MACRO_SHIFT_POINTER,
                            func_name = _FUNC_NAME,
                            T = _T, 
                            )
