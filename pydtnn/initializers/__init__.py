@@ -80,9 +80,9 @@ def lecun_normal(shape, dtype):
     return _generate_distribution(shape, 1.0, "fan_in", "normal", dtype)
 
 
-def ones(shape, dtype):
-    return np.ones(shape).astype(dtype)
+def ones(shape:tuple, dtype:np.ndarray) -> np.ndarray:
+    return np.ones(shape, dtype=dtype)
 
 
-def zeros(shape, dtype):
-    return np.zeros(shape).astype(dtype)
+def zeros(shape:tuple, dtype:np.dtype) -> np.ndarray:
+    return np.zeros(shape, dtype=dtype)
