@@ -188,7 +188,6 @@ _ds_group.add_argument('--dataset_train_path', type=str, default=_default_datase
 _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path)
 _ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path)
 _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1")
-_ds_group.add_argument('--sampling_method', type=str, default="normal")
 _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda)
 _ds_group.add_argument('--flip_images', default=False, type=bool_lambda)
 _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5)
@@ -254,7 +253,8 @@ _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default=True)
-_pe_group.add_argument('--proc_weight', type=str, default="equal")
+_pe_group.add_argument('--sync_alg', type=str, default="avg")
+_pe_group.add_argument('--min_rank_sync', type=float, default=0.25)
 
 # Tracing and profiling
 _tr_group = parser.add_argument_group("Tracing options")

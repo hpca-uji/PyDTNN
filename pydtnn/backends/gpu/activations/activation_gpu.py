@@ -71,7 +71,6 @@ class ActivationGPU(Activation, ABC):
 
             if self.model.enable_nccl:
                 self.model.stream.synchronize()
-                dw /= self.model.comm_size
                 dw *= self.model.rank_weight
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
@@ -108,7 +107,6 @@ class ActivationGPU(Activation, ABC):
                     self.model.stream.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                dw_cpu /= self.model.comm_size
                 dw_cpu *= self.model.rank_weight
                 req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 self.reqs_allred[dw_] = req
@@ -157,14 +155,11 @@ class ActivationGPU(Activation, ABC):
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                dw /= self.model.comm_size
                 if comm:
                     dw *= self.model.rank_weight
                     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                        stream=self.stream_2.handle)
-                else:
-                    dw *= self.model.comm_size
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -201,12 +196,9 @@ class ActivationGPU(Activation, ABC):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                dw_cpu /= self.model.comm_size
                 if comm:
                     dw_cpu *= self.model.rank_weight
                     self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
-                else:
-                    dw_cpu *= self.model.comm_size
 
                 if not self.model.gpudirect:
                     dw.ary.set_async(dw_cpu, self.stream_2)
