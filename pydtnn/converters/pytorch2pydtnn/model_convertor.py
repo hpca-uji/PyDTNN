@@ -167,14 +167,14 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
                 weights = weights.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else weights
 
                 if hasattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER):
-                    def weights_initializer(*args_to_ignore, pytorch_weights = weights, **kwargs_to_ignore):
+                    def weights_initializer(shape:tuple, dtype:np.ndarray, pytorch_weights:np.ndarray = weights, **kwargs_to_ignore) -> np.ndarray:
                         # NOTE [IMPORTANT]: Regarding "pytorch_weights = weights".
                         # NOTE > If "weights" are directly set as the returned value (return weights), for some reason the return will be a reference to "weights"
                         # NOTE >> instead of the "weights" value (that is a reference to the layer's PyTorch's weights), so, since this is in a for loop and 
                         # NOTE >>> this function (weights_initializer) is called in some step after the loop, every layer will have the last iteration's "weights" values
                         # NOTE >>>> -a reference to the last layer weights- instead of a reference to their respective layer weights.
-                        # NOTE >>>>> In this way "pytorch_weights" has the copy of "weights" values (that, as said before, is a reference to the layer's weights) of that iteration.
-                        return pytorch_weights
+                        # NOTE >>>>> In this way "pytorch_weights" has the copy of "weights" values (that, as said before, is a reference to the layer's weights) of that iteration.                        
+                        return pytorch_weights.reshape(shape).astype(dtype=dtype, copy=False)
                     # - END weights_initializer - #
                     setattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER, weights_initializer)
                 else:
@@ -186,9 +186,9 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
                 biases = copy.deepcopy(state_dict[LAYER_BIASES].cpu().detach().numpy())
                 biases = biases.T if name in cm.TRANSPOSE_WEIGHTS_LAYERS else biases
                 if hasattr(converted_layer, PYDTNN_BIASES_INITIALIZER):
-                    def biases_initializer(*args_to_ignore, pytorch_biases =biases, **kwargs_to_ignore):
+                    def biases_initializer(shape:tuple, dtype:np.ndarray, pytorch_biases:np.ndarray = biases, **kwargs_to_ignore) -> np.ndarray:
                         # NOTE [IMPORTANT]: See "weights_initializer" notes; the case of "pytorch_biases = biases" parameter is the same case as weights_initializer's "pytorch_weights = weights".
-                        return pytorch_biases
+                        return pytorch_biases.reshape(shape).astype(dtype=dtype, copy=False)
                     # - END weights_initializer - #
                     setattr(converted_layer, PYDTNN_BIASES_INITIALIZER, biases_initializer)
                 else:

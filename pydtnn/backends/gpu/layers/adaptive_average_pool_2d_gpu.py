@@ -189,16 +189,12 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
 
     def initialize_pool_2d_gpu(self, prev_shape, need_dx, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
-    
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
-
-        if not self.pooling_not_needed:
-            pooling_shape = (self.ho, self.wo, self.co)
-            y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
-            self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
-            # Activations y
-            y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-            self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        
+        pooling_shape = (self.ho, self.wo, self.co)
+        # Activations y
+        y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
+        self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
         if self.need_dx:
             # Derivative dx
