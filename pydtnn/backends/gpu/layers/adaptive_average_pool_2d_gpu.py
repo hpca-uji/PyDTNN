@@ -120,7 +120,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
             """
             # -- END cuda_adaptive_average_pooling_fwd_nchw --
         elif self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
-            # NOTE: Righr now it's the same as NCHW.
+            # NOTE: Right now it's the same as NCHW.
             # TODO: NHWC Implementation.
             code = \
             """
@@ -128,11 +128,10 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
             {full_macro_index_last_element}
             {full_macro_shift_pointer}
             
-
             __global__ void {func_name}(const {T}* x_p, {T}* pooled_x_p,
                                         int n, int c, int h, int w, 
                                         int new_h, int new_w) 
-            {
+            {{
                 int n_idx, c_idx;
                 int wi, hi, i, j;
                 int h_start, h_end, w_start, w_end, elements_h, elements;
@@ -147,27 +146,25 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
                 pooled_x_p += {macro_shift_pointer}(n_idx, c_idx, c, new_h, new_w);
 
                 for(hi = 0; hi < new_h; hi++)
-                {   
+                {{
                     h_start = {macro_index_first_element}(wi, w, new_w);
                     h_end = {macro_index_last_element}(wi, w, new_w);
                     elements_h = h_end - h_start;
                     
-                    for(hi = 0; hi < new_h; hi++)
-                    {
+                    for(wi = 0; wi < new_w; wi++, pooled_x_p++)
+                    {{
                         w_start = {macro_index_first_element}(wi, w, new_w);
                         w_end = {macro_index_last_element}(wi, w, new_w);
                         elements = elements_h * (w_end - w_start);
 
-                        add = ({T}) 0.0;
                         for(i = h_start, add = ({T}) 0.0; i < h_end; i++)
-                            for(j = w_start; j < w_end; j++)
-                                add += ({T}) (x_p[i][j]);
+                            for(j = w_start; j < w_end; j++, x_p++)
+                                add += ({T}) (*x_p);
 
-                        pooled_x_p[new_h][new_w] = add / elements
-                    }
-                    
-                }
-            }
+                        (*pooled_x_p) = ({T}) (add / elements);
+                    }}                    
+                }}
+            }}
             """
             # -- END cuda_adaptive_average_pooling_fwd_nhwc --
         else:
