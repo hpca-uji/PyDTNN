@@ -93,6 +93,8 @@ class Model:
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="",
                  tracer_pmlib_server="127.0.0.1", tracer_pmlib_port=6526, tracer_pmlib_device="",
                  **kwargs):
+        from pprint import pprint
+        pprint(f"kwargs ({type(kwargs)}):\n{kwargs}\n-----\n")
         # Attributes related to the given arguments
         self.parallel = parallel
         self.blocking_mpi = not non_blocking_mpi
@@ -128,7 +130,11 @@ class Model:
                     self.tracer = SimpleTracer(tracing, tracer_output, self.comm)
         # Get default values from parser and update them from the received kwargs
         self.kwargs = vars(parser.parse_args([]))
+        pprint(f"self.kwargs: {self.kwargs}")
+        print("............")
         self.kwargs.update(kwargs)
+        pprint(f"self.kwargs: {self.kwargs}")
+        print("............")
         # Set performance counter
         self.perf_counter = PerformanceCounter()
         # Layers' attributes
@@ -392,9 +398,6 @@ class Model:
         layer.set_model(self)
         need_dx = layer.id > 0
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
-        print(f"layer: {layer}")
-        print(f"layer.id: {layer.id}")
-        print(f"self.enable_cudnn: {self.enable_cudnn}")
         if self.enable_cudnn:
             y = self.layers[-1].y if layer.id > 0 else None
             layer.initialize(prev_shape, need_dx, y)

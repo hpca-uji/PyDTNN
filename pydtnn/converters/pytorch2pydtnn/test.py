@@ -56,6 +56,19 @@ DATASET_PATH = "/home/usuario/Documentos/CIBER_CAFE/Datasets/cifar-10-batches-bi
 WEIGHTS_PATH = "/home/usuario/Documentos/Resultados/pesos/clasificacion/"
 INFERENCE = False
 TRAINING = True
+
+KWARGS = {
+        "model_name": None,
+        "dataset": None,
+        "dataset_name": None,
+        "evaluate_only": True,
+        "parallel": "data",
+        "tensor_format": "NCHW", # "NCHW" # "NHWC",
+        "loss_func": "categorical_cross_entropy",
+        "enable_gpu" : True,
+        "dataset_train_path": DATASET_PATH,
+        "dataset_test_path": DATASET_PATH,
+    }
 # --- END EXECUTION PARAMETERS --- #
 
 def get_model_layers(model:torch.nn.Module, name:str = "self") -> Dict[str, torch.nn.Module]:
@@ -207,32 +220,20 @@ def main():
     pytorch_model, create_pydtnn_model, shape, dataset, args, weight = dict_test[test]
     pytorch_model = pytorch_model(**args)
 
-    kwargs = {
-        "model_name": None,
-        "comm": None,
-        "dataset": dataset,
-        "dataset_name": dataset,
-        "evaluate_only": True,
-        "parallel": "data",
-        "tensor_format": "NCHW", # "NCHW" # "NHWC",
-        "loss_func": "categorical_cross_entropy",
-        "enable_gpu": False,
-        "dataset_train_path": DATASET_PATH,
-        "dataset_test_path": DATASET_PATH
-    }
+    KWARGS["dataset"] = dataset
+    KWARGS["dataset_name"] = dataset
+    kwargs = KWARGS
 
-    device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("gpu")
+    device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("cuda")
     if weight is not None:
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
         weight = torch.load(weight, weights_only=True, map_location=torch.device(device))
 
         pytorch_model.load_state_dict(weight, strict=False,)
     
-    
     print("====================")
     print("== PyDTNN version ==")
     print("====================")
-
 
     old_model = PyDTNN_Model(**kwargs)
     create_pydtnn_model(old_model)
@@ -260,8 +261,8 @@ def main():
     print("=======================")
     
     
-    new_model = convert_model(model = pytorch_model, input_shape=shape, kwargs=kwargs,
-                              default_output_activation_layer=Softmax() )
+    new_model = convert_model(model = pytorch_model, input_shape=shape,
+                              default_output_activation_layer=Softmax(), **kwargs)
     
     new_model.show()
     print("-----")
