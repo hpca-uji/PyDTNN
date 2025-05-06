@@ -8,8 +8,8 @@ mpirun -np 4 \
   --model=simplecnn \
   --dataset=raw \
   --dataset_raw_path='datasets/mnist/dataset.${rank}.npz' \
-  --proc_weight=equal \
-  --sampling_method=normal \
+  --sync_alg=fedavg \
+  --min_rank_sync=0.25 \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \

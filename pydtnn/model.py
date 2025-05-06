@@ -146,6 +146,7 @@ class Model:
         # Initialize the total number of params of the model
         self.nparams = 0
         # Execution attributes
+        self.rank_weight = 1.0
         self.comm_rank = self.rank = 0
         self.comm_size = self.nprocs = 1
         if self.comm:
@@ -315,25 +316,10 @@ class Model:
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
             self._read_model(self.model_name)
-        # Communications sample sizes
-        self.comm_nsamples = [
-            self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples],
-            self.comm.allgather(self.dataset.val_nsamples) if self.comm else [self.dataset.val_nsamples],
-            self.comm.allgather(self.dataset.test_nsamples) if self.comm else [self.dataset.test_nsamples]
-        ]
-        # Process weights
-        total_nsamples = sum(self.comm_nsamples[0])
-        match self.proc_weight:
-            case "equal":
-                self.rank_weight = 1.0
-            case "mean":
-                self.rank_weight = self.comm_size * (self.dataset.train_nsamples / total_nsamples)
-            case "inverse":
-                min_nsamples, max_nsamples = min(self.comm_nsamples[0]), max(self.comm_nsamples[0])
-                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
-                self.rank_weight = self.comm_size * (inverse_nsamples / total_nsamples)
-            case _:
-                raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+        # Syncronization parameters
+        self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
+        if self.sync_alg not in {"avg", "fedavg", "fedinvavg"}:
+            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
 
     @property
     def dataset_raw_path(self):
@@ -681,6 +667,23 @@ class Model:
         history = self.train_dataset(bar_width=bar_width)
         return history
 
+    def _compute_rank_weight(self, mask):
+        if not mask[self.rank]:
+            return 0.0
+
+        comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples, mask) if mask]
+        min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
+        comm_size = len(comm_nsamples)
+
+        match self.sync_alg:
+            case "avg":
+                return 1.0 / comm_size
+            case "fedavg":
+                return self.dataset.train_nsamples / total_nsamples
+            case "fedinvavg":
+                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
+                return inverse_nsamples / self.total_nsamples
+
     @ensure_model_is_initialized
     def train_dataset(self, bar_width=BAR_WIDTH):
         if self.enable_cudnn and self.y_batch is None:
@@ -711,9 +714,21 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for x_batch, y_batch, batch_size in train_batch_generator:
-                model_sync_count += 1
-                tic = timer()
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+                model_sync_count += 1
+
+                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                rank_avail = sum(rank_mask) / len(rank_mask)
+
+                if rank_avail <= 0:
+                    break
+
+                if rank_avail < self.min_rank_sync:
+                    sync_model = False
+
+                self.rank_weight = self._compute_rank_weight(rank_mask)
+
+                tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
                 toc = timer()
 
@@ -737,8 +752,18 @@ class Model:
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for x_batch, y_batch, batch_size in val_batch_generator:
-                model_sync_count += 1
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+                model_sync_count += 1
+
+                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                rank_avail = sum(rank_mask) / len(rank_mask)
+
+                if rank_avail <= 0:
+                    break
+
+                if rank_avail < self.min_rank_sync:
+                    sync_model = False
+
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=False and sync_model)
 
                 if batch_size <= 0:
@@ -768,8 +793,8 @@ class Model:
                 break
 
         # Syncronize model
-        self._weight_update(gradient=True, blocking=self.blocking_mpi, comm=True)
-        self._weight_update(gradient=False, blocking=self.blocking_mpi, comm=True)
+        # self._weight_update(gradient=True, blocking=self.blocking_mpi, comm=True)
+        # self._weight_update(gradient=False, blocking=self.blocking_mpi, comm=True)
 
         self.tracer.define_event_types(self)
         return self.history
@@ -819,9 +844,19 @@ class Model:
 
         model_sync_count = 0
         for x_batch, y_batch, batch_size in test_batch_generator:
-            model_sync_count += 1
-            tic = timer()
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+            model_sync_count += 1
+
+            rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+            rank_avail = sum(rank_mask) / len(rank_mask)
+
+            if rank_avail <= 0:
+                break
+
+            if rank_avail < self.min_rank_sync:
+                sync_model = False
+
+            tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
             toc = timer()
 
