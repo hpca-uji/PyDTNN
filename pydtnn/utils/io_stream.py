@@ -68,7 +68,7 @@ class Stream(io.BufferedIOBase):
     # stream methods
     def empty(self) -> bool:
         """Is stream empty (would read block)"""
-        return len(self._chunks) <= 0
+        return not bool(self._chunks)
 
     @property
     def nbytes(self) -> int:
@@ -181,7 +181,8 @@ class Stream(io.BufferedIOBase):
         read = 0
         with byteview(b) as view:
             while not self.empty() and read < len(view):
-                read += self.readinto1(view[read:])
+                with view[read:] as subview:
+                    read += self.readinto1(subview)
 
         return read
 

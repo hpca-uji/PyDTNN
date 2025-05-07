@@ -20,7 +20,6 @@ from collections import abc
 
 from pydtnn import comms
 from pydtnn.comms.grpc import grpc_pb2
-from pydtnn.utils.io_stream import Serializer
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -45,9 +44,9 @@ class Protocol(comms.Communicator):
         super().__init__(addr, port)
 
         # Calculate maximun data size (reduced for protobuf overhead)
-        data = bytes(bytearray(self._max_message_size))
-        size = grpc_pb2.Message(data=data).ByteSize()
-        headers = size - self._max_message_size
+        data = bytearray(self._max_message_size)
+        size = grpc_pb2.Message(data=bytes(data)).ByteSize()
+        headers = size - len(data)
         self._max_data_size = self._max_message_size - headers
 
     @property
@@ -59,46 +58,15 @@ class Protocol(comms.Communicator):
         )
 
     @staticmethod
-    def _consume_queue[O](queue: SimpleQueue[O]) -> coll_abc.Iterable[O]:
-        """Consume a queue and return its items (eagerly)"""
-        items = list()
-        try:
-            for _ in range(queue.qsize()):
-                items.append(queue.get_nowait())
-        except Empty:
-            pass
-        return items
-
-    def _o2m(self, objects: abc.Iterable[typing.Any]) -> abc.Iterable[grpc_pb2.Message]:
-        """Transform objects to gRPC messages"""
-        serializer = Serializer()
-        buffer = bytearray(self._max_data_size)
-
-        # Try to generate full messages
-        for obj in objects:
-            serializer.dump(obj)
-            while serializer.nbytes >= len(buffer):
-                size = serializer.readinto(buffer)
-                assert size == len(buffer), "Sending partial message"
-                yield grpc_pb2.Message(data=bytes(buffer))
-
-        # Drain serializer
-        try:
-            size = serializer.readinto(buffer)
-        except BlockingIOError:
-            return
-        with memoryview(buffer) as view:
-            with view[:size] as subview:
-                yield grpc_pb2.Message(data=bytes(subview))
-
-    def _m2o(self, messages: abc.Iterable[grpc_pb2.Message]) -> abc.Generator[typing.Any]:
-        """Transform gRPC messages to objects"""
-        serializer = Serializer()
-
+    def _m2d(messages: abc.Iterable[grpc_pb2.Message]) -> abc.Generator[bytes]:
+        """Transforms gRPC messages to bytes"""
         for message in messages:
-            serializer.write(message.data)
-            try:
-                while True:
-                    yield serializer.load()
-            except BlockingIOError:
-                pass
+            yield message.data
+
+    @staticmethod
+    def _s2m(state: comms.ConnectionData) -> abc.Generator[grpc_pb2.Message]:
+        """Transforms state to message"""
+        state.put_flush()
+        while not state.put_buffer.empty():
+            with state.put_read() as view:
+                yield grpc_pb2.Message(data=bytes(view))

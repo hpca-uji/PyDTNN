@@ -2,7 +2,6 @@
 
 import uuid
 import socket
-import warnings
 import selectors
 import threading
 from queue import SimpleQueue
@@ -102,6 +101,7 @@ class Server(Protocol):
         """Handle session initialize message"""
         sock = self._peers[peer]
         state = self._state[peer]
+        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
 
         # Set peer in state
         with stream:
@@ -118,6 +118,34 @@ class Server(Protocol):
         with self._lock:
             self._peers.inverse[sock] = id
 
+    def _handle_session_fin(self, peer: uuid.UUID, stream: Stream) -> None:
+        """Handle session finalize message"""
+        state = self._state[peer]
+        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
+        stream.close()
+        state.state &= ~ConnectionState.READABLE
+
+    def _get_flush(self, peer: uuid.UUID):
+        state = self._state[peer]
+
+        while True:
+            try:
+                stream = state.get()
+            except BlockingIOError:
+                break
+
+            if stream.empty():
+                self._handle_session_fin(peer, stream)
+                self._session_fin(peer)
+
+            elif state.peer == UUID_NIL:
+                self._handle_session_ini(peer, stream)
+                peer = state.peer
+
+            else:
+                state.get_queue.put(stream)
+                self._get_event.put(peer)
+
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
         peer = self._peers.inverse[sock]
@@ -131,27 +159,7 @@ class Server(Protocol):
             return
 
         state.get_buffer.write(data)
-
-        while True:
-            try:
-                stream = state.get()
-            except BlockingIOError:
-                break
-
-            if stream.empty():
-                if ConnectionState.READABLE not in state.state:
-                    warnings.warn("Recived duplicate session fin", RuntimeWarning)
-                    continue
-                state.state &= ~ConnectionState.READABLE
-                self._session_fin(peer)
-
-            elif state.peer == UUID_NIL:
-                self._handle_session_ini(peer, stream)
-                peer = state.peer
-
-            else:
-                state.get_queue.put(stream)
-                self._get_event.put(peer)
+        self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
