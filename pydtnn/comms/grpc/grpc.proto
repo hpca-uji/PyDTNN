@@ -1,9 +1,7 @@
 syntax = "proto3";
 
 service gRPC {
-    rpc _ini (stream Message) returns (stream Message) {}
     rpc _com (stream Message) returns (stream Message) {}
-    rpc _fin (stream Message) returns (stream Message) {}
 }
 
 message Message {

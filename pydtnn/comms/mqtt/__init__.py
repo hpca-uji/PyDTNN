@@ -13,8 +13,6 @@
 # are not. This could be implemented using grouping requests that generate new
 # UUID per group. This would reduce also reduce load on the broker.
 
-import uuid
-from queue import SimpleQueue
 from concurrent.futures import ThreadPoolExecutor
 
 import paho.mqtt.enums as mqtte_enum
@@ -54,6 +52,7 @@ class Protocol(comms.Communicator):
             transport=self._transport  # type: ignore
         )
         self._client.connect(host=self._addr, port=self._port)
+        self._client.loop_start()
 
     def _submit(self, fn, /, *args, **kwargs):
         """Process in the pool with exception handeling"""
@@ -74,9 +73,9 @@ class Protocol(comms.Communicator):
         self._client.message_callback_add(sub=topic, callback=handler)
         self._client.subscribe(topic=topic, qos=self._qos)
 
-    def _peer(self, message: mqtt_client.MQTTMessage) -> uuid.UUID:
+    def _peer(self, message: mqtt_client.MQTTMessage) -> str:
         """Get peer from a mesage"""
-        return uuid.UUID(message.topic.split("/", 1)[1])
+        return message.topic.split("/", 1)[1]
 
     def _publish(self, topic: str, data=None) -> None:
         """Generic MQTT publish"""

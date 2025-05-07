@@ -5,7 +5,7 @@ import warnings
 
 from pydtnn.comms.grpc import grpc_pb2 as pydtnn_dot_comms_dot_grpc_dot_grpc__pb2
 
-GRPC_GENERATED_VERSION = '1.70.0'
+GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -34,18 +34,8 @@ class gRPCStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self._ini = channel.stream_stream(
-                '/gRPC/_ini',
-                request_serializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
-                response_deserializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
-                _registered_method=True)
         self._com = channel.stream_stream(
                 '/gRPC/_com',
-                request_serializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
-                response_deserializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
-                _registered_method=True)
-        self._fin = channel.stream_stream(
-                '/gRPC/_fin',
                 request_serializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
                 response_deserializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
                 _registered_method=True)
@@ -54,19 +44,7 @@ class gRPCStub(object):
 class gRPCServicer(object):
     """Missing associated documentation comment in .proto file."""
 
-    def _ini(self, request_iterator, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
     def _com(self, request_iterator, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def _fin(self, request_iterator, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -75,18 +53,8 @@ class gRPCServicer(object):
 
 def add_gRPCServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            '_ini': grpc.stream_stream_rpc_method_handler(
-                    servicer._ini,
-                    request_deserializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
-                    response_serializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
-            ),
             '_com': grpc.stream_stream_rpc_method_handler(
                     servicer._com,
-                    request_deserializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
-                    response_serializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
-            ),
-            '_fin': grpc.stream_stream_rpc_method_handler(
-                    servicer._fin,
                     request_deserializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
                     response_serializer=pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
             ),
@@ -100,33 +68,6 @@ def add_gRPCServicer_to_server(servicer, server):
  # This class is part of an EXPERIMENTAL API.
 class gRPC(object):
     """Missing associated documentation comment in .proto file."""
-
-    @staticmethod
-    def _ini(request_iterator,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(
-            request_iterator,
-            target,
-            '/gRPC/_ini',
-            pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
-            pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
 
     @staticmethod
     def _com(request_iterator,
@@ -143,33 +84,6 @@ class gRPC(object):
             request_iterator,
             target,
             '/gRPC/_com',
-            pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
-            pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def _fin(request_iterator,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.stream_stream(
-            request_iterator,
-            target,
-            '/gRPC/_fin',
             pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.SerializeToString,
             pydtnn_dot_comms_dot_grpc_dot_grpc__pb2.Message.FromString,
             options,

@@ -206,10 +206,6 @@ class Communicator[T](abc.ABC):
         if self._close_lock.acquire(blocking=False):
             self._close()
 
-    def __repr__(self) -> str:
-        """Representation of instnace"""
-        return f"<{self.__class__.__name__} id={self._id}>"
-
     def __enter__(self):
         """Context manager start"""
         return self

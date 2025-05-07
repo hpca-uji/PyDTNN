@@ -2,7 +2,6 @@
 
 import uuid
 import socket
-import warnings
 import selectors
 import threading
 from queue import SimpleQueue
@@ -26,10 +25,9 @@ class Client(Protocol):
         """Client initialization"""
         super().__init__(addr, port)
 
-        self._get_event = SimpleQueue[uuid.UUID]()
-
         # State
         self._lock = threading.Condition()
+        self._get_event = SimpleQueue[uuid.UUID]()
         self._state = ConnectionData(buffer_size=self._max_message_size)
 
         # TCP
@@ -37,6 +35,7 @@ class Client(Protocol):
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
         self._socket.setblocking(False)
+
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
 
         self._session_ini()
@@ -65,7 +64,6 @@ class Client(Protocol):
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
         state = self._state
-        peer = state.peer
 
         data = sock.recv(self._max_message_size)
 
@@ -75,6 +73,11 @@ class Client(Protocol):
             return
 
         state.get_buffer.write(data)
+        self._get_flush()
+
+    def _get_flush(self) -> None:
+        state = self._state
+        peer = state.peer
 
         while True:
             try:
@@ -83,10 +86,7 @@ class Client(Protocol):
                 break
 
             if stream.empty():
-                if ConnectionState.READABLE not in state.state:
-                    warnings.warn("Recived duplicate session fin", RuntimeWarning)
-                    continue
-                state.state &= ~ConnectionState.READABLE
+                self._handle_session_fin(stream)
 
             elif state.peer == UUID_NIL:
                 self._handle_session_ini(stream)
@@ -167,12 +167,21 @@ class Client(Protocol):
     def _handle_session_ini(self, stream: Stream) -> None:
         """Handle session initialize message"""
         state = self._state
+        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
 
         # Set peer in state
         with stream:
             id = self._serializer.load(stream)
         state.peer = id
         state.state |= ConnectionState.READABLE
+
+    def _handle_session_fin(self, stream: Stream) -> None:
+        """Handle session finalize message"""
+        state = self._state
+        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
+
+        stream.close()
+        state.state &= ~ConnectionState.READABLE
 
     def _close(self) -> None:
         """Close the client"""
