@@ -1,6 +1,6 @@
 from model_convertor import convert_model
 
-from typing import Dict, Tuple, Any
+from typing import Dict, Tuple, Any, Callable
 
 from torch.nn import Module as PyTorch_Model
 import torch.nn as nn
@@ -13,11 +13,21 @@ from pydtnn.layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils.best_of import BestOf
 
+# noinspection PyUnresolvedReferences
+import pycuda.gpuarray as gpuarray
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+try:
+    from pydtnn.backends.gpu.libs import libcudnn as cudnn
+except:
+    pass
+
 from copy import deepcopy
 from math import prod
 import numpy as np
 
-# CONSANTS
+import pydtnn
+
+# CONSTANTS
 N = 5
 SHAPE = (3, 20, 20) # CHW
 CONV_IN_CHANNELS = SHAPE[0] # Shape format: CHW
@@ -40,6 +50,28 @@ np.random.seed(SEED)
 
 THRESHOLD = 1e-4
 DTYPE = np.float32
+
+KWARGS = {
+        "model_name": None,
+        #"dataset": None,
+        #"dataset_name": None,
+        "evaluate_only": True,
+        "parallel": "data",
+        "tensor_format": "NCHW", # "NCHW" # "NHWC",
+        "loss_func": "categorical_cross_entropy",
+        "enable_gpu" : True,
+        "omm": None,
+        "dtype": DTYPE,
+        "tracing": False,
+        "tracer_output": "",
+        "batch_size": min(64, N)
+    }
+# --- END EXECUTION PARAMETERS --- #
+
+TYPES_DATA_CUDA = { np.float64: "CUDNN_DATA_DOUBLE", 
+                    np.float32: "CUDNN_DATA_FLOAT", 
+                    np.int8: "CUDNN_DATA_INT8", 
+                    np.int32: "CUDNN_DATA_INT32"}
 
 DICT_SUPPORTED_LAYERS:Dict[str, Tuple[nn.Module, float]] = {
     # Activations:
@@ -77,9 +109,12 @@ class TEST_PyTorch_Model(PyTorch_Model):
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
+        print(f"self.layer: {self.layer}")
+    # --- END __init__ --- #
     
     def forward(self, x):
         return self.layer(x)
+    # --- END forward --- #
 # --- END TEST_PyTorch_Model --- #
 
 class Addition_Test_PyTorch_Model(PyTorch_Model):
@@ -90,6 +125,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         self.op1:nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
         self.op2:nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"][0]
         self.act:nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
+    # --- END __init__ --- #
     
     def forward(self, x):
         dict_forwards = dict()
@@ -104,6 +140,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         res = self.act(res)
         dict_forwards["Tanh"] = res
         return (res, dict_forwards)
+    # --- END forward --- #
 # --- END Addition_Test_PyTorch_Model --- #
 
 class Concat_Test_PyTorch_Model(PyTorch_Model):
@@ -116,6 +153,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         self.activation1:nn.Module = DICT_SUPPORTED_LAYERS["Sigmoid"][0]
         self.activation2:nn.Module = DICT_SUPPORTED_LAYERS["Softmax"][0]
         self.act:nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
+    # --- END __init__ --- #
     
     def forward(self, x):
         dict_forwards = dict()
@@ -134,6 +172,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         res = self.act(res)
         dict_forwards["Tanh"] = res
         return (res, dict_forwards)
+    # --- END forward --- #
 # --- END Addition_Test_PyTorch_Model --- #
 
 def are_all_zeros(diff: np.ndarray) -> bool:
@@ -144,102 +183,113 @@ def are_all_below_threshold(diff: np.ndarray, threshold:float = THRESHOLD) -> bo
     return np.all(diff < threshold)
 # --- END are_all_zeros --- #
 
-def inference_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray) -> np.ndarray:
-    y:np.ndarray = dataset
-    for layer in model.layers:
-        layer:LayerAndActivationBase
-        y = layer.forward(y)
+def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -> np.ndarray | TensorGPU:    
+    y:np.ndarray | TensorGPU = dataset
+    print(f"forward_pydtnn_model - type(y.ary): {type(y.ary)}")
 
-    return (y)
+    for i in range(1, len(model.layers)): # NOTE - Remember: Layer 0 is the Input layer and it's ignored
+        layer:LayerAndActivationBase = model.layers[i]
+        if y != dataset:
+            print(f"y != dataset - {layer} - type(y): {type(y)}")
+        y = layer.forward(y)
+    return y
+# --- END forward_pydtnn_model --- #
+
+def test_layers_gpu(model: PyDTNN_Model, dataset: TensorGPU) -> np.ndarray:
+    
+    print(f"test_layers_gpu - model")
+    model.show()
+    print(f"test_layers_gpu - model\n========")
+    print(f"model.dtype: {model.dtype}")
+
+    print(f"TYPES_DATA_CUDA[model.dtype]: {TYPES_DATA_CUDA[model.dtype]}")
+    dtype = model.dtype
+    model.cudnn_dtype = cudnn.cudnnDataType[TYPES_DATA_CUDA[model.dtype]]
+    _dataset = TensorGPU(
+        gpu_arr=gpuarray.empty(shape=dataset.shape, dtype=dtype),
+        tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
+        
+    _dataset.ary.set(dataset)
+    print(f"_dataset: {_dataset} | type(_dataset): {type(_dataset)} | _dataset.ary.shape: {_dataset.ary.shape}")
+    
+    model.y_batch = _dataset
+
+    y:TensorGPU | None = forward_pydtnn_model(model, _dataset)
+
+    if y is None:
+        layer:pydtnn.backends.gpu.layers.LayerGPU
+        y:TensorGPU = layer.y
+    # else: Nothing special.
+    print(f"y | ({type(y)})")
+
+    y: np.ndarray = y.ary.get()
+    print(f"y | ({type(y)}): {y}")
+
+    return y
+# --- END test_layers_gpu --- #
 
 def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int], 
-                device: torch.device, dataset: np.ndarray, threshold: float) -> None:
+                device: torch.device, dataset: np.ndarray, threshold: float, function_to_test_layers: Callable) -> None:
 
     print(pytorch_model)
-    if False: # if necessary to check PyTorch's layers parameters
-        for _name, layer in pytorch_model.named_children():
-            params = vars(layer)        
-            print(f"layer {_name}")
-            for k in params.keys():
-                print(f"\t{k}: {params[k]}")    
     
     print("=======================\n== Converted version ==\n=======================")
 
-    #print("PyTorch model's forward method:")
-    #graph = torch.fx.symbolic_trace(pytorch_model)
-    #print(graph.code)
-
-    print("-----\n")
-
-    new_model:PyDTNN_Model = convert_model(model = pytorch_model, input_shape=input_shape, kwargs=kwargs,
-                              default_output_activation_layer=None, is_input_shape_in_format=True)
+    new_model:PyDTNN_Model = convert_model(model = pytorch_model, input_shape=input_shape,
+                                           default_output_activation_layer=None, 
+                                           is_input_shape_in_format=True, **kwargs)
     
     new_model.mode = TRAIN_MODE
     new_model.show()
+    new_model.dataset = dataset
     print("-----")
+    #print("PyTorch model's forward method:")
+    #graph = torch.fx.symbolic_trace(pytorch_model)
+    #print(graph.code)
+    #print("-----\n")
 
-    print("======================\n")
-
-    # Must be at two layers: Input and the testing layer.
-    pydtnn_layer:LayerAndActivationBase = new_model.layers.pop()
+    # Must be only two layers: "Input" layer and the testing one.
+    pydtnn_layer:LayerAndActivationBase = new_model.layers[-1]
     print("=============================\n== Checking Dataset Values ==\n=============================")
 
     torch_dataset = torch.from_numpy(dataset).to(device)
     
-    #print(f"PyTorch dataset.shape: {torch_dataset.shape}")
-    #print(f"PyDTNN dataset.shape: {dataset.shape}")
-    diff = torch_dataset.numpy() - dataset
+    diff = torch_dataset.cpu().detach().numpy() - dataset
     print(f"Are equal: {are_all_zeros(diff)}")
 
     pytorch_state_dict = pytorch_model.layer.state_dict()
     
     pytorch_weights: None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_WEIGHTS] if PYTORCH_LAYER_WEIGHTS in pytorch_state_dict else None
-    pydtnn_weights: None | np.ndarray = pydtnn_layer.weights
+    pydtnn_weights: None | np.ndarray | TensorGPU = pydtnn_layer.weights
+
+    if isinstance(pydtnn_weights, TensorGPU):
+        pydtnn_weights: np.ndarray = pydtnn_weights.ary.get()
 
     there_are_pytorch_weigths = pytorch_weights is not None
     there_are_pydtnn_weights = pydtnn_weights is not None
-    #print(f"there_are_pytorch_weigths: {there_are_pytorch_weigths}")
-    #print(f"there_are_pydtnn_weights: {there_are_pydtnn_weights}")
-    #
-    #if there_are_pytorch_weigths:
-    #    print(f"pytorch_weights.shape: {pytorch_weights.shape}")
-    #if there_are_pydtnn_weights:
-    #    print(f"pydtnn_weights.shape: {pydtnn_weights.shape}")
-    #
-    if name == "Linear":
-    #    print(f"pydtnn_weights.shape: {pydtnn_weights.shape}")
-        pydtnn_weights = pydtnn_weights.T
-    #    print(f"pydtnn_weights.T.shape: {pydtnn_weights.shape}")
-
+    
     if there_are_pytorch_weigths and there_are_pydtnn_weights:
-        print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.numpy() - pydtnn_weights)}")
+        print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)}")
 
     pytorch_biases : None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_BIASES] if PYTORCH_LAYER_BIASES in pytorch_state_dict else None
-    pydtnn_biases : None | np.ndarray = pydtnn_layer.biases
+    pydtnn_biases : None | np.ndarray | TensorGPU = pydtnn_layer.biases
+
+    if isinstance(pydtnn_weights, TensorGPU):
+        pydtnn_biases: np.ndarray = pydtnn_biases.ary.get()
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None
-    #print(f"there_are_pytorch_biases: {there_are_pytorch_biases}")
-    #print(f"there_are_pydtnn_biases: {there_are_pydtnn_biases}")
-    #
-    #if there_are_pytorch_biases:
-    #    print(f"pytorch_biases.shape: {pytorch_biases.shape}")
-    #    print(f"pytorch_biases: {pytorch_biases}")
-    #if there_are_pydtnn_biases:
-    #    print(f"pydtnn_biases.shape: {pydtnn_biases.shape}")
-    #    print(f"pydtnn_biases: {pydtnn_biases}")
     
     if there_are_pytorch_biases and there_are_pydtnn_biases:
-        print(f"biases are all zeros: {are_all_zeros(pytorch_biases.numpy() - pydtnn_biases)}")
+        print(f"biases are all zeros: {are_all_zeros(pytorch_biases.cpu().detach().numpy() - pydtnn_biases)}")
 
     print("=====================\n== Testing Forward ==\n=====================")
-    print(f"pydtnn_layer: {pydtnn_layer}")
     print(f"pytorch_model: {pytorch_model}")
 
     pytorch_output:torch.Tensor = pytorch_model(torch_dataset)
-    pydtnn_output:np.ndarray = pydtnn_layer.forward(dataset)
+    pydtnn_output:np.ndarray = function_to_test_layers(model = new_model, dataset = dataset)
 
-    pytorch_output = pytorch_output.detach().to(device).numpy()
+    pytorch_output = pytorch_output.detach().to("cpu").numpy()
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
     
@@ -251,12 +301,12 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     print(f"Mean of the values: {np.mean(pydtnn_output)}")
     print(f"Median of the values: {np.median(pydtnn_output)}")
     print(f"Max. difference between outputs: {np.max(diff)}")
-    if not are_below_threshold:        
+    if False and not are_below_threshold:        
         #print(f"pytorch_output.shape: {pytorch_output.shape}")
         #print(f"pydtnn_output.shape: {pydtnn_output.shape}")
-        print(f"pytorch_output:\n{pytorch_output}")
-        print(f"pydtnn_output:\n{pydtnn_output}")
-        print(f"pytorch_output - pydtnn_output:\n{diff}")
+        print(f"pytorch_output:\n{pytorch_output}\n[pytorch_output]")
+        print(f"pydtnn_output:\n{pydtnn_output}\n[pydtnn_output]")
+        print(f"pytorch_output - pydtnn_output:\n{diff}\n[pytorch_output - pydtnn_output]")
 
     print("=========================================\n")
 # --- END test_layers --- #
@@ -268,14 +318,15 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
     
     print("=======================\n== Converted version ==\n=======================")
 
-    print("PyTorch model's forward method:")
-    graph = torch.fx.symbolic_trace(pytorch_model)
-    print(graph.code)
+    #print("PyTorch model's forward method:")
+    #graph = torch.fx.symbolic_trace(pytorch_model)
+    #print(graph.code)
 
     print("-----\n")
 
-    pydtnn_model:PyDTNN_Model = convert_model(model = pytorch_model, input_shape=input_shape, kwargs=kwargs,
-                              default_output_activation_layer=None, is_input_shape_in_format=True)
+    pydtnn_model:PyDTNN_Model = convert_model(model = pytorch_model, input_shape=input_shape,
+                                              default_output_activation_layer=None, 
+                                              is_input_shape_in_format=True, **kwargs)
     
     #pydtnn_model.mode = EVALUATE_MODE
     pydtnn_model.show()
@@ -285,20 +336,15 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
     print("======================\n")
 
     print("=====================\n== Testing Forward ==\n=====================")
-    print(f"pydtnn_layer: {pydtnn_model}")
     print(f"pytorch_model: {pytorch_model}")
 
     pytorch_output, _ = pytorch_model(torch_dataset)
     pytorch_output:torch.Tensor
     pydtnn_model.dataset = dataset
-    pydtnn_output = inference_pydtnn_model(pydtnn_model, dataset)
+    pydtnn_output = forward_pydtnn_model(pydtnn_model, dataset)
     pydtnn_output:np.ndarray
     
-    pytorch_output = pytorch_output.detach().to(device).numpy()
-    #print(f"pytorch_output.shape: {pytorch_output.shape}")
-    #print(f"pydtnn_output.shape: {pydtnn_output.shape}")
-    #print(f"pytorch_output:\n{pytorch_output}")
-    #print(f"pydtnn_output:\n{pydtnn_output}")
+    pytorch_output = pytorch_output.detach().to("cpu").numpy()
 
     diff = abs(pytorch_output) - abs(pydtnn_output)
     #print(f"pytorch_output - pydtnn_output:\n{diff}")
@@ -309,9 +355,7 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
     print(f"Max. value: {np.max(pydtnn_output)}")
     print(f"Median of the differences between outputs: {np.median(diff)}")
     print(f"Max. difference between outputs: {np.max(diff)}")
-    if not are_below_threshold:        
-        #print(f"pytorch_output.shape: {pytorch_output.shape}")
-        #print(f"pydtnn_output.shape: {pydtnn_output.shape}")
+    if False and not are_below_threshold:
         print(f"pytorch_output:\n{pytorch_output}")
         print(f"pydtnn_output:\n{pydtnn_output}")
         print(f"pytorch_output - pydtnn_output:\n{diff}")
@@ -320,25 +364,20 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
 
 def main():
 
-    kwargs = {
-        "model_name": None,
-        "comm": None,
-        "mpi_processes": 1,
-        "evaluate_only": True,
-        "parallel": "sequential",
-        "tensor_format": "NCHW", # "NCHW", "NHWC",
-        "loss_func": "categorical_cross_entropy",
-        "enable_gpu": False,
-    }
+    kwargs = KWARGS
 
-    device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("gpu")
+    device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("cuda")
     dataset = np.arange(prod((N, *SHAPE)), dtype=DTYPE).reshape((N, *SHAPE))
     
+    function_to_test_layers = (test_layers_gpu if device.type == "cuda" else forward_pydtnn_model)
     for name in DICT_SUPPORTED_LAYERS.keys():
         layer, threshold = DICT_SUPPORTED_LAYERS[name]
         model = TEST_PyTorch_Model(layer)
         print(f"Testing: {name}")
-        test_layers(name = name, pytorch_model = model, kwargs = kwargs, input_shape = SHAPE, device=device, dataset = deepcopy(dataset), threshold = threshold)
+        test_layers(name = name, pytorch_model = model, kwargs = kwargs, input_shape = SHAPE, 
+                    device=device, dataset = deepcopy(dataset), threshold = threshold,
+                    function_to_test_layers = function_to_test_layers
+                    )
     print("\n\n\n========================\n TESTING ADD AND CONCAT \n========================")
     
     for name, model in [("Addition", Addition_Test_PyTorch_Model()),
