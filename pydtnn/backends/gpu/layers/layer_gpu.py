@@ -149,7 +149,7 @@ class LayerGPU(Layer, ABC):
                 # If there is no CUDA-aware MPI, copy data back to GPU
                 dw.ary.set_async(dw_cpu, self.stream_2)
 
-    def reduce_weights_sync(self, gradient=True, comm=True):
+    def reduce_weights_sync(self, gradient=True):
         if not self.model.comm:
             return
 
@@ -162,11 +162,10 @@ class LayerGPU(Layer, ABC):
             dw = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                if comm:
-                    dw *= self.model.rank_weight
-                    nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
-                                       nccl.RedOp.Sum, comm=self.model.nccl_comm,
-                                       stream=self.stream_2.handle)
+                dw *= self.model.rank_weight
+                nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                                   nccl.RedOp.Sum, comm=self.model.nccl_comm,
+                                   stream=self.stream_2.handle)
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -203,9 +202,8 @@ class LayerGPU(Layer, ABC):
                     self.stream_2.synchronize()
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
-                if comm:
-                    dw_cpu *= self.model.rank_weight
-                    self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                dw_cpu *= self.model.rank_weight
+                self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
                 if not self.model.gpudirect:
                     dw.ary.set_async(dw_cpu, self.stream_2)

@@ -55,10 +55,10 @@ class AbstractBlockLayer(Layer, ABC):
             for layer in p:
                 layer.wait_allreduce_async(gradient=gradient)
 
-    def reduce_weights_sync(self, gradient=True, comm=True):
+    def reduce_weights_sync(self, gradient=True):
         for p in self.paths:
             for layer in p:
-                layer.reduce_weights_sync(gradient=gradient, comm=comm)
+                layer.reduce_weights_sync(gradient=gradient)
 
     def print_in_convdirect_format(self):
         for p in self.paths:
