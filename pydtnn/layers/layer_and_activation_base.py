@@ -87,7 +87,7 @@ class LayerAndActivationBase(ABC):
         pass
 
     @abstractmethod
-    def reduce_weights_sync(self, gradient=True, comm=True):
+    def reduce_weights_sync(self, gradient=True):
         pass
 
     def show(self, attrs=""):
