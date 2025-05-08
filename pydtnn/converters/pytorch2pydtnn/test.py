@@ -54,8 +54,8 @@ FIRST_PYTORCH = False
 OLD_FIRST = None
 DATASET_PATH = "/home/usuario/Documentos/CIBER_CAFE/Datasets/cifar-10-batches-bin"
 WEIGHTS_PATH = "/home/usuario/Documentos/Resultados/pesos/clasificacion/"
-INFERENCE = False
-TRAINING = True
+INFERENCE = True
+TRAINING = False
 
 KWARGS = {
         "model_name": None,
@@ -129,7 +129,7 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func:torch.nn.mod
         for inputs, labels, _ in dataloader:
             inputs = torch.Tensor(inputs).to(device)
             labels = torch.Tensor(labels).to(device)
-            outputs = model(inputs)            
+            outputs = model(inputs)
             outputs = outputs.to(device)
             #loss = loss_fn(outputs, labels)
 
@@ -161,7 +161,7 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list = None, dataset = None) -
     model.dataset = dataset
     model.evaluate_dataset()
     print_model_reports(model)
-# --- END pytorch_inference --- #
+# --- END pydtnn_inference --- #
 
 def _pydtnn_inference(new_model, old_model, dataset, old_first = None):
     print("-------------------")
@@ -209,8 +209,9 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 
 def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, num_samples = 64 * 2):
 
-    history = model.train(x_train=dataset._x[TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples], 
-                          y_train=dataset._y[TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
+    #history = model.train(x_train=dataset._x[TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples], 
+    #                      y_train=dataset._y[TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
+    history = model.train_dataset()
     print(f"history: {history}")
 # --- END pydtnn_training --- #
 
@@ -292,11 +293,11 @@ def main():
             print(layer)
             print(f"layer.biases: {layer.biases.shape}")
 
-    if TRAINING:
-        print("OLD MODEL")
-        pydtnn_training(model=old_model, dataset=dataset)
-        print("NEW MODEL")
-        pydtnn_training(model=new_model, dataset=dataset)
+    #if TRAINING:
+    #    print("OLD MODEL")
+    #    pydtnn_training(model=old_model, dataset=dataset)
+    #    print("NEW MODEL")
+    #    pydtnn_training(model=new_model, dataset=dataset)
 
     if INFERENCE:
         if FIRST_PYTORCH:
