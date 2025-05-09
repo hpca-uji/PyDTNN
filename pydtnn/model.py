@@ -736,7 +736,7 @@ class Model:
                 model_sync_count += 1
 
                 rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
-                rank_avail = sum(rank_mask) / len(rank_mask)
+                rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
                     break
@@ -774,7 +774,7 @@ class Model:
                 model_sync_count += 1
 
                 rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
-                rank_avail = sum(rank_mask) / len(rank_mask)
+                rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
                     break
@@ -868,7 +868,7 @@ class Model:
             model_sync_count += 1
 
             rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
-            rank_avail = sum(rank_mask) / len(rank_mask)
+            rank_avail = sum(rank_mask)
 
             if rank_avail <= 0:
                 break
