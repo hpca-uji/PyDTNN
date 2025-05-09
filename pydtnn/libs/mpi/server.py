@@ -189,8 +189,7 @@ class Server:
             del self._peers[rank]
 
         # Inform clients of state change
-        state = mpi_comm.StateResponse(size=self._size)
-        self._comm.put(state)
+        self._comm.put(mpi_comm.StateResponse(size=self._size))
 
     def _handle_operation_request(self, message: comms.Message[mpi_comm.OperationRequest]) -> None:
         """Handle an operation request"""

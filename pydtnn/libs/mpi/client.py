@@ -20,10 +20,6 @@
 # call Finalize, and ensure it is always called, even when exceptions might be
 # unhandled and lead to thread termination.
 
-# FIXME: Use semaphore for reponse request counting and threading condition for
-# respone recive notifications. Current implementation, when multiple async operations
-# are inflight, could issue more recives than expected, leading to a infinite lock.
-
 # FIXME: Move backgroud_server logic from communicator to module. Currently it is
 # here because of import restrictions, but it will be an issue when multiple
 # communicator are open.
@@ -37,11 +33,12 @@ import functools
 import threading
 import itertools
 from collections import abc
-from concurrent.futures import ThreadPoolExecutor, Future
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
 from pydtnn import comms
+from pydtnn.utils import UUID_MAX
 from pydtnn.libs.mpi import comm as mpi_comm
 
 
@@ -63,25 +60,45 @@ class InPlace(enum.Enum):
     IN_PLACE = enum.auto()
 
 
+class RequestState(enum.Enum):
+    INI = enum.auto()
+    ACK = enum.auto()
+    FIN = enum.auto()
+
+
 class Request[T]:
+    _result: T
+    _callback: abc.Callable[[T], T]
+
     """Request handler."""
-    def __init__(self, future: Future[T], callback: abc.Callable[[T], None] | None = None) -> None:
-        self._future = future
-        self._callback = callback
+    def __init__(self) -> None:
+        self._state = RequestState.INI
+        self._lock = threading.Condition()
+
+    def _put(self, value) -> uuid.UUID:
+        """Process state change"""
+        match self._state:
+            case RequestState.INI:
+                self._state = RequestState.ACK
+                return value
+
+            case RequestState.ACK:
+                self._result = value
+                with self._lock:
+                    self._state = RequestState.FIN
+                    self._lock.notify_all()
+                return UUID_MAX
+
+            case _:
+                raise RuntimeError(f"Invalid request state {self._state}")
 
     def wait(self) -> T:
         """Wait for a non-blocking operation to complete."""
-        # NOTE: only hold future for one attempt, then discard
-        if future := self.__dict__.pop("_future"):
-            result = future.result()
-        else:
-            return None  # type: ignore
-
-        if self._callback:
-            self._callback(result)
-            return None   # type: ignore
-        else:
-            return result
+        with self._lock:
+            self._lock.wait_for(lambda: self._state == RequestState.FIN)
+        result = self.__dict__.pop("_result", None)
+        callback = self.__dict__.pop("_callback", lambda result: result)
+        return callback(result)
 
 
 class Comm:
@@ -92,8 +109,8 @@ class Comm:
         self._comm_lock = threading.Lock()
 
         self._closed = False
-        self._respones = dict[uuid.UUID, typing.Any]()
-
+        self._requests = dict[uuid.UUID, Request]()
+        self._responses = dict[uuid.UUID, typing.Any]()
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
 
     def _recive_response(self) -> None:
@@ -104,29 +121,45 @@ class Comm:
             case mpi_comm.OperationResponse():
                 pass
             case _:
-                warnings.warn(f"Unknown response {response}", RuntimeWarning)
-                return
+                raise RuntimeError(f"Unknown response {response}")
 
-        self._respones[response.id] = response.obj
+        self._responses[response.id] = response.obj
 
-    def _get_response(self, id: uuid.UUID):
-        """Get a particular response (blocking until ready)"""
-        while True:
-            try:
-                return self._respones.pop(id)
-            except KeyError:
-                self._recive_response()
+        self._handle_request(response.id)
 
-    def _resolve_request(self, request: mpi_comm.OperationRequest):
-        """Resolve request"""
-        self._comm.put(request)
+    def _handle_request(self, id: uuid.UUID):
+        """Handle a request"""
+        MISSING = object()
 
-        response_id: uuid.UUID = self._get_response(request.id)
-        response = self._get_response(response_id)
+        while request := self._requests.pop(id, None):
+            if (response := self._responses.pop(id, MISSING)) is MISSING:
+                self._requests[id] = request
+                break
 
-        if isinstance(response, mpi_comm.RemoteException):
-            raise response
-        return response
+            if (id := request._put(response)) is UUID_MAX:  # type: ignore
+                break
+            else:
+                self._requests[id] = request
+
+    def _submit_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any) -> Request:
+        """Schedule a new operation"""
+
+        # Create appropriate request according to participation
+        if self.rank == comm.root:
+            operation = mpi_comm.OperationRequest(comm=comm, context=context, obj=obj)
+        elif self.rank in comm.src:
+            operation = mpi_comm.OperationRequest(comm=comm, obj=obj)
+        elif self.rank in comm.dst:
+            operation = mpi_comm.OperationRequest(comm=comm)
+        else:
+            raise RuntimeError("Tried to schedule operation without participating")
+
+        request = Request()
+        self._requests[operation.id] = request
+        self._comm.put(operation)
+        self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
+        self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
+        return request
 
     @property
     def size(self) -> int:
@@ -229,26 +262,11 @@ class Comm:
         except:  # noqa: E722
             pass
 
-    def _submit_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any) -> Future:
-        """Schedule a new operation"""
-
-        # Create appropriate request according to participation
-        if self.rank == comm.root:
-            request = mpi_comm.OperationRequest(comm=comm, context=context, obj=obj)
-        elif self.rank in comm.src:
-            request = mpi_comm.OperationRequest(comm=comm, obj=obj)
-        elif self.rank in comm.dst:
-            request = mpi_comm.OperationRequest(comm=comm)
-        else:
-            raise RuntimeError("Tried to schedule operation without participating")
-
-        return self._pool.submit(self._resolve_request, request)
-
     def bcast[T](self, obj: T, root: mpi_comm.Rank = 0) -> T:
         """Broadcast."""
         context = mpi_comm.BroadcastContext(root=root)
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context).result()
+        return self._submit_operation(comm=comm, obj=obj, context=context).wait()
 
     def barrier(self) -> None:
         """Barrier synchronization."""
@@ -258,7 +276,7 @@ class Comm:
         """Gather to All."""
         context = mpi_comm.AllGatherContext()
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context).result()
+        return self._submit_operation(comm=comm, obj=obj, context=context).wait()
 
     def allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All."""
@@ -267,7 +285,7 @@ class Comm:
 
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context).result()
+        return self._submit_operation(comm=comm, obj=obj, context=context).wait()
 
     def _phased_allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All (with steps)."""
@@ -278,7 +296,7 @@ class Comm:
 
         for phase in itertools.count():
             comm = context.comm(rank=self.rank, size=self.size, phase=phase)
-            obj = self._submit_operation(comm=comm, obj=obj, context=context).result()
+            obj = self._submit_operation(comm=comm, obj=obj, context=context).wait()
             if len(comm.dst) == self.size:
                 break
 
@@ -316,8 +334,9 @@ class Comm:
 
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
-        future = self._submit_operation(comm=comm, obj=sendbuf, context=context)
-        return Request(future, callback)
+        req = self._submit_operation(comm=comm, obj=sendbuf, context=context)
+        req._callback = callback
+        return req
 
 
 # Exports
