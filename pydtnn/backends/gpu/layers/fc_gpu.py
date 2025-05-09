@@ -22,12 +22,9 @@ import pycuda.driver as drv
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
-from pydtnn import utils
 from pydtnn.layers import FC
 from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_OPS_FORWARD_CUBLAS_MATMUL, \
-    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES, \
-    PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW, PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB, PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
@@ -109,21 +106,21 @@ class FCGPU(LayerGPU, FC):
 
         # Compute a' = x @ weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUBLAS_MATMUL)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL.value)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     self.weights.ary.gpudata, ldb,
                     x.ary.gpudata, lda, beta,
                     self.y.ary.gpudata, ldc, self.model.dtype)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES.value)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc,
                                  self.biases.ptr, beta, self.y.desc, self.y.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy):
@@ -134,11 +131,11 @@ class FCGPU(LayerGPU, FC):
         trans_a, trans_b, alpha, beta = 'T', 'N', 1.0, 0.0
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DW)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW.value)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     dy.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta,
                     self.dw.ptr_intp if self.model.gpudirect else self.dw.ary.gpudata, ldc, self.model.dtype)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
@@ -152,12 +149,12 @@ class FCGPU(LayerGPU, FC):
             trans_a, alpha, beta, inc_x, inc_y = 'N', 1.0, 0.0, 1, 1
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUBLAS_MATVEC_DB)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB.value)
             self.matvec(self.model.cublas_handle, trans_a, n, m, alpha,
                         dy.ary.gpudata, lda, self.one_vec_gpu.gpudata, inc_x, beta,
                         self.db.ptr_intp if self.model.gpudirect else self.db.ary.gpudata,
                         inc_y, self.model.dtype)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
             if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
@@ -172,10 +169,10 @@ class FCGPU(LayerGPU, FC):
             trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUBLAS_MATMUL_DX)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX.value)
             self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                         self.weights.ary.gpudata, ldb,
                         dy.ary.gpudata, lda, beta,
                         self.dx.ary.gpudata, ldc, self.model.dtype)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx

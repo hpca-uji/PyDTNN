@@ -26,8 +26,7 @@ from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
                                   max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd_nchw_cython
 from pydtnn.layers import MaxPool2D
 from pydtnn.model import TRAIN_MODE
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_COMP_DX_COL2IM, PYDTNN_OPS_FORWARD_IM2COL
-
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
 
@@ -36,39 +35,39 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         self.idx_max = None
 
     def _forward_nhwc_i2c(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL.value)
         x_rows = im2row_1ch_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y, idx_max = argmax_cython(x_rows, axis=1)
         if self.model.mode == TRAIN_MODE:
             self.idx_max = idx_max
         return y.reshape(-1, self.ho, self.wo, self.co)
 
     def _forward_nhwc_cython(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL.value)
         y, idx_max = max_pool_2d_fwd_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                                  self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         if self.model.mode == TRAIN_MODE:
             self.idx_max = idx_max
         return y
 
     def _forward_nchw_i2c(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL.value)
         x_cols = im2col_1ch_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y, idx_max = argmax_cython(x_cols, axis=0)
         if self.model.mode == TRAIN_MODE:
             self.idx_max = idx_max
         return y.reshape(-1, self.co, self.ho, self.wo)
 
     def _forward_nchw_cython(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_IM2COL)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL.value)
         y, idx_max = max_pool_2d_fwd_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
                                                  self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         if self.model.mode == TRAIN_MODE:
             self.idx_max = idx_max
         return y
@@ -77,41 +76,41 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         if self.need_dx:
             dy_rows = np.zeros((np.prod(dy.shape), self.kh * self.kw), dtype=self.model.dtype)
             dy_rows[self.idx_max] = dy.flatten()
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM.value)
             dx = row2im_1ch_nhwc_cython(dy_rows, dy.shape[0], self.hi, self.wi, self.ci,
                                         self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             dx = dx.reshape(-1, self.hi, self.wi, self.ci)
             return dx
 
     def _backward_nhwc_cython(self, dy):
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM.value)
             dx = max_pool_2d_bwd_nhwc_cython(dy, self.idx_max, dy.shape[0], self.hi, self.wi, self.ci,
                                              self.kh, self.kw, self.vpadding, self.hpadding,
                                              self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return dx
 
     def _backward_nchw_i2c(self, dy):
         if self.need_dx:
             dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype)
             dy_cols[self.idx_max] = dy.flatten()
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM.value)
             dx = col2im_1ch_nchw_cython(dy_cols, dy.shape[0], self.hi, self.wi, self.ci,
                                         self.kh, self.kw, self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             dx = dx.reshape(-1, self.ci, self.hi, self.wi)
             return dx
 
     def _backward_nchw_cython(self, dy):
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_COL2IM)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM.value)
             dx = max_pool_2d_bwd_nchw_cython(dy, self.idx_max, dy.shape[0], self.hi, self.wi, self.ci,
                                              self.kh, self.kw, self.vpadding, self.hpadding,
                                              self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return dx
 

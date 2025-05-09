@@ -24,9 +24,8 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import ConcatenationBlock
 from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, \
-    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONCAT, \
-    PYDTNN_OPS_BACKWARD_ELTW_SUM, PYDTNN_OPS_BACKWARD_SPLIT
+from pydtnn.tracers import  PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+                            PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from . import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
@@ -139,33 +138,33 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 y_i = layer.forward(y_i)
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONCAT)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONCAT.value)
             self.concat(self.y.ary, y_i.ary, self.model.batch_size, self.ho, self.wo, self.co,
                         0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy):
         for i, p in enumerate(self.paths):
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SPLIT)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT.value)
             self.split(dy.ary, self.dy[i].ary, self.model.batch_size, self.ho, self.wo, self.co,
                        0 if i == 0 else self.idx_co[i - 1], self.idx_co[i])
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             dx_i = self.dy[i]
             for layer in reversed(p):
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
                 dx_i = layer.backward(dx_i)
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i == 0:
                 self.dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM.value)
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
                                      dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

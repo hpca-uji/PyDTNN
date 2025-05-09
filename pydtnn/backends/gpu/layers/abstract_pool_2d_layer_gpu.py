@@ -24,7 +24,7 @@ from ..libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN, PYDTNN_OPS_BACKWARD_CUDNN_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from . import LayerGPU
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
@@ -81,22 +81,22 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
                                   x.desc, x.ptr, beta,
                                   self.y.desc, self.y.ptr)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy):
         if self.need_dx:
             alpha, beta = 1.0, 0.0
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX.value)
             # Compute dx
             cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
                                        self.y.desc, self.y.ptr,
                                        dy.desc, dy.ptr,
                                        self.x.desc, self.x.ptr,
                                        beta, self.dx.desc, self.dx.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx

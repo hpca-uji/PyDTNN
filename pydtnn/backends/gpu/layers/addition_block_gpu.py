@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -18,9 +18,8 @@
 #
 
 from pydtnn.layers import AdditionBlock
-from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, \
-    PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_ELTW_SUM, \
-    PYDTNN_OPS_BACKWARD_ELTW_SUM
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum 
 from . import LayerGPU
 from ..libs import libcudnn as cudnn
 
@@ -50,36 +49,36 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 y_i = layer.forward(y_i)
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i == 0:
                 self.y = y_i
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM.value)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, y_i.desc,
                                      y_i.ptr, beta, self.y.desc, self.y.ptr)
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
     def backward(self, dy):
         for i, p in enumerate(self.paths):
             dx_i = dy
             for layer in reversed(p):
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
                 dx_i = layer.backward(dx_i)
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i == 0:
                 self.dx = dx_i
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM.value)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
                                      dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

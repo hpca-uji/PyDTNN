@@ -21,8 +21,8 @@ from abc import ABC
 
 from pydtnn.cython_modules import depthwise_conv_cython, add_nchw_cython
 from pydtnn.layers import Conv2D
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \
-    PYDTNN_OPS_FORWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_RESHAPE_Y
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
@@ -34,18 +34,18 @@ class DepthwiseVariant(Conv2D, ABC):
     def _forward_depthwise_nchw(self, x):
         """ Version of the forward that perform a depthwise convolution"""
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_DEPTHWISE_CONV)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV.value)
         res = depthwise_conv_cython(x, self.weights, self.vpadding, self.hpadding,
                                     self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES.value)
         y = add_nchw_cython(res, self.biases) if self.use_bias else res
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y.value)
         y = best_transpose_1023(y.reshape(self.co, -1, self.ho, self.wo))
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
     def _backward_depthwise_nhwc(self, dy):

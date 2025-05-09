@@ -24,7 +24,8 @@ from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 
 # Import from AbstractPool2DLayerGPU
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN, PYDTNN_OPS_BACKWARD_CUDNN_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
@@ -209,7 +210,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         # --- END initialize_pool_2d_gpu --- #
 
     def forward(self, x: TensorGPU) -> TensorGPU:
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
 
         if self.pooling_not_needed:
             self.y = x
@@ -224,21 +225,21 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
                            grid=(self.blocks, 1, 1), block=(self.threads, 1, 1),
                            stream=self.model.stream)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
     # --- END forward --- #
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
         if self.need_dx:
             alpha, beta = 1.0, 0.0
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX.value)
             # Compute dx
             cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
                                        self.y.desc, self.y.ptr,
                                        dy.desc, dy.ptr,
                                        self.x.desc, self.x.ptr,
                                        beta, self.dx.desc, self.dx.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx
     # --- END backward --- #
     # END of methods from AbstractPool2DLayerGPU #

@@ -41,9 +41,8 @@ from .lr_schedulers import get_lr_schedulers
 from .optimizers import get_optimizer
 from .parser import parser
 from .performance_models import *
-from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, ExtraeTracer, \
-    SimpleTracer, PYDTNN_MDL_UPDATE_DW, PYDTNN_OPS_ALLREDUCE_DW, PYDTNN_MDL_WAIT_DW, \
-    PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, PYDTNN_MDL_ALLREDUCE_DW
+from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, ExtraeTracer, SimpleTracer, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
 from .utils.best_of import BestOf
 from .utils.memory_cache import MemoryCache
 from .utils.performance_counter import PerformanceCounter
@@ -601,23 +600,23 @@ class Model:
         if blocking or not comm:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
+                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW.value)
                 self.layers[i].reduce_weights_sync(gradient=gradient, comm=comm)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         else:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW)
+                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW.value)
                 self.layers[i].reduce_weights_async(gradient=gradient)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                        [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_WAIT_DW,
-                                        self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
+                                        [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW.value,
+                                        self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW.value])
                 self.layers[i].wait_allreduce_async(gradient=gradient)
-                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
+                self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
     def _train_batch(self, x_batch, y_batch, current_batch_size, sync_model=True):
         self.mode = TRAIN_MODE
@@ -634,9 +633,9 @@ class Model:
         # Forward pass (FP)
         if current_batch_size > 0:
             for i in range(1, len(self.layers)):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 x = self.layers[i].forward(x)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             loss, dx = self.loss_func(x, y_targ, self.batch_size)
         else:
@@ -645,9 +644,9 @@ class Model:
 
         # Backward pass (BP)
         for i in range(len(self.layers) - 1, 0, -1):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
             dx = self.layers[i].backward(dx)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.enable_cudnn:
             self.stream.synchronize()
@@ -657,9 +656,9 @@ class Model:
 
         # Optimizer
         for i in range(len(self.layers) - 1, 0, -1):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_UPDATE_DW)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW.value)
             self.layers[i].update_weights(self.optimizer)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weight update
         if self.model_sync_freq > 0 and sync_model:
@@ -799,9 +798,9 @@ class Model:
         # Forward pass (FP)
         if current_batch_size > 0:
             for i in range(1, len(self.layers)):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 x = self.layers[i].forward(x)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             y_pred = self.layers[-1].y
             loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)

@@ -22,8 +22,7 @@ from functools import partialmethod
 
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.layers import Conv2D
-from pydtnn.tracers import PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_FORWARD_CONVDIRECT
-
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 class ConvDirectVariant(Conv2D, ABC):
 
@@ -57,12 +56,12 @@ class ConvDirectVariant(Conv2D, ABC):
         biases = None
         biases_vector = self.biases if self.use_bias else None
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVDIRECT)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT.value)
         y = self.cd[n].conv_direct(self.weights, x, biases,
                                    vpadding=self.vpadding, hpadding=self.hpadding,
                                    vstride=self.vstride, hstride=self.hstride,
                                    vdilation=self.vdilation, hdilation=self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
     def _backward_cd(self, y, n=0):

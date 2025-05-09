@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -20,9 +20,8 @@
 from pydtnn.backends.cpu.layers.abstract_block_layer_cpu import AbstractBlockLayerCPU
 from pydtnn.layers import AdditionBlock
 from pydtnn.cython_modules import eltw_sum_cython
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_FORWARD, PYDTNN_MDL_BACKWARD, \
-    PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_BACKWARD_ELTW_SUM, PYDTNN_OPS_FORWARD_ELTW_SUM
-
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
 
 class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
 
@@ -35,26 +34,26 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
         x = [x] * len(self.paths)
         for i, p in enumerate(self.paths):
             for layer in p:
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_FORWARD)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 x[i] = layer.forward(x[i])
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM.value)
                 eltw_sum_cython(x[0], x[i])
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return x[0]
 
     def backward(self, dy):
         dx = [dy] * len(self.paths)
         for i, p in enumerate(self.paths):
             for layer in reversed(p):
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_BACKWARD)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
                 dx[i] = layer.backward(dx[i])
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                              self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM.value)
                 eltw_sum_cython(dx[0], dx[i])
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx[0]
