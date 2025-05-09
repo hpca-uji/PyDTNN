@@ -284,7 +284,7 @@ class Dataset(ABC):
     def _actual_data_generator(self, part):
         yield self._x[part], self._y[part]
 
-    def _actual_batch_generator(self, part):
+    def _batch_generator(self, part):
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.nprocs
         generator = self._data_generator(part)
@@ -321,7 +321,8 @@ class Dataset(ABC):
                 nsamples -= global_batch_size
 
 
-    def _batch_generator(self, part):
+    #def _batch_generator(self, part):
+    def patata(self, part):
         global_batch_size = self.model.batch_size * self.nprocs
         x_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
         y_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)

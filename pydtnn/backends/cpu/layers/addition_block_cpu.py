@@ -40,7 +40,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_ELTW_SUM)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM.value)
                 eltw_sum_cython(x[0], x[i])
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return x[0]
@@ -54,7 +54,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, 0)
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_ELTW_SUM)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM.value)
                 eltw_sum_cython(dx[0], dx[i])
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return dx[0]
