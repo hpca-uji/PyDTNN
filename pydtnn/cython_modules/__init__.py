@@ -42,3 +42,4 @@ from transpose_cython import \
 from adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython
 from adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 # from oversampling_nchw_cython import oversampling_fwd_nchw_cython # NOTE: not used
+from memory_cython import memoryview_index

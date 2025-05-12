@@ -1,15 +1,80 @@
 """Communications package"""
 
-# NOTE: Review Apache Kafka communication
-# TODO: Extract serialzization and only accept bytes
+# NOTE: Communication conventions:
+# - syc: connection state (generic)
+# - ini: connection start (identify)
+# - fin: connection stop  (flush)
+# - com: message exchange (generic)
+# - c2s: message exchange (client -> server)
+# - s2c: message exchange (server -> client)
+
+# NOTE: Communication handshakes:
+# Ini:
+# - Server & client sends ID
+# - Server & client wait for ID
+# - Server create session or continues session
+#
+# Fin:
+# - Server & client flushes message queue
+# - Server & client sends empty message
+# - Server & client wait for empty message
+
+# NOTE: Communication persistency:
+# Ini:
+# - Must be done on first or changing connection
+#
+# Fin:
+# - Must be done on session end (not connection)
+
+# NOTE: Communication contract:
+# Constructor
+# - May block
+# - Only one communicator per ID
+# - Reusing ID retain server queues
+#
+# Put
+# - Never blocks
+# - Communication will not modify object
+# - Consumer must not modify object util future resolved
+# - Resolved futures acknowledge peer reception
+# - Cancelled futures indicates peer diconnected
+#
+# Get
+# - Always block
+# - Returns a message or raises ResouceClosed
+# - Once closed it continues working until exhausted then it raises ResouceClosed
+#
+# Close
+# - May block
+# - Server waits for peers to disconnect
+
+# FIXME: Implement put future handling
+
+# TODO: Revise connection data API
+
+# TODO: Change ResouceClosed for queue.Empty exception
+
+# TODO: Implement two-way connection expiration and keep-alives. There
+# is no reliable way to track connection drops between communication
+# implementations. Most of them end up with memory leaks. If desired
+# expiration periods could be long and client reconnections could be
+# allowed, enabling MQTT-like reliability without the cost.
+
+# TODO: Review Apache Kafka communication
 
 import os
 import abc
 import uuid
 import enum
-import pickle
 import importlib
+import threading
 from dataclasses import dataclass
+from queue import Empty, SimpleQueue
+from concurrent.futures import Future
+
+
+from pydtnn.utils import UUID_NIL
+from pydtnn.utils.io_stream import Packer, Serializer, Stream
 
 
 __all__ = (
@@ -17,7 +82,8 @@ __all__ = (
     "Protocol",
     "Message",
     "ResourceClosed",
-    "Communication",
+    "Communicator",
+    "ConnectionData",
     "Server",
     "Client"
 )
@@ -30,28 +96,115 @@ class Protocol(enum.StrEnum):
     TCP = enum.auto()
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class Message[T]:
     """Message object"""
     peer: uuid.UUID
     obj: T
 
 
+class ConnectionState(enum.Flag):
+    """Connection state"""
+    READABLE = enum.auto()
+    WRITABLE = enum.auto()
+
+
+class ConnectionData:
+    """Connection data"""
+
+    def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1) -> None:
+        """Initialize connection state"""
+        self.peer = UUID_NIL
+        self.state = ConnectionState(value=0)
+
+        self._buffer = memoryview(bytearray(buffer_size))
+        self._packer = Packer()
+
+        self.put_queue = SimpleQueue[Stream]()
+        self.get_queue = SimpleQueue[Stream]()
+        self.put_buffer = Stream()
+        self.get_buffer = Stream()
+
+    def get_empty(self) -> bool:
+        """Is get connection flushed"""
+        return self.get_queue.empty() and self.get_buffer.empty()
+
+    def put_empty(self) -> bool:
+        """Is put connection flushed"""
+        return self.put_queue.empty() and self.put_buffer.empty()
+
+    def get(self) -> Stream:
+        """Unpack from get buffer"""
+        return self._packer.unpack(self.get_buffer)
+
+    def put(self, stream: Stream) -> Future[None]:
+        """Push stream to put queue"""
+        self.put_queue.put(stream)
+        return Future[None]()
+
+    def put_read(self) -> memoryview:
+        """Read put stream"""
+        view = self.put_buffer.read1(len(self._buffer))
+
+        # View if large or end chunks
+        if len(view) == len(self._buffer) or self.put_buffer.empty():
+            return view
+
+        # Buffer if multiple small chunks
+        else:
+            self.put_buffer.unreadchunk(view)
+            size = self.put_buffer.readinto(self._buffer)
+            return self._buffer[:size]
+
+    def put_flush(self) -> None:
+        """Flush put queue"""
+        while True:
+            try:
+                stream = self.put_queue.get_nowait()
+            except Empty:
+                break
+            else:
+                self._packer.pack(self.put_buffer, stream)
+
+
 class ResourceClosed(RuntimeError):
     """Resource closed"""
 
 
-class Communication[T](abc.ABC):
-    """Base communication implementation"""
-    _pickle_protocol = 5
+class Communicator[T](abc.ABC):
+    """Base communicator implementation"""
 
     def __init__(self, addr: str, port: int) -> None:
-        """Communication initialization"""
+        """Communicator initialization"""
         super().__init__()
-        self.id = uuid.uuid4()
+        self._id = uuid.uuid4()
         self._addr = addr
         self._port = port
-        self.closed = False
+        self._close_lock = threading.Lock()
+        self._serializer = Serializer()
+
+    @property
+    def _closed(self):
+        """Is communicator closed"""
+        return self._close_lock.locked()
+
+    @abc.abstractmethod
+    def get(self, *peers: uuid.UUID) -> Message[T]:
+        """Get data from peer"""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def put(self, obj: T, *peers: uuid.UUID) -> Future[None]:
+        """Publish data to peer"""
+        raise NotImplementedError()
+
+    def _close(self) -> None:
+        """Communicator finalizer"""
+
+    def close(self) -> None:
+        """Close the communicator"""
+        if self._close_lock.acquire(blocking=False):
+            self._close()
 
     def __enter__(self):
         """Context manager start"""
@@ -60,32 +213,6 @@ class Communication[T](abc.ABC):
     def __exit__(self, cls, exc, tb):
         """Context manager exit"""
         self.close()
-
-    def _serialize(self, obj) -> bytes:
-        """Serialize object for comunication"""
-        return pickle.dumps(obj, protocol=self._pickle_protocol)
-
-    def _deserialize(self, data: bytes):
-        """Deserialize object from comunication"""
-        return pickle.loads(data)
-
-    @abc.abstractmethod
-    def get(self, *peers: uuid.UUID) -> Message[T]:
-        """Get data from peer"""
-        if self.closed:
-            raise ResourceClosed()
-
-    @abc.abstractmethod
-    def put(self, obj, *peers: uuid.UUID) -> None:
-        """Publish data to peer"""
-        if self.closed:
-            raise ResourceClosed()
-
-    def close(self) -> None:
-        """Close the connection"""
-        if self.closed:
-            return
-        self.closed = True
 
     def __del__(self) -> None:
         """Best effort finalizer"""
@@ -96,8 +223,8 @@ class Communication[T](abc.ABC):
 
 
 # Exports
-Server: type[Communication]
-Client: type[Communication]
+Server: type[Communicator]
+Client: type[Communicator]
 
 PROTOCOL: Protocol | None
 if _env_protocol := os.environ.get("PYDTNN_COMM"):

@@ -1,25 +1,31 @@
-"""MPI communication"""
+"""Shared client-server MPI code"""
 
-# NOTE: Module considerations
-#
-# Metadata is lazily initialized to prevent module imports execution.
-#
-# Dataclasses use explict super calls due to a bug:
-# https://github.com/python/cpython/issues/90562
+# NOTE: Communications are lazily initialized to prevent module imports execution
+
+# NOTE: Dataclasses must not use functools.cache, as it would add data to serialization
+
+# FIXME: Check sends and recives are sent or as much as posible even on error,
+# or if this is handled completely by the comunication layer.
+
+# TODO: Check which lazy inizializations are actually required now, if not necessary
+# inizialize eagerly and avoid complex handeling.
 
 import os
 import abc
 import enum
+import uuid
+import typing
+import functools
 import dataclasses
+from dataclasses import dataclass
 from collections import abc as coll_abc
-from dataclasses import dataclass, InitVar
+from traceback import TracebackException
 
 from intbitset import intbitset
 
 
 __all__ = (
     "Rank",
-    "RankGroup",
     "get_init",
     "get_addr",
     "get_port",
@@ -28,52 +34,96 @@ __all__ = (
     "CommmunicationGroup",
     "ReduceOperation",
     "StateRequest",
-    "InitRequest",
-    "FinalizeRequest",
+    "RankInit",
+    "RankFinalize",
     "OperationRequest",
-    "BroadcastRequest",
-    "AllGatherRequest",
-    "AllReduceRequest",
-    "OperationResponse"
+    "OperationResponse",
+    "BroadcastContext",
+    "AllGatherContext",
+    "AllReduceContext",
 )
 
 
 type Rank = int
-type RankGroup = intbitset
 
 
+@functools.cache
 def get_init() -> bool:
     """Should service auto initialize"""
-    return bool(not os.environ.get("PYDTNN_MPI_ADDR"))
+    return bool(
+        not os.environ.get("PYDTNN_MPI_ADDR")
+    )
 
 
+@functools.cache
 def get_addr() -> str:
     """Service address"""
-    return os.environ.get("PYDTNN_MPI_ADDR") or "127.0.0.1"
+    return (
+        os.environ.get("PYDTNN_MPI_ADDR")
+        or "127.0.0.1"
+    )
 
 
+@functools.cache
 def get_port() -> int:
     """Service port"""
-    return int(os.environ.get("PYDTNN_MPI_PORT") or 50000)
+    return int(
+        os.environ.get("PYDTNN_MPI_PORT")
+        or 50000
+    )
 
 
+@functools.cache
 def get_size() -> int:
     """Communication size"""
-    # NOTE: Lazily initialized, prevent module imports execution
-    return int(os.environ["OMPI_COMM_WORLD_SIZE"])
+    return int(
+        os.environ.get("PYDTNN_MPI_SIZE")
+        or os.environ.get("OMPI_COMM_WORLD_SIZE")
+        or os.environ.get("PMI_SIZE")
+        or os.environ.get("SLUM_NPROCS")
+        or 1
+    )
 
 
+@functools.cache
 def get_rank() -> Rank:
     """Communication identifier"""
-    # NOTE: Lazily initialized, prevent module imports execution
-    return int(os.environ["OMPI_COMM_WORLD_RANK"])
+    return int(
+        os.environ.get("PYDTNN_MPI_RANK")
+        or os.environ.get("OMPI_COMM_WORLD_RANK")
+        or os.environ.get("PMI_RANK")
+        or os.environ.get("SLUM_PROCID")
+        or 0
+    )
+
+
+class RemoteException(RuntimeError):
+    """Remote exception (serialization safe)"""
+
+    @classmethod
+    def from_exception(cls, exc: Exception):
+        """Create message from exception"""
+        traceback = TracebackException.from_exception(exc)
+        message = "".join(traceback.format())
+        return cls(message)
 
 
 @dataclass(slots=True, frozen=True)
 class CommmunicationGroup:
     """Communication group"""
-    src: RankGroup
-    dst: RankGroup
+    src: frozenset[Rank]
+    dst: frozenset[Rank]
+
+    def __init__(self, src: coll_abc.Iterable[Rank], dst: coll_abc.Iterable[Rank]) -> None:
+        """Inizialize communication group"""
+        # NOTE: Frozen dataclasess must use object.__setattr__ during __init__
+        object.__setattr__(self, "src", intbitset(src))  # type: ignore
+        object.__setattr__(self, "dst", intbitset(dst))  # type: ignore
+
+    @property
+    def root(self) -> Rank:
+        """Root rank of communication group"""
+        return min(self.src)
 
 
 class ReduceOperation(enum.Enum):
@@ -83,97 +133,107 @@ class ReduceOperation(enum.Enum):
 
 @dataclass(slots=True, frozen=True)
 class StateRequest:
-    """Generic state operation"""
+    """Status request"""
 
 
 @dataclass(slots=True, frozen=True)
-class InitRequest(StateRequest):
-    """Initialize request"""
+class RankInit(StateRequest):
+    """Initialize rank"""
     rank: Rank
+
+
+@dataclass(slots=True, frozen=True)
+class RankFinalize(StateRequest):
+    """Finalize rank"""
+
+
+@dataclass(slots=True, frozen=True)
+class StateResponse:
+    """Status response"""
     size: int
 
 
 @dataclass(slots=True, frozen=True)
-class FinalizeRequest(StateRequest):
-    """Terminate request"""
-
-
-@dataclass(slots=True, frozen=True)
-class OperationRequest(abc.ABC):
-    """Operation request"""
-    comm: CommmunicationGroup = dataclasses.field(init=False)
-    rank: InitVar[Rank]
-    size: InitVar[int]
+class OperationContext[T](abc.ABC):
+    """Operation context"""
 
     @abc.abstractmethod
-    def __post_init__(self, src: coll_abc.Iterable[Rank], dst: coll_abc.Iterable[Rank]) -> None:  # type: ignore
-        # NOTE: abc.abstractmethod, dataclass.__post_init__ combination not inferred by typecheker
-        """Inizialize communication group"""
-        comm = CommmunicationGroup(
-            src=intbitset(src),  # type: ignore (not inferred by typecheker)
-            dst=intbitset(dst),  # type: ignore (not inferred by typecheker)
-        )
+    def comm(self, size: int) -> CommmunicationGroup:
+        """Compute operation's communication group"""
+        raise NotImplementedError()
 
-        # NOTE: Frozen dataclasess must use object.__setattr__ during __init__
-        object.__setattr__(self, "comm", comm)
+    @abc.abstractmethod
+    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> typing.Any:
+        """Apply operation over objects"""
+        raise NotImplementedError()
 
 
 @dataclass(slots=True, frozen=True)
-class BroadcastRequest[T](OperationRequest):
-    """Broadcast request"""
-    obj: T
+class BroadcastContext[T](OperationContext[T]):
+    """Broadcast operation"""
     root: Rank = 0
 
-    def __post_init__(self, rank: Rank, size: int) -> None:
+    def comm(self, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        # NOTE: Explict super call due to bug
-        super(BroadcastRequest, self).__post_init__([self.root], range(size))
+        return CommmunicationGroup([self.root], range(size))
+
+    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> T:
+        """Apply operation over objects"""
+        return objs[self.root]
 
 
 @dataclass(slots=True, frozen=True)
-class AllGatherRequest[T](OperationRequest):
-    """All gather request"""
-    obj: T
+class AllGatherContext[T](OperationContext[T]):
+    """All gather operation"""
 
-    def __post_init__(self, rank: Rank, size: int) -> None:
+    def comm(self, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        # NOTE: Explict super call due to bug
-        super(AllGatherRequest, self).__post_init__(range(size), range(size))
+        return CommmunicationGroup(range(size), range(size))
+
+    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> list[T]:
+        """Apply operation over objects"""
+        objs = dict(sorted(objs.items(), key=lambda item: item[0]))
+        return list(objs.values())
 
 
 @dataclass(slots=True, frozen=True)
-class AllReduceRequest[T](OperationRequest):
-    """All reduce request"""
-    obj: T
+class AllReduceContext[T](OperationContext[T]):
+    """All reduce operation"""
     op: ReduceOperation = ReduceOperation.SUM
 
-    def __post_init__(self, rank: Rank, size: int) -> None:
+    def comm(self, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        # NOTE: Explict super call due to bug
-        super(AllReduceRequest, self).__post_init__(range(size), range(size))
+        return CommmunicationGroup(range(size), range(size))
+
+    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> T:
+        """Apply operation over objects"""
+        return sum(objs.values())  # type: ignore (T should be addable)
 
 
 @dataclass(slots=True, frozen=True)
-class AllPhasedReduceRequest[T](OperationRequest):
-    """All phased reduce request"""
-    obj: T
-    op: ReduceOperation = ReduceOperation.SUM
-    phase: dataclasses.InitVar[int] = 0
-    group: dataclasses.InitVar[int] = 2
+class AllPhasedReduceContext(AllReduceContext):
+    """All phased reduce operation"""
 
-    def __post_init__(self, rank: Rank, size: int, phase: int, group: int) -> None:
+    def comm(self, rank: Rank, size: int, phase: int = 0, group: int = 2) -> CommmunicationGroup:
         """Compute operation's communication group"""
         phase_size = (group ** (phase + 1))
         start = (rank // phase_size) * phase_size
         step = (group ** (phase))
         stop = min(start + phase_size, size)
-
-        # NOTE: Explict super call due to bug
-        super(AllPhasedReduceRequest, self).__post_init__(range(start, stop, step), range(start, stop))
+        return CommmunicationGroup(range(start, stop, step), range(start, stop))
 
 
 @dataclass(slots=True, frozen=True)
-class OperationResponse[T]:
+class OperationRequest:
+    """Operation request"""
+    comm: CommmunicationGroup
+    context: OperationContext | None = None
+    obj: typing.Any | None = None
+    id: uuid.UUID = dataclasses.field(init=False, default_factory=uuid.uuid4)
+
+
+@dataclass(slots=True, frozen=True)
+class OperationResponse:
     """Operation response"""
-    dst: RankGroup
-    obj: T
+    id: uuid.UUID
+    obj: typing.Any

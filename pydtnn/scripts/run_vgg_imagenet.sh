@@ -1,18 +1,21 @@
 #!/bin/bash
 
+export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
+#mpirun --use-hwthread-cpus -np 16 \
+#  --steps_per_epoch=10 \
 pydtnn_benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
-  --dataset_train_path=datasets/imagenet \
-  --dataset_test_path=datasets/imagenet \
-  --use_synthetic_data=True \
+  --dataset_train_path=datasets/imagenet/train \
+  --dataset_test_path=datasets/imagenet/test \
+  --use_synthetic_data=False \
+  --tensor_format=NCHW \
   --batch_size=64 \
   --validation_split=0.2 \
-  --steps_per_epoch=0 \
-  --num_epochs=30 \
-  --evaluate=False \
+  --num_epochs=1 \
+  --evaluate=True \
   --optimizer=adam \
   --learning_rate=0.0001 \
   --momentum=0.9 \

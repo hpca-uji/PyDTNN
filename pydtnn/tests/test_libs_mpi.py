@@ -1,16 +1,9 @@
 """MPI server-client test"""
 
-import enum
 from argparse import ArgumentParser, Namespace
 
 
 __all__ = ()
-
-
-class Mode(enum.StrEnum):
-    """Test modes"""
-    SERVER = enum.auto()
-    CLIENT = enum.auto()
 
 
 # Argument pasrser
@@ -20,6 +13,7 @@ parser = ArgumentParser(prog="test_libs_mpi", description="MPI server-client tes
 def main(config: Namespace):
     """Application entrypoint"""
     from pydtnn.libs.mpi import client as MPI
+    from pydtnn.libs.mpi.comm import RemoteException
 
     comm = MPI.COMM_WORLD
     size = comm.size
@@ -36,12 +30,31 @@ def main(config: Namespace):
     print(f"R{rank}: allgather {res}/{ref}")
     assert res == ref, f"allgather error; got {res}, expect {ref}"
 
-    ref = sum(rank for rank in range(size))
-    res = comm.allreduce(rank, MPI.SUM)
+    ref = sum(range(size))
+    res = comm.allreduce(rank)
     print(f"R{rank}: allreduce {res}/{ref}")
     assert res == ref, f"allreduce error; got {res}, expect {ref}"
 
+    ref = RemoteException
+    try:
+        res = comm.allreduce(None)
+    except RemoteException as exc:
+        res = exc
+    print(f"R{rank}: error handeling {type(res)}/{ref}")
+    assert isinstance(res, ref), f"error handeling error; got {res}, expect {ref}"
+
+    ref = None
+    try:
+        comm.barrier()
+    except Exception as exc:
+        res = exc
+    else:
+        res = None
+    print(f"R{rank}: error recovery {res}/{ref}")
+    assert res == ref, f"error recovery error; got {res}, expect {ref}"
+
     MPI.Finalize()
+    print(f"R{rank}: finalize")
 
 
 if __name__ == "__main__":
