@@ -76,7 +76,6 @@ def get_port() -> int:
 @functools.cache
 def get_size() -> int:
     """Communication size"""
-    # NOTE: Lazily initialized, prevent module imports execution
     return int(
         os.environ.get("OMPI_COMM_WORLD_SIZE")
         or os.environ.get("PMI_SIZE")
@@ -88,7 +87,6 @@ def get_size() -> int:
 @functools.cache
 def get_rank() -> Rank:
     """Communication identifier"""
-    # NOTE: Lazily initialized, prevent module imports execution
     return int(
         os.environ.get("OMPI_COMM_WORLD_RANK")
         or os.environ.get("PMI_RANK")
