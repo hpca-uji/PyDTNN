@@ -6,6 +6,7 @@ rich>=9.9.0
 scikit-image>=0.17.2
 scipy>=1.5.4
 tqdm>=4.55.0
+
 wheel>=0.38.0
 setuptools>=68.2.0,<80.0.0
 
