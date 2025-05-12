@@ -77,7 +77,8 @@ def get_port() -> int:
 def get_size() -> int:
     """Communication size"""
     return int(
-        os.environ.get("OMPI_COMM_WORLD_SIZE")
+        os.environ.get("PYDTNN_MPI_SIZE")
+        or os.environ.get("OMPI_COMM_WORLD_SIZE")
         or os.environ.get("PMI_SIZE")
         or os.environ.get("SLUM_NPROCS")
         or 1
@@ -88,7 +89,8 @@ def get_size() -> int:
 def get_rank() -> Rank:
     """Communication identifier"""
     return int(
-        os.environ.get("OMPI_COMM_WORLD_RANK")
+        os.environ.get("PYDTNN_MPI_RANK")
+        or os.environ.get("OMPI_COMM_WORLD_RANK")
         or os.environ.get("PMI_RANK")
         or os.environ.get("SLUM_PROCID")
         or 0
