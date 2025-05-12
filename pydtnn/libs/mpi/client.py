@@ -38,7 +38,6 @@ from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 
 from pydtnn import comms
-from pydtnn.utils import UUID_MAX
 from pydtnn.libs.mpi import comm as mpi_comm
 
 
@@ -67,15 +66,16 @@ class RequestState(enum.Enum):
 
 
 class Request[T]:
+    """Request handler."""
     _result: T
     _callback: abc.Callable[[T], T]
 
-    """Request handler."""
     def __init__(self) -> None:
+        """Inizialize request"""
         self._state = RequestState.INI
         self._lock = threading.Condition()
 
-    def _put(self, value) -> uuid.UUID:
+    def _put(self, value) -> uuid.UUID | None:
         """Process state change"""
         match self._state:
             case RequestState.INI:
@@ -87,7 +87,7 @@ class Request[T]:
                 with self._lock:
                     self._state = RequestState.FIN
                     self._lock.notify_all()
-                return UUID_MAX
+                return None
 
             case _:
                 raise RuntimeError(f"Invalid request state {self._state}")
@@ -106,9 +106,9 @@ class Comm:
 
     def __init__(self) -> None:
         """Communicator initialization"""
+        self._close_lock = threading.Lock()
         self._comm_lock = threading.Lock()
 
-        self._closed = False
         self._requests = dict[uuid.UUID, Request]()
         self._responses = dict[uuid.UUID, typing.Any]()
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
@@ -125,21 +125,24 @@ class Comm:
 
         self._responses[response.id] = response.obj
 
+        # Process pending requests
         self._handle_request(response.id)
 
-    def _handle_request(self, id: uuid.UUID):
+    def _handle_request(self, id: uuid.UUID) -> None:
         """Handle a request"""
-        MISSING = object()
-
+        # While matching request and response
         while request := self._requests.pop(id, None):
-            if (response := self._responses.pop(id, MISSING)) is MISSING:
+            if (response := self._responses.pop(id, self)) is self:
                 self._requests[id] = request
                 break
 
-            if (id := request._put(response)) is UUID_MAX:  # type: ignore
-                break
-            else:
+            # Continue request
+            if id := request._put(response):  # type: ignore
                 self._requests[id] = request
+
+            # Finish request
+            else:
+                break
 
     def _submit_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any) -> Request:
         """Schedule a new operation"""
@@ -155,8 +158,8 @@ class Comm:
             raise RuntimeError("Tried to schedule operation without participating")
 
         request = Request()
-        self._requests[operation.id] = request
         self._comm.put(operation)
+        self._requests[operation.id] = request
         self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
         self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
         return request
@@ -164,13 +167,11 @@ class Comm:
     @property
     def size(self) -> int:
         """Communication size"""
-        # NOTE: Lazily initialized, prevent module imports execution
         return mpi_comm.get_size()
 
     @property
     def rank(self) -> mpi_comm.Rank:
         """Communication identifier"""
-        # NOTE: Lazily initialized, prevent module imports execution
         return mpi_comm.get_rank()
 
     @functools.cached_property
@@ -178,8 +179,8 @@ class Comm:
         """Communication connection"""
         # NOTE: Lazily initialized, prevent module imports execution
         with self._comm_lock:
-            if comm := self.__dict__.get("_comm"):
-                pass
+            if "_comm" in self.__dict__:
+                comm = self.__dict__["_comm"]
             else:
                 comm = self.__dict__["_comm"] = self._new_comm()
         return comm
@@ -199,40 +200,46 @@ class Comm:
 
         addr = mpi_comm.get_addr()
         port = mpi_comm.get_port()
-        comm = comms.Client(addr=addr, port=port)
         state = mpi_comm.RankInit(rank=self.rank)
-        comm.put(state)
-        while True:
-            response = comm.get().obj
+        try:
+            comm = comms.Client(addr=addr, port=port)
+            comm.put(state)
+            while True:
+                response = comm.get().obj
 
-            match response:
-                case mpi_comm.StateResponse():
-                    pass
-                case _:
-                    warnings.warn(f"Unknown response {response}", RuntimeWarning)
-                    continue  # response lost
+                match response:
+                    case mpi_comm.StateResponse():
+                        pass
+                    case _:
+                        warnings.warn(f"Unknown response {response}", RuntimeWarning)
+                        continue  # response lost
 
-            if response.size == self.size:
-                break
+                if response.size == self.size:
+                    break
+        except Exception:
+            comm.close()
+            raise
         return comm
 
     def _close_comm(self, comm: comms.Communicator) -> None:
         """Fianlize a communication object"""
         state = mpi_comm.RankFinalize()
-        comm.put(state)
-        while True:
-            response = comm.get().obj
+        try:
+            comm.put(state)
+            while True:
+                response = comm.get().obj
 
-            match response:
-                case mpi_comm.StateResponse():
-                    pass
-                case _:
-                    warnings.warn(f"Unknown response {response}", RuntimeWarning)
-                    continue  # response lost
+                match response:
+                    case mpi_comm.StateResponse():
+                        pass
+                    case _:
+                        warnings.warn(f"Unknown response {response}", RuntimeWarning)
+                        continue  # response lost
 
-            if response.size == 0:
-                break
-        comm.close()
+                if response.size == 0:
+                    break
+        finally:
+            comm.close()
 
         # If requested, stop a local server
         if mpi_comm.get_init():
@@ -243,17 +250,18 @@ class Comm:
             from time import sleep
             sleep(0.5)
 
-    def Disconnect(self) -> None:
-        """Disconnect from a communicator."""
-        # Atomicly get and remove communicator
+    def _close(self) -> None:
+        """Communicator finalizer"""
+        # Close comunicator if initialized
         if comm := self.__dict__.pop("_comm", None):
             self._close_comm(comm)
 
-        if self._closed:
-            return
-        self._closed = True
-
         self._pool.shutdown()
+
+    def Disconnect(self) -> None:
+        """Disconnect from a communicator."""
+        if self._close_lock.acquire(blocking=False):
+            self._close()
 
     def __del__(self) -> None:
         """Best effort finalizer"""
