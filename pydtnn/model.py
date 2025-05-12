@@ -35,7 +35,6 @@ import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 from . import losses, metrics
 from . import utils
-from . import codecs
 from .datasets import CustomDataset, get_dataset
 from .lr_schedulers import get_lr_schedulers
 from .optimizers import get_optimizer
@@ -152,6 +151,7 @@ class Model:
         # Initialize the total number of params of the model
         self.nparams = 0
         # Execution attributes
+        self.rank_weight = 1.0
         self.comm_rank = self.rank = 0
         self.comm_size = self.nprocs = 1
         if self.comm:
@@ -321,33 +321,12 @@ class Model:
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
             self._read_model(self.model_name)
-        # Communications sample sizes
-        self.comm_nsamples = [
-            self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples],
-            self.comm.allgather(self.dataset.val_nsamples) if self.comm else [self.dataset.val_nsamples],
-            self.comm.allgather(self.dataset.test_nsamples) if self.comm else [self.dataset.test_nsamples]
-        ]
-        # Process weights
-        total_nsamples = sum(self.comm_nsamples[0])
-        match self.proc_weight:
-            case "equal":
-                self.rank_weight = 1.0
-            case "mean":
-                self.rank_weight = self.comm_size * (self.dataset.train_nsamples / total_nsamples)
-            case "inverse":
-                min_nsamples, max_nsamples = min(self.comm_nsamples[0]), max(self.comm_nsamples[0])
-                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
-                self.rank_weight = self.comm_size * (inverse_nsamples / total_nsamples)
-            case _:
-                raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
-        # Communications codec
-        match self.comm_codec:
-            case "plain":
-                self.comm_codec = codecs.ident.Codec()
-            case "fhe":
-                self.comm_codec = codecs.fhe.Codec()
-            case _:
-                raise SystemExit(f"Communication codec '{self.comm_codec}' not recognized.")
+        # Syncronization parameters
+        self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
+        if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
+            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+        if self.model_sync_participation not in {"all", "avail2all"}:
+            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
 
     @property
     def dataset_raw_path(self):
@@ -383,7 +362,7 @@ class Model:
             print(line)
             layer.show()
         print(line)
-        print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size(self.nparams * bfp):^15s} "
+        print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size_bytes(self.nparams * bfp):^15s} "
               f"{'':19s} {'':37s}|")
         print(line)
 
@@ -552,25 +531,28 @@ class Model:
 
     def _compute_metrics_funcs(self, y_pred, y_targ, loss, blocking=True, comm=True):
         loss_req = None
+
         if y_targ.shape[0] > 0:
             if self.enable_cudnn:
-                _losses = np.array([loss] + [func(y_pred.ary, y_targ.ary) for func in self.metrics_funcs], dtype=self.dtype) / self.comm_size
+                _losses = np.array([loss] + [func(y_pred.ary, y_targ.ary) for func in self.metrics_funcs], dtype=self.dtype)
             else:
-                _losses = np.array([loss] + [func(y_pred, y_targ) for func in self.metrics_funcs], dtype=self.dtype) / self.comm_size
+                _losses = np.array([loss] + [func(y_pred, y_targ) for func in self.metrics_funcs], dtype=self.dtype)
         else:
             _losses = self.total_metrics.copy()
             _losses[0] = loss
-            _losses /= self.comm_size
+
         if self.comm is not None and comm:
+            _losses /= self.comm_size
             if blocking:
                 self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
             else:
                 loss_req = self.comm.Iallreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
         else:
             if blocking:
-                _losses *= self.comm_size
+                pass
             else:
                 raise NotImplementedError("can not compute metrics non-blocking locally")
+
         return _losses, loss_req
 
     def _update_running_average(self, curr, total, count, batch_size, prefix=""):
@@ -596,12 +578,12 @@ class Model:
     def _zero_dx(self, y):
         return np.zeros_like(y, shape=(1,) + y.shape[1:])
 
-    def _weight_update(self, gradient=True, blocking=True, comm=True):
-        if blocking or not comm:
+    def _weight_update(self, gradient=True, blocking=True):
+        if blocking:
             for i in range(len(self.layers) - 1, 0, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW.value)
-                self.layers[i].reduce_weights_sync(gradient=gradient, comm=comm)
+                self.layers[i].reduce_weights_sync(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         else:
@@ -630,8 +612,8 @@ class Model:
         except ValueError:
             return self.total_metrics
 
-        # Forward pass (FP)
-        if current_batch_size > 0:
+        if x_batch.shape[0] > 0:
+            # Forward pass (FP)
             for i in range(1, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 x = self.layers[i].forward(x)
@@ -639,30 +621,36 @@ class Model:
 
             loss, dx = self.loss_func(x, y_targ, self.batch_size)
         else:
-            loss, dx = 0.0, self._zero_dx(y_targ)
+            assert y_targ.shape[0] == 0
+            loss, dx = 0.0, y_targ
+
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
 
-        # Backward pass (BP)
-        for i in range(len(self.layers) - 1, 0, -1):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
-            dx = self.layers[i].backward(dx)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+        if x_batch.shape[0] > 0:
+            # Backward pass (BP)
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
+                dx = self.layers[i].backward(dx)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.enable_cudnn:
             self.stream.synchronize()
 
         # Gradient update
-        self._weight_update(gradient=True, blocking=self.blocking_mpi, comm=sync_model)
+        if sync_model:
+            self._weight_update(gradient=True, blocking=self.blocking_mpi)
 
-        # Optimizer
-        for i in range(len(self.layers) - 1, 0, -1):
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW.value)
-            self.layers[i].update_weights(self.optimizer)
-            self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+        if x_batch.shape[0] > 0 or sync_model:
+
+            # Optimizer
+            for i in range(len(self.layers) - 1, 0, -1):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW.value)
+                self.layers[i].update_weights(self.optimizer)
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weight update
         if self.model_sync_freq > 0 and sync_model:
-            self._weight_update(gradient=False, blocking=self.blocking_mpi, comm=True)
+            self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         if self.enable_cudnn:
             for i in range(len(self.layers) - 1, 0, -1):
@@ -694,6 +682,30 @@ class Model:
         history = self.train_dataset(bar_width=bar_width)
         return history
 
+    def _compute_rank_weight(self, mask):
+        match self.model_sync_participation:
+            case "all":
+                comm_nsamples = self.comm_nsamples
+            case "avail2all":
+                if mask[self.rank]:
+                    comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples, mask) if mask]
+                else:
+                    return 0.0
+            case _:
+                raise NotImplementedError(f"model_sync_participation = {self.model_sync_participation}")
+
+        min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
+        comm_size = len(comm_nsamples)
+
+        match self.model_sync_alg:
+            case "avg":
+                return 1.0 / comm_size
+            case "wavg":
+                return self.dataset.train_nsamples / total_nsamples
+            case "invwavg":
+                inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
+                return inverse_nsamples / self.total_nsamples
+
     @ensure_model_is_initialized
     def train_dataset(self, bar_width=BAR_WIDTH):
         if self.enable_cudnn and self.y_batch is None:
@@ -724,15 +736,27 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for x_batch, y_batch, batch_size in train_batch_generator:
-                model_sync_count += 1
-                tic = timer()
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+                model_sync_count += 1
+
+                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                rank_avail = sum(rank_mask)
+
+                if rank_avail <= 0:
+                    break
+
+                if rank_avail < self.model_sync_min_avail:
+                    sync_model = False
+
+                self.rank_weight = self._compute_rank_weight(rank_mask)
+
+                tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
                 toc = timer()
 
                 if batch_size <= 0:
                     if self.comm_rank == 0:
-                        pbar.set_postfix_str(s=f"{string}, peers busy…", refresh=True)
+                        pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                     continue
 
                 train_total_loss, train_batch_count, string = \
@@ -750,8 +774,18 @@ class Model:
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for x_batch, y_batch, batch_size in val_batch_generator:
-                model_sync_count += 1
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+                model_sync_count += 1
+
+                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                rank_avail = sum(rank_mask)
+
+                if rank_avail <= 0:
+                    break
+
+                if rank_avail < self.model_sync_min_avail:
+                    sync_model = False
+
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=False and sync_model)
 
                 if batch_size <= 0:
@@ -781,8 +815,9 @@ class Model:
                 break
 
         # Syncronize model
-        self._weight_update(gradient=True, blocking=self.blocking_mpi, comm=True)
-        self._weight_update(gradient=False, blocking=self.blocking_mpi, comm=True)
+        if self.final_model_sync:
+            self._weight_update(gradient=True, blocking=self.blocking_mpi)
+            self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         self.tracer.define_event_types(self)
         return self.history
@@ -796,7 +831,7 @@ class Model:
             return self.total_metrics
 
         # Forward pass (FP)
-        if current_batch_size > 0:
+        if x_batch.shape[0] > 0:
             for i in range(1, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
                 x = self.layers[i].forward(x)
@@ -807,6 +842,7 @@ class Model:
         else:
             y_pred = self.layers[-1].y
             loss = 0.0
+
         self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
 
         return self.total_metrics
@@ -832,9 +868,19 @@ class Model:
 
         model_sync_count = 0
         for x_batch, y_batch, batch_size in test_batch_generator:
-            model_sync_count += 1
-            tic = timer()
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+            model_sync_count += 1
+
+            rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+            rank_avail = sum(rank_mask)
+
+            if rank_avail <= 0:
+                break
+
+            if rank_avail < self.model_sync_min_avail:
+                sync_model = False
+
+            tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
             toc = timer()
 

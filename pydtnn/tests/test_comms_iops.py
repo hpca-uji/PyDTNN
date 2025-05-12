@@ -1,79 +1,132 @@
 """Communications IOPS test"""
 
-import os
 import sys
 import time
 import enum
-from pydtnn import comms
+import numpy
+from threading import Thread
+from pydtnn import comms, utils
 from argparse import ArgumentParser, Namespace
 
 
 __all__ = ()
 
 
-class Mode(enum.StrEnum):
-    """Test modes"""
+class Peer(enum.StrEnum):
+    """Peer type"""
     SERVER = enum.auto()
     CLIENT = enum.auto()
 
 
+class Mode(enum.StrEnum):
+    """Test mode"""
+    SEQUENTIAL = enum.auto()
+    RANDOM = enum.auto()
+
+
 # Argument pasrser
 parser = ArgumentParser(prog="test_comms_iops", description="Communications IOPS test")
+parser.add_argument("peer", choices=list(Peer))
 parser.add_argument("mode", choices=list(Mode))
 parser.add_argument("--addr", type=str, default="127.0.0.1")
 parser.add_argument("--port", type=int, default=50000)
 parser.add_argument("--start-delay", type=float, default=3.0)
-parser.add_argument("--end-delay", type=float, default=1.5)
-parser.add_argument("--delay", type=float, default=3.0)
+parser.add_argument("--delay", type=float, default=0.0)
 parser.add_argument("--size", type=int, default=1_000)
 parser.add_argument("--reps", type=int, default=1_000_000)
 
 
+def get(comm: comms.Communicator, msg: numpy.ndarray, reps: int):
+    """Communication get handler"""
+    for i in range(reps):
+        print(i, end="\r", flush=True)
+        got = comm.get().obj
+        assert len(got) == len(msg), "Lost message data"
+    assert numpy.array_equal(got, msg), "Corrupted message data"
+    print(i)
+    return got
+
+
+def put(comm: comms.Communicator, msg: numpy.ndarray, reps: int):
+    """Communication put handler"""
+    for i in range(reps):
+        print(i, end="\r", flush=True)
+        comm.put(msg)
+    print(i)
+    return msg
+
+
+def print_stats(config: Namespace, time: float) -> None:
+    """Print statistics"""
+    ops = config.reps * 2
+    size = config.size * ops
+    print(f"Time:       {time:.1f}s")
+    print(f"Data:       {utils.convert_size(config.reps)} x {utils.convert_size(config.size)}B")
+    print(f"Transfer:   {utils.convert_size(size)}B @ {utils.convert_size(size * 8 / time):>5}bps")
+    print(f"Operations: {utils.convert_size(ops)} @ {utils.convert_size(ops / time)}IOPS")
+
+
 def server(config: Namespace):
-    """Server mode"""
-    server = comms.Server(addr=config.addr, port=config.port)
-    server.get()
+    """Server peer"""
+    message = numpy.arange(config.size, dtype=numpy.uint8)
 
-    time.sleep(config.delay)
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        msg = server.get().obj
-    print()
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        server.put(msg)
-    print()
+    with comms.Server(addr=config.addr, port=config.port) as server:
+        get_thread = Thread(target=get, args=(server, message, config.reps))
+        put_thread = Thread(target=put, args=(server, message, config.reps))
+        server.get()
+        start_time = time.time()
 
-    time.sleep(config.end_delay)
-    server.close()
+        match config.mode:
+            case Mode.SEQUENTIAL:
+                time.sleep(config.delay)
+                get_thread.run()
+                put_thread.run()
+
+            case Mode.RANDOM:
+                get_thread.start()
+                put_thread.start()
+                get_thread.join()
+                put_thread.join()
+
+    end_time = time.time()
+    del message
+
+    print_stats(config=config, time=end_time - start_time)
 
 
 def client(config: Namespace):
-    """Client mode"""
+    """Client peer"""
+    message = numpy.arange(config.size, dtype=numpy.uint8)
+
     time.sleep(config.start_delay)
-    put_msg = os.urandom(config.size)
-    client = comms.Client(addr=config.addr, port=config.port)
-    client.put(None)
+    with comms.Client(addr=config.addr, port=config.port) as client:
+        get_thread = Thread(target=get, args=(client, message, config.reps))
+        put_thread = Thread(target=put, args=(client, message, config.reps))
+        client.put(None)
+        start_time = time.time()
 
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        client.put(put_msg)
-    print()
-    time.sleep(config.delay)
-    for i in range(config.reps):
-        print(i, end="\r", flush=True)
-        get_msg = client.get().obj
-        assert len(put_msg) == len(get_msg), "Lost message data"
-    assert put_msg == get_msg, "Corrupted message data"
-    print()
+        match config.mode:
+            case Mode.SEQUENTIAL:
+                put_thread.run()
+                time.sleep(config.delay)
+                get_thread.run()
 
-    client.close()
+            case Mode.RANDOM:
+                get_thread.start()
+                put_thread.start()
+                get_thread.join()
+                put_thread.join()
+
+    end_time = time.time()
+    del message
+
+    print_stats(config=config, time=end_time - start_time)
 
 
 def main(config: Namespace):
     """Application entrypoint"""
     self = sys.modules[__name__]
-    handler = getattr(self, config.mode)
+    handler = getattr(self, config.peer)
     print(config)
     handler(config)
 

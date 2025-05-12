@@ -1,6 +1,4 @@
-"""Fully Homomorphic Encryption codec"""
-
-# NOTE: Module does not provide any encryption, it is temporary placeholder
+"""Pseudo encryption codec"""
 
 import numpy
 from dataclasses import dataclass

@@ -25,6 +25,7 @@ import math
 import os
 import sys
 import string
+import uuid
 from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
@@ -34,6 +35,10 @@ import numpy as np
 PYDTNN_TENSOR_FORMATS = 2
 (PYDTNN_TENSOR_FORMAT_NHWC,
  PYDTNN_TENSOR_FORMAT_NCHW) = range(PYDTNN_TENSOR_FORMATS)
+
+
+UUID_NIL = uuid.UUID(int=0)
+UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
 
 
 def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
@@ -103,14 +108,19 @@ def mkl():
     return mkl.lib
 
 
-def convert_size(size_bytes):
-    if size_bytes == 0:
-        return "0B"
-    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
-    i = int(math.log(size_bytes, 1024))
-    p = math.pow(1024, i)
-    s = round(size_bytes / p, 2)
-    return "%s %sytes" % (s, size_name[i])
+def convert_size(units: int, scale: int = 1000):
+    if units > 0:
+        size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
+        i = int(math.log(units, scale))
+        p = math.pow(scale, i)
+        s = round(units / p, 2)
+    else:
+        i = 0
+    return f"{s}{size_name[i]}"
+
+
+def convert_size_bytes(size_bytes):
+    return f"{convert_size(size_bytes, scale=1024)}B"
 
 
 def get_module_path(path, base):
