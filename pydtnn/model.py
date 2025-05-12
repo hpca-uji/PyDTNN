@@ -741,7 +741,7 @@ class Model:
                 if rank_avail <= 0:
                     break
 
-                if rank_avail < self.model_sync_min_participation:
+                if rank_avail < self.model_sync_min_avail:
                     sync_model = False
 
                 self.rank_weight = self._compute_rank_weight(rank_mask)
@@ -779,7 +779,7 @@ class Model:
                 if rank_avail <= 0:
                     break
 
-                if rank_avail < self.model_sync_min_participation:
+                if rank_avail < self.model_sync_min_avail:
                     sync_model = False
 
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=False and sync_model)
@@ -873,7 +873,7 @@ class Model:
             if rank_avail <= 0:
                 break
 
-            if rank_avail < self.model_sync_min_participation:
+            if rank_avail < self.model_sync_min_avail:
                 sync_model = False
 
             tic = timer()

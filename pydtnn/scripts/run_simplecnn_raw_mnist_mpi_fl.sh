@@ -9,7 +9,7 @@ mpirun -np 4 \
   --dataset=raw \
   --dataset_raw_path='datasets/mnist/dataset.${rank}.npz' \
   --model_sync_alg=avg \
-  --model_sync_min_participation=0 \
+  --model_sync_min_avail=0 \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \
