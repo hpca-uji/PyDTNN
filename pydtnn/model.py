@@ -295,8 +295,6 @@ class Model:
         # Load weights and bias
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
-        # Dataset
-        self.dataset = get_dataset(self)
         # Optimizers and LRSchedulers
         if self.kwargs["learning_rate_scaling"]:
             # using comm_size instead of nprocs might not be appropriate,
@@ -313,15 +311,19 @@ class Model:
         # Attributes that will be properly defined elsewhere
         self.y_batch = None
         self.history = None
-        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
-        self.model_name = self.kwargs.get("model_name")
-        if self.model_name:
-            self._read_model(self.model_name)
         # Syncronization parameters
         if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
+        self.model_name = self.kwargs.get("model_name")
+        if self.model_name:
+            self._read_model(self.model_name)
+        # Dataset
+        self.dataset_name = self.kwargs.get("dataset_name")
+        if self.dataset_name:
+            self.dataset = get_dataset(self)
 
     @property
     def dataset_raw_path(self):
