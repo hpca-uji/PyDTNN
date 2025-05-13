@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -18,21 +18,21 @@
 #
 
 from abc import ABC
+from typing import Tuple
 
 from ..backends import PromoteToBackendMixin
 from ..layers.layer_and_activation_base import LayerAndActivationBase
 
-
 class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
 
-    def __init__(self, shape=(1,)):
+    def __init__(self, shape: Tuple[int, ...]=(1,)) -> None:
         super().__init__(shape)
         self.y = None
 
-    def initialize(self, prev_shape, need_dx=True):
+    def initialize(self, prev_shape, need_dx=True) -> None:
         super().initialize(prev_shape, need_dx)
         self.shape = prev_shape
 
     @property
-    def canonical_name_with_id(self):
+    def canonical_name_with_id(self) -> str:
         return f"{self._id_prefix}{self.canonical_name}"

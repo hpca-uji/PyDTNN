@@ -21,12 +21,14 @@ import numpy as np
 
 from .activation import Activation
 
+from ..backends.gpu.tensor_gpu import TensorGPU
+from numpy import ndarray
 
 class Tanh(Activation):
 
-    def forward(self, x):
+    def forward(self, x: ndarray | TensorGPU) -> ndarray | TensorGPU:
         return np.tanh(x)
 
-    def backward(self, dy):
+    def backward(self, dy: ndarray | TensorGPU | None) -> ndarray | TensorGPU | None:
         if self.need_dx:
             return 1 - np.tanh(dy) ** 2

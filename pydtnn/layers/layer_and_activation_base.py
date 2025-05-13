@@ -21,30 +21,36 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
+from typing import Tuple, List, Self
+from ..model import Model
+
+from ..backends.gpu.tensor_gpu import TensorGPU
+from numpy import ndarray
+from ..optimizers.optimizer import Optimizer
 
 class LayerAndActivationBase(ABC):
 
-    def __init__(self, shape=()):
-        self.nparams = 0
-        self.shape = shape
-        self.weights = np.array([])
-        self.biases = np.array([])
+    def __init__(self, shape:Tuple[int, ...]=()) -> None:
+        self.nparams: int = 0
+        self.shape: Tuple[int, ...] = shape
+        self.weights: np.array = np.array([])
+        self.biases: np.array = np.array([])
         self.act = None
-        self.grad_vars = {}
-        self.fwd_time = np.zeros((4,), dtype=np.float32)
-        self.bwd_time = np.zeros((4,), dtype=np.float32)
-        self.paths = []
-        self.need_dx = True
+        self.grad_vars:dict[str, str] = {}
+        self.fwd_time: np.array = np.zeros((4,), dtype=np.float32)
+        self.bwd_time: np.array = np.zeros((4,), dtype=np.float32)
+        self.paths: List[List[LayerAndActivationBase]] = []
+        self.need_dx: bool = True
         self.reqs_allred = {}
         # The next attributes will be initialized later
-        self.id = None
-        self.model = None
-        self.prev_shape = None
-        self.is_block_layer = False
-        self.stream_2 = None
+        self.id: int = None
+        self.model: Model = None
+        self.prev_shape: Tuple[int, ...] = None
+        self.is_block_layer: bool = False
+        self.stream_2 = None 
 
     @property
-    def _id_prefix(self):
+    def _id_prefix(self) -> str:
         prefix = ''
         if self.id is not None and self.model is not None:
             try:
@@ -59,38 +65,38 @@ class LayerAndActivationBase(ABC):
             prefix = "{:0{width}d}_".format(self.id, width=max_digits)
         return prefix
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self._id_prefix}{type(self).__name__}"
 
-    def set_model(self, parent_model):
+    def set_model(self, parent_model: Model) -> None:
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape, need_dx=True):
+    def initialize(self, prev_shape: Tuple[int, ...], need_dx:bool=True) -> None:
         self.prev_shape = prev_shape
         self.need_dx = need_dx
 
     @abstractmethod
-    def forward(self, x):
+    def forward(self, x: ndarray | TensorGPU) -> ndarray | TensorGPU:
         pass
 
     @abstractmethod
-    def backward(self, dy):
+    def backward(self, dy: ndarray | TensorGPU | None) -> ndarray | TensorGPU | None:
         pass
 
     @abstractmethod
-    def reduce_weights_async(self, gradient=True):
+    def reduce_weights_async(self, gradient:bool=True):
         pass
 
     @abstractmethod
-    def wait_allreduce_async(self, gradient=True):
+    def wait_allreduce_async(self, gradient:bool=True):
         pass
 
     @abstractmethod
-    def reduce_weights_sync(self, gradient=True):
+    def reduce_weights_sync(self, gradient:bool=True):
         pass
 
-    def show(self, attrs=""):
+    def show(self, attrs:str | None = "") -> str:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
@@ -99,11 +105,11 @@ class LayerAndActivationBase(ABC):
         pass
 
     @property
-    def children(self):
-        children = []
+    def children(self) -> List[Self]:
+        children:list = []
         for path in self.paths:
             children += [layer for layer in path]
         return children
 
-    def update_weights(self, optimizer):
+    def update_weights(self, optimizer: Optimizer) -> None:
         optimizer.update(self)
