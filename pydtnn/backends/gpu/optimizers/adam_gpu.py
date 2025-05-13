@@ -27,6 +27,7 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import Adam
+from pydtnn.utils import get_attr_factory
 
 
 class AdamGPU(OptimizerGPU, Adam):
@@ -70,8 +71,8 @@ class AdamGPU(OptimizerGPU, Adam):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            m = getattr(layer, "m_%s" % w_, gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
-            v = getattr(layer, "v_%s" % w_, gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
+            m = get_attr_factory(layer, "m_%s" % w_, lambda: gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
+            v = get_attr_factory(layer, "v_%s" % w_, lambda: gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
 
             if self.gpudirect:
                 rows, cols = w.shape[0], np.prod(w.shape[1:])

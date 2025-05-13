@@ -41,6 +41,30 @@ UUID_NIL = uuid.UUID(int=0)
 UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
 
 
+def get_attr_factory(o, name, factory):
+    try:
+        return getattr(o, name)
+    except AttributeError:
+        return factory()
+
+
+def set_attr_default(o, name, value):
+    try:
+        return getattr(o, name)
+    except AttributeError:
+        setattr(o, name, value)
+        return value
+
+
+def set_attr_default_factory(o, name, factory):
+    try:
+        return getattr(o, name)
+    except AttributeError:
+        value = factory()
+        setattr(o, name, value)
+        return value
+
+
 def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
     if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
         return shape[2], shape[0], shape[1]
