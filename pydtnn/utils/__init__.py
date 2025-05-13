@@ -169,7 +169,7 @@ def get_derived_classes(base_class, module_locals):
 
 # Matmul operation
 # Warning: the output matrix can not be cached, as it will persist outside this method
-def matmul(a, b, c=None):
+def matmul(a: np.ndarray, b: np.ndarray, c: np.ndarray | None = None) -> np.ndarray:
     # if a.dtype == np.float32:
     #    c = slb.sgemm(1.0, a, b)
     # elif a.dtype == np.float64:

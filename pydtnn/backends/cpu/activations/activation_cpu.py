@@ -39,7 +39,7 @@ class ActivationCPU(Activation, ABC):
       * reduce_weights_sync()
     """
 
-    def reduce_weights_async(self, gradient=True):
+    def reduce_weights_async(self, gradient:bool=True) -> None:
         if not self.model.comm:
             return
         self.reqs_allred = {}
@@ -51,14 +51,14 @@ class ActivationCPU(Activation, ABC):
             req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             self.reqs_allred[dw_] = req
 
-    def wait_allreduce_async(self, gradient=True):
+    def wait_allreduce_async(self, gradient=True) -> None:
         if not self.model.comm or self.model.enable_nccl:
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             self.reqs_allred[dw_].wait()
 
-    def reduce_weights_sync(self, gradient=True):
+    def reduce_weights_sync(self, gradient=True) -> None:
         if not self.model.comm:
             return
         for w_, dw_ in self.grad_vars.items():
