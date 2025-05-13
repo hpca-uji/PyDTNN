@@ -386,7 +386,7 @@ class Model:
         if layer.act:
             self.add(layer.act())
 
-    def extend(self, layers):
+    def add_layers(self, layers):
         for layer in layers:
             self.add(layer)
 
@@ -679,7 +679,14 @@ class Model:
         self.tracer.define_event_types(self)
         self._initialized = True
 
-    def train(self, x_train, y_train, x_val, y_val, bar_width=BAR_WIDTH):
+    def train(self, x_train, y_train, x_val=None, y_val=None, bar_width=BAR_WIDTH):
+        if x_val is None or y_val is None:
+            if x_val is None and y_val is None:
+                x_val = x_train
+                y_val = y_train
+            else:
+                raise SystemExit("Both x_train and y_train must be provided or, alternatively, none of them!")
+
         self.dataset = CustomDataset(self, x_train=x_train, y_train=y_train, x_test=x_val, y_test=y_val)
         history = self.train_dataset(bar_width=bar_width)
         return history
