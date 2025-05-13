@@ -386,6 +386,10 @@ class Model:
         if layer.act:
             self.add(layer.act())
 
+    def extend(self, layers):
+        for layer in layers:
+            self.add(layer)
+
     def get_all_layers(self, from_layers=None):
         if from_layers is None:
             from_layers = self.layers
