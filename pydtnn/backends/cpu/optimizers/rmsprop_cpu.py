@@ -21,6 +21,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import RMSProp
+from pydtnn.utils import get_attr_factory
 
 
 class RMSPropCPU(OptimizerCPU, RMSProp):
@@ -29,7 +30,7 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
         lr = self.learning_rate
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            cache = getattr(layer, "cache_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
+            cache = get_attr_factory(layer, "cache_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
 
             cache = self.rho * cache + (1 - self.rho) * dw ** 2
             w -= lr * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
