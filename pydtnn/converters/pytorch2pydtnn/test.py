@@ -65,7 +65,7 @@ KWARGS = {
         "parallel": "data",
         "tensor_format": "NCHW", # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
-        "enable_gpu" : True,
+        "enable_gpu" : False,
         "dataset_train_path": DATASET_PATH,
         "dataset_test_path": DATASET_PATH,
     }
@@ -277,7 +277,7 @@ def main():
 
     dataset: Dataset = get_dataset(old_model)    
 
-    dataloader = list(dataset.get_test_generator())
+    dataloader = list(dataset._actual_batch_generator(TRAIN))
 
     print("dataset:")
     print(dataset)
