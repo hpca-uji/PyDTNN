@@ -698,7 +698,7 @@ class Model:
             case "all":
                 pass
             case "avail2all":
-                if mask[self.rank]:
+                if mask[self.comm_rank]:
                     comm_nsamples = [nsamples for nsamples, mask in zip(comm_nsamples, mask) if mask]
                 else:
                     return 0.0
@@ -715,7 +715,7 @@ class Model:
                 return self.dataset.train_nsamples / total_nsamples
             case "invwavg":
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
-                return inverse_nsamples / self.total_nsamples
+                return inverse_nsamples / total_nsamples
 
     @ensure_model_is_initialized
     def train_dataset(self, bar_width=BAR_WIDTH):
