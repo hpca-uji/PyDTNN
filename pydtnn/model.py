@@ -28,7 +28,10 @@ import time
 from timeit import default_timer as timer
 
 # Typing-related import
-from typing import Any, Generator, List, Tuple, TypeAlias
+from typing import Any, TypeVar
+from collections.abc import Iterable
+from .tracers import SimpleTracerGPU
+
 from types import ModuleType
 from .layers.layer_and_activation_base import LayerAndActivationBase
 from .tracers.tracer import Tracer
@@ -52,20 +55,47 @@ from .utils.best_of import BestOf
 from .utils.memory_cache import MemoryCache
 from .utils.performance_counter import PerformanceCounter
 
+
+# --- CUDA related imports --- #
+import atexit
+cuda_error_msg = list()
+try:
+    import pydtnn.backends.gpu.tensor_gpu
+    # noinspection PyUnresolvedReferences
+    import pycuda.gpuarray as gpuarray
+except (ImportError, ModuleNotFoundError) as e: 
+    gpuarray = None
+    cuda_error_msg.append(e)
+except Exception as e: raise(e)
+try:
+    # noinspection PyUnresolvedReferences
+    import pycuda.driver as drv
+    from pydtnn.backends.gpu.libs import libcudnn as cudnn
+except (ImportError, ModuleNotFoundError) as e: 
+    drv = None
+    cuda_error_msg.append(e)
+except Exception as e: raise(e)
+try: 
+    # noinspection PyUnresolvedReferences
+    from skcuda import cublas
+except (ImportError, ModuleNotFoundError) as e: 
+    cublas = None
+    cuda_error_msg.append(e)
+except Exception as e: raise(e)
+# --- END CUDA related imports --- #
+
 # --- GLOBAL VARIABLES --- #
 supported_gpu: bool = False
 supported_cudnn: bool = True
 supported_nccl: bool = True
-supported_mpi4py: bool = True
 enable_cudnn: bool = False
-gpuarray: Any = None
 # --- END GLOBAL VARIABLES --- #
 
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     from pydtnn.libs.mpi import MPI
 except (ImportError, ModuleNotFoundError):
-    supported_mpi4py = False
+    MPI = None
 
 # --- CONSTANS --- #
 BAR_WIDTH = 140
@@ -74,14 +104,14 @@ DEFAULT_BACH_SIZE = 64
 # --- END CONSTANS --- #
 
 # TODO: Change ModuleType to the actual module type.
-NCCL_DataType: TypeAlias = type # NOTE: Check "_initialize_cuda" to get the actual types.
-NCCL_Comm_Type: TypeAlias = type # NOTE: Check "_initialize_cuda" to get the actual types.
-Cudnn_Handle_Type: TypeAlias = type # NOTE: Check "_initialize_cuda" to get the actual types.
-Cublas_Handle_Type: TypeAlias = type # NOTE: Check "_initialize_cuda" to get the actual types.
-PyCuda_Stream_Type : TypeAlias = type # NOTE: Check "_initialize_cuda" to get the actual types.
-Cudnn_dtype : TypeAlias = type # NOTE: Check "_initialize_cuda" to get the actual types.
+NCCL_DataType = TypeVar("NCCL_DataType") # NOTE: Check "_initialize_cuda" to get the actual types.
+NCCL_Comm_Type = TypeVar("NCCL_Comm_Type") # NOTE: Check "_initialize_cuda" to get the actual types.
+Cudnn_Handle_Type = TypeVar("Cudnn_Handle_Type") # NOTE: Check "_initialize_cuda" to get the actual types.
+Cublas_Handle_Type = TypeVar("Cublas_Handle_Type") # NOTE: Check "_initialize_cuda" to get the actual types.
+PyCuda_Stream_Type  = TypeVar("PyCuda_Stream_Type") # NOTE: Check "_initialize_cuda" to get the actual types.
+Cudnn_dtype = TypeVar("Cudnn_dtype") # NOTE: Check "_initialize_cuda" to get the actual types.
 
-def _layer_id_generator() -> Generator[int]:
+def _layer_id_generator() -> Iterable[int]:
     """To obtain consecutive layer ids. See Layer.set_model()."""
     current_layer_id = 0
     while True:
@@ -101,16 +131,15 @@ def ensure_model_is_initialized(method):
     return wrapper_ensure_model_is_initialized
 # --- END ensure_model_is_initialized --- #
 
-def _initilize_communications(parallel: str) -> Tuple[ModuleType | None, ModuleType | None]:
+def _initilize_communications(parallel: str) -> tuple[ModuleType | None, ModuleType | None]:
     
-    global supported_mpi4py
     
     match parallel:
         case "sequential":
             mpi = None
             comm = None
         case "data":
-            if not supported_mpi4py:
+            if not MPI:
                 raise SystemExit("Please, install mpi4py to allow parallel MPI execution!")
             mpi: ModuleType = MPI
             comm: ModuleType = MPI.COMM_WORLD
@@ -120,17 +149,15 @@ def _initilize_communications(parallel: str) -> Tuple[ModuleType | None, ModuleT
     return (mpi, comm)
 # --- END _initilize_communications --- #
 
-def _set_execution_attributes(comm: ModuleType | None, shared_storage: bool) -> Tuple[float, int, int, int, int, int]:
-
-    global supported_mpi4py
+def _set_execution_attributes(comm: ModuleType | None, shared_storage: bool) -> tuple[float, int, int, int, int, int]:
 
     rank_weight = 1.0
     comm_rank = rank = 0
     comm_size = nprocs = 1        
     if comm:
-        # NOTE: "if supported_mpi4py" was already check in "_initilize_communications"
+        # NOTE: "if MPI" was already check in "_initilize_communications"
         # FIXME: remove this if-else.
-        if supported_mpi4py:
+        if MPI:
             comm_rank:int = comm.Get_rank() # NOTE: From libs.mpi.client.py
             comm_size:int = comm.Get_size() # NOTE: From libs.mpi.client.py
             if shared_storage:
@@ -151,7 +178,6 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
         tracer = ExtraeTracer(tracing)
     else:
         if enable_gpu:
-            from .tracers import SimpleTracerGPU
             tracer = SimpleTracerGPU(tracing, tracer_output, comm)
         else:
             if tracer_pmlib_device != "":
@@ -165,28 +191,14 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
 
 def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int, 
                      gpus_per_node:int, parallel:str, dtype: np.dtype, 
-                     enable_nccl: bool, tracer: Tracer) -> Tuple[NCCL_DataType | None, NCCL_Comm_Type | None, 
+                     enable_nccl: bool, tracer: SimpleTracer) -> tuple[NCCL_DataType | None, NCCL_Comm_Type | None, 
                                                                  Cudnn_Handle_Type, Cublas_Handle_Type, 
                                                                  PyCuda_Stream_Type, Cudnn_dtype]:
         
     global supported_cudnn, supported_nccl
     supported_cudnn = True
     supported_nccl = True
-
-    try:
-        import pydtnn.backends.gpu.tensor_gpu
-        global gpuarray
-        # noinspection PyUnresolvedReferences
-        import pycuda.gpuarray as gpuarray
-        # noinspection PyUnresolvedReferences
-        import pycuda.driver as drv
-        from pydtnn.backends.gpu.libs import libcudnn as cudnn
-        # noinspection PyUnresolvedReferences
-        from skcuda import cublas
-    except Exception:
-        msg = "Please, install pycuda, skcuda, and cudnn to be able to use the GPUs!"
-        raise SystemExit(msg) from None
-    import atexit
+    
     # TODO | FIXME: Remove the following comments after the commit.
     # import pycuda.autoinit
     # The next fake test exists only to avoid the pycuda.autoinit import being removed when optimizing imports
@@ -310,6 +322,14 @@ class Model:
         
         self.nparams:int = 0 # NOTE: Model's total number of params
         
+        # The following attributes will be initilized later only if "enable_cudnn" is True.
+        self.nccl_type: NCCL_DataType | None = None
+        self.nccl_comm: NCCL_Comm_Type | None = None
+        self.cudnn_handle: Cudnn_Handle_Type | None = None
+        self.cublas_handle: Cublas_Handle_Type | None = None
+        self.stream: PyCuda_Stream_Type | None = None
+        self.cudnn_dtype: Cudnn_dtype | None = None       
+        
         # Set MPI and comm          
         self.MPI, self.comm = _initilize_communications(parallel = parallel)
         
@@ -331,9 +351,9 @@ class Model:
         self.perf_counter = PerformanceCounter()
         
         # Layers' attributes
-        self.layers: List[LayerAndActivationBase] = []
+        self.layers: list[LayerAndActivationBase] = []
         self.layer_id:int = _layer_id_generator()
-        self.shared_storage:bool = self.kwargs["shared_storage"]
+        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         
         # Matmul
         self.matmul = utils.matmul
@@ -348,18 +368,25 @@ class Model:
         else:
             MemoryCache.disable()        
         
+        # Cuda
         if self.enable_cudnn:
-            self.gpus_per_node: int # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
-            (self.nccl_type, self.nccl_comm, self.cudnn_handle, self.cudnn_handle, 
-            self.cublas_handle, self.stream, self.cudnn_dtype) = _initialize_cuda(comm = self.comm, comm_rank = self.comm_rank, rank = self.rank,
+            if gpuarray and drv and cublas:
+                self.gpus_per_node: int # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+                (self.nccl_type, self.nccl_comm, self.cudnn_handle, 
+                 self.cublas_handle, self.stream, self.cudnn_dtype) = _initialize_cuda(comm = self.comm, comm_rank = self.comm_rank, rank = self.rank,
                                                                               nprocs = self.nprocs, gpus_per_node = self.gpus_per_node, 
                                                                               parallel = self.parallel, dtype = self.dtype, enable_nccl = 
                                                                               self.enable_nccl, tracer = self.tracer)
-            
+            else:
+                raise ImportError(" ".join(cuda_error_msg))
+        else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
+        
+        # Data format
         self.tensor_format = _set_data_format(tensor_format = self.tensor_format, enable_cudnn = self.enable_cudnn)
 
         # Disable BestOf globally if not enabled
-        if self.kwargs['enable_best_of'] is False:
+        if self.kwargs['enable_best_of'] is False: 
+            # NOTE: comes from "Parser" (vars(parser.parse_args([])))
             BestOf.use_always_the_first_alternative()
         
         self.batch_size = _calculate_batch_size(batch_size = self.kwargs['batch_size'], # NOTE: This parameters comes from "Parser" (vars(parser.parse_args([])))
@@ -379,12 +406,14 @@ class Model:
         # Load weights and bias
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
-
-        # TODO: POR AQUÍ!!!
-
         # Dataset
         self.dataset: Dataset = get_dataset(self)
+        
+        # ¡¡¡TODO: POR AQUÍ!!!
+        # NOTE: Check where 'self.kwargs["learning_rate"]' is used.
+
         # Optimizers and LRSchedulers
+        # NOTE: 'self.kwargs["learning_rate_scaling"]' comes from "Parser" (vars(parser.parse_args([])))
         if self.kwargs["learning_rate_scaling"]:
             # using comm_size instead of nprocs might not be appropriate,
             # as it differs to how learning_rate is defined elsewhere,
