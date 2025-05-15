@@ -37,7 +37,7 @@ __all__ = (
 class Protocol(comms.Communicator):
     """Shared base gRPC implementation"""
     _compression = grpc.Compression.NoCompression
-    _max_message_size = 16 * 1024 ** 1 - 1
+    _max_message_size = 16 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Initialize protocol"""
