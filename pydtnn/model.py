@@ -685,7 +685,7 @@ class Model:
                 x_val = x_train
                 y_val = y_train
             else:
-                raise SystemExit("Both x_train and y_train must be provided or, alternatively, none of them!")
+                raise SystemExit("Both x_val and y_val must be provided or, alternatively, none of them!")
 
         self.dataset = CustomDataset(self, x_train=x_train, y_train=y_train, x_test=x_val, y_test=y_val)
         history = self.train_dataset(bar_width=bar_width)
