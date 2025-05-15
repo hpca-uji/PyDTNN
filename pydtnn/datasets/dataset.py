@@ -59,8 +59,8 @@ class Dataset(ABC):
 
     def __init__(self, model, train_nsamples, test_nsamples, input_shape, output_shape, max_batches_online=40,
                  force_test_as_validation=False, debug=False):
-        assert len(input_shape) == 3 and input_shape[0] > input_shape[2], "Input shape must be in NHWC format"
-        assert len(output_shape) == 2, "Output shape must be in NC format"
+        assert len(input_shape) == 3 and input_shape[0] > input_shape[2], f"Input shape must be in N-HWC format: {input_shape}"
+        assert len(output_shape) == 1, f"Output shape must be in N-C format: {output_shape}"
         self.model = model
         if self.model.shared_storage:
             self.nprocs = self.model.nprocs
