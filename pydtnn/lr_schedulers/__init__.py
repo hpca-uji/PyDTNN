@@ -51,7 +51,7 @@ get_derived_classes(LRScheduler, locals())
 def get_lr_schedulers(model):
     """Get LR Scheduler objects from model attributes"""
     lr_schedulers = []
-    for lr_sched in model.lr_schedulers_names.split(","):
+    for lr_sched in filter(None, model.lr_schedulers_names.split(",")):
         if lr_sched == "warm_up":
             lrs = WarmUpLRScheduler(model,
                                     model.warm_up_epochs,
