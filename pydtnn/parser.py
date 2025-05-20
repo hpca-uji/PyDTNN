@@ -178,10 +178,6 @@ parser.add_argument('--model_sync_alg', type=str, default="avg")
 parser.add_argument('--model_sync_participation', type=str, default="all")
 parser.add_argument('--model_sync_min_avail', type=int, default=0)
 parser.add_argument('--final_model_sync', type=bool, default=True)
-parser.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
-parser.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
-parser.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
-parser.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
 parser.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
 
 # Dataset options
@@ -204,6 +200,10 @@ _ds_group.add_argument('--validation_split', type=factor, default=0.2)
 _oo_group = parser.add_argument_group("Optimization options")
 _oo_group.add_argument('--enable_best_of', type=bool_lambda, default=False)
 _oo_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
+_oo_group.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
+_oo_group.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
+_oo_group.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
+_oo_group.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
 
 # Convolution methods
 _cm_group = parser.add_argument_group("Convolution options")
