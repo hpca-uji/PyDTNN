@@ -17,8 +17,23 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+import operator
+import warnings
 import numpy as np
 from .dataset import Dataset, TRAIN, VAL, TEST
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+
+
+TENSOR_NAME = {
+    PYDTNN_TENSOR_FORMAT_NCHW: "NCHW",
+    PYDTNN_TENSOR_FORMAT_NHWC: "NHWC"
+}
+
+
+TENSOR_ASSERT = {
+    PYDTNN_TENSOR_FORMAT_NCHW: operator.lt,
+    PYDTNN_TENSOR_FORMAT_NHWC: operator.gt
+}
 
 
 class CustomDataset(Dataset):
@@ -36,6 +51,12 @@ class CustomDataset(Dataset):
 
         if output_shape is None:
             output_shape = y_train.shape[1:]
+
+        if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_train.shape[0], x_train.shape[2]):
+            warnings.warn(f"Dataset x_train.shape {x_train.shape} may not be in {TENSOR_NAME[self.model.tensor_format]} format, following the model format!", RuntimeWarning)
+
+        if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
+            warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {TENSOR_NAME[self.model.tensor_format]} format, following the model format!", RuntimeWarning)
 
         self.__x_source = []
         self.__y_source = []
@@ -76,6 +97,8 @@ class CustomDataset(Dataset):
             y_train = data["y_train"]
             x_test = data["x_test"]
             y_test = data["y_test"]
+
+            
 
             self = cls(
                 model,
