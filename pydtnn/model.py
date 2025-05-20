@@ -679,18 +679,6 @@ class Model:
         self.tracer.define_event_types(self)
         self._initialized = True
 
-    def train(self, x_train, y_train, x_val=None, y_val=None, bar_width=BAR_WIDTH):
-        if x_val is None or y_val is None:
-            if x_val is None and y_val is None:
-                x_val = x_train
-                y_val = y_train
-            else:
-                raise SystemExit("Both x_val and y_val must be provided or, alternatively, none of them!")
-
-        self.dataset = CustomDataset(self, x_train=x_train, y_train=y_train, x_test=x_val, y_test=y_val)
-        history = self.train_dataset(bar_width=bar_width)
-        return history
-
     def _compute_rank_weight(self, mask):
         comm_nsamples = self.comm_nsamples[TRAIN]
 
@@ -869,10 +857,6 @@ class Model:
         self.total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
 
         return self.total_metrics
-
-    def evaluate(self, x_test, y_test, bar_width=BAR_WIDTH):
-        self.dataset = CustomDataset(self, x_test=x_test, y_test=y_test)
-        self.evaluate_dataset(bar_width=bar_width)
 
     @ensure_model_is_initialized
     def evaluate_dataset(self, bar_width=BAR_WIDTH):

@@ -17,16 +17,22 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import warnings
 from abc import ABC
 
 from .layer import Layer
 from pydtnn.utils import encode_tensor
 
+
 class Input(Layer, ABC):
+    # NOTE: Input(shape) is expected to be in NHWC
 
     def __init__(self, shape=(1,)):
         super().__init__(shape)
+        assert len(shape) == 3, f"Input layer must have 3 dimensions ({shape})"
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
+        if not (self.shape[0] > self.shape[2]):
+            warnings.warn(f"Input layer shape {self.shape} may not be in NHWC format, regardless of model format! ", RuntimeWarning)
         self.shape = encode_tensor(self.shape, self.model.tensor_format)

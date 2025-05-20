@@ -17,8 +17,8 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import math
 import queue
+import warnings
 import itertools
 import threading
 from abc import ABC, abstractmethod
@@ -56,11 +56,16 @@ TRAIN, VAL, TEST = range(3)
 
 
 class Dataset(ABC):
+    # NOTE: Dataset(input_shape) is expected to be in NCHW format
+    # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
+    # NOTE: Dataset.data_generator(y) is expected to be in NC format
 
     def __init__(self, model, train_nsamples, test_nsamples, input_shape, output_shape, max_batches_online=40,
                  force_test_as_validation=False, debug=False):
-        assert len(input_shape) == 3 and input_shape[0] > input_shape[2], f"Input shape must be in N-HWC format: {input_shape}"
-        assert len(output_shape) == 1, f"Output shape must be in N-C format: {output_shape}"
+        assert len(input_shape) == 3, f"Input shape must have 3 dimensions ({input_shape})"
+        assert len(output_shape) == 1, f"Output shape must have 1 dimensions ({output_shape})"
+        if not (input_shape[0] < input_shape[2]):
+            warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
         self.model = model
         if self.model.shared_storage:
             self.nprocs = self.model.nprocs

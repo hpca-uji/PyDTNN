@@ -112,10 +112,9 @@ def main():
             pr = cProfile.Profile()
             pr.enable()
     # Training a model directly from a dataset
+    # or alternatively, define any custom data
+    # mode.dataset = CustomDataset(model, x, y)
     history = model.train_dataset()
-    # Alternatively, the model can be trained on any specific data
-    # history = model.train(x_train=x_train, y_train=y_train_val,
-    #                       x_val=x_test, y_val=y_test)
     # Barrier
     if model.parallel == "data":
         model.comm.Barrier()
