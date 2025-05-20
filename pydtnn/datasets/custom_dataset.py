@@ -23,13 +23,19 @@ from .dataset import Dataset, TRAIN, VAL, TEST
 
 class CustomDataset(Dataset):
 
-    def __init__(self, model, x_test, y_test, x_train=None, y_train=None, force_test_as_validation=True):
-        if x_train is None or y_train is None:
-            if x_train is None and y_train is None:
-                x_train = x_test
-                y_train = y_test
+    def __init__(self, model, x_train, y_train, x_test=None, y_test=None, input_shape=None, output_shape=None, force_test_as_validation=True):
+        if x_test is None or y_test is None:
+            if x_test is None and y_test is None:
+                x_test = x_train
+                y_test = y_train
             else:
-                raise SystemExit("Both x_train and y_train must be provided or, alternatively, none of them!")
+                raise SystemExit("Both x_test and y_test must be provided or, alternatively, none of them!")
+
+        if input_shape is None:
+            input_shape = x_train.shape[1:]
+
+        if output_shape is None:
+            output_shape = y_train.shape[1:]
 
         self.__x_source = []
         self.__y_source = []
@@ -50,8 +56,8 @@ class CustomDataset(Dataset):
         super().__init__(model,
                          x_train.shape[0],
                          x_test.shape[0],
-                         x_train.shape[1:],
-                         y_test.shape[1:],
+                         input_shape,
+                         output_shape,
                          force_test_as_validation=force_test_as_validation)
 
     def _init_actual_data(self):
