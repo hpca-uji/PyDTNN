@@ -122,50 +122,45 @@ The PyDTNN framework comes with a utility launcher called
 -  Model parameters:
 
    -  ``--model``: Neural network model: ``simplemlp``, ``simplecnn``,
-      ``alexnet``, ``vgg11``, ``vgg16``, etc.
-   -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
-      Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
-      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
-   - ``--enable_best_of``: Enable the BestOf auto-tuner.
-   -  ``--flip_images``: Enable horizontal flip of images in the
-      dataset. Default: False
-   -  ``--flip_images_prob``: Probability of horizontal flip of images
-      in the dataset. Default: 0.5
-   -  ``--crop_images``: Enable random cropping of images in the
-      dataset. Default: False
-   -  ``--crop_images_prob``: Probability of random cropping of images
-      in the dataset. Default: 0.5
-   -  ``--batch_size``: Batch size per MPI rank.
+      ``alexnet``, ``vgg11``, ``vgg16``, etc. Default: ``simplecnn``.
+   -  ``--batch_size``: Batch size per MPI rank. Default: 64.
+   -  ``--global_batch_size``: Batch size between all MPI ranks.
+   -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
+   -  ``--num_epochs``: Number of epochs to perform. Default: 1.
    -  ``--steps_per_epoch``: Trims the training data depending on the
       given number of steps per epoch. Default: 0, i.e., do not trim.
-   -  ``--num_epochs``: Number of epochs to perform. Default value: 1.
    -  ``--evaluate``: Evaluate the model before and after training the
       model. Default: False.
    -  ``--evaluate_only``: Only evaluate the model. Default: False.
    -  ``--weights_and_bias_filename``: Load weights and bias from file.
       Default: None.
-   -  ``--shared_storage``: If true only rank 0 can dump weights and
-      bias onto a file. Default: True.
-   -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
    -  ``--history_file``: Filename to save training loss and metrics.
-   -  ``--enable_fused_bn_relu``: Fuse BatchNormalization and Relu
-      layers. True if specified
-   -  ``--enable_fused_conv_relu``: Fuse Conv2D and Relu layers.
-      True if specified
-   -  ``--enable_fused_conv_bn``: Fuse Conv2D and BatchNormalization
-      layers. True if specified
-   -  ``--enable_fused_conv_bn_relu``: Fuse Conv2D and
-      BatchNormalization and Relu layers. Default: False
-   -  ``--enable_best_of``: Enable BestOf optimization. True if
-      specified
+   -  ``--shared_storage``: If true ranks assume they share the file
+      system. Default: True.
+   -  ``--model_sync_freq``: Number of batches between model syncronization.
+      The ``0`` value syncronizes gradients every batch. Positive values
+      syncronizes gradients and weights every N batches. Default: 0.
+   -  ``--model_sync_alg``: Aggregation method used to syncronize models:
+      ``avg``, ``wavg`` or ``invwavg``. Default: ``avg``.
+   -  ``--model_sync_participation``: Rank participation to syncronize models:
+      ``all`` or ``avail2all``. Default: ``all``.
+   -  ``--model_sync_min_avail``: Minumun ranks with data required to
+      syncronize models. Default: 0.
+   -  ``--final_model_sync``: Sincronize models on training end. Default: True.
+   -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
+      Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
+      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
 
 -  Dataset parameters:
 
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
-      ``imagenet``.
+      ``imagenet`` or ``raw``.
+   -  ``--use_synthetic_data``: Use synthetic data. Default: False.
    -  ``--dataset_train_path``: Path to the training dataset.
    -  ``--dataset_test_path``: Path to the training dataset.
-   -  ``--use_synthetic_data``: Use synthetic data. Default: False.
+   -  ``--dataset_raw_path``: Path to the raw custom dataset.
+   -  ``--dataset_export_split_weights``: When exporting, the weights
+      of each split, used to determine the number samples.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.
@@ -180,23 +175,51 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--validation_split``: Split between training and validation
       data.
 
+- Optimization -  Optimizer parameters:
+   - ``--enable_best_of``: Enable the BestOf auto-tuner.
+   - ``--enable_memory_cache``: Enable the memory cache module to use
+      persistent memory.
+   -  ``--enable_fused_bn_relu``: Fuse BatchNormalization and Relu
+      layers. True if specified
+   -  ``--enable_fused_conv_relu``: Fuse Conv2D and Relu layers.
+      True if specified
+   -  ``--enable_fused_conv_bn``: Fuse Conv2D and BatchNormalization
+      layers. True if specified
+   -  ``--enable_fused_conv_bn_relu``: Fuse Conv2D and
+      BatchNormalization and Relu layers. Default: False.
+
+-  Convolution operation parameters:
+
+   -  ``--enable_conv_i2c``: Use ConvI2C module to
+      realize convolutions in Conv2D layers. True if specified.
+   -  ``--enable_conv_gemm``: Use ConvGemm (implicit gemm) module to
+      realize convolutions in Conv2D layers. True if specified.
+   -  ``--enable_conv_winograd``: Use the Winograd algorithm to
+      realize convolutions in Conv2D layers. True if specified.
+   -  ``--conv_direct_method``: The ConvDirect module to
+      realize convolutions in Conv2D layers.
+   -  ``--conv_direct_method``: Use ConvDirect module to
+      realize convolutions in Conv2D layers. True if specified.
+   -  ``--conv_direct_methods_for_best_of``: ConvDirect modules to
+      compare in ``best_of`` option if specified.
+
 -  Optimizer parameters:
 
    -  ``--optimizer``: Optimizers: ``sgd``, ``rmsprop``, ``adam``,
       ``nadam``. Default: ``sgd``.
    -  ``--learning_rate``: Learning rate. Default: 0.01.
    -  ``--learning_rate_scaling``: Scale learning rate in data
-      parallelism: new\_lr = lr \* num\_procs.
+      parallelism: new\_lr = lr / num\_procs.
    -  ``--momentum``: Decay rate for ``sgd`` optimizer. Default: 0.9.
-   -  ``--rho``: Variable for ``rmsprop`` optimizers. Default: 0.99.
-   -  ``--epsilon``: Variable for ``rmsprop``, ``adam``, ``nadam``
       optimizers. Default: 1e-8.
+   -  ``--decay``: Decay rate for optimizers. Default: 0.0.
+   -  ``--nesterov``: Whether to apply Nesterov momentum. Default: False.
    -  ``--beta1``: Variable for ``adam``, ``nadam`` optimizers. Default:
       0.99.
    -  ``--beta2``: Variable for ``adam``, ``nadam`` optimizers. Default:
       0.999.
-   -  ``--nesterov``: Whether to apply Nesterov momentum. Default:
-      False.
+   -  ``--epsilon``: Variable for ``rmsprop``, ``adam``, ``nadam``
+   -  ``--rho``: Variable for ``rmsprop`` optimizers. Default: 0.99.
    -  ``--loss_func``: Loss functions that is evaluated on each trained
       batch: ``categorical_cross_entropy``, ``binary_cross_entropy``.
    -  ``--metrics``: List of comma-separated metrics that are evaluated
@@ -215,6 +238,8 @@ The PyDTNN framework comes with a utility launcher called
       early\_stopping LR scheduler.
    -  ``--early_stopping_patience``: Number of epochs with no
       improvement after which training will be stopped.
+   -  ``--early_stopping_minimize``: Whether to minize the metic.
+      If False, it will maximize. Default: True.
    -  ``--reduce_lr_on_plateau_metric``: Loss metric monitored by
       reduce\_lr\_on\_plateau LR scheduler.
    -  ``--reduce_lr_on_plateau_factor``: Factor by which the learning
@@ -229,20 +254,15 @@ The PyDTNN framework comes with a utility launcher called
       which LR will be periodically reduced.
    -  ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning
       rate.
+   - ``stop_at_loss_metric``: Loss metric monitored by
+      stop\_at\_loss LR scheduler.
+   - ``stop_at_loss_threshold``: Metric threshold monitored by
+      stop\_at\_loss LR scheduler.
    -  ``--model_checkpoint_metric``: Loss metric monitored by
       model\_checkpoint LR scheduler.
    -  ``--model_checkpoint_save_freq``: Frequency (in epochs) at which
       the model weights and bias will be saved by the model\_checkpoint
       LR scheduler.
-
--  Convolution operation parameters:
-
-   -  ``--enable_conv_gemm``: Use ConvGemm (implicit gemm) module to
-      realize convolutions in Conv2D layers. True if specified.
-   -  ``--enable_conv_winograd``: Use the Winograd algorithm to
-      realize convolutions in Conv2D layers. True if specified.
-   -  ``--enable_memory_cache``: Enable the memory cache module to use
-      persistent memory.
 
 -  Parallelization and other performance-related parameters:
 
@@ -252,19 +272,20 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--enable_gpu``: Enable GPU, use cuDNN library.
    -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
       when using a CUDA-aware MPI version.
-   -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
-      performing convolution algorithm.
    -  ``--enable_nccl``: Enable the use of the NCCL library for 
       collective communications on GPUs. This option can only be set 
       with ``--enable_gpu``.
-   -  ``--enable_conv_gemm``: Enables the use of libconvGemm to replace
-      im2col and gemm operations.
+   -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
+      performing convolution algorithm.
 
 -  Tracing and profiling parameters:
 
    -  ``--tracing``: Obtain Simple/Extrae-based traces.
    -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
       traces.
+   -  ``--tracer_pmlib_server``: Address of PMlib tracer server.
+   -  ``--tracer_pmlib_port``: Port of PMlib tracer server.
+   -  ``--tracer_pmlib_device``: Port of PMlib tracer device.
    -  ``--profile``: Obtain cProfile profiles.
 
 Example: distributed training of a CNN for the MNIST dataset
