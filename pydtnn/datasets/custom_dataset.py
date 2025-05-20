@@ -97,15 +97,21 @@ class CustomDataset(Dataset):
             y_train = data["y_train"]
             x_test = data["x_test"]
             y_test = data["y_test"]
+            input_shape = x_train.shape[1:]
 
-            
+            # Ensure dataset is in model.tensor_format
+            if model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                x_train = x_train.transpose(0, 2, 3, 1)
+                x_test = x_test.transpose(0, 2, 3, 1)
 
+            # Create dataset
             self = cls(
                 model,
                 x_train=x_train,
                 y_train=y_train,
                 x_test=x_test,
                 y_test=y_test,
+                input_shape=input_shape,
                 force_test_as_validation=False
             )
 

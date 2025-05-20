@@ -130,6 +130,11 @@ class Dataset(ABC):
         x_train, y_train = map(np.concat, zip(*gen_train))
         x_test, y_test = map(np.concat, zip(*gen_test))
 
+        # Ensure dataset is in NCHW
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            x_train = x_train.transpose(0, 3, 1, 2)
+            x_test = x_test.transpose(0, 3, 1, 2)
+
         # Calculate percentage splits
         total = sum(split_weights)
         split_percentage = [weight / total for weight in itertools.accumulate(split_weights)]
