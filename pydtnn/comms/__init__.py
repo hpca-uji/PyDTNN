@@ -50,7 +50,7 @@
 
 # FIXME: Implement put future handling
 
-# TODO: Revise connection data API
+# TODO: Implement client reconnection
 
 # TODO: Change ResouceClosed for queue.Empty exception
 
