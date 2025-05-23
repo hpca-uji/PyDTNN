@@ -28,7 +28,7 @@
 
 # NOTE: Communication contract:
 # Constructor
-# - May block
+# - Never blocks
 # - Only one communicator per ID
 # - Reusing ID retain server queues
 #
@@ -45,7 +45,7 @@
 # - Once closed it continues working until exhausted then it raises ResouceClosed
 #
 # Close
-# - May block
+# - Always block
 # - Server waits for peers to disconnect
 
 # FIXME: Implement put future handling
