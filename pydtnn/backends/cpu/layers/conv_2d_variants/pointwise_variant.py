@@ -35,8 +35,7 @@ class PointwiseVariant(Conv2D, ABC):
 
     def _forward_pointwise_nchw(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_POINTWISE_CONV)
-        # y = np.einsum("nchw,oc->nohw", x, self.weights) # Einsum
-        y = np.matmul(best_transpose_0231(x), np.transpose(self.weights, axes=(1, 0)))  # Matmul
+        y = np.matmul(best_transpose_0231(x), self.weights.T)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_TRANSPOSE_Y)
@@ -50,7 +49,83 @@ class PointwiseVariant(Conv2D, ABC):
         return y
 
     def _backward_pointwise_nhwc(self, dy):
-        raise RuntimeError("Backward not yet implemented!")
 
-    def _backward_pointwise_nchw(self, dy):
-        raise RuntimeError("Backward not yet implemented!")
+        _n, _h, _w, _c = dy.shape
+        _dim = (_n * _h * _w)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+        # NOTE: "n", "h" and "w" must be the same, "c" is the only dimension that changes
+        reshaped_dy = dy.reshape(_dim, _c)
+        _x = self._x.reshape(-1, _dim)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
+        res:np.ndarray = np.matmul(_x, reshaped_dy)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
+        self.dw = res.reshape((*self.weights.shape, -1))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
+            self.db = np.sum(dy, axis=(0, 1, 2)).reshape((self.co,))
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.need_dx:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)    
+            w = self.weights.reshape(self.co, -1).T
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            reshaped_dy:np.ndarray = dy.reshape(self.co, -1)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+            dx:np.ndarray = self.model.matmul(w, reshaped_dy)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            # NOTE: Remember, dx must have the forward's input shape.
+            dx = dx.reshape(self._x.shape)
+            
+            return dx
+    # --- END _backward_pointwise_nhwc --- #
+
+    def _backward_pointwise_nchw(self, dy: np.ndarray) -> np.ndarray | None:
+        
+        _n, _c, _h, _w = dy.shape
+        _dim = (_n * _h * _w)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_DY)
+        # NOTE: "n", "h" and "w" must be the same, "c" is the only dimension that changes
+        reshaped_dy = dy.reshape(_dim, _c)
+        _x = self._x.reshape(-1, _dim)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DW_MATMUL)
+        res:np.ndarray = np.matmul(_x, reshaped_dy)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
+        self.dw = res.reshape((*self.weights.shape, -1))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_SUM_BIASES)
+            self.db = np.sum(dy, axis=(0, 2, 3)).reshape((self.co,))
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        if self.need_dx:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_TRANSPOSE_W)    
+            w = self.weights.reshape(self.co, -1).T
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            reshaped_dy:np.ndarray = dy.reshape(self.co, -1)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_COMP_DX_MATMUL)
+            dx:np.ndarray = self.model.matmul(w, reshaped_dy)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+            # NOTE: Remember, dx must have the forward's input shape.
+            dx = dx.reshape(self._x.shape)
+            
+            return dx
+    # --- END _backward_pointwise_nchw --- #
