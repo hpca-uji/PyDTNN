@@ -88,8 +88,8 @@ def adaptive_avg_pooling_fwd_nhwc_cython(np.ndarray x, int new_h, int new_w) -> 
     try:
         avg_pooling(pooled_x, x, n, c, h, w, new_h, new_w)
         return pooled_x
-    except TypeError:
-        raise TypeError(f"Type '{x.dtype}' is not supported by adaptive_avg_pooling_fwd_nhwc_cython")
+    except TypeError as e:
+        raise TypeError(f"Function: \"adaptive_avg_pooling_fwd_nhwc_cython\". Error: {e}")
 # --- END adaptive_avg_pooling_fwd_nchw_cython --- #
 
 # --- END FORWARD --- #
@@ -154,8 +154,8 @@ def adaptive_avg_pooling_bwd_nhwc_cython(np.ndarray dy, int new_h, int new_w) ->
     try:
         backward_avg_pooling(dx, dy, n, c, h, w, new_h, new_w)
         return dx
-    except TypeError:
-        raise TypeError(f"Type '{dy.dtype}' is not supported by adaptive_avg_pooling_bwd_nhwc_cython")
+    except TypeError as e:
+            raise TypeError(f"Function: \"adaptive_avg_pooling_bwd_nhwc_cython\". Error: {e}")
 # --- END adaptive_avg_pooling_bwd_nhwc_cython --- #
 
 # --- END BACKWARD --- #
