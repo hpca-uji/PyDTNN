@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -23,17 +23,36 @@ import numpy as np
 
 from pydtnn.layers import Conv2D
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_POINTWISE_CONV, \
-    PYDTNN_OPS_FORWARD_TRANSPOSE_Y, PYDTNN_OPS_FORWARD_SUM_BIASES
+    PYDTNN_OPS_FORWARD_TRANSPOSE_Y, PYDTNN_OPS_FORWARD_SUM_BIASES, PYDTNN_OPS_BACKWARD_TRANSPOSE_DY, \
+    PYDTNN_OPS_COMP_DX_MATMUL, PYDTNN_OPS_COMP_DW_MATMUL, PYDTNN_OPS_BACKWARD_RESHAPE_DW, \
+    PYDTNN_OPS_BACKWARD_SUM_BIASES, PYDTNN_OPS_BACKWARD_TRANSPOSE_W
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
+from pydtnn.model import TRAIN_MODE
 
 
 class PointwiseVariant(Conv2D, ABC):
 
     def _forward_pointwise_nhwc(self, x):
-        raise RuntimeError("Forward not yet implemented!")
+        if self.model.mode == TRAIN_MODE:
+            self._x:np.ndarray = x
 
-    def _forward_pointwise_nchw(self, x):
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_POINTWISE_CONV)
+        y = np.matmul(x, self.weights)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_SUM_BIASES)
+        if self.use_bias:
+            y += self.biases.reshape(1, 1, 1, self.co)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return y
+    # --- END _forward_pointwise_nhwc --- #
+
+    def _forward_pointwise_nchw(self, x: np.ndarray) -> np.ndarray:        
+
+        if self.model.mode == TRAIN_MODE:
+            self._x:np.ndarray = x
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_POINTWISE_CONV)
         y = np.matmul(best_transpose_0231(x), self.weights.T)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -47,6 +66,7 @@ class PointwiseVariant(Conv2D, ABC):
             y += self.biases.reshape(1, self.co, 1, 1)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return y
+    # --- END _forward_pointwise_nchw --- #
 
     def _backward_pointwise_nhwc(self, dy):
 

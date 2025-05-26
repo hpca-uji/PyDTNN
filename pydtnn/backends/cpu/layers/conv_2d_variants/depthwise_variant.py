@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -24,6 +24,7 @@ from pydtnn.cython_modules import depthwise_conv_nchw_cython, add_nchw_cython, d
 from pydtnn.layers import Conv2D
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_DEPTHWISE_CONV, \
     PYDTNN_OPS_FORWARD_SUM_BIASES, PYDTNN_OPS_FORWARD_RESHAPE_Y, PYDTNN_OPS_BACKWARD_SUM_BIASES
+
 import numpy as np
 
 class DepthwiseVariant(Conv2D, ABC):
