@@ -30,6 +30,28 @@ def ReLU(args: Dict[str, Any]) -> activations.Relu:
     return activations.Relu()
 # --- END ReLU --- #
 
+def ReLU6(args: Dict[str, Any]) -> activations.Relu:
+    # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
+    # Not used Pytorch's parameters: inplace.
+    not_used = args
+
+    # NOTE: max_val. A interal PyTorch variable that seems to set the cap.
+
+    return activations.Relu6()
+# --- END ReLU6 --- #
+
+def LeakyReLU(args: Dict[str, Any]) -> activations.Relu:
+    # https://pytorch.org/docs/stable/generated/torch.nn.ReLU.html#torch.nn.ReLU
+    # Not used Pytorch's parameters: inplace.
+    NEGATIVE_SLOPE = "negative_slope"
+    torch_dict_keys = [NEGATIVE_SLOPE]
+    pydtnn_dict_keys = [NEGATIVE_SLOPE]
+    
+    layer_args = cm.prepare_pydtnn_arguments(arguments = args[cm.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
+
+    return activations.LeakyRelu(**layer_args)
+# --- END LeakyReLU --- #
+
 def Sigmoid(args: Dict[str, Any]) -> activations.Sigmoid:
     # https://pytorch.org/docs/stable/generated/torch.nn.Sigmoid.html#torch.nn.Sigmoid
     not_used = args

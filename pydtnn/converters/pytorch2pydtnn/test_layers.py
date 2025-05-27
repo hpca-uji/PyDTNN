@@ -77,6 +77,8 @@ DICT_SUPPORTED_LAYERS:Dict[str, Tuple[nn.Module, float]] = {
     # Activations:
     "LogSigmoid": (nn.LogSigmoid(), 1e-5), # PyTorch is more precise ==> it can differ in elements below "e-08"
     "ReLU": (nn.ReLU(), 1e-5),
+    "ReLU6": (nn.ReLU6(), 1e-5),
+    "LeakyReLU": (nn.LeakyReLU(negative_slope=6), 1e-5),
     "Sigmoid": (nn.Sigmoid(), 1e-5),
     "Softmax": (nn.Softmax(), 1e-5),
     "Tanh": (nn.Tanh(), 1e-5),
@@ -378,8 +380,9 @@ def main():
                     device=device, dataset = deepcopy(dataset), threshold = threshold,
                     function_to_test_layers = function_to_test_layers
                     )
+   
     print("\n\n\n========================\n TESTING ADD AND CONCAT \n========================")
-    
+
     for name, model in [("Addition", Addition_Test_PyTorch_Model()),
                         ("Concat", Concat_Test_PyTorch_Model()),
                         ]:
@@ -388,4 +391,5 @@ def main():
 # --- END main --- #
 
 if __name__ == "__main__":
+    print("Buenos días")
     main()
