@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-25 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,25 +17,25 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
-from typing import Tuple
-
-from ..backends import PromoteToBackendMixin
-from ..layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.activations.relu6 import Relu6
+from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
+from pydtnn.cython_modules import capped_relu_cython
+from pydtnn.model import TRAIN_MODE
 from numpy import ndarray
-from ..backends.gpu.tensor_gpu import TensorGPU
 
-class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
 
-    def __init__(self, shape: tuple[int,...] = (1,)):
-        super().__init__(shape)
-        self.y: ndarray | TensorGPU | None = None
+class Relu6CPU(Relu6, ActivationCPU):
 
-    def initialize(self, prev_shape: tuple[int,...] , need_dx:bool = True):
-        super().initialize(prev_shape, need_dx)
-        self.shape = prev_shape
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.mask: ndarray = None
 
-    @property
-    def canonical_name_with_id(self) -> str:
-        return f"{self._id_prefix}{self.canonical_name}"
+    def forward(self, x: ndarray) -> ndarray:
+        self.y, mask = capped_relu_cython(x, self.cap)
+        if self.model.mode == TRAIN_MODE:
+            self.mask = mask
+        return self.y
+
+    def backward(self, dy: ndarray) -> ndarray | None:
+        if self.need_dx:
+            return dy * self.mask

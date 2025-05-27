@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-25 Universitat Jaume I
+#  Copyright (C) 2021-22 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,25 +17,12 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
-from typing import Tuple
+from .relu import Relu
 
-from ..backends import PromoteToBackendMixin
-from ..layers.layer_and_activation_base import LayerAndActivationBase
+# NOTE -> "CappedRelu": https://www.cs.utoronto.ca/~kriz/conv-cifar10-aug2010.pdf
 
-from numpy import ndarray
-from ..backends.gpu.tensor_gpu import TensorGPU
-
-class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
-
-    def __init__(self, shape: tuple[int,...] = (1,)):
+class Relu6(Relu):
+        # NOTE: This is a ReLU6 *iif* cap is 6, but it's more interesting a implementation where the user have the freedom to choose their cap.        
+    def __init__(self, shape: tuple[int,...] = (1,), cap: float = 6.0):
         super().__init__(shape)
-        self.y: ndarray | TensorGPU | None = None
-
-    def initialize(self, prev_shape: tuple[int,...] , need_dx:bool = True):
-        super().initialize(prev_shape, need_dx)
-        self.shape = prev_shape
-
-    @property
-    def canonical_name_with_id(self) -> str:
-        return f"{self._id_prefix}{self.canonical_name}"
+        self.cap: float = cap
