@@ -62,6 +62,8 @@ def prepare_pydtnn_arguments(arguments: Dict[str, Any], torch_dict_keys: List[st
 # --- END prepare_pydtnn_arguments --- #
 
 def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActivationBase]:
+    # NOTE: name is the result of torch.nn.[layer]._get_name(); 
+    #   if PyTorch change their layer's names, then it's necessary to change the names here.
     match name:
         case "AdaptiveAvgPool2d": return AdaptiveAvgPool2d
         case "AvgPool2d": return AvgPool2d
@@ -71,6 +73,8 @@ def switch_pytorch_pydtnn(name:str) -> Callable[[Dict[str, Any]], LayerAndActiva
         case "Linear": return Linear  
         case "MaxPool2d": return MaxPool2d
         case "ReLU": return ReLU
+        case "ReLU6": return ReLU6
+        case "LeakyReLU": return LeakyReLU
         case "LogSigmoid": return LogSigmoid
         case "Sigmoid": return Sigmoid
         case "Softmax": return Softmax
