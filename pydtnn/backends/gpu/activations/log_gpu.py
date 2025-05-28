@@ -46,12 +46,12 @@ class LogGPU(ActivationGPU, Log):
             "out[i] = %s(1.0 / (1.0 + %s(-in[i])));" %
             ({np.float32: "logf", np.float64: "log"}[self.model.dtype],
              {np.float32: "expf", np.float64: "exp"}[self.model.dtype]),
-            "log")
+            "log_GPU")
 
         self.dlog = ElementwiseKernel(
             "T *in, T *out".replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + %s(in[i]));" % {np.float32: "expf", np.float64: "exp"}[self.model.dtype],
-            "log")
+            "dlog_GPU")
 
         # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
