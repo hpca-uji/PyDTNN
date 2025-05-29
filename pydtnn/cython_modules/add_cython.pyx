@@ -31,53 +31,14 @@ ctypedef fused supported_types_t:
 # -- END supported_types_t -- #
 # --- END COMMON --- #
 
-# ============================= #
-# ===== START NCHW FORMAT ===== #
-# ============================= #
-
-def add_nchw_cython(x: np.ndarray, b: np.ndarray) -> np.ndarray:
-    
-    try:
-        _add_nchw_cython_inner(x, b)
-        return x
-    except TypeError as e:
-        raise TypeError(f"Function: \"adaptive_avg_pooling_fwd_nchw_cython\". Error: {e}")
-# --- END add_nchw_cython --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef _add_nchw_cython_inner(np.ndarray[supported_types_t, ndim=2] x,
-                            np.ndarray[supported_types_t, ndim=1] b):
-    cdef supported_types_t[:, :] x_view = x
-    cdef const supported_types_t[:] b_view = b
-    _add_nchw_cython(x_view, b_view)
-# --- END _add_nchw_cython_inner --- #
-    
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef _add_nchw_cython(supported_types_t[:,:] x,
-                      const supported_types_t[:] b):
-    cdef int i, j
-    for i in prange(x.shape[0], nogil=True):
-        for j in range(x.shape[1]):
-            x[i, j] += b[i]
-# --- END _add_nchw_cython --- #
-
-# ============================= #
-# ====== END NCHW FORMAT ====== #
-# ============================= #
-
-# ============================= #
-
-# ============================= #
-# ===== START NHWC FORMAT ===== #
-# ============================= #
+# ================== #
+# ====== NHWC ====== #
+# ================== #
 
 def add_nhwc_cython(x: np.ndarray, b: np.ndarray) -> np.ndarray:
     
     try:
-        _add_nhwc_cython_inner(x, b)
+        add_nhwc(x, b)
         return x
     except TypeError as e:
         raise TypeError(f"Function: \"add_nhwc_cython\". Error: {e}")
@@ -85,24 +46,52 @@ def add_nhwc_cython(x: np.ndarray, b: np.ndarray) -> np.ndarray:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _add_nhwc_cython_inner(np.ndarray[supported_types_t, ndim=2] x,
+def add_nhwc(np.ndarray[supported_types_t, ndim=2] x,
                             np.ndarray[supported_types_t, ndim=1] b):
     cdef supported_types_t[:, :] x_view = x
     cdef const supported_types_t[:] b_view = b
-    _add_nhwc_cython(x_view, b_view)
-# --- END _add_nhwc_cython_inner --- #
+    _add_nhwc(x_view, b_view)
+# --- END NHWC_inner --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _add_nhwc_cython(supported_types_t[:,:] x,
-                      const supported_types_t[:] b):
+cdef _add_nhwc(supported_types_t[:,:] x,
+          const supported_types_t[:] b):
     cdef int i, j
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i, j] += b[j]
 # --- END _add_nhwc_cython --- #
 
-# ============================= #
-# ====== END NHWC FORMAT ====== #
-# ============================= #
+# ================== #
+# ====== NCHW ====== #
+# ================== #
 
+
+def add_nchw_cython(x: np.ndarray[supported_types_t], b: np.ndarray[supported_types_t]) -> np.ndarray:
+
+    try:
+        _add_inner_nchw(x, b)
+        return x
+    except TypeError as e:
+        raise TypeError(f"Function: \"adaptive_avg_pooling_fwd_nchw_cython\". Error: {e}")
+# --- END add_nchw_cython --- #
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def _add_inner_nchw(np.ndarray[supported_types_t, ndim=2] x,
+               np.ndarray[supported_types_t, ndim=1] b):
+    cdef supported_types_t[:, :] x_view = x
+    cdef const supported_types_t[:] b_view = b
+    _add_nchw(x_view, b_view)
+# --- END add --- #
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef _add_nchw(supported_types_t[:, :] x,
+          const supported_types_t[:] b):
+    cdef int i, j
+    for i in prange(x.shape[0], nogil=True):
+        for j in range(x.shape[1]):
+            x[i, j] += b[i]
+# --- END _add_nchw_cython --- #

@@ -21,6 +21,7 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
+import indexing
 
 # --- COMMON --- #
 ctypedef fused supported_types_t:
@@ -38,7 +39,7 @@ def argmax_cython(x:np.ndarray, axis=0) -> tuple(np.ndarray, tuple(np.ndarray, n
     cdef np.ndarray rng = np.empty((x.shape[0],), dtype=np.int32)
 
     try:
-        argmax_cython_inner((x, maxv, amax, rng))
+        indexing.argmax_cython_inner[x.dtype](x, maxv, amax, rng)
         return maxv, tuple([amax, rng] if axis == 0 else [rng, amax])
 
     except TypeError as e:
@@ -52,12 +53,14 @@ cdef argmax_cython_inner(np.ndarray[supported_types_t, ndim=2] x,
                          np.ndarray[np.int32_t, ndim=1] amax,
                          np.ndarray[np.int32_t, ndim=1] rng):
 
-    cdef supported_types_t[:,:] x
-    cdef const supported_types_t[:] maxv
-    cdef np.int32_t[:] amax
-    cdef np.int32_t[:] rng    
+    cdef const supported_types_t[:,:] x_view = x
+    cdef supported_types_t[:] maxv_view = maxv
+    cdef np.int32_t[:] amax_view = amax
+    cdef np.int32_t[:] rng_view = rng
+    # TODO: Put this in the layer's initializer and pass it as a parameter to the 1st function
+    cdef supported_types_t minval = np.iinfo(x.dtype).min if np.issubdtype(x.dtype, np.integer) else np.finfo(x.dtype).min
 
-    _argmax_cython(x, maxv, amax, rng)
+    _argmax_cython(x_view, maxv_view, amax_view, rng_view, minval)
 # --- END argmax_cython_inner --- #
 
 
@@ -66,14 +69,10 @@ cdef argmax_cython_inner(np.ndarray[supported_types_t, ndim=2] x,
 cdef _argmax_cython(const supported_types_t[:, :] x,
                     supported_types_t[:] maxv,
                     np.int32_t[:] amax,
-                    np.int32_t[:] rng):
+                    np.int32_t[:] rng, 
+                    supported_types_t minval):
     cdef int i, j, idx_maxval
-    cdef supported_types_t maxval, minval
-    # TODO: CHECK IF THIS IS CORRECT:
-    minval = np.finfo(supported_types_t).min
-    #minval = np.finfo(np.float64).min
-    #minval = np.finfo(np.float32).min
-    #minval = np.finfo(np.int8).min
+    cdef supported_types_t maxval
 
     for i in prange(x.shape[0], nogil=True):
         maxval, idx_maxval = minval, 0
