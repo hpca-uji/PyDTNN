@@ -21,7 +21,6 @@ import numpy as np
 cimport numpy as np
 cimport cython
 from cython.parallel import prange
-import indexing
 
 # --- COMMON --- #
 ctypedef fused supported_types_t:
@@ -39,7 +38,7 @@ def argmax_cython(x:np.ndarray, axis=0) -> tuple(np.ndarray, tuple(np.ndarray, n
     cdef np.ndarray rng = np.empty((x.shape[0],), dtype=np.int32)
 
     try:
-        indexing.argmax_cython_inner[x.dtype](x, maxv, amax, rng)
+        argmax_cython_inner(x, maxv, amax, rng)
         return maxv, tuple([amax, rng] if axis == 0 else [rng, amax])
 
     except TypeError as e:
@@ -57,7 +56,6 @@ cdef argmax_cython_inner(np.ndarray[supported_types_t, ndim=2] x,
     cdef supported_types_t[:] maxv_view = maxv
     cdef np.int32_t[:] amax_view = amax
     cdef np.int32_t[:] rng_view = rng
-    # TODO: Put this in the layer's initializer and pass it as a parameter to the 1st function
     cdef supported_types_t minval = np.iinfo(x.dtype).min if np.issubdtype(x.dtype, np.integer) else np.finfo(x.dtype).min
 
     _argmax_cython(x_view, maxv_view, amax_view, rng_view, minval)
