@@ -66,6 +66,7 @@ import os
 import abc
 import uuid
 import enum
+import pathlib
 import importlib
 import threading
 from dataclasses import dataclass
@@ -231,6 +232,11 @@ if _env_protocol := os.environ.get("PYDTNN_COMM"):
     PROTOCOL = Protocol(_env_protocol)
 else:
     PROTOCOL = None
+
+SERVER_CERTIFICATE_PATH = pathlib.Path(__file__).parent.joinpath("certs", "cert.pem")
+SERVER_KEY_PATH = pathlib.Path(__file__).parent.joinpath("certs", "key.pem")
+SERVER_CERTIFICATE = SERVER_CERTIFICATE_PATH.read_bytes()
+SERVER_KEY = SERVER_KEY_PATH.read_bytes()
 
 
 def __getattr__(key):

@@ -1,5 +1,6 @@
 """TCP server"""
 
+import ssl
 import uuid
 import socket
 import selectors
@@ -9,6 +10,7 @@ from concurrent.futures import Future
 
 from bidict import bidict
 
+from pydtnn import comms
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_NIL, UUID_MAX
@@ -35,7 +37,10 @@ class Server(Protocol):
         self._state = dict[uuid.UUID, ConnectionData]()
 
         # TCP
+        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SERVER_CERTIFICATE_PATH)
+        context.load_cert_chain(certfile=comms.SERVER_CERTIFICATE_PATH, keyfile=comms.SERVER_KEY_PATH)
         self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
+        self._socket = context.wrap_socket(self._socket, server_side=True)
         self._selector.register(self._socket, selectors.EVENT_READ, self._new_connection)
         self._notify_selector()
 
@@ -151,7 +156,10 @@ class Server(Protocol):
         peer = self._peers.inverse[sock]
         state = self._state[peer]
 
-        data = sock.recv(self._max_message_size)
+        try:
+            data = sock.recv(self._max_message_size)
+        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            return
 
         if not data:
             assert not state.state, "Lost connection unexpectedly"
@@ -170,7 +178,10 @@ class Server(Protocol):
         if state.put_buffer.empty():
             return
         with state.put_read() as view:
-            size = sock.send(view)
+            try:
+                size = sock.send(view)
+            except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                size = 0
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
 

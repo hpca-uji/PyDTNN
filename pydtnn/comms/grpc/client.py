@@ -7,6 +7,7 @@ from collections import abc
 from queue import SimpleQueue, Empty
 from concurrent.futures import Future, ThreadPoolExecutor
 
+from pydtnn import comms
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
 from pydtnn.comms.grpc import Protocol, grpc_pb2_grpc
@@ -39,8 +40,10 @@ class Client(Protocol):
         self._put_grpc = threading.Event()
 
         # gRPC
-        self._channel = grpc.insecure_channel(
+        creds = grpc.ssl_channel_credentials(comms.SERVER_CERTIFICATE)
+        self._channel = grpc.secure_channel(
             target=f"{self._addr}:{self._port}",
+            credentials=creds,
             compression=self._compression,
             options=self._options
         )
