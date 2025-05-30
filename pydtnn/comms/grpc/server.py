@@ -10,6 +10,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 from bidict import bidict
 
+from pydtnn import comms
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
 from pydtnn.utils.asynctools import merge_futures
@@ -46,8 +47,9 @@ class Server(Protocol):
             compression=self._compression,
             options=self._options
         )
+        creds = grpc.ssl_server_credentials([[comms.SERVER_KEY, comms.SERVER_CERTIFICATE]])
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
-        self._server.add_insecure_port(address=f"{self._addr}:{self._port}")
+        self._server.add_secure_port(address=f"{self._addr}:{self._port}", server_credentials=creds)
         self._server.start()
 
     def _com(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
