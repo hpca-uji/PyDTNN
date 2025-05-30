@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,8 +22,22 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def max_pool_2d_fwd_nhwc_cython(x, int kh, int kw, int vpadding, int hpadding,
-                                int vstride, int hstride, int vdilation, int hdilation):
+# =================== #
+# --- COMMON --- #
+ctypedef fused npDT:
+    np.int8_t
+    np.float32_t
+    np.float64_t
+    # NOTE: in order to extend the supported data types, add the new types here.
+# -- END npDT -- #
+# --- END COMMON --- #
+# =================== #
+
+def max_pool_2d_fwd_nhwc_cython(np.ndarray[npDT, ndim=4] x, 
+                                int kh, int kw, 
+                                int vpadding, int hpadding,
+                                int vstride, int hstride, 
+                                int vdilation, int hdilation) -> tuple[np.ndarray, np.ndarray]:
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
     cdef int w = x.shape[2]
@@ -32,38 +46,34 @@ def max_pool_2d_fwd_nhwc_cython(x, int kh, int kw, int vpadding, int hpadding,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cdef np.ndarray y = np.zeros((n, hh, ww, c), dtype=x.dtype)
-    cdef np.ndarray idx_max = np.zeros((n, hh, ww, c), dtype=np.int32)
+    cdef np.ndarray[npDT, ndim=4] y = np.empty((n, hh, ww, c), dtype=x.dtype)
+    cdef np.ndarray[np.int32_t, ndim=4] idx_max = np.empty((n, hh, ww, c), dtype=np.int32)
 
-    if x.dtype == np.int8:
-        max_pool_2d_fwd_nhwc_cython_inner_int8(y, x, idx_max, n, h, w, c,
-                                               hh, ww, kh, kw, vpadding, hpadding,
-                                               vstride, hstride, vdilation, hdilation)
-    elif x.dtype == np.float32:
-        max_pool_2d_fwd_nhwc_cython_inner_float32(y, x, idx_max, n, h, w, c,
-                                               hh, ww, kh, kw, vpadding, hpadding,
-                                               vstride, hstride, vdilation, hdilation)
-    elif x.dtype == np.float64:
-        max_pool_2d_fwd_nhwc_cython_inner_float64(y, x, idx_max, n, h, w, c,
-                                               hh, ww, kh, kw, vpadding, hpadding,
-                                               vstride, hstride, vdilation, hdilation)
-    else:
-        raise TypeError("Type '{}' is not supported by max_pool_2d_fwd_nhwc_cython!".format(str(y.dtype)))
+    cdef npDT minval = np.iinfo(x.dtype).min if np.issubdtype(x.dtype, np.integer) else np.finfo(x.dtype).min 
+
+    try:
+        max_pool_2d_fwd_nhwc_cython_inner(y, x, idx_max, n, h, w, c,
+                                          hh, ww, kh, kw, vpadding, hpadding,
+                                          vstride, hstride, vdilation, hdilation, minval)
+    except TypeError as e:
+        raise TypeError(f"Function: \"max_pool_2d_fwd_nchw_cython\". Error: {e}")
 
     return y, idx_max
+# --- END max_pool_2d_fwd_nhwc_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int max_pool_2d_fwd_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] y,
-                                                np.ndarray[np.int8_t, ndim=4] x,
-                                                np.ndarray[np.int32_t, ndim=4] idx_max,
-                                                int n, int h, int w, int c, int hh, int ww,
-                                                int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride,
-                                                int vdilation, int hdilation) except? -1:
+cdef max_pool_2d_fwd_nhwc_cython_inner(np.ndarray[npDT, ndim=4] y,
+                                       np.ndarray[npDT, ndim=4] x,
+                                       np.ndarray[np.int32_t, ndim=4] idx_max,
+                                       int n, int h, int w, int c, int hh, int ww,
+                                       int kh, int kw, int vpadding, int hpadding,
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation, 
+                                       npDT minval):
+
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y, idx_maxval
-    cdef np.int8_t maxval, minval, val
-    minval = np.finfo(np.int8).min
+    cdef npDT maxval, val
 
     for nn in prange(n, nogil=True):
         for xx in range(hh):
@@ -80,102 +90,53 @@ cdef int max_pool_2d_fwd_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] y,
                                     if val > maxval:
                                         maxval, idx_maxval = val, ii * kw + jj
                     y[nn, xx, yy, cc], idx_max[nn, xx, yy, cc] = maxval, idx_maxval
+# --- END max_pool_2d_fwd_nhwc_cython_inner --- #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int max_pool_2d_fwd_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim=4] y,
-                                                np.ndarray[np.float32_t, ndim=4] x,
-                                                np.ndarray[np.int32_t, ndim=4] idx_max,
-                                                int n, int h, int w, int c, int hh, int ww,
-                                                int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride,
-                                                int vdilation, int hdilation) except? -1:
-    cdef int cc, ii, jj, yy, xx, nn, x_x, x_y, idx_maxval
-    cdef np.float32_t maxval, minval, val
-    minval = np.finfo(np.float32).min
+# --- END Forward --- #
 
-    for nn in prange(n, nogil=True):
-        for xx in range(hh):
-            for yy in range(ww):
-                for cc in range(c):
-                    maxval, idx_maxval = minval, 0
-                    for ii in range(kh):
-                        x_x = vstride * xx + vdilation * ii - vpadding
-                        if 0 <= x_x < h:
-                            for jj in range(kw):
-                                x_y = hstride * yy + hdilation * jj - hpadding
-                                if 0 <= x_y < w:
-                                    val = x[nn, x_x, x_y, cc]
-                                    if val > maxval:
-                                        maxval, idx_maxval = val, ii * kw + jj
-                    y[nn, xx, yy, cc], idx_max[nn, xx, yy, cc] = maxval, idx_maxval
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int max_pool_2d_fwd_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim=4] y,
-                                                np.ndarray[np.float64_t, ndim=4] x,
-                                                np.ndarray[np.int32_t, ndim=4] idx_max,
-                                                int n, int h, int w, int c, int hh, int ww,
-                                                int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride,
-                                                int vdilation, int hdilation) except? -1:
-    cdef int cc, ii, jj, yy, xx, nn, x_x, x_y, idx_maxval
-    cdef np.float64_t maxval, minval, val
-    minval = np.finfo(np.float64).min
+# =================== #
 
-    for nn in prange(n, nogil=True):
-        for xx in range(hh):
-            for yy in range(ww):
-                for cc in range(c):
-                    maxval, idx_maxval = minval, 0
-                    for ii in range(kh):
-                        x_x = vstride * xx + vdilation * ii - vpadding
-                        if 0 <= x_x < h:
-                            for jj in range(kw):
-                                x_y = hstride * yy + hdilation * jj - hpadding
-                                if 0 <= x_y < w:
-                                    val = x[nn, x_x, x_y, cc]
-                                    if val > maxval:
-                                        maxval, idx_maxval = val, ii * kw + jj
-                    y[nn, xx, yy, cc], idx_max[nn, xx, yy, cc] = maxval, idx_maxval
+# =================== #
 
-def max_pool_2d_bwd_nhwc_cython(y, idx_max,
+
+# --- Backward --- #
+
+def max_pool_2d_bwd_nhwc_cython(np.ndarray[npDT, ndim=4]y, 
+                                np.ndarray[np.int32_t, ndim=4] idx_max,
                                 int n, int h, int w, int c,
                                 int kh, int kw,
                                 int vpadding, int hpadding,
                                 int vstride, int hstride,
-                                int vdilation, int hdilation):
+                                int vdilation, int hdilation) -> np.ndarray:
+
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cdef np.ndarray x = np.zeros((n, h, w, c), dtype=y.dtype)
+    cdef np.ndarray[npDT, ndim=4] x = np.empty((n, h, w, c), dtype=y.dtype)
 
-    if y.dtype == np.int8:
-        max_pool_2d_bwd_nhwc_cython_inner_int8(y, x, idx_max, n, h, w, c,
-                                               hh, ww, kh, kw, vpadding, hpadding,
-                                               vstride, hstride, vdilation, hdilation)
-    elif y.dtype == np.float32:
-        max_pool_2d_bwd_nhwc_cython_inner_float32(y, x, idx_max, n, h, w, c,
-                                               hh, ww, kh, kw, vpadding, hpadding,
-                                               vstride, hstride, vdilation, hdilation)
-    elif y.dtype == np.float64:
-        max_pool_2d_bwd_nhwc_cython_inner_float64(y, x, idx_max, n, h, w, c,
-                                               hh, ww, kh, kw, vpadding, hpadding,
-                                               vstride, hstride, vdilation, hdilation)
-    else:
-        raise TypeError("Type '{}' is not supported by max_pool_2d_bwd_nhwc_cython!".format(str(y.dtype)))
+    try:
+        max_pool_2d_bwd_nhwc_cython_inner(y, x, idx_max, n, h, w, c,
+                                          hh, ww, kh, kw, 
+                                          vpadding, hpadding,
+                                          vstride, hstride, 
+                                          vdilation, hdilation)
+    except TypeError as e:
+        raise TypeError(f"Function: \"max_pool_2d_bwd_nhwc_cython\". Error: {e}")
 
     return x
+# --- END max_pool_2d_bwd_nhwc_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int max_pool_2d_bwd_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] y,
-                                                np.ndarray[np.int8_t, ndim=4] x,
-                                                np.ndarray[np.int32_t, ndim=4] idx_max,
-                                                int n, int h, int w, int c, int hh, int ww,
-                                                int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride,
-                                                int vdilation, int hdilation) except? -1:
+cdef max_pool_2d_bwd_nhwc_cython_inner(np.ndarray[npDT, ndim=4] y,
+                                       np.ndarray[npDT, ndim=4] x,
+                                       np.ndarray[np.int32_t, ndim=4] idx_max,
+                                       int n, int h, int w, int c, 
+                                       int hh, int ww, int kh, int kw, 
+                                       int vpadding, int hpadding,
+                                       int vstride, int hstride,
+                                       int vdilation, int hdilation):
     cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, idx_maxval
 
     for nn in prange(n, nogil=True):
@@ -188,47 +149,6 @@ cdef int max_pool_2d_bwd_nhwc_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] y,
                     x_y = hstride * yy + hdilation * jj - hpadding
                     if 0 <= x_x < h and 0 <= x_y < w:
                         x[nn, x_x, x_y, cc] += y[nn, xx, yy, cc]
+# --- max_pool_2d_bwd_nhwc_cython_inner --- #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int max_pool_2d_bwd_nhwc_cython_inner_float32(np.ndarray[np.float32_t, ndim=4] y,
-                                                np.ndarray[np.float32_t, ndim=4] x,
-                                                np.ndarray[np.int32_t, ndim=4] idx_max,
-                                                int n, int h, int w, int c, int hh, int ww,
-                                                int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride,
-                                                int vdilation, int hdilation) except? -1:
-    cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, idx_maxval
-
-    for nn in prange(n, nogil=True):
-        for xx in range(hh):
-            for yy in range(ww):
-                for cc in range(c):
-                    idx_maxval = idx_max[nn, xx, yy, cc]
-                    ii, jj = idx_maxval // kh, idx_maxval % kw
-                    x_x = vstride * xx + vdilation * ii - vpadding
-                    x_y = hstride * yy + hdilation * jj - hpadding
-                    if 0 <= x_x < h and 0 <= x_y < w:
-                        x[nn, x_x, x_y, cc] += y[nn, xx, yy, cc]
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int max_pool_2d_bwd_nhwc_cython_inner_float64(np.ndarray[np.float64_t, ndim=4] y,
-                                                np.ndarray[np.float64_t, ndim=4] x,
-                                                np.ndarray[np.int32_t, ndim=4] idx_max,
-                                                int n, int h, int w, int c, int hh, int ww,
-                                                int kh, int kw, int vpadding, int hpadding,
-                                                int vstride, int hstride,
-                                                int vdilation, int hdilation) except? -1:
-    cdef int nn, xx, yy, cc, ii, jj, x_x, x_y, idx_maxval
-
-    for nn in prange(n, nogil=True):
-        for xx in range(hh):
-            for yy in range(ww):
-                for cc in range(c):
-                    idx_maxval = idx_max[nn, xx, yy, cc]
-                    ii, jj = idx_maxval // kh, idx_maxval % kw
-                    x_x = vstride * xx + vdilation * ii - vpadding
-                    x_y = hstride * yy + hdilation * jj - hpadding
-                    if 0 <= x_x < h and 0 <= x_y < w:
-                        x[nn, x_x, x_y, cc] += y[nn, xx, yy, cc]
+# --- END Backward --- #

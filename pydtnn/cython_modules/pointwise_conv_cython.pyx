@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of neural networks (PyDTnn)
 #
-#  copyright (c) 2021 Universitat Jaume I
+#  copyright (c) 2021-2025 Universitat Jaume I
 #
 #  PyDTnn is free software: you can redistribute it and/or modify it under the
 #  terms of the GnU General Public License as published by the Free Software
@@ -22,7 +22,20 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def pointwise_conv_cython(x, k):
+# =================== #
+# --- COMMON --- #
+ctypedef fused npDT:
+    np.int8_t
+    np.float32_t
+    np.float64_t
+    # NOTE: in order to extend the supported data types, add the new types here.
+# -- END npDT -- #
+# --- END COMMON --- #
+# =================== #
+
+def pointwise_conv_cython(np.ndarray[npDT, ndim=4] x,
+                          np.ndarray[npDT, ndim=2] k) -> np.ndarray:
+
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
@@ -30,25 +43,22 @@ def pointwise_conv_cython(x, k):
 
     cdef int co = k.shape[0]
 
-    cdef np.ndarray out = np.zeros((n, co, h, w), dtype=x.dtype)
+    cdef np.ndarray[npDT, ndim=4] out = np.empty((n, co, h, w), dtype=x.dtype)
 
-    if (x.dtype == np.int8):
-        pointwise_conv_cython_inner_int8(out, x, k, n, c, h, w, co)
-    elif (x.dtype == np.float32):
-        pointwise_conv_cython_inner_float32(out, x, k, n, c, h, w, co)
-    elif (x.dtype == np.float64):
-        pointwise_conv_cython_inner_float64(out, x, k, n, c, h, w, co)
-    else:
-        raise TypeError("Type '{}' is not by pointwise_conv_cython!".format(str(out.dtype)))
+    try:
+        pointwise_conv_cython_inner(out, x, k, n, c, h, w, co)
+    except TypeError as e:
+        raise TypeError(f"Function: \"pointwise_conv_cython\". Error: {e}")
 
     return out
+# --- END pointwise_conv_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int pointwise_conv_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] out,
-                                         np.ndarray[np.int8_t, ndim=4] x, 
-                                         np.ndarray[np.int8_t, ndim=2] k,
-                                         int n, int c, int h, int w, int co):
+cdef pointwise_conv_cython_inner(np.ndarray[npDT, ndim=4] out,
+                                 np.ndarray[npDT, ndim=4] x,
+                                 np.ndarray[npDT, ndim=2] k,
+                                 int n, int c, int h, int w, int co):
     cdef int nn, cco, cc, ii, jj
 
     for cco in prange(co, nogil=True):
@@ -57,33 +67,4 @@ cdef int pointwise_conv_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] out,
                 for ii in range(h):
                     for jj in range(w):
                         out[nn, cco, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int pointwise_conv_cython_inner_float32(np.ndarray[np.float32_t, ndim=4] out,
-                                         np.ndarray[np.float32_t, ndim=4] x, 
-                                         np.ndarray[np.float32_t, ndim=2] k,
-                                         int n, int c, int h, int w, int co):
-    cdef int nn, cco, cc, ii, jj
-
-    for cco in prange(co, nogil=True):
-        for cc in range(c):
-            for nn in range(n):
-                for ii in range(h):
-                    for jj in range(w):
-                        out[nn, co, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int pointwise_conv_cython_inner_float64(np.ndarray[np.float64_t, ndim=4] out,
-                                         np.ndarray[np.float64_t, ndim=4] x, 
-                                         np.ndarray[np.float64_t, ndim=2] k,
-                                         int n, int c, int h, int w, int co):
-    cdef int nn, cco, cc, ii, jj
-
-    for cco in prange(co, nogil=True):
-        for cc in range(c):
-            for nn in range(n):
-                for ii in range(h):
-                    for jj in range(w):
-                        out[nn, cco, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
+# --- END pointwise_conv_cython_inner --- #

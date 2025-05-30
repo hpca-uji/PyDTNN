@@ -23,26 +23,23 @@ cimport cython
 from cython.parallel import prange
 
 # --- COMMON --- #
-ctypedef fused supported_types_t:
+ctypedef fused npDT:
     np.int8_t
     np.float32_t
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
-# -- END supported_types_t -- #
+# -- END npDT -- #
 # --- END COMMON --- #
 
 # ================== #
 # ====== NHWC ====== #
 # ================== #
 
-def add_nhwc_cython(np.ndarray[supported_types_t, ndim=2] x, 
-                    np.ndarray[supported_types_t, ndim=1] b) -> np.ndarray:
-    
-    cdef supported_types_t[:, :] x_view = x
-    cdef const supported_types_t[:] b_view = b
+def add_nhwc_cython(np.ndarray[npDT, ndim=2] x, 
+                    np.ndarray[npDT, ndim=1] b) -> np.ndarray:
 
     try:
-        add_nhwc(x_view, b_view)
+        add_nhwc(x, b)
         return x
     except TypeError as e:
         raise TypeError(f"Function: \"add_nhwc_cython\". Error: {e}")
@@ -51,8 +48,8 @@ def add_nhwc_cython(np.ndarray[supported_types_t, ndim=2] x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef add_nhwc(supported_types_t[:,:] x,
-              const supported_types_t[:] b):
+cdef add_nhwc(np.ndarray[npDT, ndim=2] x,
+              np.ndarray[npDT, ndim=1] b):
 
     cdef int i, j
 
@@ -66,14 +63,11 @@ cdef add_nhwc(supported_types_t[:,:] x,
 # ================== #
 
 
-def add_nchw_cython(np.ndarray[supported_types_t, ndim=2] x, 
-                    np.ndarray[supported_types_t, ndim=1] b) -> np.ndarray:
-
-
-    cdef supported_types_t[:, :] x_view = x
-    cdef const supported_types_t[:] b_view = b    
+def add_nchw_cython(np.ndarray[npDT, ndim=2] x, 
+                    np.ndarray[npDT, ndim=1] b) -> np.ndarray:
+  
     try:
-        add_nchw(x_view, b_view)
+        add_nchw(x, b)
         return x
     except TypeError as e:
         raise TypeError(f"Function: \"add_nchw_cython\". Error: {e}")
@@ -81,8 +75,8 @@ def add_nchw_cython(np.ndarray[supported_types_t, ndim=2] x,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef add_nchw(supported_types_t[:, :] x,
-              const supported_types_t[:] b):
+cdef add_nchw(np.ndarray[npDT, ndim=2] x,
+              np.ndarray[npDT, ndim=1] b):
 
     cdef int i, j
     
