@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,38 +22,36 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def eltw_sum_cython(x_acc, x):
-    if x.dtype == np.int8:
-        eltw_sum_cython_inner_int8(x_acc.reshape(-1), x.reshape(-1))
-    elif x.dtype == np.float32:
-        eltw_sum_cython_inner_float32(x_acc.reshape(-1), x.reshape(-1))
-    elif x.dtype == np.float64:
-        eltw_sum_cython_inner_float64(x_acc.reshape(-1), x.reshape(-1))
-    else:
-        raise TypeError("Type '{}' is not supported by eltw_sum_cython!" % (str(x.dtype)))
+# =================== #
+# --- COMMON --- #
+ctypedef fused npDT:
+    np.int8_t
+    np.float32_t
+    np.float64_t
+    # NOTE: in order to extend the supported data types, add the new types here.
+# -- END npDT -- #
+# --- END COMMON --- #
+# =================== #
+
+def eltw_sum_cython(np.ndarray[npDT] x_acc,
+                    np.ndarray[npDT] x) -> np.ndarray:
+
+    cdef np.ndarray[npDT, ndim=1] _x_acc = x_acc.reshape(-1)
+    cdef np.ndarray[npDT, ndim=1] _x = x.reshape(-1)
+
+    try:
+        eltw_sum_cython_inner(_x_acc, _x)
+    except TypeError as e:
+        raise TypeError(f"Function: \"eltw_sum_cython\". Error: {e}")
 
     return x_acc
+# --- END eltw_sum_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef eltw_sum_cython_inner_int8(np.ndarray[np.int8_t, ndim=1] x_acc,
-                                np.ndarray[np.int8_t, ndim=1] x):
+cdef eltw_sum_cython_inner(np.ndarray[npDT, ndim=1] x_acc,
+                           np.ndarray[npDT, ndim=1] x):
     cdef int i
     for i in prange(x.shape[0], nogil=True):
         x_acc[i] += x[i]
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef eltw_sum_cython_inner_float32(np.ndarray[np.float32_t, ndim=1] x_acc,
-                                   np.ndarray[np.float32_t, ndim=1] x):
-    cdef int i
-    for i in prange(x.shape[0], nogil=True):
-        x_acc[i] += x[i]
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef eltw_sum_cython_inner_float64(np.ndarray[np.float64_t, ndim=1] x_acc,
-                                   np.ndarray[np.float64_t, ndim=1] x):
-    cdef int i
-    for i in prange(x.shape[0], nogil=True):
-        x_acc[i] += x[i]
+# --- END eltw_sum_cython --- #
