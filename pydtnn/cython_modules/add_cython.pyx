@@ -35,29 +35,27 @@ ctypedef fused supported_types_t:
 # ====== NHWC ====== #
 # ================== #
 
-def add_nhwc_cython(x: np.ndarray, b: np.ndarray) -> np.ndarray:
+def add_nhwc_cython(np.ndarray[supported_types_t, ndim=2] x, 
+                    np.ndarray[supported_types_t, ndim=1] b) -> np.ndarray:
     
+    cdef supported_types_t[:, :] x_view = x
+    cdef const supported_types_t[:] b_view = b
+
     try:
-        add_nhwc(x, b)
+        add_nhwc(x_view, b_view)
         return x
     except TypeError as e:
         raise TypeError(f"Function: \"add_nhwc_cython\". Error: {e}")
 # --- END add_nhwc_cython --- #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def add_nhwc(np.ndarray[supported_types_t, ndim=2] x,
-                            np.ndarray[supported_types_t, ndim=1] b):
-    cdef supported_types_t[:, :] x_view = x
-    cdef const supported_types_t[:] b_view = b
-    _add_nhwc(x_view, b_view)
-# --- END NHWC_inner --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _add_nhwc(supported_types_t[:,:] x,
-          const supported_types_t[:] b):
+cdef add_nhwc(supported_types_t[:,:] x,
+              const supported_types_t[:] b):
+
     cdef int i, j
+
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i, j] += b[j]
@@ -68,29 +66,26 @@ cdef _add_nhwc(supported_types_t[:,:] x,
 # ================== #
 
 
-def add_nchw_cython(x: np.ndarray[supported_types_t], b: np.ndarray[supported_types_t]) -> np.ndarray:
+def add_nchw_cython(np.ndarray[supported_types_t, ndim=2] x, 
+                    np.ndarray[supported_types_t, ndim=1] b) -> np.ndarray:
 
+
+    cdef supported_types_t[:, :] x_view = x
+    cdef const supported_types_t[:] b_view = b    
     try:
-        _add_inner_nchw(x, b)
+        add_nchw(x_view, b_view)
         return x
     except TypeError as e:
-        raise TypeError(f"Function: \"adaptive_avg_pooling_fwd_nchw_cython\". Error: {e}")
+        raise TypeError(f"Function: \"add_nchw_cython\". Error: {e}")
 # --- END add_nchw_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def _add_inner_nchw(np.ndarray[supported_types_t, ndim=2] x,
-               np.ndarray[supported_types_t, ndim=1] b):
-    cdef supported_types_t[:, :] x_view = x
-    cdef const supported_types_t[:] b_view = b
-    _add_nchw(x_view, b_view)
-# --- END add --- #
+cdef add_nchw(supported_types_t[:, :] x,
+              const supported_types_t[:] b):
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef _add_nchw(supported_types_t[:, :] x,
-          const supported_types_t[:] b):
     cdef int i, j
+    
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i, j] += b[i]

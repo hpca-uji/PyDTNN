@@ -33,10 +33,10 @@ cdef inline int index_last_element(int index, int dim_in, int dim_out) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 # NOTE: "supported_types_t[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
-cdef _avg_pooling(supported_types_t[:, :, :, :] pooled_x,
-                  const supported_types_t[:, :, :, :] x,
-                  int n, int c, int h, int w,
-                  int new_h, int new_w):
+cdef avg_pooling(supported_types_t[:, :, :, :] pooled_x,
+                 const supported_types_t[:, :, :, :] x,
+                 int n, int c, int h, int w,
+                 int new_h, int new_w):
                   
     cdef int h_start, h_end, w_start, w_end
     cdef int nn, cc, hi, wi, i, j
@@ -64,29 +64,20 @@ cdef _avg_pooling(supported_types_t[:, :, :, :] pooled_x,
                     pooled_x[nn, hi, wi, cc] = add / elements
 # --- END _avg_pooling --- #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def avg_pooling(np.ndarray[supported_types_t, ndim=4] pooled_x, 
-                 np.ndarray[supported_types_t, ndim=4] x, 
-                 int n, int c, int h, int w, int new_h, int new_w):
-
-    cdef supported_types_t[:,:,:,:] pooled_x_view = pooled_x    
-    cdef const supported_types_t[:,:,:,:] x_view = x
-    _avg_pooling(pooled_x_view, x_view, n, c, h, w, new_h, new_w)
-# --- END avg_pooling --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def adaptive_avg_pooling_fwd_nhwc_cython(np.ndarray x, int new_h, int new_w) -> np.ndarray:
+def adaptive_avg_pooling_fwd_nhwc_cython(np.ndarray[supported_types_t, ndim=4] x, 
+                                         int new_h, int new_w) -> np.ndarray:
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
     cdef int w = x.shape[2]
     cdef int c = x.shape[3]        
 
-    cdef np.ndarray pooled_x = np.empty((n, new_h, new_w, c), dtype = x.dtype)
+    cdef np.ndarray[supported_types_t, ndim=4] pooled_x = np.empty((n, new_h, new_w, c), dtype = x.dtype)
+
+    cdef supported_types_t[:,:,:,:] pooled_x_view = pooled_x    
+    cdef const supported_types_t[:,:,:,:] x_view = x    
 
     try:
-        avg_pooling(pooled_x, x, n, c, h, w, new_h, new_w)
+        avg_pooling(pooled_x_view, x_view, n, c, h, w, new_h, new_w)
         return pooled_x
     except TypeError as e:
         raise TypeError(f"Function: \"adaptive_avg_pooling_fwd_nhwc_cython\". Error: {e}")
@@ -103,7 +94,7 @@ def adaptive_avg_pooling_fwd_nhwc_cython(np.ndarray x, int new_h, int new_w) -> 
 @cython.boundscheck(False)
 @cython.wraparound(False)
 # NOTE: "supported_types_t[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
-cdef _backward_avg_pooling(supported_types_t[:, :, :, :] dx,
+cdef backward_avg_pooling(supported_types_t[:, :, :, :] dx,
                   const supported_types_t[:, :, :, :] dy,
                   int n, int c, int h, int w,
                   int new_h, int new_w):
@@ -128,31 +119,24 @@ cdef _backward_avg_pooling(supported_types_t[:, :, :, :] dx,
                     for i in range(h_start, h_end):
                         for j in range(w_start, w_end):
                                 dx[nn, i, j, cc] += delta
-# --- END _avg_pooling --- #
+# --- END backward_avg_pooling --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def backward_avg_pooling(np.ndarray[supported_types_t, ndim=4] dx, 
-                 np.ndarray[supported_types_t, ndim=4] dy, 
-                 int n, int c, int h, int w, int new_h, int new_w):
-
-    cdef supported_types_t[:,:,:,:] y_view = dx
-    cdef const supported_types_t[:,:,:,:] x_view = dy
-    _backward_avg_pooling(y_view, x_view, n, c, h, w, new_h, new_w)
-# --- END avg_pooling --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def adaptive_avg_pooling_bwd_nhwc_cython(np.ndarray dy, int new_h, int new_w) -> np.ndarray:
+def adaptive_avg_pooling_bwd_nhwc_cython(np.ndarray[supported_types_t, ndim=4] dy, 
+                                         int new_h, int new_w) -> np.ndarray:
     cdef int n = dy.shape[0]
     cdef int h = dy.shape[1]
     cdef int w = dy.shape[2]
     cdef int c = dy.shape[3]        
 
-    cdef np.ndarray dx = np.empty((n, new_h, new_w, c), dtype = dy.dtype)
+    cdef np.ndarray[supported_types_t, ndim=4] dx = np.empty((n, new_h, new_w, c), dtype = dy.dtype)
+
+    cdef supported_types_t[:,:,:,:] y_view = dx
+    cdef const supported_types_t[:,:,:,:] x_view = dy    
 
     try:
-        backward_avg_pooling(dx, dy, n, c, h, w, new_h, new_w)
+        backward_avg_pooling(y_view, x_view, n, c, h, w, new_h, new_w)
         return dx
     except TypeError as e:
             raise TypeError(f"Function: \"adaptive_avg_pooling_bwd_nhwc_cython\". Error: {e}")
