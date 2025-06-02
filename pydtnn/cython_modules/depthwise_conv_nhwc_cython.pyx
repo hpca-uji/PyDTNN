@@ -36,8 +36,7 @@ ctypedef fused npDT:
 # =============== #
 # --- FORWARD --- #
 
-def depthwise_conv_nhwc_cython(np.ndarray[npDT, ndim=4] x,
-                               np.ndarray[npDT, ndim=3] k,
+def depthwise_conv_nhwc_cython(x: np.ndarray, k: np.ndarray,
                                int vpadding, int hpadding, 
                                int vstride, int hstride, 
                                int vdilation, int hdilation)-> np.ndarray:
@@ -52,7 +51,7 @@ def depthwise_conv_nhwc_cython(np.ndarray[npDT, ndim=4] x,
     cdef int hi = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cdef np.ndarray res = np.empty((n, hi, ww, c), dtype=x.dtype)
+    res: np.ndarray = np.empty((n, hi, ww, c), dtype=x.dtype)
     try:
         depthwise_conv_cython_inner(res, x, k, n, c, h, w,
                                     hi, ww, kh, kw, vpadding, hpadding,
@@ -62,15 +61,34 @@ def depthwise_conv_nhwc_cython(np.ndarray[npDT, ndim=4] x,
         raise TypeError(f"Function: \"depthwise_conv_nhwc_cython\". Error: {e}")
 # --- END depthwise_conv_cython --- #
 
+def depthwise_conv_cython_inner(np.ndarray[npDT, ndim=4] res,
+                                np.ndarray[npDT, ndim=4] x,
+                                np.ndarray[npDT, ndim=3] k,
+                                int n, int c, int h, int w, int hi, int ww,
+                                int kh, int kw, int vpadding, int hpadding,
+                                int vstride, int hstride,
+                                int vdilation, int hdilation):
+
+    cdef npDT[:,:,:,:] res_view = res
+    cdef const npDT[:,:,:,:] x_view = x
+    cdef const npDT[:,:,:] k_view = k
+
+    _depthwise_conv_cython_inner(res_view, x_view, k_view, n, c, h, w,
+                                 hi, ww, kh, kw, vpadding, hpadding,
+                                 vstride, hstride, vdilation, hdilation)
+# --- END depthwise_conv_cython_inner --- #
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef depthwise_conv_cython_inner(np.ndarray[npDT, ndim=4] res,
-                                 np.ndarray[npDT, ndim=4] x,
-                                 np.ndarray[npDT, ndim=3] k,
-                                 int n, int c, int h, int w, int hi, int ww,
-                                 int kh, int kw, int vpadding, int hpadding,
-                                 int vstride, int hstride,
-                                 int vdilation, int hdilation):
+cdef _depthwise_conv_cython_inner(npDT[:, :, :, :] res,
+                                  const npDT[:, :, :, :] x,
+                                  const npDT[:, :, :] k,
+                                  int n, int c, int h, int w, int hi, int ww,
+                                  int kh, int kw, int vpadding, int hpadding,
+                                  int vstride, int hstride,
+                                  int vdilation, int hdilation):
+
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
 
     for cc in prange(c, nogil=True):
@@ -84,7 +102,7 @@ cdef depthwise_conv_cython_inner(np.ndarray[npDT, ndim=4] res,
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     res[nn, xx, yy, cc] += k[cc, ii, jj] * x[nn, x_x, x_y, cc]
-# --- END depthwise_conv_cython_inner --- #
+# --- END _depthwise_conv_cython_inner --- #
 
 # --- END FORWARD --- #
 # =================== #
@@ -92,9 +110,7 @@ cdef depthwise_conv_cython_inner(np.ndarray[npDT, ndim=4] res,
 
 # =================== #
 # ----- BACKWARD ---- #
-def depthwise_conv_backward_nhwc_cython(np.ndarray[npDT, ndim=4] dy,
-                                        np.ndarray[npDT, ndim=4] x,
-                                        np.ndarray[npDT, ndim=3] k,
+def depthwise_conv_backward_nhwc_cython(dy: np.ndarray, x: np.ndarray, k: np.ndarray,
                                         int vpadding, int hpadding, 
                                         int vstride, int hstride, 
                                         int vdilation, int hdilation)-> tuple(np.ndarray, np.ndarray):
@@ -109,8 +125,8 @@ def depthwise_conv_backward_nhwc_cython(np.ndarray[npDT, ndim=4] dy,
     cdef int hi = dy.shape[1]
     cdef int ww = dy.shape[2]
 
-    cdef np.ndarray dx = np.empty((n, h, w, c), dtype=x.dtype)
-    cdef np.ndarray dw = np.empty((c, kh, kw), dtype=k.dtype)
+    dx: np.ndarray = np.empty((n, h, w, c), dtype=x.dtype)
+    dw: np.ndarray = np.empty((c, kh, kw), dtype=k.dtype)
 
     try:
         depthwise_conv_backward_inner(dx, dw, dy, x, k, 
@@ -124,18 +140,43 @@ def depthwise_conv_backward_nhwc_cython(np.ndarray[npDT, ndim=4] dy,
         raise TypeError(f"Function: \"depthwise_conv_backward_nhwc_cython\". Error: {e}")
 # --- END depthwise_conv_backward_nhwc_cython --- #
 
+def depthwise_conv_backward_inner(np.ndarray[npDT, ndim=4] dx,
+                                  np.ndarray[npDT, ndim=3] dw,
+                                  np.ndarray[npDT, ndim=4] dy,
+                                  np.ndarray[npDT, ndim=4] x,
+                                  np.ndarray[npDT, ndim=3] k,
+                                  int n, int c, int h, int w, 
+                                  int hi, int ww, int kh, int kw, 
+                                  int vpadding, int hpadding,
+                                  int vstride, int hstride,
+                                  int vdilation, int hdilation):
+    
+    cdef npDT[:,:,:,:] dx_view = dx
+    cdef npDT[:,:,:] dw_view = dw
+    cdef const npDT[:,:,:,:] dy_view = dy
+    cdef const npDT[:,:,:,:] x_view = x
+    cdef const npDT[:,:,:] k_view = k
+
+    _depthwise_conv_backward_inner(dx_view, dw_view, dy_view, x_view, k_view, 
+                                   n, c, h, w,
+                                   hi, ww, kh, kw, 
+                                   vpadding, hpadding,
+                                   vstride, hstride, 
+                                   vdilation, hdilation)
+# --- END depthwise_conv_cython_inner --- #
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef depthwise_conv_backward_inner(np.ndarray[npDT, ndim=4] dx,
-                                   np.ndarray[npDT, ndim=3] dw,
-                                   np.ndarray[npDT, ndim=4] dy,
-                                   np.ndarray[npDT, ndim=4] x,
-                                   np.ndarray[npDT, ndim=3] k,
-                                   int n, int c, int h, int w, 
-                                   int hi, int ww, int kh, int kw, 
-                                   int vpadding, int hpadding,
-                                   int vstride, int hstride,
-                                   int vdilation, int hdilation):
+cdef _depthwise_conv_backward_inner(npDT[:, :, :, :] dx,
+                                    npDT[:, :, :] dw,
+                                    const npDT[:, :, :, :] dy,
+                                    const npDT[:, :, :, :] x,
+                                    const npDT[:, :, :] k,
+                                    int n, int c, int h, int w, 
+                                    int hi, int ww, int kh, int kw, 
+                                    int vpadding, int hpadding,
+                                    int vstride, int hstride,
+                                    int vdilation, int hdilation):
 
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
     cdef npDT val_k
@@ -157,7 +198,7 @@ cdef depthwise_conv_backward_inner(np.ndarray[npDT, ndim=4] dx,
                                     
                                     dw[cc, ii, jj] = val_k * x[nn, x_x, x_y, cc]
                                     dx[nn, x_x, x_y, cc] += val_k * dy[nn, xx, yy, cc]
-# --- END depthwise_conv_backward_inner --- #
+# --- END _depthwise_conv_backward_inner --- #
 
 # --- END FORWARD --- #
 # =================== #
