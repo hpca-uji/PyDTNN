@@ -33,8 +33,7 @@ ctypedef fused npDT:
 # --- END COMMON --- #
 # =================== #
 
-def pointwise_conv_cython(np.ndarray[npDT, ndim=4] x,
-                          np.ndarray[npDT, ndim=2] k) -> np.ndarray:
+def pointwise_conv_cython(x: np.ndarray, k: np.ndarray) -> np.ndarray:
 
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -43,7 +42,7 @@ def pointwise_conv_cython(np.ndarray[npDT, ndim=4] x,
 
     cdef int co = k.shape[0]
 
-    cdef np.ndarray[npDT, ndim=4] out = np.empty((n, co, h, w), dtype=x.dtype)
+    out: np.ndarray = np.empty((n, co, h, w), dtype=x.dtype)
 
     try:
         pointwise_conv_cython_inner(out, x, k, n, c, h, w, co)
@@ -53,12 +52,24 @@ def pointwise_conv_cython(np.ndarray[npDT, ndim=4] x,
     return out
 # --- END pointwise_conv_cython --- #
 
+def pointwise_conv_cython_inner(np.ndarray[npDT, ndim=4] out,
+                                np.ndarray[npDT, ndim=4] x,
+                                np.ndarray[npDT, ndim=2] k,
+                                int n, int c, int h, int w, int co):
+
+    cdef npDT[:,:,:,:] out_view = out
+    cdef const npDT[:,:,:,:] x_view = x
+    cdef const npDT[:,:] k_view = k
+
+    _pointwise_conv_cython_inner(out_view, x_view, k_view, n, c, h, w, co)
+# --- END pointwise_conv_cython_inner --- #
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef pointwise_conv_cython_inner(np.ndarray[npDT, ndim=4] out,
-                                 np.ndarray[npDT, ndim=4] x,
-                                 np.ndarray[npDT, ndim=2] k,
-                                 int n, int c, int h, int w, int co):
+cdef _pointwise_conv_cython_inner(npDT[:,:,:,:] out,
+                                  const npDT[:,:,:,:] x,
+                                  const npDT[:,:] k,
+                                  int n, int c, int h, int w, int co):
     cdef int nn, cco, cc, ii, jj
 
     for cco in prange(co, nogil=True):
@@ -67,4 +78,4 @@ cdef pointwise_conv_cython_inner(np.ndarray[npDT, ndim=4] out,
                 for ii in range(h):
                     for jj in range(w):
                         out[nn, cco, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
-# --- END pointwise_conv_cython_inner --- #
+# --- END _pointwise_conv_cython_inner --- #

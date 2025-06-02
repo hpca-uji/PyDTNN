@@ -35,7 +35,7 @@ ctypedef fused npDT:
 
 # --- im2row --- #
 
-def im2row_1ch_nhwc_cython(np.ndarray[npDT, ndim=4] x, 
+def im2row_1ch_nhwc_cython(x: np.ndarray,
                            int kh, int kw, int vpadding, int hpadding,
                            int vstride, int hstride, int vdilation, int hdilation) -> np.ndarray:
     cdef int n = x.shape[0]
@@ -46,7 +46,7 @@ def im2row_1ch_nhwc_cython(np.ndarray[npDT, ndim=4] x,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cdef np.ndarray[npDT, ndim=2] rows = np.empty((n * c * hh * ww, kh * kw), dtype=x.dtype)
+    rows: np.ndarray = np.empty((n * c * hh * ww, kh * kw), dtype=x.dtype)
 
     try:
         im2row_1ch_nhwc_cython_inner(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
@@ -56,14 +56,28 @@ def im2row_1ch_nhwc_cython(np.ndarray[npDT, ndim=4] x,
 
     return rows
 
+def im2row_1ch_nhwc_cython_inner(np.ndarray[npDT, ndim=2] rows,
+                                 np.ndarray[npDT, ndim=4] x,
+                                 int n, int h, int w, int c, int hh, int ww,
+                                 int kh, int kw, int vpadding, int hpadding,
+                                 int vstride, int hstride,
+                                 int vdilation, int hdilation):
+
+    cdef npDT[:,:] rows_view = rows
+    cdef npDT[:,:,:,:] x_view = x
+
+    _im2row_1ch_nhwc_cython_inner(rows_view, x_view, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
+                                  vstride, hstride, vdilation, hdilation)
+# --- im2row_1ch_nhwc_cython_inner --- #
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef im2row_1ch_nhwc_cython_inner(np.ndarray[npDT, ndim=2] rows,
-                                  np.ndarray[npDT, ndim=4] x,
-                                  int n, int h, int w, int c, int hh, int ww,
-                                  int kh, int kw, int vpadding, int hpadding,
-                                  int vstride, int hstride,
-                                  int vdilation, int hdilation):
+cdef _im2row_1ch_nhwc_cython_inner(npDT[:,:] rows,
+                                   npDT[:,:,:,:] x,
+                                   int n, int h, int w, int c, int hh, int ww,
+                                   int kh, int kw, int vpadding, int hpadding,
+                                   int vstride, int hstride,
+                                   int vdilation, int hdilation):
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
@@ -79,7 +93,7 @@ cdef im2row_1ch_nhwc_cython_inner(np.ndarray[npDT, ndim=2] rows,
                                 if 0 <= x_y < w:
                                     col = cc * kh * kw + ii * kw + jj
                                     rows[row, col] = x[nn, x_x, x_y, cc]
-# --- im2row_1ch_nhwc_cython_inner --- #
+# --- _im2row_1ch_nhwc_cython_inner --- #
 
 # --- END im2row --- #
 
@@ -111,14 +125,28 @@ def row2im_1ch_nhwc_cython(np.ndarray[npDT, ndim=2] rows,
     return x
 # --- END row2im_1ch_nhwc_cython --- #
 
+def row2im_1ch_nhwc_cython_inner(np.ndarray[npDT, ndim=2] rows,
+                                 np.ndarray[npDT, ndim=4] x,
+                                 int n, int h, int w, int c, int hh, int ww,
+                                 int kh, int kw, int vpadding, int hpadding,
+                                 int vstride, int hstride,
+                                 int vdilation, int hdilation):
+
+    cdef const npDT[:,:] rows_view = rows
+    cdef npDT[:,:,:,:] x_view = x
+
+    _row2im_1ch_nhwc_cython_inner(rows_view, x_view, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
+                                  vstride, hstride, vdilation, hdilation)
+# --- END row2im_1ch_nhwc_cython_inner --- #
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef row2im_1ch_nhwc_cython_inner(np.ndarray[npDT, ndim=2] rows,
-                                  np.ndarray[npDT, ndim=4] x,
-                                  int n, int h, int w, int c, int hh, int ww,
-                                  int kh, int kw, int vpadding, int hpadding,
-                                  int vstride, int hstride,
-                                  int vdilation, int hdilation):
+cdef _row2im_1ch_nhwc_cython_inner(const npDT[:,:] rows,
+                                   npDT[:,:,:,:] x,
+                                   int n, int h, int w, int c, int hh, int ww,
+                                   int kh, int kw, int vpadding, int hpadding,
+                                   int vstride, int hstride,
+                                   int vdilation, int hdilation):
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
