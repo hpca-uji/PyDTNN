@@ -65,7 +65,7 @@ try:
     import pycuda.gpuarray as gpuarray
 except (ImportError, ModuleNotFoundError) as e: 
     gpuarray = None
-    cuda_error_msg.append(e)
+    cuda_error_msg.append(f"Import: \"import pycuda.gpuarray as gpuarray\". Error: {e}")
 except Exception as e: raise(e)
 try:
     # noinspection PyUnresolvedReferences
@@ -73,14 +73,14 @@ try:
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
 except (ImportError, ModuleNotFoundError) as e: 
     drv = None
-    cuda_error_msg.append(e)
+    cuda_error_msg.append(f"Import: \"import pycuda.driver as drv\". Error: {e}")
 except Exception as e: raise(e)
 try: 
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
 except (ImportError, ModuleNotFoundError) as e: 
     cublas = None
-    cuda_error_msg.append(e)
+    cuda_error_msg.append(f"Import: \"from skcuda import cublas\". Error: {e}")
 except Exception as e: raise(e)
 # --- END CUDA related imports --- #
 
@@ -370,6 +370,8 @@ class Model:
         else:
             MemoryCache.disable()        
         
+        global cuda_error_msg
+
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
@@ -380,7 +382,7 @@ class Model:
                                                                               parallel = self.parallel, dtype = self.dtype, enable_nccl = 
                                                                               self.enable_nccl, tracer = self.tracer)
             else:
-                raise ImportError(" ".join(cuda_error_msg))
+                raise ImportError("\n".join(cuda_error_msg))
         else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
         
         # Data format
