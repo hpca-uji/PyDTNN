@@ -40,13 +40,18 @@ class Client(Protocol):
         self._put_grpc = threading.Event()
 
         # gRPC
-        creds = grpc.ssl_channel_credentials(comms.SERVER_CERTIFICATE)
-        self._channel = grpc.secure_channel(
-            target=f"{self._addr}:{self._port}",
-            credentials=creds,
-            compression=self._compression,
-            options=self._options
-        )
+        config: abc.MutableMapping = {
+            "target": f"{self._addr}:{self._port}",
+            "compression": self._compression,
+            "options": self._options
+        }
+
+        if comms.SSL:
+            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=comms.SSL_CERT.read_bytes() if comms.SSL_CERT else None)
+            self._channel = grpc.secure_channel(**config)
+        else:
+            self._channel = grpc.insecure_channel(**config)
+
         self._client = grpc_pb2_grpc.gRPCStub(self._channel)
 
         self._session_ini()

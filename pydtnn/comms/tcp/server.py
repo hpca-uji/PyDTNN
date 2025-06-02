@@ -37,10 +37,13 @@ class Server(Protocol):
         self._state = dict[uuid.UUID, ConnectionData]()
 
         # TCP
-        context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SERVER_CERTIFICATE_PATH)
-        context.load_cert_chain(certfile=comms.SERVER_CERTIFICATE_PATH, keyfile=comms.SERVER_KEY_PATH)
         self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
-        self._socket = context.wrap_socket(self._socket, server_side=True)
+
+        if comms.SSL:
+            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SSL_CERT)
+            context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
+            self._socket = context.wrap_socket(self._socket, server_side=True)
+
         self._selector.register(self._socket, selectors.EVENT_READ, self._new_connection)
         self._notify_selector()
 
@@ -156,18 +159,18 @@ class Server(Protocol):
         peer = self._peers.inverse[sock]
         state = self._state[peer]
 
-        try:
-            data = sock.recv(self._max_message_size)
-        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
-            return
+        while True:
+            try:
+                data = sock.recv(self._max_message_size)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                break
 
-        if not data:
-            assert not state.state, "Lost connection unexpectedly"
-            self._fin(sock)
-            return
+            if not data:
+                assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+                return
 
-        state.get_buffer.write(data)
-        self._get_flush(peer)
+            state.get_buffer.write(data)
+            self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""

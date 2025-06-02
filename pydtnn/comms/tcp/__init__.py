@@ -41,7 +41,7 @@ class Protocol(comms.Communicator):
 
         self._pool = ThreadPoolExecutor(max_workers=1 + self._max_workers, thread_name_prefix=f"{thread_prefix}")
         self._loop_thread = self._pool.submit(self._handle_selector_loop)
-        self._loop_thread.add_done_callback(lambda future: future.result())
+        # self._loop_thread.add_done_callback(lambda future: future.result())
         self._task_queue = SimpleQueue[Task]()
 
     def _modify_selector(self, fileobj, events) -> None:

@@ -53,7 +53,10 @@ class Protocol(comms.Communicator):
             protocol=self._protocol,
             transport=self._transport  # type: ignore
         )
-        self._client.tls_set(str(comms.SERVER_CERTIFICATE_PATH))
+
+        if comms.SSL:
+            self._client.tls_set(ca_certs=str(comms.SSL_CERT) if comms.SSL_CERT else None)
+
         self._client.connect(host=self._addr, port=self._port)
         self._client.loop_start()
 
