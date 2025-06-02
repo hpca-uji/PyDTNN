@@ -16,13 +16,15 @@
 #  You should have received a copy of the GNU General Public License along
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
 import numpy as np
 
-from typing import Tuple, List, Self
-from ..model import Model
+from typing import Tuple, List, Self, TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
 
 from ..backends.gpu.tensor_gpu import TensorGPU
 from numpy import ndarray

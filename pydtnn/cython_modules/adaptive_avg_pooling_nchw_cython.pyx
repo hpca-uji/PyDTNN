@@ -1,7 +1,6 @@
 import numpy as np
 cimport numpy as np
 cimport cython
-from libc.stdlib cimport malloc, free
 from cython.parallel import prange
 
 # --- COMMON --- #

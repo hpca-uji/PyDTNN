@@ -20,7 +20,7 @@
 import importlib
 import sys
 
-from dataset import Dataset
+from .dataset import Dataset
 from .cifar10 import CIFAR10
 from .custom_dataset import CustomDataset
 from .imagenet import ImageNet
