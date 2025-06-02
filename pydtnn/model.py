@@ -33,7 +33,7 @@ from collections.abc import Iterable
 from .tracers import SimpleTracerGPU
 
 from types import ModuleType
-from .layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from .tracers.tracer import Tracer
 from .datasets import Dataset
 
@@ -328,7 +328,14 @@ class Model:
         self.cudnn_handle: Cudnn_Handle_Type | None = None
         self.cublas_handle: Cublas_Handle_Type | None = None
         self.stream: PyCuda_Stream_Type | None = None
-        self.cudnn_dtype: Cudnn_dtype | None = None       
+        self.cudnn_dtype: Cudnn_dtype | None = None
+
+        # FIXME | TODO: Get the parser's value from other place.
+        # Get default values from parser and update them from the received kwargs
+        self.kwargs: dict[str, Any] = vars(parser.parse_args([]))
+        self.kwargs.update(kwargs)
+        
+        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         
         # Set MPI and comm          
         self.MPI, self.comm = _initilize_communications(parallel = parallel)
@@ -341,11 +348,6 @@ class Model:
         self.tracer = _initilize_and_get_tracer(tracer_output = tracer_output, tracing = tracing, comm = self.comm, enable_gpu = enable_gpu,
                                                 tracer_pmlib_server = tracer_pmlib_server, tracer_pmlib_port = tracer_pmlib_port, 
                                                 tracer_pmlib_device = tracer_pmlib_device)
-        
-        # FIXME | TODO: Get the parser's value from other place.
-        # Get default values from parser and update them from the received kwargs
-        self.kwargs: dict[str, Any] = vars(parser.parse_args([]))
-        self.kwargs.update(kwargs)
 
         # Set performance counter
         self.perf_counter = PerformanceCounter()
