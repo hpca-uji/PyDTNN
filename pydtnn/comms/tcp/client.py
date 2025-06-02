@@ -33,12 +33,14 @@ class Client(Protocol):
         self._state = ConnectionData(buffer_size=self._max_message_size)
 
         # TCP
-        context = ssl.create_default_context(cafile=comms.SERVER_CERTIFICATE_PATH)
-        context.check_hostname = False
         self._socket = socket.create_connection((self._addr, self._port))
+
+        if comms.SSL:
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=comms.SSL_CERT)
+            self._socket = context.wrap_socket(self._socket, server_hostname=self._addr)
+
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
         self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
-        self._socket = context.wrap_socket(self._socket)
         self._socket.setblocking(False)
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
@@ -70,18 +72,18 @@ class Client(Protocol):
         """Server to client communication"""
         state = self._state
 
-        try:
-            data = sock.recv(self._max_message_size)
-        except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
-            return
+        while True:
+            try:
+                data = sock.recv(self._max_message_size)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                break
 
-        if not data:
-            assert not state.state, "Lost connection unexpectedly"
-            self._fin(sock)
-            return
+            if not data:
+                assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+                return
 
-        state.get_buffer.write(data)
-        self._get_flush()
+            state.get_buffer.write(data)
+            self._get_flush()
 
     def _get_flush(self) -> None:
         state = self._state

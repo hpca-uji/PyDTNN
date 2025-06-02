@@ -37,11 +37,7 @@ import multiprocessing
 import os
 
 import numpy as np
-
-
-def bool_lambda(x):
-    """Returns True if command line value is a truthy value"""
-    return str(x).lower() in ['true', '1', 'yes', 'y', 't']
+from pydtnn.utils import parse_bool as bool_lambda
 
 
 def factor(x):
@@ -95,11 +91,11 @@ def _get_gpus_per_node():
 
 
 def _get_comm_protocol():
-    from pydtnn.comms import PROTOCOL
-    if PROTOCOL is None:
-        return "native"
-    else:
-        return str(PROTOCOL)
+    from pydtnn.comms import PROTOCOL, SSL
+    protocol = str(PROTOCOL)
+    if PROTOCOL and SSL:
+        protocol = f"{protocol}+tls"
+    return protocol
 
 
 def _get_mpi_server():

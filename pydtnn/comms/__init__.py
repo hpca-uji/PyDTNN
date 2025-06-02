@@ -66,20 +66,21 @@ import os
 import abc
 import uuid
 import enum
-import pathlib
 import importlib
 import threading
+from pathlib import Path
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
 from concurrent.futures import Future
 
 
-from pydtnn.utils import UUID_NIL
+from pydtnn.utils import UUID_NIL, parse_bool
 from pydtnn.utils.io_stream import Packer, Serializer, Stream
 
 
 __all__ = (
     "PROTOCOL",
+    "SSL",
     "Protocol",
     "Message",
     "ResourceClosed",
@@ -224,19 +225,29 @@ class Communicator[T](abc.ABC):
 
 
 # Exports
-Server: type[Communicator]
-Client: type[Communicator]
-
+# PROTOCOL
 PROTOCOL: Protocol | None
 if _env_protocol := os.environ.get("PYDTNN_COMM"):
     PROTOCOL = Protocol(_env_protocol)
 else:
     PROTOCOL = None
 
-SERVER_CERTIFICATE_PATH = pathlib.Path(__file__).parent.joinpath("certs", "cert.pem")
-SERVER_KEY_PATH = pathlib.Path(__file__).parent.joinpath("certs", "key.pem")
-SERVER_CERTIFICATE = SERVER_CERTIFICATE_PATH.read_bytes()
-SERVER_KEY = SERVER_KEY_PATH.read_bytes()
+# SSL
+SSL = parse_bool(os.environ.get("PYDTNN_COMM_SSL"))
+
+if _ssl_key := os.environ.get("PYDTNN_COMM_SSL_KEY"):
+    SSL_KEY = Path(_ssl_key).resolve()
+else:
+    SSL_KEY = None
+
+if _ssl_cert := os.environ.get("PYDTNN_COMM_SSL_CERT"):
+    SSL_CERT = Path(_ssl_cert).resolve()
+else:
+    SSL_CERT = None
+
+# Proxy
+Server: type[Communicator]
+Client: type[Communicator]
 
 
 def __getattr__(key):

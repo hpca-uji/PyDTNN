@@ -47,9 +47,18 @@ class Server(Protocol):
             compression=self._compression,
             options=self._options
         )
-        creds = grpc.ssl_server_credentials([[comms.SERVER_KEY, comms.SERVER_CERTIFICATE]])
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
-        self._server.add_secure_port(address=f"{self._addr}:{self._port}", server_credentials=creds)
+
+        config: abc.MutableMapping = {
+            "address": f"{self._addr}:{self._port}"
+        }
+
+        if comms.SSL:
+            config["server_credentials"] = grpc.ssl_server_credentials([[comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()]])
+            self._server.add_secure_port(**config)
+        else:
+            self._server.add_insecure_port(**config)
+
         self._server.start()
 
     def _com(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:

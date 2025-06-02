@@ -41,6 +41,11 @@ UUID_NIL = uuid.UUID(int=0)
 UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
 
 
+def parse_bool(x):
+    """Returns True if value is a user truthy value"""
+    return str(x).lower() in {'true', '1', 'yes', 'y', 't'}
+
+
 def get_attr_factory(o, name, factory):
     try:
         return getattr(o, name)
