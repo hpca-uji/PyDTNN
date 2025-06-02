@@ -109,13 +109,14 @@ def mkl():
 
 
 def convert_size(units: int, scale: int = 1000):
-    if units > 0:
-        size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
+    size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
+    if units > 0:        
         i = int(math.log(units, scale))
         p = math.pow(scale, i)
         s = round(units / p, 2)
     else:
         i = 0
+        s = 0
     return f"{s}{size_name[i]}"
 
 
