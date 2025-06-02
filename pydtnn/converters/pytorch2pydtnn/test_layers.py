@@ -14,9 +14,9 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils.best_of import BestOf
 
 # noinspection PyUnresolvedReferences
-import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 try:
+    import pycuda.gpuarray as gpuarray
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
 except:
     pass
@@ -59,7 +59,7 @@ KWARGS = {
         "parallel": "data",
         "tensor_format": "NCHW", # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
-        "enable_gpu" : True,
+        "enable_gpu" : False,
         "omm": None,
         "dtype": DTYPE,
         "tracing": False,
@@ -187,12 +187,11 @@ def are_all_below_threshold(diff: np.ndarray, threshold:float = THRESHOLD) -> bo
 
 def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -> np.ndarray | TensorGPU:    
     y:np.ndarray | TensorGPU = dataset
-    print(f"forward_pydtnn_model - type(y.ary): {type(y.ary)}")
 
     for i in range(1, len(model.layers)): # NOTE - Remember: Layer 0 is the Input layer and it's ignored
         layer:LayerAndActivationBase = model.layers[i]
-        if y != dataset:
-            print(f"y != dataset - {layer} - type(y): {type(y)}")
+        #if y != dataset:
+        #    print(f"y != dataset - {layer} - type(y): {type(y)}")
         y = layer.forward(y)
     return y
 # --- END forward_pydtnn_model --- #
@@ -271,7 +270,8 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     there_are_pydtnn_weights = pydtnn_weights is not None
     
     if there_are_pytorch_weigths and there_are_pydtnn_weights:
-        print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)}")
+        pytorch_w:np.ndarray = pytorch_weights.cpu().detach().numpy()
+        print(f"weigths are all zeros: {are_all_zeros(pytorch_w - pydtnn_weights.reshape(pytorch_w.shape))}")
 
     pytorch_biases : None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_BIASES] if PYTORCH_LAYER_BIASES in pytorch_state_dict else None
     pydtnn_biases : None | np.ndarray | TensorGPU = pydtnn_layer.biases
