@@ -48,40 +48,42 @@ warm_up = WarmUpLRScheduler
 get_derived_classes(LRScheduler, locals())
 
 
-def get_lr_schedulers(model):
+def get_lr_schedulers(model) -> list[LRScheduler]:
     """Get LR Scheduler objects from model attributes"""
     lr_schedulers = []
+    # NOTE: All this parameters came from Parser
     for lr_sched in filter(None, model.lr_schedulers_names.split(",")):
-        if lr_sched == "warm_up":
-            lrs = WarmUpLRScheduler(model,
-                                    model.warm_up_epochs,
-                                    model.learning_rate / model.nprocs,
-                                    model.learning_rate)
-        elif lr_sched == "early_stopping":
-            lrs = EarlyStopping(model,
-                                model.early_stopping_metric,
-                                model.early_stopping_patience,
-                                model.early_stopping_minimize)
-        elif lr_sched == "reduce_lr_on_plateau":
-            lrs = ReduceLROnPlateau(model,
-                                    model.reduce_lr_on_plateau_metric,
-                                    model.reduce_lr_on_plateau_factor,
-                                    model.reduce_lr_on_plateau_patience,
-                                    model.reduce_lr_on_plateau_min_lr)
-        elif lr_sched == "reduce_lr_every_nepochs":
-            lrs = ReduceLREveryNEpochs(model,
-                                       model.reduce_lr_every_nepochs_factor,
-                                       model.reduce_lr_every_nepochs_nepochs,
-                                       model.reduce_lr_every_nepochs_min_lr)
-        elif lr_sched == "stop_at_loss":
-            lrs = StopAtLoss(model,
-                             model.stop_at_loss_metric,
-                             model.stop_at_loss_threshold)
-        elif lr_sched == "model_checkpoint":
-            lrs = ModelCheckpoint(model,
-                                  model.model_checkpoint_metric,
-                                  model.model_checkpoint_save_freq)
-        else:
-            raise SystemExit(f"LRScheduler '{model.optimizer}' not supported yet!")
+        match lr_sched:
+            case "warm_up":
+                lrs = WarmUpLRScheduler(model,
+                                        model.warm_up_epochs,
+                                        model.learning_rate / model.nprocs,
+                                        model.learning_rate)
+            case "early_stopping":
+                lrs = EarlyStopping(model,
+                                    model.early_stopping_metric,
+                                    model.early_stopping_patience,
+                                    model.early_stopping_minimize)
+            case "reduce_lr_on_plateau":
+                lrs = ReduceLROnPlateau(model,
+                                        model.reduce_lr_on_plateau_metric,
+                                        model.reduce_lr_on_plateau_factor,
+                                        model.reduce_lr_on_plateau_patience,
+                                        model.reduce_lr_on_plateau_min_lr)
+            case "reduce_lr_every_nepochs":
+                lrs = ReduceLREveryNEpochs(model,
+                                        model.reduce_lr_every_nepochs_factor,
+                                        model.reduce_lr_every_nepochs_nepochs,
+                                        model.reduce_lr_every_nepochs_min_lr)
+            case "stop_at_loss":
+                lrs = StopAtLoss(model,
+                                model.stop_at_loss_metric,
+                                model.stop_at_loss_threshold)
+            case "model_checkpoint":
+                lrs = ModelCheckpoint(model,
+                                    model.model_checkpoint_metric,
+                                    model.model_checkpoint_save_freq)
+            case _:
+                raise SystemExit(f"LRScheduler '{model.optimizer}' not supported yet!")
         lr_schedulers.append(lrs)
     return lr_schedulers

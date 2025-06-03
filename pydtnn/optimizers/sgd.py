@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 # 
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 # 
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -29,10 +29,11 @@ class SGD(Optimizer, ABC):
     SGD Optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype=np.float32):
+    def __init__(self, learning_rate:float=1e-2, momentum:float=0.9, 
+                 nesterov:bool=False, decay:float=0.0, dtype:np.dtype=np.float32):
         super().__init__()
-        self.learning_rate = learning_rate
-        self.momentum = momentum
-        self.nesterov = nesterov
-        self.decay = decay
-        self.dtype = dtype
+        self.learning_rate:float = learning_rate
+        self.momentum:float = momentum
+        self.nesterov:bool = nesterov
+        self.decay:float = decay
+        self.dtype:np.dtype = dtype

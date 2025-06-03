@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,11 +22,11 @@ import numpy as np
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import Adam
 from pydtnn.utils import get_attr_factory
-
+from pydtnn.backends.cpu.layers import LayerCPU
 
 class AdamCPU(OptimizerCPU, Adam):
 
-    def update(self, layer):
+    def update(self, layer: LayerCPU):
         lr = self.learning_rate
         it = getattr(layer, "it", 0) + 1
         setattr(layer, "it", it)
