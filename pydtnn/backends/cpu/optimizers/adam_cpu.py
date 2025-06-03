@@ -21,6 +21,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import Adam
+from pydtnn.utils import get_attr_factory
 
 
 class AdamCPU(OptimizerCPU, Adam):
@@ -32,8 +33,8 @@ class AdamCPU(OptimizerCPU, Adam):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            m = getattr(layer, "m_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
-            v = getattr(layer, "v_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
+            m = get_attr_factory(layer, "m_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
+            v = get_attr_factory(layer, "v_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
 
             m = self.beta1 * m + (1 - self.beta1) * dw
             v = self.beta2 * v + (1 - self.beta2) * dw ** 2

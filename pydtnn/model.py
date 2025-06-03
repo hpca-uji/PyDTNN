@@ -40,6 +40,7 @@ from .datasets import Dataset
 from tqdm import tqdm
 import numpy as np
 
+from pydtnn.datasets.dataset import TEST, TRAIN, VAL
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
 from . import losses, metrics
@@ -433,16 +434,19 @@ class Model:
         # Attributes that will be properly defined elsewhere
         self.y_batch = None
         self.history = None
-        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
-        self.model_name = self.kwargs.get("model_name")
-        if self.model_name:
-            self._read_model(self.model_name)
         # Syncronization parameters
-        self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
         if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
+        self.model_name = self.kwargs.get("model_name")
+        if self.model_name:
+            self._read_model(self.model_name)
+        # Dataset
+        self.dataset_name = self.kwargs.get("dataset_name")
+        if self.dataset_name:
+            self.dataset = get_dataset(self)
 
     @property
     def dataset_raw_path(self):
@@ -503,6 +507,10 @@ class Model:
 
         if layer.act:
             self.add(layer.act())
+
+    def add_layers(self, layers):
+        for layer in layers:
+            self.add(layer)
 
     def get_all_layers(self, from_layers=None):
         if from_layers is None:
@@ -793,18 +801,15 @@ class Model:
         self.tracer.define_event_types(self)
         self._initialized = True
 
-    def train(self, x_train, y_train, x_val, y_val, bar_width=BAR_WIDTH):
-        self.dataset = CustomDataset(self, x_train=x_train, y_train=y_train, x_test=x_val, y_test=y_val)
-        history = self.train_dataset(bar_width=bar_width)
-        return history
-
     def _compute_rank_weight(self, mask):
+        comm_nsamples = self.comm_nsamples[TRAIN]
+
         match self.model_sync_participation:
             case "all":
-                comm_nsamples = self.comm_nsamples
+                pass
             case "avail2all":
-                if mask[self.rank]:
-                    comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples, mask) if mask]
+                if mask[self.comm_rank]:
+                    comm_nsamples = [nsamples for nsamples, mask in zip(comm_nsamples, mask) if mask]
                 else:
                     return 0.0
             case _:
@@ -820,7 +825,7 @@ class Model:
                 return self.dataset.train_nsamples / total_nsamples
             case "invwavg":
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
-                return inverse_nsamples / self.total_nsamples
+                return inverse_nsamples / total_nsamples
 
     @ensure_model_is_initialized
     def train_dataset(self, bar_width=BAR_WIDTH):
@@ -829,11 +834,15 @@ class Model:
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
 
+        self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
         self.history = {lm: [] for lm in (self.loss_and_metrics + [f"val_{m}" for m in self.loss_and_metrics])}
 
         terminate = False
 
         model_sync_count = 0
+        train_batches_min = min(self.comm_nsamples[TRAIN]) / (self.batch_size * self.nprocs)
+        val_batches_min = min(self.comm_nsamples[VAL]) / (self.batch_size * self.nprocs)
+
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
 
@@ -851,11 +860,15 @@ class Model:
             for lr_sched in self.lr_schedulers:
                 lr_sched.on_epoch_begin(self, self.rank)
 
-            for x_batch, y_batch, batch_size in train_batch_generator:
+            for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
                 model_sync_count += 1
 
-                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                if i_batch < train_batches_min:
+                    rank_mask = [1] * self.comm_size
+                else:
+                    rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+
                 rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
@@ -889,11 +902,15 @@ class Model:
                 for c in range(len(self.loss_and_metrics)):
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
-            for x_batch, y_batch, batch_size in val_batch_generator:
+            for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
                 model_sync_count += 1
 
-                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                if i_batch < val_batches_min:
+                    rank_mask = [1] * self.comm_size
+                else:
+                    rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+
                 rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
@@ -963,16 +980,16 @@ class Model:
 
         return self.total_metrics
 
-    def evaluate(self, x_test, y_test, bar_width=BAR_WIDTH):
-        self.dataset = CustomDataset(self, x_test=x_test, y_test=y_test)
-        self.evaluate_dataset(bar_width=bar_width)
-
     @ensure_model_is_initialized
     def evaluate_dataset(self, bar_width=BAR_WIDTH):
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
+
+        self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
+
+        test_batches_min = min(self.comm_nsamples[TEST]) / (self.batch_size * self.nprocs)
 
         test_batch_generator = self.dataset.get_test_generator()
 
@@ -983,11 +1000,15 @@ class Model:
                         desc="Testing", unit=" samples")
 
         model_sync_count = 0
-        for x_batch, y_batch, batch_size in test_batch_generator:
+        for i_batch, (x_batch, y_batch, batch_size) in enumerate(test_batch_generator):
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
             model_sync_count += 1
 
-            rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+            if i_batch < test_batches_min:
+                rank_mask = [1] * self.comm_size
+            else:
+                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+
             rank_avail = sum(rank_mask)
 
             if rank_avail <= 0:

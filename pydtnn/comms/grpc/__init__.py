@@ -5,10 +5,10 @@
 # To simulate this model we created a bidirectional streaming procedure.
 # Sent data is queued at the server, recived data is polled until available.
 
-# NOTE: Polling is implemented with a exponential backoff time and a limit
-# provided by the server. The gRPC library queues requests, so requests would
-# always be replyed in a timely maner, but we do not want to hogh the CPU or
-# network with usesless requests.
+# NOTE: Polling is implemented with a exponential backoff time and a limit.
+# The gRPC library queues requests, so requests would always be replyed in
+# a timely maner, but we do not want to hogh the CPU or network with
+# usesless requests.
 
 # NOTE: It is important to not hold the prodedures indefinitely, since this
 # could starve the server of threads. Additionaly, if a streaming direction
@@ -37,7 +37,7 @@ __all__ = (
 class Protocol(comms.Communicator):
     """Shared base gRPC implementation"""
     _compression = grpc.Compression.NoCompression
-    _max_message_size = 16 * 1024 ** 1 - 1
+    _max_message_size = 16 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Initialize protocol"""

@@ -23,7 +23,8 @@ from average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average
 from average_pool_2d_nhwc_cython import average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython
 from bn_inference_cython import bn_inference_cython, bn_inference_nchw_cython, bn_relu_inference_cython
 from bn_training_cython import bn_training_fwd_cython, bn_training_bwd_cython
-from depthwise_conv_cython import depthwise_conv_cython
+from depthwise_conv_nchw_cython import depthwise_conv_nchw_cython, depthwise_conv_backward_nchw_cython
+from depthwise_conv_nhwc_cython import depthwise_conv_nhwc_cython, depthwise_conv_backward_nhwc_cython
 from eltw_sum_cython import eltw_sum_cython
 from im2col_1ch_nchw_cython import im2col_1ch_nchw_cython, col2im_1ch_nchw_cython
 from im2col_nchw_cython import im2col_nchw_cython, col2im_nchw_cython
@@ -41,3 +42,4 @@ from adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cytho
 from adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 # from oversampling_nchw_cython import oversampling_fwd_nchw_cython # NOTE: not used
 from memory_cython import memoryview_index
+from decimal_cython import round

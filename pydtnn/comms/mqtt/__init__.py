@@ -9,9 +9,11 @@
 # operations on related callbacks are limited to pushing or pulling data from
 # queues without blocking, so all operations are minimal and fast.
 
-# TODO: Peer-specific and global comunications are topic optimized, but peer groups
-# are not. This could be implemented using grouping requests that generate new
-# UUID per group. This would reduce also reduce load on the broker.
+# FIXME: Peer-groups and global comunications are not optimized. First, chunked
+# message ordering must be resolved. Single chunk order it is guaranteed by
+# the protocol, even on with diferent topics. Second, peer-groups could be
+# implemented using grouping requests that generate new UUID per group.
+# This would reduce also reduce load on the broker.
 
 from concurrent.futures import ThreadPoolExecutor
 

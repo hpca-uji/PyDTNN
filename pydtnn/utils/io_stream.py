@@ -137,11 +137,13 @@ class Stream(io.BufferedIOBase):
                 try:
                     i = memoryview_index(chunk, b"\n")
                 except ValueError:
-                    stream.write(chunk)
+                    with chunk:
+                        stream.write(chunk)
                     continue
                 else:
                     self.unreadchunk(chunk)
-                    stream.write(self.read1(i))
+                    with self.read1(i) as chunk:
+                        stream.write(chunk)
                     break
             return stream.read()
 
@@ -166,10 +168,9 @@ class Stream(io.BufferedIOBase):
             raise BlockingIOError()
 
         with byteview(b) as view:
-            chunk = self.read1(len(view))
-            size = len(chunk)
-
-            view[:size] = chunk
+            with self.read1(len(view)) as chunk:
+                size = len(chunk)
+                view[:size] = chunk
 
         return size
 

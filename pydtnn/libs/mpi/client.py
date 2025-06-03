@@ -158,10 +158,11 @@ class Comm:
             raise RuntimeError("Tried to schedule operation without participating")
 
         request = Request()
-        self._comm.put(operation)
         self._requests[operation.id] = request
-        self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
-        self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
+        self._comm.put(operation)
+        if self.rank in comm.dst:
+            self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
+            self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
         return request
 
     @property
