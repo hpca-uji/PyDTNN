@@ -18,7 +18,6 @@
 #
 
 from abc import ABC
-from typing import Tuple
 
 from ..backends import PromoteToBackendMixin
 from ..layers.layer_and_activation_base import LayerAndActivationBase

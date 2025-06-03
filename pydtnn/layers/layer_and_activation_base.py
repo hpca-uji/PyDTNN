@@ -25,22 +25,23 @@ import numpy as np
 from typing import Tuple, List, Self, TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
+    from pydtnn.activations.activation import Activation
+    from ..optimizers.optimizer import Optimizer
 
 from ..backends.gpu.tensor_gpu import TensorGPU
 from numpy import ndarray
-from ..optimizers.optimizer import Optimizer
 
 class LayerAndActivationBase(ABC):
 
     def __init__(self, shape:Tuple[int, ...]=()) -> None:
         self.nparams: int = 0
         self.shape: Tuple[int, ...] = shape
-        self.weights: np.array = np.array([])
-        self.biases: np.array = np.array([])
-        self.act = None
+        self.weights: np.ndarray = np.array([])
+        self.biases: np.ndarray = np.array([])
+        self.act: Activation | None = None
         self.grad_vars:dict[str, str] = {}
-        self.fwd_time: np.array = np.zeros((4,), dtype=np.float32)
-        self.bwd_time: np.array = np.zeros((4,), dtype=np.float32)
+        self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
+        self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.paths: List[List[LayerAndActivationBase]] = []
         self.need_dx: bool = True
         self.reqs_allred = {}
@@ -49,7 +50,8 @@ class LayerAndActivationBase(ABC):
         self.model: Model = None
         self.prev_shape: Tuple[int, ...] = None
         self.is_block_layer: bool = False
-        self.stream_2 = None 
+        self.stream_2 = None
+    # --- END __init__ --- #
 
     @property
     def _id_prefix(self) -> str:
@@ -66,6 +68,7 @@ class LayerAndActivationBase(ABC):
                 max_digits = len(str(model__last_id))
             prefix = "{:0{width}d}_".format(self.id, width=max_digits)
         return prefix
+    # --- END _id_prefix --- #
 
     def __repr__(self) -> str:
         return f"{self._id_prefix}{type(self).__name__}"
