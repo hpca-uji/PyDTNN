@@ -17,8 +17,8 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-import math
 import queue
+import warnings
 import itertools
 import threading
 from abc import ABC, abstractmethod
@@ -56,16 +56,23 @@ TRAIN, VAL, TEST = range(3)
 
 
 class Dataset(ABC):
+    # NOTE: Dataset(input_shape) is expected to be in NCHW format
+    # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
+    # NOTE: Dataset.data_generator(y) is expected to be in NC format
 
     def __init__(self, model, train_nsamples, test_nsamples, input_shape, output_shape, max_batches_online=40,
                  force_test_as_validation=False, debug=False):
+
+        if len(input_shape) != 3:
+            warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+
+        if len(output_shape) != 1:
+            warnings.warn(f"Output shape does not have 1 dimension ({output_shape}), it may cause issues!", RuntimeWarning)
+
+        if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
+            warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
+
         self.model = model
-        if self.model.shared_storage:
-            self.nprocs = self.model.nprocs
-            self.rank = self.model.rank
-        else:
-            self.nprocs = 1
-            self.rank = 0
         self.max_batches_online = max_batches_online
         self.debug = debug
         self.test_as_validation = self.model.test_as_validation or force_test_as_validation
@@ -74,8 +81,8 @@ class Dataset(ABC):
         if self.test_as_validation:
             self._nsamples[VAL] = self._nsamples[TEST]
         else:
-            self._nsamples[VAL] = min(self._nsamples[TRAIN] - self.nprocs,
-                                      max(self.nprocs, int(self._nsamples[TRAIN] * self.model.validation_split)))
+            self._nsamples[VAL] = min(self._nsamples[TRAIN] - self.model.nprocs,
+                                      max(self.model.nprocs, int(self._nsamples[TRAIN] * self.model.validation_split)))
             self._nsamples[TRAIN] -= self._nsamples[VAL]
         self.input_shape = list(input_shape)
         self.output_shape = list(output_shape)
@@ -122,6 +129,11 @@ class Dataset(ABC):
         # Array from generators
         x_train, y_train = map(np.concat, zip(*gen_train))
         x_test, y_test = map(np.concat, zip(*gen_test))
+
+        # Ensure dataset is in NCHW
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            x_train = x_train.transpose(0, 3, 1, 2)
+            x_test = x_test.transpose(0, 3, 1, 2)
 
         # Calculate percentage splits
         total = sum(split_weights)
@@ -192,23 +204,23 @@ class Dataset(ABC):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""
 
         # Reduce nsamples according to steps per epoch
-        global_batch_size = self.model.batch_size * self.nprocs
+        global_batch_size = self.model.batch_size * self.model.nprocs
         batches_per_worker = nsamples / global_batch_size
         if batches_per_worker > self.model.steps_per_epoch > 0:
             batches_per_worker = self.model.steps_per_epoch
             nsamples = batches_per_worker * global_batch_size
 
         # Calculate nsamples per worker
-        nsamples_per_worker, big_workers = divmod(nsamples, self.nprocs)
+        nsamples_per_worker, big_workers = divmod(nsamples, self.model.nprocs)
         nsamples_per_big_worker = nsamples_per_worker + 1
 
         # Calculate local values
-        if self.rank < big_workers:
+        if self.model.rank < big_workers:
             local_nsamples = nsamples_per_big_worker
-            local_offset = self.rank * nsamples_per_big_worker
+            local_offset = self.model.rank * nsamples_per_big_worker
         else:
             local_nsamples = nsamples_per_worker
-            local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (self.rank - big_workers)
+            local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (self.model.rank - big_workers)
 
         return local_offset, local_nsamples, nsamples
 
@@ -286,7 +298,7 @@ class Dataset(ABC):
 
     def _actual_batch_generator(self, part):
         local_batch_size = self.model.batch_size
-        global_batch_size = self.model.batch_size * self.nprocs
+        global_batch_size = self.model.batch_size * self.model.nprocs
         generator = self._data_generator(part)
         nsamples = self._nsamples[part]
         for x_data, y_data in _BackgroundGenerator(generator):

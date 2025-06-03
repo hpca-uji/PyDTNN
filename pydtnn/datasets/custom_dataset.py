@@ -17,19 +17,46 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+import operator
+import warnings
 import numpy as np
 from .dataset import Dataset, TRAIN, VAL, TEST
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+
+
+TENSOR_NAME = {
+    PYDTNN_TENSOR_FORMAT_NCHW: "NCHW",
+    PYDTNN_TENSOR_FORMAT_NHWC: "NHWC"
+}
+
+
+TENSOR_ASSERT = {
+    PYDTNN_TENSOR_FORMAT_NCHW: operator.lt,
+    PYDTNN_TENSOR_FORMAT_NHWC: operator.gt
+}
 
 
 class CustomDataset(Dataset):
 
-    def __init__(self, model, x_test, y_test, x_train=None, y_train=None, force_test_as_validation=True):
-        if x_train is None or y_train is None:
-            if x_train is None and y_train is None:
-                x_train = x_test
-                y_train = y_test
+    def __init__(self, model, x_train, y_train, x_test=None, y_test=None, input_shape=None, output_shape=None, force_test_as_validation=True):
+        if x_test is None or y_test is None:
+            if x_test is None and y_test is None:
+                x_test = x_train
+                y_test = y_train
             else:
-                raise SystemExit("Both x_train and y_train must be provided or, alternatively, none of them!")
+                raise SystemExit("Both x_test and y_test must be provided or, alternatively, none of them!")
+
+        if input_shape is None:
+            input_shape = x_train.shape[1:]
+
+        if output_shape is None:
+            output_shape = y_train.shape[1:]
+
+        if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_train.shape[0], x_train.shape[2]):
+            warnings.warn(f"Dataset x_train.shape {x_train.shape} may not be in {TENSOR_NAME[self.model.tensor_format]} format, following the model format!", RuntimeWarning)
+
+        if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
+            warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {TENSOR_NAME[self.model.tensor_format]} format, following the model format!", RuntimeWarning)
 
         self.__x_source = []
         self.__y_source = []
@@ -50,8 +77,8 @@ class CustomDataset(Dataset):
         super().__init__(model,
                          x_train.shape[0],
                          x_test.shape[0],
-                         x_train.shape[1:],
-                         y_test.shape[1:],
+                         input_shape,
+                         output_shape,
                          force_test_as_validation=force_test_as_validation)
 
     def _init_actual_data(self):
@@ -70,13 +97,21 @@ class CustomDataset(Dataset):
             y_train = data["y_train"]
             x_test = data["x_test"]
             y_test = data["y_test"]
+            input_shape = x_train.shape[1:]
 
+            # Ensure dataset is in model.tensor_format
+            if model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                x_train = x_train.transpose(0, 2, 3, 1)
+                x_test = x_test.transpose(0, 2, 3, 1)
+
+            # Create dataset
             self = cls(
                 model,
                 x_train=x_train,
                 y_train=y_train,
                 x_test=x_test,
                 y_test=y_test,
+                input_shape=input_shape,
                 force_test_as_validation=False
             )
 

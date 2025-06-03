@@ -21,6 +21,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD
+from pydtnn.utils import get_attr_factory
 
 
 class SGDCPU(OptimizerCPU, SGD):
@@ -29,7 +30,7 @@ class SGDCPU(OptimizerCPU, SGD):
         lr = self.learning_rate
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity = getattr(layer, "velocity_%s" % w_, np.zeros_like(w, dtype=layer.model.dtype))
+            velocity = get_attr_factory(layer, "velocity_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
 
             velocity = self.momentum * velocity + dw
             if self.nesterov:
