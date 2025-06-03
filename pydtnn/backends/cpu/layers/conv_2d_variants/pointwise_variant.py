@@ -84,7 +84,7 @@ class PointwiseVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
-        self.dw = res.reshape((*self.weights.shape, -1))
+        self.dw = res.reshape(self.weights.shape)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.use_bias:
@@ -125,7 +125,7 @@ class PointwiseVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DW)
-        self.dw = res.reshape((*self.weights.shape, -1))
+        self.dw = res.reshape(self.weights.shape)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         if self.use_bias:
