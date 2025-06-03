@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-23 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -28,36 +28,145 @@ ctypedef fused npDT:
     np.float32_t
     np.float64_t
 
-def relu_cython(x):
-    # Warning: the keys in the next dictionary need to be the given strings
-    # (i.e., for np.int8, neither np.int8, nor str(np.int8) work as a valid key)
-    fake_arg = {'int8': <np.int8_t> 0,
-                'float32': <np.float32_t> 0.0,
-                'float64': <np.float64_t> 0.0}
-    try:
-        return relu_cython_template(x, fake_arg[str(x.dtype)])
-    except KeyError:
-        raise TypeError(f"Type '{x.dtype}' is not supported by relu_cython!")
+###############################################
+#                 relu_cython                 #
+###############################################
 
-# The fake argument is used to generate specialized versions of this function
-def relu_cython_template(x, npDT fake_arg):
-    shape = x.shape
+def relu_cython(x: np.ndarray) -> tuple(np.ndarray, np.ndarray):
+    
+    # NOTE: x.shape is considered "npy_intp*" and it's not possible to do a direct cast to python's list nor tuple.
+    shape = [x.shape[i] for i in range(x.ndim)]
     size = np.prod(shape)
-    cdef:
-        np.ndarray max = np.zeros((size,), dtype=x.dtype)
-        np.ndarray mask = np.zeros((size,), dtype=np.int8)
-        npDT[:] x_view = x.reshape(-1)
+
+    max: np.ndarray = np.empty((size,), dtype=x.dtype)
+    mask: np.ndarray = np.empty((size,), dtype=np.int8)
+
+    try:
+        max, mask = relu_cython_template(x.reshape(-1), max, mask)        
+        return max.reshape(shape), mask.reshape(shape)
+    except KeyError as e:
+        raise TypeError(f"Function: \"relu_cython\". Error: {e}")
+# --- END relu_cython --- #
+
+def relu_cython_template(np.ndarray[npDT, ndim=1] x, 
+                         np.ndarray[npDT, ndim=1] max,
+                         np.ndarray[np.int8_t, ndim=1] mask):
+    cdef:                
+        const npDT[:] x_view = x
         npDT[:] max_view = max
         np.int8_t[:] mask_view = mask
     relu_cython_inner(x_view, max_view, mask_view)
-    return max.reshape(shape), mask.reshape(shape)
+    return max, mask
+# --- END relu_cython_template --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef relu_cython_inner(npDT[:] x,
+cdef relu_cython_inner(const npDT[:] x,
                        npDT[:] max,
                        np.int8_t[:] mask):
     cdef int i
     for i in prange(x.shape[0], nogil=True):
         if x[i] > 0:
             max[i], mask[i] = x[i], 1
+        else: # NOTE: Since max and mask are both initialize "np.empty", it's necessary to set them.
+            max[i], mask[i] = 0, 0
+# --- END relu_cython_inner --- # 
+
+
+###############################################
+#             capped_relu_cython              #
+###############################################
+
+
+# NOTE: If cap = 6, then this is a Relu6.
+def capped_relu_cython(x: np.ndarray, cap: float) -> tuple(np.ndarray, np.ndarray):
+    
+    # NOTE: x.shape is considered "npy_intp*" and it's not possible to do a direct cast to python's list nor tuple.
+    shape = [x.shape[i] for i in range(x.ndim)]
+    size = np.prod(shape)
+
+    max: np.ndarray = np.empty((size,), dtype=x.dtype)
+    mask: np.ndarray = np.empty((size,), dtype=np.int8)
+
+    try:
+        max, mask = capped_relu_cython_template(x.reshape(-1), max, mask, cap)        
+        return max.reshape(shape), mask.reshape(shape)
+    except KeyError as e:
+        raise TypeError(f"Function: \"capped_relu_cython\". Error: {e}")
+# --- END capped_relu_cython --- #
+
+def capped_relu_cython_template(np.ndarray[npDT, ndim=1] x, 
+                         np.ndarray[npDT, ndim=1] max,
+                         np.ndarray[np.int8_t, ndim=1] mask,
+                         np.float64_t cap):
+    cdef:                
+        const npDT[:] x_view = x
+        npDT[:] max_view = max
+        np.int8_t[:] mask_view = mask
+    capped_relu_cython_inner(x_view, max_view, mask_view, cap)
+    return max, mask
+# --- END capped_relu_cython_template --- #
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef capped_relu_cython_inner(const npDT[:] x,
+                       npDT[:] max,
+                       np.int8_t[:] mask, 
+                       np.float64_t cap):
+    cdef int i
+    for i in prange(x.shape[0], nogil=True):
+        if x[i] >= cap:
+            max[i], mask[i] = <npDT> cap, 1
+        elif x[i] > 0: # cap > x[i] > 0
+            max[i], mask[i] = x[i], 1
+        else: # x[i] = 0; since max, mask are set as np.empty instead of np.zeros, it's necessary to set them.
+            max[i], mask[i] = 0, 0
+# --- END capped_relu_cython_inner --- # 
+
+###############################################
+#              leaky_relu_cython              #
+###############################################
+
+def leaky_relu_cython(x: np.ndarray, negative_slope: float) -> tuple(np.ndarray, np.ndarray):
+    
+    # NOTE: x.shape is considered "npy_intp*" and it's not possible to do a direct cast to python's list nor tuple.
+    shape = [x.shape[i] for i in range(x.ndim)]
+    size = np.prod(shape)
+
+    max: np.ndarray = np.empty((size,), dtype=x.dtype)
+    mask: np.ndarray = np.empty((size,), dtype=np.float32)
+
+    try:
+        max, mask = leaky_relu_cython_template(x.reshape(-1), max, mask, negative_slope)        
+        return max.reshape(shape), mask.reshape(shape)
+    except KeyError as e:
+        raise TypeError(f"Function: \"leaky_relu_cython\". Error: {e}")
+# --- END leaky_relu_cython --- #
+
+def leaky_relu_cython_template(np.ndarray[npDT, ndim=1] x, 
+                         np.ndarray[npDT, ndim=1] max,
+                         np.ndarray[np.float32_t, ndim=1] mask,
+                         np.float32_t negative_slope):
+    cdef:                
+        const npDT[:] x_view = x
+        npDT[:] max_view = max
+        np.float32_t[:] mask_view = mask
+    leaky_relu_cython_inner(x_view, max_view, mask_view, negative_slope)
+    return max, mask
+# --- END leaky_relu_cython_template --- #
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+cdef leaky_relu_cython_inner(const npDT[:] x,
+                       npDT[:] max,
+                       np.float32_t[:] mask, 
+                       np.float32_t negative_slope):
+    cdef int i
+    for i in prange(x.shape[0], nogil=True):
+        if x[i] > 0:
+            max[i], mask[i] = x[i], 1
+        elif x[i] < 0:
+            max[i], mask[i] = <npDT> (x[i] * negative_slope), negative_slope
+        else: # x[i] = 0; since max, mask are set as np.empty instead of np.zeros, it's necessary to set them.
+            max[i], mask[i] = 0, 0
+# --- END leaky_relu_cython_inner --- # 
