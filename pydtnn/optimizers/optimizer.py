@@ -20,12 +20,17 @@
 from abc import ABC, abstractmethod
 
 from pydtnn.backends import PromoteToBackendMixin
-
+import numpy as np
 
 class Optimizer(PromoteToBackendMixin, ABC):
     """
     Optimizer abstract base class
     """
+
+    def __init__(self, learning_rate:float = 1e-2, dtype:np.dtype=np.float32):
+        super().__init__()
+        self.learning_rate:float = learning_rate
+        self.dtype:np.dtype = dtype
 
     @abstractmethod
     def update(self, layer):
