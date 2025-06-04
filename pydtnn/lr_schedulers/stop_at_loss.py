@@ -18,19 +18,25 @@
 #
 
 from . import LRSchedulerWithLossOrMetric
+from numpy import ndarray
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
 
 class StopAtLoss(LRSchedulerWithLossOrMetric):
     """
     StopAtLoss LRScheduler
     """
 
-    def __init__(self, model, loss_or_metric="", threshold_value=0, verbose=True):
+    def __init__(self, model: Model, loss_or_metric:str ="", threshold_value=0, verbose=True):
+        # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, loss_or_metric, verbose)
         self.threshold_value = threshold_value
         self.stop_training = False
 
-    def on_epoch_end(self, train_loss, val_loss):
+    def on_epoch_end(self, train_loss: ndarray[float], val_loss: ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

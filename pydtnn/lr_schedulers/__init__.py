@@ -27,7 +27,8 @@ If you want to add a new LR Scheduler:
 #
 
 from .lr_scheduler import LRScheduler
-from .lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
+# NOTE: The following import is necessary for other imports:
+from .lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric 
 from .early_stopping import EarlyStopping
 from .model_checkpoint import ModelCheckpoint
 from .reduce_lr_every_n_epochs import ReduceLREveryNEpochs
@@ -72,17 +73,17 @@ def get_lr_schedulers(model) -> list[LRScheduler]:
                                         model.reduce_lr_on_plateau_min_lr)
             case "reduce_lr_every_nepochs":
                 lrs = ReduceLREveryNEpochs(model,
-                                        model.reduce_lr_every_nepochs_factor,
-                                        model.reduce_lr_every_nepochs_nepochs,
-                                        model.reduce_lr_every_nepochs_min_lr)
+                                           model.reduce_lr_every_nepochs_factor,
+                                           model.reduce_lr_every_nepochs_nepochs,
+                                           model.reduce_lr_every_nepochs_min_lr)
             case "stop_at_loss":
                 lrs = StopAtLoss(model,
-                                model.stop_at_loss_metric,
-                                model.stop_at_loss_threshold)
+                                 model.stop_at_loss_metric,
+                                 model.stop_at_loss_threshold)
             case "model_checkpoint":
                 lrs = ModelCheckpoint(model,
-                                    model.model_checkpoint_metric,
-                                    model.model_checkpoint_save_freq)
+                                      model.model_checkpoint_metric,
+                                      model.model_checkpoint_save_freq)
             case _:
                 raise SystemExit(f"LRScheduler '{model.optimizer}' not supported yet!")
         lr_schedulers.append(lrs)

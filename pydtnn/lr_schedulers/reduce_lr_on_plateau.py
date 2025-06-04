@@ -20,22 +20,26 @@
 import numpy as np
 
 from . import LRSchedulerWithLossOrMetric
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
 
 class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
     """
     ReduceLROnPlateau LRScheduler
     """
 
-    def __init__(self, model, loss_or_metric="", factor=0.1, patience=5, min_lr=0, verbose=True):
+    def __init__(self, model:Model, loss_or_metric:str="", factor=0.1, patience=5, min_lr=0, verbose=True):
+        # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, loss_or_metric, verbose)
         self.factor = factor
         self.patience = patience
         self.min_lr = min_lr
-        self.best_epoch = 0
-        self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
+        self.best_epoch: int = 0
+        self.best_loss: float = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
 
-    def on_epoch_end(self, train_loss, val_loss):
+    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

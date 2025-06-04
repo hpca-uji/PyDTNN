@@ -17,15 +17,18 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
-
-
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
+from numpy import ndarray
 class LRScheduler(ABC):
     """
     LRScheduler base class
     """
 
-    def __init__(self, model, verbose):
+    def __init__(self, model: Model, verbose:bool):
         self.model = model
         self.verbose = verbose
         self.epoch_count = 0
@@ -45,6 +48,10 @@ class LRScheduler(ABC):
     def on_epoch_end(self, *args):
         pass
 
-    def log(self, text):
+    def log(self, text:str):
         if self.verbose and self.model.comm_rank == 0:
             print(f"{self}: {text}")
+
+    @abstractmethod
+    def on_epoch_end(self, train_loss:ndarray[float], val_loss:ndarray[float]) -> None:
+        raise NotImplementedError("\"on_epoch_end\" not imlemented")
