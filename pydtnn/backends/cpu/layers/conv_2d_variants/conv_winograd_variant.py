@@ -55,7 +55,7 @@ class ConvWinogradVariant(I2CVariant, ABC):
 
         biases_vector = self.biases if self.use_bias else None
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
         y = self.cw.conv_winograd_nhwc(self.weights, x, biases=biases_vector,
                                        vpadding=self.vpadding, hpadding=self.hpadding,
                                        vstride=self.vstride, hstride=self.hstride,
@@ -71,7 +71,7 @@ class ConvWinogradVariant(I2CVariant, ABC):
 
         biases_vector = self.biases if self.use_bias else None
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
         y = self.cw.conv_winograd_nchw(self.weights, x, biases=biases_vector,
                                        vpadding=self.vpadding, hpadding=self.hpadding,
                                        vstride=self.vstride, hstride=self.hstride,
@@ -82,7 +82,7 @@ class ConvWinogradVariant(I2CVariant, ABC):
     def _backward_cw_nhwc(self, dy):
         """Version of the backward function that uses the convWinograd library"""
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
         self.x_rows = im2row_nhwc_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                          self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -90,7 +90,7 @@ class ConvWinogradVariant(I2CVariant, ABC):
 
     def _backward_cw_nchw(self, dy):
         """Version of the backward function that uses the convWinograd library"""
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
         self.x_cols = im2col_nchw_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                          self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
