@@ -33,11 +33,11 @@ PYDTNN_EVENT_FINISHED = 0
 # ==== PYDTNN_MDL_EVENT ==== #
 # ========================== #
 class PYDTNN_MDL_EVENT_enum(IntEnum):    
-    FORWARD      = 1 # Originally: 1
-    BACKWARD     = 2 # Originally: 2
-    ALLREDUCE_DW = 3 # Originally: 3
-    WAIT_DW      = 4 # Originally: 4
-    UPDATE_DW    = 5 # Originally: 5
+    FORWARD      = auto() # Originally: 1
+    BACKWARD     = auto() # Originally: 2
+    ALLREDUCE_DW = auto() # Originally: 3
+    WAIT_DW      = auto() # Originally: 4
+    UPDATE_DW    = auto() # Originally: 5
 
     @staticmethod
     def get_num_events():
