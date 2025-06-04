@@ -31,9 +31,7 @@ class SGD(Optimizer, ABC):
 
     def __init__(self, learning_rate:float=1e-2, momentum:float=0.9, 
                  nesterov:bool=False, decay:float=0.0, dtype:np.dtype=np.float32):
-        super().__init__()
-        self.learning_rate:float = learning_rate
+        super().__init__(learning_rate=learning_rate, dtype=dtype)
         self.momentum:float = momentum
         self.nesterov:bool = nesterov
         self.decay:float = decay
-        self.dtype:np.dtype = dtype

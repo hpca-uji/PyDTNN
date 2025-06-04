@@ -31,9 +31,8 @@ class RMSProp(Optimizer, ABC):
 
     def __init__(self, learning_rate:float=1e-2, rho:float=0.9, epsilon:float=1e-7, 
                  decay:float=0.0, dtype:np.dtype=np.float32):
-        super().__init__()
-        self.learning_rate:float = learning_rate
-        self.rho:float = rho
-        self.epsilon:float = epsilon
-        self.decay:float = decay
-        self.dtype:np.dtype = dtype
+        super().__init__(learning_rate=learning_rate, dtype=dtype)
+        self.rho = rho
+        self.epsilon = epsilon
+        self.decay = decay
+
