@@ -26,7 +26,7 @@ from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from .layer_cpu import LayerCPU
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 try:
     # noinspection PyUnresolvedReferences
@@ -47,12 +47,12 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                 _mean = np.mean(data, axis=0)
             return _mean
 
-        if self.model.mode == EVALUATE_MODE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.mode == EVALUATE_MODE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             y = bn_inference_nchw_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
             return y
 
         if self.spatial:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
             x = x.reshape(-1, self.ci)
 
@@ -100,14 +100,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         if self.spatial:
             y = y.reshape(-1, self.hi, self.wi, self.ci)
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
 
         return y
 
     def backward(self, dy):
         if self.spatial:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 dy = best_transpose_0231(dy)
             dy = dy.reshape(-1, self.ci)
 
@@ -123,7 +123,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
             if self.spatial:
                 dx = dx.reshape(-1, self.hi, self.wi, self.ci)
-                if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                     dx = best_transpose_0312(dx)
 
             return dx

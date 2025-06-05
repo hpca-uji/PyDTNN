@@ -23,7 +23,6 @@ from typing import Optional, Callable, List
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_direct_variant import ConvDirectVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_winograd_variant import ConvWinogradVariant
 from pydtnn.model import TRAIN_MODE, EVALUATE_MODE
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
 from pydtnn.utils.best_of import BestOf
 
 
@@ -83,9 +82,8 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
             )
 
     def _get_class_forward_and_backward(self, variant) -> List[Callable]:
-        tensor_format = 'nchw' if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else 'nhwc'
-        return [getattr(self.__class__, f'_forward_{variant}_{tensor_format}'),
-                getattr(self.__class__, f'_backward_{variant}_{tensor_format}')]
+        return [getattr(self.__class__, f'_forward_{variant}_{self.model.tensor_format}'),
+                getattr(self.__class__, f'_backward_{variant}_{self.model.tensor_format}')]
 
     def _fw_bw_best_of(self, stage, x_or_y):
         if self.model.mode == TRAIN_MODE:

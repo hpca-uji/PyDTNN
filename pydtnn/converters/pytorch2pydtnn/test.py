@@ -7,7 +7,7 @@ from torchvision.models import densenet121, densenet201, resnet18, resnet34, res
 
 from torchmetrics import Accuracy, Metric
 
-from pydtnn.datasets.dataset import TRAIN, VAL, TEST, Dataset
+from pydtnn.datasets.dataset import Dataset, dataset_enum
 from pydtnn.activations import *
 from pydtnn.layers import *
 
@@ -31,6 +31,10 @@ from pydtnn.utils.best_of import BestOf
 
 import torch
 from torch.nn import CrossEntropyLoss
+
+TRAIN = dataset_enum.TRAIN
+VAL = dataset_enum.VAL
+TEST = dataset_enum.TEST
 
 dict_test = {
    "vgg11": (vgg11, create_vgg11, (32, 32, 3), "cifar10", {"num_classes": 10}, None), # (224, 224, 3)

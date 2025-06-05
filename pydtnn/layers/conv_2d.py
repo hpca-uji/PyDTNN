@@ -22,8 +22,7 @@ from abc import ABC
 from .layer import Layer
 from .. import activations
 from .. import initializers
-from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT_NCHW
-import numpy as np
+from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
 
 
 class Conv2D(Layer, ABC):
@@ -63,12 +62,12 @@ class Conv2D(Layer, ABC):
             self.weights_shape = (self.ci, *self.filter_shape)
         elif self.grouping == "pointwise":
             self.kh = self.kw = 1
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 self.weights_shape = (self.co, self.ci)
             else:
                 self.weights_shape = (self.ci, self.co)
         else:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 self.weights_shape = (self.co, self.ci, *self.filter_shape)
             else:
                 self.weights_shape = (self.ci, *self.filter_shape, self.co)
