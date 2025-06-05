@@ -22,14 +22,13 @@ import numpy as np
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import Nadam
 from pydtnn.utils import get_attr_factory
-
+from pydtnn.backends.cpu.layers import LayerCPU
 
 class NadamCPU(OptimizerCPU, Nadam):
 
-    def update(self, layer):
+    def update(self, layer: LayerCPU) -> None:
         lr = self.learning_rate
-        it = getattr(layer, "it", 0) + 1
-        setattr(layer, "it", it)
+        it = layer.get_and_increase_optimizer_it()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

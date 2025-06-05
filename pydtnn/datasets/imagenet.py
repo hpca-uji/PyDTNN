@@ -21,7 +21,7 @@ import os
 import numpy as np
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from .dataset import Dataset, dataset_enum
+from .dataset import Dataset, DatasetEnum
 
 # The most highly-used subset of ImageNet is the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
 # image classification and localization dataset. This dataset spans 1000 object classes and contains 1,281,
@@ -46,16 +46,16 @@ class ImageNet(Dataset):
         if not self.model.use_synthetic_data:
             # Train part
             path = self.model.dataset_train_path
-            self._xy_filenames[dataset_enum.TRAIN] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
-            self._images_per_file[dataset_enum.TRAIN] = IMAGES_PER_TRAIN_FILE
+            self._xy_filenames[DatasetEnum.TRAIN] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
+            self._images_per_file[DatasetEnum.TRAIN] = IMAGES_PER_TRAIN_FILE
             # Test part
             path = self.model.dataset_test_path
-            self._xy_filenames[dataset_enum.TEST] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
-            self._images_per_file[dataset_enum.TEST] = IMAGES_PER_TEST_FILE
+            self._xy_filenames[DatasetEnum.TEST] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
+            self._images_per_file[DatasetEnum.TEST] = IMAGES_PER_TEST_FILE
             # Validation part
-            self._xy_filenames[dataset_enum.VAL] = self._xy_filenames[dataset_enum.TEST] if self.test_as_validation else self._xy_filenames[dataset_enum.TRAIN]
-            self._images_per_file[dataset_enum.VAL] = self._images_per_file[dataset_enum.TEST] \
-                if self.test_as_validation else self._images_per_file[dataset_enum.TRAIN]
+            self._xy_filenames[DatasetEnum.VAL] = self._xy_filenames[DatasetEnum.TEST] if self.test_as_validation else self._xy_filenames[DatasetEnum.TRAIN]
+            self._images_per_file[DatasetEnum.VAL] = self._images_per_file[DatasetEnum.TEST] \
+                if self.test_as_validation else self._images_per_file[DatasetEnum.TRAIN]
 
     def _init_actual_data(self):
         # There is no initialization, as the data is huge, it will be read from the corresponding files as required
@@ -83,7 +83,7 @@ class ImageNet(Dataset):
     def _actual_data_generator(self, part):
         files = self._xy_filenames[part]
         images_per_file = self._images_per_file[part]
-        if part == dataset_enum.TRAIN:
+        if part == DatasetEnum.TRAIN:
             # Note that the actual array is shuffled. This is done to ensure that the validation part,
             # when is extracted from the train samples, uses the same files order.
             np.random.shuffle(files)

@@ -59,12 +59,11 @@ class _BackgroundGenerator(threading.Thread):
     def __iter__(self):
         return self
 
-# TODO: Make this a ENUM
-class dataset_enum(IntEnum):
+class DatasetEnum(IntEnum):
     TRAIN = auto()
     VAL = auto()
     TEST = auto()
-# --- END dataset_enum --- #
+# --- END DatasetEnum --- #
 
 
 class Dataset(ABC):
@@ -90,32 +89,32 @@ class Dataset(ABC):
         self.test_as_validation:bool = self.model.test_as_validation or force_test_as_validation
         self._nsamples:list[int, int, int] = [train_nsamples, 0, test_nsamples]
 
-        # Compute self._nsamples[dataset_enum.VAL]
+        # Compute self._nsamples[DatasetEnum.VAL]
         if self.test_as_validation:
-            self._nsamples[dataset_enum.VAL] = self._nsamples[dataset_enum.TEST]
+            self._nsamples[DatasetEnum.VAL] = self._nsamples[DatasetEnum.TEST]
         else:
-            self._nsamples[dataset_enum.VAL] = min(self._nsamples[dataset_enum.TRAIN] - self.model.nprocs,
+            self._nsamples[DatasetEnum.VAL] = min(self._nsamples[DatasetEnum.TRAIN] - self.model.nprocs,
                                                    max(self.model.nprocs, 
-                                                       int(self._nsamples[dataset_enum.TRAIN] * self.model.validation_split)))
-            self._nsamples[dataset_enum.TRAIN] -= self._nsamples[dataset_enum.VAL]
+                                                       int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
+            self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
 
         self.input_shape = list(input_shape)
         self.output_shape = list(output_shape)
-        self._initial_nsamples = [self._nsamples[dataset_enum.TRAIN], self._nsamples[dataset_enum.VAL], self._nsamples[dataset_enum.TEST]]
+        self._initial_nsamples = [self._nsamples[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.VAL], self._nsamples[DatasetEnum.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
         self._local_offset = [0] * 3
         self._local_nsamples = [0] * 3
         self._local_remaining_nsamples = [-1] * 3  # -1 is used to mark each part as not initialized
 
-        for part in dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST:
+        for part in DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST:
             (self._local_offset[part],
              self._local_nsamples[part],
              self._nsamples[part]
              ) = self._compute_local_workload(self._nsamples[part])
             
         # Declare _x and _y for train, val and test dataset parts
-        self._x = [np.zeros((0, *self.input_shape), dtype=self.model.dtype)] * len(dataset_enum)
-        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(dataset_enum)
+        self._x = [np.zeros((0, *self.input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
+        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(DatasetEnum)
 
         if self.model.use_synthetic_data:
             self._data_generator = self._synthetic_data_generator
@@ -135,9 +134,9 @@ class Dataset(ABC):
             split_weights = list(map(float, self.model.dataset_export_split_weights.split(",")))
 
         # Data generators
-        gen_train = self._data_generator(dataset_enum.TRAIN)
-        gen_val = self._data_generator(dataset_enum.VAL)
-        gen_test = self._data_generator(dataset_enum.TEST)
+        gen_train = self._data_generator(DatasetEnum.TRAIN)
+        gen_val = self._data_generator(DatasetEnum.VAL)
+        gen_test = self._data_generator(DatasetEnum.TEST)
 
         # Reconstruct validation split
         if self.test_as_validation:
@@ -186,33 +185,33 @@ class Dataset(ABC):
 
     @property
     def train_nsamples(self):
-        return self._nsamples[dataset_enum.TRAIN]
+        return self._nsamples[DatasetEnum.TRAIN]
 
     @property
     def val_nsamples(self):
-        return self._nsamples[dataset_enum.VAL]
+        return self._nsamples[DatasetEnum.VAL]
 
     @property
     def test_nsamples(self):
-        return self._nsamples[dataset_enum.TEST]
+        return self._nsamples[DatasetEnum.TEST]
 
     def get_train_val_generator(self) -> tuple[Generator[tuple[Array, Array, int]], Generator[tuple[Array, Array, int]]]:
-        return (self._batch_generator(dataset_enum.TRAIN),
-                self._batch_generator(dataset_enum.VAL))
+        return (self._batch_generator(DatasetEnum.TRAIN),
+                self._batch_generator(DatasetEnum.VAL))
 
     def get_test_generator(self) -> Generator[tuple[Array, Array, int]]:
-        return self._batch_generator(dataset_enum.TEST)
+        return self._batch_generator(DatasetEnum.TEST)
 
     def _print_report(self):
         if self.model.comm_rank == 0:
             print(f"Initial nsamples:"
-                  f" train: {self._initial_nsamples[dataset_enum.TRAIN]} "
-                  f" val: {self._initial_nsamples[dataset_enum.VAL]} "
-                  f" test: {self._initial_nsamples[dataset_enum.TEST]} "
+                  f" train: {self._initial_nsamples[DatasetEnum.TRAIN]} "
+                  f" val: {self._initial_nsamples[DatasetEnum.VAL]} "
+                  f" test: {self._initial_nsamples[DatasetEnum.TEST]} "
                   )
         desc = ["train", "val", "test"]
-        for part in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
-            prefix = f"{self.model.rank}: " if part == dataset_enum.TRAIN else "   "
+        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
+            prefix = f"{self.model.rank}: " if part == DatasetEnum.TRAIN else "   "
             print(f"{prefix}"
                   f" {desc[part]} offset: {self._local_offset[part]}"
                   f" {desc[part]} local nsamples: {self._local_nsamples[part]}"
@@ -244,7 +243,7 @@ class Dataset(ABC):
         return local_offset, local_nsamples, nsamples
 
     def _init_synthetic_data(self):
-        for part in dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST:
+        for part in DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST:
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = min(local_batches, self.max_batches_online) * self.model.batch_size
             x_shape = [nsamples] + self.input_shape
@@ -283,7 +282,7 @@ class Dataset(ABC):
         method is implemented, at least it should raise and exception if a new round begins when a round for another
         part is still in progress.
         """
-        for p in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
+        for p in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
             if self._local_remaining_nsamples[p] == -1:  # If not initialized
                 self._local_remaining_nsamples[p] = self._local_nsamples[p]
         while self._local_remaining_nsamples[part] > 0:
@@ -323,7 +322,7 @@ class Dataset(ABC):
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
             s = memoryview(np.arange(local_nsamples))
-            if part == dataset_enum.TRAIN:
+            if part == DatasetEnum.TRAIN:
                 np.random.shuffle(s)
                 if not self.model.use_synthetic_data and (self.model.flip_images or self.model.crop_images):
                     x_data = self._do_data_augmentation(x_data)

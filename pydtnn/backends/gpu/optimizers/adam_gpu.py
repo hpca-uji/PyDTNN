@@ -30,6 +30,8 @@ from pydtnn.optimizers import Adam
 from pydtnn.utils import get_attr_factory
 
 
+from pydtnn.backends.gpu.layers import LayerGPU
+
 class AdamGPU(OptimizerGPU, Adam):
     """
     AdamGPU optimizer
@@ -65,9 +67,8 @@ class AdamGPU(OptimizerGPU, Adam):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
                                              ).get_function("Adam_kernel")
 
-    def update(self, layer):
-        it = getattr(layer, "it", 0) + 1
-        setattr(layer, "it", it)
+    def update(self, layer:LayerGPU):
+        it = layer.get_and_increase_optimizer_it()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

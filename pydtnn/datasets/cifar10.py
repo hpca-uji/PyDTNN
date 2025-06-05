@@ -21,7 +21,7 @@ import os
 import numpy as np
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from .dataset import Dataset, dataset_enum
+from .dataset import Dataset, DatasetEnum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -46,9 +46,9 @@ class CIFAR10(Dataset):
             [],
             [os.path.join(self.model.dataset_test_path, "test_batch.bin")]
         ]
-        xy_filenames[dataset_enum.VAL] = xy_filenames[dataset_enum.TEST] if self.test_as_validation else xy_filenames[dataset_enum.TRAIN]
+        xy_filenames[DatasetEnum.VAL] = xy_filenames[DatasetEnum.TEST] if self.test_as_validation else xy_filenames[DatasetEnum.TRAIN]
         y_classes = np.array([])
-        for part in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
+        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
             for filename, offset, nsamples in self._offset2files(xy_filenames[part],
                                                                  IMAGES_PER_FILE,
                                                                  self._local_offset[part],
