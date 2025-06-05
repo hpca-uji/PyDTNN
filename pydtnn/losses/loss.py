@@ -20,15 +20,21 @@
 from abc import ABC, abstractmethod
 
 from ..backends import PromoteToBackendMixin
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
+from numpy import ndarray
+from pydtnn.backends.gpu import TensorGPU
+type Array = ndarray | TensorGPU
 
 class Loss(PromoteToBackendMixin, ABC):
 
-    def __init__(self, shape, model, eps=1e-8):
+    def __init__(self, shape:tuple[int,...], model:Model, eps=1e-8):
         self.shape = shape
         self.model = model
         self.eps = eps
 
     @abstractmethod
-    def __call__(self, y_pred, y_targ, global_batch_size):
+    def __call__(self, y_pred:Array, y_targ:Array, global_batch_size:int) -> tuple[float, Array]:
         pass

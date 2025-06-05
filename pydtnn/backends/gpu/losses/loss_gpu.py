@@ -21,7 +21,13 @@ from abc import ABC, abstractmethod
 
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
+# noinspection PyUnresolvedReferences
+from pycuda.driver import Function
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
 # noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu import TensorGPU
 from pydtnn.losses import Loss
@@ -32,7 +38,7 @@ class LossGPU(Loss, ABC):
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
 
-    def __init__(self, shape, model, eps=1e-8):
+    def __init__(self, shape:tuple[int, ...], model:Model, eps=1e-8):
         super().__init__(shape, model, eps)
         self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
@@ -40,5 +46,5 @@ class LossGPU(Loss, ABC):
         self.kernel = self.__init_gpu_kernel__()
 
     @abstractmethod
-    def __init_gpu_kernel__(self):
+    def __init_gpu_kernel__(self) -> Function:
         pass
