@@ -22,14 +22,16 @@ import numpy as np
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
+# noinspection PyUnresolvedReferences
+from pycuda.driver import Function
 
 from pydtnn.losses import CategoricalCrossEntropy
 from .loss_gpu import LossGPU
-
+from pydtnn.backends.gpu import TensorGPU
 
 class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
 
-    def __init_gpu_kernel__(self):
+    def __init_gpu_kernel__(self) -> Function:
         module = SourceModule("""
         __global__ void categorical_cross_entropy(T *y_targ, T *y_pred, T *res,
                                                   T *dx, int b, int bs, int n, float eps)
@@ -57,7 +59,7 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
         """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("categorical_cross_entropy")
 
-    def __call__(self, y_pred, y_targ, batch_size):
+    def __call__(self, y_pred:TensorGPU, y_targ:TensorGPU, batch_size:int) -> tuple[float, TensorGPU]:
         threads = min(self.model.batch_size, 1024)
         blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
@@ -65,5 +67,5 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
                     np.int32(self.shape[1]), np.float32(self.eps),
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
-        loss = -gpuarray.sum(self.loss).get() / self.model.batch_size
+        loss:float = -gpuarray.sum(self.loss).get() / self.model.batch_size
         return loss, self.dx

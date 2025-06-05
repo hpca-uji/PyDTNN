@@ -22,7 +22,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from typing import Tuple, List, Self, TYPE_CHECKING
+from typing import Self, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from pydtnn.model import Model
     from pydtnn.activations.activation import Activation
@@ -31,26 +31,28 @@ if TYPE_CHECKING:
 from ..backends.gpu.tensor_gpu import TensorGPU
 from numpy import ndarray
 
+drv_Stream = TypeVar("pycuda_driver_Stream") # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+
 class LayerAndActivationBase(ABC):
 
-    def __init__(self, shape:Tuple[int, ...]=()) -> None:
+    def __init__(self, shape:tuple[int, ...]=()) -> None:
         self.nparams: int = 0
-        self.shape: Tuple[int, ...] = shape
+        self.shape: tuple[int, ...] = shape
         self.weights: np.ndarray = np.array([])
         self.biases: np.ndarray = np.array([])
         self.act: Activation | None = None
         self.grad_vars:dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
-        self.paths: List[List[LayerAndActivationBase]] = []
+        self.paths: list[list[LayerAndActivationBase]] = []
         self.need_dx: bool = True
         self.reqs_allred = {}
         # The next attributes will be initialized later
         self.id: int = None
         self.model: Model = None
-        self.prev_shape: Tuple[int, ...] = None
+        self.prev_shape: tuple[int, ...] = None
         self.is_block_layer: bool = False
-        self.stream_2 = None
+        self.stream_2: drv_Stream = None
     # --- END __init__ --- #
 
     @property
@@ -77,7 +79,7 @@ class LayerAndActivationBase(ABC):
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape: Tuple[int, ...], need_dx:bool=True) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool=True) -> None:
         self.prev_shape = prev_shape
         self.need_dx = need_dx
 
@@ -110,7 +112,7 @@ class LayerAndActivationBase(ABC):
         pass
 
     @property
-    def children(self) -> List[Self]:
+    def children(self) -> list[Self]:
         children:list = []
         for path in self.paths:
             children += [layer for layer in path]
