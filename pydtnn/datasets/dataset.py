@@ -362,7 +362,7 @@ class Dataset(ABC):
             yield x_batch[:0], y_batch[:0], 0
 
     def _do_flip_images(self, data):
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, c, h, w = data.shape
             width_dim = -1
         else:

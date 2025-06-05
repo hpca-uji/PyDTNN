@@ -427,7 +427,8 @@ class ConvWinograd:
         return y
     # --- END _conv_winograd_numpy --- #
 
-    def _conv_winograd_c(self, m:int, r:int, g:np.ndarray, bt:np.ndarray, at:np.ndarray, x_winograd,
+    def _conv_winograd_c(self, m:int, r:int, g:np.ndarray, bt:np.ndarray, at:np.ndarray, 
+                         x_winograd_pre, x_winograd_kernel,
                          weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None = None, 
                          vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1,
                          relu=False, bn=False, 
