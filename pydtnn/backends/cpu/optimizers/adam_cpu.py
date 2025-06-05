@@ -26,10 +26,9 @@ from pydtnn.backends.cpu.layers import LayerCPU
 
 class AdamCPU(OptimizerCPU, Adam):
 
-    def update(self, layer: LayerCPU):
+    def update(self, layer: LayerCPU) -> None:
         lr = self.learning_rate
-        it = getattr(layer, "it", 0) + 1
-        setattr(layer, "it", it)
+        it = layer.get_and_increase_optimizer_it()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

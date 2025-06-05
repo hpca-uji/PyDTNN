@@ -20,7 +20,7 @@
 import operator
 import warnings
 import numpy as np
-from .dataset import Dataset, dataset_enum
+from .dataset import Dataset, DatasetEnum
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 from typing import TYPE_CHECKING, Self
@@ -84,7 +84,7 @@ class CustomDataset(Dataset):
                          force_test_as_validation=force_test_as_validation)
 
     def _init_actual_data(self):
-        for part in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
+        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
             local_offset = self._local_offset[part]
             local_nsamples = self._local_nsamples[part]
             local_slice = slice(local_offset, local_offset + local_nsamples)

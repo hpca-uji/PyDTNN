@@ -21,7 +21,7 @@ import os
 
 import numpy as np
 
-from .dataset import Dataset, dataset_enum
+from .dataset import Dataset, DatasetEnum
 from ..utils import PYDTNN_TENSOR_FORMAT
 
 TRAIN_NSAMPLES = 60000
@@ -46,11 +46,11 @@ class MNIST(Dataset):
             None,
             os.path.join(self.model.dataset_test_path, "t10k-labels-idx1-ubyte")
         ]
-        x_filename[dataset_enum.VAL] = x_filename[dataset_enum.TEST] if self.test_as_validation else x_filename[dataset_enum.TRAIN]
-        y_filename[dataset_enum.VAL] = y_filename[dataset_enum.TEST] if self.test_as_validation else y_filename[dataset_enum.TRAIN]
+        x_filename[DatasetEnum.VAL] = x_filename[DatasetEnum.TEST] if self.test_as_validation else x_filename[DatasetEnum.TRAIN]
+        y_filename[DatasetEnum.VAL] = y_filename[DatasetEnum.TEST] if self.test_as_validation else y_filename[DatasetEnum.TRAIN]
         images_header_offset = 16  # 4 + 4 * 3
         labels_header_offset = 8  # 4 + 4 * 1
-        for part in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
+        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
             offset = images_header_offset + self._local_offset[part] * np.prod(self.input_shape)
             nbytes = self._local_nsamples[part] * np.prod(self.input_shape)
             self._x[part] = self._read_file(x_filename[part], offset, nbytes) \

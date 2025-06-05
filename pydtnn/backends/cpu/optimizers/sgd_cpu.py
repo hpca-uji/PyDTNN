@@ -23,10 +23,11 @@ from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD
 from pydtnn.utils import get_attr_factory
 
+from pydtnn.backends.cpu.layers import LayerCPU
 
 class SGDCPU(OptimizerCPU, SGD):
 
-    def update(self, layer):
+    def update(self, layer: LayerCPU) -> None:
         lr = self.learning_rate
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

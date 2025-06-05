@@ -29,13 +29,14 @@ from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import Nadam
 from pydtnn.utils import get_attr_factory
 
+from pydtnn.backends.gpu.layers import LayerGPU
 
 class NadamGPU(OptimizerGPU, Nadam):
     """
     NadamGPU optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype=np.float32):
+    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype:np.dtype=np.float32):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
 
         self.update_gpu = ElementwiseKernel("T *w, T *dw, T *m, T *v, \
@@ -66,9 +67,8 @@ class NadamGPU(OptimizerGPU, Nadam):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
                                              ).get_function("Nadam_kernel")
 
-    def update(self, layer):
-        it = getattr(layer, "it", 0) + 1
-        setattr(layer, "it", it)
+    def update(self, layer: LayerGPU) -> None:
+        it = layer.get_and_increase_optimizer_it()
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
