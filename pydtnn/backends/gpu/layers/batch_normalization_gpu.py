@@ -121,7 +121,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
     def forward(self, x):
         alpha, beta = 1.0, 0.0
         if self.model.mode == TRAIN_MODE:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
             cudnn.cudnnBatchNormalizationForwardTraining(self.model.cudnn_handle, self.mode,
                                                          alpha, beta, x.desc, x.ptr,
                                                          self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
@@ -131,7 +131,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
                                                          self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         elif self.model.mode == EVALUATE_MODE:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
             cudnn.cudnnBatchNormalizationForwardInference(self.model.cudnn_handle, self.mode,
                                                           alpha, beta, x.desc, x.ptr,
                                                           self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
@@ -145,7 +145,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
     def backward(self, dy):
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx, dgamma, dbeta
         cudnn.cudnnBatchNormalizationBackward(self.model.cudnn_handle, self.mode,
                                               alpha_dx, beta_dx, alpha_dgb, beta_dgb,

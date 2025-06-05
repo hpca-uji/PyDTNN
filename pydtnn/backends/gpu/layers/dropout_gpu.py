@@ -62,10 +62,10 @@ class DropoutGPU(LayerGPU, Dropout):
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
-                                        self.states.ptr, self.states_size.value, seed=0)
+                                        self.states.ptr, self.states_size, seed=0)
 
     def forward(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnDropoutForward(self.model.cudnn_handle, self.drop_desc,
                                   x.desc, x.ptr,
                                   self.y.desc, self.y.ptr,
@@ -75,7 +75,7 @@ class DropoutGPU(LayerGPU, Dropout):
 
     def backward(self, dy):
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX.value)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnDropoutBackward(self.model.cudnn_handle, self.drop_desc,
                                        dy.desc, dy.ptr,

@@ -168,7 +168,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
     def forward(self, x):
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnConvolutionForward(self.model.cudnn_handle, alpha,
                                       x.desc, x.ptr,
                                       self.weights.desc, self.weights.ptr,
@@ -180,7 +180,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
         if self.use_bias:
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES.value)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc, self.biases.ptr,
                                  beta, self.y.desc, self.y.ptr)
@@ -189,7 +189,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
 
     def backward(self, dy):
         alpha, beta = 1.0, 0.0
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
         # Compute dw
         cudnn.cudnnConvolutionBackwardFilter(self.model.cudnn_handle, alpha,
                                              self.x.desc, self.x.ptr,
@@ -204,7 +204,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB.value)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             # Compute db
             cudnn.cudnnConvolutionBackwardBias(self.model.cudnn_handle, alpha,
                                                dy.desc, dy.ptr, beta,
@@ -217,7 +217,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
 
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX.value)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnConvolutionBackwardData(self.model.cudnn_handle, alpha,
                                                self.weights.desc, self.weights.ptr,

@@ -81,7 +81,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
                                   x.desc, x.ptr, beta,
                                   self.y.desc, self.y.ptr)
@@ -91,7 +91,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
     def backward(self, dy):
         if self.need_dx:
             alpha, beta = 1.0, 0.0
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX.value)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
                                        self.y.desc, self.y.ptr,

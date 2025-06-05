@@ -60,8 +60,8 @@ class LayerCPU(Layer, ABC):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW.value,
-                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW.value])
+                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
+                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             dw = getattr(self, dw_)
             dw *= self.model.rank_weight
             self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)

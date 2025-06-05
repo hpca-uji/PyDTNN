@@ -34,12 +34,12 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
         x = [x] * len(self.paths)
         for i, p in enumerate(self.paths):
             for layer in p:
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x[i] = layer.forward(x[i])
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM.value)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
                 eltw_sum_cython(x[0], x[i])
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return x[0]
@@ -48,12 +48,12 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
         dx = [dy] * len(self.paths)
         for i, p in enumerate(self.paths):
             for layer in reversed(p):
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
                 dx[i] = layer.backward(dx[i])
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i > 0:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM.value)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
                 eltw_sum_cython(dx[0], dx[i])
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx[0]

@@ -49,7 +49,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD.value)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 y_i = layer.forward(y_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i == 0:
@@ -57,7 +57,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM.value)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, y_i.desc,
                                      y_i.ptr, beta, self.y.desc, self.y.ptr)
@@ -68,7 +68,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
         for i, p in enumerate(self.paths):
             dx_i = dy
             for layer in reversed(p):
-                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD.value)
+                self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
                 dx_i = layer.backward(dx_i)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             if i == 0:
@@ -76,7 +76,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
             else:
                 alpha, beta = 1.0, 1.0
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM.value)
+                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
                 # noinspection PyUnboundLocalVariable
                 cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, dx_i.desc,
                                      dx_i.ptr, beta, self.dx.desc, self.dx.ptr)
