@@ -23,7 +23,7 @@ from .layer import Layer
 from .. import activations
 from .. import initializers
 from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
-
+import numpy as np
 
 class Conv2D(Layer, ABC):
 
