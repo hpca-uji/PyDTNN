@@ -32,6 +32,10 @@ class LRScheduler(ABC):
         self.model = model
         self.verbose = verbose
         self.epoch_count = 0
+        # NOTE: Only used in early_stopping and stop_at_loss.
+        # NOTE (cont.): Since there are only 2 classes that uses this variable, 
+        #   I think it's not necessary to create an abstract class only to store this variable.
+        self.stop_training:bool = False
 
     def __str__(self):
         return f"LRScheduler {type(self).__name__}"

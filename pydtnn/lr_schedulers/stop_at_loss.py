@@ -34,7 +34,6 @@ class StopAtLoss(LRSchedulerWithLossOrMetric):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, loss_or_metric, verbose)
         self.threshold_value = threshold_value
-        self.stop_training = False
 
     def on_epoch_end(self, train_loss: ndarray[float], val_loss: ndarray[float]) -> None:
         idx = self._get_idx()

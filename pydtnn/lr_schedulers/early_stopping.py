@@ -37,7 +37,6 @@ class EarlyStopping(LRSchedulerWithLossOrMetric):
         self.patience = patience
         self.minimize = minimize
         self.best_epoch:int = 0
-        self.stop_training:bool = False
         self.best_loss:float = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename:str | None = None
     
