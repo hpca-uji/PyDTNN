@@ -32,7 +32,7 @@ class Input(Layer, ABC):
             warnings.warn(f"Input layer does not have 3 dimensions ({shape}), it may cause issues!", RuntimeWarning)
 
         if len(shape) == 3 and not (shape[0] > shape[2]):
-            warnings.warn(f"Input layer shape {self.shape} may not be in NHWC format, regardless of model format! ", RuntimeWarning)
+            warnings.warn(f"Input layer shape {shape} may not be in NHWC format, regardless of model format! ", RuntimeWarning)
 
         super().__init__(shape)
         self.is_shape_in_format = is_shape_in_format
