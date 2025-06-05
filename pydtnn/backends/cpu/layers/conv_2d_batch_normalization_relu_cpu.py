@@ -47,7 +47,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                 vstride=self.vstride, hstride=self.hstride,
@@ -66,7 +66,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
                                      vpadding=self.vpadding, hpadding=self.hpadding,
                                      vstride=self.vstride, hstride=self.hstride,
@@ -83,7 +83,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
             raise RuntimeError("Fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM.value)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
                                      vpadding=self.vpadding, hpadding=self.hpadding,
                                      vstride=self.vstride, hstride=self.hstride,

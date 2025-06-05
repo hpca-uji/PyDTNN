@@ -106,7 +106,7 @@ class FCGPU(LayerGPU, FC):
 
         # Compute a' = x @ weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL.value)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUBLAS_MATMUL)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     self.weights.ary.gpudata, ldb,
                     x.ary.gpudata, lda, beta,
@@ -116,7 +116,7 @@ class FCGPU(LayerGPU, FC):
         if self.use_bias:
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES.value)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc,
                                  self.biases.ptr, beta, self.y.desc, self.y.ptr)
@@ -131,7 +131,7 @@ class FCGPU(LayerGPU, FC):
         trans_a, trans_b, alpha, beta = 'T', 'N', 1.0, 0.0
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW.value)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DW)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     dy.ary.gpudata, ldb, self.x.ary.gpudata, lda, beta,
                     self.dw.ptr_intp if self.model.gpudirect else self.dw.ary.gpudata, ldc, self.model.dtype)
@@ -149,7 +149,7 @@ class FCGPU(LayerGPU, FC):
             trans_a, alpha, beta, inc_x, inc_y = 'N', 1.0, 0.0, 1, 1
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB.value)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATVEC_DB)
             self.matvec(self.model.cublas_handle, trans_a, n, m, alpha,
                         dy.ary.gpudata, lda, self.one_vec_gpu.gpudata, inc_x, beta,
                         self.db.ptr_intp if self.model.gpudirect else self.db.ary.gpudata,
@@ -169,7 +169,7 @@ class FCGPU(LayerGPU, FC):
             trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX.value)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
             self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                         self.weights.ary.gpudata, ldb,
                         dy.ary.gpudata, lda, beta,
