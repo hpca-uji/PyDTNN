@@ -22,7 +22,7 @@ from abc import ABC
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
@@ -31,7 +31,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
 
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             setattr(self, "forward", self._forward_nchw_cython)
             setattr(self, "backward", self._backward_nchw_cython)
             # I2C-based implementations have been temporarily discarded

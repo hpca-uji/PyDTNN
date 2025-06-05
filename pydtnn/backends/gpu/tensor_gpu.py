@@ -20,7 +20,7 @@
 import ctypes
 
 import numpy as np
-from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
 
 try:
     from .libs import libcudnn as cudnn
@@ -29,12 +29,11 @@ except OSError:
 
 
 class TensorGPU:
-    def __init__(self, gpu_arr, tensor_format, cudnn_dtype, tensor_type="tensor", desc=None, gpudirect=False,
+    def __init__(self, gpu_arr, tensor_format:PYDTNN_TENSOR_FORMAT, cudnn_dtype:int, tensor_type="tensor", desc=None, gpudirect=False,
                  cublas=False):
-        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + {PYDTNN_TENSOR_FORMAT_NCHW :"NCHW", \
-                                                                              PYDTNN_TENSOR_FORMAT_NHWC :"NHWC"}[tensor_format]]
+        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
         if len(gpu_arr.shape) == 2:
-            if tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 self.shape = (*gpu_arr.shape, 1, 1)
             else:
                 self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])

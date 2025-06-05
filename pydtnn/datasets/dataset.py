@@ -25,7 +25,15 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW, string_substitute
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT, string_substitute
+from typing import TYPE_CHECKING, Generator
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
+from enum import IntEnum, auto
+from pydtnn.backends.gpu import TensorGPU
+type Array = np.ndarray | TensorGPU
+type shape_t  = tuple[int, ...]
 
 
 class _BackgroundGenerator(threading.Thread):
@@ -51,8 +59,12 @@ class _BackgroundGenerator(threading.Thread):
     def __iter__(self):
         return self
 
-
-TRAIN, VAL, TEST = range(3)
+# TODO: Make this a ENUM
+class dataset_enum(IntEnum):
+    TRAIN = auto()
+    VAL = auto()
+    TEST = auto()
+# --- END dataset_enum --- #
 
 
 class Dataset(ABC):
@@ -60,8 +72,8 @@ class Dataset(ABC):
     # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
     # NOTE: Dataset.data_generator(y) is expected to be in NC format
 
-    def __init__(self, model, train_nsamples, test_nsamples, input_shape, output_shape, max_batches_online=40,
-                 force_test_as_validation=False, debug=False):
+    def __init__(self, model: Model, train_nsamples:int, test_nsamples:int, input_shape:shape_t, output_shape:shape_t, 
+                 max_batches_online = 40, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -72,39 +84,46 @@ class Dataset(ABC):
         if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
             warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
 
-        self.model = model
-        self.max_batches_online = max_batches_online
-        self.debug = debug
-        self.test_as_validation = self.model.test_as_validation or force_test_as_validation
-        self._nsamples = [train_nsamples, 0, test_nsamples]
-        # Compute self._nsamples[VAL]
+        self.model:Model = model
+        self.max_batches_online:int = max_batches_online
+        self.debug:bool = debug
+        self.test_as_validation:bool = self.model.test_as_validation or force_test_as_validation
+        self._nsamples:list[int, int, int] = [train_nsamples, 0, test_nsamples]
+
+        # Compute self._nsamples[dataset_enum.VAL]
         if self.test_as_validation:
-            self._nsamples[VAL] = self._nsamples[TEST]
+            self._nsamples[dataset_enum.VAL] = self._nsamples[dataset_enum.TEST]
         else:
-            self._nsamples[VAL] = min(self._nsamples[TRAIN] - self.model.nprocs,
-                                      max(self.model.nprocs, int(self._nsamples[TRAIN] * self.model.validation_split)))
-            self._nsamples[TRAIN] -= self._nsamples[VAL]
+            self._nsamples[dataset_enum.VAL] = min(self._nsamples[dataset_enum.TRAIN] - self.model.nprocs,
+                                                   max(self.model.nprocs, 
+                                                       int(self._nsamples[dataset_enum.TRAIN] * self.model.validation_split)))
+            self._nsamples[dataset_enum.TRAIN] -= self._nsamples[dataset_enum.VAL]
+
         self.input_shape = list(input_shape)
         self.output_shape = list(output_shape)
-        self._initial_nsamples = [self._nsamples[TRAIN], self._nsamples[VAL], self._nsamples[TEST]]
+        self._initial_nsamples = [self._nsamples[dataset_enum.TRAIN], self._nsamples[dataset_enum.VAL], self._nsamples[dataset_enum.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
         self._local_offset = [0] * 3
         self._local_nsamples = [0] * 3
         self._local_remaining_nsamples = [-1] * 3  # -1 is used to mark each part as not initialized
-        for part in TRAIN, VAL, TEST:
+
+        for part in dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST:
             (self._local_offset[part],
              self._local_nsamples[part],
              self._nsamples[part]
              ) = self._compute_local_workload(self._nsamples[part])
+            
         # Declare _x and _y for train, val and test dataset parts
-        self._x = [np.zeros((0, *self.input_shape), dtype=self.model.dtype)] * 3
-        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * 3
+        self._x = [np.zeros((0, *self.input_shape), dtype=self.model.dtype)] * len(dataset_enum)
+        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(dataset_enum)
+
         if self.model.use_synthetic_data:
             self._data_generator = self._synthetic_data_generator
             self._init_synthetic_data()
         else:
             self._data_generator = self._actual_data_generator
             self._init_actual_data()
+
         if self.debug:
             self._print_report()
 
@@ -116,9 +135,9 @@ class Dataset(ABC):
             split_weights = list(map(float, self.model.dataset_export_split_weights.split(",")))
 
         # Data generators
-        gen_train = self._data_generator(TRAIN)
-        gen_val = self._data_generator(VAL)
-        gen_test = self._data_generator(TEST)
+        gen_train = self._data_generator(dataset_enum.TRAIN)
+        gen_val = self._data_generator(dataset_enum.VAL)
+        gen_test = self._data_generator(dataset_enum.TEST)
 
         # Reconstruct validation split
         if self.test_as_validation:
@@ -131,7 +150,7 @@ class Dataset(ABC):
         x_test, y_test = map(np.concat, zip(*gen_test))
 
         # Ensure dataset is in NCHW
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
             x_train = x_train.transpose(0, 3, 1, 2)
             x_test = x_test.transpose(0, 3, 1, 2)
 
@@ -167,33 +186,33 @@ class Dataset(ABC):
 
     @property
     def train_nsamples(self):
-        return self._nsamples[TRAIN]
+        return self._nsamples[dataset_enum.TRAIN]
 
     @property
     def val_nsamples(self):
-        return self._nsamples[VAL]
+        return self._nsamples[dataset_enum.VAL]
 
     @property
     def test_nsamples(self):
-        return self._nsamples[TEST]
+        return self._nsamples[dataset_enum.TEST]
 
-    def get_train_val_generator(self):
-        return (self._batch_generator(TRAIN),
-                self._batch_generator(VAL))
+    def get_train_val_generator(self) -> tuple[Generator[tuple[Array, Array, int]], Generator[tuple[Array, Array, int]]]:
+        return (self._batch_generator(dataset_enum.TRAIN),
+                self._batch_generator(dataset_enum.VAL))
 
-    def get_test_generator(self):
-        return self._batch_generator(TEST)
+    def get_test_generator(self) -> Generator[tuple[Array, Array, int]]:
+        return self._batch_generator(dataset_enum.TEST)
 
     def _print_report(self):
         if self.model.comm_rank == 0:
             print(f"Initial nsamples:"
-                  f" train: {self._initial_nsamples[TRAIN]} "
-                  f" val: {self._initial_nsamples[VAL]} "
-                  f" test: {self._initial_nsamples[TEST]} "
+                  f" train: {self._initial_nsamples[dataset_enum.TRAIN]} "
+                  f" val: {self._initial_nsamples[dataset_enum.VAL]} "
+                  f" test: {self._initial_nsamples[dataset_enum.TEST]} "
                   )
         desc = ["train", "val", "test"]
-        for part in (TRAIN, VAL, TEST):
-            prefix = f"{self.model.rank}: " if part == TRAIN else "   "
+        for part in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
+            prefix = f"{self.model.rank}: " if part == dataset_enum.TRAIN else "   "
             print(f"{prefix}"
                   f" {desc[part]} offset: {self._local_offset[part]}"
                   f" {desc[part]} local nsamples: {self._local_nsamples[part]}"
@@ -225,11 +244,11 @@ class Dataset(ABC):
         return local_offset, local_nsamples, nsamples
 
     def _init_synthetic_data(self):
-        for part in TRAIN, VAL, TEST:
+        for part in dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST:
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = min(local_batches, self.max_batches_online) * self.model.batch_size
             x_shape = [nsamples] + self.input_shape
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
                 x_shape = [x_shape[i] for i in (0, 2, 3, 1)]
             y_shape = [nsamples] + self.output_shape
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
@@ -264,7 +283,7 @@ class Dataset(ABC):
         method is implemented, at least it should raise and exception if a new round begins when a round for another
         part is still in progress.
         """
-        for p in (TRAIN, VAL, TEST):
+        for p in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
             if self._local_remaining_nsamples[p] == -1:  # If not initialized
                 self._local_remaining_nsamples[p] = self._local_nsamples[p]
         while self._local_remaining_nsamples[part] > 0:
@@ -304,7 +323,7 @@ class Dataset(ABC):
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
             s = memoryview(np.arange(local_nsamples))
-            if part == TRAIN:
+            if part == dataset_enum.TRAIN:
                 np.random.shuffle(s)
                 if not self.model.use_synthetic_data and (self.model.flip_images or self.model.crop_images):
                     x_data = self._do_data_augmentation(x_data)
@@ -337,6 +356,8 @@ class Dataset(ABC):
         y_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
         for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
             yield x_batch, y_batch, batch_size
+        # NOTE: The following infinite loop provides of empty batches 
+        #        if there are asked more batches than actually are.
         while True:
             yield x_batch[:0], y_batch[:0], 0
 
@@ -355,7 +376,7 @@ class Dataset(ABC):
         return data
 
     def _do_crop_images(self, data):
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, c, h, w = data.shape
         else:
             n, h, w, c = data.shape
@@ -369,7 +390,7 @@ class Dataset(ABC):
         for i, ri in enumerate(s):
             b, r = t[i] + crop_size, ll[i] + crop_size
             # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 data[ri, :, :t[i], :ll[i]] = 0.0
                 data[ri, :, b:, r:] = 0.0
             else:

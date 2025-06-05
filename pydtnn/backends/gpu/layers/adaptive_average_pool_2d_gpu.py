@@ -37,7 +37,7 @@ from pycuda.compiler import SourceModule
 from pycuda.driver import Function
 
 import numpy as np
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.model import Model
 
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
@@ -74,7 +74,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         _FULL_MACRO_INDEX_LAST_ELEMENT = f"#define {_MACRO_INDEX_LAST_ELEMENT}(index, dim_in, dim_out) (int) ((((index + 1) * dim_in) + dim_out - 1) / dim_out)"
 
         self.model:Model # NOTE: This is only for the hints.
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             code = \
             """
             {full_macro_index_first_element}
@@ -120,9 +120,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
             }}
             """
             # -- END cuda_adaptive_average_pooling_fwd_nchw --
-        elif self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
-            # NOTE: Right now it's the same as NCHW.
-            # TODO: NHWC Implementation.
+        elif self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
             code = \
             """
             {full_macro_index_first_element}
@@ -215,7 +213,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         if self.pooling_not_needed:
             self.y = x
         else:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = x.shape
             else:
                 n, h, w, c = x.shape

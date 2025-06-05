@@ -8,7 +8,7 @@ import onnx
 from pydtnn.model import Model as PyDTNN_Model
 import pydtnn.converters.onnx2pydtnn.constants as cons 
 from pydtnn.layers import Input
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 
 # ////////////////////////////////////////////////////
@@ -188,7 +188,7 @@ def convert_model(onnx_model:onnx.ModelProto, omm=None, non_blocking_mpi=False, 
                  enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
     
     if "tensor_format" not in kwargs:
-        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT_NHWC# PYDTNN_TENSOR_FORMAT_NCHW #PYDTNN_TENSOR_FORMAT_NHWC
+        kwargs["tensor_format"] = PYDTNN_TENSOR_FORMAT.NHWC
     # Output model.
     # NOTE: ¡¡¡¡IMPORTANT!!!!! Be sure that the "parser.model_name" from pydtnn.parser import parser is None!!!!!!!!.
     model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,

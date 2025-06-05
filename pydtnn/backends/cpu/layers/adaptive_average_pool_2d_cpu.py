@@ -23,7 +23,7 @@ from pydtnn.layers import AdaptiveAveragePool2D
 from pydtnn.backends.cpu.layers import LayerCPU
 
 # Imports for the method from AbstractPool2DLayerCPU
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 # Imports for the methods from AveragePool2DCPU
 from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
@@ -46,7 +46,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
         LayerCPU.initialize(self, prev_shape, need_dx)
 
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             self._forward = self._forward_nchw_cython
             self._backward = self._backward_nchw_cython
             # I2C-based implementations have been temporarily discarded

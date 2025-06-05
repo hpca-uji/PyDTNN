@@ -22,7 +22,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn import losses
 
 
@@ -59,7 +59,7 @@ class CheckGPUModels(CheckConvGemmModels):
         params.model_name = model_name
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
-        params.tensor_format = "NHWC"
+        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
         model1 = Model(**vars(params))
         # loss function
         loss = model1.loss_func
@@ -74,7 +74,7 @@ class CheckGPUModels(CheckConvGemmModels):
         params.model_name = model_name
         params.enable_gpu = True
         params.enable_cudnn_auto_conv_alg = True
-        params.tensor_format = "NHWC"
+        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
         return Model(**vars(params))
 
     @staticmethod
@@ -86,7 +86,7 @@ class CheckGPUModels(CheckConvGemmModels):
             if len(cpu_layer.weights.shape) == 1:
                 continue
             if "Conv2D" in type(gpu_layer).__name__:
-                if model2.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                if model2.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
                     gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
                 else:
                     gpu_layer.weights_cpu = cpu_layer.weights.copy()

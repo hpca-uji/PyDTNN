@@ -23,7 +23,7 @@ from pydtnn.backends.cpu.layers.abstract_block_layer_cpu import AbstractBlockLay
 from pydtnn.layers import ConcatenationBlock
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum  
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 
 class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
@@ -37,7 +37,7 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def initialize_block_layer(self):
         super().initialize_block_layer()
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
             self.out_co = [s[0] for s in self.out_shapes]
             self.idx_co = np.cumsum(self.out_co, axis=0)

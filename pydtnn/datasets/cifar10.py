@@ -20,8 +20,13 @@ import os
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC
-from .dataset import Dataset, TRAIN, VAL, TEST
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from .dataset import Dataset, dataset_enum
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
 
 TRAIN_NSAMPLES = 50000
 TEST_NSAMPLES = 10000
@@ -29,22 +34,21 @@ INPUT_SHAPE = (3, 32, 32)
 OUTPUT_SHAPE = (10,)
 IMAGES_PER_FILE = 10000
 
-
 class CIFAR10(Dataset):
     """CIFAR10 Dataset"""
 
-    def __init__(self, model):
+    def __init__(self, model: Model):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE)
 
     def _init_actual_data(self):
-        xy_filenames = [
+        xy_filenames: list[str] = [
             [os.path.join(self.model.dataset_train_path, f"data_batch_{x}.bin") for x in range(1, 6)],
             [],
             [os.path.join(self.model.dataset_test_path, "test_batch.bin")]
         ]
-        xy_filenames[VAL] = xy_filenames[TEST] if self.test_as_validation else xy_filenames[TRAIN]
+        xy_filenames[dataset_enum.VAL] = xy_filenames[dataset_enum.TEST] if self.test_as_validation else xy_filenames[dataset_enum.TRAIN]
         y_classes = np.array([])
-        for part in (TRAIN, VAL, TEST):
+        for part in (dataset_enum.TRAIN, dataset_enum.VAL, dataset_enum.TEST):
             for filename, offset, nsamples in self._offset2files(xy_filenames[part],
                                                                  IMAGES_PER_FILE,
                                                                  self._local_offset[part],
@@ -57,7 +61,7 @@ class CIFAR10(Dataset):
                 self._y[part] = np.concatenate((self._y[part], y), axis=0)
             self._x[part] = self._x[part] / 255.0
             self._x[part] = self._normalize_image(self._x[part])
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
                 self._x[part] = self._nchw2nhwc(self._x[part])
 
     def _read_file(self, filename, offset, nsamples):
