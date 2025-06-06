@@ -21,7 +21,6 @@ from abc import ABC
 
 from .optimizer import Optimizer
 import numpy as np
-
 class Adam(Optimizer, ABC):
     """
     Adam optimizer
@@ -33,4 +32,4 @@ class Adam(Optimizer, ABC):
         self.beta1:float = beta1
         self.beta2:float = beta2
         self.epsilon:float = epsilon
-        self.decay:float = decay
+        self.decay:float = decay    

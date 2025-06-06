@@ -36,7 +36,12 @@ from ..utils import get_derived_classes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn.model import Model
+    from pydtnn.optimizers import Layer_types
+else: Layer_types = None
+
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.backends import PromoteToBackendMixin
+type Layer_types = LayerAndActivationBase | PromoteToBackendMixin
 
 # Search this module for Optimizer derived classes and expose them
 get_derived_classes(Optimizer, locals())

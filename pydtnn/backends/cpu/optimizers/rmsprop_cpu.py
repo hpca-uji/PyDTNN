@@ -21,20 +21,49 @@ import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import RMSProp
-from pydtnn.utils import get_attr_factory
 
 from pydtnn.backends.cpu.layers import LayerCPU
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.optimizers import Layer_types
+else: Layer_types = None
 
 class RMSPropCPU(OptimizerCPU, RMSProp):
 
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        super().__init__(list_layers)
+
+        for layer in list_layers:
+            list_grad_vars = list(layer.grad_vars.keys())
+                    
+            if len(list_grad_vars) != 0:
+                self.context[layer] = dict[str, np.ndarray]()
+                for w_ in list_grad_vars:
+                    w = getattr(layer, w_)
+                    self.context[layer]["cache_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
+
     def update(self, layer: LayerCPU) -> None:
-        lr = self.learning_rate
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            cache = get_attr_factory(layer, "cache_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
+            cache:np.ndarray = self.context[layer]["cache_%s" % w_]
+            w:np.ndarray
+            dw:np.ndarray
 
-            cache = self.rho * cache + (1 - self.rho) * dw ** 2
-            w -= lr * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
+            # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
-            setattr(layer, w_, w)
-            setattr(layer, "cache_%s" % w_, cache)
+            #cache = self.rho * cache + (1 - self.rho) * dw ** 2
+            cache *= self.rho
+            _dw = dw ** 2
+            _dw *= (1 - self.rho)
+            cache += _dw
+            #w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
+            w -= (self.learning_rate * self.decay) * w
+            _cache = cache + self.epsilon
+            _cache = np.sqrt(_cache)
+            _dw = dw / _cache 
+            _dw *= self.learning_rate
+            w -= _dw
+
+            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
+            #del _cache
+            #del _dw

@@ -419,7 +419,7 @@ class Model:
         self.loss_func_name:str = self.kwargs['loss_func_name']
         self.num_epochs: int = self.kwargs['num_epochs']
         self.model_sync_freq:int = self.kwargs['model_sync_freq']
-        self.final_model_sync:bool = self.kwargs['final_model_syn']
+        self.final_model_sync:bool = self.kwargs['final_model_sync']
         self.test_as_validation:bool = self.kwargs['test_as_validation']
         self.validation_split:float = self.kwargs['validation_split']
         self.use_synthetic_data:bool = self.kwargs['use_synthetic_data']
@@ -624,6 +624,8 @@ class Model:
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
         self._initialized = True
+        
+        self.optimizer.initialize(self.layers)
     # --- End _initialize --- #
 
     def load_store_path(self, layers: list[Layer], d: dict[str, np.ndarray], mode:LOAD_STORE_MODE) -> None:

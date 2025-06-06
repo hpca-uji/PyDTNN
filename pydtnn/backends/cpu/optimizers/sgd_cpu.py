@@ -21,23 +21,53 @@ import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import SGD
-from pydtnn.utils import get_attr_factory
 
 from pydtnn.backends.cpu.layers import LayerCPU
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.optimizers import Layer_types
+else: Layer_types = None
 
 class SGDCPU(OptimizerCPU, SGD):
 
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        super().__init__(list_layers)
+
+        for layer in list_layers:
+            list_grad_vars = list(layer.grad_vars.keys())
+                    
+            if len(list_grad_vars) != 0:
+                self.context[layer] = dict[str, np.ndarray]()
+                for w_ in list_grad_vars:
+                    w = getattr(layer, w_)
+                    self.context[layer]["velocity_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
+
     def update(self, layer: LayerCPU) -> None:
-        lr = self.learning_rate
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity = get_attr_factory(layer, "velocity_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
+            velocity: np.ndarray = self.context[layer]["velocity_%s" % w_]
+            w: np.ndarray
+            dw: np.ndarray
+            # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
-            velocity = self.momentum * velocity + dw
+            # velocity = self.momentum * velocity + dw
+            velocity *= self.momentum 
+            velocity += dw
+            
+            #if self.nesterov:
+            #    w -= self.learning_rate * (self.decay * w + dw + self.momentum * velocity)
+            #else:
+            #    w -= self.learning_rate * (self.decay * w + velocity)
+            v:np.ndarray = velocity.copy()
             if self.nesterov:
-                w -= lr * (self.decay * w + dw + self.momentum * velocity)
-            else:
-                w -= lr * (self.decay * w + velocity)
+                v *= self.momentum
+                v += dw
+            v *= self.learning_rate
+            _w = w * (self.learning_rate * self.decay)
+            _w += v
+            w -= _w
 
-            setattr(layer, w_, w)
-            setattr(layer, "velocity_%s" % w_, velocity)
+
+            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
+            #del v
+            #del _w

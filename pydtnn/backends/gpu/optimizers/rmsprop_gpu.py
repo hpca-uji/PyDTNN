@@ -27,8 +27,8 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import RMSProp
-from pydtnn.utils import get_attr_factory
-
+from pydtnn.optimizers import Layer_types
+from pydtnn.backends.gpu.layers import LayerGPU
 
 class RMSPropGPU(OptimizerGPU, RMSProp):
     """
@@ -59,10 +59,25 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype])
                                              ).get_function("RMSProp_kernel")
 
-    def update(self, layer):
+
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        super().__init__(list_layers)
+
+        for layer in list_layers:
+            list_grad_vars = list(layer.grad_vars.keys())
+                    
+            if len(list_grad_vars) != 0:
+                self.context[layer] = dict[str, np.ndarray]()
+                for w_ in list_grad_vars:
+                    w = getattr(layer, w_)
+                    self.context[layer]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+
+
+
+    def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            cache = get_attr_factory(layer, "cache_%s" % w_, lambda: gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
+            cache = self.context[layer]["cache_%s" % w_]
 
             if self.gpudirect:
                 rows, cols = w.shape[0], np.prod(w.shape[1:])
@@ -82,6 +97,3 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
                 self.update_gpu(w.ary, dw.ary, cache, np.float32(self.learning_rate),
                                 np.float32(self.decay), np.float32(self.rho),
                                 np.float32(self.epsilon), stream=layer.stream_2)
-
-            if not hasattr(layer, "cache_%s" % w_):
-                setattr(layer, "cache_%s" % w_, cache)
