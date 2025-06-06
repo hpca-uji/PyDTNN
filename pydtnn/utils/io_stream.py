@@ -19,6 +19,7 @@ from collections import abc, deque
 
 
 __all__ = (
+    "byteview",
     "Stream",
     "Packer",
     "Serializer"
@@ -75,8 +76,14 @@ class Stream(io.BufferedIOBase):
         """Number of bytes held in stream"""
         return sum(map(len, self._chunks))
 
+    def unread(self, b: abc.Buffer) -> int:
+        """Unread bytes into the steam"""
+        chunk = byteview(b)
+        size = self.unreadchunk(chunk)
+        return size
+
     def unreadchunk(self, chunk: memoryview) -> int:
-        """Unread a chunk from the steam"""
+        """Unread a chunk into the steam"""
         size = len(chunk)
         if size > 0:
             self._chunks.appendleft(chunk)

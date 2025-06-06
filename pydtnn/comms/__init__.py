@@ -75,7 +75,7 @@ from concurrent.futures import Future
 
 
 from pydtnn.utils import UUID_NIL, parse_bool
-from pydtnn.utils.io_stream import Packer, Serializer, Stream
+from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
 __all__ = (
@@ -114,12 +114,13 @@ class ConnectionState(enum.Flag):
 class ConnectionData:
     """Connection data"""
 
-    def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1) -> None:
+    def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1, view_size: int = 64 * 1024 ** 1 - 1) -> None:
         """Initialize connection state"""
         self.peer = UUID_NIL
         self.state = ConnectionState(value=0)
 
-        self._buffer = memoryview(bytearray(buffer_size))
+        self._buffer = byteview(bytearray(buffer_size))
+        self._view_size = min(view_size, buffer_size)
         self._packer = Packer()
 
         self.put_queue = SimpleQueue[Stream]()
@@ -149,7 +150,7 @@ class ConnectionData:
         view = self.put_buffer.read1(len(self._buffer))
 
         # View if large or end chunks
-        if len(view) == len(self._buffer) or self.put_buffer.empty():
+        if len(view) >= self._view_size or self.put_buffer.empty():
             return view
 
         # Buffer if multiple small chunks
