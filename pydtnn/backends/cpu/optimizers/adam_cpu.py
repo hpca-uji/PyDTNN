@@ -21,28 +21,64 @@ import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import Adam
-from pydtnn.utils import get_attr_factory
 from pydtnn.backends.cpu.layers import LayerCPU
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.optimizers import Layer_types
+else: Layer_types = None
+
 class AdamCPU(OptimizerCPU, Adam):
+    
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        super().__init__(list_layers)
+
+        for layer in list_layers:
+            self.context[layer] = dict[str, int | np.ndarray]()
+            self.context[layer]["it"] = 0
+
+            for w_ in layer.grad_vars.keys():
+                w = getattr(layer, w_)
+                self.context[layer]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
+                self.context[layer]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
 
     def update(self, layer: LayerCPU) -> None:
-        lr = self.learning_rate
-        it = layer.get_and_increase_optimizer_it()
+        self.context[layer]["it"] += 1
+        it = self.context[layer]["it"]
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            m = get_attr_factory(layer, "m_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
-            v = get_attr_factory(layer, "v_%s" % w_, lambda: np.zeros_like(w, dtype=layer.model.dtype))
+            w: np.ndarray
+            dw: np.ndarray
+            # Momentum of the weight or bias of the given layer
+            m:np.ndarray = self.context[layer]["m_%s" % w_]
+            # Velocity of the weight or bias of the given layer
+            v:np.ndarray = self.context[layer]["v_%s" % w_]
 
-            m = self.beta1 * m + (1 - self.beta1) * dw
-            v = self.beta2 * v + (1 - self.beta2) * dw ** 2
+            # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
-            mt = m / (1 - self.beta1 ** it)
-            vt = v / (1 - self.beta2 ** it)
+            # m = beta1 * m + (1 - beta1) * dw
+            m *= self.beta1 
+            m += (1 - self.beta1) * dw
 
-            w -= lr * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
+            # v = beta2 * v + (1 - beta2) * dw ** 2
+            v *= self.beta2 
+            _dw = dw ** 2
+            _dw *= (1 - self.beta2)
+            v =+ _dw            
 
-            setattr(layer, w_, w)
-            setattr(layer, "m_%s" % w_, m)
-            setattr(layer, "v_%s" % w_, v)
+            mt:np.ndarray = m / (1 - self.beta1 ** it)
+            vt:np.ndarray = v / (1 - self.beta2 ** it)
+
+            # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
+            w -= (self.learning_rate * self.decay) * w
+            vt += self.epsilon
+            mt /= np.sqrt(vt)
+            mt *= self.learning_rate
+            w -= mt
+
+            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
+            #del _w
+            #del _dw
+            #del mt
+            #del vt

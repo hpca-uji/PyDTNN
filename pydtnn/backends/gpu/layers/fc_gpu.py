@@ -43,6 +43,7 @@ class FCGPU(LayerGPU, FC):
         self.stream_2 = drv.Stream()
 
         # Weights
+        # TODO : Check if "self.weights_cpu" is necessary
         self.weights_cpu = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)

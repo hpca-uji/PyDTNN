@@ -22,6 +22,12 @@ from abc import ABC, abstractmethod
 from pydtnn.backends import PromoteToBackendMixin
 import numpy as np
 
+from pydtnn.layers import Layer
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.optimizers import Layer_types
+else: Layer_types = None    
+
 class Optimizer(PromoteToBackendMixin, ABC):
     """
     Optimizer abstract base class
@@ -31,7 +37,12 @@ class Optimizer(PromoteToBackendMixin, ABC):
         super().__init__()
         self.learning_rate:float = learning_rate
         self.dtype:np.dtype = dtype
+        self.context:dict = dict()
 
     @abstractmethod
-    def update(self, layer):
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
+
+    @abstractmethod
+    def update(self, layer: Layer) -> None:
         pass
