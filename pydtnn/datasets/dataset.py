@@ -60,9 +60,9 @@ class _BackgroundGenerator(threading.Thread):
         return self
 
 class DatasetEnum(IntEnum):
-    TRAIN = auto()
-    VAL = auto()
-    TEST = auto()
+    TRAIN = 0
+    VAL = 1
+    TEST = 2
 # --- END DatasetEnum --- #
 
 
@@ -97,6 +97,10 @@ class Dataset(ABC):
                                                    max(self.model.nprocs, 
                                                        int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
+
+        print(f"{DatasetEnum.TRAIN=}")
+        print(f"{DatasetEnum.TEST=}")
+        print(f"{DatasetEnum.VAL=}")
 
         self.input_shape = list(input_shape)
         self.output_shape = list(output_shape)
