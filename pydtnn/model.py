@@ -304,7 +304,7 @@ class Model:
         self.optimizer = get_optimizer(self)
         self.lr_schedulers = get_lr_schedulers(self)
         # Metrics list
-        self.metrics_list = [m for m in self.metrics.replace(" ", "").split(",")]
+        self.metrics_list = [m for m in self.metrics.replace(" ", "").split(",") if m]
         # Private attributes
         self._evaluate_round = 0
         self._initialized = False
@@ -313,9 +313,9 @@ class Model:
         self.history = None
         # Syncronization parameters
         if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
-            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+            raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
-            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+            raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized.")
         # Read the model (must be the last action, as it calls self._initialize() if there is a model)
         self.model_name = self.kwargs.get("model_name")
         if self.model_name:
