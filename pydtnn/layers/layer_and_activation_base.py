@@ -44,7 +44,7 @@ class LayerAndActivationBase(ABC):
         self.grad_vars:dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
-        self.paths: list[list[LayerAndActivationBase]] = []
+        self.paths: list[list[Self]] = []
         self.need_dx: bool = True
         self.reqs_allred = {}
         # The next attributes will be initialized later
