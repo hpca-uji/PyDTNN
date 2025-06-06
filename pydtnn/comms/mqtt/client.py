@@ -118,10 +118,9 @@ class Client(Protocol):
         state = self._state
 
         state.put_flush()
-        if state.put_buffer.empty():
-            return
-        with state.put_read() as view:
-            self._publish(f"c2s/{self._id.hex}", bytes(view))
+        while not state.put_buffer.empty():
+            with state.put_read() as view:
+                self._publish(f"c2s/{self._id.hex}", bytes(view))
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:
         """Publish data to server"""
