@@ -31,7 +31,6 @@ else: Layer_types = None
 class RMSPropCPU(OptimizerCPU, RMSProp):
 
     def initialize(self, list_layers: list[Layer_types]) -> None:
-        super().__init__(list_layers)
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
@@ -65,5 +64,5 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
             w -= _dw
 
             # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            #del _cache
-            #del _dw
+            del _cache
+            del _dw
