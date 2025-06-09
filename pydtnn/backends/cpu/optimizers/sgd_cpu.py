@@ -27,11 +27,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.optimizers import Layer_types
 else: Layer_types = None
+from copy import deepcopy
 
 class SGDCPU(OptimizerCPU, SGD):
 
     def initialize(self, list_layers: list[Layer_types]) -> None:
-        super().__init__(list_layers)
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
@@ -49,7 +49,7 @@ class SGDCPU(OptimizerCPU, SGD):
             w: np.ndarray
             dw: np.ndarray
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
-
+            
             # velocity = self.momentum * velocity + dw
             velocity *= self.momentum 
             velocity += dw
@@ -58,7 +58,7 @@ class SGDCPU(OptimizerCPU, SGD):
             #    w -= self.learning_rate * (self.decay * w + dw + self.momentum * velocity)
             #else:
             #    w -= self.learning_rate * (self.decay * w + velocity)
-            v:np.ndarray = velocity.copy()
+            v:np.ndarray = deepcopy(velocity)
             if self.nesterov:
                 v *= self.momentum
                 v += dw
@@ -67,7 +67,6 @@ class SGDCPU(OptimizerCPU, SGD):
             _w += v
             w -= _w
 
-
             # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            #del v
-            #del _w
+            del v
+            del _w

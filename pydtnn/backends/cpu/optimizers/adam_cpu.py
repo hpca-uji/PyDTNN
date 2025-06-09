@@ -31,7 +31,6 @@ else: Layer_types = None
 class AdamCPU(OptimizerCPU, Adam):
     
     def initialize(self, list_layers: list[Layer_types]) -> None:
-        super().__init__(list_layers)
 
         for layer in list_layers:
             self.context[layer] = dict[str, int | np.ndarray]()
@@ -46,7 +45,7 @@ class AdamCPU(OptimizerCPU, Adam):
         self.context[layer]["it"] += 1
         it = self.context[layer]["it"]
 
-        for w_, dw_ in layer.grad_vars.items():
+        for w_, dw_ in layer.grad_vars.items():            
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             w: np.ndarray
             dw: np.ndarray
@@ -56,12 +55,11 @@ class AdamCPU(OptimizerCPU, Adam):
             v:np.ndarray = self.context[layer]["v_%s" % w_]
 
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
-
-            # m = beta1 * m + (1 - beta1) * dw
+            # m = self.beta1 * m + (1 - self.beta1) * dw
             m *= self.beta1 
             m += (1 - self.beta1) * dw
 
-            # v = beta2 * v + (1 - beta2) * dw ** 2
+            # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
             v *= self.beta2 
             _dw = dw ** 2
             _dw *= (1 - self.beta2)
@@ -78,7 +76,6 @@ class AdamCPU(OptimizerCPU, Adam):
             w -= mt
 
             # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            #del _w
-            #del _dw
-            #del mt
-            #del vt
+            del _dw
+            del mt
+            del vt

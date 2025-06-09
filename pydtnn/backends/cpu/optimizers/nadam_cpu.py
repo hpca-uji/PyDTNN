@@ -31,7 +31,6 @@ else: Layer_types = None
 class NadamCPU(OptimizerCPU, Nadam):
 
     def initialize(self, list_layers: list[Layer_types]) -> None:
-        super().__init__(list_layers)
 
         for layer in list_layers:
             self.context[layer] = dict[str, int | np.ndarray]()
@@ -55,25 +54,25 @@ class NadamCPU(OptimizerCPU, Nadam):
 
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
-            #m = beta1 * m + (1 - beta1) * dw
+            #m = self.beta1 * m + (1 - self.beta1) * dw
             m *= self.beta1
             _dw = (1 - self.beta1) * dw
             m += _dw
-            #v = beta2 * v + (1 - beta2) * dw ** 2
+            #v = self.beta2 * v + (1 - self.beta2) * dw ** 2
             v *= self.beta2
             _dw = dw ** 2
             _dw *= (1 - self.beta2) 
             v += _dw
 
-            #mt = (m + (1 - beta1) * dw) / (1 - beta1 ** it)
+            #mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
             mt = (1 - self.beta1) * dw
             mt /= (1 - self.beta1 ** it)
             mt += m
 
-            #vt = v / (1 - beta2 ** it)
+            #vt = v / (1 - self.beta2 ** it)
             vt = v / (1 - self.beta2 ** it)
 
-            #w -= self.learning_rate * (decay * w + (mt / np.sqrt(vt + epsilon)))
+            #w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon)))
             w -= (self.learning_rate * self.decay) * w
             vt += self.epsilon
             mt /= np.sqrt(vt)
@@ -81,5 +80,5 @@ class NadamCPU(OptimizerCPU, Nadam):
             w -= mt
 
             # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            #del mt
-            #del vt
+            del mt
+            del vt
