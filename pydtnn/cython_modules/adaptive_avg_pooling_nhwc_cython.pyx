@@ -4,12 +4,12 @@ cimport cython
 from cython.parallel import prange
 
 # --- COMMON --- #
-ctypedef fused supported_types_t:
+ctypedef fused npDT:
     np.int8_t
     np.float32_t
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
-# -- END supported_types_t -- #
+# -- END npDT -- #
 
 @cython.cdivision(True)
 cdef inline int index_first_element(int index, int dim_in, int dim_out) nogil:
@@ -43,28 +43,28 @@ def adaptive_avg_pooling_fwd_nhwc_cython(np.ndarray x, int new_h, int new_w) -> 
         raise TypeError(f"Function: \"adaptive_avg_pooling_fwd_nhwc_cython\". Error: {e}")
 # --- END adaptive_avg_pooling_fwd_nchw_cython --- #
 
-def avg_pooling(np.ndarray[supported_types_t, ndim=4] pooled_x, 
-                 np.ndarray[supported_types_t, ndim=4] x, 
+def avg_pooling(np.ndarray[npDT, ndim=4] pooled_x, 
+                 np.ndarray[npDT, ndim=4] x, 
                  int n, int c, int h, int w, int new_h, int new_w):
 
-    cdef supported_types_t[:,:,:,:] pooled_x_view = pooled_x    
-    cdef const supported_types_t[:,:,:,:] x_view = x
+    cdef npDT[:,:,:,:] pooled_x_view = pooled_x    
+    cdef const npDT[:,:,:,:] x_view = x
     _avg_pooling(pooled_x_view, x_view, n, c, h, w, new_h, new_w)
 # --- END avg_pooling --- #
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-# NOTE: "supported_types_t[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
-cdef _avg_pooling(supported_types_t[:, :, :, :] pooled_x,
-                  const supported_types_t[:, :, :, :] x,
+# NOTE: "npDT[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
+cdef _avg_pooling(npDT[:, :, :, :] pooled_x,
+                  const npDT[:, :, :, :] x,
                   int n, int c, int h, int w,
                   int new_h, int new_w):
                   
     cdef int h_start, h_end, w_start, w_end
     cdef int nn, cc, hi, wi, i, j
     cdef int elements_h, elements
-    cdef supported_types_t add
+    cdef npDT add
 
     for nn in prange(n, nogil=True):
         for cc in range(c):
@@ -77,7 +77,7 @@ cdef _avg_pooling(supported_types_t[:, :, :, :] pooled_x,
                     w_end = index_last_element(wi, w, new_w)
                     elements = elements_h * (w_end - w_start)
     
-                    add = <supported_types_t> 0.0
+                    add = <npDT> 0.0
                     for i in range(h_start, h_end):
                         for j in range(w_start, w_end):
                             # If it is not done in this way (e.g.: add += x[nn, cc, i, j]),
@@ -109,28 +109,28 @@ def adaptive_avg_pooling_bwd_nhwc_cython(np.ndarray dy, int new_h, int new_w) ->
         raise TypeError(f"Function: \"adaptive_avg_pooling_bwd_nhwc_cython\". Error: {e}")
 # --- END adaptive_avg_pooling_bwd_nhwc_cython --- #
 
-def backward_avg_pooling(np.ndarray[supported_types_t, ndim=4] dx, 
-                         np.ndarray[supported_types_t, ndim=4] dy, 
+def backward_avg_pooling(np.ndarray[npDT, ndim=4] dx, 
+                         np.ndarray[npDT, ndim=4] dy, 
                          int n, int c, int h, int w, int new_h, int new_w):
 
-    cdef supported_types_t[:,:,:,:] y_view = dx
-    cdef const supported_types_t[:,:,:,:] x_view = dy
+    cdef npDT[:,:,:,:] y_view = dx
+    cdef const npDT[:,:,:,:] x_view = dy
     _backward_avg_pooling(y_view, x_view, n, c, h, w, new_h, new_w)
 # --- END avg_pooling --- #
 
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-# NOTE: "supported_types_t[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
-cdef _backward_avg_pooling(supported_types_t[:, :, :, :] dx,
-                  const supported_types_t[:, :, :, :] dy,
+# NOTE: "npDT[:, :, :, :]" this is a view of a 4 dimensions array-like object of one of the supported types.
+cdef _backward_avg_pooling(npDT[:, :, :, :] dx,
+                  const npDT[:, :, :, :] dy,
                   int n, int c, int h, int w,
                   int new_h, int new_w):
                   
     cdef int h_start, h_end, w_start, w_end
     cdef int nn, cc, ho, wo, i, j
     cdef int elements_h, elements
-    cdef supported_types_t delta
+    cdef npDT delta
 
     for nn in prange(n, nogil=True):
         for cc in range(c):
