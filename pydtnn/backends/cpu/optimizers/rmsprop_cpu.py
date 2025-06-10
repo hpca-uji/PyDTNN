@@ -34,7 +34,7 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
-                    
+
             if len(list_grad_vars) != 0:
                 self.context[layer] = dict[str, np.ndarray]()
                 for w_ in list_grad_vars:

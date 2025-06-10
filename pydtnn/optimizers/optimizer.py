@@ -26,7 +26,7 @@ from pydtnn.layers import Layer
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.optimizers import Layer_types
-else: Layer_types = None    
+else: Layer_types = None
 
 class Optimizer(PromoteToBackendMixin, ABC):
     """

@@ -63,7 +63,7 @@ class AdamCPU(OptimizerCPU, Adam):
             v *= self.beta2 
             _dw = dw ** 2
             _dw *= (1 - self.beta2)
-            v =+ _dw            
+            v =+ _dw
 
             mt:np.ndarray = m / (1 - self.beta1 ** it)
             vt:np.ndarray = v / (1 - self.beta2 ** it)

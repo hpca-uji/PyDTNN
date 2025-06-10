@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.optimizers import Layer_types
 else: Layer_types = None
-from copy import deepcopy
 
 class SGDCPU(OptimizerCPU, SGD):
 
@@ -51,20 +50,21 @@ class SGDCPU(OptimizerCPU, SGD):
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
             
             # velocity = self.momentum * velocity + dw
-            velocity *= self.momentum 
+            velocity *= self.momentum
             velocity += dw
             
             #if self.nesterov:
             #    w -= self.learning_rate * (self.decay * w + dw + self.momentum * velocity)
             #else:
             #    w -= self.learning_rate * (self.decay * w + velocity)
-            v:np.ndarray = deepcopy(velocity)
             if self.nesterov:
-                v *= self.momentum
+                v = velocity * self.momentum
                 v += dw
-            v *= self.learning_rate
-            _w = w * (self.learning_rate * self.decay)
+            else:
+                v = velocity
+            _w = w * self.decay
             _w += v
+            _w *= self.learning_rate
             w -= _w
 
             # TODO: check if "del" worths to reduce the memory without increasing the execution time.
