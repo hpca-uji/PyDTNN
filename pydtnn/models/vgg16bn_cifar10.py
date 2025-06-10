@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,29 +17,8 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import math
+from vgg11bn import create_vgg11bn
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
-from ..activations import *
-from ..layers import *
-
-
-def create_vgg16bn_cifar10(model):
-    _ = model.add
-    _(Input(shape=(32, 32, 3)))
-    conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
-    for nlayers, nfilters in conv_pattern:
-        for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer="he_uniform"))
-            _(BatchNormalization())
-            _(Relu())
-        _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(Flatten())
-    _(Dropout(rate=0.5))
-    _(FC(shape=(512,), weights_initializer="he_uniform"))
-    _(BatchNormalization())
-    _(Relu())
-    _(Dropout(rate=0.5))
-    _(FC(shape=(512,), weights_initializer="he_uniform"))
-    _(BatchNormalization())
-    _(Relu())
-    _(FC(shape=(10,), activation="softmax", weights_initializer="he_uniform"))
+def create_vgg11bn_cifar16() -> list[LayerAndActivationBase]:
+    return create_vgg11bn(input_shape=(32, 32, 3), output_shape=(10,))

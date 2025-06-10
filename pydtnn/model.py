@@ -540,6 +540,11 @@ class Model:
             self.add(layer.act())
     # --- END add --- #
 
+    def add_layers(self, list_layers: list[LayerAndActivationBase]) -> None:
+        for layer in list_layers:
+            self.add(layer)
+    # --- END add_layers ---
+
     def get_all_layers(self, from_layers: list[LayerAndActivationBase] | None = None) -> list[LayerAndActivationBase]:
         if from_layers is None:
             from_layers = self.layers

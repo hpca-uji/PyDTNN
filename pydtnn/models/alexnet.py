@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -18,11 +18,13 @@
 #
 
 from ..layers import *
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
-
-def create_alexnet(model):
-    _ = model.add
-    _(Input(shape=(227, 227, 3)))
+def create_alexnet(input_shape:tuple[int, int, int]=(227, 227, 3), 
+                   output_shape:tuple[int, ...] = (1000,)) -> list[LayerAndActivationBase]:
+    list_layers:list[LayerAndActivationBase] = list()
+    _ = list_layers.append
+    _(Input(shape = input_shape))
     _(Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation="relu"))
     _(MaxPool2D(pool_shape=(3, 3), stride=2))
     _(Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation="relu"))
@@ -36,4 +38,6 @@ def create_alexnet(model):
     _(Dropout(rate=0.5))
     _(FC(shape=(4096,), activation="relu"))
     _(Dropout(rate=0.5))
-    _(FC(shape=(1000,), activation="softmax"))
+    _(FC(shape = output_shape, activation="softmax"))
+
+    return list_layers
