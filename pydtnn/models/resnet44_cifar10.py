@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,40 +17,8 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ..activations import *
-from ..layers import *
+from resnet44 import create_resnet44
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
-
-def create_resnet44_cifar10(model):
-    _ = model.add
-    _(Input(shape=(32, 32, 3)))
-    _(Conv2D(nfilters=16, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"))
-    _(BatchNormalization())
-
-    layout = [[16, 9, 1], [32, 9, 2], [64, 9, 2]]  # Resnet-44
-    for n_filt, res_blocks, stride in layout:
-        for r in range(res_blocks):
-            if r > 0:
-                stride = 1
-            _(AdditionBlock(
-                [
-                    Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
-                           weights_initializer="he_uniform"),
-                    BatchNormalization(),
-                    Relu(),
-                    Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1,
-                           weights_initializer="he_uniform"),
-                    BatchNormalization()
-                ],
-                [
-                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer="he_uniform"),
-                    BatchNormalization()
-                ] if stride != 1 else []))
-            _(Relu())
-
-    _(AveragePool2D(pool_shape=(0, 0)))  # Global average pooling 2D
-    _(Flatten())
-    _(FC(shape=(64,)))
-    _(BatchNormalization())
-    _(Relu())
-    _(FC(shape=(10,), activation="softmax"))
+def create_resnet44_cifar10() -> list[LayerAndActivationBase]:
+    return create_resnet44(input_shape=(32, 32, 3), output_shape=(10,))

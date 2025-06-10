@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,16 +17,16 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import math
-
 from ..activations import *
 from ..layers import *
 
 
-def create_densenet_cifar10(model):
-    _ = model.add
+def create_densenet_cifar10(input_shape: tuple[int, int, int] = (32, 32, 3), 
+                            output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
+    list_layers: list[layer.LayerAndActivationBase] = list()
+    _ = list_layers.append
 
-    _(Input(shape=(32, 32, 3)))
+    _(Input(shape= input_shape))
 
     blocks, growth_rate = [6, 12, 24, 16], 12
 
@@ -62,4 +62,6 @@ def create_densenet_cifar10(model):
     _(Relu())
     _(AveragePool2D(pool_shape=(4, 4)))
     _(Flatten())
-    _(FC(shape=(10,), activation="softmax"))
+    _(FC(shape= output_shape, activation="softmax"))
+
+    return list_layers
