@@ -112,6 +112,18 @@ packages, and enable the protocol with::
 
     $ pip install -r requirements_mqtt.txt
     $ export PYDTNN_COMM=mqtt
+    
+Optionally, if you are going to use MQTT, you should have installed a MQTT broker
+server, install the required Python packages, and enable the protocol with::
+
+    $ pip install -r requirements_mqtt.txt
+    $ export PYDTNN_COMM=mqtt
+
+Optionally, if you are going to use SSL/TLS, you should enable the protocol with::
+
+    $ export PYDTNN_COMM_SSL=yes
+    $ export PYDTNN_COMM_SSL_CERT=comms/ssl/key.pem  # server private key
+    $ export PYDTNN_COMM_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
 
 Launcher options
 ----------------
