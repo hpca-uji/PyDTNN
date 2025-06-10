@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from mobilenetv1 import create_mobilenetv1
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_mobilenetv1_cifar10() -> list[LayerAndActivationBase]:
-    return create_mobilenetv1(input_shape=(32, 32, 3), output_shape=(10,))
+from mobilenetv1 import create_mobilenetv1 as create_mobilenetv1

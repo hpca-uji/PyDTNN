@@ -316,14 +316,19 @@ class Model:
             raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized.")
-        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
-        self.model_name = self.kwargs.get("model_name")
-        if self.model_name:
-            self._read_model(self.model_name)
+        # Encryption
+        if self.encryption_name:
+            self._init_crypt(self.encryption_name)
+        else:
+            self._crypt = None
         # Dataset
         self.dataset_name = self.kwargs.get("dataset_name")
         if self.dataset_name:
             self.dataset = get_dataset(self)
+        # Read the model (must be the last action, as it calls self._initialize() if there is a model)
+        self.model_name = self.kwargs.get("model_name")
+        if self.model_name:
+            self._read_model(self.model_name)
 
     @property
     def dataset_raw_path(self):
@@ -336,10 +341,32 @@ class Model:
         except KeyError:
             raise AttributeError(f"Model object has no attribute '{item}'!") from None
 
+    def _init_crypt(self, encryption_name):
+        """Inizialize encryption context"""
+        try:
+            module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
+        except ModuleNotFoundError as exc:
+            import traceback
+            print(traceback.print_exception(exc))
+            sys.exit(-1)
+
+        if self.comm_rank == 0:
+            self._crypt = module.Context()
+
+        if self.comm:
+            self._crypt = self.comm.bcast(self._crypt)
+
+        assert self._crypt is not None
+
     def _read_model(self, model_name):
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
-            getattr(model_module, f"create_{model_name}")(self)
+            # NOTE: Dataset is always in NCHW, but Layer always wants NHWC
+            c, h, w = self.dataset.input_shape
+            input_shape = (h, w, c)
+            output_shape = tuple(self.dataset.output_shape)
+            layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
+            self.add_layers(layers)
         except (ModuleNotFoundError, AttributeError):
             import traceback
             print(traceback.format_exc())

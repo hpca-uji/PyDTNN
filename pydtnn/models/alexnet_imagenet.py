@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ..layers import *
-from alexnet import create_alexnet
-
-def create_alexnet_imagenet() -> list[layer.LayerAndActivationBase]:
-    return create_alexnet(input_shape=(227, 227, 3), output_shape=(1000,))
+from alexnet import create_alexnet as create_alexnet_imagenet

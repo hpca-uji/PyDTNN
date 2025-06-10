@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from densenet201 import create_densenet201
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_densenet201_cifar10() -> list[LayerAndActivationBase]:
-    return create_densenet201(input_shape=(32, 32, 3), output_shape=(10,))
+from densenet201 import create_densenet201 as create_densenet201_cifar10

@@ -17,13 +17,16 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence
+
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
-def create_alexnet(input_shape:tuple[int, int, int]=(227, 227, 3), 
-                   output_shape:tuple[int, ...] = (1000,)) -> list[LayerAndActivationBase]:
-    list_layers:list[LayerAndActivationBase] = list()
-    _ = list_layers.append
+
+def create_alexnet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
+    _ = model.append
+
     _(Input(shape = input_shape))
     _(Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation="relu"))
     _(MaxPool2D(pool_shape=(3, 3), stride=2))
@@ -40,4 +43,4 @@ def create_alexnet(input_shape:tuple[int, int, int]=(227, 227, 3),
     _(Dropout(rate=0.5))
     _(FC(shape = output_shape, activation="softmax"))
 
-    return list_layers
+    return model

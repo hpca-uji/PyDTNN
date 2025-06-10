@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from googlenet import create_googlenet
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_googlenet_cifar10() -> list[LayerAndActivationBase]:
-    return create_googlenet(input_shape=(32, 32, 3), output_shape=(10,))
+from googlenet import create_googlenet as create_googlenet_cifar10

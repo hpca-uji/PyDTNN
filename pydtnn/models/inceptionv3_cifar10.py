@@ -17,9 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from inceptionv3 import create_inceptionv3
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_inceptionv3_cifar10() -> list[LayerAndActivationBase]:
-    # NOTE: Usually cifar10 input's shape is (32, 32, 3), but in the previous version it was (299, 299, 3).
-    return create_inceptionv3(input_shape=(299, 299, 3), output_shape=(10,))
+from inceptionv3 import create_inceptionv3 as create_inceptionv3_cifar10
