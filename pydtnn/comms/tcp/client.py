@@ -35,12 +35,14 @@ class Client(Protocol):
         # TCP
         self._socket = socket.create_connection((self._addr, self._port))
 
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
+        # self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
         if comms.SSL:
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=comms.SSL_CERT)
             self._socket = context.wrap_socket(self._socket, server_hostname=self._addr)
 
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
         self._socket.setblocking(False)
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)

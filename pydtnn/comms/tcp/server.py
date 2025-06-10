@@ -39,10 +39,13 @@ class Server(Protocol):
         # TCP
         self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
 
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
+
         if comms.SSL:
             context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SSL_CERT)
             context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
-            self._socket = context.wrap_socket(self._socket, server_side=True)
+            self._socket = context.wrap_socket(self._socket, server_side=True, do_handshake_on_connect=True)
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._new_connection)
         self._notify_selector()
@@ -50,11 +53,12 @@ class Server(Protocol):
     def _new_connection(self, sock: socket.socket, event) -> None:
         """Handle new incomming connections"""
         # NOTE: communication thead
-        sock = self._socket.accept()[0]
+        sock, _ = self._socket.accept()
         peer = uuid.uuid4()  # temporary ID
 
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
+        # sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.setblocking(False)
 
         with self._lock:
@@ -171,6 +175,7 @@ class Server(Protocol):
 
             state.get_buffer.write(data)
             self._get_flush(peer)
+            peer = state.peer
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
