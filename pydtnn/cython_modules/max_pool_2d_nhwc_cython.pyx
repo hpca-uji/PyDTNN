@@ -155,7 +155,7 @@ def max_pool_2d_bwd_nhwc_cython_inner(np.ndarray[npDT, ndim=4] y,
     cdef const npDT[:,:,:,:] y_view = y
     cdef npDT[:,:,:,:] x_view = x
 
-    max_pool_2d_bwd_nhwc_cython_inner(y_view, x_view, idx_max, n, h, w, c,
+    _max_pool_2d_bwd_nhwc_cython_inner(y_view, x_view, idx_max, n, h, w, c,
                                       hh, ww, kh, kw, 
                                       vpadding, hpadding,
                                       vstride, hstride, 
