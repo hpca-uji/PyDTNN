@@ -98,10 +98,6 @@ class Dataset(ABC):
                                                        int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
 
-        print(f"{DatasetEnum.TRAIN=}")
-        print(f"{DatasetEnum.TEST=}")
-        print(f"{DatasetEnum.VAL=}")
-
         self.input_shape = list(input_shape)
         self.output_shape = list(output_shape)
         self._initial_nsamples = [self._nsamples[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.VAL], self._nsamples[DatasetEnum.TEST]]
