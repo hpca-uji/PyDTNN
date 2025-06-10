@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,34 +22,53 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
-def argmax_cython(x, axis=0):
+# --- COMMON --- #
+ctypedef fused npDT:
+    np.int8_t
+    np.float32_t
+    np.float64_t
+    # NOTE: in order to extend the supported data types, add the new types here.
+# -- END npDT -- #
+
+def argmax_cython(x: np.ndarray, int axis=0) -> tuple(np.ndarray, tuple(np.ndarray, np.ndarray)):
+    
     if axis == 0: x = x.T
-    # if not x.flags['C_CONTIGUOUS']:
-    #     np.ascontiguousarray(x, dtype=np.float32)
-    cdef np.ndarray maxv = np.zeros((x.shape[0],), dtype=x.dtype)
-    cdef np.ndarray amax = np.zeros((x.shape[0],), dtype=np.int32)
-    cdef np.ndarray rng = np.zeros((x.shape[0],), dtype=np.int32)
 
-    if x.dtype == np.int8:
-        argmax_cython_inner_int8(x, maxv, amax, rng)
-    elif x.dtype == np.float32:
-        argmax_cython_inner_float32(x, maxv, amax, rng)
-    elif x.dtype == np.float64:
-        argmax_cython_inner_float64(x, maxv, amax, rng)
-    else:
-        raise TypeError("Type '{}' is not supported by argmax_cython!".format(str(x.dtype)))
+    maxv: np.ndarray = np.empty((x.shape[0],), dtype=x.dtype)
+    amax: np.ndarray = np.empty((x.shape[0],), dtype=np.int32)
+    rng: np.ndarray = np.empty((x.shape[0],), dtype=np.int32)    
+    
+    try:
+        argmax_cython_inner(x, maxv, amax, rng)
+        return maxv, tuple([amax, rng] if axis == 0 else [rng, amax])
 
-    return maxv, tuple([amax, rng] if axis == 0 else [rng, amax])
+    except TypeError as e:
+        raise TypeError(f"Function: \"argmax_cython\". Error: {e}")    
+# --- END argmax_cython --- #
+
+def argmax_cython_inner(np.ndarray[npDT, ndim=2] x,
+                        np.ndarray[npDT, ndim=1] maxv,
+                        np.ndarray[np.int32_t, ndim=1] amax,
+                        np.ndarray[np.int32_t, ndim=1] rng):
+
+    cdef const npDT[:,:] x_view = x
+    cdef npDT[:] maxv_view = maxv
+
+    cdef npDT minval = np.iinfo(x.dtype).min if np.issubdtype(x.dtype, np.integer) else np.finfo(x.dtype).min    
+
+    _argmax_cython_inner(x_view, maxv_view, amax, rng, minval)
+# --- END argmax_cython_inner --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef argmax_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
-                              np.ndarray[np.int8_t, ndim=1] maxv,
-                              np.ndarray[np.int32_t, ndim=1] amax,
-                              np.ndarray[np.int32_t, ndim=1] rng):
+cdef _argmax_cython_inner(const npDT[:,:] x,
+                          npDT[:] maxv,
+                          np.ndarray[np.int32_t, ndim=1] amax,
+                          np.ndarray[np.int32_t, ndim=1] rng, 
+                          npDT minval):
+
     cdef int i, j, idx_maxval
-    cdef np.int8_t maxval, minval
-    minval = np.finfo(np.int8).min
+    cdef npDT maxval
 
     for i in prange(x.shape[0], nogil=True):
         maxval, idx_maxval = minval, 0
@@ -57,37 +76,4 @@ cdef argmax_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
             if x[i, j] > maxval:
                 maxval, idx_maxval = x[i, j], j
         amax[i], maxv[i], rng[i] = idx_maxval, maxval, i
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef argmax_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
-                                 np.ndarray[np.float32_t, ndim=1] maxv,
-                                 np.ndarray[np.int32_t, ndim=1] amax,
-                                 np.ndarray[np.int32_t, ndim=1] rng):
-    cdef int i, j, idx_maxval
-    cdef np.float32_t maxval, minval
-    minval = np.finfo(np.float32).min
-
-    for i in prange(x.shape[0], nogil=True):
-        maxval, idx_maxval = minval, 0
-        for j in range(x.shape[1]):
-            if x[i, j] > maxval:
-                maxval, idx_maxval = x[i, j], j
-        amax[i], maxv[i], rng[i] = idx_maxval, maxval, i
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef argmax_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
-                                 np.ndarray[np.float64_t, ndim=1] maxv,
-                                 np.ndarray[np.int32_t, ndim=1] amax,
-                                 np.ndarray[np.int32_t, ndim=1] rng):
-    cdef int i, j, idx_maxval
-    cdef np.float64_t maxval, minval
-    minval = np.finfo(np.float64).min
-
-    for i in prange(x.shape[0], nogil=True):
-        maxval, idx_maxval = minval, 0
-        for j in range(x.shape[1]):
-            if x[i, j] > maxval:
-                maxval, idx_maxval = x[i, j], j
-        amax[i], maxv[i], rng[i] = idx_maxval, maxval, i
+# --- END _argmax_cython_inner --- #

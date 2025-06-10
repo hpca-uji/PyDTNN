@@ -17,13 +17,11 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from add_nchw_cython import add_nchw_cython
-from add_nhwc_cython import add_nhwc_cython
+from add_cython import add_nhwc_cython, add_nchw_cython
 from argmax_cython import argmax_cython
 from average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
 from average_pool_2d_nhwc_cython import average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython
-from bn_inference_cython import bn_inference_cython, bn_inference_nchw_cython
-from bn_relu_inference_cython import bn_relu_inference_cython
+from bn_inference_cython import bn_inference_cython, bn_inference_nchw_cython, bn_relu_inference_cython
 from bn_training_cython import bn_training_fwd_cython, bn_training_bwd_cython
 from depthwise_conv_nchw_cython import depthwise_conv_nchw_cython, depthwise_conv_backward_nchw_cython
 from depthwise_conv_nhwc_cython import depthwise_conv_nhwc_cython, depthwise_conv_backward_nhwc_cython
@@ -40,5 +38,12 @@ from transpose_cython import \
     transpose_0231_ikj_cython, transpose_0231_ijk_cython, \
     transpose_0312_ijk_cython, transpose_0312_ikj_cython, \
     transpose_1023_jik_cython, transpose_1023_ijk_cython
+from adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython
+from adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 from memory_cython import memoryview_index
 from decimal_cython import round
+from optimizer_adam_cython import adam_cython
+from optimizer_nadam_cython import nadam_cython
+from optimizer_rmsprop_cython import rmsprop_cython
+from optimizer_sgd_optimizer import sgd_cython
+

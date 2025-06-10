@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,136 +22,201 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
+# --- COMMON --- #
+ctypedef fused npDT:
+    np.int8_t
+    np.float32_t
+    np.float64_t
+    # NOTE: in order to extend the supported data types, add the new types here.
+# -- END npDT -- #
 
-def bn_inference_cython(x, running_mean, inv_std, gamma, beta):
+# --- Base Batch Normalization --- #
+def bn_inference_cython(x: np.ndarray, 
+                        running_mean: np.ndarray, 
+                        inv_std: np.ndarray, 
+                        gamma: np.ndarray, 
+                        beta: np.ndarray) -> np.ndarray:
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
-    shape = x.shape
 
-    cdef np.ndarray y = np.empty_like(x, order="C")
+    y: np.ndarray = np.empty_like(x, order="C", dtype=x.dtype)    
 
-    if x.dtype == np.int8:
-        bn_inference_cython_inner_int8(x, running_mean, inv_std, y, gamma, beta)
-    elif x.dtype == np.float32:
-        bn_inference_cython_inner_float32(x, running_mean, inv_std, y, gamma, beta)
-    elif x.dtype == np.float64:
-        bn_inference_cython_inner_float64(x, running_mean, inv_std, y, gamma, beta)
-    else:
-        raise TypeError(f"Type {str(x.dtype)} is not supported by bn_inference_cython!")
+    try:
+        bn_inference_cython_inner(y, x, running_mean, inv_std, gamma, beta)
+    except TypeError as e:
+        raise TypeError(f"Function: \"bn_inference_cython\". Error: {e}")    
 
-    return y
+    return y 
+# --- END bn_inference_cython --- #
+
+def bn_inference_cython_inner(np.ndarray[npDT, ndim=2] y, 
+                              np.ndarray[npDT, ndim=2] x, 
+                              np.ndarray[npDT, ndim=1] running_mean, 
+                              np.ndarray[npDT, ndim=1] inv_std, 
+                              np.ndarray[npDT, ndim=1] gamma, 
+                              np.ndarray[npDT, ndim=1] beta):
+    cdef npDT[:,:] y_view = y
+    cdef const npDT[:,:] x_view = x
+    cdef const npDT[:] running_mean_view = running_mean
+    cdef const npDT[:] inv_std_view = inv_std
+    cdef const npDT[:] gamma_view = gamma
+    cdef const npDT[:] beta_view = beta
+
+    try:
+        _bn_inference_cython_inner(y_view, x_view, running_mean_view, inv_std_view, gamma_view, beta_view)
+    except TypeError as e:
+        raise TypeError(f"Function: \"bn_inference_cython\". Error: {e}")    
+
+    return y 
+# --- END bn_inference_cython_inner --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef bn_inference_cython_inner_int8(np.ndarray[np.int8_t, ndim=2] x,
-                                    np.ndarray[np.int8_t, ndim=1] running_mean,
-                                    np.ndarray[np.int8_t, ndim=1] inv_std,
-                                    np.ndarray[np.int8_t, ndim=2] y,
-                                    np.ndarray[np.int8_t, ndim=1] gamma,
-                                    np.ndarray[np.int8_t, ndim=1] beta):
+cdef _bn_inference_cython_inner(npDT[:,:] y,
+                                const npDT[:,:] x,
+                                const npDT[:] running_mean,
+                                const npDT[:] inv_std,                               
+                                const npDT[:] gamma,
+                                const npDT[:] beta):
     cdef int i, j = 0
-    cdef int tmp
+    cdef npDT tmp
+    
     for i in prange(x.shape[0], nogil=True, schedule='static'):
         for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
             y[i, j] = (tmp * gamma[j]) + beta[j]
+# --- END _bn_inference_cython_inner --- #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef bn_inference_cython_inner_float32(np.ndarray[np.float32_t, ndim=2] x,
-                                       np.ndarray[np.float32_t, ndim=1] running_mean,
-                                       np.ndarray[np.float32_t, ndim=1] inv_std,
-                                       np.ndarray[np.float32_t, ndim=2] y,
-                                       np.ndarray[np.float32_t, ndim=1] gamma,
-                                       np.ndarray[np.float32_t, ndim=1] beta):
-    cdef int i, j
-    cdef float tmp
-    for i in prange(x.shape[0], nogil=True, schedule='static'):
-        for j in range(x.shape[1]):
-            tmp = (x[i, j] - running_mean[j]) * inv_std[j]
-            y[i, j] = (tmp * gamma[j]) + beta[j]
+# --- END Base Batch Normalization --- #
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef bn_inference_cython_inner_float64(np.ndarray[np.float64_t, ndim=2] x,
-                                       np.ndarray[np.float64_t, ndim=1] running_mean,
-                                       np.ndarray[np.float64_t, ndim=1] inv_std,
-                                       np.ndarray[np.float64_t, ndim=2] y,
-                                       np.ndarray[np.float64_t, ndim=1] gamma,
-                                       np.ndarray[np.float64_t, ndim=1] beta):
-    cdef int i, j
-    cdef double tmp
-    for i in prange(x.shape[0], nogil=True, schedule='static'):
-        for j in range(x.shape[1]):
-            tmp = (x[i, j] - running_mean[j]) * inv_std[j]
-            y[i, j] = (tmp * gamma[j]) + beta[j]
 
-def bn_inference_nchw_cython(x, running_mean, inv_std, gamma, beta):
+
+# ==================================== #
+
+
+# ==================================== #
+
+
+
+# --- NCHW Batch Normalization --- #
+def bn_inference_nchw_cython(x: np.ndarray, 
+                             running_mean: np.ndarray, 
+                             inv_std: np.ndarray, 
+                             gamma: np.ndarray, 
+                             beta: np.ndarray) -> np.ndarray:
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
-    shape = x.shape
 
-    cdef np.ndarray y = np.empty_like(x, order="C")
+    y: np.ndarray = np.empty_like(x, order="C", dtype=x.dtype)
 
-    if x.dtype == np.int8:
-        bn_inference_nchw_cython_inner_int8(x, running_mean, inv_std, y, gamma, beta)
-    elif x.dtype == np.float32:
-        bn_inference_nchw_cython_inner_float32(x, running_mean, inv_std, y, gamma, beta)
-    elif x.dtype == np.float64:
-        bn_inference_nchw_cython_inner_float64(x, running_mean, inv_std, y, gamma, beta)
-    else:
-        raise TypeError(f"Type {str(x.dtype)} is not supported by bn_inference_cython!")
+    try:
+        bn_inference_nchw_cython_inner(y, x, running_mean, inv_std, gamma, beta)
+    except TypeError as e:
+        raise TypeError(f"Function: \"bn_inference_nchw_cython\". Error: {e}")  
 
     return y
+# --- END bn_inference_nchw_cython --- #
+
+def bn_inference_nchw_cython_inner(np.ndarray[npDT, ndim=4] y,
+                                   np.ndarray[npDT, ndim=4] x,
+                                   np.ndarray[npDT, ndim=1] running_mean,
+                                   np.ndarray[npDT, ndim=1] inv_std,
+                                   np.ndarray[npDT, ndim=1] gamma,
+                                   np.ndarray[npDT, ndim=1] beta):
+
+    cdef npDT[:,:,:,:] y_view = y
+    cdef const npDT[:,:,:,:] x_view = x
+    cdef const npDT[:] running_mean_view = running_mean
+    cdef const npDT[:] inv_std_view = inv_std
+    cdef const npDT[:] gamma_view = gamma
+    cdef const npDT[:] beta_view = beta
+
+    _bn_inference_nchw_cython_inner(y_view, x_view, running_mean_view, inv_std_view, gamma_view, beta_view)
+# --- END bn_inference_nchw_cython_inner --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef bn_inference_nchw_cython_inner_int8(np.ndarray[np.int8_t, ndim=4] x,
-                                    np.ndarray[np.int8_t, ndim=1] running_mean,
-                                    np.ndarray[np.int8_t, ndim=1] inv_std,
-                                    np.ndarray[np.int8_t, ndim=4] y,
-                                    np.ndarray[np.int8_t, ndim=1] gamma,
-                                    np.ndarray[np.int8_t, ndim=1] beta):
+cdef _bn_inference_nchw_cython_inner(npDT[:,:,:,:] y,
+                                     const npDT[:,:,:,:] x,
+                                     const npDT[:] running_mean,
+                                     const npDT[:] inv_std,
+                                     const npDT[:] gamma,
+                                     const npDT[:] beta):
     cdef int i, j, h, w
-    cdef int tmp
+    cdef npDT tmp
+
     for i in prange(x.shape[0], nogil=True, schedule='static'):
         for j in range(x.shape[1]):
             for h in range(x.shape[2]):
                 for w in range(x.shape[3]):
                     tmp = (x[i, j, h, w] - running_mean[j]) * inv_std[j]
                     y[i, j, h, w] = (tmp * gamma[j]) + beta[j]
+# --- END _bn_inference_nchw_cython_inner --- #
 
+# --- END NCHW Batch Normalization --- #
+
+
+# ==================================== #
+
+
+
+# ==================================== #
+
+
+# --- END ReLU Batch Normalization --- #
+
+def bn_relu_inference_cython(x: np.ndarray, 
+                             running_mean: np.ndarray, 
+                             inv_std: np.ndarray, 
+                             gamma: np.ndarray, 
+                             beta: np.ndarray) -> np.ndarray:
+    #   xn = (x - self.running_mean) * inv_std
+    #   y = gamma * xn + beta
+    
+    y:np.ndarray = np.empty_like(x, order="C", dtype=x.dtype)
+
+    try:
+        bn_relu_inference_cython_inner(y, x, running_mean, inv_std, gamma, beta)
+    except TypeError as e:
+        raise TypeError(f"Function: \"bn_relu_inference_cython\". Error: {e}")    
+
+    return y
+# --- END bn_relu_inference_cython --- #
+
+def bn_relu_inference_cython_inner(np.ndarray[npDT, ndim=2] y,
+                                   np.ndarray[npDT, ndim=2] x,
+                                   np.ndarray[npDT, ndim=1] running_mean,
+                                   np.ndarray[npDT, ndim=1] inv_std,                                   
+                                   np.ndarray[npDT, ndim=1] gamma,
+                                   np.ndarray[npDT, ndim=1] beta):
+    
+    cdef npDT[:,:] y_view = y
+    cdef const npDT[:,:] x_view = x
+    cdef const npDT[:] running_mean_view = running_mean
+    cdef const npDT[:] inv_std_view = inv_std
+    cdef const npDT[:] gamma_view = gamma
+    cdef const npDT[:] beta_view = beta    
+
+    _bn_relu_inference_cython_inner(y_view, x_view, running_mean_view, inv_std_view, gamma_view, beta_view)
+
+# --- END bn_relu_inference_cython_inner --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef bn_inference_nchw_cython_inner_float32(np.ndarray[np.float32_t, ndim=4] x,
-                                       np.ndarray[np.float32_t, ndim=1] running_mean,
-                                       np.ndarray[np.float32_t, ndim=1] inv_std,
-                                       np.ndarray[np.float32_t, ndim=4] y,
-                                       np.ndarray[np.float32_t, ndim=1] gamma,
-                                       np.ndarray[np.float32_t, ndim=1] beta):
-    cdef int i, j, h, w
-    cdef float tmp
-    for i in prange(x.shape[0], nogil=True, schedule='static'):
-        for j in range(x.shape[1]):
-            for h in range(x.shape[2]):
-                for w in range(x.shape[3]):
-                    tmp = (x[i, j, h, w] - running_mean[j]) * inv_std[j]
-                    y[i, j, h, w] = (tmp * gamma[j]) + beta[j]
+cdef _bn_relu_inference_cython_inner(npDT[:,:] y,
+                                     const npDT[:,:] x,
+                                     const npDT[:] running_mean,
+                                     const npDT[:] inv_std,                                    
+                                     const npDT[:] gamma,
+                                     const npDT[:] beta):
+    
+    cdef int i, j = 0
+    cdef npDT tmp
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef bn_inference_nchw_cython_inner_float64(np.ndarray[np.float64_t, ndim=4] x,
-                                       np.ndarray[np.float64_t, ndim=1] running_mean,
-                                       np.ndarray[np.float64_t, ndim=1] inv_std,
-                                       np.ndarray[np.float64_t, ndim=4] y,
-                                       np.ndarray[np.float64_t, ndim=1] gamma,
-                                       np.ndarray[np.float64_t, ndim=1] beta):
-    cdef int i, j, h, w
-    cdef double tmp
     for i in prange(x.shape[0], nogil=True, schedule='static'):
         for j in range(x.shape[1]):
-            for h in range(x.shape[2]):
-                for w in range(x.shape[3]):
-                    tmp = (x[i, j, h, w] - running_mean[j]) * inv_std[j]
-                    y[i, j, h, w] = (tmp * gamma[j]) + beta[j]
+            tmp = (x[i, j] - running_mean[j]) * inv_std[j]
+            y[i, j] = max((tmp * gamma[j]) + beta[j], 0)
+# --- END _bn_relu_inference_cython_inner --- #
+
+# --- END ReLU Batch Normalization --- #
