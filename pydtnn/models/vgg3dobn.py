@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -21,9 +21,12 @@ from ..activations import *
 from ..layers import *
 
 
-def create_vgg3dobn(model):
-    _ = model.add
-    _(Input(shape=(32, 32, 3)))
+def create_vgg3dobn(input_shape: tuple[int, int, int] = (32, 32, 3), 
+                    output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
+    list_layers: list[layer.LayerAndActivationBase] = list()
+    _ = list_layers.append
+
+    _(Input(shape=input_shape))
     for n_filt, do_rate in zip([32, 64, 128], [0.2, 0.3, 0.4]):
         for i in range(2):
             _(Conv2D(nfilters=n_filt, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"))
@@ -36,5 +39,7 @@ def create_vgg3dobn(model):
     _(Relu())
     _(BatchNormalization())
     _(Dropout(rate=0.5))
-    _(FC(shape=(10,), weights_initializer="he_uniform"))
+    _(FC(shape=output_shape, weights_initializer="he_uniform"))
     _(Softmax())
+
+    return list_layers

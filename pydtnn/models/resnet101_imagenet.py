@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -23,9 +23,12 @@ from ..activations import *
 from ..layers import *
 
 
-def create_resnet101_imagenet(model):
-    _ = model.add
-    _(Input(shape=(224, 224, 3)))
+def create_resnet101_imagenet(input_shape: tuple[int, int, int] = (224, 224, 3), 
+                              output_shape: tuple[int, ...] = (1000,)) -> list[layer.LayerAndActivationBase]:
+    list_layers: list[layer.LayerAndActivationBase] = list()
+    _ = list_layers.append
+
+    _(Input(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"))
     _(BatchNormalization())
 
@@ -57,4 +60,6 @@ def create_resnet101_imagenet(model):
 
     _(AveragePool2D(pool_shape=(0, 0)))  # Global average pooling 2D
     _(Flatten())
-    _(FC(shape=(1000,), activation="softmax"))
+    _(FC(shape=output_shape, activation="softmax"))
+
+    return list_layers

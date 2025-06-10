@@ -20,9 +20,12 @@
 from ..layers import *
 
 
-def create_vgg3do(model):
-    _ = model.add
-    _(Input(shape=(32, 32, 3)))
+def create_vgg3do(input_shape: tuple[int, int, int] = (32, 32, 3), 
+                  output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
+    list_layers: list[layer.LayerAndActivationBase] = list()
+    _ = list_layers.append
+
+    _(Input(shape=input_shape))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform"))
     _(Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform"))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
@@ -38,4 +41,6 @@ def create_vgg3do(model):
     _(Flatten())
     _(FC(shape=(128,), activation="relu", weights_initializer="he_uniform"))
     _(Dropout(rate=0.2))
-    _(FC(shape=(10,), activation="softmax"))
+    _(FC(shape=output_shape, activation="softmax"))
+
+    return list_layers
