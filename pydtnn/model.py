@@ -316,11 +316,6 @@ class Model:
             raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized.")
-        # Encryption
-        if self.encryption_name:
-            self._init_crypt(self.encryption_name)
-        else:
-            self._crypt = None
         # Dataset
         self.dataset_name = self.kwargs.get("dataset_name")
         if self.dataset_name:
@@ -704,6 +699,7 @@ class Model:
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
+        self.optimizer.initialize(self.layers)
         self._initialized = True
 
     def _compute_rank_weight(self, mask):
