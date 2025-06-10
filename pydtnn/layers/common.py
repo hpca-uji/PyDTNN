@@ -17,7 +17,9 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ..model import TRAIN_MODE
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..model import TRAIN_MODE
 
 
 # @todo: will be used when layer.initialize includes model: initialize(model, id, ...)
