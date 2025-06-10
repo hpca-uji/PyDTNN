@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from vgg19 import create_vgg19
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_vgg19_imagenet10() -> list[LayerAndActivationBase]:
-    return create_vgg19(input_shape=(224, 224, 3), output_shape=(1000,))
+from vgg19 import create_vgg19 as create_vgg19_imagenet10

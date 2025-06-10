@@ -17,14 +17,16 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence
+
 from ..activations import *
 from ..layers import *
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 
-def create_resnet152(input_shape: tuple[int, int, int] = (32, 32, 3), 
-                     output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
-    list_layers: list[layer.LayerAndActivationBase] = list()
-    _ = list_layers.append
+def create_resnet152(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
+    _ = model.append
 
     _(Input(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"))
@@ -63,4 +65,4 @@ def create_resnet152(input_shape: tuple[int, int, int] = (32, 32, 3),
     _(Relu())
     _(FC(shape=output_shape, activation="softmax"))
 
-    return list_layers
+    return model

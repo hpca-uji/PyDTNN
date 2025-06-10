@@ -17,13 +17,15 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence
+
 from ..layers import *
 from layers.layer import LayerAndActivationBase
 
-def create_vgg16_cifar10(input_shape: tuple[int, int, int] = (32, 32, 3), 
-                         output_shape: tuple[int, ...] = (10,)) -> list[LayerAndActivationBase]:
-    list_layers: list[LayerAndActivationBase] = list()
-    _ = list_layers.append
+
+def create_vgg16_cifar10(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
+    _ = model.append
 
     _(Input(shape=input_shape))
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
@@ -39,4 +41,4 @@ def create_vgg16_cifar10(input_shape: tuple[int, int, int] = (32, 32, 3),
     _(Dropout(rate=0.5))
     _(FC(shape=output_shape, activation="softmax", weights_initializer="he_uniform"))
 
-    return list_layers
+    return model

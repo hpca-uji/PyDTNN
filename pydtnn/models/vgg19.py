@@ -17,13 +17,15 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence
+
 from ..layers import *
 from layers.layer import LayerAndActivationBase
 
-def create_vgg19(input_shape: tuple[int, int, int] = (224, 224, 3), 
-                 output_shape: tuple[int, ...] = (1000,)) -> list[LayerAndActivationBase]:
-    list_layers: list[LayerAndActivationBase] = list()
-    _ = list_layers.append
+
+def create_vgg19(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
+    _ = model.append
 
     _(Input(shape=input_shape))
     conv_pattern = [[2, 64], [2, 128], [4, 256], [4, 512], [4, 512]]
@@ -39,4 +41,4 @@ def create_vgg19(input_shape: tuple[int, int, int] = (224, 224, 3),
     _(Dropout(rate=0.5))
     _(FC(shape=output_shape, activation="softmax", weights_initializer="he_uniform"))
 
-    return list_layers
+    return model

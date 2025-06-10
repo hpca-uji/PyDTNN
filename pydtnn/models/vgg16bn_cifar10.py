@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from vgg11bn import create_vgg11bn
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_vgg11bn_cifar16() -> list[LayerAndActivationBase]:
-    return create_vgg11bn(input_shape=(32, 32, 3), output_shape=(10,))
+from vgg11bn import create_vgg11bn as create_vgg11bn_cifar16
