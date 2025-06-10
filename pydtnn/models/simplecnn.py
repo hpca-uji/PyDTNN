@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -20,8 +20,12 @@
 from ..layers import *
 
 
-def create_simplecnn(model):
-    _ = model.add
+def create_simplecnn(input_shape: tuple[int, int, int] = (28, 28, 1), 
+                     output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
+    list_layers: list[layer.LayerAndActivationBase] = list()
+    _ = list_layers.append
+
+    _(Input(shape=input_shape))
     _(Input(shape=(28, 28, 1)))
     _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
     _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
@@ -29,4 +33,6 @@ def create_simplecnn(model):
     _(Flatten())
     _(FC(shape=(128,), activation="relu"))
     _(Dropout(rate=0.5))
-    _(FC(shape=(10,), activation="softmax"))
+    _(FC(shape=output_shape, activation="softmax"))
+
+    return list_layers

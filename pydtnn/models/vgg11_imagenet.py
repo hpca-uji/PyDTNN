@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,21 +17,8 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from ..layers import *
+from vgg11 import create_vgg11
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
-
-def create_vgg11_imagenet(model):
-    _ = model.add
-    _(Input(shape=(224, 224, 3)))
-    conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
-    for nlayers, nfilters in conv_pattern:
-        for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation="relu",
-                     weights_initializer="he_uniform"))
-        _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(Flatten())
-    _(FC(shape=(4096,), activation="relu", weights_initializer="he_uniform"))
-    _(Dropout(rate=0.5))
-    _(FC(shape=(4096,), activation="relu", weights_initializer="he_uniform"))
-    _(Dropout(rate=0.5))
-    _(FC(shape=(1000,), activation="softmax", weights_initializer="he_uniform"))
+def create_vgg11_imagenet10() -> list[LayerAndActivationBase]:
+    return create_vgg11(input_shape=(224, 224, 3), output_shape=(1000,))

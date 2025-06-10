@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -18,11 +18,14 @@
 #
 
 from ..layers import *
+from layers.layer import LayerAndActivationBase
 
+def create_vgg16(input_shape: tuple[int, int, int] = (224, 224, 3), 
+                 output_shape: tuple[int, ...] = (1000,)) -> list[LayerAndActivationBase]:
+    list_layers: list[LayerAndActivationBase] = list()
+    _ = list_layers.append
 
-def create_vgg16(model):
-    _ = model.add
-    _(Input(shape=(224, 224, 3)))
+    _(Input(shape=input_shape))
 
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
@@ -35,4 +38,6 @@ def create_vgg16(model):
     _(Dropout(rate=0.5))
     _(FC(shape=(4096,), activation="relu"))
     _(Dropout(rate=0.5))
-    _(FC(shape=(1000,), activation="softmax"))
+    _(FC(output_shape, activation="softmax"))
+
+    return list_layers

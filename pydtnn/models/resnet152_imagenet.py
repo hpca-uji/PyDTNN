@@ -23,9 +23,12 @@ from ..activations import *
 from ..layers import *
 
 
-def create_resnet152_imagenet(model):
-    _ = model.add
-    _(Input(shape=(224, 224, 3)))
+def create_resnet152_imagenet(input_shape: tuple[int, int, int] = (224, 224, 3), 
+                              output_shape: tuple[int, ...] = (1000,)) -> list[layer.LayerAndActivationBase]:
+    list_layers: list[layer.LayerAndActivationBase] = list()
+    _ = list_layers.append
+
+    _(Input(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"))
     _(BatchNormalization())
 
@@ -57,4 +60,6 @@ def create_resnet152_imagenet(model):
 
     _(AveragePool2D(pool_shape=(0, 0)))  # Global average pooling 2D
     _(Flatten())
-    _(FC(shape=(1000,), activation="softmax"))
+    _(FC(shape=output_shape, activation="softmax"))
+
+    return list_layers
