@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -20,13 +20,29 @@
 from abc import ABC, abstractmethod
 
 from pydtnn.backends import PromoteToBackendMixin
+import numpy as np
 
+from pydtnn.layers import Layer
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.optimizers import Layer_types
+else: Layer_types = None
 
 class Optimizer(PromoteToBackendMixin, ABC):
     """
     Optimizer abstract base class
     """
 
+    def __init__(self, learning_rate:float = 1e-2, dtype:np.dtype=np.float32):
+        super().__init__()
+        self.learning_rate:float = learning_rate
+        self.dtype:np.dtype = dtype
+        self.context:dict = dict()
+
     @abstractmethod
-    def update(self, layer):
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
+
+    @abstractmethod
+    def update(self, layer: Layer) -> None:
         pass

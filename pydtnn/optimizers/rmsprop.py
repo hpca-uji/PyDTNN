@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -29,10 +29,10 @@ class RMSProp(Optimizer, ABC):
     RMSProp optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0, dtype=np.float32):
-        super().__init__()
-        self.learning_rate = learning_rate
+    def __init__(self, learning_rate:float=1e-2, rho:float=0.9, epsilon:float=1e-7,
+                 decay:float=0.0, dtype:np.dtype=np.float32):
+        super().__init__(learning_rate=learning_rate, dtype=dtype)
         self.rho = rho
         self.epsilon = epsilon
         self.decay = decay
-        self.dtype = dtype
+
