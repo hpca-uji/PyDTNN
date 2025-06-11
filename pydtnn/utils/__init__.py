@@ -270,19 +270,31 @@ def string_substitute(template, /, **mappings):
     return string.Template(template).safe_substitute(mappings)
 
 
-def funcdebug(func):
+def debug_stack():
+    """Get stack trace"""
+    stack = inspect.stack()
+    try:
+        context = "|".join(
+            f"{frame_info.frame.f_globals["__name__"]}.{frame_info.function}:{frame_info.lineno}"
+            for frame_info in stack[1:]
+        )
+    finally:
+        del stack
+    print(f"{context} from {os.getpid()}:{threading.get_native_id()}")
+
+
+def debug_func(func):
     """Wraps a functions and traces the calls"""
     log = print
-    # log = lambda msg: None  # noqa: E731
 
     @functools.wraps(func)
     def wrapper(*args, **kwds):
         header = "DEBUG"
-        frame = inspect.stack()[1]
+        frame_info = inspect.stack()[1]
         try:
-            context = f"{func.__qualname__}{args!r}{kwds!r} from {frame.frame.f_globals["__name__"]}.{frame.function}:{frame.lineno} from {os.getpid()}:{threading.get_native_id()}"
+            context = f"{func.__qualname__}{args!r}{kwds!r} from {frame_info.frame.f_globals["__name__"]}.{frame_info.function}:{frame_info.lineno} from {os.getpid()}:{threading.get_native_id()}"
         finally:
-            del frame
+            del frame_info
         log(f"{header}: Call {context}")
         try:
             result = func(*args, **kwds)
