@@ -50,7 +50,7 @@ def im2col_1ch_nchw_cython(x: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cols: np.ndarray = np.empty((kh * kw, n * c * hh * ww), dtype=x.dtype)
+    cols: np.ndarray = np.zeros((kh * kw, n * c * hh * ww), dtype=x.dtype)
 
     try:
         im2col_1ch_nchw_cython_inner(cols, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
@@ -119,7 +119,7 @@ def col2im_1ch_nchw_cython(cols: np.ndarray,
     cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
     cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
 
-    x: np.ndarray = np.empty((n, c, h, w), dtype=cols.dtype)
+    x: np.ndarray = np.zeros((n, c, h, w), dtype=cols.dtype)
 
     try:
         col2im_1ch_nchw_cython_inner(cols, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
