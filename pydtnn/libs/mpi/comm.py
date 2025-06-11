@@ -207,7 +207,11 @@ class AllReduceContext[T](OperationContext[T]):
 
     def apply(self, objs: coll_abc.Mapping[Rank, T]) -> T:
         """Apply operation over objects"""
-        return sum(objs.values())  # type: ignore (T should be addable)
+        match self.op:
+            case ReduceOperation.SUM:
+                return sum(objs.values())  # type: ignore (T should be addable)
+            case _:
+                raise NotImplementedError(f"op with not {self.op}")
 
 
 @dataclass(slots=True, frozen=True)
