@@ -50,7 +50,7 @@ def im2col_nchw_cython(x: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cols: np.ndarray = np.empty((c * kh * kw, n * hh * ww), dtype=x.dtype)
+    cols: np.ndarray = np.zeros((c * kh * kw, n * hh * ww), dtype=x.dtype)
 
     try:
         im2col_nchw_cython_inner(cols, x, n, c, h, w, hh, ww, kh, kw, vpadding, hpadding,

@@ -45,10 +45,10 @@ def bn_training_fwd_cython(x: np.ndarray,
                            float momentum, 
                            float eps) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
 
-    y:np.ndarray   = np.empty_like(x, dtype=x.dtype, order="C")
-    xn:np.ndarray  = np.empty_like(x, dtype=x.dtype, order="C")
-    xc:np.ndarray  = np.empty_like(x, dtype=x.dtype, order="C")
-    std:np.ndarray = np.empty((x.shape[1],), dtype=x.dtype)
+    y:np.ndarray   = np.zeros_like(x, dtype=x.dtype, order="C")
+    xn:np.ndarray  = np.zeros_like(x, dtype=x.dtype, order="C")
+    xc:np.ndarray  = np.zeros_like(x, dtype=x.dtype, order="C")
+    std:np.ndarray = np.zeros((x.shape[1],), dtype=x.dtype)
 
     try:
         bn_training_fwd_cython_inner(x, y, xn, xc, std, gamma, beta, running_mean, running_var, momentum, eps)
@@ -139,7 +139,7 @@ def bn_training_bwd_cython(dy: np.ndarray,
                            dgamma: np.ndarray,
                            dbeta: np.ndarray) -> np.ndarray:
 
-    dx:np.ndarray  = np.empty_like(dy, dtype=dy.dtype, order="C")
+    dx:np.ndarray  = np.zeros_like(dy, dtype=dy.dtype, order="C")
 
     try:
         _bn_training_bwd_cython_inner(dx, dy, xn, std, gamma, dgamma, dbeta)

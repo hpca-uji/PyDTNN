@@ -51,7 +51,7 @@ def depthwise_conv_nhwc_cython(x: np.ndarray, k: np.ndarray,
     cdef int hi = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    res: np.ndarray = np.empty((n, hi, ww, c), dtype=x.dtype)
+    res: np.ndarray = np.zeros((n, hi, ww, c), dtype=x.dtype)
     try:
         depthwise_conv_cython_inner(res, x, k, n, c, h, w,
                                     hi, ww, kh, kw, vpadding, hpadding,
@@ -125,8 +125,8 @@ def depthwise_conv_backward_nhwc_cython(dy: np.ndarray, x: np.ndarray, k: np.nda
     cdef int hi = dy.shape[1]
     cdef int ww = dy.shape[2]
 
-    dx: np.ndarray = np.empty((n, h, w, c), dtype=x.dtype)
-    dw: np.ndarray = np.empty((c, kh, kw), dtype=k.dtype)
+    dx: np.ndarray = np.zeros((n, h, w, c), dtype=x.dtype)
+    dw: np.ndarray = np.zeros((c, kh, kw), dtype=k.dtype)
 
     try:
         depthwise_conv_backward_inner(dx, dw, dy, x, k, 

@@ -49,7 +49,7 @@ def im2row_nhwc_cython(x: np.ndarray,
         int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     # Initialize rows and its view
-    rows = np.empty((n * hh * ww, c * kh * kw), dtype=x.dtype)
+    rows = np.zeros((n * hh * ww, c * kh * kw), dtype=x.dtype)
 
     # Call im2row_nhwc_cython_inner
     im2row_nhwc_cython_inner(rows, x, n, h, w, c, hh, ww, kh, kw, vpadding, hpadding,
@@ -136,7 +136,7 @@ def row2im_nhwc_cython(rows: np.ndarray,
         int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
     # Initialize x and its view
     
-    x:np.ndarray = np.empty((n, h, w, c), dtype=rows.dtype)
+    x:np.ndarray = np.zeros((n, h, w, c), dtype=rows.dtype)
     # Call row2im_nhwc_cython_inner
     row2im_nhwc_cython_inner(rows, x, n, h, w, c, hh, ww, kh, kw, vpadding, hpadding,
                              vstride, hstride, vdilation, hdilation)

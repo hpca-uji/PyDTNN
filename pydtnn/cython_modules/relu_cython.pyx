@@ -38,8 +38,8 @@ def relu_cython(x: np.ndarray) -> tuple(np.ndarray, np.ndarray):
     shape = [x.shape[i] for i in range(x.ndim)]
     size = np.prod(shape)
 
-    max: np.ndarray = np.empty((size,), dtype=x.dtype)
-    mask: np.ndarray = np.empty((size,), dtype=np.int8)
+    max: np.ndarray = np.zeros((size,), dtype=x.dtype)
+    mask: np.ndarray = np.zeros((size,), dtype=np.int8)
 
     try:
         max, mask = relu_cython_template(x.reshape(-1), max, mask)        
@@ -68,7 +68,7 @@ cdef relu_cython_inner(const npDT[:] x,
     for i in prange(x.shape[0], nogil=True):
         if x[i] > 0:
             max[i], mask[i] = x[i], 1
-        else: # NOTE: Since max and mask are both initialize "np.empty", it's necessary to set them.
+        else: # NOTE: Since max and mask are both initialize "np.zeros", it's necessary to set them.
             max[i], mask[i] = 0, 0
 # --- END relu_cython_inner --- # 
 
@@ -85,8 +85,8 @@ def capped_relu_cython(x: np.ndarray, cap: float) -> tuple(np.ndarray, np.ndarra
     shape = [x.shape[i] for i in range(x.ndim)]
     size = np.prod(shape)
 
-    max: np.ndarray = np.empty((size,), dtype=x.dtype)
-    mask: np.ndarray = np.empty((size,), dtype=np.int8)
+    max: np.ndarray = np.zeros((size,), dtype=x.dtype)
+    mask: np.ndarray = np.zeros((size,), dtype=np.int8)
 
     try:
         max, mask = capped_relu_cython_template(x.reshape(-1), max, mask, cap)        
@@ -119,7 +119,7 @@ cdef capped_relu_cython_inner(const npDT[:] x,
             max[i], mask[i] = <npDT> cap, 1
         elif x[i] > 0: # cap > x[i] > 0
             max[i], mask[i] = x[i], 1
-        else: # x[i] = 0; since max, mask are set as np.empty instead of np.zeros, it's necessary to set them.
+        else: 
             max[i], mask[i] = 0, 0
 # --- END capped_relu_cython_inner --- # 
 
@@ -133,8 +133,8 @@ def leaky_relu_cython(x: np.ndarray, negative_slope: float) -> tuple(np.ndarray,
     shape = [x.shape[i] for i in range(x.ndim)]
     size = np.prod(shape)
 
-    max: np.ndarray = np.empty((size,), dtype=x.dtype)
-    mask: np.ndarray = np.empty((size,), dtype=np.float32)
+    max: np.ndarray = np.zeros((size,), dtype=x.dtype)
+    mask: np.ndarray = np.zeros((size,), dtype=np.float32)
 
     try:
         max, mask = leaky_relu_cython_template(x.reshape(-1), max, mask, negative_slope)        
@@ -167,6 +167,6 @@ cdef leaky_relu_cython_inner(const npDT[:] x,
             max[i], mask[i] = x[i], 1
         elif x[i] < 0:
             max[i], mask[i] = <npDT> (x[i] * negative_slope), negative_slope
-        else: # x[i] = 0; since max, mask are set as np.empty instead of np.zeros, it's necessary to set them.
+        else: 
             max[i], mask[i] = 0, 0
 # --- END leaky_relu_cython_inner --- # 
