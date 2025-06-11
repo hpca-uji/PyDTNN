@@ -604,9 +604,6 @@ class Model:
             x, y_targ = x_batch, y_batch
         return x, y_targ
 
-    def _zero_dx(self, y):
-        return np.zeros_like(y, shape=(1,) + y.shape[1:])
-
     def _weight_update(self, gradient=True, blocking=True):
         if blocking:
             for i in range(len(self.layers) - 1, 0, -1):

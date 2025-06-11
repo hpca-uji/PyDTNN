@@ -44,6 +44,7 @@ class LayerCPU(Layer, ABC):
             dw_ = dw_ if gradient else w_
             dw = getattr(self, dw_)
             dw *= self.model.rank_weight
+            # TODO: crypt
             req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             self.reqs_allred[dw_] = req
 
@@ -53,6 +54,9 @@ class LayerCPU(Layer, ABC):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             self.reqs_allred[dw_].wait()
+            dw = getattr(self, dw_)
+            # TODO: decrypt
+            setattr(self, dw_, dw)
 
     def reduce_weights_sync(self, gradient=True):
         if not self.model.comm:
@@ -64,5 +68,8 @@ class LayerCPU(Layer, ABC):
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
             dw = getattr(self, dw_)
             dw *= self.model.rank_weight
+            # TODO: crypt
             self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            # TODO: decrypt
+            setattr(self, dw_, dw)
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
