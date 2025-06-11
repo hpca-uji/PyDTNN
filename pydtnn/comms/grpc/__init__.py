@@ -18,9 +18,6 @@ import sys
 import typing
 from collections import abc
 
-from pydtnn import comms
-from pydtnn.comms.grpc import grpc_pb2
-
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
 try:
@@ -28,6 +25,8 @@ try:
 finally:
     sys.path.insert(0, _pkg)
 
+from pydtnn import comms
+from pydtnn.comms.grpc import grpc_pb2
 
 __all__ = (
     "Protocol",
