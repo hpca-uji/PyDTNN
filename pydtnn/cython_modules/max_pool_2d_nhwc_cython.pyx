@@ -130,7 +130,6 @@ def max_pool_2d_bwd_nhwc_cython(y: np.ndarray,
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     x: np.ndarray = np.empty((n, h, w, c), dtype=y.dtype)
-    print(f"{y.dtype=}")
 
     try:
         max_pool_2d_bwd_nhwc_cython_inner(y, x, idx_max, n, h, w, c,

@@ -316,6 +316,11 @@ class Model:
             raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized.")
+        # Encryption
+        if self.encryption_name:
+            self._init_crypt(self.encryption_name)
+        else:
+            self.crypt = None
         # Dataset
         self.dataset_name = self.kwargs.get("dataset_name")
         if self.dataset_name:
@@ -346,12 +351,12 @@ class Model:
             sys.exit(-1)
 
         if self.comm_rank == 0:
-            self._crypt = module.Context()
+            self.crypt = module.Context()
 
         if self.comm:
-            self._crypt = self.comm.bcast(self._crypt)
+            self.crypt = self.comm.bcast(self.crypt)
 
-        assert self._crypt is not None
+        assert self.crypt is not None
 
     def _read_model(self, model_name):
         try:
