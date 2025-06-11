@@ -274,11 +274,11 @@ def debug_stack():
     """Get stack trace"""
     log = print
 
-    stack = inspect.stack()
+    stack = inspect.stack()[1:]
     try:
         context = "|".join(
             f"{frame_info.frame.f_globals["__name__"]}.{frame_info.function}:{frame_info.lineno}"
-            for frame_info in stack[1:]
+            for frame_info in stack
         )
     finally:
         del stack
