@@ -272,6 +272,8 @@ def string_substitute(template, /, **mappings):
 
 def debug_stack():
     """Get stack trace"""
+    log = print
+
     stack = inspect.stack()
     try:
         context = "|".join(
@@ -280,7 +282,8 @@ def debug_stack():
         )
     finally:
         del stack
-    print(f"{context} from {os.getpid()}:{threading.get_native_id()}")
+
+    log(f"{context} from {os.getpid()}:{threading.get_native_id()}")
 
 
 def debug_func(func):
