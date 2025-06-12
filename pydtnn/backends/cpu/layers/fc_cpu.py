@@ -29,9 +29,9 @@ class FCCPU(LayerCPU, FC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.x = None
-        self.dw = None
-        self.db = None
+        self.x: np.ndarray = None
+        self.dw: np.ndarray = None
+        self.db: np.ndarray = None
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)
@@ -52,18 +52,28 @@ class FCCPU(LayerCPU, FC):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype) if need_dx else 0
 
-    def forward(self, x):
+    def forward(self, x: np.ndarray) -> np.ndarray:
         if self.model.mode == TRAIN_MODE:
             self.x = x
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
         res = self.model.matmul(x, self.weights)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return res + self.biases if self.use_bias else 0
 
-    def backward(self, dy):
+        if self.use_bias:
+            res += self.biases
+
+        return res 
+
+    def backward(self, dy: np.ndarray) -> np.ndarray | None:
+        # self.model.mode = TRAIN_MODE is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         self.dw = self.model.matmul(self.x.T, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # From this point, in this iteration this "self.x" will not be used anymore.
+        del self.x
+        self.x = None
 
         if self.use_bias:
             self.db = np.sum(dy, axis=0)

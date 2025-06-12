@@ -35,7 +35,7 @@ class DepthwiseVariant(Conv2D, ABC):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         res:np.ndarray = depthwise_conv_nhwc_cython(x, self.weights, self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.need_dx:
@@ -46,7 +46,7 @@ class DepthwiseVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y = y.reshape(-1, self.ho, self.wo, self.co)
+        y = y.reshape((-1, self.ho, self.wo, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y

@@ -22,6 +22,8 @@ from pydtnn.layers import AdditionBlock
 from pydtnn.cython_modules import eltw_sum_cython
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
+import numpy as np
+
 
 class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
 
@@ -30,30 +32,31 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 
-    def forward(self, x):
-        x = [x] * len(self.paths)
-        for i, p in enumerate(self.paths):
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        sum_forwards = np.zeros_like(x, dtype=x.dtype)
+        for p in self.paths:
+            x_forward = x
             for layer in p:
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
-                x[i] = layer.forward(x[i])
+                x_forward = layer.forward(x_forward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            if i > 0:
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
-                eltw_sum_cython(x[0], x[i])
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return x[0]
+            
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
+            eltw_sum_cython(sum_forwards, x_forward)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
+        return sum_forwards
 
-    def backward(self, dy):
-        dx = [dy] * len(self.paths)
-        for i, p in enumerate(self.paths):
+    def backward(self, dy:np.ndarray) -> np.ndarray:
+        dx = np.zeros_like(dy, dtype=dy.dtype)
+
+        for p in self.paths:
+            dx_backward = dy
             for layer in reversed(p):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
-                dx[i] = layer.backward(dx[i])
+                dx_backward = layer.backward(dx_backward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            if i > 0:
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                             self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-                eltw_sum_cython(dx[0], dx[i])
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx[0]
+            
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
+            eltw_sum_cython(dx, dx_backward)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return dx
