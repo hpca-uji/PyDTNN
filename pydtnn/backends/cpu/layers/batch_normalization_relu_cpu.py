@@ -25,13 +25,14 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
+from numpy import ndarray
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def forward(self, x):
+    def forward(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the BN + Relu"""
 
         if self.model.mode == TRAIN_MODE:
@@ -40,16 +41,16 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
-            x = x.reshape(-1, self.ci)
+            x = x.reshape((-1, self.ci), copy=False)
 
-        y = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
+        y: ndarray = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
-            y = y.reshape(-1, self.hi, self.wi, self.ci)
+            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
 
         return y
 
-    def backward(self, x):
+    def backward(self, x:ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")
