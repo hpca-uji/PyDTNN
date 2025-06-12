@@ -21,25 +21,37 @@ import numpy as np
 
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Dropout
-from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 
 
 class DropoutCPU(LayerCPU, Dropout):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mask = None
+        self.mask:np.ndarray = None
 
-    def forward(self, x):
-        if self.model.mode == TRAIN_MODE:
-            self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (
-                    1 - self.rate)
-            return x * self.mask
-        elif self.model.mode == EVALUATE_MODE:
-            return x
-        else:
-            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
+    def initialize(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def backward(self, dy):
+    def forward(self, x:np.ndarray) -> np.ndarray:
+
+        match self.model.mode:
+            case ModelModeEnum.TRAIN:
+                # NOTE: Remember, it's necessary a new random mask every training's forward call.
+                #self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
+                # TODO: Check if copy is better with False or True
+                self.mask:np.ndarray = np.random.binomial(n=1, p=(1 - self.rate), size=self.shape).astype(self.model.dtype, copy=False)
+                self.mask /= (1 - self.rate)
+                return x * self.mask
+            case ModelModeEnum.EVALUATE:
+                return x
+            case _:
+                raise RuntimeError(f"Unexpected model mode \'{self.model.mode}\'.")
+
+    def backward(self, dy:np.ndarray) -> np.ndarray | None:
         if self.need_dx:
-            return dy * self.mask
+            dy *= self.mask
+            # From this point, in this iteration this "self.mask" will not be used anymore.
+            del self.mask
+            self.mask = None
+            return dy
