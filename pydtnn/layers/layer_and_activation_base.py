@@ -26,7 +26,7 @@ class LayerAndActivationBase(ABC):
 
     def __init__(self, shape=()):
         self.nparams = 0
-        self.shape = shape
+        self.shape = tuple(shape)
         self.weights = np.array([])
         self.biases = np.array([])
         self.act = None
