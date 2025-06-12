@@ -72,6 +72,11 @@ class Stream(io.BufferedIOBase):
         return not bool(self._chunks)
 
     @property
+    def nchunks(self) -> int:
+        """Number of chunks held in stream"""
+        return len(self._chunks)
+
+    @property
     def nbytes(self) -> int:
         """Number of bytes held in stream"""
         return sum(map(len, self._chunks))
