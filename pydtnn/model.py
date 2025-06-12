@@ -102,10 +102,19 @@ except (ImportError, ModuleNotFoundError):
 
 # --- CONSTANS --- #
 BAR_WIDTH = 140
-EVALUATE_MODE, TRAIN_MODE, UNSPECIFIED_MODE = (0, 1, 2)
+
+class ModelModeEnum(enum.Enum):
+    EVALUATE = enum.auto()
+    TRAIN = enum.auto()
+    UNSPECIFIED = enum.auto()
+
+EVALUATE_MODE = ModelModeEnum.EVALUATE
+TRAIN_MODE = ModelModeEnum.TRAIN
+UNSPECIFIED_MODE = ModelModeEnum.UNSPECIFIED
+
 DEFAULT_BACH_SIZE = 64
 
-class LOAD_STORE_MODE(enum.Enum):
+class LoadStoreMode(enum.Enum):
     LOAD = enum.auto()
     STORE = enum.auto()
 # --- END CONSTANS --- #
@@ -371,7 +380,7 @@ class Model:
         self.matmul = utils.matmul
         
         # Set current mode to unspecified
-        self.mode:int = UNSPECIFIED_MODE
+        self.mode:ModelModeEnum = UNSPECIFIED_MODE
 
         # Memory cache optimization
         self.enable_memory_cache: bool # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
@@ -424,6 +433,11 @@ class Model:
         self.validation_split:float = self.kwargs['validation_split']
         self.use_synthetic_data:bool = self.kwargs['use_synthetic_data']
         self.dataset_train_path:str = self.kwargs['dataset_train_path']
+        self.enable_best_of:bool = self.kwargs['enable_best_of']
+        self.enable_conv_i2c:bool = self.kwargs['enable_conv_i2c']
+        self.enable_conv_winograd:bool = self.kwargs['enable_conv_winograd']
+        self.enable_conv_gemm:bool = self.kwargs['enable_conv_gemm']
+        self.enable_conv_direct:bool = self.kwargs['enable_conv_direct']
 
         self.weights_and_bias_filename:str # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         # Load weights and bias
@@ -629,20 +643,20 @@ class Model:
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
         self._initialized = True
-        
-        self.optimizer.initialize(self.layers)
+                
+        self.optimizer.initialize(self.get_all_layers(self.layers))
     # --- End _initialize --- #
 
-    def load_store_path(self, layers: list[Layer], d: dict[str, np.ndarray], mode:LOAD_STORE_MODE) -> None:
+    def load_store_path(self, layers: list[Layer], d: dict[str, np.ndarray], mode:LoadStoreMode) -> None:
         """
         Method to load and store the weigths and biases.
 
         Args:
             layers: the list of the layers.
             d: The dictionary of layers (keys) with their respective Weights and Biases (values), that are numpy's ndarray.
-            mode: Values from the enum "LOAD_STORE_MODE". 
-                - "LOAD_STORE_MODE.LOAD" (that is "load") mode loads the data from "d" into the Model.
-                - "LOAD_STORE_MODE.STORE" (that is "store") mode stores the data from the Model into "d".
+            mode: Values from the enum "LoadStoreMode". 
+                - "LoadStoreMode.LOAD" (that is "load") mode loads the data from "d" into the Model.
+                - "LoadStoreMode.STORE" (that is "store") mode stores the data from the Model into "d".
         """
         for layer in layers:
             name = layer.canonical_name
@@ -656,18 +670,18 @@ class Model:
                     layer.updated_running_var = True
                 for key in grad_vars:
                     base = f"{layer.id}_{name}_{key}"
-                    if mode is LOAD_STORE_MODE.LOAD and base not in d:
+                    if mode is LoadStoreMode.LOAD and base not in d:
                         print(f"Could not find '{base}' for layer '{name}' in file!")
                         continue
                     match mode:
-                        case LOAD_STORE_MODE.LOAD:
+                        case LoadStoreMode.LOAD:
                             if self.enable_cudnn:
                                 # NOTE: getattr(layer, key): TensorGPU, ary: gpuarray
                                 ary = getattr(layer, key).ary
                                 ary.set(d[base].reshape(ary.shape))
                             else:
                                 setattr(layer, key, d[base])
-                        case LOAD_STORE_MODE.STORE:
+                        case LoadStoreMode.STORE:
                             if self.enable_cudnn:
                                 # NOTE: getattr(layer, key): TensorGPU
                                 d[base] = getattr(layer, key).ary.get()
@@ -683,7 +697,7 @@ class Model:
             filename: Path to the file with the weights and biases to load.
         """
         d = np.load(filename)
-        self.load_store_path(self.layers, d, LOAD_STORE_MODE.LOAD)
+        self.load_store_path(self.layers, d, LoadStoreMode.LOAD)
 
     def store_weights_and_bias(self, filename: str) -> None:
         """
@@ -692,7 +706,7 @@ class Model:
         """
         if self.shared_storage and self.comm_rank == 0:
             d = {}
-            self.load_store_path(self.layers, d, LOAD_STORE_MODE.STORE)
+            self.load_store_path(self.layers, d, LoadStoreMode.STORE)
             np.savez_compressed(filename, **d)
 
     def calculate_time(self) -> np.ndarray:
