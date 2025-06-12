@@ -17,22 +17,19 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 
 from ..activations import *
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 
-def create_googlenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
-    model = list[LayerAndActivationBase]()
-    _ = model.append
-
-    _(Input(shape=input_shape))
+def create_googlenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
     
-    _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"))
-    _(BatchNormalization())
-    _(Relu())
+    yield Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform")
+    yield BatchNormalization()
+    yield Relu()
 
     inception_blocks = [[64, 96, 128, 16, 32, 32],
                         [128, 128, 192, 32, 96, 64],
@@ -48,10 +45,10 @@ def create_googlenet(input_shape: Sequence[int], output_shape: Sequence[int]) ->
 
     for layout in inception_blocks:
         if not layout:
-            _(MaxPool2D(pool_shape=(3, 3), stride=2, padding=1))
+            yield MaxPool2D(pool_shape=(3, 3), stride=2, padding=1)
         else:
             n1x1, n3x3red, n3x3, n5x5red, n5x5, pool_planes = layout
-            _(ConcatenationBlock(
+            yield ConcatenationBlock(
                 [
                     # 1x1 conv branch
                     Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer="he_uniform"),
@@ -82,13 +79,13 @@ def create_googlenet(input_shape: Sequence[int], output_shape: Sequence[int]) ->
                     Conv2D(nfilters=pool_planes, filter_shape=(1, 1), weights_initializer="he_uniform"),
                     BatchNormalization(),
                     Relu()
-                ]))
+                ])
 
-    _(AveragePool2D(pool_shape=(8, 8), stride=1))  # Global average pooling 2D
-    _(Flatten())
-    _(FC(shape=(1024,)))
-    _(BatchNormalization())
-    _(Relu())
-    _(FC(shape=output_shape, activation="softmax"))
+    yield AveragePool2D(pool_shape=(8, 8), stride=1)  # Global average pooling 2D
+    yield Flatten()
+    yield FC(shape=(1024,))
+    yield BatchNormalization()
+    yield Relu()
+    yield FC(shape=output_shape, activation="softmax")
 
     return model
