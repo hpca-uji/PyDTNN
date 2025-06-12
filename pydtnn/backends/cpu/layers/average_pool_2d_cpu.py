@@ -29,18 +29,18 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 
 class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
-    def _forward_nhwc_i2c(self, x):
+    def _forward_nhwc_i2c(self, x:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        x_rows = im2row_1ch_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride, self.vdilation, self.hdilation)
+        x_rows:np.ndarray = im2row_1ch_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
+                                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        y = np.mean(x_rows, axis=1)
-        return y.reshape(-1, self.ho, self.wo, self.co)
+        y:np.ndarray = np.mean(x_rows, axis=1)
+        return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
 
     def _forward_nhwc_cython(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         y = average_pool_2d_fwd_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                            self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
@@ -55,7 +55,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
     def _forward_nchw_cython(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         y = average_pool_2d_fwd_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                            self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 

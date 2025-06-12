@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn.model import TRAIN_MODE
+    from pydtnn.model import TRAIN_MODE, Model
 
 
 # @todo: will be used when layer.initialize includes model: initialize(model, id, ...)
@@ -31,11 +31,11 @@ class ForwardToBackward:
     """
 
     def __init__(self):
-        self._model = None
+        self._model:Model = None
         self._storage = {}
 
-    def set_model(self, model):
-        self._model = model
+    def set_model(self, model:Model):
+        self._model:Model = model
 
     def __setattr__(self, key, value):
         if self._model.mode == TRAIN_MODE:

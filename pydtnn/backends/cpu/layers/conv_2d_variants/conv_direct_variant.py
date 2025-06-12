@@ -31,7 +31,7 @@ class ConvDirectVariant(Conv2D, ABC):
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
-    def initialize(self, prev_shape, need_dx=True):
+    def initialize(self, prev_shape:tuple[int, ...], need_dx=True):
         super().initialize(prev_shape, need_dx)
         # ConvWinograd parameters
         if self.model.enable_conv_direct:

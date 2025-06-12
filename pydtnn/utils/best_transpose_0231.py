@@ -21,9 +21,9 @@ import numpy as np
 
 from pydtnn.cython_modules import transpose_0231_ijk_cython, transpose_0231_ikj_cython
 from pydtnn.utils.best_of import BestOf
+from typing import Callable
 
-
-def transpose_0231_numpy(original, transposed=None):
+def transpose_0231_numpy(original:np.ndarray, transposed:np.ndarray | None=None) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
@@ -31,7 +31,7 @@ def transpose_0231_numpy(original, transposed=None):
     return transposed
 
 
-def transpose_0231_ijk_cython_wrapper(original, transposed=None):
+def transpose_0231_ijk_cython_wrapper(original:np.ndarray, transposed:np.ndarray | None=None) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
@@ -39,7 +39,7 @@ def transpose_0231_ijk_cython_wrapper(original, transposed=None):
     return transposed
 
 
-def transpose_0231_ikj_cython_wrapper(original, transposed=None):
+def transpose_0231_ikj_cython_wrapper(original:np.ndarray, transposed:np.ndarray | None=None) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d0, d2, d3, d1), original.dtype, order="C")
@@ -47,7 +47,7 @@ def transpose_0231_ikj_cython_wrapper(original, transposed=None):
     return transposed
 
 
-best_transpose_0231 = BestOf(
+best_transpose_0231:Callable[[np.ndarray, np.ndarray | None], np.ndarray] = BestOf(
     name="Transpose 0231 methods",
     alternatives=[
         ("ikj_cyt", transpose_0231_ikj_cython_wrapper),

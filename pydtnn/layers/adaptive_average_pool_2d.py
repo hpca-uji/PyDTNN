@@ -39,7 +39,7 @@ class AdaptiveAveragePool2D(Layer, ABC):
         self.output_shape = output_shape
 
         # This value will change in initialize:
-        self._forward_pooling_not_needed = None
+        self._forward_pooling_not_needed:bool = None
     # ---  END __init__ --- #
 
     @override
