@@ -26,15 +26,18 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 
+CONCAT_DIM_NCHW  = 1
+CONCAT_DIM_NHWC = -1
+
 class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
-        self.out_co = None
-        self.idx_co = None
-        self.concat_dim = None
-
+        self.out_co:list[int] = None
+        self.idx_co:np.ndarray = None
+        self.concat_dim:int = None
+    
     def initialize_block_layer(self):
         super().initialize_block_layer()
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
@@ -42,13 +45,13 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
             self.out_co = [s[0] for s in self.out_shapes]
             self.idx_co = np.cumsum(self.out_co, axis=0)
             self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
-            self.concat_dim = 1
+            self.concat_dim = CONCAT_DIM_NCHW
         else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
             assert all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes])
             self.out_co = [s[-1] for s in self.out_shapes]
-            self.idx_co = np.cumsum(self.out_co, axis=0)
-            self.shape = (*self.out_shapes[0][:-1], sum(self.out_co))
-            self.concat_dim = -1
+            self.idx_co:np.ndarray = np.cumsum(self.out_co, axis=0)
+            self.shape:tuple[int] = (*self.out_shapes[0][:-1], sum(self.out_co))
+            self.concat_dim = CONCAT_DIM_NHWC
 
     def forward(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)
