@@ -17,23 +17,37 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Iterable
 
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 
-def create_simplecnn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
-    model = list[LayerAndActivationBase]()
-    _ = model.append
+# 4 2 1.5 1.2 1 0.9 0.75 0.6
+# 40000
 
-    _(Input(shape=input_shape))
-    _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
-    _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
-    _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(Flatten())
-    _(FC(shape=(128,), activation="relu"))
-    _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, activation="softmax"))
+# 58 118 238 400
+# 512
 
-    return model
+# 60 118 237 396
+# 32 4096
+
+
+# 4 7 15 26
+# 4096/32 4096
+
+# 1 2 3 4
+# 175 375 40000
+
+def create_simplecnn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
+    yield Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu")
+    yield Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation="relu")
+    yield MaxPool2D(pool_shape=(2, 2), stride=2)
+    yield Flatten()
+    for i in range(1):
+        yield FC(shape=(int(175),), activation="relu")
+        yield FC(shape=(int(375),), activation="relu")
+        yield FC(shape=(int(40000),), activation="relu")
+    yield Dropout(rate=0.5)
+    yield FC(shape=output_shape, activation="softmax")
