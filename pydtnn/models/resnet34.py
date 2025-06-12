@@ -19,7 +19,7 @@
 
 from ..activations import *
 from ..layers import *
-
+from pydtnn.initializers import he_uniform
 
 def create_resnet34(input_shape: tuple[int, int, int] = (32, 32, 3), 
                     output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
@@ -27,7 +27,7 @@ def create_resnet34(input_shape: tuple[int, int, int] = (32, 32, 3),
     _ = list_layers.append
 
     _(Input(shape=input_shape))
-    _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform"))
+    _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform))
     _(BatchNormalization())
 
     layout = [[64, 3, 1], [128, 4, 2], [256, 6, 2], [512, 3, 2]]  # Resnet-34
@@ -38,15 +38,15 @@ def create_resnet34(input_shape: tuple[int, int, int] = (32, 32, 3),
             _(AdditionBlock(
                 [
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization()
                 ],
                 [
-                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform),
                     BatchNormalization()
                 ] if stride != 1 else []))
             _(Relu())
@@ -56,6 +56,6 @@ def create_resnet34(input_shape: tuple[int, int, int] = (32, 32, 3),
     _(FC(shape=(512,)))
     _(BatchNormalization())
     _(Relu())
-    _(FC(shape=output_shape, activation="softmax"))
+    _(FC(shape=output_shape, activation=softmax))
 
     return list_layers

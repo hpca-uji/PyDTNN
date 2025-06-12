@@ -19,6 +19,7 @@
 
 from ..layers import *
 from layers.layer import LayerAndActivationBase
+from pydtnn.activations import relu, softmax
 
 def create_vgg16(input_shape: tuple[int, int, int] = (224, 224, 3), 
                  output_shape: tuple[int, ...] = (1000,)) -> list[LayerAndActivationBase]:
@@ -30,14 +31,14 @@ def create_vgg16(input_shape: tuple[int, int, int] = (224, 224, 3),
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
+            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=relu))
         _(MaxPool2D(pool_shape=(2, 2), stride=2))
 
     _(Flatten())
-    _(FC(shape=(4096,), activation="relu"))
+    _(FC(shape=(4096,), activation=relu))
     _(Dropout(rate=0.5))
-    _(FC(shape=(4096,), activation="relu"))
+    _(FC(shape=(4096,), activation=relu))
     _(Dropout(rate=0.5))
-    _(FC(output_shape, activation="softmax"))
+    _(FC(output_shape, activation=softmax))
 
     return list_layers

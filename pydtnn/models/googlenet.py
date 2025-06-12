@@ -19,7 +19,7 @@
 
 from ..activations import *
 from ..layers import *
-
+from pydtnn.initializers import he_uniform
 
 def create_googlenet(input_shape: tuple[int, int, int] = (32, 32, 3), 
                      output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
@@ -28,7 +28,7 @@ def create_googlenet(input_shape: tuple[int, int, int] = (32, 32, 3),
 
     _(Input(shape=input_shape))
     
-    _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"))
+    _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
     _(BatchNormalization())
     _(Relu())
 
@@ -52,32 +52,32 @@ def create_googlenet(input_shape: tuple[int, int, int] = (32, 32, 3),
             _(ConcatenationBlock(
                 [
                     # 1x1 conv branch
-                    Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu()
                 ],
                 [  # 1x1 conv -> 3x3 conv branch
-                    Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
-                    Conv2D(nfilters=n3x3, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n3x3, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu()
                 ],
                 [  # 1x1 conv -> 5x5 conv branch
-                    Conv2D(nfilters=n5x5red, filter_shape=(1, 1), weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n5x5red, filter_shape=(1, 1), weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
-                    Conv2D(nfilters=n5x5, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n5x5, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
-                    Conv2D(nfilters=n5x5, filter_shape=(3, 3), padding=1, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n5x5, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu()
                 ],
                 [  # 3x3 pool -> 1x1 conv branch
                     MaxPool2D(pool_shape=(3, 3), stride=1, padding=1),
-                    Conv2D(nfilters=pool_planes, filter_shape=(1, 1), weights_initializer="he_uniform"),
+                    Conv2D(nfilters=pool_planes, filter_shape=(1, 1), weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu()
                 ]))
@@ -87,6 +87,6 @@ def create_googlenet(input_shape: tuple[int, int, int] = (32, 32, 3),
     _(FC(shape=(1024,)))
     _(BatchNormalization())
     _(Relu())
-    _(FC(shape=output_shape, activation="softmax"))
+    _(FC(shape=output_shape, activation=softmax))
 
     return list_layers

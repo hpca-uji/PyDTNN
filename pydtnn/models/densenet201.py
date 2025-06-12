@@ -19,6 +19,7 @@
 
 from ..activations import *
 from ..layers import *
+from pydtnn.initializers import he_uniform
 
 def create_densenet201(input_shape: tuple[int, int, int] = (32, 32, 3), 
                        output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
@@ -33,7 +34,7 @@ def create_densenet201(input_shape: tuple[int, int, int] = (32, 32, 3),
     num_planes = 2 * growth_rate
 
     _(Conv2D(nfilters=num_planes, filter_shape=(3, 3), padding=1, use_bias=False,
-                     weights_initializer="he_uniform"))
+                     weights_initializer=he_uniform))
 
     for i, nblocks in enumerate(blocks):
         for j in range(nblocks):
@@ -43,11 +44,11 @@ def create_densenet201(input_shape: tuple[int, int, int] = (32, 32, 3),
                         BatchNormalization(),
                         Relu(),
                         Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False,
-                               weights_initializer="he_uniform"),
+                               weights_initializer=he_uniform),
                         BatchNormalization(),
                         Relu(),
                         Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False,
-                               weights_initializer="he_uniform")
+                               weights_initializer=he_uniform)
                     ], []))
 
         num_planes += nblocks * growth_rate
@@ -57,13 +58,13 @@ def create_densenet201(input_shape: tuple[int, int, int] = (32, 32, 3),
             _(BatchNormalization())
             _(Relu())
             _(
-                Conv2D(nfilters=num_planes, filter_shape=(1, 1), use_bias=False, weights_initializer="he_uniform"))
+                Conv2D(nfilters=num_planes, filter_shape=(1, 1), use_bias=False, weights_initializer=he_uniform))
             _(AveragePool2D(pool_shape=(2, 2), stride=2))
 
     _(BatchNormalization())
     _(Relu())
     _(AveragePool2D(pool_shape=(4, 4)))
     _(Flatten())
-    _(FC(shape=output_shape, activation="softmax"))
+    _(FC(shape=output_shape, activation=softmax))
 
     return list_layers

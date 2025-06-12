@@ -19,26 +19,26 @@
 
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.activations import Relu, Softmax
 
 def create_alexnet_cifar10(input_shape:tuple[int, int, int]=(32, 32, 3), 
                            output_shape:tuple[int, ...] = (10,) ) -> list[LayerAndActivationBase]:
     list_layers:list[LayerAndActivationBase] = list()
     _ = list_layers.append
     _(Input(shape= input_shape))
-    _(Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, stride=2, activation="relu"))
+    _(Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, stride=2, activation=Relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
+    _(Conv2D(nfilters=192, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
-    _(Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
-    _(Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
+    _(Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
+    _(Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
+    _(Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
-    _(FC(shape=(4096,), activation="relu"))
+    _(FC(shape=(4096,), activation=Relu))
     _(Dropout(rate=0.5))
-    _(FC(shape=(4096,), activation="relu"))
+    _(FC(shape=(4096,), activation=Relu))
     _(Dropout(rate=0.5))
-    _(FC(shape= output_shape, activation="softmax"))
+    _(FC(shape= output_shape, activation=Softmax))
 
     return list_layers
