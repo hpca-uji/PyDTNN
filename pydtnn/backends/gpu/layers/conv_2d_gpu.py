@@ -31,6 +31,7 @@ from .layer_gpu import LayerGPU
 from .memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from ..tensor_gpu import TensorGPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.layers.conv_2d import GroupingEnum
 
 class Conv2DGPU(LayerGPU, Conv2D):
 
@@ -70,7 +71,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                                               self.vstride, self.hstride, self.vdilation, self.hdilation,
                                               conv_mode, self.model.cudnn_dtype)
         # Set grouping options
-        if self.grouping == "depthwise":
+        if self.grouping is GroupingEnum.DEPTHWISE:
             cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
 
         # Allow NCHW -> NHWC conversion for the use of Tensor Cores
