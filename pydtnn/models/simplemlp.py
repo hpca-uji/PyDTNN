@@ -18,7 +18,7 @@
 #
 
 from ..layers import *
-
+from pydtnn.activations import relu, softmax
 
 def create_simplemlp(input_shape: tuple[int, int, int] = (28, 28, 1), 
                      output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
@@ -27,9 +27,9 @@ def create_simplemlp(input_shape: tuple[int, int, int] = (28, 28, 1),
 
     _(Input(shape=input_shape))
     _(Flatten())
-    _(FC(shape=(512,), activation="relu"))
-    _(FC(shape=(512,), activation="relu"))
-    _(FC(shape=(512,), activation="relu"))
-    _(FC(shape=output_shape, activation="softmax"))
+    _(FC(shape=(512,), activation=relu))
+    _(FC(shape=(512,), activation=relu))
+    _(FC(shape=(512,), activation=relu))
+    _(FC(shape=output_shape, activation=softmax))
 
     return list_layers

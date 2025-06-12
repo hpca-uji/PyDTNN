@@ -17,8 +17,8 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from pydtnn.activations import relu, softmax
 from ..layers import *
-
 
 def create_simplecnn(input_shape: tuple[int, int, int] = (28, 28, 1), 
                      output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
@@ -27,12 +27,12 @@ def create_simplecnn(input_shape: tuple[int, int, int] = (28, 28, 1),
 
     _(Input(shape=input_shape))
     _(Input(shape=(28, 28, 1)))
-    _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
-    _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation="relu"))
+    _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation=relu))
+    _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation=relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
-    _(FC(shape=(128,), activation="relu"))
+    _(FC(shape=(128,), activation=relu))
     _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, activation="softmax"))
+    _(FC(shape=output_shape, activation=softmax))
 
     return list_layers

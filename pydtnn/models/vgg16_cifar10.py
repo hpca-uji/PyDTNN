@@ -19,6 +19,8 @@
 
 from ..layers import *
 from layers.layer import LayerAndActivationBase
+from pydtnn.initializers import he_uniform
+from pydtnn.activations import relu, softmax
 
 def create_vgg16_cifar10(input_shape: tuple[int, int, int] = (32, 32, 3), 
                          output_shape: tuple[int, ...] = (10,)) -> list[LayerAndActivationBase]:
@@ -29,14 +31,14 @@ def create_vgg16_cifar10(input_shape: tuple[int, int, int] = (32, 32, 3),
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation="relu",
-                     weights_initializer="he_uniform"))
+            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=relu,
+                     weights_initializer=he_uniform))
         _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
-    _(FC(shape=(512,), activation="relu", weights_initializer="he_uniform"))
+    _(FC(shape=(512,), activation=relu, weights_initializer=he_uniform))
     _(Dropout(rate=0.5))
-    _(FC(shape=(512,), activation="relu", weights_initializer="he_uniform"))
+    _(FC(shape=(512,), activation=relu, weights_initializer=he_uniform))
     _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, activation="softmax", weights_initializer="he_uniform"))
+    _(FC(shape=output_shape, activation=softmax, weights_initializer=he_uniform))
 
     return list_layers
