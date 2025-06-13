@@ -32,7 +32,7 @@ class Client(Protocol):
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData(buffer_size=self._max_message_size)
+        self._state = ConnectionData()
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
 
         # MQTT
@@ -119,7 +119,7 @@ class Client(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read() as view:
+            with state.put_read(self._max_message_size) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:

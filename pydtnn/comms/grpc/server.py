@@ -44,8 +44,7 @@ class Server(Protocol):
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
-            compression=self._compression,
-            options=self._options
+            compression=self._compression
         )
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
 
@@ -75,7 +74,7 @@ class Server(Protocol):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData(buffer_size=self._max_data_size)
+            self._state[peer] = ConnectionData()
             self._lock.notify_all()
 
         # ACK

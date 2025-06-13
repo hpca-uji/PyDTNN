@@ -49,7 +49,7 @@ class Server(Protocol):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData(buffer_size=self._max_message_size)
+            self._state[peer] = ConnectionData()
             self._lock.notify_all()
 
         # ACK
@@ -194,7 +194,7 @@ class Server(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read() as view:
+            with state.put_read(self._max_message_size) as view:
                 self._publish(f"s2c/{peer.hex}", bytes(view))
 
         if not state.state and state.put_empty():

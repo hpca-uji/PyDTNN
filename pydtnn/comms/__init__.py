@@ -114,13 +114,13 @@ class ConnectionState(enum.Flag):
 class ConnectionData:
     """Connection data"""
 
-    def __init__(self, buffer_size: int = 16 * 1024 ** 2 - 1, view_size: int = 64 * 1024 ** 1 - 1) -> None:
+    def __init__(self, merge_size: int = 16 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 1 - 1) -> None:
         """Initialize connection state"""
         self.peer = UUID_NIL
         self.state = ConnectionState(value=0)
 
-        self._buffer = byteview(bytearray(buffer_size))
-        self._view_size = min(view_size, buffer_size)
+        self._merge_buffer = byteview(bytearray(merge_size))
+        self._efficient_size = efficient_size
         self._packer = Packer()
 
         self.put_queue = SimpleQueue[Stream]()
@@ -145,19 +145,25 @@ class ConnectionData:
         self.put_queue.put(stream)
         return Future[None]()
 
-    def put_read(self) -> memoryview:
-        """Read put stream"""
-        view = self.put_buffer.read1(len(self._buffer))
+    def _put_merge(self) -> int:
+        """Merge head of buffer into contiguous memory"""
+        read = 0
 
-        # View if large or end chunks
-        if len(view) >= self._view_size or self.put_buffer.empty():
-            return view
+        while not self.put_buffer.empty() and read < len(self._merge_buffer):
+            with self._merge_buffer[read:] as view:
+                if read < self._efficient_size or len(self.put_buffer._chunks[0]) <= len(view):
+                    read += self.put_buffer.readinto1(view)
+                else:
+                    break
 
-        # Buffer if multiple small chunks
-        else:
-            self.put_buffer.unreadchunk(view)
-            size = self.put_buffer.readinto(self._buffer)
-            return self._buffer[:size]
+        return self.put_buffer.unreadchunk(self._merge_buffer[:read])
+
+    def put_read(self, size: int = -1) -> memoryview:
+        """Read put stream (merging chunks if plausible)"""
+        if self.put_buffer.nchunks > 1 and len(self.put_buffer._chunks[0]) < min(self._efficient_size, len(self._merge_buffer)):
+            self._put_merge()
+
+        return self.put_buffer.read1(size)
 
     def put_flush(self) -> None:
         """Flush put queue"""

@@ -30,14 +30,10 @@ class Client(Protocol):
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData(buffer_size=self._max_message_size)
+        self._state = ConnectionData()
 
         # TCP
         self._socket = socket.create_connection((self._addr, self._port))
-
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
-        # self._socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
         if comms.SSL:
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=comms.SSL_CERT)
