@@ -194,7 +194,7 @@ class Server(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_message_size) as view:
+            with state.put_read(self._max_payload_size) as view:
                 self._publish(f"s2c/{peer.hex}", bytes(view))
 
         if not state.state and state.put_empty():

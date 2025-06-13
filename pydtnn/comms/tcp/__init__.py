@@ -26,8 +26,8 @@ CONTROL_EVENT = b"\0"
 
 class Protocol(comms.Communicator):
     """Shared base TCP implementation"""
-    _max_message_size = 16 * 1024 ** 2 - 1
     _max_workers = 1
+    _max_payload_size = 16 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Inizialize comunicator"""
@@ -68,7 +68,7 @@ class Protocol(comms.Communicator):
 
     def _handle_control_socket(self, sock: socket.socket, mask):
         """Handle selector notification"""
-        if len(sock.recv(self._max_message_size)) == 0:
+        if len(sock.recv(self._max_payload_size)) == 0:
             return CONTROL_STOP
 
         # Handle tasks
