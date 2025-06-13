@@ -33,7 +33,7 @@ class Client(Protocol):
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData(buffer_size=self._max_data_size)
+        self._state = ConnectionData()
         self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
 
         self._get_grpc = SimpleQueue()
@@ -42,8 +42,7 @@ class Client(Protocol):
         # gRPC
         config: abc.MutableMapping = {
             "target": f"{self._addr}:{self._port}",
-            "compression": self._compression,
-            "options": self._options
+            "compression": self._compression
         }
 
         if comms.SSL:

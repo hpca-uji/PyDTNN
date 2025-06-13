@@ -56,14 +56,11 @@ class Server(Protocol):
         sock, _ = self._socket.accept()
         peer = uuid.uuid4()  # temporary ID
 
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
-        # sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         sock.setblocking(False)
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData(buffer_size=self._max_message_size)
+            self._state[peer] = ConnectionData()
             self._lock.notify_all()
 
         self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)

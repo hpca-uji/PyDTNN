@@ -38,7 +38,7 @@ class Protocol(comms.Communicator):
     _qos = 0
     _transport = "tcp"
     _protocol = mqtt_client.MQTTv311
-    _max_message_size = 16 * 1024 ** 2 - 1
+    _max_message_size = 256 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Communication initialization"""
