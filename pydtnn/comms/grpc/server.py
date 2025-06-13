@@ -29,6 +29,7 @@ END_COMM = None
 
 class Server(Protocol):
     """gRPC server"""
+    _max_workers = 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Server initialization"""
@@ -41,7 +42,7 @@ class Server(Protocol):
         self._state = dict[uuid.UUID, ConnectionData]()
 
         # gRPC
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._pool = ThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
             compression=self._compression

@@ -35,18 +35,20 @@ __all__ = (
 
 class Protocol(comms.Communicator):
     """Shared base gRPC implementation"""
+    _max_payload_size = 4 * 1024 ** 2 - 1
     _compression = grpc.Compression.NoCompression
-    _max_message_size = 4 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Initialize protocol"""
         super().__init__(addr, port)
+        self._max_payload_size -= self._transport_overhead()
 
-        # Reduce message size (account for protobuf overhead)
-        data = bytearray(self._max_message_size)
+    def _transport_overhead(self):
+        """Calculate transport layer overhead"""
+        data = bytearray(self._max_payload_size)
         size = grpc_pb2.Message(data=bytes(data)).ByteSize()
         headers = size - len(data)
-        self._max_message_size -= headers
+        return headers
 
     def _m2d(self, messages: abc.Iterable[grpc_pb2.Message]) -> abc.Generator[bytes]:
         """Transforms gRPC messages to bytes"""
@@ -57,5 +59,5 @@ class Protocol(comms.Communicator):
         """Transforms state to message"""
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_message_size) as view:
+            with state.put_read(self._max_payload_size) as view:
                 yield grpc_pb2.Message(data=bytes(view))

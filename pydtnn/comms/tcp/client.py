@@ -72,7 +72,7 @@ class Client(Protocol):
 
         while True:
             try:
-                data = sock.recv(self._max_message_size)
+                data = sock.recv(self._max_payload_size)
             except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 break
 

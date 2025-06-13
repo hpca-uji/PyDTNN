@@ -119,7 +119,7 @@ class Client(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_message_size) as view:
+            with state.put_read(self._max_payload_size) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:

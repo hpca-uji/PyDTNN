@@ -39,9 +39,6 @@ class Server(Protocol):
         # TCP
         self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
 
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
-
         if comms.SSL:
             context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SSL_CERT)
             context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
@@ -162,7 +159,7 @@ class Server(Protocol):
 
         while True:
             try:
-                data = sock.recv(self._max_message_size)
+                data = sock.recv(self._max_payload_size)
             except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 break
 
