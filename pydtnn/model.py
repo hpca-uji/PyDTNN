@@ -101,12 +101,6 @@ try:
 except (ImportError, ModuleNotFoundError):
     MPI = None
 
-# TODO REMOVE BELOW
-import warnings
-warnings.filterwarnings("error")
-# TODO: Remove above
-
-
 # --- CONSTANS --- #
 BAR_WIDTH = 140
 
