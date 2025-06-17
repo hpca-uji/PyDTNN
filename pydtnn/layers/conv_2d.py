@@ -21,7 +21,7 @@ from abc import ABC
 
 from .layer import Layer
 from pydtnn.activations import Activation 
-from ..initializers import InitializerFunc, glorot_uniform, zeros
+from ..initializers import InitializerFunc, glorot_uniform, zeros, ones
 from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
 import numpy as np
 from enum import StrEnum, auto
