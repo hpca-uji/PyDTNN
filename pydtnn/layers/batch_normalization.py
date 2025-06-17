@@ -25,7 +25,7 @@ from .layer import Layer
 from pydtnn.utils import decode_tensor
 from typing import Callable
 
-from initializers import zeros
+from pydtnn.initializers import zeros
 
 class BatchNormalization(Layer, ABC):
 
