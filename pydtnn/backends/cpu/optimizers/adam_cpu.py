@@ -63,14 +63,19 @@ class AdamCPU(OptimizerCPU, Adam):
             v *= self.beta2 
             _dw = dw ** 2
             _dw *= (1 - self.beta2)
-            v =+ _dw
+            v += _dw
 
             mt:np.ndarray = m / (1 - self.beta1 ** it)
             vt:np.ndarray = v / (1 - self.beta2 ** it)
 
             # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
-            w -= (self.learning_rate * self.decay) * w
+            _w = self.decay * w
+            
             vt += self.epsilon
             mt /= np.sqrt(vt)
-            mt *= self.learning_rate
-            w -= mt
+
+            _w += mt
+            _w *= self.learning_rate
+
+            w -= _w
+        
