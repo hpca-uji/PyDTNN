@@ -31,7 +31,7 @@ class DropoutCPU(LayerCPU, Dropout):
         self.mask:np.ndarray = None
 
     def initialize(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().initialize(*args, **kwargs)
 
     def forward(self, x:np.ndarray) -> np.ndarray:
 
@@ -39,9 +39,7 @@ class DropoutCPU(LayerCPU, Dropout):
             case ModelModeEnum.TRAIN:
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 #self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
-                # TODO: Check if copy is better with False or True
-                self.mask:np.ndarray = np.random.binomial(n=1, p=(1 - self.rate), size=self.shape).astype(self.model.dtype, copy=False)
-                self.mask /= (1 - self.rate)
+                self.mask = (np.random.binomial(n=1, p=(1 - self.rate), size=self.shape) / (1 - self.rate)).astype(self.model.dtype)
                 return x * self.mask
             case ModelModeEnum.EVALUATE:
                 return x
@@ -51,7 +49,4 @@ class DropoutCPU(LayerCPU, Dropout):
     def backward(self, dy:np.ndarray) -> np.ndarray | None:
         if self.need_dx:
             dy *= self.mask
-            # From this point, in this iteration this "self.mask" will not be used anymore.
-            del self.mask
-            self.mask = None
             return dy

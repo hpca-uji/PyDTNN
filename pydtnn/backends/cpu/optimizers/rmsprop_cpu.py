@@ -62,7 +62,3 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
             _dw = dw / _cache 
             _dw *= self.learning_rate
             w -= _dw
-
-            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            del _cache
-            del _dw

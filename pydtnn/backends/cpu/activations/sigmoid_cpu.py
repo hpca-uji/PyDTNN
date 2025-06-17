@@ -25,10 +25,17 @@ from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 
 class SigmoidCPU(ActivationCPU, Sigmoid):
 
-    def forward(self, x):
-        self.y = 1 / (1 + np.exp(-x))
-        return self.y
+    def forward(self, x:np.ndarray) -> np.ndarray:
+        # self.y = 1 / (1 + np.exp(-x))
+        x *= -1
+        np.exp(x, out=x, casting="unsafe", dtype=self.model.dtype)
+        x += 1
+        self.y = 1 / x
+        return self.y.astype(self.model.dtype)
 
-    def backward(self, dy):
+    def backward(self, dy:np.ndarray) -> np.ndarray | None:
         if self.need_dx:
-            return dy * (self.y * (1 - self.y))
+            #return dy * (self.y * (1 - self.y))
+            dy *= self.y
+            dy *= (1 - self.y)
+            return dy

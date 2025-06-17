@@ -87,9 +87,6 @@ class ConvWinogradVariant(I2CVariant, ABC):
         self.x_rows:ndarray = im2row_nhwc_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                                  self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        
-        del self.cw_x 
-        self.cw_x = None
 
         return self._backward_i2c_nhwc(dy)
 
@@ -99,8 +96,5 @@ class ConvWinogradVariant(I2CVariant, ABC):
         self.x_cols:ndarray = im2col_nchw_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
                                                  self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        del self.cw_x
-        self.cw_x = None
 
         return self._backward_i2c_nchw(dy)

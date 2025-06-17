@@ -78,7 +78,3 @@ class NadamCPU(OptimizerCPU, Nadam):
             mt /= np.sqrt(vt)
             mt *= self.learning_rate
             w -= mt
-
-            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            del mt
-            del vt

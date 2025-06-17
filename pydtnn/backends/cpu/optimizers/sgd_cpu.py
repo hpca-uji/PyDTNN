@@ -50,6 +50,7 @@ class SGDCPU(OptimizerCPU, SGD):
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
             
             # velocity = self.momentum * velocity + dw
+            # NOTE/ Future FIXME: This will raise an error if the model is working in "int8" due is trying to assing a float64 value into a int8 ndarray.
             velocity *= self.momentum
             velocity += dw
             

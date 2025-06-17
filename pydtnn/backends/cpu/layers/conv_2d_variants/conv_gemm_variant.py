@@ -77,7 +77,7 @@ class ConvGemmVariant(Conv2D, ABC):
     def _backward_cg_nhwc(self, dy: np.ndarray) -> np.ndarray | None:
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM)
-        res: np.ndarray = np.empty(self.weights.shape, dtype=dy.dtype)
+        res: np.ndarray = np.zeros(self.weights.shape, dtype=dy.dtype)
         self.cg.conv_gemm_nhwc(dy, self.cg_x, biases=res,
                                vpadding=self.vpadding, hpadding=self.hpadding,
                                vstride=self.vstride, hstride=self.hstride,
@@ -85,9 +85,6 @@ class ConvGemmVariant(Conv2D, ABC):
                                trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         self.dw = res
-
-        del self.cw_x
-        self.cw_x = None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
         if self.use_bias:
@@ -109,7 +106,7 @@ class ConvGemmVariant(Conv2D, ABC):
     def _backward_cg_nchw(self, dy: np.ndarray) -> np.ndarray | None:
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM)
-        res = np.empty(self.weights.shape, dtype=dy.dtype)
+        res = np.zeros(self.weights.shape, dtype=dy.dtype)
         self.cg.conv_gemm_nchw(dy, self.cg_x, biases=res,
                                vpadding=self.vpadding, hpadding=self.hpadding,
                                vstride=self.vstride, hstride=self.hstride,
@@ -117,9 +114,6 @@ class ConvGemmVariant(Conv2D, ABC):
                                trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         self.dw = res
-
-        del self.cw_x
-        self.cw_x = None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
         if self.use_bias:

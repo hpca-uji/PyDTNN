@@ -35,7 +35,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
     def initialize(self, from_parent_dict=None, *args, **kwargs) -> None:
         # TODO: Discover why super.initialize() was not called.
-        super().initialize()
+        super().initialize(args, kwargs)
         self.forward = {"_forward_nchw_cg": self._forward_nchw_cg,
                         "_forward_nhwc_cg": self._forward_nhwc_cg,
                         "_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]

@@ -35,7 +35,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
                                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y:np.ndarray = np.mean(x_rows, axis=1)
-        return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        return y.reshape((-1, self.ho, self.wo, self.co))
 
     def _forward_nhwc_cython(self, x):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
