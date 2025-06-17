@@ -42,7 +42,7 @@ def pointwise_conv_cython(x: np.ndarray, k: np.ndarray) -> np.ndarray:
 
     cdef int co = k.shape[0]
 
-    out: np.ndarray = np.empty((n, co, h, w), dtype=x.dtype)
+    out: np.ndarray = np.zeros((n, co, h, w), dtype=x.dtype)
 
     try:
         pointwise_conv_cython_inner(out, x, k, n, c, h, w, co)

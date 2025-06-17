@@ -34,9 +34,9 @@ def argmax_cython(x: np.ndarray, int axis=0) -> tuple(np.ndarray, tuple(np.ndarr
     
     if axis == 0: x = x.T
 
-    maxv: np.ndarray = np.empty((x.shape[0],), dtype=x.dtype)
-    amax: np.ndarray = np.empty((x.shape[0],), dtype=np.int32)
-    rng: np.ndarray = np.empty((x.shape[0],), dtype=np.int32)    
+    maxv: np.ndarray = np.zeros((x.shape[0],), dtype=x.dtype)
+    amax: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32)
+    rng: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32)    
     
     try:
         argmax_cython_inner(x, maxv, amax, rng)

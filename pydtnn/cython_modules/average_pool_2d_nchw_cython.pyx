@@ -46,7 +46,7 @@ def average_pool_2d_fwd_nchw_cython(x: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    y:np.ndarray = np.empty((n, c, hh, ww), dtype=x.dtype)
+    y:np.ndarray = np.zeros((n, c, hh, ww), dtype=x.dtype)
 
     try:
         average_pool_2d_fwd_nchw_cython_inner(y, x, 
@@ -125,7 +125,7 @@ def average_pool_2d_bwd_nchw_cython(y: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    x:np.ndarray = np.empty((n, c, h, w), dtype=y.dtype)
+    x:np.ndarray = np.zeros((n, c, h, w), dtype=y.dtype)
 
     try:
         average_pool_2d_bwd_nchw_cython_inner(y, x,
