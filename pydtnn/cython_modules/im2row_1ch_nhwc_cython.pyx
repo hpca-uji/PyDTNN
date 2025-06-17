@@ -46,7 +46,7 @@ def im2row_1ch_nhwc_cython(x: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    rows: np.ndarray = np.empty((n * c * hh * ww, kh * kw), dtype=x.dtype)
+    rows: np.ndarray = np.zeros((n * c * hh * ww, kh * kw), dtype=x.dtype)
 
     try:
         im2row_1ch_nhwc_cython_inner(rows, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,

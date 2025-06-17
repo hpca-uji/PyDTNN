@@ -46,8 +46,8 @@ def max_pool_2d_fwd_nhwc_cython(x: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    y: np.ndarray = np.empty((n, hh, ww, c), dtype=x.dtype)
-    idx_max: np.ndarray = np.empty((n, hh, ww, c), dtype=np.int32)    
+    y: np.ndarray = np.zeros((n, hh, ww, c), dtype=x.dtype)
+    idx_max: np.ndarray = np.zeros((n, hh, ww, c), dtype=np.int32)    
 
     try:
         max_pool_2d_fwd_nhwc_cython_inner(y, x, idx_max, n, h, w, c,
@@ -129,7 +129,7 @@ def max_pool_2d_bwd_nhwc_cython(y: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    x: np.ndarray = np.empty((n, h, w, c), dtype=y.dtype)
+    x: np.ndarray = np.zeros((n, h, w, c), dtype=y.dtype)
 
     try:
         max_pool_2d_bwd_nhwc_cython_inner(y, x, idx_max, n, h, w, c,
