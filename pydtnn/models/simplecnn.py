@@ -26,7 +26,6 @@ def create_simplecnn(input_shape: tuple[int, int, int] = (28, 28, 1),
     _ = list_layers.append
 
     _(Input(shape=input_shape))
-    _(Input(shape=(28, 28, 1)))
     _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation=relu))
     _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation=relu))
     _(MaxPool2D(pool_shape=(2, 2), stride=2))
