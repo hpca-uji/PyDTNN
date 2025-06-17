@@ -49,7 +49,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         self.save_inv_var = None
         self.factor = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape:tuple[int, ...], need_dx:bool, x:TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
         self.stream_2 = drv.Stream()
 

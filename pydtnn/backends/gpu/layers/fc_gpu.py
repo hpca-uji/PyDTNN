@@ -38,7 +38,7 @@ class FCGPU(LayerGPU, FC):
         self.matmul = matmul_gpu
         self.matvec = matvec_gpu
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
         self.stream_2 = drv.Stream()
 
@@ -99,7 +99,7 @@ class FCGPU(LayerGPU, FC):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype) if need_dx else 0
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         m = x.ary.shape[0]
         n = ldb = ldc = self.weights.ary.shape[1]
         k = lda = x.ary.shape[1]
@@ -124,7 +124,7 @@ class FCGPU(LayerGPU, FC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         # Compute dw
         m = lda = self.x.ary.shape[1]
         n = ldb = ldc = dy.ary.shape[1]

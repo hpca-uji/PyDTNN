@@ -22,14 +22,16 @@ import numpy as np
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
+# noinspection PyUnresolvedReferences
+from pycuda.driver import Function
 
 from pydtnn.metrics import CategoricalAccuracy
 from .metric_gpu import MetricGPU
-
+from ..tensor_gpu import TensorGPU
 
 class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy):
 
-    def __init_gpu_kernel__(self):
+    def __init_gpu_kernel__(self) -> Function:
         module = SourceModule("""
         __global__ void categorical_accuracy(T *y_targ, T *y_pred, T *res, int b, int n)
         {
@@ -50,7 +52,7 @@ class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy):
         """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
         return module.get_function("categorical_accuracy")
 
-    def __call__(self, y_pred, y_targ):
+    def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU):
         threads = min(self.model.batch_size, 1024)
         blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ, y_pred, self.cost,

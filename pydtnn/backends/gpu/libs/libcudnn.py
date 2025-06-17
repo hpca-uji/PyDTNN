@@ -5,7 +5,7 @@ Python interface to the NVIDIA cuDNN library
 # 
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 # 
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 # 
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -62,6 +62,7 @@ class CudnnError(Exception):
 # Data layout specification
 # cudnnTensorFormat_t is an enumerated type used by
 # cudnnSetTensor4dDescriptor() to create a tensor with a pre-defined layout.
+type CudnnTensorFormat = dict[str, int]
 cudnnTensorFormat = {
     'CUDNN_TENSOR_NCHW': 0,  # This tensor format specifies that the data
     # is laid out in the following order: image,
@@ -100,6 +101,7 @@ cudnnTensorFormat = {
 # Data type
 # cudnnDataType_t is an enumerated type indicating the data type to which a tensor
 # descriptor or filter descriptor refers.
+type CudnnDataType = dict[str, int]
 cudnnDataType = {
     'CUDNN_DATA_FLOAT': 0,  # The data is 32-bit single-precision floating point
     # ( float ).
@@ -117,6 +119,7 @@ cudnnDataType = {
 # Math type
 # cudnnMathType_t is an enumerated type used to indicate if the use of Tensor Core 
 # operations is permitted in a given library routine.
+type CudnnMathType = dict[str, int]
 cudnnMathType = {
     'CUDNN_DEFAULT_MATH': 0,  # Tensor Core operations are not used on
     # pre-NVIDIA A100 GPU devices. On A100 GPU architecture devices,
@@ -132,6 +135,7 @@ cudnnMathType = {
 
 # cudnnAddMode_t is an enumerated type used by cudnnAddTensor() to specify how
 # a bias tensor is added to an input/output tensor.
+type CudnnAddMode = dict[str, int]
 cudnnAddMode = {
     'CUDNN_ADD_IMAGE': 0,
     'CUDNN_ADD_SAME_HW': 0,  # In this mode, the bias tensor is defined as one
@@ -160,6 +164,7 @@ cudnnAddMode = {
 # filter used for the convolution can be applied in two different ways, corresponding
 # mathematically to a convolution or to a cross-correlation. (A cross-correlation is
 # equivalent to a convolution with its filter rotated by 180 degrees.)
+type CudnnConvolutionMode = dict[str, int]
 cudnnConvolutionMode = {
     'CUDNN_CONVOLUTION': 0,  # In this mode, a convolution operation will be done
     # when applying the filter to the images.
@@ -170,6 +175,7 @@ cudnnConvolutionMode = {
 # cudnnConvolutionFwdPreference_t is an enumerated type used by
 # cudnnGetConvolutionForwardAlgorithm() to help the choice of the algorithm used for the
 # forward convolution.
+type CudnnConvolutionFwdPreference = dict[str, int]
 cudnnConvolutionFwdPreference = {
     'CUDNN_CONVOLUTION_FWD_NO_WORKSPACE': 0,  # In this configuration, the routine
     # cudnnGetConvolutionForwardAlgorithm() is guaranteed to return
@@ -185,6 +191,7 @@ cudnnConvolutionFwdPreference = {
 
 # cudnnConvolutionFwdAlgo_t is an enumerated type that exposes the different algorithm
 # available to execute the forward convolution operation.
+type CudnnConvolutionFwdAlgo = dict[str, int]
 cudnnConvolutionFwdAlgo = {
     'CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_GEMM': 0,  # This algorithm expresses the convolution
     # as a matrix product without actually explicitly forming the matrix
@@ -207,12 +214,14 @@ cudnnConvolutionFwdAlgo = {
     'CUDNN_CONVOLUTION_FWD_ALGO_COUNT': 8
 }
 
+type CudnnConvolutionBwdDataPreference = dict[str, int]
 cudnnConvolutionBwdDataPreference = {
     'CUDNN_CONVOLUTION_BWD_DATA_NO_WORKSPACE': 0,
     'CUDNN_CONVOLUTION_BWD_DATA_PREFER_FASTEST': 1,
     'CUDNN_CONVOLUTION_BWD_DATA_SPECIFY_WORKSPACE_LIMIT': 2
 }
 
+type CudnnConvolutionBwdDataAlgo = dict[str, int]
 cudnnConvolutionBwdDataAlgo = {
     'CUDNN_CONVOLUTION_BWD_DATA_ALGO_0': 0,
     'CUDNN_CONVOLUTION_BWD_DATA_ALGO_1': 1,
@@ -223,12 +232,14 @@ cudnnConvolutionBwdDataAlgo = {
     'CUDNN_CONVOLUTION_BWD_DATA_ALGO_COUNT': 6
 }
 
+type CudnnConvolutionBwdFilterPreference = dict[str, int]
 cudnnConvolutionBwdFilterPreference = {
     'CUDNN_CONVOLUTION_BWD_FILTER_NO_WORKSPACE': 0,
     'CUDNN_CONVOLUTION_BWD_FILTER_PREFER_FASTEST': 1,
     'CUDNN_CONVOLUTION_BWD_FILTER_SPECIFY_WORKSPACE_LIMIT': 2,
 }
 
+type CudnnConvolutionBwdFilterAlgo = dict[str, int]
 cudnnConvolutionBwdFilterAlgo = {
     'CUDNN_CONVOLUTION_BWD_FILTER_ALGO_0': 0,
     'CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1': 1,
@@ -240,6 +251,7 @@ cudnnConvolutionBwdFilterAlgo = {
     'CUDNN_CONVOLUTION_BWD_FILTER_ALGO_COUNT': 7
 }
 
+type CudnnBatchNormMode = dict[str, int]
 cudnnBatchNormMode = {
     'CUDNN_BATCHNORM_PER_ACTIVATION': 0,
     'CUDNN_BATCHNORM_SPATIAL': 1,
@@ -248,6 +260,7 @@ cudnnBatchNormMode = {
 
 # cudnnSoftmaxAlgorithm_t is used to select an implementation of the softmax
 # function used in cudnnSoftmaxForward() and cudnnSoftmaxBackward().
+type CudnnSoftmaxAlgorithm = dict[str, int]
 cudnnSoftmaxAlgorithm = {
     'CUDNN_SOFTMAX_FAST': 0,  # This implementation applies the straightforward
     # softmax operation.
@@ -260,6 +273,7 @@ cudnnSoftmaxAlgorithm = {
 
 # cudnnSoftmaxMode_t is used to select over which data the cudnnSoftmaxForward()
 # and cudnnSoftmaxBackward() are computing their results.
+type CudnnSoftmaxMode = dict[str, int]
 cudnnSoftmaxMode = {
     'CUDNN_SOFTMAX_MODE_INSTANCE': 0,  # The softmax operation is computed per image (N)
     # across the dimensions C,H,W.
@@ -271,6 +285,7 @@ cudnnSoftmaxMode = {
 # cudnnPoolingMode_t is an enumerated type passed to
 # cudnnSetPoolingDescriptor() to select the pooling method to be used by
 # cudnnPoolingForward() and cudnnPoolingBackward() .
+type CudnnPoolingMode = dict[str, int]
 cudnnPoolingMode = {
     'CUDNN_POOLING_MAX': 0,  # The maximum value inside the pooling window will
     # be used.
@@ -287,12 +302,14 @@ cudnnPoolingMode = {
 # cudnnNanPropagation_t is an enumerated type used to indicate if a given routine 
 # should propagate Nan numbers. This enumerated type is used as a field for the 
 # cudnnActivationDescriptor_t descriptor and cudnnPoolingDescriptor_t descriptor
+type CudnnNanPropagation = dict[str, int]
 cudnnNanPropagation = {
     'CUDNN_NOT_PROPAGATE_NAN': 0,
     'CUDNN_PROPAGATE_NAN': 1
 }
 # cudnnActivationMode_t is an enumerated type used to select the neuron activation
 # function used in cudnnActivationForward() and cudnnActivationBackward() .
+type CudnnActivationMode = dict[str, int]
 cudnnActivationMode = {
     'CUDNN_ACTIVATION_SIGMOID': 0,  # sigmoid function
     'CUDNN_ACTIVATION_RELU': 1,  # rectified linear function

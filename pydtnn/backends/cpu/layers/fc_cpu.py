@@ -57,7 +57,7 @@ class FCCPU(LayerCPU, FC):
             self.x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        res = self.model.matmul(x, self.weights)
+        res:np.ndarray = np.matmul(x, self.weights)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -68,18 +68,14 @@ class FCCPU(LayerCPU, FC):
     def backward(self, dy: np.ndarray) -> np.ndarray | None:
         # self.model.mode = TRAIN_MODE is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        self.dw = self.model.matmul(self.x.T, dy)
+        self.dw = np.matmul(self.x.T, dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        # From this point, in this iteration this "self.x" will not be used anymore.
-        del self.x
-        self.x = None
 
         if self.use_bias:
             self.db = np.sum(dy, axis=0)
 
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-            dx = self.model.matmul(dy, self.weights.T)
+            dx = np.matmul(dy, self.weights.T)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return dx

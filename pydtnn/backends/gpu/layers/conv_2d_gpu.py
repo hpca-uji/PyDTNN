@@ -43,7 +43,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.bwd_dx_algo = None
         self.conv_desc = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
         # This weight shape is required for cuDNN when NHWC is seleted!
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
@@ -166,7 +166,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) \
             if need_dx else 0
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
@@ -188,7 +188,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
         # Compute dw

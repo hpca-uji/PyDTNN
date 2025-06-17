@@ -21,20 +21,22 @@ from pydtnn.activations.relu import Relu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from pydtnn.cython_modules import relu_cython
 from pydtnn.model import TRAIN_MODE
-
+import numpy as np
 
 class ReluCPU(ActivationCPU, Relu):
 
-    def __init__(self, shape=(1,)):
+    def __init__(self, shape:tuple[int, ...]=(1,)):
         super().__init__(shape)
-        self.mask = None
+        self.mask:np.ndarray = None
 
-    def forward(self, x):
-        self.y, mask = relu_cython(x)
+    def forward(self, x:np.ndarray) -> np.ndarray:
+        self.y, mask = relu_cython(x)        
         if self.model.mode == TRAIN_MODE:
             self.mask = mask
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy:np.ndarray) -> np.ndarray | None:
         if self.need_dx:
-            return dy * self.mask
+            #return dy * self.mask
+            dy *= self.mask
+            return dy

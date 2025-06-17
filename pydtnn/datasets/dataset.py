@@ -26,15 +26,14 @@ from abc import ABC, abstractmethod
 import numpy as np
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT, string_substitute
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, Iterable
 if TYPE_CHECKING:
     from pydtnn.model import Model
 else: Model = None
-from enum import IntEnum, auto
+from enum import IntEnum
 from pydtnn.backends.gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
 type shape_t  = tuple[int, ...]
-
 
 class _BackgroundGenerator(threading.Thread):
 
@@ -50,7 +49,7 @@ class _BackgroundGenerator(threading.Thread):
             self.queue.put(item)
         self.queue.put(None)
 
-    def __next__(self):
+    def __next__(self) -> tuple[Array, Array]:
         next_item = self.queue.get()
         if next_item is None:
             raise StopIteration
@@ -259,15 +258,15 @@ class Dataset(ABC):
         pass
 
     @staticmethod
-    def _nchw2nhwc(x):
+    def _nchw2nhwc(x: Array) -> Array:
         return x.transpose(0, 2, 3, 1).copy()
 
     @staticmethod
-    def _decode_class(y, classes_list):
+    def _decode_class(y: Array, classes_list: np.ndarray) -> None:
         """Sets to 1 the corresponding entry in the 2D y array as indicated by the 1D array of classes"""
         y[np.arange(y.shape[0]), classes_list] = 1
 
-    def _synthetic_data_generator(self, part):
+    def _synthetic_data_generator(self, part: DatasetEnum):
         """
         Generates synthetic data for each dataset part returning (slices of) _x[part] and _y[part] initialized in
         _init_synthetic_data().
@@ -311,10 +310,10 @@ class Dataset(ABC):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part):
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
         yield self._x[part], self._y[part]
 
-    def _actual_batch_generator(self, part):
+    def _actual_batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
         generator = self._data_generator(part)
@@ -350,7 +349,7 @@ class Dataset(ABC):
                 yield x_local_batch, y_local_batch, global_batch_size
                 nsamples -= global_batch_size
 
-    def _batch_generator(self, part):
+    def _batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
         x_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
         y_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
         for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
@@ -360,7 +359,7 @@ class Dataset(ABC):
         while True:
             yield x_batch[:0], y_batch[:0], 0
 
-    def _do_flip_images(self, data):
+    def _do_flip_images(self, data: Array) -> Array:
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, c, h, w = data.shape
             width_dim = -1
@@ -374,7 +373,7 @@ class Dataset(ABC):
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
         return data
 
-    def _do_crop_images(self, data):
+    def _do_crop_images(self, data: Array) -> Array:
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, c, h, w = data.shape
         else:
@@ -399,7 +398,7 @@ class Dataset(ABC):
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
         return data
 
-    def _do_data_augmentation(self, x_data):
+    def _do_data_augmentation(self, x_data: Array) -> Array:
         # Preserve the original version when producing new data
         x_data = x_data.copy()
         if self.model.flip_images:

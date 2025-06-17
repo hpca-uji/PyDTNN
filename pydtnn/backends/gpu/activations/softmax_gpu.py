@@ -34,7 +34,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         self.mode = None
         self.algo = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> None:
         self.shape = prev_shape
         self.need_dx = need_dx
 
@@ -49,14 +49,14 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnSoftmaxForward(self.model.cudnn_handle, self.algo, self.mode, alpha,
                                   x.desc, x.ptr, beta,
                                   self.y.desc, self.y.ptr)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU | None:
         if self.need_dx:
             alpha, beta = 1.0, 0.0
             cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha,
