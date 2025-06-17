@@ -38,8 +38,8 @@ class LayerAndActivationBase(ABC):
     def __init__(self, shape:tuple[int, ...]=()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
-        self.weights: np.ndarray = np.array([])
-        self.biases: np.ndarray = np.array([])
+        self.weights: np.ndarray = None
+        self.biases: np.ndarray = None
         self.act: Activation | None = None
         self.grad_vars:dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)

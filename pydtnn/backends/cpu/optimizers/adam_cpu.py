@@ -43,7 +43,7 @@ class AdamCPU(OptimizerCPU, Adam):
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer]["it"] += 1
-        it = self.context[layer]["it"]
+        it:int = self.context[layer]["it"]
 
         for w_, dw_ in layer.grad_vars.items():            
             w, dw = getattr(layer, w_), getattr(layer, dw_)
@@ -74,8 +74,3 @@ class AdamCPU(OptimizerCPU, Adam):
             mt /= np.sqrt(vt)
             mt *= self.learning_rate
             w -= mt
-
-            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            del _dw
-            del mt
-            del vt

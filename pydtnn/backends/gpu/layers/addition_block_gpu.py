@@ -22,7 +22,7 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum 
 from . import LayerGPU
 from ..libs import libcudnn as cudnn
-
+from ..tensor_gpu import TensorGPU
 
 class AdditionBlockGPU(LayerGPU, AdditionBlock):
 
@@ -45,7 +45,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
         assert all([o == self.out_shapes[0] for o in self.out_shapes])
         self.shape = self.out_shapes[0]
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
@@ -64,7 +64,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             dx_i = dy
             for layer in reversed(p):

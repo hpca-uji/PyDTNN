@@ -47,32 +47,34 @@ def roofline(intensity, cpu_speed, memory_bw):
     return min(cpu_speed, memory_bw * intensity)
 
 
-def flops2time(flops, memops, cpu_speed, memory_bw, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def flops2time(flops:int, memops:int, cpu_speed:float, memory_bw:float, dtype: type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     speed = roofline(flops / (bfp * memops), cpu_speed, memory_bw)
     time = flops / (speed + 1e-8)
     comp_time = flops / (cpu_speed + 1e-8)
     return np.array([time, comp_time, time - comp_time, 0], dtype=np.float32)
 
 
-def im2col_time(m, n, cpu_speed, memory_bw, dtype):
+def im2col_time(m:int, n:int, cpu_speed:float, memory_bw:float, dtype:type|np.dtype) -> np.ndarray[np.float32]:
     flops, memops = (0, m * n)
     return flops2time(flops, memops, cpu_speed, memory_bw, dtype)
 
 
-def col2im_time(m, n, cpu_speed, memory_bw, dtype):
+def col2im_time(m:int, n:int, cpu_speed:float, memory_bw:float, dtype:type|np.dtype) -> np.ndarray[np.float32]:
     flops, memops = (m * n, m * n)
     return flops2time(flops, memops, cpu_speed, memory_bw, dtype)
 
 
-def matmul_time(m, n, k, cpu_speed, memory_bw, dtype):
+def matmul_time(m:int, n:int, k:int, cpu_speed:float, memory_bw: float, dtype:type|np.dtype) -> np.ndarray[np.float32]:
     flops, memops = (2.0 * m * n * k, m * n + m * k + n * k)
     return flops2time(flops, memops, cpu_speed, memory_bw, dtype)
 
 
-def allreduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def allreduce_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                   network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time = 0
+    # TODO: Move network_alg to a Enum?
     if network_alg == "bta":
         time = 2.0 * log(nprocs, 2) * network_lat + \
                2.0 * ((nprocs - 1.0) / nprocs) * ((elems * bfp * 8.0) / network_bw) + \
@@ -87,9 +89,11 @@ def allreduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nproc
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 
-def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def scatter_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                 network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time = 0
+    # TODO: Move network_alg to a Enum?
     if network_alg == "bta":
         time = ceil(log(nprocs, 2)) * network_lat + \
                ((nprocs - 1) / nprocs) * ((elems * bfp * 8.0) / network_bw)
@@ -100,8 +104,9 @@ def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs,
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 
-def reduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def reduce_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time, comp_time = 0, 0
     if network_alg == "bta":
         comp_time = ceil(log(nprocs, 2)) * (elems / cpu_speed)
@@ -119,8 +124,9 @@ def reduce_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, 
     return np.array([time, comp_time, 0, time - comp_time], dtype=np.float32)
 
 
-def bcast_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def bcast_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time = 0
     if network_alg == "bta":
         time = ceil(log(nprocs, 2)) * ((3 * network_lat) + \
@@ -132,8 +138,9 @@ def bcast_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, d
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 
-def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def scatter_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time = 0
     if network_alg == "bta":
         time = ceil(log(nprocs, 2)) * network_lat + \
@@ -145,14 +152,16 @@ def scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs,
     return time
 
 
-def gather_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
+def gather_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
     time = bcast_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype)
     # print("gather_time; s; %8d; t; %8.8f" % (elems, time))
     return time
 
 
-def allgather_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def allgather_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time = 0
     if network_alg == "bta":
         time = (nprocs - 1) * network_lat + \
@@ -164,8 +173,9 @@ def allgather_time(elems, cpu_speed, network_bw, network_lat, network_alg, nproc
     return np.array([time, 0, 0, time], dtype=np.float32)
 
 
-def reduce_scatter_time(elems, cpu_speed, network_bw, network_lat, network_alg, nprocs, dtype):
-    bfp = {np.float32: 4, np.float64: 8}[dtype]
+def reduce_scatter_time(elems:int, cpu_speed:float, network_bw:float, network_lat:float, 
+                network_alg:str, nprocs:int, dtype:type|np.dtype) -> np.ndarray[np.float32]:
+    bfp = np.dtype(dtype).itemsize
     time = 0
     if network_alg == "bta":
         comp_time = ((nprocs - 1) / nprocs) * (elems / cpu_speed)

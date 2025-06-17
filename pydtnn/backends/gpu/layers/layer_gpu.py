@@ -35,6 +35,8 @@ try:
 except (ImportError, ModuleNotFoundError, OSError):
     pass
 
+from numpy import ndarray
+from ..tensor_gpu import TensorGPU
 
 class LayerGPU(Layer, ABC):
     """
@@ -44,20 +46,20 @@ class LayerGPU(Layer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
-        self.y = None
-        self.weights_cpu = None
-        self.biases_cpu = None
-        self.x = None
-        self.dx = None
-        self.dw = None
-        self.db = None
-        self.dw_cpu = None
-        self.db_cpu = None
-        self.one_vec_cpu = None
-        self.one_vec_gpu = None
+        self.y: TensorGPU = None
+        self.weights_cpu: ndarray = None
+        self.biases_cpu: ndarray = None
+        self.x: TensorGPU = None
+        self.dx: TensorGPU = None
+        self.dw: TensorGPU = None
+        self.db: TensorGPU = None
+        self.dw_cpu: ndarray = None
+        self.db_cpu: ndarray = None
+        self.one_vec_cpu: ndarray = None
+        self.one_vec_gpu: TensorGPU = None
 
     # noinspection PyMethodOverriding
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool, x: TensorGPU) -> None:
         self.x = x  # Must be before super().initialize()
         super().initialize(prev_shape, need_dx)
 

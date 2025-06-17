@@ -25,10 +25,13 @@ from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 
 class TanhCPU(ActivationCPU, Tanh):
 
-    def forward(self, x):
-        self.y = np.tanh(x)
+    def forward(self, x:np.ndarray) -> np.ndarray:
+        self.y = np.tanh(x, casting="unsafe", dtype=self.model.dtype)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy:np.ndarray) -> np.ndarray | None:
         if self.need_dx:
-            return 1 - np.tanh(dy) ** 2
+            # return 1 - np.tanh(dy) ** 2
+            np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
+            dy *= dy
+            return 1 - dy

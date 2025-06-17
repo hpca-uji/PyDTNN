@@ -40,7 +40,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         self.out_co = None
         self.idx_co = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape:tuple[int, ...], need_dx:bool, x:TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
@@ -133,7 +133,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
             self.shape = (*self.out_shapes[0][:-1], sum(self.out_co))
         self.ho, self.wo, self.co = decode_tensor(self.shape, self.model.tensor_format)
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             y_i = x
             for layer in p:
@@ -146,7 +146,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
             self.split(dy.ary, self.dy[i].ary, self.model.batch_size, self.ho, self.wo, self.co,

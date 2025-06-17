@@ -20,8 +20,8 @@
 from abc import ABC
 
 from .layer import Layer
-from activations import Activation
-from initializers import InitializerFunc, glorot_uniform, zeros
+from pydtnn.activations import Activation
+from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 
 
 class FC(Layer, ABC):

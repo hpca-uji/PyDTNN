@@ -28,9 +28,10 @@ import time
 from timeit import default_timer as timer
 
 # Typing-related import
-from typing import Any, TypeVar
+from typing import Any, TypeVar, Callable
 from collections.abc import Iterable
 from .tracers import SimpleTracerGPU
+from pydtnn.layers.batch_normalization import BatchNormalization
 
 from types import ModuleType
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
@@ -100,6 +101,12 @@ try:
 except (ImportError, ModuleNotFoundError):
     MPI = None
 
+# TODO REMOVE BELOW
+import warnings
+warnings.filterwarnings("error")
+# TODO: Remove above
+
+
 # --- CONSTANS --- #
 BAR_WIDTH = 140
 
@@ -139,10 +146,10 @@ def _layer_id_generator() -> Iterable[int]:
 # --- END _layer_id_generator --- #
 
 # TODO: Check the output.
-def ensure_model_is_initialized(method):
+def ensure_model_is_initialized(method:Callable):
     @functools.wraps(method)
-    def wrapper_ensure_model_is_initialized(*args, **kwargs):
-        self = args[0]
+    def wrapper_ensure_model_is_initialized(*args, **kwargs) -> Callable:
+        self:Model = args[0]
         if not self._initialized:
             self._initialize()
         return method(*args, **kwargs)
@@ -151,8 +158,6 @@ def ensure_model_is_initialized(method):
 # --- END ensure_model_is_initialized --- #
 
 def _initilize_communications(parallel: str) -> tuple[ModuleType | None, ModuleType | None]:
-    
-    
     match parallel:
         case "sequential":
             mpi = None
@@ -274,10 +279,10 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
     cublas.cublasSetStream(cublas_handle, stream.handle)
     cudnn.cudnnSetStream(cudnn_handle, stream.handle)
 
-    cudnn_types = {np.float64: "CUDNN_DATA_DOUBLE", 
-                   np.float32: "CUDNN_DATA_FLOAT", 
-                   np.int8: "CUDNN_DATA_INT8", 
-                   np.int32: "CUDNN_DATA_INT32"}
+    cudnn_types = {np.float64:  "CUDNN_DATA_DOUBLE", 
+                   np.float32:  "CUDNN_DATA_FLOAT", 
+                   np.int8:     "CUDNN_DATA_INT8", 
+                   np.int32:    "CUDNN_DATA_INT32"}
 
     cudnn_type:str = cudnn_types.get(dtype, "CUDNN_DATA_FLOAT")
 
@@ -293,8 +298,10 @@ def _set_data_format(tensor_format:str, enable_cudnn:bool) -> PYDTNN_TENSOR_FORM
             tensor_format = PYDTNN_TENSOR_FORMAT.NCHW if enable_cudnn else PYDTNN_TENSOR_FORMAT.NHWC
         case "NCHW":
             tensor_format = PYDTNN_TENSOR_FORMAT.NCHW
-        case _: # case "NHWC":
+        case "NHWC":
             tensor_format = PYDTNN_TENSOR_FORMAT.NHWC
+        case _:
+            raise NotImplementedError(f"\'{tensor_format}\' is not supported.")
     return tensor_format
 # --- END _set_data_format --- #
 
@@ -438,6 +445,21 @@ class Model:
         self.enable_conv_winograd:bool = self.kwargs['enable_conv_winograd']
         self.enable_conv_gemm:bool = self.kwargs['enable_conv_gemm']
         self.enable_conv_direct:bool = self.kwargs['enable_conv_direct']
+        self.evaluate_only:bool = self.kwargs['evaluate_only']
+        self.evaluate_on_train:bool = self.kwargs['evaluate_on_train']      
+        self.profile:bool = self.kwargs['profile']
+        self.history_file:str = self.kwargs['history_file']
+        self.model_sync_min_avail:int = self.kwargs['model_sync_min_avail']
+        # ---
+
+        # Attributes that will be properly initialized elsewhere
+        self.y_batch: Array = None
+        self.history: dict[str, list[np.ndarray]] = None
+        self.loss_func: Loss = None
+        self.metrics_funcs:list[metrics.Metric] = None
+        self.loss_and_metrics: list[str] # Is a list with the name of the loss function and the metrics's names.
+        self.total_metrics: Array
+        # ---
 
         self.weights_and_bias_filename:str # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         # Load weights and bias
@@ -476,14 +498,6 @@ class Model:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
-        
-        # Attributes that will be properly initialized elsewhere
-        self.y_batch: Array = None
-        self.history: dict[str, list[np.ndarray]] = None
-        self.loss_func: Loss = None
-        self.metrics_funcs:list[metrics.Metric] = None
-        self.loss_and_metrics: list[str] # Is a list with the name of the loss function and the metrics's names.
-        self.total_metrics: Array
     # --- END __init__ --- #
 
     @property
@@ -501,10 +515,15 @@ class Model:
 
     # TODO: Erease this function.
     #   > If the user want to use a premade model, they should call to that function, pass the parameters, and then initalize.
-    def _read_model(self, model_name) -> None:
+    def _read_model(self, model_name):
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
-            getattr(model_module, f"create_{model_name}")(self)
+            # NOTE: Dataset is always in NCHW, but Layer always wants NHWC
+            c, h, w = self.dataset.input_shape
+            input_shape = (h, w, c)
+            output_shape = tuple(self.dataset.output_shape)
+            layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
+            self.add_layers(layers)
         except (ModuleNotFoundError, AttributeError):
             import traceback
             print(traceback.format_exc())
@@ -514,7 +533,7 @@ class Model:
     # --- END _read_model --- #
 
     def show(self) -> None:
-        bfp = {np.float32: 4, np.float64: 8}[self.dtype]
+        bfp = np.dtype(self.dtype).itemsize
         line = "+-------+--------------------------+---------+---------------+-------------------" \
                "+-------------------------------------+"
         head = "| Layer |           Type           | #Params | Output shape  |   Weights shape   " \
@@ -631,12 +650,11 @@ class Model:
     def _initialize(self):
         if self._initialized:
             return
-        # NOTE: all this "something" in self.kwargs.get([something]) come from Parser
+        # NOTE: all this "[keyword]" in self.kwargs.get([keyword]) come from Parser
         self._apply_layer_fusion(self.kwargs.get("enable_fused_bn_relu"), self.kwargs.get("enable_fused_conv_relu"),
                                  self.kwargs.get("enable_fused_conv_bn"), self.kwargs.get("enable_fused_conv_bn_relu"))
         # TODO/FIXME: Pass the loss' class as a parameter insted of get it here.
-        self.loss_func = getattr(losses, self.loss_func_name)(shape=(self.batch_size, *self.layers[-1].shape),
-                                                              model=self)
+        self.loss_func = losses.switch_losses(self.loss_func_name)(shape=(self.batch_size, *self.layers[-1].shape), model=self)
         self.metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
                               self.metrics_list]
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
@@ -667,6 +685,7 @@ class Model:
                 grad_vars = [g for g in layer.grad_vars] + \
                             (["running_var", "running_mean"] if name == "BatchNormalization" else [])
                 if name == "BatchNormalization":
+                    layer:BatchNormalization # This is only for the hint.
                     layer.updated_running_var = True
                 for key in grad_vars:
                     base = f"{layer.id}_{name}_{key}"
@@ -713,6 +732,7 @@ class Model:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
         total_time:np.ndarray = np.zeros((4,), dtype=np.float32)
 
+        last_layer = len(self.layers) - 1
         # Forward pass (FP)
         for layer in range(1, len(self.layers)):
             total_time += self.layers[layer].fwd_time
@@ -720,11 +740,11 @@ class Model:
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(len(self.layers) - 1, 0, -1):
+            for layer in range(last_layer, 0, -1):
                 total_time += self.layers[layer].bwd_time
 
             # Weight update (WU)
-            for layer in range(len(self.layers) - 1, 0, -1):
+            for layer in range(last_layer, 0, -1):
                 if self.comm and self.layers[layer].weights.size > 0:
                     total_time += allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
                                                  self.cpu_speed, self.network_bw, self.network_lat,
@@ -733,7 +753,7 @@ class Model:
             total_time_iar:int = 0
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(len(self.layers) - 1, 0, -1):
+            for layer in range(last_layer, 0, -1):
                 total_time += self.layers[layer].bwd_time
                 if self.comm and self.layers[layer].weights.size > 0:
                     time_iar = allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
@@ -1015,7 +1035,8 @@ class Model:
         return history
     # --- END train --- #
 
-    def _compute_rank_weight(self, mask):
+    def _compute_rank_weight(self, mask:list[int]) -> float:
+        # TODO Move "all" and "avail2all" to an Enum?
         match self.model_sync_participation:
             case "all":
                 comm_nsamples = self.comm_nsamples
@@ -1030,6 +1051,7 @@ class Model:
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
 
+        # TODO Move "avg", "wavg", "invwavg" to an Enum?
         match self.model_sync_alg:
             case "avg":
                 return 1.0 / comm_size
@@ -1066,8 +1088,7 @@ class Model:
         return self.total_metrics
     # --- END _evaluate_batch --- #
 
-    # NOTE: This is correct.
-    def evaluate(self, x_test, y_test, bar_width=BAR_WIDTH):
+    def evaluate(self, x_test:Array, y_test:Array, bar_width=BAR_WIDTH):
         self.dataset = CustomDataset(self, x_test=x_test, y_test=y_test)
         self.evaluate_dataset(bar_width=bar_width)
     # --- END evaluate --- #

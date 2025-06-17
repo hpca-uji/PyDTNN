@@ -21,10 +21,14 @@ from abc import ABC, abstractmethod
 
 from ..backends import PromoteToBackendMixin
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from model import Model
+else: Model = None
 
 class Metric(PromoteToBackendMixin, ABC):
 
-    def __init__(self, shape, model, eps=1e-8):
+    def __init__(self, shape: tuple[int, ...], model: Model, eps=1e-8):
         self.shape = shape
         self.model = model
         self.eps = eps

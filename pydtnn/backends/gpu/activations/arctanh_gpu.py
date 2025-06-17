@@ -38,7 +38,7 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.atanh = None
         self.datanh = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape:tuple[int, ...], need_dx: bool, x: TensorGPU) -> None:
         super().initialize(prev_shape, need_dx, x)
 
         self.atanh = ElementwiseKernel(
@@ -60,11 +60,11 @@ class ArctanhGPU(ActivationGPU, Arctanh):
             dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
             self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         self.atanh(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU | None:
         if self.need_dx:
             # Compute dx
             self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
