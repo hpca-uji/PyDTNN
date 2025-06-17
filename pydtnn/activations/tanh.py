@@ -31,4 +31,7 @@ class Tanh(Activation):
 
     def backward(self, dy: ndarray | TensorGPU | None) -> ndarray | TensorGPU | None:
         if self.need_dx:
-            return 1 - np.tanh(dy) ** 2
+            #return 1 - np.tanh(dy) ** 2
+            dy = np.tanh(dy)
+            dy *= dy
+            return 1 - dy

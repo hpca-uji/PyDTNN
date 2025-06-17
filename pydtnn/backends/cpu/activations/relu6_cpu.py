@@ -31,11 +31,11 @@ class Relu6CPU(Relu6, ActivationCPU):
         self.mask: ndarray = None
 
     def forward(self, x: ndarray) -> ndarray:
-        self.y, mask = capped_relu_cython(x, self.cap)
-        if self.model.mode == TRAIN_MODE:
-            self.mask = mask
+        self.y, self.mask = capped_relu_cython(x, self.cap)
         return self.y
 
     def backward(self, dy: ndarray) -> ndarray | None:
         if self.need_dx:
-            return dy * self.mask
+            # return dy * self.mask
+            dy *= self.mask
+            return dy

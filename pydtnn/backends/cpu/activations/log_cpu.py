@@ -21,13 +21,21 @@ import numpy as np
 
 from pydtnn.activations.log import Log
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-
+from numpy import ndarray
 
 class LogCPU(ActivationCPU, Log):
 
-    def forward(self, x):
-        return np.log(1 / (1 + np.exp(-x)))
+    def forward(self, x:ndarray) -> ndarray:
+        # return np.log(1 / (1 + np.exp(-x)))
+        x *= -1
+        np.exp(x, out=x, casting='unsafe', dtype=x.dtype)
+        x += 1
+        x = 1 / x
+        return np.log(x).astype(dtype=self.model.dtype)
 
-    def backward(self, dy):
+    def backward(self, dy:ndarray) -> ndarray | None:
         if self.need_dx:
-            return 1 / (np.exp(dy) + 1)
+            # return 1 / (np.exp(dy) + 1)
+            np.exp(dy, out=dy, casting='unsafe', dtype=dy.dtype)
+            dy += 1
+            return 1 / dy

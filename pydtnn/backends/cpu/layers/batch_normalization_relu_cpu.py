@@ -41,12 +41,12 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
-            x = x.reshape((-1, self.ci), copy=False)
+            x = x.reshape((-1, self.ci))
 
         y: ndarray = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+            y = y.reshape((-1, self.hi, self.wi, self.ci))
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
 

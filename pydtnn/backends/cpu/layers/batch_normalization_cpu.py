@@ -55,7 +55,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 x:np.ndarray = best_transpose_0231(x)
-            x:np.ndarray = x.reshape((-1, self.ci), copy=False)
+            x:np.ndarray = x.reshape((-1, self.ci))
 
         match self.model.mode:
             case ModelModeEnum.TRAIN:
@@ -108,7 +108,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+            y = y.reshape((-1, self.hi, self.wi, self.ci))
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
 
@@ -119,7 +119,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.spatial:
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 dy = best_transpose_0231(dy)
-            dy = dy.reshape((-1, self.ci), copy=False)
+            dy = dy.reshape((-1, self.ci))
 
         self.dgamma = np.sum(dy * self.xn, axis=0)
         self.dbeta = np.sum(dy, axis=0)
@@ -131,7 +131,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             dx:np.ndarray = bn_training_bwd_cython(dy, self.std, self.xn, self.gamma, self.dgamma, self.dbeta)
 
             if self.spatial:
-                dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                dx = dx.reshape((-1, self.hi, self.wi, self.ci))
                 if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                     dx = best_transpose_0312(dx)
 

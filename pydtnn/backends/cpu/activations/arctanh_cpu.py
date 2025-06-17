@@ -21,14 +21,21 @@ import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
 from .activation_cpu import ActivationCPU
-
+from numpy import ndarray
 
 class ArctanhCPU(ActivationCPU, Arctanh):
 
-    def forward(self, x):
-        self.y = np.arctan(x)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)        
+
+    def forward(self, x: ndarray) -> ndarray:
+        #self.y = np.arctan(x)
+        self.y = np.arctan(x, casting="unsafe", dtype=x.dtype)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: ndarray) -> ndarray | None:
         if self.need_dx:
-            return 1 / (1 + dy ** 2)
+            # return 1 / (1 + dy ** 2)
+            dy *= dy
+            dy += 1
+            return 1 / dy

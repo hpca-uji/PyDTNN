@@ -5,7 +5,7 @@ PyDTNN convGemm module
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -62,7 +62,7 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, dtype=np.float32, debug=False, parent_layer=None):
+    def __init__(self, dtype:np.dtype=np.float32, debug:bool=False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
@@ -167,7 +167,7 @@ class ConvGemm:
             ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
             if biases is None:
-                biases = np.empty((b, kn, ho, wo), weights.dtype, order="C")
+                biases = np.zeros((b, kn, ho, wo), weights.dtype, order="C")
             else:
                 bb, knb, hob, wob = biases.shape
                 assert bb == b, "Batch size of the biases must be the same as in the input!"
@@ -219,7 +219,7 @@ class ConvGemm:
             ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
             if biases is None:
-                biases = np.empty((b, ho, wo, kn), weights.dtype, order="C")
+                biases = np.zeros((b, ho, wo, kn), weights.dtype, order="C")
             else:
                 bb, hob, wob, knb = biases.shape
                 assert bb == b, "Batch size of the biases must be the same as in the input!"

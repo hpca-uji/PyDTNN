@@ -26,7 +26,6 @@ class FlattenCPU(LayerCPU, Flatten):
 
     def forward(self, x:ndarray) -> ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        # TODO: Check if it's better to use copy=False or True
         y:ndarray = x.reshape((x.shape[0], *self.shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y

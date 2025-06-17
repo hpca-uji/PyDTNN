@@ -5,7 +5,7 @@ PyDTNN convDirect module
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2022 Universitat Jaume I
+#  Copyright (C) 2022-2025 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software

@@ -44,8 +44,8 @@ PYTORCH_LAYER_BIASES = "bias"
 
 # setting random seed
 SEED = 1234
-torch.manual_seed(SEED)
-np.random.seed(SEED)
+#torch.manual_seed(SEED)
+#np.random.seed(SEED)
 # ---
 
 THRESHOLD = 1e-4
