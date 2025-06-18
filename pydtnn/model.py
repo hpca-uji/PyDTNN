@@ -852,7 +852,6 @@ class Model:
 
         # Syncronize model
         if self.final_model_sync:
-            self._weight_update(gradient=True, blocking=self.blocking_mpi)
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         self.tracer.define_event_types(self)
