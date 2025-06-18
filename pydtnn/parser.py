@@ -37,11 +37,7 @@ import multiprocessing
 import os
 
 import numpy as np
-
-
-def bool_lambda(x):
-    """Returns True if command line value is a truthy value"""
-    return str(x).lower() in ['true', '1', 'yes', 'y', 't']
+from pydtnn.utils import parse_bool as bool_lambda
 
 
 def factor(x):
@@ -95,11 +91,11 @@ def _get_gpus_per_node():
 
 
 def _get_comm_protocol():
-    from pydtnn.comms import PROTOCOL
-    if PROTOCOL is None:
-        return "native"
-    else:
-        return str(PROTOCOL)
+    from pydtnn.comms import PROTOCOL, SSL
+    protocol = str(PROTOCOL)
+    if PROTOCOL and SSL:
+        protocol = f"{protocol}+tls"
+    return protocol
 
 
 def _get_mpi_server():
@@ -257,6 +253,10 @@ _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
 _pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default=True)
+
+# Encryption options
+_cy_group = parser.add_argument_group("Encryption options")
+_cy_group.add_argument('--encryption', dest="encryption_name", type=str, default="")
 
 # Tracing and profiling
 _tr_group = parser.add_argument_group("Tracing options")

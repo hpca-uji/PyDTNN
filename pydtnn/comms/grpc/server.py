@@ -10,6 +10,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 from bidict import bidict
 
+from pydtnn import comms
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
 from pydtnn.utils.asynctools import merge_futures
@@ -28,6 +29,7 @@ END_COMM = None
 
 class Server(Protocol):
     """gRPC server"""
+    _max_workers = 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Server initialization"""
@@ -40,14 +42,23 @@ class Server(Protocol):
         self._state = dict[uuid.UUID, ConnectionData]()
 
         # gRPC
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._pool = ThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
-            compression=self._compression,
-            options=self._options
+            compression=self._compression
         )
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
-        self._server.add_insecure_port(address=f"{self._addr}:{self._port}")
+
+        config: abc.MutableMapping = {
+            "address": f"{self._addr}:{self._port}"
+        }
+
+        if comms.SSL:
+            config["server_credentials"] = grpc.ssl_server_credentials([[comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()]])
+            self._server.add_secure_port(**config)
+        else:
+            self._server.add_insecure_port(**config)
+
         self._server.start()
 
     def _com(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
@@ -64,7 +75,7 @@ class Server(Protocol):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData(buffer_size=self._max_data_size)
+            self._state[peer] = ConnectionData()
             self._lock.notify_all()
 
         # ACK

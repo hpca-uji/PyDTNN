@@ -35,9 +35,8 @@ import itertools
 from collections import abc
 from concurrent.futures import ThreadPoolExecutor
 
-import numpy as np
-
 from pydtnn import comms
+from pydtnn.utils.io_stream import byteview
 from pydtnn.libs.mpi import comm as mpi_comm
 
 
@@ -289,18 +288,16 @@ class Comm:
 
     def allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All."""
-        if op is not mpi_comm.ReduceOperation.SUM:
-            raise NotImplementedError("op with not SUM")
+        return self.iallreduce(obj=obj, op=op).wait()
 
+    def iallreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> Request[T]:
+        """Reduce to All."""
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context).wait()
+        return self._submit_operation(comm=comm, obj=obj, context=context)
 
     def _phased_allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All (with steps)."""
-        if op is not mpi_comm.ReduceOperation.SUM:
-            raise NotImplementedError("op with not SUM")
-
         context = mpi_comm.AllPhasedReduceContext(op=op)
 
         for phase in itertools.count():
@@ -332,19 +329,12 @@ class Comm:
         if sendbuf is InPlace.IN_PLACE:
             sendbuf = recvbuf
 
-        if not isinstance(recvbuf, np.ndarray):
-            raise NotImplementedError("recvbuf with not np.ndarray")
+        def callback(result: T):
+            with byteview(result) as src, byteview(recvbuf) as dst:
+                dst[:] = src
 
-        if op is not mpi_comm.ReduceOperation.SUM:
-            raise NotImplementedError("op with not SUM")
-
-        def callback(result):
-            recvbuf[:] = result
-
-        context = mpi_comm.AllReduceContext(op=op)
-        comm = context.comm(size=self.size)
-        req = self._submit_operation(comm=comm, obj=sendbuf, context=context)
-        req._callback = callback
+        req = self.iallreduce(obj=sendbuf, op=op)
+        req._callback = callback  # type: ignore
         return req
 
 

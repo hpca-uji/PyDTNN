@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from inceptionv3 import create_inceptionv3 as create_inceptionv3_imagenet
+from mobilenetv1 import create_mobilenetv1 as create_mobilenetv1
