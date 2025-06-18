@@ -16,6 +16,7 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 from abc import ABC
+from collections import abc
 
 from pydtnn.activations import Activation
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
@@ -110,7 +111,10 @@ class ActivationGPU(Activation, ABC):
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 dw_cpu *= self.model.rank_weight
                 # TODO: crypt
-                req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                if isinstance(dw_cpu, abc.Buffer):
+                    req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                else:
+                    req = self.model.comm.iallreduce(dw_cpu, op=MPI.SUM)
                 self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
@@ -125,8 +129,11 @@ class ActivationGPU(Activation, ABC):
         else:
             for w_, dw_ in self.grad_vars.items():
                 dw_ = dw_ if gradient else w_
-                self.reqs_allred[dw_].wait()
-                dw = getattr(self, dw_)
+                res = self.reqs_allred[dw_].wait()
+                if res is None:
+                    dw = getattr(self, dw_)
+                else:
+                    dw = res
                 # TODO: decrypt
                 setattr(self, dw_, dw)
 
@@ -212,7 +219,10 @@ class ActivationGPU(Activation, ABC):
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 dw_cpu *= self.model.rank_weight
                 # TODO: crypt
-                self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                if isinstance(dw, abc.Buffer):
+                    self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                else:
+                    dw_cpu = self.model.comm.allreduce(dw_cpu, op=MPI.SUM)
                 # TODO: decrypt
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 

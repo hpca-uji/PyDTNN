@@ -17,6 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 from abc import ABC
+from collections import abc
 
 from pydtnn.activations.activation import Activation
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
@@ -49,7 +50,10 @@ class ActivationCPU(Activation, ABC):
             dw = getattr(self, dw_)
             dw *= self.model.rank_weight
             # TODO: crypt
-            req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            if isinstance(dw, abc.Buffer):
+                req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            else:
+                req = self.model.comm.iallreduce(dw, op=MPI.SUM)
             self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
@@ -57,8 +61,11 @@ class ActivationCPU(Activation, ABC):
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            self.reqs_allred[dw_].wait()
-            dw = getattr(self, dw_)
+            res = self.reqs_allred[dw_].wait()
+            if res is None:
+                dw = getattr(self, dw_)
+            else:
+                dw = res
             # TODO: decrypt
             setattr(self, dw_, dw)
 
@@ -73,7 +80,10 @@ class ActivationCPU(Activation, ABC):
             dw = getattr(self, dw_)
             dw *= self.model.rank_weight
             # TODO: crypt
-            self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            if isinstance(dw, abc.Buffer):
+                self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
+            else:
+                dw = self.model.comm.allreduce(dw, op=MPI.SUM)
             # TODO: decrypt
             setattr(self, dw_, dw)
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
