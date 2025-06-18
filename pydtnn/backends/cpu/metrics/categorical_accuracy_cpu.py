@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -25,6 +25,10 @@ from pydtnn.metrics import CategoricalAccuracy
 
 class CategoricalAccuracyCPU(MetricCPU, CategoricalAccuracy):
 
-    def __call__(self, y_pred, y_targ):
+    def __call__(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         b = y_targ.shape[0]
-        return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
+        #return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
+        y = y_targ[np.arange(b), np.argmax(y_pred, axis=1)]
+        y = np.sum(y, dtype=self.model.dtype)
+        y *= 100/b
+        return y

@@ -26,6 +26,11 @@ if TYPE_CHECKING:
     from model import Model
 else: Model = None
 
+from numpy import ndarray
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+
+type Array = ndarray | TensorGPU
+
 class Metric(PromoteToBackendMixin, ABC):
 
     def __init__(self, shape: tuple[int, ...], model: Model, eps=1e-8):
@@ -34,5 +39,5 @@ class Metric(PromoteToBackendMixin, ABC):
         self.eps = eps
 
     @abstractmethod
-    def __call__(self, y_pred, y_targ):
+    def __call__(self, y_pred:Array, y_targ:Array) -> float:
         pass
