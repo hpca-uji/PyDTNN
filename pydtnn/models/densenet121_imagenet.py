@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from densenet121 import create_densenet121
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_densenet121_imagenet() -> list[LayerAndActivationBase]:
-    return create_densenet121(input_shape=(224, 224, 3), output_shape=(1000,))
+from pydtnn.models.densenet121 import create_densenet121 as create_densenet121_imagenet

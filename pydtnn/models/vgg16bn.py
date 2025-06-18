@@ -17,35 +17,29 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence, Iterable
+
 from ..activations import *
 from ..layers import *
-
 from layers.layer import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
-from pydtnn.activations import softmax
 
-def create_vgg16_cifar10(input_shape: tuple[int, int, int] = (32, 32, 3), 
-                         output_shape: tuple[int, ...] = (10,)) -> list[LayerAndActivationBase]:
-    list_layers: list[LayerAndActivationBase] = list()
-    _ = list_layers.append
-
-    _(Input(shape=input_shape))
+def create_vgg16_cifar10(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            _(Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer=he_uniform))
-            _(BatchNormalization())
-            _(Relu())
-        _(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(Flatten())
-    _(Dropout(rate=0.5))
-    _(FC(shape=(512,), weights_initializer=he_uniform))
-    _(BatchNormalization())
-    _(Relu())
-    _(Dropout(rate=0.5))
-    _(FC(shape=(512,), weights_initializer=he_uniform))
-    _(BatchNormalization())
-    _(Relu())
-    _(FC(shape=output_shape, activation=softmax, weights_initializer=he_uniform))
-
-    return list_layers
+            yield Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer=he_uniform)
+            yield BatchNormalization()
+            yield Relu()
+        yield MaxPool2D(pool_shape=(2, 2), stride=2)
+    yield Flatten()
+    yield Dropout(rate=0.5)
+    yield FC(shape=(512,), weights_initializer=he_uniform)
+    yield BatchNormalization()
+    yield Relu()
+    yield Dropout(rate=0.5)
+    yield FC(shape=(512,), weights_initializer=he_uniform)
+    yield BatchNormalization()
+    yield Relu()
+    yield FC(shape=output_shape, activation=softmax, weights_initializer=he_uniform)

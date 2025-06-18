@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from googlenet import create_googlenet
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_googlenet_imagenet() -> list[LayerAndActivationBase]:
-    return create_googlenet(input_shape=(224, 224, 3), output_shape=(1000,))
+from googlenet import create_googlenet as create_googlenet_imagenet

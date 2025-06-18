@@ -17,29 +17,26 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence, Iterable
+
 from ..activations import *
 from ..layers import *
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
-def create_vgg3dobn(input_shape: tuple[int, int, int] = (32, 32, 3), 
-                    output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
-    list_layers: list[layer.LayerAndActivationBase] = list()
-    _ = list_layers.append
-
-    _(Input(shape=input_shape))
+def create_vgg3dobn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
     for n_filt, do_rate in zip([32, 64, 128], [0.2, 0.3, 0.4]):
         for i in range(2):
-            _(Conv2D(nfilters=n_filt, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
-            _(Relu())
-            _(BatchNormalization())
-        _(MaxPool2D(pool_shape=(2, 2), stride=2))
-        _(Dropout(rate=do_rate))
-    _(Flatten())
-    _(FC(shape=(512,), weights_initializer=he_uniform))
-    _(Relu())
-    _(BatchNormalization())
-    _(Dropout(rate=0.5))
-    _(FC(shape=output_shape, weights_initializer=he_uniform))
-    _(Softmax())
-
-    return list_layers
+            yield Conv2D(nfilters=n_filt, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform)
+            yield Relu()
+            yield BatchNormalization()
+        yield MaxPool2D(pool_shape=(2, 2), stride=2)
+        yield Dropout(rate=do_rate)
+    yield Flatten()
+    yield FC(shape=(512,), weights_initializer=he_uniform)
+    yield Relu()
+    yield BatchNormalization()
+    yield Dropout(rate=0.5)
+    yield FC(shape=output_shape, weights_initializer=he_uniform)
+    yield Softmax()

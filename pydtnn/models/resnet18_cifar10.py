@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from resnet18 import create_resnet18
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_resnet18_cifar10() -> list[LayerAndActivationBase]:
-    return create_resnet18(input_shape=(32, 32, 3), output_shape=(10,))
+from resnet18 import create_resnet18 as create_resnet18_cifar10

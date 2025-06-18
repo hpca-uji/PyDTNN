@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from densenet169 import create_densenet169
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_densenet169_imagenet() -> list[LayerAndActivationBase]:
-    return create_densenet169(input_shape=(224, 224, 3), output_shape=(1000,))
+from densenet169 import create_densenet169 as create_densenet169_imagenet
