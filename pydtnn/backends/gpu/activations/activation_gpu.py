@@ -73,6 +73,7 @@ class ActivationGPU(Activation, ABC):
             if self.model.enable_nccl:
                 self.model.stream.synchronize()
                 dw *= self.model.rank_weight
+                # TODO: crypt
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                    stream=self.stream_2.handle)
@@ -109,39 +110,49 @@ class ActivationGPU(Activation, ABC):
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 dw_cpu *= self.model.rank_weight
+                # TODO: crypt
                 req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 self.reqs_allred[dw_] = req
 
     def wait_allreduce_async(self, gradient=True):
-        if not self.model.comm or self.model.enable_nccl:
+        if not self.model.comm:
             return
-
-        for w_, dw_ in self.grad_vars.items():
-            dw_ = dw_ if gradient else w_
-            self.reqs_allred[dw_].wait()
-
-            # # Hierarchical mode NCCL + MPI
-            # if self.model.enable_nccl:
-            #     if len(self.model.inter_ranks) == 1:
-            #         # Do nothing, Allreduce was already completed in phase 1
-            #         pass
-            #     else:
-            #         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
-            #         if self.model.rank in self.model.inter_ranks:
-            #             self.reqs_allred[dw_].wait()
-            #             if not self.model.gpudirect:
-            #                 dw.ary.set_async(dw_cpu, self.stream_2)
-            #
-            #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
-            #                            root=0, comm=self.model.nccl_comm,
-            #                            stream=self.stream_2.handle)
-
-            if not self.model.gpudirect:
+        
+        if self.model.enable_nccl:
+            self.model.stream.synchronize()
+            dw = getattr(self, dw_)
+            # TODO: decrypt
+            setattr(self, dw_, dw)
+        else:
+            for w_, dw_ in self.grad_vars.items():
+                dw_ = dw_ if gradient else w_
+                self.reqs_allred[dw_].wait()
                 dw = getattr(self, dw_)
-                dw_cpu = getattr(self, f"{dw_}_cpu")
+                # TODO: decrypt
+                setattr(self, dw_, dw)
 
-                # If there is no CUDA-aware MPI, copy data back to GPU
-                dw.ary.set_async(dw_cpu, self.stream_2)
+                # # Hierarchical mode NCCL + MPI
+                # if self.model.enable_nccl:
+                #     if len(self.model.inter_ranks) == 1:
+                #         # Do nothing, Allreduce was already completed in phase 1
+                #         pass
+                #     else:
+                #         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
+                #         if self.model.rank in self.model.inter_ranks:
+                #             self.reqs_allred[dw_].wait()
+                #             if not self.model.gpudirect:
+                #                 dw.ary.set_async(dw_cpu, self.stream_2)
+                #
+                #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                #                            root=0, comm=self.model.nccl_comm,
+                #                            stream=self.stream_2.handle)
+
+                if not self.model.gpudirect:
+                    dw = getattr(self, dw_)
+                    dw_cpu = getattr(self, f"{dw_}_cpu")
+
+                    # If there is no CUDA-aware MPI, copy data back to GPU
+                    dw.ary.set_async(dw_cpu, self.stream_2)
 
     def reduce_weights_sync(self, gradient=True):
         if not self.model.comm:
@@ -157,9 +168,13 @@ class ActivationGPU(Activation, ABC):
 
             if self.model.enable_nccl:
                 dw *= self.model.rank_weight
+                self.stream_2.synchronize()
+                # TODO: crypt
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                                     nccl.RedOp.Sum, comm=self.model.nccl_comm,
                                     stream=self.stream_2.handle)
+                self.stream_2.synchronize()
+                # TODO: decrypt
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
@@ -197,7 +212,10 @@ class ActivationGPU(Activation, ABC):
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 dw_cpu *= self.model.rank_weight
+                # TODO: crypt
                 self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
+                # TODO: decrypt
+                setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 if not self.model.gpudirect:
                     dw.ary.set_async(dw_cpu, self.stream_2)

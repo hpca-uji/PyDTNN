@@ -1,5 +1,6 @@
 """TCP server"""
 
+import ssl
 import uuid
 import socket
 import selectors
@@ -9,6 +10,7 @@ from concurrent.futures import Future
 
 from bidict import bidict
 
+from pydtnn import comms
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_NIL, UUID_MAX
@@ -36,22 +38,26 @@ class Server(Protocol):
 
         # TCP
         self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
+
+        if comms.SSL:
+            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SSL_CERT)
+            context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
+            self._socket = context.wrap_socket(self._socket, server_side=True, do_handshake_on_connect=True)
+
         self._selector.register(self._socket, selectors.EVENT_READ, self._new_connection)
         self._notify_selector()
 
     def _new_connection(self, sock: socket.socket, event) -> None:
         """Handle new incomming connections"""
         # NOTE: communication thead
-        sock = self._socket.accept()[0]
+        sock, _ = self._socket.accept()
         peer = uuid.uuid4()  # temporary ID
 
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_message_size)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_message_size)
         sock.setblocking(False)
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData(buffer_size=self._max_message_size)
+            self._state[peer] = ConnectionData()
             self._lock.notify_all()
 
         self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
@@ -151,15 +157,19 @@ class Server(Protocol):
         peer = self._peers.inverse[sock]
         state = self._state[peer]
 
-        data = sock.recv(self._max_message_size)
+        while True:
+            try:
+                data = sock.recv(self._max_payload_size)
+            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                break
 
-        if not data:
-            assert not state.state, "Lost connection unexpectedly"
-            self._fin(sock)
-            return
+            if not data:
+                assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+                return
 
-        state.get_buffer.write(data)
-        self._get_flush(peer)
+            state.get_buffer.write(data)
+            self._get_flush(peer)
+            peer = state.peer
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
@@ -170,7 +180,10 @@ class Server(Protocol):
         if state.put_buffer.empty():
             return
         with state.put_read() as view:
-            size = sock.send(view)
+            try:
+                size = sock.send(view)
+            except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
+                size = 0
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
 

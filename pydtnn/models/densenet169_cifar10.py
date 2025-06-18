@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from densenet161 import create_densenet161 as create_densenet161
+from densenet169 import create_densenet169 as create_densenet169_cifar10

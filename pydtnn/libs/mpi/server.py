@@ -127,7 +127,7 @@ class Server:
 
     def serve_forever(self) -> None:
         """Handle until shutdown"""
-        while self._shutdown:
+        while not self._shutdown:
             self.serve_util_finalize()
 
     def serve_util_finalize(self) -> None:

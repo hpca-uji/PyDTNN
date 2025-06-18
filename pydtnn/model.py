@@ -507,8 +507,23 @@ class Model:
             raise AttributeError(f"Model object has no attribute '{item}'!") from None
     # --- End __getattr__ --- #
 
-    # TODO: Erease this function.
-    #   > If the user want to use a premade model, they should call to that function, pass the parameters, and then initalize.
+    def _init_crypt(self, encryption_name:str) -> None:
+        """Inizialize encryption context"""
+        try:
+            module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
+        except ModuleNotFoundError as exc:
+            import traceback
+            print(traceback.print_exception(exc))
+            sys.exit(-1)
+
+        if self.comm_rank == 0:
+            self.crypt = module.Context()
+
+        if self.comm:
+            self.crypt = self.comm.bcast(self.crypt)
+
+        assert self.crypt is not None
+
     def _read_model(self, model_name):
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
@@ -812,6 +827,7 @@ class Model:
         return x, y_targ
     # --- _get_x_y_targ --- #
 
+    # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
         last_layer_index = len(self.layers) - 1
         if blocking:
@@ -882,6 +898,12 @@ class Model:
 
                 self.rank_weight = self._compute_rank_weight(rank_mask)
 
+                # Encryption
+                if self.encryption_name:
+                    self._init_crypt(self.encryption_name)
+                else:
+                    self.crypt = None
+
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
                 toc = timer()
@@ -948,9 +970,6 @@ class Model:
 
         # Syncronize model
         if self.final_model_sync:
-            # NOTE: The 1st one updates the gradient, the 2nd one updates the weights.
-            # TODO: Modify the method's name.
-            self._weight_update(gradient=True, blocking=self.blocking_mpi)
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         self.tracer.define_event_types(self)
@@ -1040,7 +1059,7 @@ class Model:
                 else:
                     return 0.0
             case _:
-                raise NotImplementedError(f"model_sync_participation = {self.model_sync_participation}")
+                raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized.")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
@@ -1054,6 +1073,8 @@ class Model:
             case "invwavg":
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset.train_nsamples)
                 return inverse_nsamples / total_nsamples
+            case _:
+                raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
     # --- END _compute_rank_weight --- #
 
     def _evaluate_batch(self, x_batch:Array, y_batch:Array, current_batch_size:int, sync_model=True) -> Array:
