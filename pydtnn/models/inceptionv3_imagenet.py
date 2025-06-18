@@ -17,8 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from inceptionv3 import create_inceptionv3
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
-def create_inceptionv3_imagenet() -> list[LayerAndActivationBase]:
-    return create_inceptionv3(input_shape=(224, 224, 3), output_shape=(1000,))
+from inceptionv3 import create_inceptionv3 as create_inceptionv3_imagenet

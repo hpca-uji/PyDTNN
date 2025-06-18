@@ -17,25 +17,24 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence, Iterable
+
 from ..activations import *
 from ..layers import *
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
-def create_resnet18_imagenet(input_shape: tuple[int, int, int] = (224, 224, 3), 
-                             output_shape: tuple[int, ...] = (1000,)) -> list[layer.LayerAndActivationBase]:
-    list_layers: list[layer.LayerAndActivationBase] = list()
-    _ = list_layers.append
-
-    _(Input(shape=input_shape))
-    _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform))
-    _(BatchNormalization())
+def create_resnet18_imagenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
+    yield Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform)
+    yield BatchNormalization()
 
     layout = [[64, 2, 1], [128, 2, 2], [256, 2, 2], [512, 2, 2]]  # Resnet-18
     for n_filt, res_blocks, stride in layout:
         for r in range(res_blocks):
             if r > 0:
                 stride = 1
-            _(AdditionBlock(
+            yield AdditionBlock(
                 [
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
                            weights_initializer=he_uniform),
@@ -48,11 +47,9 @@ def create_resnet18_imagenet(input_shape: tuple[int, int, int] = (224, 224, 3),
                 [
                     Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform),
                     BatchNormalization()
-                ] if stride != 1 else []))
-            _(Relu())
+                ] if stride != 1 else [])
+            yield Relu()
 
-    _(AveragePool2D(pool_shape=(0, 0)))  # Global average pooling 2D
-    _(Flatten())
-    _(FC(shape=output_shape, activation=softmax))
-
-    return list_layers
+    yield AveragePool2D(pool_shape=(0, 0))  # Global average pooling 2D
+    yield Flatten()
+    yield FC(shape=output_shape, activation=softmax)

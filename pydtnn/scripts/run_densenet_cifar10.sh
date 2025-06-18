@@ -3,7 +3,7 @@
 export OMP_NUM_THREADS=16
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-mpirun -np 2 \
+mpirun -np 1 \
   pydtnn_benchmark \
   --model=densenet121_cifar10 \
   --dataset=cifar10 \
@@ -42,7 +42,7 @@ mpirun -np 2 \
   --non_blocking_mpi=False \
   --tracing=False \
   --profile=False \
-  --enable_gpu=True \
-  --enable_gpudirect=True \
+  --enable_gpu=False \
+  --enable_gpudirect=False \
   --history_file="results/result_googlenet.history" \
   --dtype=float32

@@ -17,30 +17,29 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence, Iterable
+
 from ..activations import *
 from ..layers import *
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
-def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3), 
-                       output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
-    list_layers: list[layer.LayerAndActivationBase] = list()
-    _ = list_layers.append
-
-    _(Input(shape=input_shape))
-    _(Conv2D(nfilters=32, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform))
-    _(Conv2D(nfilters=32, filter_shape=(3, 3), weights_initializer=he_uniform))
-    _(Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform))
-    _(MaxPool2D(pool_shape=(3, 3), stride=2))
-    _(Conv2D(nfilters=80, filter_shape=(1, 1), weights_initializer=he_uniform))
-    _(Conv2D(nfilters=192, filter_shape=(3, 3), weights_initializer=he_uniform))
-    _(MaxPool2D(pool_shape=(3, 3), stride=2))
+def create_inceptionv3(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
+    yield Conv2D(nfilters=32, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform)
+    yield Conv2D(nfilters=32, filter_shape=(3, 3), weights_initializer=he_uniform)
+    yield Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, weights_initializer=he_uniform)
+    yield MaxPool2D(pool_shape=(3, 3), stride=2)
+    yield Conv2D(nfilters=80, filter_shape=(1, 1), weights_initializer=he_uniform)
+    yield Conv2D(nfilters=192, filter_shape=(3, 3), weights_initializer=he_uniform)
+    yield MaxPool2D(pool_shape=(3, 3), stride=2)
 
     inception_blocks = [[64, 48, 64, 64, 96, 32],
                         [64, 48, 64, 64, 96, 64],
                         [64, 48, 64, 64, 96, 64]]
 
     for n1x1, n5x5red, n5x5, n3x3red, n3x3, pool_planes in inception_blocks:
-        _(ConcatenationBlock(
+        yield ConcatenationBlock(
             [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)
              ],
             [Conv2D(nfilters=n5x5red, filter_shape=(1, 1), weights_initializer=he_uniform),
@@ -52,12 +51,12 @@ def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3),
              ],
             [AveragePool2D(pool_shape=(3, 3), stride=1, padding=1),
              Conv2D(nfilters=pool_planes, filter_shape=(1, 1), weights_initializer=he_uniform)
-             ]))
+             ])
 
     inception_blocks = [[384, 64, 96]]
 
     for n1x1, n3x3red, n3x3 in inception_blocks:
-        _(ConcatenationBlock(
+        yield ConcatenationBlock(
             [Conv2D(nfilters=n1x1, filter_shape=(3, 3), stride=2, padding=0, weights_initializer=he_uniform)
              ],
             [Conv2D(nfilters=n3x3red, filter_shape=(1, 1), weights_initializer=he_uniform),
@@ -65,7 +64,7 @@ def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3),
              Conv2D(nfilters=n3x3, filter_shape=(3, 3), stride=2, padding=1, weights_initializer=he_uniform)
              ],
             [MaxPool2D(pool_shape=(3, 3), stride=2, padding=0)
-             ]))
+             ])
 
     inception_blocks = [[192, 128],
                         [192, 160],
@@ -73,7 +72,7 @@ def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3),
                         [192, 192]]
 
     for n1x1, n1x7 in inception_blocks:
-        _(ConcatenationBlock(
+        yield ConcatenationBlock(
             [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)
              ],
             [Conv2D(nfilters=n1x7, filter_shape=(1, 1), weights_initializer=he_uniform),
@@ -88,12 +87,12 @@ def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3),
              ],
             [AveragePool2D(pool_shape=(3, 3), stride=1, padding=1),
              Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform)
-             ]))
+             ])
 
     inception_blocks = [[192, 320]]
 
     for n1x1, n3x3 in inception_blocks:
-        _(ConcatenationBlock(
+        yield ConcatenationBlock(
             [Conv2D(nfilters=n1x1, filter_shape=(1, 1), weights_initializer=he_uniform),
              Conv2D(nfilters=n3x3, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform)
              ],
@@ -103,13 +102,13 @@ def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3),
              Conv2D(nfilters=n1x1, filter_shape=(3, 3), stride=2, weights_initializer=he_uniform)
              ],
             [MaxPool2D(pool_shape=(3, 3), stride=2)
-             ]))
+             ])
 
     inception_blocks = [[320, 384, 448, 192],
                         [320, 384, 448, 192]]
 
     for n1x1b0, n1x1b1, n1x1b2, n1x1b3 in inception_blocks:
-        _(ConcatenationBlock(
+        yield ConcatenationBlock(
             [Conv2D(nfilters=n1x1b0, filter_shape=(1, 1), weights_initializer=he_uniform)
              ],
             [Conv2D(nfilters=n1x1b1, filter_shape=(1, 1), weights_initializer=he_uniform),
@@ -125,13 +124,11 @@ def create_inceptionv3(input_shape: tuple[int, int, int] = (299, 299, 3),
              ],
             [AveragePool2D(pool_shape=(3, 3)),
              Conv2D(nfilters=n1x1b3, filter_shape=(1, 1), padding=1, weights_initializer=he_uniform)
-             ]))
+             ])
 
-    _(AveragePool2D(pool_shape=(8, 8), stride=1))  # Global average pooling 2D
-    _(Flatten())
-    _(FC(shape=(1024,)))
-    _(BatchNormalization())
-    _(Relu())
-    _(FC(shape=output_shape, activation=softmax))
-
-    return list_layers
+    yield AveragePool2D(pool_shape=(8, 8), stride=1)  # Global average pooling 2D
+    yield Flatten()
+    yield FC(shape=(1024,))
+    yield BatchNormalization()
+    yield Relu()
+    yield FC(shape=output_shape, activation=softmax)

@@ -17,19 +17,16 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from collections.abc import Sequence, Iterable
+
 from ..layers import *
-from pydtnn.activations import relu, softmax
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from ..activations import relu, softmax
 
-def create_simplemlp(input_shape: tuple[int, int, int] = (28, 28, 1), 
-                     output_shape: tuple[int, ...] = (10,)) -> list[layer.LayerAndActivationBase]:
-    list_layers: list[layer.LayerAndActivationBase] = list()
-    _ = list_layers.append
-
-    _(Input(shape=input_shape))
-    _(Flatten())
-    _(FC(shape=(512,), activation=relu))
-    _(FC(shape=(512,), activation=relu))
-    _(FC(shape=(512,), activation=relu))
-    _(FC(shape=output_shape, activation=softmax))
-
-    return list_layers
+def create_simplemlp(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+    yield Input(shape=input_shape)
+    yield Flatten()
+    yield FC(shape=(512,), activation=relu)
+    yield FC(shape=(512,), activation=relu)
+    yield FC(shape=(512,), activation=relu)
+    yield FC(shape=output_shape, activation=softmax)
