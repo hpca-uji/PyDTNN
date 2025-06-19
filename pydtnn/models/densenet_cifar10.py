@@ -22,7 +22,7 @@ from collections.abc import Sequence, Iterable
 from ..activations import *
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.initializers import he_uniform
 
 def create_densenet_cifar10(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape= input_shape)
@@ -32,7 +32,7 @@ def create_densenet_cifar10(input_shape: Sequence[int], output_shape: Sequence[i
     reduction = 0.5
     num_planes = 2 * growth_rate
 
-    yield Conv2D(nfilters=num_planes, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer="he_uniform")
+    yield Conv2D(nfilters=num_planes, filter_shape=(3, 3), padding=1, use_bias=False, weights_initializer=he_uniform)
 
     for i, nblocks in enumerate(blocks):
         for j in range(nblocks):
@@ -41,11 +41,11 @@ def create_densenet_cifar10(input_shape: Sequence[int], output_shape: Sequence[i
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False,
-                           weights_initializer="he_uniform")
+                           weights_initializer=he_uniform)
                 ], [])
 
         num_planes += nblocks * growth_rate
@@ -54,11 +54,11 @@ def create_densenet_cifar10(input_shape: Sequence[int], output_shape: Sequence[i
             num_planes = int(num_planes * reduction)
             yield BatchNormalization()
             yield Relu()
-            yield Conv2D(nfilters=num_planes, filter_shape=(1, 1), use_bias=False, weights_initializer="he_uniform")
+            yield Conv2D(nfilters=num_planes, filter_shape=(1, 1), use_bias=False, weights_initializer=he_uniform)
             yield AveragePool2D(pool_shape=(2, 2), stride=2)
 
     yield BatchNormalization()
     yield Relu()
     yield AveragePool2D(pool_shape=(4, 4))
     yield Flatten()
-    yield FC(shape= output_shape, activation="softmax")
+    yield FC(shape= output_shape, activation=softmax)

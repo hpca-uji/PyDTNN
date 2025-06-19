@@ -5,7 +5,7 @@ PyDTNN convDirect module
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2022 Universitat Jaume I
+#  Copyright (C) 2022-2025 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -28,7 +28,7 @@ import weakref
 import numpy as np
 
 from pydtnn.cython_modules import im2row_nhwc_cython
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils import load_library
 
 try:
@@ -67,7 +67,7 @@ class ConvDirect:
     def _set_methods(self, method_name):
         return
 
-    def __init__(self, method_name, dtype=np.float32, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC,
+    def __init__(self, method_name, dtype=np.float32, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC,
                  debug=False, parent_layer=None):
         """
         Loads the libconvDirect.so library.
@@ -129,7 +129,7 @@ class ConvDirect:
                     relu=False, bn=False, running_mean=None, inv_std=None,
                     gamma=None, beta=None):
 
-        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
@@ -139,12 +139,12 @@ class ConvDirect:
         if biases is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 biases = np.zeros((n, co, ho, wo), weights.dtype, order="C")
             else:
                 biases = np.zeros((n, ho, wo, co), weights.dtype, order="C")
         else:
-            if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 bb, knb, ho, wo = biases.shape
             else:
                 bb, ho, wo, knb = biases.shape

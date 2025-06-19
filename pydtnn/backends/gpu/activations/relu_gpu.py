@@ -32,7 +32,7 @@ class ReluGPU(ActivationGPU, Relu):
         super().__init__(*args, **kwargs)
         self.act_desc = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> None:
         super().initialize(prev_shape, need_dx, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
@@ -53,14 +53,14 @@ class ReluGPU(ActivationGPU, Relu):
             dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
             self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha,
                                      x.desc, x.ptr, beta,
                                      self.y.desc, self.y.ptr)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         if self.need_dx:
             alpha, beta = 1.0, 0.0
             cudnn.cudnnActivationBackward(self.model.cudnn_handle, self.act_desc, alpha,

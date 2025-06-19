@@ -22,11 +22,12 @@ from collections.abc import Sequence, Iterable
 from ..activations import *
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.initializers import he_uniform
+from ..activations import softmax
 
 def create_resnet56(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
-    yield Conv2D(nfilters=16, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform")
+    yield Conv2D(nfilters=16, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform)
     yield BatchNormalization()
 
     layout = [[16, 9, 1], [32, 9, 2], [64, 9, 2]]  # Resnet-56
@@ -37,15 +38,15 @@ def create_resnet56(input_shape: Sequence[int], output_shape: Sequence[int]) -> 
             yield AdditionBlock(
                 [
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization()
                 ],
                 [
-                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform),
                     BatchNormalization()
                 ] if r == 0 or stride != 1 else [])
             yield Relu()
@@ -55,4 +56,4 @@ def create_resnet56(input_shape: Sequence[int], output_shape: Sequence[int]) -> 
     yield FC(shape=(64,))
     yield BatchNormalization()
     yield Relu()
-    yield FC(shape=output_shape, activation="softmax")
+    yield FC(shape=output_shape, activation=softmax)

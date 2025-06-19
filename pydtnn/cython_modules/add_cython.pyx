@@ -37,7 +37,6 @@ ctypedef fused npDT:
 
 def add_nhwc_cython(x: np.ndarray, 
                     b: np.ndarray) -> np.ndarray:
-
     try:
         add_nhwc(x, b)
         return x

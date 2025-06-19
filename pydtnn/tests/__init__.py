@@ -20,6 +20,7 @@
 from .conv2d_conv_gemm import Conv2DConvGemmTestCase
 from .conv2d_conv_gemm_slow import Conv2DConvGemmSlowTestCase
 from .conv_gemm import ConvGemmTestCase
+from .conv_gemm_nhwc import ConvGemmNHWCTestCase
 from .check_conv_gemm_models import CheckConvGemmModels
 from .check_conv_gemm_nchw_models import CheckConvGemmNCHWModels
 from .check_tensor_format_models import CheckTensorFormatModels

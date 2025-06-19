@@ -23,11 +23,9 @@ import pycuda.gpuarray as gpuarray
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import Flatten
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_RESHAPE_Y, \
-    PYDTNN_OPS_BACKWARD_RESHAPE_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from .layer_gpu import LayerGPU
 from ..tensor_gpu import TensorGPU
-
 
 class FlattenGPU(LayerGPU, Flatten):
 
@@ -35,16 +33,17 @@ class FlattenGPU(LayerGPU, Flatten):
         super().initialize(prev_shape, need_dx, x)
         self.y = x
 
-    def forward(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_RESHAPE_Y)
+    # TODO: is this correct???
+    def forward(self, x: TensorGPU) -> TensorGPU:
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         self.y.ary = self.x.ary.reshape((self.model.batch_size, *self.shape))
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy:TensorGPU) -> TensorGPU | None:
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_RESHAPE_DX)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
             self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
             # self.y.reshape((self.model.batch_size, *self.prev_shape))
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx

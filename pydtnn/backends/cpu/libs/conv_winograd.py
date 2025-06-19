@@ -30,7 +30,7 @@ from functools import partial
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
@@ -68,8 +68,8 @@ class ConvWinograd:
 
     lib_cw = None  # will link to the libconvwinograd.so library
 
-    def __init__(self, kh, kw, vstride, hstride, vdilation, hdilation,
-                 dtype=np.float32, tensor_format=PYDTNN_TENSOR_FORMAT_NCHW,
+    def __init__(self, kh:int, kw:int, vstride:int, hstride:int, vdilation:int, hdilation:int,
+                 dtype:np.dtype= np.float32, tensor_format=PYDTNN_TENSOR_FORMAT.NCHW,
                  debug=False, parent_layer=None):
         """
         Loads the libconvWinograd.so library.
@@ -96,17 +96,17 @@ class ConvWinograd:
             The layer that is using it (for tracing purposes).
         """
 
-        def register_winograd_function(m, r, g, bt, at):
+        def register_winograd_function(m:int, r:int , g:np.ndarray, bt:np.ndarray, at:np.ndarray) -> None:
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
-                    routine_names = [("neon", f"conv_winograd_{m}x{m}_{r}x{r}_neon_fp32_{self.tensor_format_str}")]
+                    routine_names = [("neon", f"conv_winograd_{m}x{m}_{r}x{r}_neon_fp32_{self.tensor_format}")]
                 else:
                     raise NotImplementedError(
                         f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
-                    routine_names = [(intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format_str}") \
+                    routine_names = [(intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format}") \
                                        for intr in ["sse", "avx", "avx512"]]
                 else:
                     raise NotImplementedError(
@@ -143,7 +143,6 @@ class ConvWinograd:
                 raise NotImplementedError("dtype '{}' not recognized".format(dtype))
 
         self.tensor_format = tensor_format
-        self.tensor_format_str = ("nhwc", "nchw")[tensor_format == PYDTNN_TENSOR_FORMAT_NCHW]
 
         if ConvWinograd.lib_cw is None:
             ConvWinograd.lib_cw = load_library("convwinograd")
@@ -276,20 +275,22 @@ class ConvWinograd:
         self._weights_already_processed = False
 
         if enable_best_of and len(self.alternatives[r]) > 1:
-            setattr(self, f"conv_winograd_{self.tensor_format_str}", BestOf(
+            setattr(self, f"conv_winograd_{self.tensor_format}", BestOf(
                 name="Winograd functions",
                 alternatives=self.alternatives[r],
                 get_problem_size=lambda *args, **kwargs: tuple(list(args[0].shape) + list(args[1].shape[1:])),
             ))
         else:
-            setattr(self, f"conv_winograd_{self.tensor_format_str}", self.alternatives[r][0][1])
+            setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
+    # --- END __init__ --- #
 
-    def _conv_winograd_numpy(self, m, r, g, bt, at, x_winograd_nchw_pre, x_winograd_nchw_kernel,
-                             weights, x, biases=None, vpadding=0, hpadding=0,
+    def _conv_winograd_numpy(self, m:int, r:int, g:np.ndarray, bt:np.ndarray, at:np.ndarray, x_winograd_nchw,
+                             weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None = None, vpadding=0, hpadding=0,
                              vstride=1, hstride=1, vdilation=1, hdilation=1,
-                             relu=False, bn=False, running_mean=None, inv_std=None,
-                             gamma=None, beta=None):
-        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                             relu=False, bn=False, 
+                             running_mean:np.ndarray|None = None, inv_std:np.ndarray|None = None,
+                             gamma:np.ndarray|None = None, beta:np.ndarray|None = None) -> np.ndarray:
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
@@ -317,7 +318,7 @@ class ConvWinograd:
         tile_h = math.ceil((hi + 2 * vpadding - t) / s) + 1
         tile_w = math.ceil((wi + 2 * hpadding - t) / s) + 1
 
-        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             y = self.y_cache[(n, co, ho, wo)]  # Output
         else:
             y = self.y_cache[(n, ho, wo, co)]  # Output
@@ -358,7 +359,7 @@ class ConvWinograd:
                         ow = max(min(t, wi - ww) - min(t, fw), 0)
 
                         if hh < hh + oh and ww < ww + ow:
-                            if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                            if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                                 d[fh:fh + oh, fw:fw + ow] = x[b, c, hh:hh + oh, ww:ww + ow]
                             else:
                                 d[fh:fh + oh, fw:fw + ow] = x[b, hh:hh + oh, ww:ww + ow, c]
@@ -403,19 +404,19 @@ class ConvWinograd:
                     for w in range(tile_w):
                         z = (at @ m_[..., k, b * tile_h * tile_w + h * tile_w + w]) @ at.T
                         hh, ww = h * s, w * s
-                        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                             y[b, k, hh:hh + m, ww:ww + m] = z[:min(m, ho - hh), :min(m, wo - ww)]
                         else:
                             y[b, hh:hh + m, ww:ww + m, k] = z[:min(m, ho - hh), :min(m, wo - ww)]
 
             if biases is not None:
-                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                     y[:, k, ...] += biases[k]
                 else:
                     y[..., k] += biases[k]
 
             if bn:
-                if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+                if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                     y[:, k, ...] = (((y[:, k, ...] - running_mean[k]) * inv_std[k]) * gamma[k]) + beta[k]
                 else:
                     y[..., k] = (((y[..., k] - running_mean[k]) * inv_std[k]) * gamma[k]) + beta[k]
@@ -424,14 +425,17 @@ class ConvWinograd:
             y[y < 0] = 0
 
         return y
+    # --- END _conv_winograd_numpy --- #
 
-    def _conv_winograd_c(self, m, r, g, bt, at, x_winograd_pre, x_winograd_kernel,
-                         weights, x, biases=None, vpadding=0, hpadding=0,
-                         vstride=1, hstride=1, vdilation=1, hdilation=1,
-                         relu=False, bn=False, running_mean=None, inv_std=None,
-                         gamma=None, beta=None):
+    def _conv_winograd_c(self, m:int, r:int, g:np.ndarray, bt:np.ndarray, at:np.ndarray, 
+                         x_winograd_pre, x_winograd_kernel,
+                         weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None = None, 
+                         vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1,
+                         relu=False, bn=False, 
+                         running_mean:np.ndarray|None = None, inv_std:np.ndarray|None = None,
+                         gamma:np.ndarray|None = None, beta:np.ndarray|None = None) -> np.ndarray:
 
-        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
@@ -459,7 +463,7 @@ class ConvWinograd:
         _weights_already_processed, _u, = self.cw_cache_pre[(m, r, co, ci)]
         _v, _m = self.cw_cache_kernel[(m, r, n, co, ci, hi, wi, kh, kw, vpadding, hpadding)]
 
-        if self.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             y = self.y_cache[(n, co, ho, wo)]  # Output
             ld_d1, ld_d2, ld_d3 = ci * hi * wi, hi * wi, wi
             ld_f1, ld_f2, ld_f3 = ci * kh * kw, kh * kw, kw
@@ -492,7 +496,7 @@ class ConvWinograd:
                    ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
                    ctypes.c_void_p(None if beta is None else beta.ctypes.data))
         return y
-
+    # --- END _conv_winograd_c --- #
 
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
@@ -557,7 +561,7 @@ def __usage_example__():
     print("Using conv_winograd NHWC to compute weights * x + biases...")
     r = False
     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation,
-                                 tensor_format=PYDTNN_TENSOR_FORMAT_NHWC, debug=False)
+                                 tensor_format=PYDTNN_TENSOR_FORMAT.NHWC, debug=False)
     conv_winograd_result_nhwc = conv_winograd.conv_winograd_nhwc(weights, x, biases_wg,
                                                                  vpadding=vpadding, hpadding=hpadding,
                                                                  vstride=vstride, hstride=hstride,
@@ -609,14 +613,14 @@ def __usage_example__():
                                 ho = (hh + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
                                 wo = (ww + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-                                for tensor_fmt in [PYDTNN_TENSOR_FORMAT_NCHW, PYDTNN_TENSOR_FORMAT_NHWC]:
+                                for tensor_fmt in [PYDTNN_TENSOR_FORMAT.NCHW, PYDTNN_TENSOR_FORMAT.NHWC]:
                                     conv_winograd = ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation,
                                                                  tensor_format=tensor_fmt, debug=False)
                                     print(nn, cc, kk, hh, ww, vpadding, hpadding, kh, conv_winograd.tensor_format_str,
                                           end="")
 
                                     biases_wg = (np.ones(kk) * 10).astype(np.float32, order='C')
-                                    if tensor_fmt == PYDTNN_TENSOR_FORMAT_NCHW:
+                                    if tensor_fmt == PYDTNN_TENSOR_FORMAT.NCHW:
                                         weights = np.random.rand(kk, cc, kh, kw).astype(np.float32, order='C')
                                         x = np.random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
                                         biases = (np.ones((kk, nn * ho * wo)) * 10).astype(np.float32, order='C')

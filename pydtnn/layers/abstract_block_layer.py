@@ -30,7 +30,7 @@ class AbstractBlockLayer(Layer, ABC):
         for p in args:
             self.paths.append(p)
         self.is_block_layer = True
-        self.out_shapes = []
+        self.out_shapes: list[tuple[int, ...]] = []
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)

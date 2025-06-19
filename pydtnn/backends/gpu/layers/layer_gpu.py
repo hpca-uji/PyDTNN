@@ -21,8 +21,8 @@ from abc import ABC
 from collections import abc
 
 from pydtnn.layers.layer import Layer
-from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_MDL_ALLREDUCE_DW, PYDTNN_OPS_ALLREDUCE_DW
+from pydtnn.tracers import  PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+                            PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
     # noinspection PyUnresolvedReferences
@@ -36,6 +36,8 @@ try:
 except (ImportError, ModuleNotFoundError, OSError):
     pass
 
+from numpy import ndarray
+from ..tensor_gpu import TensorGPU
 
 class LayerGPU(Layer, ABC):
     """
@@ -45,20 +47,20 @@ class LayerGPU(Layer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
-        self.y = None
-        self.weights_cpu = None
-        self.biases_cpu = None
-        self.x = None
-        self.dx = None
-        self.dw = None
-        self.db = None
-        self.dw_cpu = None
-        self.db_cpu = None
-        self.one_vec_cpu = None
-        self.one_vec_gpu = None
+        self.y: TensorGPU = None
+        self.weights_cpu: ndarray = None
+        self.biases_cpu: ndarray = None
+        self.x: TensorGPU = None
+        self.dx: TensorGPU = None
+        self.dw: TensorGPU = None
+        self.db: TensorGPU = None
+        self.dw_cpu: ndarray = None
+        self.db_cpu: ndarray = None
+        self.one_vec_cpu: ndarray = None
+        self.one_vec_gpu: TensorGPU = None
 
     # noinspection PyMethodOverriding
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool, x: TensorGPU) -> None:
         self.x = x  # Must be before super().initialize()
         super().initialize(prev_shape, need_dx)
 
@@ -176,8 +178,8 @@ class LayerGPU(Layer, ABC):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
-                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
+                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
+                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             # stream = self.stream_2.handle)
             dw = getattr(self, dw_)
 
@@ -238,4 +240,4 @@ class LayerGPU(Layer, ABC):
                 if not self.model.gpudirect:
                     dw.ary.set_async(dw_cpu, self.stream_2)
 
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
+            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])

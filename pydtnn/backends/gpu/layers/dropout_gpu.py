@@ -22,7 +22,7 @@ import numpy as np
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.layers import Dropout
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN, PYDTNN_OPS_BACKWARD_CUDNN_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
@@ -38,7 +38,7 @@ class DropoutGPU(LayerGPU, Dropout):
         self.states = None
         self.drop_desc = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
 
         # Activations y
@@ -62,24 +62,24 @@ class DropoutGPU(LayerGPU, Dropout):
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
-                                        self.states.ptr, self.states_size.value, seed=0)
+                                        self.states.ptr, self.states_size, seed=0)
 
-    def forward(self, x):
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
+    def forward(self, x: TensorGPU) -> TensorGPU:
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnDropoutForward(self.model.cudnn_handle, self.drop_desc,
                                   x.desc, x.ptr,
                                   self.y.desc, self.y.ptr,
                                   self.space.ptr, self.space_size.value)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU | None:
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnDropoutBackward(self.model.cudnn_handle, self.drop_desc,
                                        dy.desc, dy.ptr,
                                        self.dx.desc, self.dx.ptr,
                                        self.space.ptr, self.space_size.value)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx

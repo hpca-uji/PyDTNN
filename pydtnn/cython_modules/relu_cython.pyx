@@ -68,8 +68,6 @@ cdef relu_cython_inner(const npDT[:] x,
     for i in prange(x.shape[0], nogil=True):
         if x[i] > 0:
             max[i], mask[i] = x[i], 1
-        else: # NOTE: Since max and mask are both initialize "np.zeros", it's necessary to set them.
-            max[i], mask[i] = 0, 0
 # --- END relu_cython_inner --- # 
 
 
@@ -119,8 +117,6 @@ cdef capped_relu_cython_inner(const npDT[:] x,
             max[i], mask[i] = <npDT> cap, 1
         elif x[i] > 0: # cap > x[i] > 0
             max[i], mask[i] = x[i], 1
-        else: 
-            max[i], mask[i] = 0, 0
 # --- END capped_relu_cython_inner --- # 
 
 ###############################################
@@ -167,6 +163,4 @@ cdef leaky_relu_cython_inner(const npDT[:] x,
             max[i], mask[i] = x[i], 1
         elif x[i] < 0:
             max[i], mask[i] = <npDT> (x[i] * negative_slope), negative_slope
-        else: 
-            max[i], mask[i] = 0, 0
 # --- END leaky_relu_cython_inner --- # 

@@ -27,7 +27,8 @@ from pydtnn.utils import decode_tensor, encode_tensor
 
 class AbstractPool2DLayer(Layer, ABC):
 
-    def __init__(self, pool_shape=(2, 2), padding=0, stride=1, dilation=1):
+    def __init__(self, pool_shape:tuple[int, int] | int = (2, 2), padding:tuple[int, int] | int = 0, 
+                 stride:tuple[int, int] | int = 1, dilation:tuple[int, int] | int = 1):
         super().__init__()
         self.pool_shape = pool_shape
         self.padding = padding

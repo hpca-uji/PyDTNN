@@ -31,11 +31,11 @@ class LeakyReluCPU(ActivationCPU, LeakyRelu):
         self.mask: ndarray = None
 
     def forward(self, x: ndarray) -> ndarray:
-        self.y, mask = leaky_relu_cython(x, self.negative_slope)
-        if self.model.mode == TRAIN_MODE:
-            self.mask = mask
+        self.y, self.mask = leaky_relu_cython(x, self.negative_slope)
         return self.y
 
     def backward(self, dy: ndarray) -> ndarray | None:
         if self.need_dx:
-            return dy * self.mask
+            # return dy * self.mask
+            dy *= self.mask
+            return dy

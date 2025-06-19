@@ -22,23 +22,25 @@ import time
 import numpy as np
 
 from . import LRSchedulerWithLossOrMetric
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
 
 class EarlyStopping(LRSchedulerWithLossOrMetric):
     """
     EarlyStopping LRScheduler
     """
 
-    def __init__(self, model, loss_or_metric="", patience=10, minimize=True, verbose=True):
+    def __init__(self, model:Model, loss_or_metric="", patience=10, minimize=True, verbose=True):
         super().__init__(model, loss_or_metric, verbose)
         self.patience = patience
         self.minimize = minimize
-        self.best_epoch = 0
-        self.stop_training = False
-        self.best_loss = np.inf * {True: -1, False: 1}[not self.minimize]
-        self.best_weights_filename = None
-
-    def on_epoch_end(self, train_loss, val_loss):
+        self.best_epoch:int = 0
+        self.best_loss:float = np.inf * {True: -1, False: 1}[not self.minimize]
+        self.best_weights_filename:str | None = None
+    
+    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

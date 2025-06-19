@@ -20,6 +20,7 @@
 import importlib
 import sys
 
+from .dataset import Dataset
 from .cifar10 import CIFAR10
 from .custom_dataset import CustomDataset
 from .imagenet import ImageNet
@@ -27,7 +28,7 @@ from .mnist import MNIST
 
 CustomImport = CustomDataset.import_
 
-def get_dataset(model):
+def get_dataset(model) -> Dataset:
     try:
         dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet", "raw": "CustomImport"}
         dataset_mod = importlib.import_module("pydtnn.datasets")

@@ -22,13 +22,14 @@ from collections.abc import Sequence, Iterable
 from ..activations import *
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.initializers import he_uniform
+from ..activations import softmax
 
 def create_resnet152_imagenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
     yield Input(shape=input_shape)
-    yield Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform")
+    yield Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform)
     yield BatchNormalization()
 
     expansion = 4
@@ -39,24 +40,24 @@ def create_resnet152_imagenet(input_shape: Sequence[int], output_shape: Sequence
                 stride = 1
             yield AdditionBlock(
                 [
-                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization()
                 ],
                 [
                     Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=stride,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization()
                 ] if r == 0 or stride != 1 else [])
             yield Relu()
 
     yield AveragePool2D(pool_shape=(0, 0))  # Global average pooling 2D
     yield Flatten()
-    yield FC(shape=output_shape, activation="softmax")
+    yield FC(shape=output_shape, activation=softmax)

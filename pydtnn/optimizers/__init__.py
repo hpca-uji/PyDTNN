@@ -10,7 +10,7 @@ If you want to add a new optimizer:
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -26,7 +26,6 @@ If you want to add a new optimizer:
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import importlib
 
 from .adam import Adam
 from .nadam import Nadam
@@ -34,6 +33,18 @@ from .optimizer import Optimizer
 from .rmsprop import RMSProp
 from .sgd import SGD
 from ..utils import get_derived_classes
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.optimizers import Layer_types
+    from pydtnn import Model
+else: 
+    Layer_types = None
+    Model = None
+
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.backends import PromoteToBackendMixin
+type Layer_types = LayerAndActivationBase | PromoteToBackendMixin
 
 # Search this module for Optimizer derived classes and expose them
 get_derived_classes(Optimizer, locals())
@@ -45,38 +56,40 @@ rmsprop = RMSProp
 sgd = SGD
 
 
-def get_optimizer(model):
+def get_optimizer(model) -> Optimizer:
     """Get optimizer object from model attributes"""
-    optimizers_module = importlib.import_module("pydtnn.optimizers")
-    _optimizer = getattr(optimizers_module, model.optimizer_name)
-    if model.optimizer_name == "rmsprop":
-        opt = _optimizer(learning_rate=model.learning_rate,
-                         rho=model.rho,
-                         epsilon=model.epsilon,
-                         decay=model.decay,
-                         dtype=model.dtype)
-    elif model.optimizer_name == "adam":
-        opt = _optimizer(learning_rate=model.learning_rate,
-                         beta1=model.beta1,
-                         beta2=model.beta2,
-                         epsilon=model.epsilon,
-                         decay=model.decay,
-                         dtype=model.dtype)
-    elif model.optimizer_name == "nadam":
-        opt = _optimizer(learning_rate=model.learning_rate,
-                         beta1=model.beta1,
-                         beta2=model.beta2,
-                         epsilon=model.epsilon,
-                         decay=model.decay,
-                         dtype=model.dtype)
-    elif model.optimizer_name == "sgd":
-        opt = _optimizer(learning_rate=model.learning_rate,
-                         momentum=model.momentum,
-                         nesterov=model.nesterov,
-                         decay=model.decay,
-                         dtype=model.dtype)
-    else:
-        raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
+    model: Model
+    match model.optimizer_name:
+        
+        case "rmsprop":
+            opt: RMSProp = RMSProp(learning_rate=model.learning_rate,
+                                   rho=model.rho,
+                                   epsilon=model.epsilon,
+                                   decay=model.decay,
+                                   dtype=model.dtype)
+        case "adam":
+            opt: Adam = Adam(learning_rate=model.learning_rate,
+                             beta1=model.beta1,
+                             beta2=model.beta2,
+                             epsilon=model.epsilon,
+                             decay=model.decay,
+                             dtype=model.dtype)
+        case "nadam":
+            opt: Nadam = Nadam(learning_rate=model.learning_rate,
+                               beta1=model.beta1,
+                               beta2=model.beta2,
+                               epsilon=model.epsilon,
+                               decay=model.decay,
+                               dtype=model.dtype)
+        case "sgd":
+            opt: SGD = SGD(learning_rate=model.learning_rate,
+                           momentum=model.momentum,
+                           nesterov=model.nesterov,
+                           decay=model.decay,
+                           dtype=model.dtype)
+        case _:
+            raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
+        
     if model.enable_cudnn:
         opt.set_gpudirect(model.gpudirect)
     return opt
