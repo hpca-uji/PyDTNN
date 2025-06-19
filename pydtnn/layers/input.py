@@ -27,7 +27,7 @@ from pydtnn.utils import encode_tensor
 class Input(Layer, ABC):
     # NOTE: Input(shape) is expected to be in NHWC
 
-    def __init__(self, shape=(1,)):
+    def __init__(self, shape:tuple = (1,), is_shape_in_format:bool = False):
         if len(shape) != 3:
             warnings.warn(f"Input layer does not have 3 dimensions ({shape}), it may cause issues!", RuntimeWarning)
 
@@ -35,7 +35,9 @@ class Input(Layer, ABC):
             warnings.warn(f"Input layer shape {shape} may not be in NHWC format, regardless of model format! ", RuntimeWarning)
 
         super().__init__(shape)
+        self.is_shape_in_format = is_shape_in_format
 
-    def initialize(self, prev_shape, need_dx=True):
+    def initialize(self, prev_shape:tuple, need_dx:bool=True):
         super().initialize(prev_shape, need_dx)
-        self.shape = encode_tensor(self.shape, self.model.tensor_format)
+        if not self.is_shape_in_format:
+            self.shape = encode_tensor(self.shape, self.model.tensor_format)

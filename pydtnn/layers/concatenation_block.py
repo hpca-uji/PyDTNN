@@ -24,7 +24,7 @@ from .abstract_block_layer import AbstractBlockLayer
 
 class ConcatenationBlock(AbstractBlockLayer, ABC):
 
-    def show(self, attrs=""):
+    def show(self, attrs="") -> None:
         print(
             f"|{self.id:^7d}"
             f"|{(type(self).__name__.replace('Concatenation', 'Concat') + ' (%d-path)' % len(self.paths)):^26s}"

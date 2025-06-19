@@ -22,7 +22,6 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 from libc.math cimport sqrt
-cimport openmp
 
 # --- COMMON --- #
 ctypedef fused npDT:

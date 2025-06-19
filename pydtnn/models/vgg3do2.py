@@ -21,23 +21,24 @@ from collections.abc import Sequence, Iterable
 
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.initializers import he_uniform
+from ..activations import relu, softmax
 
 def create_vgg3do2(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
-    yield Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform")
-    yield Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform")
+    yield Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation=relu, weights_initializer=he_uniform)
+    yield Conv2D(nfilters=32, filter_shape=(3, 3), padding=1, activation=relu, weights_initializer=he_uniform)
     yield MaxPool2D(pool_shape=(2, 2), stride=2)
     yield Dropout(rate=0.2)
-    yield Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform")
-    yield Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform")
+    yield Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation=relu, weights_initializer=he_uniform)
+    yield Conv2D(nfilters=64, filter_shape=(3, 3), padding=1, activation=relu, weights_initializer=he_uniform)
     yield MaxPool2D(pool_shape=(2, 2), stride=2)
     yield Dropout(rate=0.3)
-    yield Conv2D(nfilters=128, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform")
-    yield Conv2D(nfilters=128, filter_shape=(3, 3), padding=1, activation="relu", weights_initializer="he_uniform")
+    yield Conv2D(nfilters=128, filter_shape=(3, 3), padding=1, activation=relu, weights_initializer=he_uniform)
+    yield Conv2D(nfilters=128, filter_shape=(3, 3), padding=1, activation=relu, weights_initializer=he_uniform)
     yield MaxPool2D(pool_shape=(2, 2), stride=2)
     yield Dropout(rate=0.4)
     yield Flatten()
-    yield FC(shape=(128,), activation="relu", weights_initializer="he_uniform")
+    yield FC(shape=(128,), activation=relu, weights_initializer=he_uniform)
     yield Dropout(rate=0.5)
-    yield FC(shape=output_shape, activation="softmax")
+    yield FC(shape=output_shape, activation=softmax)

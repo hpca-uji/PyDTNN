@@ -21,21 +21,21 @@ from collections.abc import Sequence, Iterable
 
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from ..activations import relu, softmax
 
 def create_alexnet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape = input_shape)
-    yield Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation="relu")
+    yield Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation=relu)
     yield MaxPool2D(pool_shape=(3, 3), stride=2)
-    yield Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation="relu")
+    yield Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation=relu)
     yield MaxPool2D(pool_shape=(3, 3), stride=2)
-    yield Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation="relu")
-    yield Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation="relu")
-    yield Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation="relu")
+    yield Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=relu)
+    yield Conv2D(nfilters=384, filter_shape=(3, 3), padding=1, stride=1, activation=relu)
+    yield Conv2D(nfilters=256, filter_shape=(3, 3), padding=1, stride=1, activation=relu)
     yield MaxPool2D(pool_shape=(3, 3), stride=2)
     yield Flatten()
-    yield FC(shape=(4096,), activation="relu")
+    yield FC(shape=(4096,), activation=relu)
     yield Dropout(rate=0.5)
-    yield FC(shape=(4096,), activation="relu")
+    yield FC(shape=(4096,), activation=relu)
     yield Dropout(rate=0.5)
-    yield FC(shape = output_shape, activation="softmax")
+    yield FC(shape = output_shape, activation=softmax)

@@ -21,12 +21,12 @@ from collections.abc import Sequence, Iterable
 
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from ..activations import relu, softmax
 
 def create_simplemlp(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
     yield Flatten()
-    yield FC(shape=(512,), activation="relu")
-    yield FC(shape=(512,), activation="relu")
-    yield FC(shape=(512,), activation="relu")
-    yield FC(shape=output_shape, activation="softmax")
+    yield FC(shape=(512,), activation=relu)
+    yield FC(shape=(512,), activation=relu)
+    yield FC(shape=(512,), activation=relu)
+    yield FC(shape=output_shape, activation=softmax)

@@ -38,7 +38,7 @@ class LogGPU(ActivationGPU, Log):
         self.log = None
         self.dlog = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
 
         self.log = ElementwiseKernel(
@@ -62,11 +62,11 @@ class LogGPU(ActivationGPU, Log):
             dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
             self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         self.log(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU | None:
         if self.need_dx:
             # Compute dx
             self.dlog(dy.ary, self.dx.ary, stream=self.model.stream)

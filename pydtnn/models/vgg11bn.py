@@ -22,24 +22,24 @@ from collections.abc import Sequence, Iterable
 from ..activations import *
 from ..layers import *
 from layers.layer import LayerAndActivationBase
-
+from pydtnn.initializers import he_uniform
 
 def create_vgg11bn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
     conv_pattern = [[1, 64], [1, 128], [2, 256], [2, 512], [2, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            yield Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer="he_uniform")
+            yield Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, weights_initializer=he_uniform)
             yield BatchNormalization()
             yield Relu()
         yield MaxPool2D(pool_shape=(2, 2), stride=2)
     yield Flatten()
     yield Dropout(rate=0.5)
-    yield FC(shape=(512,), weights_initializer="he_uniform")
+    yield FC(shape=(512,), weights_initializer=he_uniform)
     yield BatchNormalization()
     yield Relu()
     yield Dropout(rate=0.5)
-    yield FC(shape=(512,), weights_initializer="he_uniform")
+    yield FC(shape=(512,), weights_initializer=he_uniform)
     yield BatchNormalization()
     yield Relu()
-    yield FC(shape=output_shape, activation="softmax", weights_initializer="he_uniform")
+    yield FC(shape=output_shape, activation=softmax, weights_initializer=he_uniform)

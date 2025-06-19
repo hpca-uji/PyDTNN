@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -25,9 +25,16 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGe
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
+from pydtnn.utils.best_transpose_0312 import best_transpose_0312
+from pydtnn.utils.best_transpose_1023 import best_transpose_1023
+from pydtnn.utils.memory_cache import MemoryCache
 
-
+from numpy import ndarray
+from pydtnn.layers.conv_2d import GroupingEnum
+from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import ConvVariantEnum
 class Conv2DCPU(LayerCPU,
                 DepthwiseVariant,
                 PointwiseVariant,
@@ -46,7 +53,7 @@ class Conv2DCPU(LayerCPU,
         self.fwd_time = None
         self.bwd_time = None
 
-    def initialize(self, prev_shape, need_dx=True):
+    def initialize(self, prev_shape:tuple[int, ...], need_dx=True) -> None:
         super().initialize(prev_shape, need_dx)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
@@ -56,39 +63,39 @@ class Conv2DCPU(LayerCPU,
         # Select variants if it has not been already selected (e.g., by BestOfVariant)
         if self.variant is None:
             # Select variant when best_of is not enabled
-            variant = 'i2c'  # Default variant is i2c
-            if self.grouping == 'pointwise':  # 2nd alternative
-                variant = 'pointwise'
-            elif self.grouping == 'depthwise':  # 3rd alternative
-                variant = 'depthwise'
-            else:  # 4th alternative: one of convWinograd, convGemm or convDirect
-                # Check colliding options
-                if self.model.enable_conv_winograd and self.model.enable_conv_direct:
-                    sys.stderr.write("Error: please, select exactly one of conv_winograd or conv_direct")
-                    sys.exit(1)
-                if self.model.enable_conv_gemm and self.model.enable_conv_direct:
-                    sys.stderr.write("Error: please, select exactly one of conv_gemm or conv_direct")
-                    sys.exit(1)
-                if self.model.enable_conv_winograd:
-                    # If conv_winograd is enabled, use it if it is possible.
-                    # If not, fallback to cg or i2c variant depending on the user's choice.
-                    if self.cw_constraints_fulfilled:
-                        variant = 'cw'
-                    elif self.model.enable_conv_gemm:
-                        variant = 'cg'
-                    elif self.model.enable_conv_direct:
-                        variant = 'cd0'
-                    else:
-                        variant = 'i2c'  # Redundant, just to make it clear
-                elif self.model.enable_conv_gemm:  # After conv_winograd, as it can be selected as fallback
-                    variant = 'cg'
-                elif self.model.enable_conv_direct:
-                    variant = 'cd0'
+            variant = ConvVariantEnum.I2C # Default Convolution variant.
+            match self.grouping:
+                case GroupingEnum.POINTWISE:
+                    variant = ConvVariantEnum.POINTWISE
+                case GroupingEnum.DEPTHWISE:
+                    variant = GroupingEnum.DEPTHWISE
+                case convWinograd_or_Gemm_or_Direct:
+                    # Check colliding options
+                    # -> WINOGRAD:
+                    if self.model.enable_conv_winograd:
+                        if self.model.enable_conv_direct:
+                            sys.stderr.write("Error: please, select exactly one of conv_winograd or conv_direct")
+                            sys.exit(1)
+                        elif self.cw_constraints_fulfilled:
+                            variant = ConvVariantEnum.WINOGRAD
+                        #else: variant = None # Value set before the match-case statement
+                    if variant == ConvVariantEnum.I2C:
+                        #assert not self.model.enable_conv_winograd or (self.model.enable_conv_winograd and not self.cw_constraints_fulfilled)
+                        # -> GEMM or ConvDirect:
+                        if self.model.enable_conv_gemm:
+                            # -> GEMM:
+                            if self.model.enable_conv_direct:
+                                sys.stderr.write("Error: please, select exactly one of conv_gemm or conv_direct")
+                                sys.exit(1)
+                            else:
+                                variant = ConvVariantEnum.GEMM
+                        elif self.model.enable_conv_direct:
+                            # -> ConvDirect:
+                            variant = ConvVariantEnum.DIRECT
+                        # else: variant = ConvVariantEnum.I2C # Already set.                            
             self.variant = variant
         # Set forward and backward implementations based on self.variant
-        forward, backward = self._get_forward_and_backward(self.variant)
-        setattr(self, "forward", forward)
-        setattr(self, "backward", backward)
+        self.forward, self.backward = self._get_forward_and_backward(self.variant)
         # Performance models
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
@@ -110,25 +117,25 @@ class Conv2DCPU(LayerCPU,
                                          cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                                          dtype=self.model.dtype)
 
-    def forward(self, x):
-        """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
-        pass
+    def forward(self, x:ndarray)->ndarray:
+        msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""
+        NotImplementedError(f"Conv2DCPU forward: {msg}")
 
-    def backward(self, dy):
-        """This is a fake backward function. It will be masked on initialization by a _backward implementation"""
-        pass
+    def backward(self, dy:ndarray) -> ndarray:
+        msg = """This is a fake backward function. It must be masked on initialization by a _backward implementation"""
+        NotImplementedError(f"Conv2DCPU backward: {msg}")
 
-    def print_in_convdirect_format(self):
+    def print_in_convdirect_format(self) -> None:
         if self.hstride != 1 or self.vstride != 1:
             return
         # #l kn wo ho t kh kw ci wi hi"
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             ci, hi, wi = self.prev_shape
         else:
             hi, wi, ci = self.prev_shape
         print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
 
-    def _get_forward_and_backward(self, variant):
-        tensor_format = 'nchw' if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else 'nhwc'
+    def _get_forward_and_backward(self, variant:str):
+        tensor_format = self.model.tensor_format
         return (getattr(self, f'_forward_{variant}_{tensor_format}'),
                 getattr(self, f'_backward_{variant}_{tensor_format}'))

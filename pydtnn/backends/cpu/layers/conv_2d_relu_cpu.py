@@ -20,8 +20,9 @@
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DRelu
 from pydtnn.model import TRAIN_MODE
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CONVGEMM
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
+from numpy import ndarray
 
 # Next no inspection is because Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
 # noinspection PyAbstractClass
@@ -32,18 +33,20 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape=None, need_dx=True, from_parent_dict=None):
+    def initialize(self, from_parent_dict=None, *args, **kwargs) -> None:
+        # TODO: Discover why super.initialize() was not called.
+        super().initialize(args, kwargs)
         self.forward = {"_forward_nchw_cg": self._forward_nchw_cg,
                         "_forward_nhwc_cg": self._forward_nhwc_cg,
                         "_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
 
-    def forward(self, x):
+    def forward(self, x: ndarray) -> ndarray:
         """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
         pass
 
-    def _forward_nchw_cg(self, x):
+    def _forward_nchw_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
 
         if self.model.mode == TRAIN_MODE:
@@ -51,16 +54,16 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         biases_vector = self.biases if self.use_bias else None
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation,
-                                     biases_vector=biases_vector, relu=True)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
+        res: ndarray = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
+                                              vpadding=self.vpadding, hpadding=self.hpadding,
+                                              vstride=self.vstride, hstride=self.hstride,
+                                              vdilation=self.vdilation, hdilation=self.hdilation,
+                                              biases_vector=biases_vector, relu=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 
-    def _forward_nhwc_cg(self, x):
+    def _forward_nhwc_cg(self, x:ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
 
         if self.model.mode == TRAIN_MODE:
@@ -68,16 +71,16 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         biases_vector = self.biases if self.use_bias else None
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        res = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation,
-                                     biases_vector=biases_vector, relu=True)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
+        res:ndarray = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
+                                             vpadding=self.vpadding, hpadding=self.hpadding,
+                                             vstride=self.vstride, hstride=self.hstride,
+                                             vdilation=self.vdilation, hdilation=self.hdilation,
+                                             biases_vector=biases_vector, relu=True)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 
-    def _forward_nchw_cw(self, x):
+    def _forward_nchw_cw(self, x:ndarray)->ndarray:
         """Version of the forward function that uses the convWinograd + Relu"""
 
         if self.model.mode == TRAIN_MODE:
@@ -85,15 +88,15 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
         biases_vector = self.biases if self.use_bias else None
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CONVGEMM)
-        y = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
+        y:ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
                                        vpadding=self.vpadding, hpadding=self.hpadding,
                                        vstride=self.vstride, hstride=self.hstride,
                                        vdilation=self.vdilation, hdilation=self.hdilation,
                                        relu=True)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y
 
-    def backward(self, x):
+    def backward(self, x:ndarray)->ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

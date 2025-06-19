@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,7 @@ from collections import abc
 
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_MDL_ALLREDUCE_DW, PYDTNN_OPS_ALLREDUCE_DW
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum  
 
 try:
     # noinspection PyUnresolvedReferences
@@ -30,6 +30,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+from numpy import ndarray
 
 class LayerCPU(Layer, ABC):
     """
@@ -43,7 +44,7 @@ class LayerCPU(Layer, ABC):
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            dw = getattr(self, dw_)
+            dw:ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             # TODO: crypt
             if isinstance(dw, abc.Buffer):
@@ -71,9 +72,9 @@ class LayerCPU(Layer, ABC):
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
-                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
-            dw = getattr(self, dw_)
+                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
+                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
+            dw:ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             # TODO: crypt
             if isinstance(dw, abc.Buffer):
@@ -82,4 +83,4 @@ class LayerCPU(Layer, ABC):
                 dw = self.model.comm.allreduce(dw, op=MPI.SUM)
             # TODO: decrypt
             setattr(self, dw_, dw)
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
+            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])

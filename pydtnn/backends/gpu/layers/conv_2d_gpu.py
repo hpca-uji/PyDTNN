@@ -26,13 +26,12 @@ import pycuda.driver as drv
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN, \
-    PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES, \
-    PYDTNN_OPS_BACKWARD_CUDNN_DW, PYDTNN_OPS_BACKWARD_CUDNN_DB, PYDTNN_OPS_BACKWARD_CUDNN_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from .layer_gpu import LayerGPU
 from .memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from ..tensor_gpu import TensorGPU
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.layers.conv_2d import GroupingEnum
 
 class Conv2DGPU(LayerGPU, Conv2D):
 
@@ -44,10 +43,10 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.bwd_dx_algo = None
         self.conv_desc = None
 
-    def initialize(self, prev_shape, need_dx, x):
+    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, need_dx, x)
         # This weight shape is required for cuDNN when NHWC is seleted!
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
             self.weights_shape = (self.co, *self.filter_shape, self.ci)
 
         self.stream_2 = drv.Stream()
@@ -63,7 +62,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
         # Biases
         if self.use_bias:
             self.biases_cpu = self.biases_initializer((1, self.co, 1, 1) \
-               if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else (1, 1, 1, self.co), self.model.dtype)
+               if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW else (1, 1, 1, self.co), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # Create convolution descriptor
@@ -72,7 +71,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                                               self.vstride, self.hstride, self.vdilation, self.hdilation,
                                               conv_mode, self.model.cudnn_dtype)
         # Set grouping options
-        if self.grouping == "depthwise":
+        if self.grouping is GroupingEnum.DEPTHWISE:
             cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
 
         # Allow NCHW -> NHWC conversion for the use of Tensor Cores
@@ -167,38 +166,38 @@ class Conv2DGPU(LayerGPU, Conv2D):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) \
             if need_dx else 0
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         # Compute a' = x x weights
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnConvolutionForward(self.model.cudnn_handle, alpha,
                                       x.desc, x.ptr,
                                       self.weights.desc, self.weights.ptr,
                                       self.conv_desc, self.fwd_algo,
                                       getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
                                       self.y.desc, self.y.ptr)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN_SUM_BIASES)
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             # Compute a = a' + biases
             cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc, self.biases.ptr,
                                  beta, self.y.desc, self.y.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DW)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
         # Compute dw
         cudnn.cudnnConvolutionBackwardFilter(self.model.cudnn_handle, alpha,
                                              self.x.desc, self.x.ptr,
                                              dy.desc, dy.ptr, self.conv_desc, self.bwd_dw_algo,
                                              getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
                                              self.dw.desc, self.dw.ptr)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # DtoH dw when data parallelism and no GPU direct/NCCL is used
         if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
@@ -206,12 +205,12 @@ class Conv2DGPU(LayerGPU, Conv2D):
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DB)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             # Compute db
             cudnn.cudnnConvolutionBackwardBias(self.model.cudnn_handle, alpha,
                                                dy.desc, dy.ptr, beta,
                                                self.db.desc, self.db.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # DtoH db when data parallelism and no GPU direct/NCCL is used
             if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
@@ -219,7 +218,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
 
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
             # Compute dx
             cudnn.cudnnConvolutionBackwardData(self.model.cudnn_handle, alpha,
                                                self.weights.desc, self.weights.ptr,
@@ -227,5 +226,5 @@ class Conv2DGPU(LayerGPU, Conv2D):
                                                self.conv_desc, self.bwd_dx_algo,
                                                getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
                                                self.dx.desc, self.dx.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx

@@ -29,13 +29,23 @@ import uuid
 from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
+from enum import StrEnum, auto
 
 import numpy as np
 
-PYDTNN_TENSOR_FORMATS = 2
-(PYDTNN_TENSOR_FORMAT_NHWC,
- PYDTNN_TENSOR_FORMAT_NCHW) = range(PYDTNN_TENSOR_FORMATS)
+class PYDTNN_TENSOR_FORMAT_enum(StrEnum):
 
+    @staticmethod
+    def get_num_formats():
+        return len(PYDTNN_TENSOR_FORMAT_enum)
+
+    # Constants: 
+    NHWC = auto()    
+    NCHW = auto()
+# --- END PYDTNN_OPS_EVENT_enum --- #
+
+PYDTNN_TENSOR_FORMAT = PYDTNN_TENSOR_FORMAT_enum
+PYDTNN_TENSOR_FORMATS = PYDTNN_TENSOR_FORMAT.get_num_formats()
 
 UUID_NIL = uuid.UUID(int=0)
 UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
@@ -70,17 +80,17 @@ def set_attr_default_factory(o, name, factory):
         return value
 
 
-def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
-    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC):
+    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
         return shape[2], shape[0], shape[1]
-    else:  # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+    else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
         return shape
 
 
-def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT_NHWC):
-    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC):
+    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
         return shape[1], shape[2], shape[0]
-    else:  # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+    else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
         return shape
 
 
@@ -138,13 +148,14 @@ def mkl():
 
 
 def convert_size(units: int, scale: int = 1000):
-    if units > 0:
-        size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
+    size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
+    if units > 0:        
         i = int(math.log(units, scale))
         p = math.pow(scale, i)
         s = round(units / p, 2)
     else:
         i = 0
+        s = 0
     return f"{s}{size_name[i]}"
 
 
@@ -198,7 +209,7 @@ def get_derived_classes(base_class, module_locals):
 
 # Matmul operation
 # Warning: the output matrix can not be cached, as it will persist outside this method
-def matmul(a, b, c=None):
+def matmul(a: np.ndarray, b: np.ndarray, c: np.ndarray | None = None) -> np.ndarray:
     # if a.dtype == np.float32:
     #    c = slb.sgemm(1.0, a, b)
     # elif a.dtype == np.float64:

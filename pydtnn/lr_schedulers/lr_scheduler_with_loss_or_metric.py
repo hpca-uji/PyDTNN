@@ -17,18 +17,23 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+from abc import ABC
 
 from . import LRScheduler
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+else: Model = None
 
-
-class LRSchedulerWithLossOrMetric(LRScheduler):
+class LRSchedulerWithLossOrMetric(LRScheduler, ABC):
     """
     LRScheduler with metric base class
     """
 
-    def __init__(self, model, loss_or_metric, verbose):
+    def __init__(self, model: Model, loss_or_metric:str, verbose:bool):
+        # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, verbose)
-        self.is_val_metric = "val_" == loss_or_metric[:4]
+        self.is_val_metric:bool = "val_" == loss_or_metric[:4]
         self.loss_or_metric = loss_or_metric[4:] if self.is_val_metric else loss_or_metric
 
     def _get_idx(self):

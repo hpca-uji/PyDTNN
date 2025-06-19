@@ -20,23 +20,25 @@
 from abc import ABC
 
 from .layer import Layer
-from .. import activations
-from .. import initializers
+from pydtnn.activations import Activation
+from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 
 
 class FC(Layer, ABC):
 
-    def __init__(self, shape=(1,), activation="", use_bias=True,
-                 weights_initializer="glorot_uniform",
-                 biases_initializer="zeros"):
+    def __init__(self, shape: tuple[int,...] = (1,), 
+                 activation: Activation | None = None, 
+                 use_bias=True,
+                 weights_initializer: InitializerFunc = glorot_uniform,
+                 biases_initializer: InitializerFunc = zeros):
         super().__init__(shape)
-        self.act = getattr(activations, activation, None)
+        self.act = activation
         self.use_bias = use_bias
-        self.weights_initializer = getattr(initializers, weights_initializer)
-        self.biases_initializer = getattr(initializers, biases_initializer)
+        self.weights_initializer = weights_initializer
+        self.biases_initializer = biases_initializer
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
 
-    def show(self, attrs=""):
+    def show(self, attrs="") -> None:
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape), ""))

@@ -22,11 +22,11 @@ from collections.abc import Sequence, Iterable
 from ..activations import *
 from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-
+from pydtnn.initializers import he_uniform
 
 def create_resnet18_imagenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
-    yield Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer="he_uniform")
+    yield Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform)
     yield BatchNormalization()
 
     layout = [[64, 2, 1], [128, 2, 2], [256, 2, 2], [512, 2, 2]]  # Resnet-18
@@ -37,21 +37,19 @@ def create_resnet18_imagenet(input_shape: Sequence[int], output_shape: Sequence[
             yield AdditionBlock(
                 [
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=1, padding=1,
-                           weights_initializer="he_uniform"),
+                           weights_initializer=he_uniform),
                     BatchNormalization()
                 ],
                 [
-                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer="he_uniform"),
+                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform),
                     BatchNormalization()
                 ] if stride != 1 else [])
             yield Relu()
 
     yield AveragePool2D(pool_shape=(0, 0))  # Global average pooling 2D
     yield Flatten()
-    yield FC(shape=output_shape, activation="softmax")
-
-    return model
+    yield FC(shape=output_shape, activation=softmax)

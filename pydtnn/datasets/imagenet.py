@@ -20,8 +20,8 @@ import os
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC
-from .dataset import Dataset, TRAIN, TEST, VAL
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from .dataset import Dataset, DatasetEnum
 
 # The most highly-used subset of ImageNet is the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
 # image classification and localization dataset. This dataset spans 1000 object classes and contains 1,281,
@@ -46,16 +46,16 @@ class ImageNet(Dataset):
         if not self.model.use_synthetic_data:
             # Train part
             path = self.model.dataset_train_path
-            self._xy_filenames[TRAIN] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
-            self._images_per_file[TRAIN] = IMAGES_PER_TRAIN_FILE
+            self._xy_filenames[DatasetEnum.TRAIN] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
+            self._images_per_file[DatasetEnum.TRAIN] = IMAGES_PER_TRAIN_FILE
             # Test part
             path = self.model.dataset_test_path
-            self._xy_filenames[TEST] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
-            self._images_per_file[TEST] = IMAGES_PER_TEST_FILE
+            self._xy_filenames[DatasetEnum.TEST] = [os.path.join(path, f) for f in sorted(os.listdir(path))]
+            self._images_per_file[DatasetEnum.TEST] = IMAGES_PER_TEST_FILE
             # Validation part
-            self._xy_filenames[VAL] = self._xy_filenames[TEST] if self.test_as_validation else self._xy_filenames[TRAIN]
-            self._images_per_file[VAL] = self._images_per_file[TEST] \
-                if self.test_as_validation else self._images_per_file[TRAIN]
+            self._xy_filenames[DatasetEnum.VAL] = self._xy_filenames[DatasetEnum.TEST] if self.test_as_validation else self._xy_filenames[DatasetEnum.TRAIN]
+            self._images_per_file[DatasetEnum.VAL] = self._images_per_file[DatasetEnum.TEST] \
+                if self.test_as_validation else self._images_per_file[DatasetEnum.TRAIN]
 
     def _init_actual_data(self):
         # There is no initialization, as the data is huge, it will be read from the corresponding files as required
@@ -83,7 +83,7 @@ class ImageNet(Dataset):
     def _actual_data_generator(self, part):
         files = self._xy_filenames[part]
         images_per_file = self._images_per_file[part]
-        if part == TRAIN:
+        if part == DatasetEnum.TRAIN:
             # Note that the actual array is shuffled. This is done to ensure that the validation part,
             # when is extracted from the train samples, uses the same files order.
             np.random.shuffle(files)
@@ -95,7 +95,7 @@ class ImageNet(Dataset):
             # Extract x[offset:offset+nsamples] and y[offset:offset+nsamples] from file
             values = np.load(filename)
             x = self._normalize_image(values['x'][offset:offset + nsamples].astype(self.model.dtype))
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
                 x = self._nchw2nhwc(x)
             y = np.zeros(list(x.shape[0]) + self.output_shape, dtype=self.model.dtype, order="C")
             self._decode_class(y, values['y'][offset:offset + nsamples].astype(np.int16).flatten() - 1)

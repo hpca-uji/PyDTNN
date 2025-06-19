@@ -21,14 +21,16 @@ import numpy as np
 
 from .activation import Activation
 
+from ..backends.gpu.tensor_gpu import TensorGPU
+from numpy import ndarray
 
 class Softmax(Activation):
 
-    def forward(self, x):
+    def forward(self, x: ndarray | TensorGPU) -> ndarray | TensorGPU:
         self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
         self.y /= np.sum(self.y, axis=1, keepdims=True)
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: ndarray | TensorGPU | None) -> ndarray | TensorGPU | None:
         if self.need_dx:
             return self.y * (dy - (dy * self.y).sum(axis=1, keepdims=True))

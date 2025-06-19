@@ -21,8 +21,8 @@ import os
 
 import numpy as np
 
-from .dataset import Dataset, TRAIN, TEST, VAL
-from ..utils import PYDTNN_TENSOR_FORMAT_NHWC
+from .dataset import Dataset, DatasetEnum
+from ..utils import PYDTNN_TENSOR_FORMAT
 
 TRAIN_NSAMPLES = 60000
 TEST_NSAMPLES = 10000
@@ -46,17 +46,17 @@ class MNIST(Dataset):
             None,
             os.path.join(self.model.dataset_test_path, "t10k-labels-idx1-ubyte")
         ]
-        x_filename[VAL] = x_filename[TEST] if self.test_as_validation else x_filename[TRAIN]
-        y_filename[VAL] = y_filename[TEST] if self.test_as_validation else y_filename[TRAIN]
+        x_filename[DatasetEnum.VAL] = x_filename[DatasetEnum.TEST] if self.test_as_validation else x_filename[DatasetEnum.TRAIN]
+        y_filename[DatasetEnum.VAL] = y_filename[DatasetEnum.TEST] if self.test_as_validation else y_filename[DatasetEnum.TRAIN]
         images_header_offset = 16  # 4 + 4 * 3
         labels_header_offset = 8  # 4 + 4 * 1
-        for part in (TRAIN, VAL, TEST):
+        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
             offset = images_header_offset + self._local_offset[part] * np.prod(self.input_shape)
             nbytes = self._local_nsamples[part] * np.prod(self.input_shape)
             self._x[part] = self._read_file(x_filename[part], offset, nbytes) \
-                                .reshape(self._local_nsamples[part], *self.input_shape) \
-                                .astype(self.model.dtype) / 255.0
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+                                .reshape(self._local_nsamples[part], *self.input_shape) / 255.0
+            self._x[part] = self._x[part].astype(self.model.dtype)
+            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
                 self._x[part] = self._nchw2nhwc(self._x[part])
             offset = labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
             nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number

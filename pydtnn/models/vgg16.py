@@ -21,7 +21,7 @@ from collections.abc import Sequence, Iterable
 
 from ..layers import *
 from layers.layer import LayerAndActivationBase
-
+from ..activations import relu, softmax
 
 def create_vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
@@ -29,14 +29,12 @@ def create_vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Ite
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):
-            yield Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation="relu")
+            yield Conv2D(nfilters=nfilters, filter_shape=(3, 3), padding=1, stride=1, activation=relu)
         yield MaxPool2D(pool_shape=(2, 2), stride=2)
 
     yield Flatten()
-    yield FC(shape=(4096,), activation="relu")
+    yield FC(shape=(4096,), activation=relu)
     yield Dropout(rate=0.5)
-    yield FC(shape=(4096,), activation="relu")
+    yield FC(shape=(4096,), activation=relu)
     yield Dropout(rate=0.5)
-    yield FC(output_shape, activation="softmax")
-
-    return model
+    yield FC(output_shape, activation=softmax)

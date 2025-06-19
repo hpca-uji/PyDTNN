@@ -27,15 +27,15 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import SGD
-from pydtnn.utils import get_attr_factory
-
+from pydtnn.optimizers import Layer_types
+from pydtnn.backends.gpu.layers import LayerGPU
 
 class SGDGPU(OptimizerGPU, SGD):
     """
     SGDGPU optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype=np.float32):
+    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype:np.dtype=np.float32):
         super().__init__(learning_rate, momentum, nesterov, decay, dtype)
 
         self.update_gpu = ElementwiseKernel("T *w, T * dw, T * v, \
@@ -60,11 +60,25 @@ class SGDGPU(OptimizerGPU, SGD):
                                                                                        {np.float32: "float",
                                                                                         np.float64: "double"}[dtype])
                                              ).get_function("SGD_kernel")
+    # --- END __init__ --- #
 
-    def update(self, layer):
+    def initialize(self, list_layers: list[Layer_types]) -> None:
+        super().__init__(list_layers)
+        
+        for layer in list_layers:
+            list_grad_vars = list(layer.grad_vars.keys())
+                    
+            if len(list_grad_vars) != 0:
+                self.context[layer] = dict()
+                for w_ in list_grad_vars:
+                    w = getattr(layer, w_)
+                    self.context[layer]["velocity_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+
+
+    def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity = get_attr_factory(layer, "velocity_%s" % w_, lambda: gpuarray.zeros_like(w.ary, dtype=layer.model.dtype))
+            velocity = self.context[layer]["velocity_%s" % w_]
 
             if self.gpudirect:
                 rows, cols = w.shape[0], np.prod(w.shape[1:])
@@ -84,6 +98,3 @@ class SGDGPU(OptimizerGPU, SGD):
                 self.update_gpu(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
                                 np.float32(self.decay), np.float32(self.momentum),
                                 stream=layer.stream_2)
-
-            if not hasattr(layer, "velocity_%s" % w_):
-                setattr(layer, "velocity_%s" % w_, velocity)

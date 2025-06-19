@@ -34,7 +34,7 @@ def adaptive_avg_pooling_fwd_nhwc_cython(np.ndarray x, int new_h, int new_w) -> 
     cdef int w = x.shape[2]
     cdef int c = x.shape[3]        
 
-    cdef np.ndarray pooled_x = np.zeros((n, new_h, new_w, c), dtype = x.dtype)
+    cdef np.ndarray pooled_x = np.empty((n, new_h, new_w, c), dtype = x.dtype)
 
     try:
         avg_pooling(pooled_x, x, n, c, h, w, new_h, new_w)
@@ -100,7 +100,7 @@ def adaptive_avg_pooling_bwd_nhwc_cython(np.ndarray dy, int new_h, int new_w) ->
     cdef int w = dy.shape[2]
     cdef int c = dy.shape[3]        
 
-    cdef np.ndarray dx = np.zeros((n, new_h, new_w, c), dtype = dy.dtype)
+    cdef np.ndarray dx = np.empty((n, new_h, new_w, c), dtype = dy.dtype)
 
     try:
         backward_avg_pooling(dx, dy, n, c, h, w, new_h, new_w)

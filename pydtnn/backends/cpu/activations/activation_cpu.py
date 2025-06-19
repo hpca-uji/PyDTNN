@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -21,14 +21,14 @@ from collections import abc
 
 from pydtnn.activations.activation import Activation
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_MDL_ALLREDUCE_DW, PYDTNN_OPS_ALLREDUCE_DW
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
 
 try:
     # noinspection PyUnresolvedReferences
     from pydtnn.libs.mpi import MPI
 except (ImportError, ModuleNotFoundError):
     pass
-
+from numpy import ndarray
 
 class ActivationCPU(Activation, ABC):
     """
@@ -40,14 +40,14 @@ class ActivationCPU(Activation, ABC):
       * reduce_weights_sync()
     """
 
-    def reduce_weights_async(self, gradient=True):
+    def reduce_weights_async(self, gradient:bool=True) -> None:
         if not self.model.comm:
             return
         self.reqs_allred = {}
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            dw = getattr(self, dw_)
+            dw:ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             # TODO: crypt
             if isinstance(dw, abc.Buffer):
@@ -56,7 +56,7 @@ class ActivationCPU(Activation, ABC):
                 req = self.model.comm.iallreduce(dw, op=MPI.SUM)
             self.reqs_allred[dw_] = req
 
-    def wait_allreduce_async(self, gradient=True):
+    def wait_allreduce_async(self, gradient=True) -> None:
         if not self.model.comm or self.model.enable_nccl:
             return
         for w_, dw_ in self.grad_vars.items():
@@ -69,15 +69,15 @@ class ActivationCPU(Activation, ABC):
             # TODO: decrypt
             setattr(self, dw_, dw)
 
-    def reduce_weights_sync(self, gradient=True):
+    def reduce_weights_sync(self, gradient=True) -> None:
         if not self.model.comm:
             return
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_ALLREDUCE_DW,
-                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_ALLREDUCE_DW])
-            dw = getattr(self, dw_)
+                                          [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
+                                           self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
+            dw:ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             # TODO: crypt
             if isinstance(dw, abc.Buffer):
@@ -86,4 +86,4 @@ class ActivationCPU(Activation, ABC):
                 dw = self.model.comm.allreduce(dw, op=MPI.SUM)
             # TODO: decrypt
             setattr(self, dw_, dw)
-            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [0, 0])
+            self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
