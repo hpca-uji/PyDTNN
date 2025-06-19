@@ -7,13 +7,13 @@ from torchvision.models import densenet121, densenet201, resnet18, resnet34, res
 
 from torchmetrics import Accuracy, Metric
 
-from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import TRAIN, VAL, TEST, Dataset
 from pydtnn.activations import *
 from pydtnn.layers import *
 
 from pydtnn.models.vgg11 import create_vgg11
 from pydtnn.models.vgg16 import create_vgg16
-from pydtnn.models.vgg19_imagenet import create_vgg19_imagenet
+from pydtnn.models.vgg19_imagenet import create_vgg19_imagenet10
 from pydtnn.models.alexnet_cifar10 import create_alexnet_cifar10
 from pydtnn.models.densenet121_cifar10 import create_densenet121_cifar10
 from pydtnn.models.densenet169_cifar10 import create_densenet169_cifar10
@@ -32,32 +32,29 @@ from pydtnn.utils.best_of import BestOf
 import torch
 from torch.nn import CrossEntropyLoss
 
-TRAIN = DatasetEnum.TRAIN
-VAL = DatasetEnum.VAL
-TEST = DatasetEnum.TEST
-
 dict_test = {
-   "vgg11": (vgg11, create_vgg11, (32, 32, 3), "cifar10", {"num_classes": 10}, None), # (224, 224, 3)
-   "vgg16": (vgg16, create_vgg16, (32, 32, 3), "cifar10", {"num_classes": 10}, None), # (224, 224, 3)
-   "vgg19": (vgg19, create_vgg19_imagenet, (32, 32, 3), "cifar10", {"num_classes": 10}, not None),
-   "alexnet": (alexnet, create_alexnet_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, not None),
-   "densenet121": (densenet121, create_densenet121_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, not None),
-   "densenet169": (densenet169, create_densenet169_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, not None),
-   "densenet201": (densenet201, create_densenet201_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, not None),
-   "resnet18": (resnet18, create_resnet18_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None),
-   "resnet34": (resnet34, create_resnet34_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None),
-   "resnet50": (resnet50, create_resnet50_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, not None),
-   "resnet101": (resnet101, create_resnet101_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None),
-   "resnet152": (resnet152, create_resnet152_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None),
-   "googlenet": (googlenet, create_inceptionv3_cifar10, (32, 32, 3), "cifar10", {"num_classes": 10}, None), #(299, 299, 3)
+   "vgg11": (vgg11, create_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None), # (224, 224, 3)
+   "vgg16": (vgg16, create_vgg16, (524, 524, 3), "cifar10", {"num_classes": 5}, None), # (224, 224, 3)
+   "vgg19": (vgg19, create_vgg19_imagenet10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "alexnet": (alexnet, create_alexnet_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+   "densenet121": (densenet121, create_densenet121_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "densenet169": (densenet169, create_densenet169_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "densenet201": (densenet201, create_densenet201_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "resnet18": (resnet18, create_resnet18_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+   "resnet34": (resnet34, create_resnet34_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+   "resnet50": (resnet50, create_resnet50_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "resnet101": (resnet101, create_resnet101_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+   "resnet152": (resnet152, create_resnet152_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "googlenet": (googlenet, create_inceptionv3_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None), #(299, 299, 3)
 }
 
 # ----- EXECUTION PARAMETERS ----- #
 TEST = "densenet169"
 FIRST_PYTORCH = False
 OLD_FIRST = None
-DATASET_PATH = "/home/usuario/Documentos/CIBER_CAFE/Datasets/cifar-10-batches-bin"
-WEIGHTS_PATH = "/home/usuario/Documentos/Resultados/pesos/clasificacion/"
+DATASET_PATH = ""
+WEIGHTS_PATH = ""
+OUTPUT_PATH = ""
 INFERENCE = True
 TRAINING = False
 
@@ -69,7 +66,7 @@ KWARGS = {
         "parallel": "data",
         "tensor_format": "NCHW", # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
-        "enable_gpu" : False,
+        "enable_gpu" : False, #True,
         "dataset_train_path": DATASET_PATH,
         "dataset_test_path": DATASET_PATH,
     }
@@ -269,9 +266,18 @@ def main():
     new_model = convert_model(model = pytorch_model, input_shape=shape,
                               default_output_activation_layer=Softmax(), **kwargs)
     
+    print("=====================")
+    print("=== MODEL CREATED ===")
+    print("=====================")
+
     new_model.show()
     print("-----")
     print(f"type(new_model): {type(new_model)}")
+
+    if weight is not None:
+        output_path = f"{OUTPUT_PATH}model_{test}.pth"
+        print(f"{output_path=}")
+        new_model.store_weights_and_bias(output_path)
 
     print("======================\n")
 

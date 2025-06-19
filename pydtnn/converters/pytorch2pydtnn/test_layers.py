@@ -24,12 +24,13 @@ except:
 from copy import deepcopy
 from math import prod
 import numpy as np
+from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
 
 import pydtnn
 
 # CONSTANTS
-N = 5
-SHAPE = (3, 20, 20) # CHW
+N = 2
+SHAPE = (3, 3, 20) # CHW
 CONV_IN_CHANNELS = SHAPE[0] # Shape format: CHW
 CONV_OUT_CHANNELS = 64 # = PyTorch's Number filters
 CONV_KERNEL_SIZE = (2,2)
@@ -44,8 +45,8 @@ PYTORCH_LAYER_BIASES = "bias"
 
 # setting random seed
 SEED = 1234
-#torch.manual_seed(SEED)
-#np.random.seed(SEED)
+torch.manual_seed(SEED)
+np.random.seed(SEED)
 # ---
 
 THRESHOLD = 1e-4
@@ -59,7 +60,7 @@ KWARGS = {
         "parallel": "data",
         "tensor_format": "NCHW", # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
-        "enable_gpu" : False,
+        "enable_gpu" : False, #True,
         "omm": None,
         "dtype": DTYPE,
         "tracing": False,
@@ -190,13 +191,18 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -
 
     for i in range(1, len(model.layers)): # NOTE - Remember: Layer 0 is the Input layer and it's ignored
         layer:LayerAndActivationBase = model.layers[i]
-        #if y != dataset:
-        #    print(f"y != dataset - {layer} - type(y): {type(y)}")
         y = layer.forward(y)
+
+    if y is None:
+        layer:pydtnn.backends.gpu.layers.LayerGPU
+        y:TensorGPU = layer.y
+    # else: Nothing special.
+    print(f"y | ({type(y)})")
+    
     return y
 # --- END forward_pydtnn_model --- #
 
-def test_layers_gpu(model: PyDTNN_Model, dataset: TensorGPU) -> np.ndarray:
+def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
     
     print(f"test_layers_gpu - model")
     model.show()
@@ -217,15 +223,6 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: TensorGPU) -> np.ndarray:
 
     y:TensorGPU | None = forward_pydtnn_model(model, _dataset)
 
-    if y is None:
-        layer:pydtnn.backends.gpu.layers.LayerGPU
-        y:TensorGPU = layer.y
-    # else: Nothing special.
-    print(f"y | ({type(y)})")
-
-    y: np.ndarray = y.ary.get()
-    print(f"y | ({type(y)}): {y}")
-
     return y
 # --- END test_layers_gpu --- #
 
@@ -241,8 +238,8 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
                                            is_input_shape_in_format=True, **kwargs)
     
     new_model.mode = TRAIN_MODE
-    new_model.show()
-    new_model.dataset = dataset
+    #new_model.show()
+    #new_model.dataset = dataset
     print("-----")
     #print("PyTorch model's forward method:")
     #graph = torch.fx.symbolic_trace(pytorch_model)
@@ -270,14 +267,14 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     there_are_pydtnn_weights = pydtnn_weights is not None
     
     if there_are_pytorch_weigths and there_are_pydtnn_weights:
-        pytorch_w:np.ndarray = pytorch_weights.cpu().detach().numpy()
-        print(f"weigths are all zeros: {are_all_zeros(pytorch_w - pydtnn_weights.reshape(pytorch_w.shape))}")
+        pydtnn_weights = pydtnn_weights.T if name in TRANSPOSE_WEIGHTS_LAYERS else pydtnn_weights
+        print(f"weigths are all zeros: {are_all_zeros(pytorch_weights.cpu().detach().numpy() - pydtnn_weights)}")
 
     pytorch_biases : None | torch.Tensor = pytorch_state_dict[PYTORCH_LAYER_BIASES] if PYTORCH_LAYER_BIASES in pytorch_state_dict else None
     pydtnn_biases : None | np.ndarray | TensorGPU = pydtnn_layer.biases
 
     if isinstance(pydtnn_weights, TensorGPU):
-        pydtnn_biases: np.ndarray = pydtnn_biases.ary.get()
+        pydtnn_biases: TensorGPU = pydtnn_biases.ary.get()
 
     there_are_pytorch_biases = pytorch_biases is not None
     there_are_pydtnn_biases = pydtnn_biases is not None
@@ -303,9 +300,9 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
     print(f"Mean of the values: {np.mean(pydtnn_output)}")
     print(f"Median of the values: {np.median(pydtnn_output)}")
     print(f"Max. difference between outputs: {np.max(diff)}")
-    if False and not are_below_threshold:        
-        #print(f"pytorch_output.shape: {pytorch_output.shape}")
-        #print(f"pydtnn_output.shape: {pydtnn_output.shape}")
+    if not are_below_threshold:        
+        print(f"pytorch_output.shape: {pytorch_output.shape}")
+        print(f"pydtnn_output.shape: {pydtnn_output.shape}")
         print(f"pytorch_output:\n{pytorch_output}\n[pytorch_output]")
         print(f"pydtnn_output:\n{pydtnn_output}\n[pydtnn_output]")
         print(f"pytorch_output - pydtnn_output:\n{diff}\n[pytorch_output - pydtnn_output]")
@@ -331,7 +328,7 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
                                               is_input_shape_in_format=True, **kwargs)
     
     #pydtnn_model.mode = EVALUATE_MODE
-    pydtnn_model.show()
+    #pydtnn_model.show()
     torch_dataset = torch.from_numpy(dataset).to(device)
     print("-----")
     
@@ -391,5 +388,4 @@ def main():
 # --- END main --- #
 
 if __name__ == "__main__":
-    print("Buenos días")
     main()

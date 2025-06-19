@@ -3,6 +3,7 @@ from pydtnn.model import Model, TRAIN_MODE
 from pydtnn.layers import Input, Conv2D, Layer
 from pydtnn.activations import LeakyRelu, Relu6
 from copy import deepcopy
+
 from pydtnn.layers.conv_2d import GroupingEnum
 
 # noinspection PyUnresolvedReferences
@@ -57,9 +58,9 @@ def main():
     use_bias = True
 
     models = [
-              #("=============\n==== I2C ====\n=============", model_I2C), 
-              #("=============\n= POINTWISE =\n=============", model_POINT),
-              #("=============\n= DEPTHWISE =\n=============", model_DEPTH)
+              ("=============\n==== I2C ====\n=============", model_I2C), 
+              ("=============\n= POINTWISE =\n=============", model_POINT),
+              ("=============\n= DEPTHWISE =\n=============", model_DEPTH)
               ("=============\n= LEAKY RELU =\n=============", model_RELU)
               ]    
     

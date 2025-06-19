@@ -173,7 +173,7 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
                         # NOTE >> instead of the "weights" value (that is a reference to the layer's PyTorch's weights), so, since this is in a for loop and 
                         # NOTE >>> this function (weights_initializer) is called in some step after the loop, every layer will have the last iteration's "weights" values
                         # NOTE >>>> -a reference to the last layer weights- instead of a reference to their respective layer weights.
-                        # NOTE >>>>> In this way "pytorch_weights" has the copy of "weights" values (that, as said before, is a reference to the layer's weights) of that iteration.                        
+                        # NOTE >>>>> In this way "pytorch_weights" has the copy of "weights" values (that, as said before, is a reference to the layer's weights) of that iteration.
                         return pytorch_weights.astype(dtype=dtype, copy=False)
                     # - END weights_initializer - #
                     setattr(converted_layer, PYDTNN_WEIGHTS_INITIALIZER, weights_initializer)
