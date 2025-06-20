@@ -1,7 +1,7 @@
 
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -128,7 +128,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
             # dx = dx.astype(self.model.dtype)
 
-            dx:np.ndarray = bn_training_bwd_cython(dy, self.std, self.xn, self.gamma, self.dgamma, self.dbeta)
+            dx:np.ndarray = bn_training_bwd_cython(dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
             if self.spatial:
                 dx = dx.reshape((-1, self.hi, self.wi, self.ci))
