@@ -20,7 +20,7 @@
 from collections.abc import Sequence, Iterable
 
 from ..layers import *
-from layers.layer import LayerAndActivationBase
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from ..activations import relu, softmax
 
 def create_vgg11(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:

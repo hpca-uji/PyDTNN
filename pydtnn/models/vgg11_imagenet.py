@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from vgg11 import create_vgg11 as create_vgg11_imagenet10
+from .vgg11 import create_vgg11 as create_vgg11_imagenet10

@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from vgg11bn import create_vgg11bn as create_vgg11bn_cifar16
+from .vgg16 import create_vgg16 as create_vgg16_cifar10

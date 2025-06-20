@@ -21,7 +21,7 @@ from collections.abc import Sequence, Iterable
 
 from ..activations import *
 from ..layers import *
-from layers.layer import LayerAndActivationBase
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
 def create_vgg11bn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:

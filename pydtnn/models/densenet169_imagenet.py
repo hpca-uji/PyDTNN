@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from densenet169 import create_densenet169 as create_densenet169_imagenet
+from .densenet169 import create_densenet169 as create_densenet169_imagenet
