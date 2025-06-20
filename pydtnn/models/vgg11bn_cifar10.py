@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from vgg11bn import create_vgg11bn as create_vgg11bn_cifar10
+from pydtnn.models.vgg11bn import create_vgg11bn as create_vgg11bn_cifar10

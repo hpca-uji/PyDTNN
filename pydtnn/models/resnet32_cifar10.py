@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from resnet32 import create_resnet32 as create_resnet32_cifar10
+from pydtnn.models.resnet32 import create_resnet32 as create_resnet32_cifar10
