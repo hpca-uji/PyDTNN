@@ -36,7 +36,7 @@ ctypedef fused npDT:
 def eltw_sum_cython(x_acc: np.ndarray, x: np.ndarray) -> np.ndarray:
 
     try:
-        eltw_sum_cython_inner(x_acc.reshape(-1), x.reshape(-1))
+        eltw_sum_cython_inner(x_acc.reshape(-1, copy=False), x.reshape(-1, copy=False))
     except TypeError as e:
         raise TypeError(f"Function: \"eltw_sum_cython\". Error: {e}")
 
