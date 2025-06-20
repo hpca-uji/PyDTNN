@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from pydtnn.models.vgg19 import create_vgg19 as create_vgg19_imagenet10
+from vgg19 import create_vgg19 as create_vgg19_imagenet10

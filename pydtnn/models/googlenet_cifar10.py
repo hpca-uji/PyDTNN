@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from pydtnn.models.googlenet import create_googlenet as create_googlenet_cifar10
+from googlenet import create_googlenet as create_googlenet_cifar10

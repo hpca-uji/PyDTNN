@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from pydtnn.models.resnet56 import create_resnet56 as create_resnet56_cifar10
+from resnet56 import create_resnet56 as create_resnet56_cifar10
