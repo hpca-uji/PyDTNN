@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from resnet50 import create_resnet50 as create_resnet50_cifar10
+from .resnet50 import create_resnet50 as create_resnet50_cifar10

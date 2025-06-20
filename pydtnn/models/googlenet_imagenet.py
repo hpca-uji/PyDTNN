@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from googlenet import create_googlenet as create_googlenet_imagenet
+from .googlenet import create_googlenet as create_googlenet_imagenet

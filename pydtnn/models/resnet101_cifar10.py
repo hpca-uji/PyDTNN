@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from resnet101 import create_resnet101 as create_resnet101_cifar10
+from .resnet101 import create_resnet101 as create_resnet101_cifar10

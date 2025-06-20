@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from pydtnn.models.densenet121 import create_densenet121 as create_densenet121_imagenet
+from .densenet121 import create_densenet121 as create_densenet121_imagenet

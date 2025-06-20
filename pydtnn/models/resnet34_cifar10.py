@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from resnet34 import create_resnet34 as create_resnet34_cifar10
+from .resnet34 import create_resnet34 as create_resnet34_cifar10
