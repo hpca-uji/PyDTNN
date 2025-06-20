@@ -30,7 +30,7 @@ class AbstractPool2DLayer(Layer, ABC):
     def __init__(self, pool_shape:tuple[int, int] | int = (2, 2), padding:tuple[int, int] | int = 0, 
                  stride:tuple[int, int] | int = 1, dilation:tuple[int, int] | int = 1):
         super().__init__()
-        self.pool_shape = pool_shape
+        self.pool_shape = (pool_shape, pool_shape) if isinstance(pool_shape, int) else pool_shape
         self.padding = padding
         self.stride = stride
         self.dilation = dilation
