@@ -31,6 +31,7 @@ from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
 class I2CVariant(Conv2D, ABC):
+    # NOTE: Remember, this merthos are called from conv_2d_cpu!!
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
