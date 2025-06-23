@@ -45,13 +45,13 @@ class Server(Protocol):
         self._pool = ThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
+            options=self._options,
             compression=self._compression
         )
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
 
         config: abc.MutableMapping = {
-            "address": f"{self._addr}:{self._port}",
-            "options": self._options
+            "address": f"{self._addr}:{self._port}"
         }
 
         if comms.SSL:
@@ -79,14 +79,14 @@ class Server(Protocol):
         with self._lock:
             self._peers[peer] = sock
             self._state[peer] = ConnectionData()
-            self._lock.notify_all()
 
-        # ACK
-        self._session_ini(peer)
+            # ACK
+            self._session_ini(peer)
+            self._lock.notify_all()
 
         return peer
 
-    def _get_flush(self, peer: uuid.UUID):
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
         while True:
@@ -106,6 +106,8 @@ class Server(Protocol):
             else:
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
+        
+        return peer
 
     def _handle_connection(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
         """Client to server communication"""
@@ -137,8 +139,7 @@ class Server(Protocol):
 
             # Get messages
             state.get_buffer.write(data)
-            self._get_flush(peer)
-            peer = state.peer
+            peer = self._get_flush(peer)
 
             # Publish messages
             if balance <= 0:

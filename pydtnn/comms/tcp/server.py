@@ -58,13 +58,13 @@ class Server(Protocol):
         with self._lock:
             self._peers[peer] = sock
             self._state[peer] = ConnectionData()
+            self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
+
+            # ACK
             self._lock.notify_all()
+            self._session_ini(peer)
 
-        self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
         self._notify_selector()
-
-        # ACK
-        self._session_ini(peer)
 
     def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection events"""
@@ -131,7 +131,7 @@ class Server(Protocol):
         stream.close()
         state.state &= ~ConnectionState.READABLE
 
-    def _get_flush(self, peer: uuid.UUID):
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
         while True:
@@ -152,6 +152,8 @@ class Server(Protocol):
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
 
+        return peer
+
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
         peer = self._peers.inverse[sock]
@@ -168,8 +170,7 @@ class Server(Protocol):
                 return
 
             state.get_buffer.write(data)
-            self._get_flush(peer)
-            peer = state.peer
+            peer = self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""

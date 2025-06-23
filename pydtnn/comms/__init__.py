@@ -148,8 +148,8 @@ class ConnectionData:
     def put_read(self, size: int = -1) -> memoryview:
         """Read put stream (merging chunks if plausible)"""
         if self.put_buffer.nchunks > 1 and len(self.put_buffer._chunks[0]) < self._merge_size:
-            size = self.put_buffer.readinto(self._merge_buffer)
-            self.put_buffer.unreadchunk(self._merge_buffer[:size])
+            merge_size = self.put_buffer.readinto(self._merge_buffer)
+            self.put_buffer.unreadchunk(self._merge_buffer[:merge_size])
 
         return self.put_buffer.read1(size)
 

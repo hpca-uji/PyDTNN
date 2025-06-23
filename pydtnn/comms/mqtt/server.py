@@ -50,10 +50,10 @@ class Server(Protocol):
         with self._lock:
             self._peers[peer] = sock
             self._state[peer] = ConnectionData()
-            self._lock.notify_all()
 
-        # ACK
-        self._session_ini(peer)
+            # ACK
+            self._session_ini(peer)
+            self._lock.notify_all()
 
         return peer
 
@@ -120,7 +120,7 @@ class Server(Protocol):
 
         data = mqtt_message.payload
         state.get_buffer.write(data)
-        self._get_flush(peer)
+        peer = self._get_flush(peer)
 
     def _fin(self, peer: uuid.UUID) -> None:
         """Close connection"""
@@ -135,7 +135,7 @@ class Server(Protocol):
 
             self._lock.notify_all()
 
-    def _get_flush(self, peer: uuid.UUID):
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
         while True:
@@ -155,6 +155,8 @@ class Server(Protocol):
             else:
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
+
+        return peer
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
