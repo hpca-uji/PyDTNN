@@ -73,7 +73,7 @@ class DepthwiseVariant(Conv2D, ABC):
     def _backward_depthwise_nhwc(self, dy:np.ndarray) -> np.ndarray | None:
         
         #np.ndarray dx, self.dw
-        dx, self.dw = depthwise_conv_backward_nhwc_cython(dy, self.weights, self.x,
+        dx, self.dw = depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
                                                           self.vpadding, self.hpadding,
                                                           self.vstride, self.hstride,
                                                           self.vdilation, self.hdilation)
