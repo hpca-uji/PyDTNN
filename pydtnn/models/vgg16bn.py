@@ -19,12 +19,13 @@
 
 from collections.abc import Sequence, Iterable
 
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+
 from ..activations import *
 from ..layers import *
-from layers.layer import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
-def create_vgg16_cifar10(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
+def create_vgg16bn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
     conv_pattern = [[2, 64], [2, 128], [3, 256], [3, 512], [3, 512]]
     for nlayers, nfilters in conv_pattern:
