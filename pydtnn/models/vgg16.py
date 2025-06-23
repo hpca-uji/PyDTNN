@@ -20,8 +20,8 @@
 from collections.abc import Sequence, Iterable
 
 from ..layers import *
-from layers.layer import LayerAndActivationBase
 from ..activations import relu, softmax
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 def create_vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
     yield Input(shape=input_shape)
