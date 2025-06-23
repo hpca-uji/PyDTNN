@@ -42,7 +42,8 @@ class Client(Protocol):
         # gRPC
         config: abc.MutableMapping = {
             "target": f"{self._addr}:{self._port}",
-            "compression": self._compression
+            "compression": self._compression,
+            "options": self._options
         }
 
         if comms.SSL:
@@ -134,7 +135,7 @@ class Client(Protocol):
             self._fin()
 
     @staticmethod
-    def _new_backoff(start=-10, end=1) -> abc.Generator[float]:
+    def _new_backoff(start=-10, end=0) -> abc.Generator[float]:
         """Exponential backoff generator"""
         if start >= end:
             raise ValueError(f"Null backoff range ({start} to {end})")

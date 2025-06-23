@@ -179,7 +179,7 @@ class Server(Protocol):
         state.put_flush()
         if state.put_buffer.empty():
             return
-        with state.put_read() as view:
+        with state.put_read(self._max_payload_size) as view:
             try:
                 size = sock.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):

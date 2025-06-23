@@ -27,7 +27,7 @@ CONTROL_EVENT = b"\0"
 class Protocol(comms.Communicator):
     """Shared base TCP implementation"""
     _max_workers = 1
-    _max_payload_size = 16 * 1024 ** 2 - 1
+    _max_payload_size = 4 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Inizialize comunicator"""

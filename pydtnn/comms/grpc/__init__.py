@@ -41,6 +41,10 @@ class Protocol(comms.Communicator):
     def __init__(self, addr: str, port: int) -> None:
         """Initialize protocol"""
         super().__init__(addr, port)
+        self._options = (
+            ("grpc.max_receive_message_length", self._max_payload_size),
+            ("grpc.max_send_message_length", self._max_payload_size)
+        )
         self._max_payload_size -= self._transport_overhead()
 
     def _transport_overhead(self):
