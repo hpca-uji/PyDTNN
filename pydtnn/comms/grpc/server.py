@@ -50,11 +50,14 @@ class Server(Protocol):
         grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
 
         config: abc.MutableMapping = {
-            "address": f"{self._addr}:{self._port}"
+            "address": f"{self._addr}:{self._port}",
+            "options": self._options
         }
 
         if comms.SSL:
-            config["server_credentials"] = grpc.ssl_server_credentials([[comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()]])
+            config["server_credentials"] = grpc.ssl_server_credentials([
+                (comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()),  # type: ignore
+            ])
             self._server.add_secure_port(**config)
         else:
             self._server.add_insecure_port(**config)

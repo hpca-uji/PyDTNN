@@ -38,7 +38,7 @@ class Protocol(comms.Communicator):
     _qos = 0
     _transport = "tcp"
     _protocol = mqtt_client.MQTTv311
-    _max_payload_size = 256 * 1024 ** 2 - 1
+    _max_payload_size = 4 * 1024 ** 2 - 1
 
     def __init__(self, addr: str, port: int) -> None:
         """Communication initialization"""
@@ -64,7 +64,7 @@ class Protocol(comms.Communicator):
 
     def _transport_overhead(self):
         """Calculate transport layer overhead"""
-        assert self._protocol is mqtt_client.MQTTv311 and self._qos == 0, f"Message size calculation not supported for {self._protocol} with QOS {self._qos}"
+        assert self._protocol is mqtt_client.MQTTv311 and self._qos == 0, f"Transport layer overhead calculation not supported for {self._protocol} with QOS {self._qos}"
         # Control Header (1), Variable Header Length (1-4), Topic Name Length (2), Topic Name (utf8)
         # Additionally: QOS >=1: Message ID (2); VERSION >=5: Properties (1-4 + packed)
         return 1 + 4 + 2 + len(self._id.hex)
