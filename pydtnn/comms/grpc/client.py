@@ -42,8 +42,8 @@ class Client(Protocol):
         # gRPC
         config: abc.MutableMapping = {
             "target": f"{self._addr}:{self._port}",
-            "compression": self._compression,
-            "options": self._options
+            "options": self._options,
+            "compression": self._compression
         }
 
         if comms.SSL:
