@@ -114,7 +114,7 @@ class ConnectionState(enum.Flag):
 class ConnectionData:
     """Connection data"""
 
-    def __init__(self, merge_size: int = 4 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 2 - 1) -> None:
+    def __init__(self, merge_size: int = 4 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 1 - 1) -> None:
         """Initialize connection state"""
         self.peer = UUID_NIL
         self.state = ConnectionState(value=0)
