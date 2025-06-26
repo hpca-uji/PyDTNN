@@ -45,12 +45,12 @@ class I2CVariant(Conv2D, ABC):
             self.x_rows = x_rows
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
-        w_cols = self.weights.reshape((-1, self.co))
+        w_cols = self.weights.reshape((-1, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
         res:np.ndarray = np.matmul(x_rows, w_cols)
-        res = res.astype(self.model.dtype)
+        res = res.astype(self.model.dtype, copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
@@ -58,7 +58,7 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y = y.reshape((-1, self.ho, self.wo, self.co))
+        y = y.reshape((-1, self.ho, self.wo, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
@@ -74,7 +74,7 @@ class I2CVariant(Conv2D, ABC):
             self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
-        w_cols = self.weights.reshape((self.co, -1))
+        w_cols = self.weights.reshape((self.co, -1), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
@@ -86,7 +86,7 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y:np.ndarray = best_transpose_1023(y.reshape((self.co, -1, self.ho, self.wo)))
+        y:np.ndarray = best_transpose_1023(y.reshape((self.co, -1, self.ho, self.wo), copy=False))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y

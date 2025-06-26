@@ -39,7 +39,7 @@ class DropoutCPU(LayerCPU, Dropout):
             case ModelModeEnum.TRAIN:
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 #self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
-                self.mask = (np.random.binomial(n=1, p=(1 - self.rate), size=self.shape) / (1 - self.rate)).astype(self.model.dtype)
+                self.mask = (np.random.binomial(n=1, p=(1 - self.rate), size=self.shape) / (1 - self.rate)).astype(self.model.dtype, copy=False)
                 return x * self.mask
             case ModelModeEnum.EVALUATE:
                 return x

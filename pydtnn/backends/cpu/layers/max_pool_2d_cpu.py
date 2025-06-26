@@ -103,7 +103,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray | None:
         if self.need_dx:
             dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype)
-            dy_cols[self.idx_max] = dy.flatten().astype(dtype=self.model.dtype)
+            dy_cols[self.idx_max] = dy.flatten().astype(dtype=self.model.dtype, copy=False)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
             dx:np.ndarray = col2im_1ch_nchw_cython(dy_cols, dy.shape[0], self.hi, self.wi, self.ci,
                                                    self.kh, self.kw, self.vpadding, self.hpadding,

@@ -38,4 +38,5 @@ class ArctanhCPU(ActivationCPU, Arctanh):
             # return 1 / (1 + dy ** 2)
             dy *= dy
             dy += 1
-            return 1 / dy
+            np.reciprocal(dy, out=dy)
+            return dy
