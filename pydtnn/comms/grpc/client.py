@@ -8,9 +8,9 @@ from queue import SimpleQueue, Empty
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from pydtnn import comms
+from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.comms.grpc import Protocol, grpc_pb2_grpc
 from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
 
 
@@ -52,7 +52,8 @@ class Client(Protocol):
         else:
             self._channel = grpc.insecure_channel(**config)
 
-        self._client = grpc_pb2_grpc.gRPCStub(self._channel)
+        self._client = True
+        self._com = self._channel.stream_stream(method="/grpc/com", request_serializer=bytes, response_deserializer=lambda x: x)
 
         self._session_ini()
 
@@ -127,7 +128,7 @@ class Client(Protocol):
         """Communication round"""
         state = self._state
 
-        for data in self._m2d(self._client._com(self._s2m(state))):
+        for data in self._m2d(self._com(self._s2m(state))):
             state.get_buffer.write(data)
             self._get_flush()
 

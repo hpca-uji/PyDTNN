@@ -1,9 +1,0 @@
-syntax = "proto3";
-
-service gRPC {
-    rpc _com (stream Message) returns (stream Message) {}
-}
-
-message Message {
-    bytes data = 1;
-}
