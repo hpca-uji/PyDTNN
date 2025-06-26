@@ -22,6 +22,10 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
+__all__ = (
+    "eltw_sum_cython"
+)
+
 # =================== #
 # --- COMMON --- #
 ctypedef fused npDT:
@@ -33,30 +37,17 @@ ctypedef fused npDT:
 # --- END COMMON --- #
 # =================== #
 
-def eltw_sum_cython(x_acc: np.ndarray, x: np.ndarray) -> np.ndarray:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+def eltw_sum_cython(np.ndarray[npDT, ndim=4] x_acc, 
+                    np.ndarray[npDT, ndim=4] x) -> np.ndarray:
 
-    try:
-        eltw_sum_cython_inner(x_acc.reshape(-1, copy=False), x.reshape(-1, copy=False))
-    except TypeError as e:
-        raise TypeError(f"Function: \"eltw_sum_cython\". Error: {e}")
+    cdef np.ndarray[npDT, ndim=1] x_acc_reshaped = x_acc.reshape(-1, copy=False)
+    cdef np.ndarray[npDT, ndim=1] x_reshaped = x.reshape(-1, copy=False)
+
+    cdef int i
+    for i in prange(x.shape[0], nogil=True):
+        x_acc_reshaped[i] += x_reshaped[i]
 
     return x_acc
 # --- END eltw_sum_cython --- #
-
-def eltw_sum_cython_inner(np.ndarray[npDT, ndim=1] x_acc,
-                          np.ndarray[npDT, ndim=1] x):
-
-    cdef npDT[:] x_acc_view = x_acc
-    cdef const npDT[:] x_view = x
-
-    _eltw_sum_cython_inner(x_acc_view, x_view)
-# --- END eltw_sum_cython --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef _eltw_sum_cython_inner(npDT[:] x_acc,
-                            const npDT[:] x):
-    cdef int i
-    for i in prange(x.shape[0], nogil=True):
-        x_acc[i] += x[i]
-# --- END _eltw_sum_cython_inner --- #

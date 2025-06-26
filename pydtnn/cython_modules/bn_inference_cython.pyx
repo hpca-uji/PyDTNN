@@ -39,7 +39,7 @@ def bn_inference_cython(x: np.ndarray,
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
 
-    y: np.ndarray = np.zeros_like(x, order="C", dtype=x.dtype)    
+    y: np.ndarray = np.empty_like(x, order="C", dtype=x.dtype)    
 
     try:
         bn_inference_cython_inner(y, x, running_mean, inv_std, gamma, beta)

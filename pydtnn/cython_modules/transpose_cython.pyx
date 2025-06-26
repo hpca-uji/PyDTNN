@@ -36,8 +36,8 @@ def transpose_0231_ikj_cython(original: np.ndarray,
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
     This variant calls transpose_021_ikj_cython().
     """
-    orig3d:np.ndarray = original.reshape(original.shape[0], original.shape[1], -1)
-    trans3d:np.ndarray = transposed.reshape(transposed.shape[0], -1, transposed.shape[3])
+    orig3d:np.ndarray = original.reshape((original.shape[0], original.shape[1], -1), copy=False)
+    trans3d:np.ndarray = transposed.reshape((transposed.shape[0], -1, transposed.shape[3]), copy=False)
     try:
         transpose_021_ikj_cython(orig3d, trans3d)
     except KeyError as e:
@@ -52,8 +52,8 @@ def transpose_0231_ijk_cython(original: np.ndarray,
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
     This variant calls transpose_021_ijk_cython().
     """
-    orig3d:np.ndarray = original.reshape(original.shape[0], original.shape[1], -1)
-    trans3d:np.ndarray = transposed.reshape(transposed.shape[0], -1, transposed.shape[3])
+    orig3d:np.ndarray = original.reshape((original.shape[0], original.shape[1], -1), copy=False)
+    trans3d:np.ndarray = transposed.reshape((transposed.shape[0], -1, transposed.shape[3]), copy=False)
     try:
         transpose_021_ijk_cython(orig3d, trans3d)
     except KeyError as e:
@@ -68,8 +68,8 @@ def transpose_0312_ikj_cython(original: np.ndarray,
     This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
     This variant calls transpose_021_ikj_cython().
     """
-    orig3d:np.ndarray = original.reshape(original.shape[0], -1, original.shape[3])
-    trans3d:np.ndarray = transposed.reshape(transposed.shape[0], transposed.shape[1], -1)
+    orig3d:np.ndarray = original.reshape((original.shape[0], -1, original.shape[3]), copy=False)
+    trans3d:np.ndarray = transposed.reshape((transposed.shape[0], transposed.shape[1], -1), copy=False)
     try:
         transpose_021_ikj_cython(orig3d, trans3d)
     except KeyError as e:
@@ -83,8 +83,8 @@ def transpose_0312_ijk_cython(original: np.ndarray,
     This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
     This variant calls transpose_021_ikj_cython().
     """
-    orig3d:np.ndarray = original.reshape(original.shape[0], -1, original.shape[3])
-    trans3d:np.ndarray = transposed.reshape(transposed.shape[0], transposed.shape[1], -1)
+    orig3d:np.ndarray = original.reshape((original.shape[0], -1, original.shape[3]), copy=False)
+    trans3d:np.ndarray = transposed.reshape((transposed.shape[0], transposed.shape[1], -1), copy=False)
     try:
         transpose_021_ijk_cython(orig3d, trans3d)
     except KeyError as e:
@@ -98,8 +98,8 @@ def transpose_1023_jik_cython(original: np.ndarray,
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 1x0x2·3
     This variant calls transpose_102_jik_cython().
     """
-    orig3d:np.ndarray = original.reshape(original.shape[0], original.shape[1], -1)
-    trans3d:np.ndarray = transposed.reshape(transposed.shape[0], transposed.shape[1], -1)
+    orig3d:np.ndarray = original.reshape((original.shape[0], original.shape[1], -1), copy=False)
+    trans3d:np.ndarray = transposed.reshape((transposed.shape[0], transposed.shape[1], -1), copy=False)
     try:
         transpose_102_jik_cython(orig3d, trans3d)
     except KeyError as e:
@@ -113,8 +113,8 @@ def transpose_1023_ijk_cython(original: np.ndarray,
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 1x0x2·3
     This variant calls transpose_102_ijk_cython.
     """
-    orig3d:np.ndarray = original.reshape(original.shape[0], original.shape[1], -1)
-    trans3d:np.ndarray = transposed.reshape(transposed.shape[0], transposed.shape[1], -1)
+    orig3d:np.ndarray = original.reshape((original.shape[0], original.shape[1], -1), copy=False)
+    trans3d:np.ndarray = transposed.reshape((transposed.shape[0], transposed.shape[1], -1), copy=False)
     try:
         transpose_102_ijk_cython(orig3d, trans3d)
     except KeyError as e:

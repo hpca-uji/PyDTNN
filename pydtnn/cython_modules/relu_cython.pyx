@@ -42,8 +42,8 @@ def relu_cython(x: np.ndarray) -> tuple(np.ndarray, np.ndarray):
     mask: np.ndarray = np.zeros((size,), dtype=np.int8)
 
     try:
-        max, mask = relu_cython_template(x.reshape(-1), max, mask)        
-        return max.reshape(shape), mask.reshape(shape)
+        max, mask = relu_cython_template(x.reshape(-1, copy=False), max, mask)        
+        return max.reshape(shape, copy = False), mask.reshape(shape, copy = False)
     except KeyError as e:
         raise TypeError(f"Function: \"relu_cython\". Error: {e}")
 # --- END relu_cython --- #
@@ -87,8 +87,8 @@ def capped_relu_cython(x: np.ndarray, cap: float) -> tuple(np.ndarray, np.ndarra
     mask: np.ndarray = np.zeros((size,), dtype=np.int8)
 
     try:
-        max, mask = capped_relu_cython_template(x.reshape(-1), max, mask, cap)        
-        return max.reshape(shape), mask.reshape(shape)
+        max, mask = capped_relu_cython_template(x.reshape(-1, copy=False), max, mask, cap)        
+        return max.reshape(shape, copy = False), mask.reshape(shape, copy = False)
     except KeyError as e:
         raise TypeError(f"Function: \"capped_relu_cython\". Error: {e}")
 # --- END capped_relu_cython --- #
@@ -133,8 +133,8 @@ def leaky_relu_cython(x: np.ndarray, negative_slope: float) -> tuple(np.ndarray,
     mask: np.ndarray = np.zeros((size,), dtype=np.float32)
 
     try:
-        max, mask = leaky_relu_cython_template(x.reshape(-1), max, mask, negative_slope)        
-        return max.reshape(shape), mask.reshape(shape)
+        max, mask = leaky_relu_cython_template(x.reshape(-1, copy=False), max, mask, negative_slope)        
+        return max.reshape(shape, copy = False), mask.reshape(shape, copy = False)
     except KeyError as e:
         raise TypeError(f"Function: \"leaky_relu_cython\". Error: {e}")
 # --- END leaky_relu_cython --- #
