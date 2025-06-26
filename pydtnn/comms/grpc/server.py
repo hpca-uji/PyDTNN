@@ -11,10 +11,10 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from bidict import bidict
 
 from pydtnn import comms
+from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
 from pydtnn.utils.asynctools import merge_futures
-from pydtnn.comms.grpc import Protocol, grpc_pb2, grpc_pb2_grpc
 from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
 
 
@@ -48,7 +48,8 @@ class Server(Protocol):
             options=self._options,
             compression=self._compression
         )
-        grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
+        handler = grpc.stream_stream_rpc_method_handler(behavior=self._com, request_deserializer=lambda x: x, response_serializer=bytes)
+        self._server.add_registered_method_handlers(service_name="grpc", method_handlers={"com": handler})  # type: ignore
 
         config: abc.MutableMapping = {
             "address": f"{self._addr}:{self._port}"
@@ -64,7 +65,7 @@ class Server(Protocol):
 
         self._server.start()
 
-    def _com(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
+    def _com(self, messages: abc.Iterable[abc.Buffer], context: grpc.ServicerContext) -> abc.Iterable[abc.Buffer]:
         try:
             yield from self._handle_connection(messages, context)
         except Exception as exc:
@@ -106,10 +107,10 @@ class Server(Protocol):
             else:
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
-        
+
         return peer
 
-    def _handle_connection(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
+    def _handle_connection(self, messages: abc.Iterable[abc.Buffer], context: grpc.ServicerContext) -> abc.Iterable[abc.Buffer]:
         """Client to server communication"""
         # NOTE: communication thread
         sock = context.peer()
