@@ -217,7 +217,10 @@ class Comm:
                 if response.size == self.size:
                     break
         except Exception:
-            comm.close()
+            try:
+                comm.close()
+            except:  # noqa: E722
+                pass
             raise
         return comm
 
