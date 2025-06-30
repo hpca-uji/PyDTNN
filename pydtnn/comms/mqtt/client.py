@@ -1,16 +1,16 @@
 """MQTT client"""
 
-from concurrent.futures import Future, ThreadPoolExecutor
 import uuid
 import threading
 from queue import SimpleQueue
+from concurrent.futures import Future
 
 import paho.mqtt.client as mqtt_client
 
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ConnectionState, ResourceClosed, Message
 
 
 __all__ = (
@@ -25,15 +25,14 @@ END_COMM = b""
 class Client(Protocol):
     """MQTT client"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Client initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": 1})
 
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData()
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._state = self._new_state()
 
         # MQTT
         self._register_handler(topic=f"s2c/{self._id.hex}", handler=self._handle_message)
@@ -119,7 +118,7 @@ class Client(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_payload_size) as view:
+            with state.put_read(self._max_payload) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:

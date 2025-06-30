@@ -5,13 +5,13 @@ import grpc
 import threading
 from collections import abc
 from queue import SimpleQueue, Empty
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 
 from pydtnn import comms
 from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ConnectionState, ResourceClosed, Message
 
 
 __all__ = (
@@ -26,15 +26,14 @@ ARG_MISSING = object()
 class Client(Protocol):
     """gRPC client"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Client initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": 1})
 
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData()
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._state = self._new_state()
 
         self._get_grpc = SimpleQueue()
         self._put_grpc = threading.Event()
@@ -42,7 +41,7 @@ class Client(Protocol):
         # gRPC
         config: abc.MutableMapping = {
             "target": f"{self._addr}:{self._port}",
-            "options": self._options,
+            "options": list(self._options.items()),
             "compression": self._compression
         }
 

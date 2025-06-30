@@ -107,7 +107,7 @@ class Server:
             else:
                 addr = mpi_comm.get_addr()
                 port = mpi_comm.get_port()
-                comm = self.__dict__["_comm"] = comms.Server(addr=addr, port=port)
+                comm = self.__dict__["_comm"] = comms.Server({"addr": addr, "port": port})
         return comm
 
     def __enter__(self):
