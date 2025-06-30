@@ -21,8 +21,6 @@ class Peer(enum.StrEnum):
 # Argument pasrser
 parser = ArgumentParser(prog="test_comms_iops", description="Communications mix IOPS test")
 parser.add_argument("peer", choices=list(Peer))
-parser.add_argument("--addr", type=str, default="127.0.0.1")
-parser.add_argument("--port", type=int, default=50000)
 parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--delay", type=float, default=0.0)
 parser.add_argument("--min_size", type=int, default=8)
@@ -69,7 +67,7 @@ def server(config: Namespace):
     messages.append(buffer)
     random.shuffle(messages)
 
-    with comms.Server(addr=config.addr, port=config.port) as server:
+    with comms.Server() as server:
         get_thread = Thread(target=get, args=(server, messages * config.clients))
         put_thread = Thread(target=put, args=(server, messages))
         for _ in range(config.clients):
@@ -99,7 +97,7 @@ def client(config: Namespace):
     random.shuffle(messages)
 
     time.sleep(config.start_delay)
-    with comms.Client(addr=config.addr, port=config.port) as client:
+    with comms.Client() as client:
         get_thread = Thread(target=get, args=(client, messages))
         put_thread = Thread(target=put, args=(client, messages))
         client.put(None)

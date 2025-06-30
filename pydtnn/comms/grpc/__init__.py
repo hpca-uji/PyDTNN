@@ -14,6 +14,7 @@
 # could starve the server of threads. Additionaly, if a streaming direction
 # was already closed, messages could end up queued forever if not restarted.
 
+from concurrent.futures import ThreadPoolExecutor
 import sys
 from collections import abc
 
@@ -33,25 +34,20 @@ __all__ = (
 
 class Protocol(comms.Communicator):
     """Shared base gRPC implementation"""
-    _max_payload_size = 4 * 1024 ** 2 - 1
     _compression = grpc.Compression.NoCompression
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
         """Initialize protocol"""
-        super().__init__(addr, port)
-        self._options = (
-            ("grpc.max_receive_message_length", self._max_payload_size),
-            ("grpc.max_send_message_length", self._max_payload_size)
-        )
+        max_payload = options.get("max_payload", 4 * 1024 ** 2)
+        super().__init__({**options, "grpc.max_receive_message_length": max_payload, "grpc.max_send_message_length": max_payload})
 
-    def _m2d(self, messages: abc.Iterable[abc.Buffer]) -> abc.Generator[bytes]:
+    def _m2d(self, messages: abc.Iterable[abc.Buffer]) -> abc.Generator[abc.Buffer]:
         """Transforms gRPC messages to bytes"""
-        for message in messages:
-            yield message
+        yield from messages
 
     def _s2m(self, state: comms.ConnectionData) -> abc.Generator[abc.Buffer]:
         """Transforms state to message"""
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_payload_size) as view:
+            with state.put_read(self._max_payload) as view:
                 yield view

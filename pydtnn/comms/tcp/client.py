@@ -12,7 +12,7 @@ from pydtnn import comms
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_NIL, UUID_MAX
-from pydtnn.comms import ConnectionState, Message, ResourceClosed, ConnectionData
+from pydtnn.comms import CommunicatorOptions, ConnectionState, Message, ResourceClosed
 
 
 __all__ = (
@@ -23,14 +23,14 @@ __all__ = (
 class Client(Protocol):
     """TCP client"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Client initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": 1})
 
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData()
+        self._state = self._new_state()
 
         # TCP
         self._socket = socket.create_connection((self._addr, self._port))
@@ -72,7 +72,7 @@ class Client(Protocol):
 
         while True:
             try:
-                data = sock.recv(self._max_payload_size)
+                data = sock.recv(self._max_payload)
             except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 break
 
@@ -111,7 +111,7 @@ class Client(Protocol):
         state.put_flush()
         if state.put_buffer.empty():
             return
-        with state.put_read(self._max_payload_size) as view:
+        with state.put_read(self._max_payload) as view:
             try:
                 size = sock.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):

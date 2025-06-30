@@ -66,12 +66,14 @@ import os
 import abc
 import uuid
 import enum
+import typing
 import importlib
 import threading
 from pathlib import Path
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
-from concurrent.futures import Future
+from collections import abc as col_abc
+from concurrent.futures import Future, ThreadPoolExecutor
 
 
 from pydtnn.utils import UUID_NIL, parse_bool
@@ -79,6 +81,7 @@ from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
 __all__ = (
+    "CommunicatorOptions",
     "PROTOCOL",
     "SSL",
     "Protocol",
@@ -89,6 +92,9 @@ __all__ = (
     "Server",
     "Client"
 )
+
+
+type CommunicatorOptions = col_abc.Mapping[str, typing.Any]
 
 
 class Protocol(enum.StrEnum):
@@ -171,14 +177,38 @@ class ResourceClosed(RuntimeError):
 class Communicator[T](abc.ABC):
     """Base communicator implementation"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Communicator initialization"""
         super().__init__()
+        self._options = options
+
         self._id = uuid.uuid4()
-        self._addr = addr
-        self._port = port
         self._close_lock = threading.Lock()
+
         self._serializer = Serializer()
+        thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
+        self._pool = ThreadPoolExecutor(max_workers=self._options.get("workers", 1), thread_name_prefix=f"{thread_prefix}")
+
+    def _new_state(self) -> ConnectionData:
+        """Generate new connection state data"""
+        merge = self._options.get("merge_size", self._max_payload)
+        efficient = self._options.get("merge_size", self._max_payload // 64)
+        return ConnectionData(merge_size=merge, efficient_size=efficient)
+
+    @property
+    def _max_payload(self) -> int:
+        """Maximun payload size"""
+        return self._options.get("max_payload", 4 * 1024 ** 2)
+
+    @property
+    def _addr(self) -> str:
+        """Address of service"""
+        return self._options.get("addr", "127.0.0.1")
+
+    @property
+    def _port(self) -> int:
+        """Port of service"""
+        return self._options.get("port", 50000)
 
     @property
     def _closed(self):

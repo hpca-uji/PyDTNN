@@ -202,7 +202,7 @@ class Comm:
         port = mpi_comm.get_port()
         state = mpi_comm.RankInit(rank=self.rank)
         try:
-            comm = comms.Client(addr=addr, port=port)
+            comm = comms.Client({"addr": addr, "port": port})
             comm.put(state)
             while True:
                 response = comm.get().obj
