@@ -71,9 +71,10 @@ class Operation:
 class Server:
     """MPI server"""
 
-    def __init__(self, thread_pool: ThreadPoolExecutor) -> None:
+    def __init__(self, thread_pool: ThreadPoolExecutor, comm_options: comms.CommunicatorOptions = {}) -> None:
         """Server initialization"""
         super().__init__()
+        self._comm_options = {**comm_options, "addr": mpi_comm.get_addr(), "port": mpi_comm.get_port()}
 
         # State
         self._shutdown = False
@@ -105,9 +106,7 @@ class Server:
             if comm := self.__dict__.get("_comm"):
                 pass
             else:
-                addr = mpi_comm.get_addr()
-                port = mpi_comm.get_port()
-                comm = self.__dict__["_comm"] = comms.Server({"addr": addr, "port": port})
+                comm = self.__dict__["_comm"] = comms.Server(self._comm_options)
         return comm
 
     def __enter__(self):
