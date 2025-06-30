@@ -152,12 +152,14 @@ def ensure_model_is_initialized(method:Callable):
 # --- END ensure_model_is_initialized --- #
 
 
-if TYPE_CHECKING:
-    # NOTE: can not specify a particular module
-    type MPI_MODULE = ModuleType
+# NOTE: can not specify a particular module
+type MPI_MODULE = ModuleType
 
-    # NOTE: mpi4py has more functions, but no typing
+# NOTE: mpi4py has more functions, but no typing
+if TYPE_CHECKING:
     from pydtnn.libs.mpi.client import Comm as MPI_COMM
+else:
+    MPI_COMM = ModuleType
 
 
 def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MODULE, MPI_COMM]:
