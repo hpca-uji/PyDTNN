@@ -104,8 +104,8 @@ class CustomDataset(Dataset):
 
             # Ensure dataset is in model.tensor_format
             if model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
-                x_train = x_train.transpose(0, 2, 3, 1)
-                x_test = x_test.transpose(0, 2, 3, 1)
+                x_train = x_train.transpose(0, 2, 3, 1).copy()
+                x_test = x_test.transpose(0, 2, 3, 1).copy()
 
             # Create dataset
             self = cls(
