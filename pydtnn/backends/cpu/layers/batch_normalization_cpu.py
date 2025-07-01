@@ -40,7 +40,6 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         self.var:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.dgamma:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.dbeta:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
-        self.dx:np.ndarray = np.empty(shape=(self.wi * self.hi * self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
         
         if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
             self.mean = self.mean_all_reduce
@@ -144,7 +143,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.need_dx:
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
             # dx = dx.astype(self.model.dtype)
-            dx = self.dx[:dy.shape[0],:]
+            dx:np.ndarray = np.empty(shape=(self.wi * self.hi * dy.shape[0], self.ci), dtype=self.model.dtype, order="C")
+
             bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
             match self.model.tensor_format:

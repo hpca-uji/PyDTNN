@@ -30,17 +30,13 @@ class ReluCPU(ActivationCPU, Relu):
         self.mask:np.ndarray = None
 
     def initialize(self, prev_shape, need_dx = True):
-        super().initialize(prev_shape, need_dx)
-        self.y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype)
-        self._mask = np.zeros((self.model.batch_size, *prev_shape), dtype=np.int8)
+        super().initialize(prev_shape, need_dx)        
 
     def forward(self, x:np.ndarray) -> np.ndarray:
-        y = self.y[:x.shape[0], ]
-        mask = self._mask[:x.shape[0], ]
-        relu_cython(x.reshape(-1, copy=False), y.reshape(-1, copy=False), mask.reshape(-1, copy=False))
-        if self.need_dx:
-            self.mask = mask
-
+        self.y = np.zeros((x.shape[0], *self.prev_shape), dtype=self.model.dtype)
+        self.mask = np.zeros((x.shape[0], *self.prev_shape), dtype=np.int8)
+        
+        relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False))
         return self.y
 
     def backward(self, dy:np.ndarray) -> np.ndarray | None:

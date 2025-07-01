@@ -36,9 +36,12 @@ class I2CVariant(Conv2D, ABC):
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
 
+        x_rows = np.zeros(((x.shape[0] * self.ho * self.wo), (self.ci * self.kh * self.kw)), self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        x_rows:np.ndarray = im2row_nhwc_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                               self.vstride, self.hstride, self.vdilation, self.hdilation)
+        im2row_nhwc_cython(x, x_rows,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.model.mode == TRAIN_MODE:
@@ -63,10 +66,15 @@ class I2CVariant(Conv2D, ABC):
 
     def _forward_i2c_nchw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
+        
+        n, c, _, _ = x.shape
+        x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        x_cols: np.ndarray = im2col_nchw_cython(x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                                self.vstride, self.hstride, self.vdilation, self.hdilation)
+        im2col_nchw_cython(x, x_cols,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.model.mode == TRAIN_MODE:
@@ -119,10 +127,14 @@ class I2CVariant(Conv2D, ABC):
             res = np.linalg.matmul(dy_rows, w_rows.T)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
+            dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
+
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-            dx = row2im_nhwc_cython(res, dy.shape[0], self.hi, self.wi, self.ci,
-                                    self.kh, self.kw, self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+            row2im_nhwc_cython(res, dx,
+                               dy.shape[0], self.hi, self.wi, self.ci,
+                               self.kh, self.kw, self.ho, self.wo,
+                               self.vpadding, self.hpadding,
+                               self.vstride, self.hstride, self.vdilation, self.hdilation)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return dx
 
@@ -155,9 +167,13 @@ class I2CVariant(Conv2D, ABC):
             res = np.linalg.matmul(w_cols, dy_cols)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
+            dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
+
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-            dx:np.ndarray = col2im_nchw_cython(res, dy.shape[0], self.ci, self.hi, self.wi,
-                                               self.kh, self.kw, self.vpadding, self.hpadding,
+            dx:np.ndarray = col2im_nchw_cython(res, dx,
+                                               dy.shape[0], self.ci, self.hi, self.wi,
+                                               self.kh, self.kw, self.ho, self.wo,
+                                               self.vpadding, self.hpadding,
                                                self.vstride, self.hstride, self.vdilation, self.hdilation)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return dx

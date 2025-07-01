@@ -353,6 +353,23 @@ def __free__(pack):
     libc.free(pack)
 
 
+def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+                 b: int, kn: int,
+                 ho: int, wo: int, kh: int, kw: int, 
+                 vpadding: int, hpadding: int, vstride: int, hstride: int, 
+                 vdilation: int, hdilation: int, 
+                 ) -> int | float:
+    from pydtnn.cython_modules import im2col_nchw_cython
+
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
+    im2col_nchw_cython(x, res, 
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, 
+                       vdilation, hdilation)
+    res = res @ w_c
+    res += biases.reshape(b * ho * wo, kn)
+    return res
+
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
@@ -393,7 +410,10 @@ def __usage_example__():
     print("Sum: ", conv_gemm_result.sum())
     print()
     print("Using im2col and mm...")
-    x_c = im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    x_c = np.zeros((c * kh * kw, b * ho * wo))
+    im2col_nchw_cython(x, x_c,
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)
     im2col_mm_result = (w_c @ x_c + biases).reshape(kn, b, ho, wo).transpose(1, 0, 2, 3)
     print(im2col_mm_result)
@@ -409,8 +429,8 @@ def __usage_example__():
     print("Times")
     print("-----")
     print("conv_gemm time: {:.4f}".format(conv_gemm_t))
-    im2col_t = timeit(lambda: im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride,
-                                                 vdilation, hdilation), number=10) / 10
+    im2col_t = timeit(lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+                      number=10) / 10
     mm_t = timeit(lambda: w_c @ x_c + biases, number=10) / 10
     print("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))
 

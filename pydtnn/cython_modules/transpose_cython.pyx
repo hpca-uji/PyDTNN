@@ -30,8 +30,8 @@ ctypedef fused npDT:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def transpose_0231_ikj_cython(np.ndarray[npDT, ndim=3] original,
-                              np.ndarray[npDT, ndim=3] transposed) -> None:
+def transpose_0231_ikj_cython(np.ndarray[npDT, ndim=4] original,
+                              np.ndarray[npDT, ndim=4] transposed) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (0,2,3,1).
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
@@ -49,8 +49,8 @@ def transpose_0231_ikj_cython(np.ndarray[npDT, ndim=3] original,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def transpose_0231_ijk_cython(np.ndarray[npDT, ndim=3] original,
-                              np.ndarray[npDT, ndim=3] transposed) -> None:
+def transpose_0231_ijk_cython(np.ndarray[npDT, ndim=4] original,
+                              np.ndarray[npDT, ndim=4] transposed) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (0,2,3,1).
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
@@ -68,8 +68,8 @@ def transpose_0231_ijk_cython(np.ndarray[npDT, ndim=3] original,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def transpose_0312_ikj_cython(np.ndarray[npDT, ndim=3] original,
-                              np.ndarray[npDT, ndim=3] transposed) -> None:
+def transpose_0312_ikj_cython(np.ndarray[npDT, ndim=4] original,
+                              np.ndarray[npDT, ndim=4] transposed) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (0,3,1,2).
     This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
@@ -87,8 +87,8 @@ def transpose_0312_ikj_cython(np.ndarray[npDT, ndim=3] original,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def transpose_0312_ijk_cython(np.ndarray[npDT, ndim=3] original,
-                              np.ndarray[npDT, ndim=3] transposed) -> None:
+def transpose_0312_ijk_cython(np.ndarray[npDT, ndim=4] original,
+                              np.ndarray[npDT, ndim=4] transposed) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (0,3,1,2).
     This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
@@ -106,8 +106,8 @@ def transpose_0312_ijk_cython(np.ndarray[npDT, ndim=3] original,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def transpose_1023_jik_cython(np.ndarray[npDT, ndim=3] original,
-                              np.ndarray[npDT, ndim=3] transposed) -> None:
+def transpose_1023_jik_cython(np.ndarray[npDT, ndim=4] original,
+                              np.ndarray[npDT, ndim=4] transposed) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (1,0,2,3).
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 1x0x2·3
@@ -125,8 +125,8 @@ def transpose_1023_jik_cython(np.ndarray[npDT, ndim=3] original,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def transpose_1023_ijk_cython(np.ndarray[npDT, ndim=3] original,
-                              np.ndarray[npDT, ndim=3] transposed) -> None:
+def transpose_1023_ijk_cython(np.ndarray[npDT, ndim=4] original,
+                              np.ndarray[npDT, ndim=4] transposed) -> None:
     """
     Transposes a 4D matrix from (0,1,2,3) to (0,2,3,1).
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 1x0x2·3
