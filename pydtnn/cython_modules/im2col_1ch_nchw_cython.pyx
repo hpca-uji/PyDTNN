@@ -22,6 +22,11 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
+__all__ = (
+    "im2col_1ch_nchw_cython",
+    "col2im_1ch_nchw_cython",
+)
+
 # =================== #
 # --- COMMON --- #
 ctypedef fused npDT:
@@ -36,8 +41,10 @@ ctypedef fused npDT:
 # =================== #
 
 # --- im2col --- #
-
-def im2col_1ch_nchw_cython(x: np.ndarray, 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+def im2col_1ch_nchw_cython(npDT[:,:,:,::1] x, 
                            int kh, int kw, 
                            int vpadding, int hpadding,
                            int vstride, int hstride, 
@@ -50,40 +57,8 @@ def im2col_1ch_nchw_cython(x: np.ndarray,
     cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
-    cols: np.ndarray = np.zeros((kh * kw, n * c * hh * ww), dtype=x.dtype)
+    cdef npDT[:,::1] cols = np.zeros((kh * kw, n * c * hh * ww))
 
-    try:
-        im2col_1ch_nchw_cython_inner(cols, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
-                                     vstride, hstride, vdilation, hdilation)
-    except TypeError as e:
-        raise TypeError(f"Function: \"im2col_1ch_nchw_cython\". Error: {e}")
-
-    return cols
-# --- END im2col_1ch_nchw_cython --- #
-
-def im2col_1ch_nchw_cython_inner(np.ndarray[npDT, ndim=2] cols, 
-                                 np.ndarray[npDT, ndim=4] x,
-                                 int n, int h, int w, int c, 
-                                 int hh, int ww, int kh, int kw, 
-                                 int vpadding, int hpadding,
-                                 int vstride, int hstride, 
-                                 int vdilation, int hdilation) -> np.ndarray:
-
-    cdef npDT[:,:] cols_view = cols
-    cdef const npDT[:,:,:,:] x_view = x
-
-    _im2col_1ch_nchw_cython_inner(cols_view, x_view, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
-                                  vstride, hstride, vdilation, hdilation)
-# --- END im2col_1ch_nchw_cython_inner --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef _im2col_1ch_nchw_cython_inner(npDT[:,:] cols,
-                                   const npDT[:,:,:,:] x,
-                                   int n, int h, int w, int c, int hh, int ww,
-                                   int kh, int kw, int vpadding, int hpadding,
-                                   int vstride, int hstride,
-                                   int vdilation, int hdilation):
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for ii in prange(kh, nogil=True):
@@ -99,9 +74,9 @@ cdef _im2col_1ch_nchw_cython_inner(npDT[:,:] cols,
                                 if 0 <= x_y < w:
                                     col = nn * c * hh * ww + cc * hh * ww + xx * ww + yy
                                     cols[row, col] = x[nn, cc, x_x, x_y]
-# --- END _im2col_1ch_nchw_cython_inner --- #
 
-# --- END im2col --- #
+    return cols
+# --- END im2col_1ch_nchw_cython --- #
 
 # ================== #
 
@@ -109,8 +84,10 @@ cdef _im2col_1ch_nchw_cython_inner(npDT[:,:] cols,
 # ================== #
 
 # --- col2im --- #
-
-def col2im_1ch_nchw_cython(cols: np.ndarray,
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+def col2im_1ch_nchw_cython(npDT[:,::1] cols,
                            int n, int h, int w, int c,
                            int kh, int kw,
                            int vpadding, int hpadding,
@@ -119,39 +96,8 @@ def col2im_1ch_nchw_cython(cols: np.ndarray,
     cdef int hh = (h + 2 * vpadding - kh) // vstride + 1
     cdef int ww = (w + 2 * hpadding - kw) // hstride + 1
 
-    x: np.ndarray = np.zeros((n, c, h, w), dtype=cols.dtype)
+    cdef npDT[:,:,:,::1] x = np.zeros((n, c, h, w))
 
-    try:
-        col2im_1ch_nchw_cython_inner(cols, x, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
-                                     vstride, hstride, vdilation, hdilation)
-    except TypeError as e:
-        raise TypeError(f"Function: \"eltw_sum_cython\". Error: {e}")
-
-    return x
-# --- END col2im_1ch_nchw_cython --- #
-
-def col2im_1ch_nchw_cython_inner(np.ndarray[npDT, ndim=2] cols,
-                                 np.ndarray[npDT, ndim=4] x,
-                                 int n, int h, int w, int c, int hh, int ww,
-                                 int kh, int kw, int vpadding, int hpadding,
-                                 int vstride, int hstride,
-                                 int vdilation, int hdilation):
-
-    cdef const npDT[:,:] cols_view = cols
-    cdef npDT[:,:,:,:] x_view = x
-
-    _col2im_1ch_nchw_cython_inner(cols_view, x_view, n, h, w, c, hh, ww, kh, kw, hpadding, vpadding,
-                                  vstride, hstride, vdilation, hdilation)
-# --- END col2im_1ch_nchw_cython_inner --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef int _col2im_1ch_nchw_cython_inner(const npDT[:,:] cols,
-                                       npDT[:,:,:,:] x,
-                                       int n, int h, int w, int c, int hh, int ww,
-                                       int kh, int kw, int vpadding, int hpadding,
-                                       int vstride, int hstride,
-                                       int vdilation, int hdilation):
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for ii in prange(kh, nogil=True):
@@ -167,8 +113,8 @@ cdef int _col2im_1ch_nchw_cython_inner(const npDT[:,:] cols,
                                 if 0 <= x_y < w:
                                     col = nn * c * hh * ww + cc * hh * ww + xx * ww + yy
                                     x[nn, cc, x_x, x_y] += cols[row, col]
-# --- END _col2im_1ch_nchw_cython_inner --- #
 
+    return x
 # --- END col2im --- #
 
 # ================== #

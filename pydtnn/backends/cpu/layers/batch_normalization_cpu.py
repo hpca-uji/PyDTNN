@@ -19,12 +19,9 @@
 
 import numpy as np
 
-from pydtnn.cython_modules import bn_inference_cython, bn_inference_nchw_cython, bn_training_fwd_cython, \
-                                  bn_training_bwd_cython
+from pydtnn.cython_modules import bn_inference_cython, bn_inference_nchw_cython, bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
-from pydtnn.utils.best_transpose_0231 import best_transpose_0231
-from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from .layer_cpu import LayerCPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
@@ -37,24 +34,37 @@ except (ImportError, ModuleNotFoundError):
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
-    def forward(self, x:np.ndarray) -> np.ndarray:
+    def initialize(self, prev_shape, need_dx=True):
+        super().initialize(prev_shape, need_dx)
+        self.mu:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+        self.var:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+        self.dgamma:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+        self.dbeta:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+        self.dx:np.ndarray = np.empty(shape=(self.wi * self.hi * self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+        
+        if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
+            self.mean = self.mean_all_reduce
+        else: 
+            self.mean = self.mean_numpy
+    # --
 
-        def mean(data:np.ndarray, total:int, comm) -> np.ndarray:
-            if self.sync_stats and comm is not None and self.model.shared_storage:
-                _mean:np.ndarray = np.sum(data, axis=0) / total
-                comm.Allreduce(MPI.IN_PLACE, _mean, op=MPI.SUM)
-            else:
-                _mean:np.ndarray = np.mean(data, axis=0)
-            return _mean
-        # -- End mean -- #
+    def mean_all_reduce(self, data:np.ndarray, total:int, _mean:np.ndarray) -> None:
+        np.sum(data, axis=0, out=_mean)
+        _mean /= total
+        self.model.comm.Allreduce(MPI.IN_PLACE, _mean, op=MPI.SUM)
+    # --
+
+    def mean_numpy(self, data:np.ndarray, total:int, _mean:np.ndarray) -> None:
+        np.mean(data, axis=0, out=_mean)
+    # --
+
+    def forward(self, x:np.ndarray) -> np.ndarray:
 
         if self.model.mode == ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             y:np.ndarray = bn_inference_nchw_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
             return y
 
         if self.spatial:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                x:np.ndarray = best_transpose_0231(x)
             x:np.ndarray = x.reshape((-1, self.ci), copy=False)
 
         match self.model.mode:
@@ -66,24 +76,27 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                 else: 
                     n = None
 
-                mu = mean(x, n, self.model.comm)
-                xc = (x - mu)
-                var = mean(xc ** 2, n, self.model.comm)
+                self.mean(x, n, self.mu)
+                x -= self.mu
+                x *= x                
+                self.mean(x, n, self.var)                
+                self.xn:np.ndarray = x
+                
 
-                self.std:np.ndarray = np.sqrt(var + self.epsilon)
-                self.xn:np.ndarray = xc / self.std
+                self.std:np.ndarray = np.sqrt(self.var + self.epsilon)
+                self.xn /= self.std
                 y:np.ndarray = self.gamma * self.xn
                 y += self.beta
 
                 #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
-                mu *= (1.0 - self.momentum)
+                self.mu *= (1.0 - self.momentum)
                 self.running_mean *= self.momentum
-                self.running_mean += mu
+                self.running_mean += self.mu
 
                 #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
-                var *= (1.0 - self.momentum)                
+                self.var *= (1.0 - self.momentum)                
                 self.running_var *= self.momentum                
-                self.running_var += var
+                self.running_var += self.var
 
                 # y, self.std, self.xn = bn_training_fwd_cython(x, self.gamma, self.beta, \
                 #                                               self.running_mean, self.running_var, \
@@ -101,39 +114,46 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
                 if self.updated_running_var:
                     self.updated_running_var = False
-                    self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+                    # self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+                    self.inv_std = self.running_var + self.epsilon
+                    np.sqrt(self.inv_std, out=self.inv_std)
+                    np.reciprocal(self.inv_std, out=self.inv_std)                    
 
                 y = bn_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)                
             case _:
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                y = best_transpose_0312(y)
-
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    y = y.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                case _:
+                    raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
         return y
     # --- END forward --- #
 
     def backward(self, dy: np.ndarray) -> np.ndarray | None:
         if self.spatial:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                dy = best_transpose_0231(dy)
-            dy = dy.reshape((-1, self.ci))
+            dy = dy.reshape((-1, self.ci), copy=False)
 
-        self.dgamma = np.sum(dy * self.xn, axis=0)
-        self.dbeta = np.sum(dy, axis=0)
+        np.sum(dy * self.xn, axis=0, out=self.dgamma)
+        np.sum(dy, axis=0, out=self.dbeta)
 
         if self.need_dx:
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
             # dx = dx.astype(self.model.dtype)
+            dx = self.dx[:dy.shape[0],:]
+            bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
-            dx:np.ndarray = bn_training_bwd_cython(dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
-
-            if self.spatial:
-                dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-                if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                    dx = best_transpose_0312(dx)
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                case _:
+                    raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
 
             return dx
     # --- END backward --- #

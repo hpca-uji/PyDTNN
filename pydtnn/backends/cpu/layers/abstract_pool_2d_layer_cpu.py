@@ -17,7 +17,7 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from abc import ABC
+from abc import ABC, abstractmethod
 
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import AbstractPool2DLayer
@@ -63,3 +63,21 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def backward(self, dy:ndarray) -> ndarray | None:
         msg = """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
+    # ---
+    
+    @abstractmethod
+    def _forward_nchw_cython(self, x:ndarray) -> ndarray:
+        ...
+
+    @abstractmethod
+    def _backward_nchw_cython(self, dy:ndarray) -> ndarray | None:
+        ...
+    
+    @abstractmethod
+    def _forward_nhwc_cython(self, x:ndarray) -> ndarray:
+        ...
+    
+    @abstractmethod
+    def _backward_nhwc_cython(self, dy:ndarray) -> ndarray | None:
+        ...
+    

@@ -22,6 +22,11 @@ cimport numpy as np
 cimport cython
 from cython.parallel import prange
 
+__all__ = (
+    "add_nhwc_cython",
+    "add_nchw_cython"
+)
+
 # --- COMMON --- #
 ctypedef fused npDT:
     np.int8_t
@@ -35,68 +40,29 @@ ctypedef fused npDT:
 # ====== NHWC ====== #
 # ================== #
 
-def add_nhwc_cython(x: np.ndarray, 
-                    b: np.ndarray) -> np.ndarray:
-    try:
-        add_nhwc(x, b)
-        return x
-    except TypeError as e:
-        raise TypeError(f"Function: \"add_nhwc_cython\". Error: {e}")
-# --- END add_nhwc_cython --- #
-
-def add_nhwc(np.ndarray[npDT, ndim=2] x, 
-             np.ndarray[npDT, ndim=1] b):
-    cdef npDT[:,:] x_view = x
-    cdef const npDT[:] b_view = b
-
-    _add_nhwc(x_view, b_view)
-# --- END add_nhwc --- #
-
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _add_nhwc(npDT[:,:] x,
-               const npDT[:] b):
-
+@cython.initializedcheck(False)
+def add_nhwc_cython(npDT[:,::1] x, npDT[::1] b) -> None:
     cdef int i, j
 
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i, j] += b[j]
-# --- END _add_nhwc --- #
+# --- END add_nhwc_cython --- #
 
 # ================== #
 # ====== NCHW ====== #
 # ================== #
 
-
-def add_nchw_cython(x: np.ndarray, 
-                    b: np.ndarray) -> np.ndarray:
-  
-    try:
-        add_nchw(x, b)
-        return x
-    except TypeError as e:
-        raise TypeError(f"Function: \"add_nchw_cython\". Error: {e}")
-# --- END add_nchw_cython --- #
-
-def add_nchw(np.ndarray[npDT, ndim=2] x, 
-             np.ndarray[npDT, ndim=1] b):
-
-    cdef npDT[:,:] x_view = x
-    cdef const npDT[:] b_view = b
-
-    _add_nchw(x_view, b_view)
-# --- END _adadd_nchwd_nchw --- #
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _add_nchw(npDT[:,:] x,
-               const npDT[:] b):
-
+@cython.initializedcheck(False)
+def add_nchw_cython(npDT[:,::1] x, npDT[::1] b) -> None:
+  
     cdef int i, j
     
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i, j] += b[i]
-# --- END _add_nchw --- #
+# --- END add_nchw_cython --- #

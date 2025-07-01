@@ -8,9 +8,9 @@
 #  Foundation, either version 3 of the License, or (at your option) any later
 #  version.
 #
-#  This program is distributed in the hope that it will be useful, but wIThOUT
-#  AnY wARRAnTY; without even the implied warranty of MERchAnTABILITY
-#  or FITnESS FOR A PARTIcULAR PURPOSE.  See the GnU General Public
+#  This program is distributed in the hope that it will be useful, but WITHOUT
+#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
 #  License for more details.
 #
 #  You should have received a copy of the GnU General Public License along
@@ -32,8 +32,10 @@ ctypedef fused npDT:
 # -- END npDT -- #
 # --- END COMMON --- #
 # =================== #
-
-def pointwise_conv_cython(x: np.ndarray, k: np.ndarray) -> np.ndarray:
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k) -> np.ndarray:
 
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -42,34 +44,8 @@ def pointwise_conv_cython(x: np.ndarray, k: np.ndarray) -> np.ndarray:
 
     cdef int co = k.shape[0]
 
-    out: np.ndarray = np.zeros((n, co, h, w), dtype=x.dtype)
+    cdef npDT[:,:,:,::1] out = np.zeros((n, co, h, w))
 
-    try:
-        pointwise_conv_cython_inner(out, x, k, n, c, h, w, co)
-    except TypeError as e:
-        raise TypeError(f"Function: \"pointwise_conv_cython\". Error: {e}")
-
-    return out
-# --- END pointwise_conv_cython --- #
-
-def pointwise_conv_cython_inner(np.ndarray[npDT, ndim=4] out,
-                                np.ndarray[npDT, ndim=4] x,
-                                np.ndarray[npDT, ndim=2] k,
-                                int n, int c, int h, int w, int co):
-
-    cdef npDT[:,:,:,:] out_view = out
-    cdef const npDT[:,:,:,:] x_view = x
-    cdef const npDT[:,:] k_view = k
-
-    _pointwise_conv_cython_inner(out_view, x_view, k_view, n, c, h, w, co)
-# --- END pointwise_conv_cython_inner --- #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-cdef _pointwise_conv_cython_inner(npDT[:,:,:,:] out,
-                                  const npDT[:,:,:,:] x,
-                                  const npDT[:,:] k,
-                                  int n, int c, int h, int w, int co):
     cdef int nn, cco, cc, ii, jj
 
     for cco in prange(co, nogil=True):
@@ -78,4 +54,6 @@ cdef _pointwise_conv_cython_inner(npDT[:,:,:,:] out,
                 for ii in range(h):
                     for jj in range(w):
                         out[nn, cco, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
-# --- END _pointwise_conv_cython_inner --- #
+
+    return out
+# --- END pointwise_conv_cython --- #

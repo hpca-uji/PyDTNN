@@ -26,9 +26,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 # Imports for the methods from AveragePool2DCPU
-from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
-                                  im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \
-                                  adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython, \
+from pydtnn.cython_modules import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython, \
                                   adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum    
 import numpy as np
@@ -47,24 +45,21 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
         AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
         LayerCPU.initialize(self, prev_shape, need_dx)
-        self.y = np.empty((self.model.batch_size, self.ci, self.ho, self.wo), dtype = self.model.dtype)
-        self.dx = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
 
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+            self.y = np.empty((self.model.batch_size, self.ci, self.ho, self.wo), dtype = self.model.dtype)
+            self.dx = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
+
             self._forward = self._forward_nchw_cython
             self._backward = self._backward_nchw_cython
-            # I2C-based implementations have been temporarily discarded
-            # setattr(self, "forward", self._forward_nchw_i2c)
-            # setattr(self, "backward", self._backward_nchw_i2c)
         else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
+            self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.ci), dtype = self.model.dtype)
+            self.dx = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype = self.model.dtype)
+
             self._forward = self._forward_nhwc_cython
             self._backward = self._backward_nhwc_cython
-            # I2C-based implementations have been temporarily discarded
-            # setattr(self, "forward", self._forward_nhwc_i2c)
-            # setattr(self, "backward", self._backward_nhwc_i2c)
 
         if self.pooling_not_needed:
-            #self._forward = self._forward_pooling_not_needed # NOTE: See "self._forward_pooling_not_needed"
             self._forward = (lambda x: x)
         #else: Nothing special.
 
@@ -79,13 +74,6 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         return self._backward(dy)
     # --- END backward --- #
-
-    # NOTE: I dont' know why, but if you try to set a variable with "_forward_pooling_not_needed", the value is None insted of the function.
-    #   It's possible that the problem originates in "PromoteToBackendMixin"'s "__new__" method, but it's not sure the problem originates there.
-    def _forward_pooling_not_needed(self, x:np.ndarray) -> np.ndarray:
-        # If the output shape is the same as the input one, there is no need to make the pooling.
-        return x
-    # --- END _forward_pooling_not_needed --- #
 
     def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
