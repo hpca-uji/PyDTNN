@@ -498,6 +498,56 @@ class ConvWinograd:
         return y
     # --- END _conv_winograd_c --- #
 
+def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+                 b: int, kn: int,
+                 ho: int, wo: int, kh: int, kw: int, 
+                 vpadding: int, hpadding: int, vstride: int, hstride: int, 
+                 vdilation: int, hdilation: int, 
+                 ) -> int | float:
+    from pydtnn.cython_modules import im2row_nhwc_cython
+
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
+    im2row_nhwc_cython(x, res, 
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, 
+                       vdilation, hdilation)
+    res = res @ w_c
+    res += biases.reshape(b * ho * wo, kn)
+    return res
+
+def time_it_im2col(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+                   b: int, kn: int,
+                   ho: int, wo: int, kh: int, kw: int, 
+                   vpadding: int, hpadding: int, vstride: int, hstride: int, 
+                   vdilation: int, hdilation: int, 
+                   ) -> int | float:
+    from pydtnn.cython_modules import im2col_nchw_cython
+
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
+    im2col_nchw_cython(x, res, 
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, 
+                       vdilation, hdilation)
+    res = res @ w_c
+    res += biases.reshape(b * ho * wo, kn)
+    return res
+
+def time_it_im2col_4_dims(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+                          kk:int, ho: int, wo: int, kh: int, kw: int, 
+                          vpadding: int, hpadding: int, vstride: int, hstride: int, 
+                          vdilation: int, hdilation: int, 
+                          ) -> int | float:
+    from pydtnn.cython_modules import im2col_nchw_cython
+
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
+    im2col_nchw_cython(x, res, 
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, 
+                       vdilation, hdilation)
+    res = res @ w_c
+    res += biases.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
+    return res
+
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
@@ -546,12 +596,14 @@ def __usage_example__():
                              number=10) / 10
     print("conv_winograd time: {:.4f}".format(conv_winograd_t))
     print("Using im2col and mm NCHW ...")
-    x_c = im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    x_c = np.zeros((c * kh * kw, b * ho * wo))
+    im2col_nchw_cython(x, x_c,
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)
     im2col_mm_result_nchw = (w_c @ x_c + biases).reshape(kn, -1, ho, wo).transpose(1, 0, 2, 3)
-    mm_t = timeit(
-        lambda: w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
-                + biases, number=10) / 10
+    mm_t = timeit(lambda: time_it_im2col(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+                  number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
 
     # NHWC --------------------------
@@ -573,12 +625,15 @@ def __usage_example__():
                              number=10) / 10
     print("conv_winograd time: {:.4f}".format(conv_winograd_t))
     print("Using im2col and mm NHWC ...")
-    x_c = im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
-    w_c = weights.reshape(-1, kn)
+    x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype= x.dtype)
+    im2row_nhwc_cython(x, x_c,
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    w_c = weights.reshape((-1, kn), copy=False)
     im2col_mm_result_nhwc = (x_c @ w_c + biases).reshape(-1, ho, wo, kn)
     mm_t = timeit(
-        lambda: im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation) @ w_c
-                + biases, number=10) / 10
+        lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+        number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
 
     if r:
@@ -625,16 +680,15 @@ def __usage_example__():
                                         x = np.random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
                                         biases = (np.ones((kk, nn * ho * wo)) * 10).astype(np.float32, order='C')
                                         w_c = weights.reshape(kk, -1)
-                                        im2col_mm_result = w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding,
-                                                                                    vstride, hstride, vdilation,
-                                                                                    hdilation) \
-                                                           + biases
+                                        res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
+                                        im2col_nchw_cython(x, res, 
+                                                           kh, kw, ho, wo,
+                                                           vpadding, hpadding, vstride, hstride, 
+                                                           vdilation, hdilation)
+                                        im2col_mm_result = (w_c @ res) + biases
                                         im2col_mm_result = \
                                             im2col_mm_result.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
-                                        im2col_t = timeit(lambda: (
-                                                w_c @ im2col_nchw_cython(x, kh, kw, vpadding, hpadding, vstride,
-                                                                         hstride, vdilation, hdilation)
-                                                + biases).reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3),
+                                        im2col_t = timeit(lambda: time_it_im2col_4_dims(x, w_c, biases, kk, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
                                                           number=10) / 10
 
                                         conv_winograd_result = conv_winograd.conv_winograd_nchw(weights, x, biases_wg,
@@ -658,14 +712,16 @@ def __usage_example__():
                                         biases = (np.ones((nn * ho * wo, kk)) * 10).astype(np.float32, order='C')
 
                                         w_c = weights.reshape(-1, kk)
-                                        im2col_mm_result = im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride,
-                                                                              hstride, vdilation, hdilation) @ w_c \
+                                        im2col_mm_result = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype= x.dtype)
+                                        im2row_nhwc_cython(x, x_c,
+                                                           kh, kw, ho, wo,
+                                                           vpadding, hpadding, vstride, hstride, 
+                                                           vdilation, hdilation) @ w_c \
                                                            + biases
                                         im2col_mm_result = im2col_mm_result.reshape(-1, ho, wo, kk)
-                                        im2col_t = timeit(lambda: (
-                                                im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride,
-                                                                   vdilation, hdilation) @ w_c
-                                                + biases).reshape(-1, ho, wo, kk), number=10) / 10
+                                        im2col_t = timeit(
+                                                    lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+                                                    number=10) / 10
 
                                         conv_winograd_result = conv_winograd.conv_winograd_nhwc(weights, x, biases_wg,
                                                                                                 vpadding=vpadding,

@@ -25,7 +25,7 @@ from pydtnn.cython_modules import im2row_nhwc_cython, im2col_nchw_cython
 from pydtnn.model import TRAIN_MODE
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from numpy import ndarray
+from numpy import ndarray, zeros
 class ConvWinogradVariant(I2CVariant, ABC):
 
     def __init__(self, *args, **kwargs):
@@ -84,17 +84,24 @@ class ConvWinogradVariant(I2CVariant, ABC):
         """Version of the backward function that uses the convWinograd library"""
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
-        self.x_rows:ndarray = im2row_nhwc_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
+        
+        self.x_rows = zeros(((dy.shape[0] * self.ho * self.wo), (self.ci * self.kh * self.kw)), dtype=self.model.dtype)
+        im2row_nhwc_cython(self.cw_x, self.x_rows,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self._backward_i2c_nhwc(dy)
 
     def _backward_cw_nchw(self, dy: ndarray) -> ndarray:
         """Version of the backward function that uses the convWinograd library"""
+        n, c, _, _ = dy.shape
+        self.x_cols = zeros((c * self.kh * self.kw, n * self.ho * self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
-        self.x_cols:ndarray = im2col_nchw_cython(self.cw_x, self.kh, self.kw, self.vpadding, self.hpadding,
-                                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
+        im2col_nchw_cython(self.cw_x, 
+                           self.kh, self.kw, self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self._backward_i2c_nchw(dy)

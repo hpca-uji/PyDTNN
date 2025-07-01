@@ -51,8 +51,6 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
                 x_forward = layer.forward(x_forward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
-            print(f"{sum_forwards.dtype=}")
-            print(f"{x_forward.dtype=}")
             eltw_sum_cython(sum_forwards.reshape(-1, copy=False), x_forward.reshape(-1, copy=False))
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
         return sum_forwards

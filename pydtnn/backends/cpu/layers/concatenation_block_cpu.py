@@ -36,11 +36,7 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
         # The next attributes will be initialized later
         self.out_co:list[int] = None
         self.idx_co:np.ndarray = None
-        self.concat_dim:int = None        
-    
-    def initialize(self, prev_shape, need_dx=True):
-        super().initialize(prev_shape, need_dx)
-        self.dx_out = np.empty((self.model.batch_size, *self.prev_shape))
+        self.concat_dim:int = None
 
     def initialize_block_layer(self):
         super().initialize_block_layer()        
@@ -103,8 +99,4 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
                 dx[0] += dx[i]
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        #self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-        #np.sum(dx, axis=0, out=self.dx_out)
-        #self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return self.dx_out
+        return dx

@@ -42,26 +42,23 @@ ctypedef fused npDT:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def im2row_1ch_nhwc_cython(npDT[:,:,:,::1] x,
-                           int kh, int kw, int vpadding, int hpadding,
-                           int vstride, int hstride, int vdilation, int hdilation) -> np.ndarray:
+def im2row_1ch_nhwc_cython(npDT[:,:,:,::1] x, 
+                           npDT[:,::1] rows,
+                           int kh, int kw, int ho, int wo,
+                           int vpadding, int hpadding,
+                           int vstride, int hstride, int vdilation, int hdilation) -> None:
     cdef int n = x.shape[0]
     cdef int h = x.shape[1]
     cdef int w = x.shape[2]
     cdef int c = x.shape[3]
 
-    cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-
-    cdef npDT[:,::1] rows = np.zeros((n * c * hh * ww, kh * kw))
-
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
-        for xx in range(hh):
-            for yy in range(ww):
+        for xx in range(ho):
+            for yy in range(wo):
                 for cc in range(c):
-                    row = nn * hh * ww * c + xx * ww * c + yy * c + cc
+                    row = nn * ho * wo * c + xx * wo * c + yy * c + cc
                     for ii in range(kh):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
@@ -70,8 +67,6 @@ def im2row_1ch_nhwc_cython(npDT[:,:,:,::1] x,
                                 if 0 <= x_y < w:
                                     col = cc * kh * kw + ii * kw + jj
                                     rows[row, col] = x[nn, x_x, x_y, cc]
-
-    return rows
 # --- END im2row --- #
 
 
@@ -84,23 +79,21 @@ def im2row_1ch_nhwc_cython(npDT[:,:,:,::1] x,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def row2im_1ch_nhwc_cython(npDT[:,::1] rows,
+                           npDT[:,:,:,::1] x,
                            int n, int h, int w, int c,
                            int kh, int kw,
+                           int ho, int wo,
                            int vpadding, int hpadding,
                            int vstride, int hstride,
-                           int vdilation, int hdilation) -> np.ndarray:
-    cdef int hh = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-
-    cdef npDT[:,:,:,::1] x = np.zeros((n, h, w, c))
+                           int vdilation, int hdilation) -> None:
 
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
     for nn in prange(n, nogil=True):
-        for xx in range(hh):
-            for yy in range(ww):
+        for xx in range(ho):
+            for yy in range(wo):
                 for cc in range(c):
-                    row = nn * hh * ww * c + xx * ww * c + yy * c + cc
+                    row = nn * ho * wo * c + xx * wo * c + yy * c + cc
                     for ii in range(kh):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
@@ -109,8 +102,6 @@ def row2im_1ch_nhwc_cython(npDT[:,::1] rows,
                                 if 0 <= x_y < w:
                                     col = cc * kh * kw + ii * kw + jj
                                     x[nn, x_x, x_y, cc] += rows[row, col]
-
-    return x
 # --- END row2im_1ch_nhwc_cython --- #
 
 # --- END row2im --- #
