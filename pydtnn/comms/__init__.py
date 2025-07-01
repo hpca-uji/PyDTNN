@@ -66,12 +66,14 @@ import os
 import abc
 import uuid
 import enum
+import typing
 import importlib
 import threading
 from pathlib import Path
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
-from concurrent.futures import Future
+from collections import abc as col_abc
+from concurrent.futures import Future, ThreadPoolExecutor
 
 
 from pydtnn.utils import UUID_NIL, parse_bool
@@ -79,6 +81,7 @@ from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
 __all__ = (
+    "CommunicatorOptions",
     "PROTOCOL",
     "SSL",
     "Protocol",
@@ -89,6 +92,9 @@ __all__ = (
     "Server",
     "Client"
 )
+
+
+type CommunicatorOptions = col_abc.Mapping[str, typing.Any]
 
 
 class Protocol(enum.StrEnum):
@@ -114,13 +120,13 @@ class ConnectionState(enum.Flag):
 class ConnectionData:
     """Connection data"""
 
-    def __init__(self, merge_size: int = 16 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 1 - 1) -> None:
+    def __init__(self, merge_size: int = 4 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 1 - 1) -> None:
         """Initialize connection state"""
         self.peer = UUID_NIL
         self.state = ConnectionState(value=0)
 
         self._merge_buffer = byteview(bytearray(merge_size))
-        self._efficient_size = efficient_size
+        self._merge_size = min(merge_size, efficient_size)
         self._packer = Packer()
 
         self.put_queue = SimpleQueue[Stream]()
@@ -145,23 +151,11 @@ class ConnectionData:
         self.put_queue.put(stream)
         return Future[None]()
 
-    def _put_merge(self) -> int:
-        """Merge head of buffer into contiguous memory"""
-        read = 0
-
-        while not self.put_buffer.empty() and read < len(self._merge_buffer):
-            with self._merge_buffer[read:] as view:
-                if read < self._efficient_size or len(self.put_buffer._chunks[0]) <= len(view):
-                    read += self.put_buffer.readinto1(view)
-                else:
-                    break
-
-        return self.put_buffer.unreadchunk(self._merge_buffer[:read])
-
     def put_read(self, size: int = -1) -> memoryview:
         """Read put stream (merging chunks if plausible)"""
-        if self.put_buffer.nchunks > 1 and len(self.put_buffer._chunks[0]) < min(self._efficient_size, len(self._merge_buffer)):
-            self._put_merge()
+        if self.put_buffer.nchunks > 1 and len(self.put_buffer._chunks[0]) < self._merge_size:
+            merge_size = self.put_buffer.readinto(self._merge_buffer)
+            self.put_buffer.unreadchunk(self._merge_buffer[:merge_size])
 
         return self.put_buffer.read1(size)
 
@@ -183,14 +177,38 @@ class ResourceClosed(RuntimeError):
 class Communicator[T](abc.ABC):
     """Base communicator implementation"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Communicator initialization"""
         super().__init__()
+        self._options = options
+
         self._id = uuid.uuid4()
-        self._addr = addr
-        self._port = port
         self._close_lock = threading.Lock()
+
         self._serializer = Serializer()
+        thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
+        self._pool = ThreadPoolExecutor(max_workers=self._options.get("workers", 1), thread_name_prefix=f"{thread_prefix}")
+
+    def _new_state(self) -> ConnectionData:
+        """Generate new connection state data"""
+        merge = self._options.get("merge_size", self._max_payload)
+        efficient = self._options.get("merge_size", self._max_payload // 64)
+        return ConnectionData(merge_size=merge, efficient_size=efficient)
+
+    @property
+    def _max_payload(self) -> int:
+        """Maximun payload size"""
+        return self._options.get("max_payload", 4 * 1024 ** 2)
+
+    @property
+    def _addr(self) -> str:
+        """Address of service"""
+        return self._options.get("addr", "127.0.0.1")
+
+    @property
+    def _port(self) -> int:
+        """Port of service"""
+        return self._options.get("port", 50000)
 
     @property
     def _closed(self):

@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021 Universitat Jaume I
+#  Copyright (C) 2025 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -65,5 +65,5 @@ class AdaptiveAveragePool2D(Layer, ABC):
     
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format(f"",
-                                                f"inpt. shape=({self.hi},{self.wi}), "
-                                                f"outp. shape=({self.ho},{self.wo})"))
+                                                f"inp. shape=({self.hi},{self.wi}), "
+                                                f"out. shape=({self.ho},{self.wo})"))

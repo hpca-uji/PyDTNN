@@ -6,16 +6,16 @@ import threading
 import traceback
 from collections import abc
 from queue import SimpleQueue
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 
 from bidict import bidict
 
 from pydtnn import comms
+from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
 from pydtnn.utils.asynctools import merge_futures
-from pydtnn.comms.grpc import Protocol, grpc_pb2, grpc_pb2_grpc
-from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ConnectionData, ConnectionState, ResourceClosed, Message
 
 
 __all__ = (
@@ -29,11 +29,10 @@ END_COMM = None
 
 class Server(Protocol):
     """gRPC server"""
-    _max_workers = 1
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Server initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": options.get("workers", 4)})
 
         # State
         self._lock = threading.Condition()
@@ -42,26 +41,29 @@ class Server(Protocol):
         self._state = dict[uuid.UUID, ConnectionData]()
 
         # gRPC
-        self._pool = ThreadPoolExecutor(max_workers=self._max_workers, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
         self._server = grpc.server(
             thread_pool=self._pool,
+            options=list(self._options.items()),
             compression=self._compression
         )
-        grpc_pb2_grpc.add_gRPCServicer_to_server(servicer=self, server=self._server)
+        handler = grpc.stream_stream_rpc_method_handler(behavior=self._com, request_deserializer=lambda x: x, response_serializer=bytes)
+        self._server.add_registered_method_handlers(service_name="grpc", method_handlers={"com": handler})  # type: ignore
 
         config: abc.MutableMapping = {
             "address": f"{self._addr}:{self._port}"
         }
 
         if comms.SSL:
-            config["server_credentials"] = grpc.ssl_server_credentials([[comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()]])
+            config["server_credentials"] = grpc.ssl_server_credentials([
+                (comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()),  # type: ignore
+            ])
             self._server.add_secure_port(**config)
         else:
             self._server.add_insecure_port(**config)
 
         self._server.start()
 
-    def _com(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
+    def _com(self, messages: abc.Iterable[abc.Buffer], context: grpc.ServicerContext) -> abc.Iterable[abc.Buffer]:
         try:
             yield from self._handle_connection(messages, context)
         except Exception as exc:
@@ -75,15 +77,15 @@ class Server(Protocol):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData()
-            self._lock.notify_all()
+            self._state[peer] = self._new_state()
 
-        # ACK
-        self._session_ini(peer)
+            # ACK
+            self._session_ini(peer)
+            self._lock.notify_all()
 
         return peer
 
-    def _get_flush(self, peer: uuid.UUID):
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
         while True:
@@ -104,7 +106,9 @@ class Server(Protocol):
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
 
-    def _handle_connection(self, messages: abc.Iterable[grpc_pb2.Message], context: grpc.ServicerContext) -> abc.Iterable[grpc_pb2.Message]:
+        return peer
+
+    def _handle_connection(self, messages: abc.Iterable[abc.Buffer], context: grpc.ServicerContext) -> abc.Iterable[abc.Buffer]:
         """Client to server communication"""
         # NOTE: communication thread
         sock = context.peer()
@@ -114,39 +118,11 @@ class Server(Protocol):
             peer = self._new_connection(sock)
         state = self._state[peer]
 
-        balance = 0
-
-        def get_generator():
-            nonlocal balance
-            for data in self._m2d(messages):
-                yield data
-                balance += 1
-
-        def put_generator():
-            nonlocal balance
-            for message in self._s2m(state):
-                yield message
-                balance -= 1
-
         # Message streaming
-        put_messages = put_generator()
-        for data in get_generator():
-
-            # Get messages
+        yield from self._s2m(state)
+        for data in self._m2d(messages):
             state.get_buffer.write(data)
-            self._get_flush(peer)
-            peer = state.peer
-
-            # Publish messages
-            if balance <= 0:
-                continue
-            for message in put_messages:
-                yield message
-                if balance <= 0:
-                    break
-
-        # Drain remainder queue
-        yield from put_messages
+            peer = self._get_flush(peer)
 
         if not state.state and state.put_empty():
             self._fin(peer)
