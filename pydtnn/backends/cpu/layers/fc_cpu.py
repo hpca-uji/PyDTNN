@@ -56,16 +56,20 @@ class FCCPU(LayerCPU, FC):
                         dtype=self.model.dtype) if need_dx else 0
 
     def forward(self, x: np.ndarray) -> np.ndarray:
+        print("1")
         if self.model.mode == TRAIN_MODE:
-            self.x = x                
-        _x = x.reshape(-1, np.prod(self.prev_shape))
-        _w = self.weights.reshape(np.prod(self.prev_shape),-1)
+            self.x = x
+        print("2")
+        #_x = x.reshape((-1, np.prod(self.prev_shape)), copy=False)
+        #_w = self.weights.reshape(np.prod(self.prev_shape),-1)
+        print("3")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
         #_res:np.ndarray = np.matmul(x, self.weights)
         #_res:np.ndarray = np.matmul(_x, _w)
         # np.matmul(_x, _w, out=self._res)
-        res = np.linalg.matmul(_x, _w)
-        
+        res = np.linalg.matmul(x, self.weights)
+        print("4")
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -89,7 +93,8 @@ class FCCPU(LayerCPU, FC):
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
             #dx = np.matmul(dy, self.weights.T)
-            #dx = np.matmul(dy, self.weights.T.reshape((-1, np.prod(self.prev_shape))))
-            dx = np.linalg.matmul(dy, self.weights.T.reshape( (-1, np.prod(self.prev_shape))))
+            #dx = np.linalg.matmul(dy, self.weights.T.reshape( (-1, np.prod(self.prev_shape))))
+
+            dx = np.linalg.matmul(dy, self.weights.T)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
             return dx
