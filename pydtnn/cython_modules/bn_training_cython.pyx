@@ -35,64 +35,23 @@ ctypedef fused npDT:
 # =================== #
 # =================== #
 
-
 # --- FORWARD --- #
-def bn_training_fwd_cython(x: np.ndarray, 
-                           gamma: np.ndarray, 
-                           beta: np.ndarray, 
-                           running_mean: np.ndarray, 
-                           running_var: np.ndarray, 
-                           float momentum, 
-                           float eps) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-
-    y:np.ndarray   = np.zeros_like(x, dtype=x.dtype, order="C")
-    xn:np.ndarray  = np.zeros_like(x, dtype=x.dtype, order="C")
-    xc:np.ndarray  = np.zeros_like(x, dtype=x.dtype, order="C")
-    std:np.ndarray = np.zeros((x.shape[1],), dtype=x.dtype)
-
-    try:
-        bn_training_fwd_cython_inner(x, y, xn, xc, std, gamma, beta, running_mean, running_var, momentum, eps)
-    except TypeError as e:
-        raise TypeError(f"Function: \"bn_training_fwd_cython\". Error: {e}")
-
-    return y, std, xn
-# --- END bn_training_fwd_cython --- #
-
-
-def bn_training_fwd_cython_inner(np.ndarray[npDT, ndim=2] x,
-                                 np.ndarray[npDT, ndim=2] y,
-                                 np.ndarray[npDT, ndim=2] xn,
-                                 np.ndarray[npDT, ndim=2] xc,
-                                 np.ndarray[npDT, ndim=1] std,
-                                 np.ndarray[npDT, ndim=1] gamma,
-                                 np.ndarray[npDT, ndim=1] beta,
-                                 np.ndarray[npDT, ndim=1] running_mean,
-                                 np.ndarray[npDT, ndim=1] running_var,
-                                 float momentum, 
-                                 float eps) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-
-    cdef npDT[:,:] x_view = x
-    cdef npDT[:,:] y_view = y
-    cdef npDT[:,:] xn_view = xn
-    cdef npDT[:,:] xc_view = xc
-    cdef npDT[:] std_view = std
-    cdef const npDT[:] gamma_view = gamma
-    cdef const npDT[:] beta_view = beta
-    cdef npDT[:] running_mean_view = running_mean
-    cdef npDT[:] running_var_view = running_var
-
-    _bn_training_fwd_cython_inner(x_view, y_view, xn_view, xc_view, std_view, gamma_view, beta_view, running_mean_view, running_var_view, momentum, eps)
-
-# --- END bn_training_fwd_cython --- #
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef _bn_training_fwd_cython_inner(npDT[:,:] x, npDT[:,:] y,
-                                   npDT[:,:] xn, npDT[:,:] xc,
-                                   npDT[:] std,
-                                   const npDT[:] gamma, const npDT[:] beta,
-                                   npDT[:] running_mean, npDT[:] running_var,
-                                   float momentum, float eps):
+@cython.initializedcheck(False)
+def bn_training_fwd_cython(np.ndarray[npDT, ndim=2] x,
+                           npDT[::1] gamma,
+                           npDT[::1] beta,
+                           npDT[::1] running_mean,
+                           npDT[::1] running_var,
+                           float momentum,
+                           float eps) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+    cdef np.ndarray[npDT, ndim=2] y   = np.zeros_like(x, dtype=x.dtype, order="C")
+    cdef np.ndarray[npDT, ndim=2] xn  = np.zeros_like(x, dtype=x.dtype, order="C")
+    cdef np.ndarray[npDT, ndim=2] xc  = np.zeros_like(x, dtype=x.dtype, order="C")
+    cdef np.ndarray[npDT, ndim=1] std = np.zeros((x.shape[1],), dtype=x.dtype)
+
     cdef int i, j
     cdef npDT mu, var
 
@@ -124,64 +83,30 @@ cdef _bn_training_fwd_cython_inner(npDT[:,:] x, npDT[:,:] y,
         # self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
         running_mean[j] = <npDT> (momentum * running_mean[j] + (1.0 - momentum) * mu)
         running_var[j] = <npDT> (momentum * running_var[j] + (1.0 - momentum) * var)
-# --- bn_training_fwd_cython_inner --- #
 
+    return y, std, xn
+# --- END bn_training_fwd_cython --- #
 
 # --- END FORWARD --- #
 
-
-
 # --- BACKWARD --- #
-def bn_training_bwd_cython(dy: np.ndarray,
-                           xn: np.ndarray,
-                           std: np.ndarray,
-                           gamma: np.ndarray,
-                           dgamma: np.ndarray,
-                           dbeta: np.ndarray) -> np.ndarray:
-
-    dx:np.ndarray  = np.zeros_like(dy, dtype=dy.dtype, order="C")
-
-    try:
-        _bn_training_bwd_cython_inner(dx, dy, xn, std, gamma, dgamma, dbeta)
-    except TypeError as e:
-        raise TypeError(f"Function: \"bn_training_bwd_cython\". Error: {e}")
-
-    return dx
-# --- bn_training_bwd_cython --- #
-
-def _bn_training_bwd_cython_inner(np.ndarray[npDT, ndim=2] dx,
-                                  np.ndarray[npDT, ndim=2] dy,
-                                  np.ndarray[npDT, ndim=2] xn,
-                                  np.ndarray[npDT, ndim=1] std,
-                                  np.ndarray[npDT, ndim=1] gamma,
-                                  np.ndarray[npDT, ndim=1] dgamma,
-                                  np.ndarray[npDT, ndim=1] dbeta):
-    cdef npDT[:,:] dx_view = dx
-    cdef const npDT[:,:] dy_view = dy
-    cdef const npDT[:,:] xn_view = xn
-    cdef const npDT[:] std_view = std
-    cdef const npDT[:] gamma_view = gamma
-    cdef const npDT[:] dgamma_view = dgamma
-    cdef const npDT[:] dbeta_view = dbeta    
-
-    bn_training_bwd_cython_inner(dx_view, dy_view, xn_view, std_view, gamma_view, dgamma_view, dbeta_view)
-# --- _bn_training_bwd_cython_inner --- #
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef bn_training_bwd_cython_inner(npDT[:,:] dx,
-                                  const npDT[:,:] dy,
-                                  const npDT[:,:] xn,
-                                  const npDT[:] std,
-                                  const npDT[:] gamma,
-                                  const npDT[:] dgamma,
-                                  const npDT[:] dbeta):
+@cython.initializedcheck(False)
+def bn_training_bwd_cython(npDT[:, ::1] dx,
+                           npDT[:, ::1] dy,
+                           npDT[:, ::1] xn,
+                           npDT[::1] std,
+                           npDT[::1] gamma,
+                           npDT[::1] dgamma,
+                           npDT[::1] dbeta) -> None:
+
     cdef int i, j, n = dy.shape[0]
 
-    for i in prange(dy.shape[0], nogil=True, schedule='static'):
+    for i in prange(n, nogil=True, schedule='static'):
         for j in range(dy.shape[1]):
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
             dx[i, j] = (gamma[j] // (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j])
-#--- END bn_training_bwd_cython_inner --- #
+# --- bn_training_bwd_cython --- #
 
 # --- END BACKWARD --- #

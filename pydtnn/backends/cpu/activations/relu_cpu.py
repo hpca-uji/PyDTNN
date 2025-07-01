@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -29,10 +29,18 @@ class ReluCPU(ActivationCPU, Relu):
         super().__init__(shape)
         self.mask:np.ndarray = None
 
+    def initialize(self, prev_shape, need_dx = True):
+        super().initialize(prev_shape, need_dx)
+        self.y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype)
+        self._mask = np.zeros((self.model.batch_size, *prev_shape), dtype=np.int8)
+
     def forward(self, x:np.ndarray) -> np.ndarray:
-        self.y, mask = relu_cython(x)        
-        if self.model.mode == TRAIN_MODE:
+        y = self.y[:x.shape[0], ]
+        mask = self._mask[:x.shape[0], ]
+        relu_cython(x.reshape(-1, copy=False), y.reshape(-1, copy=False), mask.reshape(-1, copy=False))
+        if self.need_dx:
             self.mask = mask
+
         return self.y
 
     def backward(self, dy:np.ndarray) -> np.ndarray | None:

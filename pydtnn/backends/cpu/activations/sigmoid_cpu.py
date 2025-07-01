@@ -27,7 +27,7 @@ class SigmoidCPU(ActivationCPU, Sigmoid):
 
     def initialize(self, prev_shape, need_dx = True):
         super().initialize(prev_shape, need_dx)
-        self.y = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
+        self.y:np.ndarray = None
 
     def forward(self, x:np.ndarray) -> np.ndarray:
         # self.y = 1 / (1 + np.exp(-x))

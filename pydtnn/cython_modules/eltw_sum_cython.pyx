@@ -39,15 +39,10 @@ ctypedef fused npDT:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def eltw_sum_cython(np.ndarray[npDT, ndim=4] x_acc, 
-                    np.ndarray[npDT, ndim=4] x) -> np.ndarray:
-
-    cdef np.ndarray[npDT, ndim=1] x_acc_reshaped = x_acc.reshape(-1, copy=False)
-    cdef np.ndarray[npDT, ndim=1] x_reshaped = x.reshape(-1, copy=False)
+@cython.initializedcheck(False)
+def eltw_sum_cython(npDT[::1] x_acc, npDT[::1] x):
 
     cdef int i
     for i in prange(x.shape[0], nogil=True):
-        x_acc_reshaped[i] += x_reshaped[i]
-
-    return x_acc
+        x_acc[i] += x[i]
 # --- END eltw_sum_cython --- #

@@ -35,8 +35,9 @@ cdef inline int index_last_element(int index, int dim_in, int dim_out) nogil:
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def adaptive_avg_pooling_fwd_nchw_cython(np.ndarray[npDT, ndim=4] x,
-                                         np.ndarray[npDT, ndim=4] pooled_x,
+@cython.initializedcheck(False)
+def adaptive_avg_pooling_fwd_nchw_cython(npDT[:,:,:,::1] x,
+                                         npDT[:,:,:,::1] pooled_x,
                                          int new_h, int new_w) -> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -79,8 +80,9 @@ def adaptive_avg_pooling_fwd_nchw_cython(np.ndarray[npDT, ndim=4] x,
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def adaptive_avg_pooling_bwd_nchw_cython(np.ndarray[npDT, ndim=4] dy, 
-                                         np.ndarray[npDT, ndim=4] dx,
+@cython.initializedcheck(False)
+def adaptive_avg_pooling_bwd_nchw_cython(npDT[:,:,:,::1] dy, 
+                                         npDT[:,:,:,::1] dx,
                                          int new_h, int new_w) -> None:
     cdef int n = dy.shape[0]
     cdef int c = dy.shape[1]
