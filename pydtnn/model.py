@@ -464,7 +464,8 @@ class Model:
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
         # Dataset
-        self.dataset: Dataset = get_dataset(self)
+        if self.dataset_name:
+            self.dataset: Dataset = get_dataset(self)
         
         # TODO: Generate the Optimizer's object in other place and pass it as a parameter to this class.
         # Optimizers and LRSchedulers
