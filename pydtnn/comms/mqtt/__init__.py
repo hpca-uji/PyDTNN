@@ -21,6 +21,7 @@ import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
 
 from pydtnn import comms
+from pydtnn.utils import UUID_NIL
 
 
 __all__ = (
@@ -38,15 +39,13 @@ class Protocol(comms.Communicator):
     _qos = 0
     _transport = "tcp"
     _protocol = mqtt_client.MQTTv311
-    _max_payload_size = 256 * 1024 ** 2 - 1
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
         """Communication initialization"""
-        super().__init__(addr, port)
-        self._max_payload_size -= self._transport_overhead()
+        super().__init__({**options, "max_payload": options.get("max_payload", 4 * 1024 ** 2) - self._transport_overhead()})
 
         # State
-        self._ack_queue = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._ack_queue = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}.acks")
 
         # MQTT
         self._client = mqtt_client.Client(
@@ -64,10 +63,10 @@ class Protocol(comms.Communicator):
 
     def _transport_overhead(self):
         """Calculate transport layer overhead"""
-        assert self._protocol is mqtt_client.MQTTv311 and self._qos == 0, f"Message size calculation not supported for {self._protocol} with QOS {self._qos}"
+        assert self._protocol is mqtt_client.MQTTv311 and self._qos == 0, f"Transport layer overhead calculation not supported for {self._protocol} with QOS {self._qos}"
         # Control Header (1), Variable Header Length (1-4), Topic Name Length (2), Topic Name (utf8)
         # Additionally: QOS >=1: Message ID (2); VERSION >=5: Properties (1-4 + packed)
-        return 1 + 4 + 2 + len(self._id.hex)
+        return 1 + 4 + 2 + len(UUID_NIL.hex)
 
     def _submit(self, fn, /, *args, **kwargs):
         """Process in the pool with exception handeling"""

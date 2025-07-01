@@ -5,13 +5,13 @@ import grpc
 import threading
 from collections import abc
 from queue import SimpleQueue, Empty
-from concurrent.futures import Future, ThreadPoolExecutor
+from concurrent.futures import Future
 
 from pydtnn import comms
+from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.comms.grpc import Protocol, grpc_pb2_grpc
-from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ConnectionState, ResourceClosed, Message
 
 
 __all__ = (
@@ -26,15 +26,14 @@ ARG_MISSING = object()
 class Client(Protocol):
     """gRPC client"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Client initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": 1})
 
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = ConnectionData()
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._state = self._new_state()
 
         self._get_grpc = SimpleQueue()
         self._put_grpc = threading.Event()
@@ -42,6 +41,7 @@ class Client(Protocol):
         # gRPC
         config: abc.MutableMapping = {
             "target": f"{self._addr}:{self._port}",
+            "options": list(self._options.items()),
             "compression": self._compression
         }
 
@@ -51,7 +51,8 @@ class Client(Protocol):
         else:
             self._channel = grpc.insecure_channel(**config)
 
-        self._client = grpc_pb2_grpc.gRPCStub(self._channel)
+        self._client = True
+        self._com = self._channel.stream_stream(method="/grpc/com", request_serializer=bytes, response_deserializer=lambda x: x)
 
         self._session_ini()
 
@@ -126,7 +127,7 @@ class Client(Protocol):
         """Communication round"""
         state = self._state
 
-        for data in self._m2d(self._client._com(self._s2m(state))):
+        for data in self._m2d(self._com(self._s2m(state))):
             state.get_buffer.write(data)
             self._get_flush()
 
@@ -134,7 +135,7 @@ class Client(Protocol):
             self._fin()
 
     @staticmethod
-    def _new_backoff(start=-10, end=1) -> abc.Generator[float]:
+    def _new_backoff(start=-10, end=0) -> abc.Generator[float]:
         """Exponential backoff generator"""
         if start >= end:
             raise ValueError(f"Null backoff range ({start} to {end})")

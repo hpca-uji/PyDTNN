@@ -28,7 +28,7 @@ import time
 from timeit import default_timer as timer
 
 # Typing-related import
-from typing import Any, TypeVar, Callable
+from typing import Any, TypeVar, Callable, TYPE_CHECKING
 from collections.abc import Iterable
 from .tracers import SimpleTracerGPU
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -151,43 +151,46 @@ def ensure_model_is_initialized(method:Callable):
     return wrapper_ensure_model_is_initialized
 # --- END ensure_model_is_initialized --- #
 
-def _initilize_communications(parallel: str) -> tuple[ModuleType | None, ModuleType | None]:
+
+# NOTE: can not specify a particular module
+type MPI_MODULE = ModuleType
+
+# NOTE: mpi4py has more functions, but no typing
+if TYPE_CHECKING:
+    from pydtnn.libs.mpi.client import Comm as MPI_COMM
+else:
+    MPI_COMM = ModuleType
+
+
+def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MODULE, MPI_COMM]:
     match parallel:
         case "sequential":
-            mpi = None
-            comm = None
+            return (None, None)
         case "data":
             if not MPI:
                 raise SystemExit("Please, install mpi4py to allow parallel MPI execution!")
-            mpi: ModuleType = MPI
-            comm: ModuleType = MPI.COMM_WORLD
+            return (MPI, MPI.COMM_WORLD)
         case _:
             raise SystemExit(f"Parallel option '{parallel}' not recognized.")
-    
-    return (mpi, comm)
 # --- END _initilize_communications --- #
 
-def _set_execution_attributes(comm: ModuleType | None, shared_storage: bool) -> tuple[float, int, int, int, int, int]:
 
+def _set_execution_attributes(comm: MPI_COMM | None, shared_storage: bool) -> tuple[float, int, int, int, int, int]:
     rank_weight = 1.0
     comm_rank = rank = 0
-    comm_size = nprocs = 1        
+    comm_size = nprocs = 1
     if comm:
-        # NOTE: "if MPI" was already check in "_initilize_communications"
-        # FIXME: remove this if-else.
-        if MPI:
-            comm_rank:int = comm.Get_rank() # NOTE: From libs.mpi.client.py
-            comm_size:int = comm.Get_size() # NOTE: From libs.mpi.client.py
-            if shared_storage:
-                rank = comm_rank
-                nprocs = comm_size
-            #else: Nothing each rank is independant
-        else:
-            raise SystemExit("Please, install mpi4py to allow parallel MPI execution!")
+        comm_rank = comm.Get_rank()
+        comm_size = comm.Get_size()
+        if shared_storage:
+            rank = comm_rank
+            nprocs = comm_size
+        # else: Nothing each rank is independant
     comm_groups = comm_size // nprocs
 
     return rank_weight, comm_rank, comm_size, rank, nprocs, comm_groups
 # --- END _set_execution_attributes --- #
+
 
 def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleType, enable_gpu: bool, 
                               tracer_pmlib_server:str, tracer_pmlib_port:int, tracer_pmlib_device:str) -> Tracer:

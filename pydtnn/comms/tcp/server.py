@@ -15,7 +15,7 @@ from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.utils import UUID_NIL, UUID_MAX
 from pydtnn.utils.asynctools import merge_futures
-from pydtnn.comms import ConnectionState, ResourceClosed, Message, ConnectionData
+from pydtnn.comms import CommunicatorOptions, ConnectionState, ResourceClosed, Message, ConnectionData
 
 
 __all__ = (
@@ -26,9 +26,9 @@ __all__ = (
 class Server(Protocol):
     """TCP server"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Server initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": options.get("workers", 4)})
 
         # State
         self._lock = threading.Condition()
@@ -57,14 +57,14 @@ class Server(Protocol):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData()
+            self._state[peer] = self._new_state()
+            self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
+
+            # ACK
             self._lock.notify_all()
+            self._session_ini(peer)
 
-        self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
         self._notify_selector()
-
-        # ACK
-        self._session_ini(peer)
 
     def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection events"""
@@ -131,7 +131,7 @@ class Server(Protocol):
         stream.close()
         state.state &= ~ConnectionState.READABLE
 
-    def _get_flush(self, peer: uuid.UUID):
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
         while True:
@@ -152,6 +152,8 @@ class Server(Protocol):
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
 
+        return peer
+
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
         peer = self._peers.inverse[sock]
@@ -159,7 +161,7 @@ class Server(Protocol):
 
         while True:
             try:
-                data = sock.recv(self._max_payload_size)
+                data = sock.recv(self._max_payload)
             except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 break
 
@@ -168,8 +170,7 @@ class Server(Protocol):
                 return
 
             state.get_buffer.write(data)
-            self._get_flush(peer)
-            peer = state.peer
+            peer = self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
@@ -179,7 +180,7 @@ class Server(Protocol):
         state.put_flush()
         if state.put_buffer.empty():
             return
-        with state.put_read() as view:
+        with state.put_read(self._max_payload) as view:
             try:
                 size = sock.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):

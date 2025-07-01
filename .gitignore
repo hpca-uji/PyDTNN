@@ -5,7 +5,9 @@
 /.vscode/
 /pydtnn/cython_modules/*.c
 __pycache__/
+*.pem
 *.so
 *.npz
 *.bin
 *.tar
+/notebook/

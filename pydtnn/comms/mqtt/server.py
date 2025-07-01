@@ -1,15 +1,15 @@
 """MQTT server"""
 
-from concurrent.futures import Future, ThreadPoolExecutor
 import uuid
 import threading
 from queue import SimpleQueue
+from concurrent.futures import Future
 
 from bidict import bidict
 import paho.mqtt.client as mqtt_client
 
 from pydtnn.comms.mqtt import Protocol
-from pydtnn.comms import ConnectionData, ConnectionState, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ConnectionData, ConnectionState, ResourceClosed, Message
 from pydtnn.utils import UUID_MAX, UUID_NIL
 from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Stream
@@ -27,17 +27,15 @@ END_COMM = b""
 class Server(Protocol):
     """MQTT server"""
 
-    def __init__(self, addr: str, port: int) -> None:
+    def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Server initialization"""
-        super().__init__(addr, port)
+        super().__init__({**options, "workers": options.get("workers", 4)})
 
         # State
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
         self._peers = bidict[uuid.UUID, str]()
         self._state = dict[uuid.UUID, ConnectionData]()
-
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
 
         # MQTT
         self._register_handler(topic="c2s/+", handler=self._c2s)
@@ -49,11 +47,11 @@ class Server(Protocol):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = ConnectionData()
-            self._lock.notify_all()
+            self._state[peer] = self._new_state()
 
-        # ACK
-        self._session_ini(peer)
+            # ACK
+            self._session_ini(peer)
+            self._lock.notify_all()
 
         return peer
 
@@ -120,7 +118,7 @@ class Server(Protocol):
 
         data = mqtt_message.payload
         state.get_buffer.write(data)
-        self._get_flush(peer)
+        peer = self._get_flush(peer)
 
     def _fin(self, peer: uuid.UUID) -> None:
         """Close connection"""
@@ -135,7 +133,7 @@ class Server(Protocol):
 
             self._lock.notify_all()
 
-    def _get_flush(self, peer: uuid.UUID):
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
         while True:
@@ -155,6 +153,8 @@ class Server(Protocol):
             else:
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
+
+        return peer
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
@@ -194,7 +194,7 @@ class Server(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_payload_size) as view:
+            with state.put_read(self._max_payload) as view:
                 self._publish(f"s2c/{peer.hex}", bytes(view))
 
         if not state.state and state.put_empty():
