@@ -490,7 +490,6 @@ class Model:
         if self.model_name:
             self._read_model(self.model_name)
         # Syncronization parameters
-        self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
         self.model_sync_alg: str # NOTE: This parameter come from Parser.
         self.model_sync_participation: str # NOTE: This parameter come from Parser.
         if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
@@ -866,6 +865,8 @@ class Model:
                 self.tensor_format, self.cudnn_dtype)
 
         self.history = {lm: [] for lm in (self.loss_and_metrics + [f"val_{m}" for m in self.loss_and_metrics])}
+
+        self.comm_nsamples = self.comm.allgather(self.dataset.train_nsamples) if self.comm else [self.dataset.train_nsamples]
 
         terminate = False # True: ends the following loop.
 
