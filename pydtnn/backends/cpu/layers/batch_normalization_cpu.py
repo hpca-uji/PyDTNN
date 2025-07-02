@@ -54,8 +54,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     # --
 
     def mean_numpy(self, data:np.ndarray, total:int, _mean:np.ndarray) -> None:
-        #np.mean(data, axis=0, out=_mean)
-        _mean = np.mean(data, axis=0, out=_mean)
+        np.mean(data, axis=0, out=_mean)
     # --
 
     def forward(self, x:np.ndarray) -> np.ndarray:
