@@ -79,8 +79,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
                 self.mean(x, n, self.mu)
                 x -= self.mu
-                x *= x                
-                self.mean(x, n, self.var)                
+                x *= x
+                self.mean(x, n, self.var)
                 self.xn:np.ndarray = x
                 
 
@@ -138,7 +138,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def backward(self, dy: np.ndarray) -> np.ndarray | None:
         if self.spatial:
-            dy = dy.reshape((-1, self.ci), copy=False)
+            dy = dy.reshape((-1, self.ci), copy=True)
 
         np.sum(dy * self.xn, axis=0, out=self.dgamma)
         np.sum(dy, axis=0, out=self.dbeta)
