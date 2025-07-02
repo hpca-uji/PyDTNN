@@ -65,6 +65,9 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = "NHWC"
+        params.dataset_name = "cifar10"
+        params.dataset_train_path = "datasets/cifar10"
+        params.dataset_test_path = "datasets/cifar10"
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -87,6 +90,9 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params.conv_gemm_trans = True
         params.conv_gemm_deconv = True
         params.tensor_format = "NHWC"
+        params.dataset_name = "cifar10"
+        params.dataset_train_path = "datasets/cifar10"
+        params.dataset_test_path = "datasets/cifar10"
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:

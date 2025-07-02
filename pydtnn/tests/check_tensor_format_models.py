@@ -55,6 +55,9 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         params = Params()
         params.model_name = model_name
         params.tensor_format = "NCHW"
+        params.dataset_name = "cifar10"
+        params.dataset_train_path = "datasets/cifar10"
+        params.dataset_test_path = "datasets/cifar10"
         return Model(**vars(params))
 
     @staticmethod
@@ -69,9 +72,9 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             if layer1.canonical_name == "Conv2D":
                 layer2.weights = layer1.weights.transpose(3, 0, 1, 2).copy()
-            else:
+            elif layer2.weights is not None:
                 layer2.weights = layer1.weights.copy()
-            layer2.biases = layer1.biases.copy()
+            layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
 
     def do_model2_forward_pass(self, model2, x1):
         """
