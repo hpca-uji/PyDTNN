@@ -11,8 +11,8 @@ type npDT_1Dims[T] = np.ndarray[tuple[int], T]
 def adaptive_avg_pooling_fwd_nchw_cython[T: npDT](x: npDT_4Dims[T], pooled_x: npDT_4Dims[T], new_h: int, new_w:int) -> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): data input.
-        pooled_x (npDT[:,:,:,::1]): ndarray where the output will be stored.
+        x (npDT_4Dims): data input.
+        pooled_x (npDT_4Dims): ndarray where the output will be stored.
         new_h (int): pooled_x's heigth.
         new_w (int): pooled_x's width.
 
@@ -25,8 +25,8 @@ def adaptive_avg_pooling_fwd_nchw_cython[T: npDT](x: npDT_4Dims[T], pooled_x: np
 def adaptive_avg_pooling_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4Dims[T], new_h: int, new_w:int) -> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): data input.
-        dx (npDT[:,:,:,::1]): ndarray where the output will be stored.
+        dy (npDT_4Dims): data input.
+        dx (npDT_4Dims): ndarray where the output will be stored.
         new_h (int): pooled_x's heigth.
         new_w (int): pooled_x's width.
 
@@ -43,8 +43,8 @@ def adaptive_avg_pooling_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4D
 def adaptive_avg_pooling_fwd_nhwc_cython[T: npDT](x: npDT_4Dims[T], pooled_x: npDT_4Dims[T], new_h: int, new_w:int) -> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): data input.
-        pooled_x (npDT[:,:,:,::1]): ndarray where the output will be stored.
+        x (npDT_4Dims): data input.
+        pooled_x (npDT_4Dims): ndarray where the output will be stored.
         new_h (int): pooled_x's heigth.
         new_w (int): pooled_x's width.
 
@@ -57,8 +57,8 @@ def adaptive_avg_pooling_fwd_nhwc_cython[T: npDT](x: npDT_4Dims[T], pooled_x: np
 def adaptive_avg_pooling_bwd_nhwc_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4Dims[T], new_h: int, new_w:int) -> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): data input.
-        dx (npDT[:,:,:,::1]): ndarray where the output will be stored.
+        dy (npDT_4Dims): data input.
+        dx (npDT_4Dims): ndarray where the output will be stored.
         new_h (int): pooled_x's heigth.
         new_w (int): pooled_x's width.
 
@@ -75,8 +75,8 @@ def adaptive_avg_pooling_bwd_nhwc_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4D
 def add_nchw_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
     """    
     Args:
-    x (npDT[:, ::1]): A contiguous memory view of the data. Since all the operations are made inplace, it's also where the output it's stored.
-    b (npDT[::1]): A contiguous memory view of the bias.
+    x (npDT_2Dims): A contiguous memory view of the data. Since all the operations are made inplace, it's also where the output it's stored.
+    b (npDT_1Dims): A contiguous memory view of the bias.
 
     Returns:
     - Nothing. The output is stored in x.
@@ -87,8 +87,8 @@ def add_nchw_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
 def add_nhwc_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
     """    
     Args:
-        x (npDT[:, ::1]): A contiguous memory view of the data. Since all the operations are made inplace, it's also where the output it's stored.
-        b (npDT[::1]): A contiguous memory view of the bias.
+        x (npDT_2Dims): A contiguous memory view of the data. Since all the operations are made inplace, it's also where the output it's stored.
+        b (npDT_1Dims): A contiguous memory view of the bias.
 
     Returns:
         Nothing. The output is stored in x.
@@ -101,16 +101,16 @@ def add_nhwc_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
 ##########
 def argmax_cython[T: npDT](x: npDT_2Dims[T], 
                            maxv: npDT_1Dims[T], 
-                           amax: npDT_1Dims[T:np.int32], 
-                           rng: npDT_1Dims[T:np.int32], 
+                           amax: np.ndarray[tuple[int], np.int32], 
+                           rng: np.ndarray[tuple[int], np.int32], 
                            axis:int = 0) -> tuple[npDT_1Dims[T:np.int32], npDT_1Dims[T:np.int32]]:
 
     """
     Args:
-        x (npDT[:,::1]): A view 2 dimensional inptu's ndarray.
-        maxv (npDT[::1]): A view to a ndarray of one of the npDT's types where the max values' will be stored.
-        amax (np.int32_t[::1]): view to a ndarray of type np.int32 where the arg max values' will be stored.
-        rng (np.int32_t[::1]): view to a ndarray of type np.int32 where some outputs will be stored.
+        x (npDT_2Dims): A view 2 dimensional inptu's ndarray.
+        maxv (npDT_1Dims): A view to a ndarray of one of the npDT's types where the max values' will be stored.
+        amax (np.ndarray[tuple[int], np.int32]): view to a ndarray of type np.int32 where the arg max values' will be stored.
+        rng (np.ndarray[tuple[int], np.int32]): view to a ndarray of type np.int32 where some outputs will be stored.
         axis (int): The axis where the argmax will be performed. Can be 0 or 1. Default: 0.
     
     Returns:
@@ -131,8 +131,8 @@ def average_pool_2d_fwd_nchw_cython[T: npDT](x:npDT_4Dims[T], y:npDT_4Dims[T],
                                              vdilation: int, hdilation: int) -> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
-        y (npDT[:,:,:,::1]): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
+        x (npDT_4Dims): The 4 dimensional input's ndarray.
+        y (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
@@ -158,12 +158,12 @@ def average_pool_2d_bwd_nchw_cython[T: npDT](dy:npDT_4Dims[T],
                                              vdilation: int, hdilation: int) -> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
-        dx (npDT[:,:,:,::1]): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter).
-        n (int): The number of images [T: npDT](usually, the batch size).
+        dy (npDT_4Dims): The 4 dimensional input's ndarray.
+        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter).
+        n (int): The number of images (usually, the batch size).
         h (int): The images' height.
         w (int): The images' width.
-        c (int): The images' number of channel's [T: npDT](e.g.: RGB = 3 channels).
+        c (int): The images' number of channel's(e.g.: RGB = 3 channels).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
@@ -192,8 +192,8 @@ def average_pool_2d_fwd_nhwc_cython[T: npDT](x:npDT_4Dims[T], y:npDT_4Dims[T],
 
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
-        y (npDT[:,:,:,::1]): The 4 dimensional output's ndarray.(the output's data is stored in this parameter).
+        x (npDT_4Dims): The 4 dimensional input's ndarray.
+        y (npDT_4Dims): The 4 dimensional output's ndarray.(the output's data is stored in this parameter).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
@@ -220,12 +220,12 @@ def average_pool_2d_bwd_nhwc_cython[T: npDT](dy:npDT_4Dims[T],
                                              vdilation: int, hdilation: int) -> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
-        dx (npDT[:,:,:,::1]): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
-        n (int): The number of images [T: npDT](usually, the batch size).
+        dy (npDT_4Dims): The 4 dimensional input's ndarray.
+        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
+        n (int): The number of images (usually, the batch size).
         h (int): The images' height.
         w (int): The images' width.
-        c (int): The images' number of channel's [T: npDT](e.g.: RGB = 3 channels).
+        c (int): The images' number of channel's (e.g.: RGB = 3 channels).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
@@ -254,12 +254,12 @@ def bn_inference_cython[T: npDT](x: npDT_2Dims[T:npDT],
                                  beta: npDT_1Dims[T:npDT]) -> None:
     """
     Args:
-        x (npDT[:, ::1]): The 2 dimensional input's ndarray.
-        y (npDT[:, ::1]): The 2 dimensional outputs's ndarray.
-        running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
-        gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
-        beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
+        x (npDT_2Dims): The 2 dimensional input's ndarray.
+        y (npDT_2Dims): The 2 dimensional outputs's ndarray.
+        running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
+        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
+        gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
+        beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
 
     Returns:
         Nothing. The output is stored in "y".
@@ -275,12 +275,12 @@ def bn_inference_nchw_cython[T: npDT](x: npDT_4Dims[T:npDT],
                                       beta: npDT_1Dims[T:npDT]) -> None:
     """
     Args:
-        x (npDTnpDT[:, :, :, ::1]): The 4 dimensional input's ndarray.
-        y (npDTnpDT[:, :, :, ::1]): The 4 dimensional output's ndarray.
-        running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
-        gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
-        beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
+        x (npDT_4Dims): The 4 dimensional input's ndarray.
+        y (npDT_4Dims): The 4 dimensional output's ndarray.
+        running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
+        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
+        gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
+        beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
 
     Returns:
         Nothing. The output will be stored in \"y\".
@@ -296,12 +296,12 @@ def bn_relu_inference_cython[T: npDT](x: npDT_2Dims[T:npDT],
                                       beta: npDT_1Dims[T:npDT]) -> None:
     """
     Args:
-        x (npDT[:, ::1]): The 2 dimensional input's ndarray.
-        y (npDT[:, ::1]): The 2 dimensional output's ndarray.
-        running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
-        gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
-        beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
+        x (npDT_2Dims): The 2 dimensional input's ndarray.
+        y (npDT_2Dims): The 2 dimensional output's ndarray.
+        running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
+        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
+        gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
+        beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
 
     Returns:
         Nothing. The output will be stored in \"y\".
@@ -323,10 +323,10 @@ def bn_training_fwd_cython[T: npDT](x: npDT_2Dims[T:npDT],
     """
     Args:
         x (np.ndarray[npDT, ndim=2]): The 4 dimensional input's ndarray.
-        running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
-        gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
-        beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
+        running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
+        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
+        gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
+        beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
 
     Returns:
         out: A tuple where:
@@ -350,13 +350,13 @@ def bn_training_bwd_cython[T: npDT](dx: npDT_2Dims[T],
                                     dbeta: npDT_1Dims[T]) -> None:
     """
     Args:
-        dx (npDT[:, ::1]): The 2 dimensional array that contains the gradient of the input forward's (that is the output).
-        dy (npDT[:, ::1]): The 2 dimensional array that contains the gradient of the backward's input.
-        xn (npDT[:, ::1]): The 2 dimensional array that contains the normalized input's value.
-        std (npDT[::1]): The 1 dimensions ndarray that stores the standard deviation
-        gamma (npDT[::1]): The input's 1 dimensions thtat stores the gamma's values
-        dgamma (npDT[::1]): The input's 1 dimensions ndarray the gradient of the gamma's values
-        dbeta (npDT[::1]): The input's 1 dimensions ndarray the  gradient of the beta's values
+        dx (npDT_2Dims): The 2 dimensional array that contains the gradient of the input forward's (that is the output).
+        dy (npDT_2Dims): The 2 dimensional array that contains the gradient of the backward's input.
+        xn (npDT_2Dims): The 2 dimensional array that contains the normalized input's value.
+        std (npDT_1Dims): The 1 dimensions ndarray that stores the standard deviation
+        gamma (npDT_1Dims): The input's 1 dimensions thtat stores the gamma's values
+        dgamma (npDT_1Dims): The input's 1 dimensions ndarray the gradient of the gamma's values
+        dbeta (npDT_1Dims): The input's 1 dimensions ndarray the  gradient of the beta's values
 
     Returns:
         Nothing. The output will be stored in "dx".
@@ -376,9 +376,9 @@ def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
                                         vdilation: int, hdilation: int)-> npDT_4Dims[T]:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
-        k (npDT[:,:,::1]): The 3dimensions ndarray that contains the kernel.
-        res (npDT[:,:,:,::1]): The 4 dimensional output's ndarray.
+        x (npDT_4Dims): The 4 dimensional input's ndarray.
+        k (npDT_3Dims): The 3dimensions ndarray that contains the kernel.
+        res (npDT_4Dims): The 4 dimensional output's ndarray.
         ho: (int): Output's height value.
         wo: (int): Output's width value.
         vpadding (int): vertical padding value.
@@ -405,11 +405,11 @@ def depthwise_conv_backward_nchw_cython[T: npDT](dy: npDT_4Dims[T],
                                                  vdilation: int, hdilation:int)-> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): The 4 dimensional array that contains the gradient of the backward's input.
-        x (npDT[:,:,:,::1]): The 4 dimensional array that contains the input forward's.
-        k (npDT[:,:,::1]): The 3 dimensional array that contains the kernel.
-        dx npDT[:,:,:,::1]: The 4 dimensional array that contains the input forward's gradient.
-        dw npDT[:,:,::1]: The 3 dimensional array that contains the kernel's gradient
+        dy (npDT_4Dims): The 4 dimensional array that contains the gradient of the backward's input.
+        x (npDT_4Dims): The 4 dimensional array that contains the input forward's.
+        k (npDT_3Dims): The 3 dimensional array that contains the kernel.
+        dx npDT_4Dims: The 4 dimensional array that contains the input forward's gradient.
+        dw npDT_3Dims: The 3 dimensional array that contains the kernel's gradient
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -431,9 +431,9 @@ def depthwise_conv_nhwc_cython[T: npDT](x: npDT_4Dims[T],
                                         vdilation: int, hdilation: int)-> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
-        k (npDT[:,:,::1]): The 3dimensions ndarray that contains the kernel.
-        res (npDT[:,:,:,::1]): The 4 dimensional output's ndarray.
+        x (npDT_4Dims): The 4 dimensional input's ndarray.
+        k (npDT_3Dims): The 3dimensions ndarray that contains the kernel.
+        res (npDT_4Dims): The 4 dimensional output's ndarray.
         ho: (int): Output's height value.
         wo: (int): Output's width value.
         vpadding (int): vertical padding value.
@@ -460,11 +460,11 @@ def depthwise_conv_backward_nhwc_cython[T: npDT](dy: npDT_4Dims[T],
                                                  vdilation: int, hdilation:int)-> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): The 4 dimensional array that contains the gradient of the backward's input.
-        x (npDT[:,:,:,::1]): The 4 dimensional array that contains the input forward's.
-        k (npDT[:,:,::1]): The 3 dimensional array that contains the kernel.
-        dx npDT[:,:,:,::1]: The 4 dimensional array that contains the input forward's gradient.
-        dw npDT[:,:,::1]: The 3 dimensional array that contains the kernel's gradient
+        dy (npDT_4Dims): The 4 dimensional array that contains the gradient of the backward's input.
+        x (npDT_4Dims): The 4 dimensional array that contains the input forward's.
+        k (npDT_3Dims): The 3 dimensional array that contains the kernel.
+        dx npDT_4Dims: The 4 dimensional array that contains the input forward's gradient.
+        dw npDT_3Dims: The 3 dimensional array that contains the kernel's gradient
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -484,8 +484,8 @@ def eltw_sum_cython[T: npDT](x_acc: npDT_1Dims[T], x: npDT_1Dims[T]) -> None:
     """
     This function adds the values of "x_acc" and "x" and accumulate them in "x_acc".
     Args:
-        x_acc (npDT[::1]): The 1 dimensional where the accumulation will be stored.
-        x (npDT[::1]): The 1 dimensional array with the data to accumulate.
+        x_acc (npDT_1Dims): The 1 dimensional where the accumulation will be stored.
+        x (npDT_1Dims): The 1 dimensional array with the data to accumulate.
     Returns:
         Nothing. The output is stored in "x_acc".
     """
@@ -502,7 +502,7 @@ def im2col_1ch_nchw_cython[T: npDT](x:npDT_4Dims[T],
                                     vdilation:int, hdilation:int) -> np.ndarray:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional array (the image).
+        x (npDT_4Dims): The 4 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -512,7 +512,7 @@ def im2col_1ch_nchw_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,::1]): The 2 dimensional array where the image as columns is stored.
+        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
     """
     ...
 # ---
@@ -525,7 +525,7 @@ def col2im_1ch_nchw_cython[T: npDT](cols:npDT_2Dims[T],
                                     vdilation: int, hdilation: int) -> np.ndarray:
     """
     Args:
-        cols (npDT[:,::1]): The 2 dimensional array (the image).
+        cols (npDT_2Dims): The 2 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -535,7 +535,7 @@ def col2im_1ch_nchw_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,:,:,::1]): The 4 dimensional array where the output image is stored.
+        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
     """
     ...
 # ---
@@ -550,7 +550,7 @@ def im2col_nchw_cython[T: npDT](x:npDT_4Dims[T],
                                     vdilation:int, hdilation:int) -> np.ndarray:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional array (the image).
+        x (npDT_4Dims): The 4 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -560,7 +560,7 @@ def im2col_nchw_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,::1]): The 2 dimensional array where the image as columns is stored.
+        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
     """
     ...
 # ---
@@ -573,7 +573,7 @@ def col2im_nchw_cython[T: npDT](cols:npDT_2Dims[T],
                                 vdilation: int, hdilation: int) -> np.ndarray:
     """
     Args:
-        cols (npDT[:,::1]): The 2 dimensional array (the image).
+        cols (npDT_2Dims): The 2 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -583,7 +583,7 @@ def col2im_nchw_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,:,:,::1]): The 4 dimensional array where the output image is stored.
+        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
     """
     ...
 # ---
@@ -598,7 +598,7 @@ def im2row_1ch_nhwc_cython[T: npDT](x:npDT_4Dims[T],
                                     vdilation:int, hdilation:int) -> np.ndarray:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional array (the image).
+        x (npDT_4Dims): The 4 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -608,7 +608,7 @@ def im2row_1ch_nhwc_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,::1]): The 2 dimensional array where the image as columns is stored.
+        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
     """
     ...
 # ---
@@ -621,7 +621,7 @@ def row2im_1ch_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
                                     vdilation: int, hdilation: int) -> np.ndarray:
     """
     Args:
-        cols (npDT[:,::1]): The 2 dimensional array (the image).
+        cols (npDT_2Dims): The 2 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -631,7 +631,7 @@ def row2im_1ch_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,:,:,::1]): The 4 dimensional array where the output image is stored.
+        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
     """
     ...
 # ---
@@ -646,7 +646,7 @@ def im2row_nhwc_cython[T: npDT](x:npDT_4Dims[T],
                                 vdilation:int, hdilation:int) -> np.ndarray:
     """
     Args:
-        x (npDT[:,:,:,::1]): The 4 dimensional array (the image).
+        x (npDT_4Dims): The 4 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -656,7 +656,7 @@ def im2row_nhwc_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,::1]): The 2 dimensional array where the image as columns is stored.
+        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
     """
     ...
 # ---
@@ -669,7 +669,7 @@ def row2im_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
                                 vdilation: int, hdilation: int) -> np.ndarray:
     """
     Args:
-        cols (npDT[:,::1]): The 2 dimensional array (the image).
+        cols (npDT_2Dims): The 2 dimensional array (the image).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -679,7 +679,7 @@ def row2im_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT[:,:,:,::1]): The 4 dimensional array where the output image is stored.
+        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
     """
     ...
 # ---
@@ -698,9 +698,9 @@ def max_pool_2d_fwd_nchw_cython[T: npDT](x: npDT_4Dims[T],
                                          minval: npDT) -> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): 4-dimensinal array where the input data is stored.
-        y (npDT[:,:,:,::1]): 4-dimensinal array where the output data will be stored.
-        idx_max (np.int32_t[:,:,:,::1]): 4-dimensinal array where the index of the maximum values will be stored.
+        x (npDT_4Dims): 4-dimensinal array where the input data is stored.
+        y (npDT_4Dims): 4-dimensinal array where the output data will be stored.
+        idx_max (np.ndarray[tuple[int, int, int, int], np.int32]): 4-dimensinal array where the index of the maximum values will be stored.
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         ho (int): Output's heigth 
@@ -728,9 +728,9 @@ def max_pool_2d_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T],
                                          vdilation: int, hdilation: int) -> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): 4-dimensinal array where the input data will be stored.
-        idx_max (np.int32_t[:,:,:,::1]): 4-dimensinal array where the index of the maximum values will be stored.
-        dx (npDT[:,:,:,::1]): 4 dimensional ndarray where the gradient is stored.
+        dy (npDT_4Dims): 4-dimensinal array where the input data will be stored.
+        idx_max (np.ndarray[tuple[int, int, int, int], np.int32]): 4-dimensinal array where the index of the maximum values will be stored.
+        dx (npDT_4Dims): 4 dimensional ndarray where the gradient is stored.
         n (int): Number of samples.
         h (int): Sample's heigth.
         w (int): Sample's width.
@@ -765,9 +765,9 @@ def max_pool_2d_fwd_nhwc_cython[T: npDT](x: npDT_4Dims[T],
                                          minval: npDT) -> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): 4-dimensinal array where the input data is stored.
-        y (npDT[:,:,:,::1]): 4-dimensinal array where the output data will be stored.
-        idx_max (np.int32_t[:,:,:,::1]): 4-dimensinal array where the index of the maximum values will be stored.
+        x (npDT_4Dims): 4-dimensinal array where the input data is stored.
+        y (npDT_4Dims): 4-dimensinal array where the output data will be stored.
+        idx_max (np.ndarray[tuple[int, int, int, int], np.int32]): 4-dimensinal array where the index of the maximum values will be stored.
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         ho (int): Output's heigth 
@@ -795,9 +795,9 @@ def max_pool_2d_bwd_nhwc_cython[T: npDT](dy: npDT_4Dims[T],
                                          vdilation: int, hdilation: int) -> None:
     """
     Args:
-        dy (npDT[:,:,:,::1]): 4-dimensinal array where the input data will be stored.
-        idx_max (np.int32_t[:,:,:,::1]): 4-dimensinal array where the index of the maximum values will be stored.
-        dx (npDT[:,:,:,::1]): 4 dimensional ndarray where the gradient is stored.
+        dy (npDT_4Dims): 4-dimensinal array where the input data will be stored.
+        idx_max (np.ndarray[tuple[int, int, int, int], np.int32]): 4-dimensinal array where the index of the maximum values will be stored.
+        dx (npDT_4Dims): 4 dimensional ndarray where the gradient is stored.
         n (int): Number of samples.
         h (int): Sample's heigth.
         w (int): Sample's width.
@@ -841,9 +841,9 @@ def memoryview_index(view: memoryview, sub: bytes) -> int:
 def pointwise_conv_cython[T: npDT](x: npDT_4Dims[T],  k: npDT_2Dims[T], out: npDT_4Dims[T]) -> None:
     """
     Args:
-        x (npDT[:,:,:,::1]): 4-dimensinal array where the input data is stored.
-        k (npDT[:,::1]): 2-dimensinal array where the kernel is stored.
-        out (npDT[:,:,:,::1]): 4-dimensinal array where the output is stored.
+        x (npDT_4Dims): 4-dimensinal array where the input data is stored.
+        k (npDT_2Dims): 2-dimensinal array where the kernel is stored.
+        out (npDT_4Dims): 4-dimensinal array where the output is stored.
     Returns:
         Nothing. The output is stored in \"out\".
     """
@@ -859,9 +859,9 @@ def relu_cython[T:npDT](x: npDT_1Dims[T],
                         mask: np.ndarray[tuple[int], np.int8]) -> None:
     """
     Args:
-        x (npDT[::1]): 1-dimensional input's array.
-        max (npDT[::1]): 1-dimensional array where the ouput is stored
-        mask (np.int8_t[::1]): 1-dimensional array where the output's mask is stored.
+        x (npDT_1Dims): 1-dimensional input's array.
+        max (npDT_1Dims): 1-dimensional array where the ouput is stored
+        mask (np.ndarray[tuple[int], np.int8]): 1-dimensional array where the output's mask is stored.
     Returns:
         Nothing. The output is stored in "max" and "mask".
     """
@@ -879,9 +879,9 @@ def capped_relu_cython[T:npDT](x: npDT_1Dims[T],
     Note: if cap is 6, this is a Relu6
 
     Args:
-        x (npDT[::1]): 1-dimensional input's array.
-        max (npDT[::1]): 1-dimensional array where the ouput is stored
-        mask (np.int8_t[::1]): 1-dimensional array where the output's mask is stored.
+        x (npDT_1Dims): 1-dimensional input's array.
+        max (npDT_1Dims): 1-dimensional array where the ouput is stored
+        mask (np.ndarray[tuple[int], np.int8]): 1-dimensional array where the output's mask is stored.
         cap (float): The ReLU's superior limit. Any value in x greater that this parameter will be set to this parameter in the ouput.
     Returns:
         Nothing. The output is stored in "max" and "mask".
@@ -895,9 +895,9 @@ def leaky_relu_cython[T:npDT](x: npDT_1Dims[T],
                                negative_slope: float) -> None:
     """
     Args:
-        x (npDT[::1]): 1-dimensional input's array.
-        max (npDT[::1]): 1-dimensional array where the ouput is stored
-        mask (np.int8_t[::1]): 1-dimensional array where the output's mask is stored.
+        x (npDT_1Dims): 1-dimensional input's array.
+        max (npDT_1Dims): 1-dimensional array where the ouput is stored
+        mask (np.ndarray[tuple[int], np.int8]): 1-dimensional array where the output's mask is stored.
         negative_slope (float): The negative value's multiplayer (if is 0, this function acts as a normal ReLU)
     Returns:
         Nothing. The output is stored in "max" and "mask".
@@ -916,8 +916,8 @@ def transpose_0231_ikj_cython[T:npDT](original: npDT_3Dims[T:npDT],
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
     
     Args:
-        original (np.ndarray[npDT, ndim=3]): The original matrix.
-        transposed (np.ndarray[npDT, ndim=3]): The matrix to transpose.
+        original npDT_3Dims): The original matrix.
+        transposed npDT_3Dims): The matrix to transpose.
     Returns:
         Nothing. The output is stored in "transposed"
     """
@@ -931,8 +931,8 @@ def transpose_0231_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 0x2·3x1
 
     Args:
-        original (np.ndarray[npDT, ndim=3]): The original matrix.
-        transposed (np.ndarray[npDT, ndim=3]): The matrix to transpose.
+        original npDT_3Dims): The original matrix.
+        transposed npDT_3Dims): The matrix to transpose.
     Returns:
         Nothing. The output is stored in "transposed"
     """
@@ -947,8 +947,8 @@ def transpose_0312_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
     This is equivalent to transpose a 3D matrix 0x1·2x3 to 0x3x1·2
 
     Args:
-        original (np.ndarray[npDT, ndim=3]): The original matrix.
-        transposed (np.ndarray[npDT, ndim=3]): The matrix to transpose.
+        original npDT_3Dims): The original matrix.
+        transposed npDT_3Dims): The matrix to transpose.
     Returns:
         Nothing. The output is stored in "transposed"
     """
@@ -963,8 +963,8 @@ def transpose_1023_jik_cython[T:npDT](original: npDT_3Dims[T:npDT],
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 1x0x2·3
 
     Args:
-        original (np.ndarray[npDT, ndim=3]): The original matrix.
-        transposed (np.ndarray[npDT, ndim=3]): The matrix to transpose.
+        original npDT_3Dims): The original matrix.
+        transposed npDT_3Dims): The matrix to transpose.
     Returns:
         Nothing. The output is stored in "transposed"
     """
@@ -979,8 +979,8 @@ def transpose_1023_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
     This is equivalent to transpose a 3D matrix 0x1x2·3 to 1x0x2·3
 
     Args:
-        original (np.ndarray[npDT, ndim=3]): The original matrix.
-        transposed (np.ndarray[npDT, ndim=3]): The matrix to transpose.
+        original npDT_3Dims): The original matrix.
+        transposed npDT_3Dims): The matrix to transpose.
     Returns:
         Nothing. The output is stored in "transposed"
     """
