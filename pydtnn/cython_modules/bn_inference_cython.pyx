@@ -41,14 +41,13 @@ ctypedef fused npDT:
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def bn_inference_cython(npDT[:, ::1] x,
+                        npDT[:, ::1] y,
                         npDT[::1] running_mean, 
                         npDT[::1] inv_std, 
                         npDT[::1] gamma, 
-                        npDT[::1] beta) -> np.ndarray[npDT]:
+                        npDT[::1] beta) -> None:
     #   xn = (x - self.running_mean) * inv_std
-    #   y = gamma * xn + beta
-
-    cdef np.ndarray[npDT, ndim=2] y = np.empty_like(x, order="C", dtype=x.dtype)    
+    #   y = gamma * xn + beta    
 
     cdef int i, j = 0
     cdef npDT tmp
@@ -56,9 +55,7 @@ def bn_inference_cython(npDT[:, ::1] x,
     for i in prange(x.shape[0], nogil=True, schedule='static'):
         for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
-            y[i, j] = (tmp * gamma[j]) + beta[j]   
-
-    return y 
+            y[i, j] = (tmp * gamma[j]) + beta[j]
 # --- END bn_inference_cython --- #
 
 # ==================================== #
@@ -71,14 +68,13 @@ def bn_inference_cython(npDT[:, ::1] x,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def bn_inference_nchw_cython(npDT[:, :, :, ::1] x, 
+                             npDT[:, :, :, ::1] y,
                              npDT[::1] running_mean, 
                              npDT[::1] inv_std, 
                              npDT[::1] gamma, 
-                             npDT[::1] beta) -> np.ndarray[npDT]:
+                             npDT[::1] beta) -> None:
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
-
-    cdef np.ndarray[npDT, ndim=4] y = np.zeros_like(x, order="C", dtype=x.dtype)
 
     cdef int i, j, h, w
     cdef npDT tmp
@@ -90,7 +86,6 @@ def bn_inference_nchw_cython(npDT[:, :, :, ::1] x,
                     tmp = (x[i, j, h, w] - running_mean[j]) * inv_std[j]
                     y[i, j, h, w] = (tmp * gamma[j]) + beta[j]
 
-    return y
 # --- END bn_inference_nchw_cython --- #
 
 # ==================================== #
@@ -105,14 +100,15 @@ def bn_inference_nchw_cython(npDT[:, :, :, ::1] x,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def bn_relu_inference_cython(npDT[:, ::1] x,
+                             npDT[:, ::1] y,
                              npDT[::1] running_mean,
                              npDT[::1] inv_std,
                              npDT[::1] gamma,
-                             npDT[::1] beta) -> np.ndarray[npDT]:
+                             npDT[::1] beta) -> None:
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
     
-    cdef np.ndarray[npDT, ndim=2] y = np.zeros_like(x, order="C", dtype=x.dtype)
+    # cdef np.ndarray[npDT, ndim=2] y = np.zeros_like(x, order="C", dtype=x.dtype)
 
     
     cdef int i, j = 0
@@ -122,8 +118,6 @@ def bn_relu_inference_cython(npDT[:, ::1] x,
         for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
             y[i, j] = max((tmp * gamma[j]) + beta[j], 0)
-
-    return y
 # --- END bn_relu_inference_cython --- #
 
 # --- END ReLU Batch Normalization --- #

@@ -35,12 +35,13 @@ class PointwiseVariant(Conv2D, ABC):
             self._x:np.ndarray = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
-        y = np.matmul(x, self.weights)
+        y = np.linalg.matmul(x, self.weights)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
         if self.use_bias:
-            y += self.biases.reshape((1, 1, 1, self.co))
+            # TODO: POSIBLE MEJORA
+            y += self.biases.reshape((1, 1, 1, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
     # --- END _forward_pointwise_nhwc --- #
@@ -51,7 +52,7 @@ class PointwiseVariant(Conv2D, ABC):
             self._x:np.ndarray = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
-        y = np.matmul(best_transpose_0231(x), self.weights.T)
+        y = np.linalg.matmul(best_transpose_0231(x), self.weights.T)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
@@ -60,7 +61,8 @@ class PointwiseVariant(Conv2D, ABC):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
         if self.use_bias:
-            y += self.biases.reshape((1, self.co, 1, 1))
+            # TODO: POSIBLE MEJORA
+            y += self.biases.reshape((1, self.co, 1, 1), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
     # --- END _forward_pointwise_nchw --- #
@@ -78,7 +80,7 @@ class PointwiseVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        res:np.ndarray = np.matmul(self._x, reshaped_dy)
+        res:np.ndarray = np.linalg.matmul(self._x, reshaped_dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
@@ -98,7 +100,7 @@ class PointwiseVariant(Conv2D, ABC):
             reshaped_dy:np.ndarray = dy.reshape((self.co, -1))
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-            dx:np.ndarray = np.matmul(w, reshaped_dy)
+            dx:np.ndarray = np.linalg.matmul(w, reshaped_dy)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # NOTE: Remember, dx must have the forward's input shape.
@@ -120,7 +122,7 @@ class PointwiseVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        res:np.ndarray = np.matmul(self._x, reshaped_dy)
+        res:np.ndarray = np.linalg.matmul(self._x, reshaped_dy)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
@@ -140,7 +142,7 @@ class PointwiseVariant(Conv2D, ABC):
             reshaped_dy:np.ndarray = dy.reshape((self.co, -1))
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-            dx:np.ndarray = np.matmul(w, reshaped_dy)
+            dx:np.ndarray = np.linalg.matmul(w, reshaped_dy)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
             # NOTE: Remember, dx must have the same shape as forward input's shape.

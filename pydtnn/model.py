@@ -95,6 +95,9 @@ supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
 
+#import warnings
+#warnings.filterwarnings("error")
+
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     from pydtnn.libs.mpi import MPI

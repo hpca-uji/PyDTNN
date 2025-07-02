@@ -58,18 +58,17 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
 
     def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
-        y = np.empty((x.shape[0], self.ci, self.ho, self.wo), dtype=self.model.dtype)
-        idx_max = np.empty((x.shape[0], self.ci, self.ho, self.wo), dtype=np.int32)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        max_pool_2d_fwd_nhwc_cython(x, y, idx_max, 
+        y = np.empty((x.shape[0], self.ho, self.wo, self.ci), dtype=self.model.dtype)
+        self.idx_max = np.empty((x.shape[0], self.ho, self.wo, self.ci), dtype=np.int32)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)    
+        max_pool_2d_fwd_nhwc_cython(x, y, self.idx_max, 
                                     self.kh, self.kw, self.ho, self.wo, 
                                     self.vpadding, self.hpadding,
                                     self.vstride, self.hstride, 
                                     self.vdilation, self.hdilation, 
                                     self.minval)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        if self.model.mode == TRAIN_MODE:
-            self.idx_max = idx_max
         return y
 
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:

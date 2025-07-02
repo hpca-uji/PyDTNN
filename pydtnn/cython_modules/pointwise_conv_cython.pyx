@@ -35,7 +35,7 @@ ctypedef fused npDT:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k) -> np.ndarray:
+def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k, npDT[:,:,:,::1] out) -> None:
 
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -44,7 +44,7 @@ def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k) -> np.ndarray:
 
     cdef int co = k.shape[0]
 
-    cdef npDT[:,:,:,::1] out = np.zeros((n, co, h, w))
+    #cdef npDT[:,:,:,::1] out = np.zeros((n, co, h, w))
 
     cdef int nn, cco, cc, ii, jj
 
@@ -54,6 +54,4 @@ def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k) -> np.ndarray:
                 for ii in range(h):
                     for jj in range(w):
                         out[nn, cco, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
-
-    return out
 # --- END pointwise_conv_cython --- #
