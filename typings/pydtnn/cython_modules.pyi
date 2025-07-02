@@ -247,58 +247,64 @@ def average_pool_2d_bwd_nhwc_cython[T: npDT](dy:npDT_4Dims[T],
 # B. N. INFERENCE #
 ###################
 def bn_inference_cython[T: npDT](x: npDT_2Dims[T:npDT],
+                                 y: npDT_2Dims[T:npDT],
                                  running_mean: npDT_1Dims[T:npDT], 
                                  inv_std: npDT_1Dims[T:npDT], 
                                  gamma: npDT_1Dims[T:npDT], 
-                                 beta: npDT_1Dims[T:npDT]) -> npDT_2Dims[T:npDT]:
+                                 beta: npDT_1Dims[T:npDT]) -> None:
     """
     Args:
         x (npDT[:, ::1]): The 2 dimensional input's ndarray.
+        y (npDT[:, ::1]): The 2 dimensional outputs's ndarray.
         running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
         inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
         gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
         beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
 
     Returns:
-        out (np.ndarray): a 2 dimensional npDT ndarray where the inference's batch normalization is stored.
+        Nothing. The output is stored in "y".
     """
     ...
 # ---
 
 def bn_inference_nchw_cython[T: npDT](x: npDT_4Dims[T:npDT],
+                                      y: npDT_4Dims[T:npDT],
                                       running_mean: npDT_1Dims[T:npDT], 
                                       inv_std: npDT_1Dims[T:npDT], 
                                       gamma: npDT_1Dims[T:npDT], 
-                                      beta: npDT_1Dims[T:npDT]) -> npDT_4Dims[T:npDT]:
+                                      beta: npDT_1Dims[T:npDT]) -> None:
     """
     Args:
         x (npDTnpDT[:, :, :, ::1]): The 4 dimensional input's ndarray.
+        y (npDTnpDT[:, :, :, ::1]): The 4 dimensional output's ndarray.
         running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
         inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
         gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
         beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
 
     Returns:
-        out (np.ndarray): a 4 dimensional npDT ndarray where the inference's batch normalization is stored.
+        Nothing. The output will be stored in \"y\".
     """
     ...
 # ---
 
 def bn_relu_inference_cython[T: npDT](x: npDT_2Dims[T:npDT],
+                                      y: npDT_2Dims[T:npDT],
                                       running_mean: npDT_1Dims[T:npDT], 
                                       inv_std: npDT_1Dims[T:npDT], 
                                       gamma: npDT_1Dims[T:npDT], 
-                                      beta: npDT_1Dims[T:npDT]) -> npDT_2Dims[T:npDT]:
+                                      beta: npDT_1Dims[T:npDT]) -> None:
     """
     Args:
         x (npDT[:, ::1]): The 2 dimensional input's ndarray.
+        y (npDT[:, ::1]): The 2 dimensional output's ndarray.
         running_mean (npDT[::1]): The 1 dimensions ndarray that stores the running mean.
         inv_std (npDT[::1]): The input's 1 dimensions thtat stores the inverse standard deviation
         gamma (npDT[::1]): The input's 1 dimensions ndarray the gamma's values
         beta (npDT[::1]): The input's 1 dimensions ndarray the beta's values
 
     Returns:
-        out (np.ndarray): a 2 dimensional npDT ndarray where the output is stored.
+        Nothing. The output will be stored in \"y\".
     """
     ...
 # ---
@@ -344,7 +350,7 @@ def bn_training_bwd_cython[T: npDT](dx: npDT_2Dims[T],
                                     dbeta: npDT_1Dims[T]) -> None:
     """
     Args:
-        dx (npDT[:, ::1]): The 2 dimensional array that contains the gradient of the forward's input (that is the output).
+        dx (npDT[:, ::1]): The 2 dimensional array that contains the gradient of the input forward's (that is the output).
         dy (npDT[:, ::1]): The 2 dimensional array that contains the gradient of the backward's input.
         xn (npDT[:, ::1]): The 2 dimensional array that contains the normalized input's value.
         std (npDT[::1]): The 1 dimensions ndarray that stores the standard deviation
@@ -363,6 +369,8 @@ def bn_training_bwd_cython[T: npDT](dx: npDT_2Dims[T],
 ##################
 def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
                                         k: npDT_3Dims[T],
+                                        res: npDT_4Dims[T] ,
+                                        ho: int, wo: int,
                                         vpadding: int, hpadding: int, 
                                         vstride: int, hstride: int, 
                                         vdilation: int, hdilation: int)-> npDT_4Dims[T]:
@@ -370,6 +378,9 @@ def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
     Args:
         x (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
         k (npDT[:,:,::1]): The 3dimensions ndarray that contains the kernel.
+        res (npDT[:,:,:,::1]): The 4 dimensional output's ndarray.
+        ho: (int): Output's height value.
+        wo: (int): Output's width value.
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -378,7 +389,7 @@ def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
         hdilation (int): horizontal dilation value.
 
     Returns:
-        A 4-dimensional np.ndarray.
+        Nothing. The value is stores in \"res\".
     """
     ...
     ...
@@ -387,14 +398,18 @@ def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
 def depthwise_conv_backward_nchw_cython[T: npDT](dy: npDT_4Dims[T],
                                                  x: npDT_4Dims[T],
                                                  k: npDT_3Dims[T],
+                                                 dx: npDT_4Dims[T],
+                                                 dw: npDT_3Dims[T],
                                                  vpadding: int, hpadding:int, 
                                                  vstride: int, hstride:int, 
-                                                 vdilation: int, hdilation:int)-> tuple[npDT_4Dims[T], npDT_3Dims[T]]:
+                                                 vdilation: int, hdilation:int)-> None:
     """
     Args:
         dy (npDT[:,:,:,::1]): The 4 dimensional array that contains the gradient of the backward's input.
-        x (npDT[:,:,:,::1]): The 4 dimensional array that contains the forward's input.
+        x (npDT[:,:,:,::1]): The 4 dimensional array that contains the input forward's.
         k (npDT[:,:,::1]): The 3 dimensional array that contains the kernel.
+        dx npDT[:,:,:,::1]: The 4 dimensional array that contains the input forward's gradient.
+        dw npDT[:,:,::1]: The 3 dimensional array that contains the kernel's gradient
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -402,22 +417,25 @@ def depthwise_conv_backward_nchw_cython[T: npDT](dy: npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out: A tuple where:
-            - dx (npDT[:,:,:,::1]): The 4 dimensional array that contains the x's gradient.
-            - dk (npDT[:,:,::1]): The 3 dimensional array that contains the kernel's gradients.
+        Nothing. The outputs are stored in \"dx\" and \"dw\".
     """
     ...
 # ---
 
 def depthwise_conv_nhwc_cython[T: npDT](x: npDT_4Dims[T],
                                         k: npDT_3Dims[T],
+                                        res: npDT_4Dims[T] ,
+                                        ho: int, wo: int,
                                         vpadding: int, hpadding: int, 
                                         vstride: int, hstride: int, 
-                                        vdilation: int, hdilation: int)-> npDT_4Dims[T]:
+                                        vdilation: int, hdilation: int)-> None:
     """
     Args:
         x (npDT[:,:,:,::1]): The 4 dimensional input's ndarray.
         k (npDT[:,:,::1]): The 3dimensions ndarray that contains the kernel.
+        res (npDT[:,:,:,::1]): The 4 dimensional output's ndarray.
+        ho: (int): Output's height value.
+        wo: (int): Output's width value.
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -426,7 +444,7 @@ def depthwise_conv_nhwc_cython[T: npDT](x: npDT_4Dims[T],
         hdilation (int): horizontal dilation value.
 
     Returns:
-        A 4-dimensional np.ndarray.
+        Nothing. The value is stores in \"res\".
     """
     ...
     ...
@@ -435,14 +453,18 @@ def depthwise_conv_nhwc_cython[T: npDT](x: npDT_4Dims[T],
 def depthwise_conv_backward_nhwc_cython[T: npDT](dy: npDT_4Dims[T],
                                                  x: npDT_4Dims[T],
                                                  k: npDT_3Dims[T],
+                                                 dx: npDT_4Dims[T],
+                                                 dw: npDT_3Dims[T],
                                                  vpadding: int, hpadding:int, 
                                                  vstride: int, hstride:int, 
-                                                 vdilation: int, hdilation:int)-> tuple[npDT_4Dims[T], npDT_3Dims[T]]:
+                                                 vdilation: int, hdilation:int)-> None:
     """
     Args:
         dy (npDT[:,:,:,::1]): The 4 dimensional array that contains the gradient of the backward's input.
-        x (npDT[:,:,:,::1]): The 4 dimensional array that contains the forward's input.
+        x (npDT[:,:,:,::1]): The 4 dimensional array that contains the input forward's.
         k (npDT[:,:,::1]): The 3 dimensional array that contains the kernel.
+        dx npDT[:,:,:,::1]: The 4 dimensional array that contains the input forward's gradient.
+        dw npDT[:,:,::1]: The 3 dimensional array that contains the kernel's gradient
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -450,9 +472,7 @@ def depthwise_conv_backward_nhwc_cython[T: npDT](dy: npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out: A tuple where:
-            - dx (npDT[:,:,:,::1]): The 4 dimensional array that contains the x's gradient.
-            - dk (npDT[:,:,::1]): The 3 dimensional array that contains the kernel's gradients.
+        Nothing. The outputs are stored in \"dx\" and \"dw\".
     """
     ...
 # ---
@@ -818,13 +838,14 @@ def memoryview_index(view: memoryview, sub: bytes) -> int:
 # POINTWISE CONV #
 ##################
 
-def pointwise_conv_cython[T: npDT](x: npDT_4Dims[T],  k: npDT_2Dims[T]) -> np.ndarray:
+def pointwise_conv_cython[T: npDT](x: npDT_4Dims[T],  k: npDT_2Dims[T], out: npDT_4Dims[T]) -> None:
     """
     Args:
         x (npDT[:,:,:,::1]): 4-dimensinal array where the input data is stored.
         k (npDT[:,::1]): 2-dimensinal array where the kernel is stored.
-    Returns:
         out (npDT[:,:,:,::1]): 4-dimensinal array where the output is stored.
+    Returns:
+        Nothing. The output is stored in \"out\".
     """
     ...
 # ---

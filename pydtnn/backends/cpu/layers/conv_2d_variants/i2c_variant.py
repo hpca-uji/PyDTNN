@@ -115,7 +115,6 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
         if self.use_bias:            
             self.db:np.ndarray = np.sum(dy, axis=(0, 1, 2))
-            print(f"{self.db.shape=}")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.need_dx:

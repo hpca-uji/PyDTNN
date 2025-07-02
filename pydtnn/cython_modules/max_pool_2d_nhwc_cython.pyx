@@ -71,7 +71,9 @@ def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                                     val = x[nn, x_x, x_y, cc]
                                     if val > maxval:
                                         maxval, idx_maxval = val, ii * kw + jj
-                    y[nn, xx, yy, cc], idx_max[nn, xx, yy, cc] = maxval, idx_maxval
+                    y[nn, xx, yy, cc] = maxval
+                    idx_max[nn, xx, yy, cc] = idx_maxval
+                    
 # --- END max_pool_2d_fwd_nhwc_cython --- #
 # --- END Forward --- #
 
