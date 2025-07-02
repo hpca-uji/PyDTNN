@@ -60,7 +60,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     def forward(self, x:np.ndarray) -> np.ndarray:
 
         if self.model.mode == ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-            y:np.ndarray = bn_inference_nchw_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
+            y = np.zeros_like(x, order="C", dtype=x.dtype)
+            bn_inference_nchw_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
             return y
 
         if self.spatial:
@@ -118,7 +119,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                     np.sqrt(self.inv_std, out=self.inv_std)
                     np.reciprocal(self.inv_std, out=self.inv_std)                    
 
-                y = bn_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)                
+                y = np.empty_like(x, order="C", dtype=self.model.dtype)
+                bn_inference_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)                
             case _:
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 

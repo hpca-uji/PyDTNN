@@ -33,9 +33,12 @@ class DepthwiseVariant(Conv2D, ABC):
     def _forward_depthwise_nhwc(self, x:np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
 
+        res = np.zeros((x.shape[0], self.ho, self.wo, self.ci), dtype=self.model.dtype)
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
-        res:np.ndarray = depthwise_conv_nhwc_cython(x, self.weights, self.vpadding, self.hpadding,
-                                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+        depthwise_conv_nhwc_cython(x, self.weights, res, self.ho, self.wo,
+                                   self.vpadding, self.hpadding,
+                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.need_dx:
@@ -55,9 +58,12 @@ class DepthwiseVariant(Conv2D, ABC):
     def _forward_depthwise_nchw(self, x:np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
 
+        res = np.zeros((x.shape[0], self.ci, self.ho, self.wo), dtype=self.model.dtype)
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
-        res:np.ndarray = depthwise_conv_nchw_cython(x, self.weights, self.vpadding, self.hpadding,
-                                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+        depthwise_conv_nchw_cython(x, self.weights, res, self.ho, self.wo,
+                                   self.vpadding, self.hpadding,
+                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
@@ -72,14 +78,19 @@ class DepthwiseVariant(Conv2D, ABC):
 
     def _backward_depthwise_nhwc(self, dy:np.ndarray) -> np.ndarray | None:
         
+        dx = np.zeros_like(self.x)
+        self.dw = np.zeros_like(self.weights)
+
         #np.ndarray dx, self.dw
-        dx, self.dw = depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
-                                                          self.vpadding, self.hpadding,
-                                                          self.vstride, self.hstride,
-                                                          self.vdilation, self.hdilation)
+        depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
+                                            dx, self.dw,
+                                            self.vpadding, self.hpadding,
+                                            self.vstride, self.hstride,
+                                            self.vdilation, self.hdilation)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            # TODO: POSIBLE MEJORA
             self.db:np.ndarray = np.sum(dy, axis=(0, 1, 2)).reshape((self.co,), copy=False)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -89,14 +100,18 @@ class DepthwiseVariant(Conv2D, ABC):
 
     def _backward_depthwise_nchw(self, dy:np.ndarray) -> np.ndarray | None:
         
-        #np.ndarray dx, self.dw
-        dx, self.dw = depthwise_conv_backward_nchw_cython(dy, self.weights, self.x,
-                                                          self.vpadding, self.hpadding,
-                                                          self.vstride, self.hstride,
-                                                          self.vdilation, self.hdilation)
+        dx = np.zeros_like(self.x)
+        self.dw = np.zeros_like(self.weights)
+    
+        depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,
+                                            dx, self.dw,
+                                            self.vpadding, self.hpadding,
+                                            self.vstride, self.hstride,
+                                            self.vdilation, self.hdilation)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            # TODO: POSIBLE MEJORA
             self.db:np.ndarray = np.sum(dy, axis=(0, 2, 3)).reshape((self.co,), copy=False)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
