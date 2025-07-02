@@ -73,9 +73,8 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
     def backward(self, dy:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
         dx = np.split(dy, self.idx_co[:-1], axis=self.concat_dim)
-        dx = [ _dx.copy() for _dx in dx]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
+        
         num_paths = len(self.paths)
 
         p = self.paths[0]
@@ -94,4 +93,4 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
             dx[0] += dx[i]
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx
+        return dx[0]
