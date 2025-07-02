@@ -17,7 +17,7 @@ import unittest
 import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from .conv2d_conv_gemm import Conv2DConvGemmTestCase, D
+from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase, D
 
 
 class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
