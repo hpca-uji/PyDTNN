@@ -54,7 +54,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     # --
 
     def mean_numpy(self, data:np.ndarray, total:int, _mean:np.ndarray) -> None:
-        np.mean(data, axis=0, out=_mean)
+        #np.mean(data, axis=0, out=_mean)
+        _mean = np.mean(data, axis=0, out=_mean)
     # --
 
     def forward(self, x:np.ndarray) -> np.ndarray:
@@ -145,17 +146,18 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.need_dx:
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
             # dx = dx.astype(self.model.dtype)
-            dx:np.ndarray = np.empty(shape=(self.wi * self.hi * dy.shape[0], self.ci), dtype=self.model.dtype, order="C")
-
+            dx:np.ndarray = np.empty(shape=dy.shape, dtype=self.model.dtype, order="C")
+            
             bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
-            match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
-                    dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
-                    dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
-                case _:
-                    raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
+            if self.spatial:
+                match self.model.tensor_format:
+                    case PYDTNN_TENSOR_FORMAT.NHWC:
+                        dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                    case PYDTNN_TENSOR_FORMAT.NCHW:
+                        dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                    case _:
+                        raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
 
             return dx
     # --- END backward --- #
