@@ -24,7 +24,6 @@ from pydtnn.layers import ConcatenationBlock
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum  
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from time import time # TODO:REMOVE
 
 CONCAT_DIM_NCHW  = 1
 CONCAT_DIM_NHWC = -1
@@ -82,21 +81,17 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
         p = self.paths[0]
         for layer in reversed(p):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
-                t1 = time()
                 dx[0] = layer.backward(dx[0])
-                print(f"{layer}: {time() - t1}")
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         for i in range(1, num_paths):
             p = self.paths[i]
             for layer in reversed(p):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
-                t1 = time()
                 dx[i] = layer.backward(dx[i])
-                print(f"{layer}: {time() - t1}")
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-                dx[0] += dx[i]
-                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
+            dx[0] += dx[i]
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx
