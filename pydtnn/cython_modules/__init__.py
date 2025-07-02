@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -42,8 +42,3 @@ from adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cytho
 from adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 from memory_cython import memoryview_index
 from decimal_cython import round
-from optimizer_adam_cython import adam_cython
-from optimizer_nadam_cython import nadam_cython
-from optimizer_rmsprop_cython import rmsprop_cython
-from optimizer_sgd_optimizer import sgd_cython
-
