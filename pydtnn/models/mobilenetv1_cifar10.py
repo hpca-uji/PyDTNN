@@ -17,4 +17,4 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from .mobilenetv1 import create_mobilenetv1 as create_mobilenetv1
+from .mobilenetv1 import create_mobilenetv1 as create_mobilenetv1_cifar10

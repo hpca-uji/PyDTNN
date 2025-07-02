@@ -25,18 +25,18 @@ SEED = 1234
 DTYPE = np.float32
 
 KWARGS = {
-        "model_name": None,
-        "evaluate_only": True,
-        "parallel": "data",
-        "tensor_format": TENSOR_FORMAT,
-        "enable_gpu" : False, #True,
-        "omm": None,
-        "dtype": DTYPE,
-        "tracing": False,
-        "tracer_output": "",
-        "batch_size": min(64, N),
-        "optimizer_name": "adam",
-    }
+    "model_name": None,
+    "evaluate_only": True,
+    "parallel": "data",
+    "tensor_format": TENSOR_FORMAT,
+    "enable_gpu" : False, #True,
+    "omm": None,
+    "dtype": DTYPE,
+    "tracing": False,
+    "tracer_output": "",
+    "batch_size": min(64, N),
+    "optimizer_name": "adam",
+}
 
 # End Constants #
 
@@ -58,11 +58,11 @@ def main():
     use_bias = True
 
     models = [
-              ("=============\n==== I2C ====\n=============", model_I2C), 
-              ("=============\n= POINTWISE =\n=============", model_POINT),
-              ("=============\n= DEPTHWISE =\n=============", model_DEPTH)
-              ("=============\n= LEAKY RELU =\n=============", model_RELU)
-              ]    
+        ("=============\n==== I2C ====\n=============", model_I2C),
+        ("=============\n= POINTWISE =\n=============", model_POINT),
+        ("=============\n= DEPTHWISE =\n=============", model_DEPTH),
+        ("=============\n= LEAKY RELU =\n=============", model_RELU)
+    ]
     
     for _, model in models:
         model:Model
