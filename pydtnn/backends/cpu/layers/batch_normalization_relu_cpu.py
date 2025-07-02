@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -25,7 +25,7 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
-from numpy import ndarray
+from numpy import ndarray, zeros_like
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
@@ -42,11 +42,12 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci))
-
-        y: ndarray = bn_relu_inference_cython(x, self.running_mean, self.inv_std, self.gamma, self.beta)
+        
+        y = np.zeros_like(x, order="C", dtype=x.dtype)
+        bn_relu_inference_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci))
+            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
             if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
 

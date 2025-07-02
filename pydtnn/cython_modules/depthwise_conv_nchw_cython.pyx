@@ -45,9 +45,11 @@ ctypedef fused npDT:
 @cython.initializedcheck(False)
 def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
                                npDT[:,:,::1] k,
+                               npDT[:,:,:,::1] res,
+                               int ho, int wo,
                                int vpadding, int hpadding, 
                                int vstride, int hstride, 
-                               int vdilation, int hdilation)-> np.ndarray:
+                               int vdilation, int hdilation)-> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
@@ -56,27 +58,20 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
     cdef int kh = k.shape[1]
     cdef int kw = k.shape[2]
 
-    cdef int hi = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
-    cdef int ww = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-
-    cdef npDT[:,:,:,::1] res = np.zeros((n, c, hi, ww))
-
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y
 
     for cc in prange(c, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
                 for nn in range(n):
-                    for xx in range(hi):
+                    for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
-                            for yy in range(ww):
+                            for yy in range(wo):
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     res[nn, cc, xx, yy] += k[cc, ii, jj] * x[nn, cc, x_x, x_y]
-
-    return res
-# --- END depthwise_conv_cython --- #
+# --- END depthwise_conv_nchw_cython --- #
 # --- END FORWARD --- #
 # =================== #
 
@@ -88,9 +83,11 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
 def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                                         npDT[:,:,:,::1] x,
                                         npDT[:,:,::1] k,
+                                        npDT[:,:,:,::1] dx,
+                                        npDT[:,:,::1] dw,
                                         int vpadding, int hpadding, 
                                         int vstride, int hstride, 
-                                        int vdilation, int hdilation)-> tuple(np.ndarray, np.ndarray):
+                                        int vdilation, int hdilation)-> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
@@ -99,11 +96,8 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
     cdef int kh = k.shape[1]
     cdef int kw = k.shape[2]
 
-    cdef int hi = dy.shape[2]
-    cdef int ww = dy.shape[3]
-
-    cdef npDT[:,:,:,::1] dx = np.zeros((n, c, h, w))
-    cdef npDT[:,:,::1] dw = np.zeros((c, kh, kw))
+    cdef int ho = dy.shape[2]
+    cdef int wo = dy.shape[3]
 
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y
     cdef npDT val_k
@@ -117,11 +111,11 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                     for xx in range(h):
 
                         x_x = vstride * xx + vdilation * ii - vpadding                        
-                        if 0 <= x_x < hi:
+                        if 0 <= x_x < ho:
                             for yy in range(w):
 
                                 x_y = hstride * yy + hdilation * jj - hpadding
-                                if 0 <= x_y < ww:
+                                if 0 <= x_y < wo:
                                     
                                     dw[cc, ii, jj] = val_k * x[nn, cc, x_x, x_y]
                                     dx[nn, cc, x_x, x_y] += val_k * dy[nn, cc, xx, yy]
