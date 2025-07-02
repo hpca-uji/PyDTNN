@@ -18,10 +18,10 @@ import unittest
 import numpy as np
 
 from pydtnn.backends.cpu.libs import ConvGemm
-from .common import verbose_test, D, alexnet_layers
-from .pydtnn_test_case import PyDTNNTestCase
-from .tools import print_with_header
-from ..cython_modules import im2row_nhwc_cython
+from pydtnn.tests.common import verbose_test, D, alexnet_layers
+from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
+from pydtnn.tests.tools import print_with_header
+from pydtnn.cython_modules import im2row_nhwc_cython
 
 
 def _conv_gemm_and_im2row_mm(weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,

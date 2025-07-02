@@ -19,10 +19,10 @@ from copy import deepcopy
 import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from .common import verbose_test, D
-from .pydtnn_test_case import PyDTNNTestCase
-from .tools import print_with_header
-from ..model import Model, TRAIN_MODE
+from pydtnn.tests.common import verbose_test, D
+from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
+from pydtnn.tests.tools import print_with_header
+from pydtnn.model import Model, TRAIN_MODE
 
 
 class Params:

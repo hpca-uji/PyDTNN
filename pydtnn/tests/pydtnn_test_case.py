@@ -3,7 +3,7 @@ from abc import ABC
 
 from rich.console import Console
 
-from .common import verbose_test
+from pydtnn.tests.common import verbose_test
 
 pydtnn_testcase_status_line = ""
 pydtnn_testcase_errors = 0
@@ -29,4 +29,3 @@ class PyDTNNTestCase(unittest.TestCase, ABC):
             pydtnn_testcase_status_line += "."
         pydtnn_testcase_errors, pydtnn_testcase_failures = errors, failures
         return result
-

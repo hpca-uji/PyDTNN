@@ -21,8 +21,8 @@ from rich.console import Console
 
 from pydtnn.backends.cpu.libs import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers
-from .tools import print_with_header
-from ..cython_modules import im2row_nhwc_cython, row2im_nhwc_cython
+from pydtnn.tests.tools import print_with_header
+from pydtnn.cython_modules import im2row_nhwc_cython, row2im_nhwc_cython
 
 
 def _conv_gemm_and_im2row_mm(weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
@@ -34,9 +34,9 @@ def _conv_gemm_and_im2row_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     conv_gemm = ConvGemm(debug=verbose_test())
     cg_biases = biases.copy() if biases is not None else None
     conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x, biases=cg_biases,
-                                           vpadding=vpadding, hpadding=hpadding,
-                                           vstride=vstride, hstride=hstride,
-                                           vdilation=vdilation, hdilation=hdilation)
+                                                vpadding=vpadding, hpadding=hpadding,
+                                                vstride=vstride, hstride=hstride,
+                                                vdilation=vdilation, hdilation=hdilation)
     conv_gemm_result = conv_gemm_result.reshape(-1, kn)
     x_c = im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(-1, kn)
@@ -289,9 +289,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
             for kn in range(1, 32):
                 weights = np.random.rand(d.c, d.kh, d.kw, kn).astype(np.float32, order='C')
                 conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                       vpadding=d.vpadding, hpadding=d.hpadding,
-                                                       vstride=d.vstride, hstride=d.hstride,
-                                                       vdilation=d.vdilation, hdilation=d.hdilation)
+                                                            vpadding=d.vpadding, hpadding=d.hpadding,
+                                                            vstride=d.vstride, hstride=d.hstride,
+                                                            vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape(-1, kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
@@ -320,9 +320,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
             for b in range(1, 32):
                 x = np.random.rand(b, d.h, d.w, d.c).astype(np.float32, order='C')
                 conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                       vpadding=d.vpadding, hpadding=d.hpadding,
-                                                       vstride=d.vstride, hstride=d.hstride,
-                                                       vdilation=d.vdilation, hdilation=d.hdilation)
+                                                            vpadding=d.vpadding, hpadding=d.hpadding,
+                                                            vstride=d.vstride, hstride=d.hstride,
+                                                            vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
@@ -351,9 +351,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
         with console.status("", spinner="bouncingBar"):
             for padding in range(0, 5):
                 conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                       vpadding=padding, hpadding=padding,
-                                                       vstride=d.vstride, hstride=d.hstride,
-                                                       vdilation=d.vdilation, hdilation=d.hdilation)
+                                                            vpadding=padding, hpadding=padding,
+                                                            vstride=d.vstride, hstride=d.hstride,
+                                                            vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, padding, padding,
                                          d.vstride, d.hstride, d.vdilation, d.hdilation)
@@ -382,9 +382,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
         with console.status("", spinner="bouncingBar"):
             for stride in range(1, 6):
                 conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                       vpadding=d.vpadding, hpadding=d.hpadding,
-                                                       vstride=stride, hstride=stride,
-                                                       vdilation=d.vdilation, hdilation=d.hdilation)
+                                                            vpadding=d.vpadding, hpadding=d.hpadding,
+                                                            vstride=stride, hstride=stride,
+                                                            vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride,
                                          d.vdilation, d.hdilation)
@@ -415,9 +415,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                     if vstride == hstride:
                         continue
                     conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                           vpadding=d.vpadding, hpadding=d.hpadding,
-                                                           vstride=vstride, hstride=hstride,
-                                                           vdilation=d.vdilation, hdilation=d.hdilation)
+                                                                vpadding=d.vpadding, hpadding=d.hpadding,
+                                                                vstride=vstride, hstride=hstride,
+                                                                vdilation=d.vdilation, hdilation=d.hdilation)
                     conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                     x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
                                              d.vdilation, d.hdilation)
@@ -446,9 +446,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
         with console.status("", spinner="bouncingBar"):
             for dilation in range(1, 3):
                 conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                       vpadding=d.vpadding, hpadding=d.hpadding,
-                                                       vstride=d.vstride, hstride=d.hstride,
-                                                       vdilation=dilation, hdilation=dilation)
+                                                            vpadding=d.vpadding, hpadding=d.hpadding,
+                                                            vstride=d.vstride, hstride=d.hstride,
+                                                            vdilation=dilation, hdilation=dilation)
                 conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
                 x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
                                          dilation, dilation)
@@ -476,9 +476,9 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                 weights = np.random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
                 x = np.random.rand(layer.b, layer.h, layer.w, layer.c).astype(np.float32, order='C')
                 conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
-                                                       vpadding=layer.vpadding, hpadding=layer.hpadding,
-                                                       vstride=layer.vstride, hstride=layer.hstride,
-                                                       vdilation=layer.vdilation, hdilation=layer.hdilation)
+                                                            vpadding=layer.vpadding, hpadding=layer.hpadding,
+                                                            vstride=layer.vstride, hstride=layer.hstride,
+                                                            vdilation=layer.vdilation, hdilation=layer.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape(-1, layer.kn)
                 x_c = im2row_nhwc_cython(x, layer.kh, layer.kw, layer.vpadding, layer.hpadding,
                                          layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)

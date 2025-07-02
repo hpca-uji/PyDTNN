@@ -19,9 +19,9 @@ import numpy as np
 
 from pydtnn import losses
 from pydtnn.model import Model, TRAIN_MODE
-from .common import verbose_test
-from .pydtnn_test_case import PyDTNNTestCase
-from .tools import print_with_header
+from pydtnn.tests.common import verbose_test
+from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
+from pydtnn.tests.tools import print_with_header
 
 
 class Params:
