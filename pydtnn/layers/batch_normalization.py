@@ -63,6 +63,8 @@ class BatchNormalization(Layer, ABC):
         if self.spatial:
             self.hi, self.wi, self.ci = decode_tensor(self.shape, self.model.tensor_format)
             shape_ = (self.ci,)
+        else:
+            self.ci = self.shape[0]
         self.gamma = np.full(shape_, self.gamma_init_val, self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
