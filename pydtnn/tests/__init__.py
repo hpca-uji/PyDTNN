@@ -17,14 +17,14 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-from .conv2d_conv_gemm import Conv2DConvGemmTestCase
-from .conv2d_conv_gemm_slow import Conv2DConvGemmSlowTestCase
-from .conv_gemm import ConvGemmTestCase
-from .conv_gemm_nhwc import ConvGemmNHWCTestCase
-from .check_conv_gemm_models import CheckConvGemmModels
-from .check_conv_gemm_nchw_models import CheckConvGemmNCHWModels
-from .check_tensor_format_models import CheckTensorFormatModels
+from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
+from pydtnn.tests.conv2d_conv_gemm_slow import Conv2DConvGemmSlowTestCase
+from pydtnn.tests.conv_gemm import ConvGemmTestCase
+from pydtnn.tests.conv_gemm_nhwc import ConvGemmNHWCTestCase
+from pydtnn.tests.check_conv_gemm_models import CheckConvGemmModels
+from pydtnn.tests.check_conv_gemm_nchw_models import CheckConvGemmNCHWModels
+from pydtnn.tests.check_tensor_format_models import CheckTensorFormatModels
 try:
-    from .check_gpu_models import CheckGPUModels
+    from pydtnn.tests.check_gpu_models import CheckGPUModels
 except (ModuleNotFoundError, ImportError):
     pass
