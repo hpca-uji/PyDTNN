@@ -35,6 +35,9 @@ def get_conv2d_cpu_layers(d, deconv=False, trans=False):
     params.enable_conv_gemm = False
     params.enable_best_of = False
     params.tensor_format = 'NCHW'
+    params.dataset_name = "cifar10"
+    params.dataset_train_path = "datasets/cifar10"
+    params.dataset_test_path = "datasets/cifar10"
     model_i2c = Model(**vars(params))
     model_i2c.mode = TRAIN_MODE
     params_gc = deepcopy(params)
