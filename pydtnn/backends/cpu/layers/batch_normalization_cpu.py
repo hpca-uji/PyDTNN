@@ -40,6 +40,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         self.var:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.dgamma:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.dbeta:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+        self.std:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         
         if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
             self.mean = self.mean_all_reduce
@@ -76,24 +77,23 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                 else: 
                     n = None
 
-                self.mean(x, n, self.mu)
-                x -= self.mu
-                x *= x
-                self.mean(x, n, self.var)
-                self.xn:np.ndarray = x
-                
+                self.xn = x
+                self.mean(self.xn, n, self.mu)
+                self.xn -= self.mu
+                #var = self.mean(xc ** 2, n, self.model.comm)
+                self.mean(self.xn ** 2, n, self.var)
 
-                self.std:np.ndarray = np.sqrt(self.var + self.epsilon)
+                self.std = np.sqrt(self.var + self.epsilon)
                 self.xn /= self.std
-                y:np.ndarray = self.gamma * self.xn
+                y = self.gamma * self.xn 
                 y += self.beta
 
-                #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * mu
+                #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
                 self.mu *= (1.0 - self.momentum)
                 self.running_mean *= self.momentum
                 self.running_mean += self.mu
 
-                #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * var
+                #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
                 self.var *= (1.0 - self.momentum)                
                 self.running_var *= self.momentum                
                 self.running_var += self.var
@@ -124,7 +124,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             case _:
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
 
-        if self.spatial:
+        if self.spatial:                
             match self.model.tensor_format:
                 case PYDTNN_TENSOR_FORMAT.NHWC:
                     y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
