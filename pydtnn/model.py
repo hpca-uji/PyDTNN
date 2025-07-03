@@ -531,7 +531,7 @@ class Model:
 
         assert self.crypt is not None
 
-    def _read_model(self, model_name):
+    def _read_model(self, model_name:str) -> None:
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
             # NOTE: Dataset is always in NCHW, but Layer always wants NHWC
