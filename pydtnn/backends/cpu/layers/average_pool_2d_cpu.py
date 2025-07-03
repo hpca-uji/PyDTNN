@@ -44,10 +44,10 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y:np.ndarray = np.mean(x_rows, axis=1)
-        return y.reshape((-1, self.ho, self.wo, self.co))
+        return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
 
     def _forward_nhwc_cython(self, x:np.ndarray) -> np.ndarray:
-        y = np.zeros((x.shape[0], self.ho, self.wo, self.co), dtype=self.model.dtype) 
+        y = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)        
         average_pool_2d_fwd_nhwc_cython(x, y, 
                                         self.kh, self.kw, self.ho, self.wo, 
@@ -72,7 +72,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
     def _forward_nchw_cython(self, x:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        y = np.zeros((x.shape[0], self.co, self.ho, self.wo), dtype=self.model.dtype)
+        y = self.y[:x.shape[0], :]
         average_pool_2d_fwd_nchw_cython(x, y, 
                                         self.kh, self.kw, self.ho, self.wo, 
                                         self.vpadding, self.hpadding,

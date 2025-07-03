@@ -23,7 +23,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from numpy import ndarray
+from numpy import ndarray, empty
 class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -35,12 +35,20 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self.forward = self._forward_nchw_cython
                 self.backward = self._backward_nchw_cython
+                # The following variable is only for NCHW implementation
+                self.y = empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
+
+
                 # I2C-based implementations have been temporarily discarded
                 # setattr(self, "forward", self._forward_nchw_i2c)
                 # setattr(self, "backward", self._backward_nchw_i2c)
             case PYDTNN_TENSOR_FORMAT.NHWC:
                 self.forward = self._forward_nhwc_cython
                 self.backward = self._backward_nhwc_cython
+
+                # The following variable is only for NHWC implementation
+                self.y = empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
+
                 # I2C-based implementations have been temporarily discarded
                 # setattr(self, "forward", self._forward_nhwc_i2c)
                 # setattr(self, "backward", self._backward_nhwc_i2c)
