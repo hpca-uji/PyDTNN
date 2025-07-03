@@ -33,5 +33,5 @@ class TanhCPU(ActivationCPU, Tanh):
         if self.need_dx:
             # return 1 - np.tanh(dy) ** 2
             np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
-            dy *= dy
+            dy **= 2
             return 1 - dy

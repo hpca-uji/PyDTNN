@@ -36,7 +36,7 @@ class ArctanhCPU(ActivationCPU, Arctanh):
     def backward(self, dy: ndarray) -> ndarray | None:
         if self.need_dx:
             # return 1 / (1 + dy ** 2)
-            dy *= dy
+            dy **= 2
             dy += 1
             np.reciprocal(dy, out=dy)
             return dy
