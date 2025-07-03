@@ -43,7 +43,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
                 x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci))
         
-        y = zeros_like(x, order="C", dtype=x.dtype)
+        y: ndarray = zeros_like(x, order="C", dtype=x.dtype)
         bn_relu_inference_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
