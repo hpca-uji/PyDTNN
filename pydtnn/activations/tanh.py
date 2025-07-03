@@ -33,5 +33,5 @@ class Tanh(Activation):
         if self.need_dx:
             #return 1 - np.tanh(dy) ** 2
             dy = np.tanh(dy)
-            dy *= dy
+            dy **= 2
             return 1 - dy
