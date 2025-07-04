@@ -67,7 +67,7 @@ try:
     import pydtnn.backends.gpu.tensor_gpu
     # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
-except (ImportError, ModuleNotFoundError) as e: 
+except (ImportError, ModuleNotFoundError, OSError) as e: 
     gpuarray = None
     cuda_error_msg.append(f"Import: \"import pycuda.gpuarray as gpuarray\". Error: {e}")
 except Exception as e: raise(e)
@@ -75,14 +75,14 @@ try:
     # noinspection PyUnresolvedReferences
     import pycuda.driver as drv
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except (ImportError, ModuleNotFoundError) as e: 
+except (ImportError, ModuleNotFoundError, OSError) as e: 
     drv = None
     cuda_error_msg.append(f"Import: \"import pycuda.driver as drv\". Error: {e}")
 except Exception as e: raise(e)
 try: 
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
-except (ImportError, ModuleNotFoundError) as e: 
+except (ImportError, ModuleNotFoundError, OSError) as e: 
     cublas = None
     cuda_error_msg.append(f"Import: \"from skcuda import cublas\". Error: {e}")
 except Exception as e: raise(e)
@@ -95,8 +95,8 @@ supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
 
-#import warnings
-#warnings.filterwarnings("error")
+import warnings
+warnings.filterwarnings("error")
 
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -1094,12 +1094,21 @@ class Model:
         except ValueError:
             return self.total_metrics
 
+        #print("_evaluate_batch")
+        #print(f"{self.mode=}")
+        #self.show()
         # Forward pass (FP)
         if x_batch.shape[0] > 0:
+            #print("Input:")
+            #print(f"\t{x.max()=}")
+            #print(f"\t{x.min()=}")
             for i in range(1, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+                #print(f"{self.layers[i]}")
                 x = self.layers[i].forward(x)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
+                #print(f"\t{x.max()=}")
+                #print(f"\t{x.min()=}")
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)            
 
             y_pred = self.layers[-1].y
             loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
