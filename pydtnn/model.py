@@ -700,9 +700,6 @@ class Model:
             else:
                 grad_vars = [g for g in layer.grad_vars] + \
                             (["running_var", "running_mean"] if name == "BatchNormalization" else [])
-                if name == "BatchNormalization":
-                    layer:BatchNormalization # This is only for the hint.
-                    layer.updated_running_var = True
                 for key in grad_vars:
                     base = f"{layer.id}_{name}_{key}"
                     if mode is LoadStoreMode.LOAD and base not in d:

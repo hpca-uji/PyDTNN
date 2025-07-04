@@ -53,7 +53,6 @@ class BatchNormalization(Layer, ABC):
         self.xn:np.ndarray = None
         self.dgamma:np.ndarray = None
         self.dbeta:np.ndarray = None
-        self.updated_running_var = False
         self.inv_std:np.ndarray = None
 
     def initialize(self, prev_shape, need_dx=True):
@@ -69,5 +68,7 @@ class BatchNormalization(Layer, ABC):
         self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
-        self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+        # self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+        self.inv_std = np.sqrt(self.running_var + self.epsilon)
+        np.reciprocal(self.inv_std, out=self.inv_std)
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
