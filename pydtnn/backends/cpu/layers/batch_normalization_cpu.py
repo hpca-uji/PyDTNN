@@ -44,8 +44,10 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         
         if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
             self.mean = self.mean_all_reduce
+            self.n = self.model.nprocs * self.model.batch_size
         else: 
             self.mean = self.mean_numpy
+            self.n = None
     # --
 
     def mean_all_reduce(self, data:np.ndarray, total:int, _mean:np.ndarray) -> None:
@@ -68,61 +70,27 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.spatial:
             x:np.ndarray = x.reshape((-1, self.ci), copy=False)
 
-        match self.model.mode:
-            case ModelModeEnum.TRAIN:
-                if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
-                    n = self.model.nprocs * self.model.batch_size
-                    # n = np.array([x.shape[0]], dtype=self.model.dtype)
-                    # self.model.comm.Allreduce(MPI.IN_PLACE, n, op=MPI.SUM)
-                else: 
-                    n = None
+        self.xn = x
+        self.mean(self.xn, self.n, self.mu)
+        self.xn -= self.mu
+        #var = self.mean(xc ** 2, n, self.model.comm)
+        self.mean(self.xn ** 2, self.n, self.var)
 
-                self.xn = x
-                self.mean(self.xn, n, self.mu)
-                self.xn -= self.mu
-                #var = self.mean(xc ** 2, n, self.model.comm)
-                self.mean(self.xn ** 2, n, self.var)
+        self.std = np.sqrt(self.var + self.epsilon)
+        self.xn /= self.std
+        y = self.gamma * self.xn 
+        y += self.beta
 
-                self.std = np.sqrt(self.var + self.epsilon)
-                self.xn /= self.std
-                y = self.gamma * self.xn 
-                y += self.beta
+        if self.model.mode is ModelModeEnum.TRAIN:
+            #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
+            self.mu *= (1.0 - self.momentum)
+            self.running_mean *= self.momentum
+            self.running_mean += self.mu
 
-                #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
-                self.mu *= (1.0 - self.momentum)
-                self.running_mean *= self.momentum
-                self.running_mean += self.mu
-
-                #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
-                self.var *= (1.0 - self.momentum)                
-                self.running_var *= self.momentum                
-                self.running_var += self.var
-
-                # y, self.std, self.xn = bn_training_fwd_cython(x, self.gamma, self.beta, \
-                #                                               self.running_mean, self.running_var, \
-                #                                               self.momentum, self.epsilon)
-
-                self.updated_running_var = True
-
-            case ModelModeEnum.EVALUATE:
-                # Original numpy-based code
-                # std = np.sqrt(self.running_var + self.epsilon)
-                # xn = (x - self.running_mean) / std
-                # y = self.gamma * xn + self.beta
-
-                # If self.running_var was updated on training we need to recompute self.inv_std!
-
-                if self.updated_running_var:
-                    self.updated_running_var = False
-                    # self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
-                    self.inv_std = self.running_var + self.epsilon
-                    np.sqrt(self.inv_std, out=self.inv_std)
-                    np.reciprocal(self.inv_std, out=self.inv_std)                    
-
-                y = np.empty_like(x, order="C", dtype=self.model.dtype)
-                bn_inference_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)                
-            case _:
-                raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
+            #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
+            self.var *= (1.0 - self.momentum)                
+            self.running_var *= self.momentum                
+            self.running_var += self.var
 
         if self.spatial:                
             match self.model.tensor_format:
