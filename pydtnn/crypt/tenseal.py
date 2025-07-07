@@ -12,9 +12,9 @@ finally:
     sys.path.insert(0, _pkg)
 
 import numpy as np
-from tenseal.tensors import CKKSVector, BFVVector
 from tenseal.enc_context import Context as SealContext
 from tenseal.tensors.abstract_tensor import AbstractTensor
+from tenseal.tensors import CKKSVector, BFVVector, CKKSTensor, BFVTensor
 
 
 __all__ = (
@@ -54,15 +54,6 @@ class Context:
         """Inizialize context"""
         self._scheme = tenseal.SCHEME_TYPE.CKKS
 
-        # Encryptor
-        match self._scheme:
-            case tenseal.SCHEME_TYPE.CKKS:
-                self._encrypt = tenseal.ckks_vector
-            case tenseal.SCHEME_TYPE.BFV:
-                self._encrypt = tenseal.bfv_vector
-            case _:
-                raise TypeError(f"Unsupported scheme {self._scheme}")
-
         # Context
         self._context = tenseal.context(
             scheme=self._scheme,
@@ -75,12 +66,27 @@ class Context:
         self._context.generate_galois_keys()
         self._context.generate_relin_keys()
 
+        # Public
+        self._public_context = self._context.copy()
+        self._public_context.make_context_public()
+
     def encrypt(self, obj: np.ndarray) -> Ciphertext:
         """Encode object to ciphertext"""
+
+        match self._scheme:
+            case tenseal.SCHEME_TYPE.CKKS:
+                data = tenseal.ckks_vector(self._context, obj.flat)
+            case tenseal.SCHEME_TYPE.BFV:
+                data = tenseal.bfv_vector(self._context, obj.flat)
+            case _:
+                raise TypeError(f"Unsupported scheme {self._scheme}")
+
+        data.link_context(self._public_context)
+
         return Ciphertext(
             _type=obj.dtype.type,
             _shape=obj.shape,
-            _data=self._encrypt(obj)
+            _data=data
         )
 
     def decrypt(self, obj: Ciphertext) -> np.ndarray:
@@ -101,11 +107,13 @@ def context_reducer(context: SealContext):
 
 def tensor_reducer(tensor: AbstractTensor):
     """TenSEAL tensor pickle reducer"""
-    cls = tensor.lazy_load
-    args = (tensor.serialize(),)
+    cls = tensor.load
+    args = (tensor.context(), tensor.serialize(),)
     return (cls, args)
 
 
 copyreg.pickle(SealContext, context_reducer)
 copyreg.pickle(BFVVector, tensor_reducer)
 copyreg.pickle(CKKSVector, tensor_reducer)
+copyreg.pickle(BFVTensor, tensor_reducer)
+copyreg.pickle(CKKSTensor, tensor_reducer)
