@@ -159,7 +159,7 @@ def average_pool_2d_bwd_nchw_cython[T: npDT](dy:npDT_4Dims[T],
     """
     Args:
         dy (npDT_4Dims): The 4 dimensional input's ndarray.
-        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter).
+        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter). Note: All values in this parameter should be 0.
         n (int): The number of images (usually, the batch size).
         h (int): The images' height.
         w (int): The images' width.
@@ -221,7 +221,7 @@ def average_pool_2d_bwd_nhwc_cython[T: npDT](dy:npDT_4Dims[T],
     """
     Args:
         dy (npDT_4Dims): The 4 dimensional input's ndarray.
-        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
+        dx (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data will be stored in this parameter). Note: All values in this parameter should be 0.
         n (int): The number of images (usually, the batch size).
         h (int): The images' height.
         w (int): The images' width.

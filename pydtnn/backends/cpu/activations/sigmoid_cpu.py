@@ -32,7 +32,7 @@ class SigmoidCPU(ActivationCPU, Sigmoid):
     def forward(self, x:np.ndarray) -> np.ndarray:
         # self.y = 1 / (1 + np.exp(-x))
         x *= -1
-        np.exp(x, out=x, casting="unsafe", dtype=self.model.dtype)
+        np.exp(x, out=x)
         x += 1
         np.reciprocal(x, out=x)
         self.y = x.astype(self.model.dtype, copy=False)

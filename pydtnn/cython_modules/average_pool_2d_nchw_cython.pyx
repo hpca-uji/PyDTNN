@@ -97,6 +97,7 @@ def average_pool_2d_bwd_nchw_cython(npDT[:,:,:,::1] dy,
             for xx in range(ho):
                 for yy in range(wo):
                     items = 0
+                    avgval = dy[nn, cc, xx, yy]
                     for ii in range(kh):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
@@ -104,8 +105,8 @@ def average_pool_2d_bwd_nchw_cython(npDT[:,:,:,::1] dy,
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     items = items + 1
-                    avgval = <npDT> (dy[nn, cc, xx, yy] // items)
-                    # avgval = dy[nn, xx, yy, cc] // (kh * kw)
+                        else: continue
+                    avgval /= items
                     for ii in range(kh):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
@@ -114,5 +115,4 @@ def average_pool_2d_bwd_nchw_cython(npDT[:,:,:,::1] dy,
                                 if 0 <= x_y < w:
                                     dx[nn, cc, x_x, x_y] += avgval
 # --- END average_pool_2d_bwd_nchw_cython --- #
-
 # --- END BACKWARD --- #
