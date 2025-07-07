@@ -8,13 +8,14 @@ mpirun -np 4 \
   --model=simplecnn \
   --dataset=raw \
   --dataset_raw_path='datasets/mnist/dataset.${rank}.npz' \
-  --model_sync_alg=avg \
+  --model_sync_participation=avail2all \
+  --model_sync_alg=wavg \
   --model_sync_min_avail=0 \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \
   --validation_split=0.2 \
-  --num_epochs=50 \
+  --num_epochs=3 \
   --evaluate=True \
   --optimizer=adam \
   --learning_rate=0.01 \
