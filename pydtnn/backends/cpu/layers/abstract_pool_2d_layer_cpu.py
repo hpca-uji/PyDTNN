@@ -35,10 +35,10 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self.forward = self._forward_nchw_cython
                 self.backward = self._backward_nchw_cython
-                # The following variable is only for NCHW implementation
+
+                # The following variable is only for NCHW implementation (not for i2c implementation)
                 self.y = empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
-
-
+                
                 # I2C-based implementations have been temporarily discarded
                 # setattr(self, "forward", self._forward_nchw_i2c)
                 # setattr(self, "backward", self._backward_nchw_i2c)
@@ -46,7 +46,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
                 self.forward = self._forward_nhwc_cython
                 self.backward = self._backward_nhwc_cython
 
-                # The following variable is only for NHWC implementation
+                # The following variable is only for NHWC implementation (not for i2c implementation)
                 self.y = empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
 
                 # I2C-based implementations have been temporarily discarded

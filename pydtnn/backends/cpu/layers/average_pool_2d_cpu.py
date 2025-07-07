@@ -27,8 +27,6 @@ from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
                                   average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
-from pydtnn.model import PYDTNN_TENSOR_FORMAT 
-
 class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
     def __init__(self, *args, **kwargs):
@@ -73,7 +71,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
     def _forward_nchw_cython(self, x:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         y = self.y[:x.shape[0], :]
-        average_pool_2d_fwd_nchw_cython(x, y, 
+        average_pool_2d_fwd_nchw_cython(x, y,
                                         self.kh, self.kw, self.ho, self.wo, 
                                         self.vpadding, self.hpadding,
                                         self.vstride, self.hstride, 
