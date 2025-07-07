@@ -96,6 +96,8 @@ class Request[T]:
         with self._lock:
             self._lock.wait_for(lambda: self._state == RequestState.FIN)
         result = self.__dict__.pop("_result", None)
+        if isinstance(result, mpi_comm.RemoteException):
+            raise result
         callback = self.__dict__.pop("_callback", lambda result: result)
         return callback(result)
 
