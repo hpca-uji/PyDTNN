@@ -17,6 +17,33 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+__all__ = (
+    "add_nhwc_cython", "add_nchw_cython",
+    "argmax_cython",
+    "average_pool_2d_fwd_nchw_cython", "average_pool_2d_bwd_nchw_cython",
+    "average_pool_2d_fwd_nhwc_cython", "average_pool_2d_bwd_nhwc_cython",
+    "bn_inference_cython", "bn_inference_nchw_cython",
+    "bn_relu_inference_cython",
+    "bn_training_fwd_cython", "bn_training_bwd_cython",
+    "depthwise_conv_nchw_cython", "depthwise_conv_backward_nchw_cython",
+    "depthwise_conv_nhwc_cython", "depthwise_conv_backward_nhwc_cython",
+    "eltw_sum_cython",
+    "im2col_1ch_nchw_cython", "col2im_1ch_nchw_cython",
+    "im2col_nchw_cython", "col2im_nchw_cython",
+    "im2row_1ch_nhwc_cython", "row2im_1ch_nhwc_cython",
+    "im2row_nhwc_cython", "row2im_nhwc_cython",
+    "max_pool_2d_fwd_nchw_cython", "max_pool_2d_bwd_nchw_cython",
+    "max_pool_2d_fwd_nhwc_cython", "max_pool_2d_bwd_nhwc_cython",
+    "pointwise_conv_cython",
+    "relu_cython", "capped_relu_cython", "leaky_relu_cython",
+    "transpose_0231_ikj_cython", "transpose_0231_ijk_cython", "transpose_0312_ijk_cython",
+    "transpose_0312_ikj_cython", "transpose_1023_jik_cython", "transpose_1023_ijk_cython",
+    "adaptive_avg_pooling_fwd_nchw_cython", "adaptive_avg_pooling_bwd_nchw_cython",
+    "adaptive_avg_pooling_fwd_nhwc_cython", "adaptive_avg_pooling_bwd_nhwc_cython",
+    "memoryview_index",
+    "round",
+)
+
 from add_cython import add_nhwc_cython, add_nchw_cython
 from argmax_cython import argmax_cython
 from average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython

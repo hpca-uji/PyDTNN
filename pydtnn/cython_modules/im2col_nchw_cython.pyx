@@ -107,31 +107,6 @@ def col2im_nchw_cython(npDT[:,::1] cols,
                                     dx[nn, cc, x_x, x_y] += cols[row, col]
 # --- END col2im_nchw_cython --- #
 
-#                                   x_x                           x_y
-#                           x[n, c, vstride * xx + vdilation * ii - vpadding, hstride * yy + hdilation * jj - hpadding] += cols[]
-# Throw away 1)
-# x_x = vstride * xx + vdilation * ii - vpadding
-# if x_x < 0 or x_x >= H:
-#   continue
-#
-# Throw away 2)
-# x_y = hstride * yy + hdilation * jj - hpadding
-# if x_y < 0 or x_y >= W:
-#  continue
-
-# Alternative to throw away 1)
-# Range for xx: from:  / a >=0
-#                      \ vstride * xx + vdilation * ii - vpadding >= 0
-#                         -> a >= (vpadding - ii) // vstride
-#                      -> xx = max(0, (vpadding - ii) // vstride))
-
-#               to:    / xx < HH
-#                      \ vstride * xx + vdilation * ii - vpadding < H
-#                         -> xx < H + (vpadding - ii) // vstride
-#                      -> xx = min(HH, H + (vpadding - ii) // vstride))
-
-# --- END col2im --- #
-
 # ================================== #
 
 # ================================== #
