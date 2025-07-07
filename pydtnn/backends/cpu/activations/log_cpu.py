@@ -34,9 +34,8 @@ class LogCPU(ActivationCPU, Log):
         return np.log(x).astype(dtype=self.model.dtype, copy=False)
 
     def backward(self, dy:ndarray) -> ndarray | None:
-        if self.need_dx:
-            # return 1 / (np.exp(dy) + 1)
-            np.exp(dy, out=dy, casting='unsafe', dtype=dy.dtype)
-            dy += 1
-            np.reciprocal(dy, out=dy)
-            return dy
+        # return 1 / (np.exp(dy) + 1)
+        np.exp(dy, out=dy, casting='unsafe', dtype=dy.dtype)
+        dy += 1
+        np.reciprocal(dy, out=dy)
+        return dy

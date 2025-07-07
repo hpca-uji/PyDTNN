@@ -33,8 +33,8 @@ class FCCPU(LayerCPU, FC):
         self.dw: np.ndarray = None
         self.db: np.ndarray = None
 
-    def initialize(self, prev_shape, need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
         self.weights = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
         # Initialize outputs:
         self.db = np.empty(self.shape, dtype=self.model.dtype)
@@ -57,7 +57,7 @@ class FCCPU(LayerCPU, FC):
                         dtype=self.model.dtype) + \
             matmul_time(m=self.model.batch_size, n=self.weights.shape[0], k=self.weights.shape[1],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self.model.mode == TRAIN_MODE:
@@ -86,10 +86,9 @@ class FCCPU(LayerCPU, FC):
             #self.db = np.sum(dy, axis=0)
             np.sum(dy, axis=0, out=self.db)
 
-        if self.need_dx:
-            dx = self.dx[:self.x.shape[0], :]
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-            #dx = np.matmul(dy, self.weights.T)
-            np.matmul(dy, self.weights.T, out=dx)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
-            return dx
+        dx = self.dx[:self.x.shape[0], :]
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
+        #dx = np.matmul(dy, self.weights.T)
+        np.matmul(dy, self.weights.T, out=dx)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
+        return dx

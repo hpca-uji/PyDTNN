@@ -34,9 +34,8 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         self.mode = None
         self.algo = None
 
-    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
         self.shape = prev_shape
-        self.need_dx = need_dx
 
         self.mode = cudnn.cudnnSoftmaxMode['CUDNN_SOFTMAX_MODE_INSTANCE']
         self.algo = cudnn.cudnnSoftmaxAlgorithm['CUDNN_SOFTMAX_ACCURATE']
@@ -57,10 +56,9 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         return self.y
 
     def backward(self, dy: TensorGPU) -> TensorGPU | None:
-        if self.need_dx:
-            alpha, beta = 1.0, 0.0
-            cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha,
-                                       self.y.desc, self.y.ptr,
-                                       dy.desc, dy.ptr, beta,
-                                       self.dx.desc, self.dx.ptr)
-            return self.dx
+        alpha, beta = 1.0, 0.0
+        cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha,
+                                    self.y.desc, self.y.ptr,
+                                    dy.desc, dy.ptr, beta,
+                                    self.dx.desc, self.dx.ptr)
+        return self.dx

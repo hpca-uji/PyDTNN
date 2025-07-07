@@ -127,7 +127,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
     PYDTNN_WEIGHTS_INITIALIZER = "weights_initializer"
     PYDTNN_BIASES_INITIALIZER = "biases_initializer"
     # -
-    PYDTNN_NEED_DX = "need_dx"
     # -----
 
     # NOTE: There is no way to get the input shape from a PyTorch model due depends of the dataset ==> The input shape will be a parameter set by the user.
@@ -208,8 +207,8 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers:Di
             converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally these were functions, then they does not have weights nor biases.
             # TODO: Check if it is necessary to set/unset in the layer's class something (like the weigths update) in order to make it work like a function.
-            #if hasattr(converted_layers[operation_variable], PYDTNN_NEED_DX):
-            #    setattr(converted_layers[operation_variable], PYDTNN_NEED_DX, False) # TODO/possible FIXME: CHECK IF THIS IS NECESSARY !!!!
+            #if hasattr(converted_layers[operation_variable]):
+            #    setattr(converted_layers[operation_variable], False) # TODO/possible FIXME: CHECK IF THIS IS NECESSARY !!!!
     # "for operation_variable in layer_var_names" end.
 
     list_layers = [layer for layer, _input in converted_layers.values()]

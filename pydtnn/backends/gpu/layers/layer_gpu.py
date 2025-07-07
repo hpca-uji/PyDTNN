@@ -60,9 +60,9 @@ class LayerGPU(Layer, ABC):
         self.one_vec_gpu: TensorGPU = None
 
     # noinspection PyMethodOverriding
-    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool, x: TensorGPU) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
         self.x = x  # Must be before super().initialize()
-        super().initialize(prev_shape, need_dx)
+        super().initialize(prev_shape)
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:

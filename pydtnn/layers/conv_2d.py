@@ -67,8 +67,8 @@ class Conv2D(Layer, ABC):
         self.weights_shape:tuple[int, ...] = None
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape:tuple[int, ...], need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape:tuple[int, ...]):
+        super().initialize(prev_shape)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape
 

@@ -30,7 +30,7 @@ class AbstractBlockLayerCPU(LayerCPU, AbstractBlockLayer, ABC):
             prev_shape = self.prev_shape
             for layer in p:
                 layer.set_model(self.model)
-                layer.initialize(prev_shape, self.need_dx)
+                layer.initialize(prev_shape)
                 prev_shape = layer.shape
                 self.fwd_time += layer.fwd_time
                 self.bwd_time += layer.bwd_time

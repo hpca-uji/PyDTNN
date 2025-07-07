@@ -43,9 +43,9 @@ class AdaptiveAveragePool2D(Layer, ABC):
     # ---  END __init__ --- #
 
     @override
-    def initialize(self, prev_shape: tuple[int, int], need_dx: bool = True) -> None:
+    def initialize(self, prev_shape: tuple[int, int]) -> None:
         # We want to override "AbstractPool2DLayer"
-        super().initialize(prev_shape, need_dx)
+        super().initialize(prev_shape)
         
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
 

@@ -40,8 +40,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.ci = self.hi = self.wi = self.kh = self.kw = self.co = self.ci = None
         self.ho = self.wo = None
 
-    def initialize_pool_2d_gpu(self, prev_shape: tuple[int, ...], need_dx: bool, 
-                               x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
+    def initialize_pool_2d_gpu(self, prev_shape: tuple[int, ...], x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])
@@ -65,10 +64,9 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        if self.need_dx:
-            # Derivative dx
-            dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        # Derivative dx
+        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
@@ -77,7 +75,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.bwd_time = \
             col2im_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        dtype=self.model.dtype)
 
     def forward(self, x:TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
@@ -89,14 +87,13 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         return self.y
 
     def backward(self, dy: TensorGPU) -> TensorGPU | None:
-        if self.need_dx:
-            alpha, beta = 1.0, 0.0
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-            # Compute dx
-            cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                       self.y.desc, self.y.ptr,
-                                       dy.desc, dy.ptr,
-                                       self.x.desc, self.x.ptr,
-                                       beta, self.dx.desc, self.dx.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return self.dx
+        alpha, beta = 1.0, 0.0
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        # Compute dx
+        cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
+                                    self.y.desc, self.y.ptr,
+                                    dy.desc, dy.ptr,
+                                    self.x.desc, self.x.ptr,
+                                    beta, self.dx.desc, self.dx.ptr)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.dx

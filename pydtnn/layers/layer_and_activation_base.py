@@ -45,7 +45,6 @@ class LayerAndActivationBase(ABC):
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.paths: list[list[Self]] = []
-        self.need_dx: bool = True
         self.reqs_allred = {}
         # The next attributes will be initialized later
         self.id: int = None
@@ -79,9 +78,8 @@ class LayerAndActivationBase(ABC):
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool=True) -> None:
+    def initialize(self, prev_shape: tuple[int, ...]) -> None:
         self.prev_shape = prev_shape
-        self.need_dx = need_dx
 
     @abstractmethod
     def forward(self, x: ndarray | TensorGPU) -> ndarray | TensorGPU:

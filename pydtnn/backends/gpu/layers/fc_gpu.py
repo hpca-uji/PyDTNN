@@ -38,8 +38,8 @@ class FCGPU(LayerGPU, FC):
         self.matmul = matmul_gpu
         self.matvec = matvec_gpu
 
-    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> TensorGPU:
-        super().initialize(prev_shape, need_dx, x)
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+        super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 
         # Weights
@@ -57,10 +57,9 @@ class FCGPU(LayerGPU, FC):
         y_gpu = gpuarray.empty((self.model.batch_size, self.shape[0]), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        if self.need_dx:
-            dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-            self.dx.reshape((self.model.batch_size, *prev_shape))
+        dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx.reshape((self.model.batch_size, *prev_shape))
 
         if self.model.gpudirect:
             self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
@@ -97,7 +96,7 @@ class FCGPU(LayerGPU, FC):
                         dtype=self.model.dtype) + \
             matmul_time(m=self.model.batch_size, n=self.weights_cpu.shape[0], k=self.weights_cpu.shape[1],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        dtype=self.model.dtype)
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         m = x.ary.shape[0]
@@ -162,18 +161,17 @@ class FCGPU(LayerGPU, FC):
                 self.model.stream.synchronize()
                 self.db.ary.get_async(self.stream_2, self.db_cpu)
 
-        if self.need_dx:
-            # Compute dx
-            m = dy.ary.shape[0]
-            n = ldc = self.weights.ary.shape[0]
-            k = lda = ldb = dy.ary.shape[1]
-            trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
+        # Compute dx
+        m = dy.ary.shape[0]
+        n = ldc = self.weights.ary.shape[0]
+        k = lda = ldb = dy.ary.shape[1]
+        trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
-            self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
-                        self.weights.ary.gpudata, ldb,
-                        dy.ary.gpudata, lda, beta,
-                        self.dx.ary.gpudata, ldc, self.model.dtype)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return self.dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
+        self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
+                    self.weights.ary.gpudata, ldb,
+                    dy.ary.gpudata, lda, beta,
+                    self.dx.ary.gpudata, ldc, self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.dx

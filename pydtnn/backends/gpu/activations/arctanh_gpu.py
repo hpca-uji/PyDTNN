@@ -38,8 +38,8 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.atanh = None
         self.datanh = None
 
-    def initialize(self, prev_shape:tuple[int, ...], need_dx: bool, x: TensorGPU) -> None:
-        super().initialize(prev_shape, need_dx, x)
+    def initialize(self, prev_shape:tuple[int, ...], x: TensorGPU) -> None:
+        super().initialize(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
             "T *in, T *out".replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]),
@@ -56,16 +56,14 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
-        if self.need_dx:
-            dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.atanh(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
     def backward(self, dy: TensorGPU) -> TensorGPU | None:
-        if self.need_dx:
-            # Compute dx
-            self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
-            return self.dx
+        # Compute dx
+        self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
+        return self.dx

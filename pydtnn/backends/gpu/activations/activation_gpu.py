@@ -52,8 +52,8 @@ class ActivationGPU(Activation, ABC):
         self.dx = None
 
     # noinspection PyMethodOverriding
-    def initialize(self, prev_shape, need_dx, x):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape, x):
+        super().initialize(prev_shape)
         self.x = x
 
     def reduce_weights_async(self, gradient=True):
