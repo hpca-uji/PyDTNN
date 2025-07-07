@@ -133,11 +133,8 @@ class Tracer(metaclass=PostInitCaller):
         ops_event = self.event_types[PYDTNN_OPS_EVENT]
         mdl_event[0] = "End"
         ops_event[0] = "End"
-        constants = dict(globals())  # warning: constants must be a copy of globals()
-        for name in ["PYDTNN_MDL_EVENT", "PYDTNN_MDL_EVENTS", "PYDTNN_OPS_EVENT", "PYDTNN_OPS_EVENTS"]:
-            constants.pop(name)
-        mdl_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_MDL_")] == "PYDTNN_MDL_"]
-        ops_constants = [(name, val) for name, val in constants.items() if name[:len("PYDTNN_OPS_")] == "PYDTNN_OPS_"]
+        mdl_constants = [(event._name_, event._value_) for event in PYDTNN_MDL_EVENT_enum]
+        ops_constants = [(event._name_, event._value_) for event in PYDTNN_OPS_EVENT_enum]
         for layer in model.get_all_layers():
             for (name, val) in mdl_constants:
                 mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.canonical_name_with_id}_{name[11:].lower()}"

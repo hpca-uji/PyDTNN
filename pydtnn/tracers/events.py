@@ -39,13 +39,10 @@ class PYDTNN_MDL_EVENT_enum(IntEnum):
     WAIT_DW      = auto() # Originally: 4
     UPDATE_DW    = auto() # Originally: 5
 
-    @staticmethod
-    def get_num_events():
-        return len(PYDTNN_MDL_EVENT_enum)
 # --- END PYDTNN_MDL_EVENT_enum --- #
 
 PYDTNN_MDL_EVENT = 60000001
-PYDTNN_MDL_EVENTS = PYDTNN_MDL_EVENT_enum.get_num_events()
+PYDTNN_MDL_EVENTS = len(PYDTNN_MDL_EVENT_enum)
 # ========================== #
 
 # ========================== #
@@ -93,11 +90,8 @@ class PYDTNN_OPS_EVENT_enum(IntEnum):
     FORWARD_TRANSPOSE_Y          = auto() # Orginally: 37 || Now: 38
     FORWARD_ADP_AVG_POOL         = auto() # Now: 39
 
-    @staticmethod
-    def get_num_events():
-        return len(PYDTNN_OPS_EVENT_enum)
 # --- END PYDTNN_OPS_EVENT_enum --- #
 
 PYDTNN_OPS_EVENT = 60000002
-PYDTNN_OPS_EVENTS = PYDTNN_OPS_EVENT_enum.get_num_events()
+PYDTNN_OPS_EVENTS = len(PYDTNN_OPS_EVENT_enum)
 # ========================== #
