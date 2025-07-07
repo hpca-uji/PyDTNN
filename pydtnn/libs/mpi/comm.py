@@ -15,6 +15,7 @@ import abc
 import enum
 import uuid
 import typing
+import operator
 import functools
 import dataclasses
 from dataclasses import dataclass
@@ -209,7 +210,7 @@ class AllReduceContext[T](OperationContext[T]):
         """Apply operation over objects"""
         match self.op:
             case ReduceOperation.SUM:
-                return sum(objs.values())  # type: ignore (T should be addable)
+                return functools.reduce(operator.add, objs.values())  # type: ignore (T should be addable)
             case _:
                 raise NotImplementedError(f"op with not {self.op}")
 
