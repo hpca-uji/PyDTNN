@@ -43,9 +43,9 @@ class LeakyReluGPU(LeakyRelu, ActivationGPU):
         self.y: TensorGPU | None = None
     # --- END __init__ --- #
     
-    def initialize(self, prev_shape: tuple[int, ...], need_dx:bool, x: TensorGPU) -> None:
-        ActivationGPU.initialize(self, prev_shape, need_dx, x)
-        LeakyRelu.initialize(self, prev_shape, need_dx)        
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+        ActivationGPU.initialize(self, prev_shape, x)
+        LeakyRelu.initialize(self, prev_shape)        
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
@@ -57,7 +57,7 @@ class LeakyReluGPU(LeakyRelu, ActivationGPU):
 
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
-        self.initialize_relu_2d_gpu(prev_shape, need_dx)
+        self.initialize_relu_2d_gpu(prev_shape)
     # --- END initialize --- #
 
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
@@ -137,21 +137,20 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
     # --- END forward --- #
 
     def backward(self, dy: TensorGPU) -> TensorGPU | None:
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
 
-            n = np.prod(dy.shape, dtype=np.int32)
+        n = np.prod(dy.shape, dtype=np.int32)
 
-            self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary,
-                               self.total_num_threads, n,
-                               grid=self.grid, block=self.block,
-                               stream=self.model.stream)
+        self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary,
+                            self.total_num_threads, n,
+                            grid=self.grid, block=self.block,
+                            stream=self.model.stream)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
-            return self.dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        return self.dx
     # --- END backward --- #
 
-    def initialize_relu_2d_gpu(self, prev_shape: tuple[int, ...], need_dx: bool) -> None:
+    def initialize_relu_2d_gpu(self, prev_shape: tuple[int, ...]) -> None:
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = prev_shape
         
@@ -163,15 +162,14 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         _mask = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.mask = TensorGPU(_mask, self.model.tensor_format, self.model.cudnn_dtype)
 
-        if self.need_dx:
-            # Derivative dx
-            dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)        
+        # Derivative dx
+        dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)        
 
         self.fwd_time = \
             im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, 
                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
         self.bwd_time = \
             col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, 
-                        memory_bw=self.model.memory_bw, dtype=self.model.dtype) if need_dx else 0
+                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
     # --- END initialize_pool_2d_gpu --- #

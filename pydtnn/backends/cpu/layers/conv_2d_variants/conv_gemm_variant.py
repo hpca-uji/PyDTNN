@@ -33,8 +33,8 @@ class ConvGemmVariant(Conv2D, ABC):
         # convGemm related attributes (will be initialized in initialize())
         self.cg = None
 
-    def initialize(self, prev_shape, need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape: tuple[int, ...]):
+        super().initialize(prev_shape)
         # ConvGemm parameters
         if self.model.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
@@ -91,17 +91,16 @@ class ConvGemmVariant(Conv2D, ABC):
             self.db: np.ndarray = np.sum(dy, axis=(0, 1, 2))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
-            dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=dy.dtype)
-            self.cg.deconv_gemm_nhwc(self.weights, dy, dx,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
+        dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=dy.dtype)
+        self.cg.deconv_gemm_nhwc(self.weights, dy, dx,
+                                    vpadding=self.vpadding, hpadding=self.hpadding,
+                                    vstride=self.vstride, hstride=self.hstride,
+                                    vdilation=self.vdilation, hdilation=self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            return dx
+        return dx
 
     def _backward_cg_nchw(self, dy: np.ndarray) -> np.ndarray | None:
         """Version of the backward function that uses the convGemm library"""
@@ -120,14 +119,13 @@ class ConvGemmVariant(Conv2D, ABC):
             self.db = np.sum(dy, axis=(0, 2, 3))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
-            dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
-            self.cg.deconv_gemm_nchw(self.weights, dy, dx,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
+        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
+        self.cg.deconv_gemm_nchw(self.weights, dy, dx,
+                                    vpadding=self.vpadding, hpadding=self.hpadding,
+                                    vstride=self.vstride, hstride=self.hstride,
+                                    vdilation=self.vdilation, hdilation=self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            return dx
+        return dx

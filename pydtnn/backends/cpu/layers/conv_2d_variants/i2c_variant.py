@@ -117,25 +117,24 @@ class I2CVariant(Conv2D, ABC):
             self.db:np.ndarray = np.sum(dy, axis=(0, 1, 2))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
-            w_rows = self.weights.reshape((-1, self.co), copy=False)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
+        w_rows = self.weights.reshape((-1, self.co), copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-            res = np.linalg.matmul(dy_rows, w_rows.T)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
+        res = np.linalg.matmul(dy_rows, w_rows.T)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
+        dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-            row2im_nhwc_cython(res, dx,
-                               dy.shape[0], self.hi, self.wi, self.ci,
-                               self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        row2im_nhwc_cython(res, dx,
+                            dy.shape[0], self.hi, self.wi, self.ci,
+                            self.kh, self.kw, self.ho, self.wo,
+                            self.vpadding, self.hpadding,
+                            self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return dx
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray | None:
         """Version of the backward function that uses im2col and matmul"""
@@ -156,23 +155,22 @@ class I2CVariant(Conv2D, ABC):
             self.db = np.sum(dy, axis=(0, 2, 3))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
-            w_cols = self.weights.reshape((self.co, -1)).T
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
+        w_cols = self.weights.reshape((self.co, -1)).T
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-            res = np.linalg.matmul(w_cols, dy_cols)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
+        res = np.linalg.matmul(w_cols, dy_cols)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
+        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-            dx:np.ndarray = col2im_nchw_cython(res, dx,
-                                               dy.shape[0], self.ci, self.hi, self.wi,
-                                               self.kh, self.kw, self.ho, self.wo,
-                                               self.vpadding, self.hpadding,
-                                               self.vstride, self.hstride, self.vdilation, self.hdilation)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        dx:np.ndarray = col2im_nchw_cython(res, dx,
+                                            dy.shape[0], self.ci, self.hi, self.wi,
+                                            self.kh, self.kw, self.ho, self.wo,
+                                            self.vpadding, self.hpadding,
+                                            self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return dx

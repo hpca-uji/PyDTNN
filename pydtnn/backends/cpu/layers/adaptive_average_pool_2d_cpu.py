@@ -41,10 +41,10 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     # -- END __init__ -- #
         
     # Method from AbstractPool2DLayerCPU
-    def initialize(self, prev_shape: tuple[int, int], need_dx:bool = True):
+    def initialize(self, prev_shape: tuple[int, int]):
         # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
-        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
-        LayerCPU.initialize(self, prev_shape, need_dx)
+        AdaptiveAveragePool2D.initialize(self, prev_shape)
+        LayerCPU.initialize(self, prev_shape)
 
         
 
@@ -92,22 +92,19 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         
         return y
 
-    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:        
-        if self.need_dx:
-            dx = self.dx[dy.shape[0]: ,:]
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
-            adaptive_avg_pooling_bwd_nhwc_cython(dy, dx, self.hi, self.wi)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return dx
+    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
+        dx = self.dx[dy.shape[0]: ,:]
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
+        adaptive_avg_pooling_bwd_nhwc_cython(dy, dx, self.hi, self.wi)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return dx
     # --- END _backward_nhwc_cython --- #
         
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        if self.need_dx:
-            dx = self.dx[dy.shape[0]: ,:]
-
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
-            adaptive_avg_pooling_bwd_nchw_cython(dy, dx, self.hi, self.wi)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return dx
+        dx = self.dx[dy.shape[0]: ,:]
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
+        adaptive_avg_pooling_bwd_nchw_cython(dy, dx, self.hi, self.wi)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return dx
     # --- END _backward_nchw_cython --- #    
 # --- END AdaptiveAveragePool2DCPU --- #

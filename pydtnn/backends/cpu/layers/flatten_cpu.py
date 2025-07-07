@@ -31,8 +31,7 @@ class FlattenCPU(LayerCPU, Flatten):
         return y
 
     def backward(self, dy:ndarray) -> ndarray | None:
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
-            dx:ndarray = dy.reshape((dy.shape[0], *self.prev_shape), copy=False)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
+        dx:ndarray = dy.reshape((dy.shape[0], *self.prev_shape), copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return dx

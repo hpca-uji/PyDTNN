@@ -37,7 +37,7 @@ class Input(Layer, ABC):
         super().__init__(shape)
         self.is_shape_in_format = is_shape_in_format
 
-    def initialize(self, prev_shape:tuple, need_dx:bool=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape:tuple):
+        super().initialize(prev_shape)
         if not self.is_shape_in_format:
             self.shape = encode_tensor(self.shape, self.model.tensor_format)

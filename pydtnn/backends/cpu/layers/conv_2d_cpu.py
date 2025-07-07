@@ -53,8 +53,8 @@ class Conv2DCPU(LayerCPU,
         self.fwd_time = None
         self.bwd_time = None
 
-    def initialize(self, prev_shape:tuple[int, ...], need_dx=True) -> None:
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape:tuple[int, ...]) -> None:
+        super().initialize(prev_shape)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
         # Biases
@@ -108,14 +108,9 @@ class Conv2DCPU(LayerCPU,
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
-        if need_dx:
-            self.bwd_time += matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                                         k=self.co, cpu_speed=self.model.cpu_speed,
-                                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
-        else:
-            self.bwd_time += col2im_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                                         dtype=self.model.dtype)
+        self.bwd_time += matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
+                                        k=self.co, cpu_speed=self.model.cpu_speed,
+                                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
 
     def forward(self, x:ndarray)->ndarray:
         msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""

@@ -33,7 +33,7 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
             x = self.x
             for i, layer in enumerate(p):
                 layer.set_model(self.model)
-                layer.initialize(prev_shape, self.need_dx, x)
+                layer.initialize(prev_shape, x)
                 x = layer.y
                 if p_i == 0 and (len(p) - 1) == i:
                     self.y = x

@@ -46,15 +46,15 @@ DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 # TODO: Test this layer.
 class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
     
-    def initialize(self, prev_shape, need_dx:bool, x: TensorGPU) -> None:
-        LayerGPU.initialize(self, prev_shape, need_dx, x)
-        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)        
+    def initialize(self, prev_shape, x: TensorGPU) -> None:
+        LayerGPU.initialize(self, prev_shape, x)
+        AdaptiveAveragePool2D.initialize(self, prev_shape)        
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
         self.cuda_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
 
-        self.initialize_pool_2d_gpu(prev_shape, need_dx, x)        
+        self.initialize_pool_2d_gpu(prev_shape, x)        
     # --- END initialize --- #
     
     def __init__(self, *args, **kwargs) -> None:
@@ -183,7 +183,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         return module
     # --- END cuda_adaptive_average_pooling_fwd --- #
 
-    def initialize_pool_2d_gpu(self, prev_shape, need_dx, x):
+    def initialize_pool_2d_gpu(self, prev_shape, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
         
@@ -192,10 +192,9 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
-        if self.need_dx:
-            # Derivative dx
-            dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        # Derivative dx
+        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
@@ -204,7 +203,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         self.bwd_time = \
             col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        dtype=self.model.dtype)
         # --- END initialize_pool_2d_gpu --- #
 
     def forward(self, x: TensorGPU) -> TensorGPU:
@@ -228,17 +227,16 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
     # --- END forward --- #
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
-        if self.need_dx:
-            alpha, beta = 1.0, 0.0
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-            # Compute dx
-            cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                       self.y.desc, self.y.ptr,
-                                       dy.desc, dy.ptr,
-                                       self.x.desc, self.x.ptr,
-                                       beta, self.dx.desc, self.dx.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return self.dx
+        alpha, beta = 1.0, 0.0
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        # Compute dx
+        cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
+                                    self.y.desc, self.y.ptr,
+                                    dy.desc, dy.ptr,
+                                    self.x.desc, self.x.ptr,
+                                    beta, self.dx.desc, self.dx.ptr)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.dx
     # --- END backward --- #
     # END of methods from AbstractPool2DLayerGPU #
 

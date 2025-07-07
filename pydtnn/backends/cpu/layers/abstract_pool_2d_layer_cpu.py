@@ -28,8 +28,8 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape:tuple[int, ...], need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape:tuple[int, ...]):
+        super().initialize(prev_shape)
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
@@ -62,7 +62,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
         self.bwd_time = \
             col2im_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        dtype=self.model.dtype)
 
     def forward(self, x:ndarray) -> ndarray:
         msg = """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""

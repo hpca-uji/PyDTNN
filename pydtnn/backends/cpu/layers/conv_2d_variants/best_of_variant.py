@@ -46,8 +46,8 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
         # Other parameters
         self.variant = None
 
-    def initialize(self, prev_shape: tuple[int,...], need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape: tuple[int,...]):
+        super().initialize(prev_shape)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
             self.variant = ConvVariantEnum.BEST_OF()

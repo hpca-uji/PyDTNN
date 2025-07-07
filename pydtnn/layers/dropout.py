@@ -28,8 +28,8 @@ class Dropout(Layer, ABC):
         super().__init__()
         self.rate = min(1., max(0., rate))
 
-    def initialize(self, prev_shape, need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
         self.shape = prev_shape
 
     def show(self, attrs=""):

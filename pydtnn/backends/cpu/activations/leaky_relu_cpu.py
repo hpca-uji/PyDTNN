@@ -29,8 +29,8 @@ class LeakyReluCPU(ActivationCPU, LeakyRelu):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
     
-    def initialize(self, prev_shape, need_dx = True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = np.zeros((x.shape[0], *self.prev_shape), dtype=self.model.dtype)
@@ -39,8 +39,7 @@ class LeakyReluCPU(ActivationCPU, LeakyRelu):
         leaky_relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False), self.negative_slope)
         return self.y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray | None:
-        if self.need_dx:
-            # return dy * self.mask
-            dy *= self.mask
-            return dy
+    def backward(self, dy: np.ndarray) -> np.ndarray | None:        
+        # return dy * self.mask
+        dy *= self.mask
+        return dy

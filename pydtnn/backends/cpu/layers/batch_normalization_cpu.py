@@ -34,8 +34,8 @@ except (ImportError, ModuleNotFoundError):
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
-    def initialize(self, prev_shape, need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
         self.mu:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.var:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.dgamma:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
@@ -118,21 +118,20 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         np.sum(dy * self.xn, axis=0, out=self.dgamma)
         np.sum(dy, axis=0, out=self.dbeta)
 
-        if self.need_dx:
-            # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
-            # dx = dx.astype(self.model.dtype)
-            dx:np.ndarray = np.empty(shape=dy.shape, dtype=self.model.dtype, order="C")
-            
-            bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
+        # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
+        # dx = dx.astype(self.model.dtype)
+        dx:np.ndarray = np.empty(shape=dy.shape, dtype=self.model.dtype, order="C")
+        
+        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
-            if self.spatial:
-                match self.model.tensor_format:
-                    case PYDTNN_TENSOR_FORMAT.NHWC:
-                        dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-                    case PYDTNN_TENSOR_FORMAT.NCHW:
-                        dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
-                    case _:
-                        raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
+        if self.spatial:
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                case _:
+                    raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
 
-            return dx
+        return dx
     # --- END backward --- #

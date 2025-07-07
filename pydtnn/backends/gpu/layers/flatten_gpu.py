@@ -29,8 +29,8 @@ from ..tensor_gpu import TensorGPU
 
 class FlattenGPU(LayerGPU, Flatten):
 
-    def initialize(self, prev_shape, need_dx, x):
-        super().initialize(prev_shape, need_dx, x)
+    def initialize(self, prev_shape, x):
+        super().initialize(prev_shape, x)
         self.y = x
 
     # TODO: is this correct???
@@ -41,9 +41,8 @@ class FlattenGPU(LayerGPU, Flatten):
         return self.y
 
     def backward(self, dy:TensorGPU) -> TensorGPU | None:
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
-            self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
-            # self.y.reshape((self.model.batch_size, *self.prev_shape))
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return self.dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
+        self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
+        # self.y.reshape((self.model.batch_size, *self.prev_shape))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.dx

@@ -40,8 +40,8 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         self.out_co = None
         self.idx_co = None
 
-    def initialize(self, prev_shape:tuple[int, ...], need_dx:bool, x:TensorGPU) -> TensorGPU:
-        super().initialize(prev_shape, need_dx, x)
+    def initialize(self, prev_shape:tuple[int, ...], x:TensorGPU) -> TensorGPU:
+        super().initialize(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
             "T *dst, T *src, int N, int H, int W, int C, int first_c, int last_c".replace("T",
@@ -111,9 +111,9 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         for p in self.paths:
             prev_shape = self.prev_shape
             x = self.x
-            for i, layer in enumerate(p):
+            for layer in p:
                 layer.set_model(self.model)
-                layer.initialize(prev_shape, self.need_dx, x)
+                layer.initialize(prev_shape, x)
                 x = layer.y
                 prev_shape = layer.shape
                 self.fwd_time += layer.fwd_time

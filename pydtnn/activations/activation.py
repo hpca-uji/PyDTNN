@@ -31,8 +31,8 @@ class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
         super().__init__(shape)
         self.y: ndarray | TensorGPU | None = None
 
-    def initialize(self, prev_shape: tuple[int,...] , need_dx:bool = True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape: tuple[int,...]):
+        super().initialize(prev_shape)
         self.shape = prev_shape
 
     @property

@@ -27,7 +27,7 @@ from ..tensor_gpu import TensorGPU
 
 class MaxPool2DGPU(AbstractPool2DLayerGPU, MaxPool2D):
 
-    def initialize(self, prev_shape: tuple[int, ...], need_dx: bool, x: TensorGPU) -> None:
-        super().initialize(prev_shape, need_dx, x)
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+        super().initialize(prev_shape, x)
         pool_mode = cudnn.cudnnPoolingMode['CUDNN_POOLING_MAX']
-        self.initialize_pool_2d_gpu(prev_shape, need_dx, x, pool_mode)
+        self.initialize_pool_2d_gpu(prev_shape, x, pool_mode)

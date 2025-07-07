@@ -96,8 +96,8 @@ supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
 
-import warnings
-warnings.filterwarnings("error")
+#import warnings
+#warnings.filterwarnings("error")
 
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -581,13 +581,12 @@ class Model:
 
     def add(self, layer: LayerAndActivationBase) -> None:
         layer.set_model(self)
-        need_dx = layer.id > 0
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
         if self.enable_cudnn:
             y = self.layers[-1].y if layer.id > 0 else None
-            layer.initialize(prev_shape, need_dx, y)
+            layer.initialize(prev_shape, y)
         else:
-            layer.initialize(prev_shape, need_dx)
+            layer.initialize(prev_shape)
 
         self.nparams += layer.nparams
         self.layers.append(layer)

@@ -25,6 +25,6 @@ from ..performance_models import *
 
 class Flatten(Layer, ABC):
 
-    def initialize(self, prev_shape, need_dx=True):
-        super().initialize(prev_shape, need_dx)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
         self.shape = (int(np.prod(prev_shape)),)
