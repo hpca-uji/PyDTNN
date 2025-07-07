@@ -9,15 +9,11 @@ mpirun -np 4 \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
-  --model_sync_participation=avail2all \
-  --model_sync_alg=wavg \
-  --model_sync_min_avail=0 \
-  --model_sync_freq=0 \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \
   --validation_split=0.2 \
-  --num_epochs=3 \
+  --num_epochs=50 \
   --evaluate=True \
   --optimizer=adam \
   --learning_rate=0.01 \
