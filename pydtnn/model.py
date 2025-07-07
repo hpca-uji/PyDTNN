@@ -462,6 +462,12 @@ class Model:
         self.total_metrics: Array
         # ---
 
+        # Encryption
+        if self.encryption_name:
+            self._init_crypt(self.encryption_name)
+        else:
+            self.crypt = None
+
         self.weights_and_bias_filename:str # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         # Load weights and bias
         if self.weights_and_bias_filename:
@@ -904,12 +910,6 @@ class Model:
 
                 self.rank_weight = self._compute_rank_weight(rank_mask)
 
-                # Encryption
-                if self.encryption_name:
-                    self._init_crypt(self.encryption_name)
-                else:
-                    self.crypt = None
-
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
                 toc = timer()
@@ -1048,12 +1048,6 @@ class Model:
         return self.total_metrics
     # --- END _train_batch --- #
 
-    def train(self, x_train: Array, y_train: Array, x_val: Array, y_val: Array, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
-        self.dataset:Dataset = CustomDataset(self, x_train=x_train, y_train=y_train, x_test=x_val, y_test=y_val)
-        history = self.train_dataset(bar_width=bar_width)
-        return history
-    # --- END train --- #
-
     def _compute_rank_weight(self, mask:list[int]) -> float:
         # TODO Move "all" and "avail2all" to an Enum?
         match self.model_sync_participation:
@@ -1117,11 +1111,6 @@ class Model:
 
         return self.total_metrics
     # --- END _evaluate_batch --- #
-
-    def evaluate(self, x_test:Array, y_test:Array, bar_width=BAR_WIDTH):
-        self.dataset = CustomDataset(self, x_test=x_test, y_test=y_test)
-        self.evaluate_dataset(bar_width=bar_width)
-    # --- END evaluate --- #
 
     @ensure_model_is_initialized
     def evaluate_dataset(self, bar_width=BAR_WIDTH):
