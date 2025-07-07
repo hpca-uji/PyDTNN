@@ -111,7 +111,8 @@ class ActivationGPU(Activation, ABC):
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 dw_cpu *= self.model.rank_weight
-                # TODO: crypt
+                if self.model.crypt:
+                    dw_cpu = self.model.crypt.encrypt(dw_cpu)
                 if isinstance(dw_cpu, abc.Buffer):
                     req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 else:
@@ -135,7 +136,8 @@ class ActivationGPU(Activation, ABC):
                     dw = getattr(self, dw_)
                 else:
                     dw = res
-                # TODO: decrypt
+                if self.model.crypt:
+                    dw = self.model.crypt.decrypt(dw)
                 setattr(self, dw_, dw)
 
                 # # Hierarchical mode NCCL + MPI
@@ -219,12 +221,14 @@ class ActivationGPU(Activation, ABC):
 
                 dw_cpu = getattr(self, f"{dw_}_cpu")
                 dw_cpu *= self.model.rank_weight
-                # TODO: crypt
+                if self.model.crypt:
+                    dw_cpu = self.model.crypt.encrypt(dw_cpu)
                 if isinstance(dw, abc.Buffer):
                     self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 else:
                     dw_cpu = self.model.comm.allreduce(dw_cpu, op=MPI.SUM)
-                # TODO: decrypt
+                if self.model.crypt:
+                    dw_cpu = self.model.crypt.decrypt(dw_cpu)
                 setattr(self, f"{dw_}_cpu", dw_cpu)
 
                 if not self.model.gpudirect:
