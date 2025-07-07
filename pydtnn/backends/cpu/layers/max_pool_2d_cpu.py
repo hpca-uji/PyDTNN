@@ -37,12 +37,15 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
 
     def initialize(self, prev_shape, need_dx=True):
         super().initialize(prev_shape, need_dx)        
-        self.minval = np.iinfo(self.model.dtype).min if np.issubdtype(self.model.dtype, np.integer) else np.finfo(self.model.dtype).min
-
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            self._idx_max = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=np.int32)
-        else: # if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-            self._idx_max = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=np.int32)
+        self.minval = np.iinfo(self.model.dtype).min if np.issubdtype(self.model.dtype, np.integer) else np.finfo(self.model.dtype).min            
+        
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                self._idx_max = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=np.int32)
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                self._idx_max = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=np.int32)
+            case _:
+                raise TypeError(f"Function: \'AveragePool2DCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
         y = np.empty((x.shape[0],), dtype=self.model.dtype)

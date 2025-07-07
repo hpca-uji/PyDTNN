@@ -48,6 +48,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         else: 
             self.mean = self.mean_numpy
             self.n = None
+        
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                self.y = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                self.y = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
+            case _:
+                raise TypeError(f"Function: \'BatchNormalizationCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
     # --
 
     def mean_all_reduce(self, data:np.ndarray, total:int, _mean:np.ndarray) -> None:
