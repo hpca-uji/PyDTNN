@@ -534,7 +534,7 @@ class Model:
             self.crypt = module.Context()
 
         if self.comm:
-            self.crypt = self.comm.bcast(self.crypt)
+            self.crypt = self.comm.bcast(self.crypt if self.comm_rank == 0 else None)
 
         assert self.crypt is not None
 
