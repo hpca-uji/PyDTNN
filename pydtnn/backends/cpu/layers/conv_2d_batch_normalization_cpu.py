@@ -30,7 +30,6 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
         super().__init__(*args, **kwargs)
 
     def initialize(self, from_parent_dict:dict=None, *args, **kwargs):
-        # TODO: check why super wasn't called
         super().initialize(*args, **kwargs)
         self.forward = {"_forward_nchw_cw": self._forward_nchw_cw,
                         "_forward_nchw_cg": self._forward_nchw_cg,
