@@ -77,6 +77,7 @@ class NadamCPU(OptimizerCPU, Nadam):
             #w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon)))
             w -= (self.learning_rate * self.decay) * w
             vt += self.epsilon
-            mt /= np.sqrt(vt)
+            np.sqrt(vt, out=vt)
+            mt /= vt
             mt *= self.learning_rate
             w -= mt
