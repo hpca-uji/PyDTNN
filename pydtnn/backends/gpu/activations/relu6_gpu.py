@@ -136,7 +136,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         return self.y
     # --- END forward --- #
 
-    def backward(self, dy: TensorGPU) -> TensorGPU | None:
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
 
         n = np.prod(dy.shape, dtype=np.int32)

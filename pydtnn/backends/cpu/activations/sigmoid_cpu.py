@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,7 @@ class SigmoidCPU(ActivationCPU, Sigmoid):
         self.y = x.astype(self.model.dtype, copy=False)
         return self.y
 
-    def backward(self, dy:np.ndarray) -> np.ndarray | None:
+    def backward(self, dy:np.ndarray) -> np.ndarray:
         #return dy * (self.y * (1 - self.y))
         dy *= self.y
         dy *= (1 - self.y)

@@ -47,6 +47,6 @@ class DropoutCPU(LayerCPU, Dropout):
             case _:
                 raise RuntimeError(f"Unexpected model mode \'{self.model.mode}\'.")
 
-    def backward(self, dy:np.ndarray) -> np.ndarray | None:
+    def backward(self, dy:np.ndarray) -> np.ndarray:
         dy *= self.mask
         return dy

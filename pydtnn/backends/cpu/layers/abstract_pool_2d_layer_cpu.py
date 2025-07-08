@@ -68,7 +68,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
         msg = """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
 
-    def backward(self, dy:ndarray) -> ndarray | None:
+    def backward(self, dy:ndarray) -> ndarray:
         msg = """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
     # ---
@@ -78,7 +78,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
         ...
 
     @abstractmethod
-    def _backward_nchw_cython(self, dy:ndarray) -> ndarray | None:
+    def _backward_nchw_cython(self, dy:ndarray) -> ndarray:
         ...
     
     @abstractmethod
@@ -86,6 +86,6 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
         ...
     
     @abstractmethod
-    def _backward_nhwc_cython(self, dy:ndarray) -> ndarray | None:
+    def _backward_nhwc_cython(self, dy:ndarray) -> ndarray:
         ...
     

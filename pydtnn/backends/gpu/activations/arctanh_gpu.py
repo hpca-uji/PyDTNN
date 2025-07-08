@@ -63,7 +63,7 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.atanh(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU | None:
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         # Compute dx
         self.datanh(dy.ary, self.dx.ary, stream=self.model.stream)
         return self.dx

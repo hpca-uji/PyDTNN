@@ -65,7 +65,7 @@ class LogGPU(ActivationGPU, Log):
         self.log(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU | None:
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         # Compute dx
         self.dlog(dy.ary, self.dx.ary, stream=self.model.stream)
         return self.dx

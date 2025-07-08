@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -31,7 +31,7 @@ class TanhCPU(ActivationCPU, Tanh):
         self.y = np.tanh(x, casting="unsafe", dtype=self.model.dtype)
         return self.y
 
-    def backward(self, dy:np.ndarray) -> np.ndarray | None:
+    def backward(self, dy:np.ndarray) -> np.ndarray:
         # return 1 - np.tanh(dy) ** 2
         np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
         dy **= 2

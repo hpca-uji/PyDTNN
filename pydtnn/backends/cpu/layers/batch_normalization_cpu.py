@@ -111,7 +111,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         return y
     # --- END forward --- #
 
-    def backward(self, dy: np.ndarray) -> np.ndarray | None:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         if self.spatial:
             dy = dy.reshape((-1, self.ci), copy=True)
 

@@ -79,7 +79,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
-    def _backward_nhwc_i2c(self, dy:np.ndarray) -> np.ndarray | None:
+    def _backward_nhwc_i2c(self, dy:np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
         dy_rows = np.tile(dy.reshape(-1, 1) / pool_size, (1, pool_size))
         dx = np.zeros_like(dy, dtype=self.model.dtype)
@@ -94,7 +94,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
         dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
         return dx
 
-    def _backward_nhwc_cython(self, dy:np.ndarray) -> np.ndarray | None:
+    def _backward_nhwc_cython(self, dy:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
@@ -107,7 +107,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx
 
-    def _backward_nchw_i2c(self, dy:np.ndarray) -> np.ndarray | None:
+    def _backward_nchw_i2c(self, dy:np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
         dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype= self.model.dtype)
@@ -122,7 +122,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
         dx = dx.reshape(-1, self.ci, self.hi, self.wi)
         return dx
 
-    def _backward_nchw_cython(self, dy:np.ndarray) -> np.ndarray | None:
+    def _backward_nchw_cython(self, dy:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
