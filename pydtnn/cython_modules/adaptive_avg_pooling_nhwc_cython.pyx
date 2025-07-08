@@ -81,6 +81,7 @@ def adaptive_avg_pooling_fwd_nhwc_cython(npDT[:,:,:,::1] x,
 @cython.cdivision(True)
 @cython.boundscheck(False)
 @cython.wraparound(False)
+@cython.initializedcheck(False)
 def adaptive_avg_pooling_bwd_nhwc_cython(npDT[:,:,:,::1] dy, 
                                          npDT[:,:,:,::1] dx,
                                          int new_h, int new_w) -> None:
