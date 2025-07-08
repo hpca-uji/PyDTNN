@@ -547,10 +547,11 @@ def im2col_nchw_cython[T: npDT](x:npDT_4Dims[T],
                                     kh:int, kw:int, 
                                     vpadding:int, hpadding:int,
                                     vstride:int, hstride:int, 
-                                    vdilation:int, hdilation:int) -> np.ndarray:
+                                    vdilation:int, hdilation:int) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
+        cols (npDT_2Dims): The 2 dimensional array where the image as columns will be stored (it should be initialized as zeros).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -560,20 +561,22 @@ def im2col_nchw_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
+        Nothing. The output is stored in \"cols\".
     """
     ...
 # ---
 
 def col2im_nchw_cython[T: npDT](cols:npDT_2Dims[T],
+                                x:npDT_4Dims[T],
                                 n: int, h: int, w: int, c: int,
                                 kh: int, kw: int,
                                 vpadding: int, hpadding: int,
                                 vstride: int, hstride: int,
-                                vdilation: int, hdilation: int) -> np.ndarray:
+                                vdilation: int, hdilation: int) -> None:
     """
     Args:
-        cols (npDT_2Dims): The 2 dimensional array (the image).
+        cols (npDT_2Dims): The 2 dimensional array (the image as columns).
+        x (npDT_4Dims): The 4 dimensional array wher the image will be stored (it should be initialized as zeros).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -583,7 +586,7 @@ def col2im_nchw_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
+        Nothing. The output is stored in \"x\".
     """
     ...
 # ---
@@ -592,13 +595,15 @@ def col2im_nchw_cython[T: npDT](cols:npDT_2Dims[T],
 # IM2ROW 1 CHANNEL NHWC #
 #########################
 def im2row_1ch_nhwc_cython[T: npDT](x:npDT_4Dims[T],
+                                    rows:npDT_2Dims[T],
                                     kh:int, kw:int, 
                                     vpadding:int, hpadding:int,
                                     vstride:int, hstride:int, 
-                                    vdilation:int, hdilation:int) -> np.ndarray:
+                                    vdilation:int, hdilation:int) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
+        rows (npDT_2Dims): The 2 dimensional array where the image will be stored as rows (it should be initalized with 0s).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -608,20 +613,22 @@ def im2row_1ch_nhwc_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
+        Nothing. The output is stored in \"rows\".
     """
     ...
 # ---
 
-def row2im_1ch_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
+def row2im_1ch_nhwc_cython[T: npDT](rows:npDT_2Dims[T],
+                                    x: npDT_4Dims[T],
                                     n: int, h: int, w: int, c: int,
                                     kh: int, kw: int,
                                     vpadding: int, hpadding: int,
                                     vstride: int, hstride: int,
-                                    vdilation: int, hdilation: int) -> np.ndarray:
+                                    vdilation: int, hdilation: int) -> None:
     """
     Args:
-        cols (npDT_2Dims): The 2 dimensional array (the image).
+        rows (npDT_2Dims): The 2 dimensional array (the image as rows).
+        x (npDT_4Dims): The 4 dimensional array where the image will be stored (it should be initalized with 0s).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -631,7 +638,7 @@ def row2im_1ch_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
+        Nothing. The output is sotred in \"x\".
     """
     ...
 # ---
@@ -640,13 +647,15 @@ def row2im_1ch_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
 # IM2COL NHWC #
 ###############
 def im2row_nhwc_cython[T: npDT](x:npDT_4Dims[T],
+                                rows:npDT_2Dims[T],
                                 kh:int, kw:int, 
                                 vpadding:int, hpadding:int,
                                 vstride:int, hstride:int, 
-                                vdilation:int, hdilation:int) -> np.ndarray:
+                                vdilation:int, hdilation:int) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
+        rows (npDT_2Dims): The 2 dimensional array where the image as columns is stored (it should be initalized with 0s).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -656,20 +665,22 @@ def im2row_nhwc_cython[T: npDT](x:npDT_4Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT_2Dims): The 2 dimensional array where the image as columns is stored.
+        Nothing. The output is sotred in \"rows\".
     """
     ...
 # ---
 
 def row2im_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
+                                x: npDT_4Dims[T],
                                 n: int, h: int, w: int, c: int,
                                 kh: int, kw: int,
                                 vpadding: int, hpadding: int,
                                 vstride: int, hstride: int,
-                                vdilation: int, hdilation: int) -> np.ndarray:
+                                vdilation: int, hdilation: int) -> None:
     """
     Args:
         cols (npDT_2Dims): The 2 dimensional array (the image).
+        x (npDT_4Dims): The 4 dimensional array where the image will be stored (it should be initalized with 0s).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         vpadding (int): vertical padding value.
@@ -679,7 +690,7 @@ def row2im_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        out (npDT_4Dims): The 4 dimensional array where the output image is stored.
+        Nothing. The output is stored in \"x\".
     """
     ...
 # ---

@@ -43,14 +43,14 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self._idx_max = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=np.int32)
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self._idx_max = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=np.int32)
+                self._idx_max = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=np.int32)
             case _:
                 raise TypeError(f"Function: \'AveragePool2DCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
-        y = np.empty((x.shape[0],), dtype=self.model.dtype)
-        amax = np.empty((x.shape[0],), dtype=np.int32)
-        rng = np.empty((x.shape[0],), dtype=np.int32)
+        y = np.zeros((x.shape[0],), dtype=self.model.dtype)
+        amax = np.zeros((x.shape[0],), dtype=np.int32)
+        rng = np.zeros((x.shape[0],), dtype=np.int32)
         x_rows = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)        
@@ -83,9 +83,9 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
         n, c, _, _ = x.shape
         x_cols = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype)
-        y = np.empty((n,), dtype=self.model.dtype)
-        amax = np.empty((n,), dtype=np.int32)
-        rng = np.empty((n,), dtype=np.int32)
+        y = np.zeros((n,), dtype=self.model.dtype)
+        amax = np.zeros((n,), dtype=np.int32)
+        rng = np.zeros((n,), dtype=np.int32)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_1ch_nchw_cython(x, x_cols,
