@@ -61,7 +61,6 @@ class PointwiseVariant(Conv2D, ABC):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
         if self.use_bias:
-            # TODO: POSIBLE MEJORA
             y += self.biases.reshape((1, self.co, 1, 1), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y

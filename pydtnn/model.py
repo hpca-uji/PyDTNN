@@ -143,7 +143,6 @@ def _layer_id_generator() -> Iterable[int]:
         current_layer_id += 1
 # --- END _layer_id_generator --- #
 
-# TODO: Check the output.
 def ensure_model_is_initialized(method:Callable):
     @functools.wraps(method)
     def wrapper_ensure_model_is_initialized(*args, **kwargs) -> Callable:
@@ -223,13 +222,6 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
     global supported_cudnn, supported_nccl
     supported_cudnn = True
     supported_nccl = True
-    
-    # TODO | FIXME: Remove the following comments after the commit.
-    # import pycuda.autoinit
-    # The next fake test exists only to avoid the pycuda.autoinit import being removed when optimizing imports
-    # if self.kwargs.get('fake_pycuda_autoinit_option'):
-    #    pycuda.autoinit()
-    # Uncomment the next code if pycuda.autoinit is not available
 
     device_id:int = comm_rank % drv.Device.count()
     drv.init()
@@ -321,8 +313,7 @@ def _calculate_batch_size(batch_size: int | None, global_batch_size: int | None,
         _batch_size = batch_size
     else:
         _batch_size = DEFAULT_BACH_SIZE
-
-    # NOTE | TODO: Check if '(num processes: {comm_size})'
+    
     if _batch_size < 1:
         raise SystemExit(f"'batch_size' ({_batch_size}) too small or too many processes (num processes: {comm_size})")
 
@@ -477,7 +468,6 @@ class Model:
         if self.dataset_name:
             self.dataset: Dataset = get_dataset(self)
         
-        # TODO: Generate the Optimizer's object in other place and pass it as a parameter to this class.
         # Optimizers and LRSchedulers
         # NOTE: 'self.kwargs["learning_rate_scaling"]' comes from "Parser" (vars(parser.parse_args([])))
         if self.kwargs["learning_rate_scaling"]:
@@ -487,7 +477,6 @@ class Model:
             self.learning_rate:float = self.kwargs["learning_rate"] / self.comm_size
 
         self.optimizer = get_optimizer(self)
-        # TODO: Generate the lr_schedulers's object in other place and pass it as a parameter to this class.
         self.lr_schedulers = get_lr_schedulers(self)
         # Metrics list
         self.metrics: str # NOTE: This variable comes from the Parser.
