@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -24,9 +24,10 @@ import numpy as np
 
 from typing import Self, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
-    from pydtnn.model import Model
+    from pydtnn.model import Model, Array
     from pydtnn.activations.activation import Activation
     from ..optimizers.optimizer import Optimizer
+else: Array = None
 
 from ..backends.gpu.tensor_gpu import TensorGPU
 from numpy import ndarray
@@ -82,11 +83,11 @@ class LayerAndActivationBase(ABC):
         self.prev_shape = prev_shape
 
     @abstractmethod
-    def forward(self, x: ndarray | TensorGPU) -> ndarray | TensorGPU:
+    def forward(self, x: Array) -> Array:
         pass
 
     @abstractmethod
-    def backward(self, dy: ndarray | TensorGPU | None) -> ndarray | TensorGPU | None:
+    def backward(self, dy: Array) -> Array:
         pass
 
     @abstractmethod
