@@ -25,10 +25,13 @@ from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 
 class TanhCPU(ActivationCPU, Tanh):
 
-    # TODO: Improve this (self.y)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
+        self._y = np.empty((self.model.batch_size, *prev_shape))
 
     def forward(self, x:np.ndarray) -> np.ndarray:
-        self.y = np.tanh(x, casting="unsafe", dtype=self.model.dtype)
+        self.y = self._y[:x.shape[0], :]
+        np.tanh(x, out=self.y, casting="unsafe", dtype=self.model.dtype)
         return self.y
 
     def backward(self, dy:np.ndarray) -> np.ndarray:
