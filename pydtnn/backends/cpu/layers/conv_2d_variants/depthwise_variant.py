@@ -75,7 +75,7 @@ class DepthwiseVariant(Conv2D, ABC):
         return y
     # --- END _forward_depthwise_nchw --- #
 
-    def _backward_depthwise_nhwc(self, dy:np.ndarray) -> np.ndarray | None:
+    def _backward_depthwise_nhwc(self, dy:np.ndarray) -> np.ndarray:
         
         dx = np.zeros_like(self.x)
         self.dw = np.zeros_like(self.weights)
@@ -96,7 +96,7 @@ class DepthwiseVariant(Conv2D, ABC):
         return dx
     # --- END _backward_depthwise_nhwc --- #
 
-    def _backward_depthwise_nchw(self, dy:np.ndarray) -> np.ndarray | None:
+    def _backward_depthwise_nchw(self, dy:np.ndarray) -> np.ndarray:
         
         dx = np.zeros_like(self.x)
         self.dw = np.zeros_like(self.weights)

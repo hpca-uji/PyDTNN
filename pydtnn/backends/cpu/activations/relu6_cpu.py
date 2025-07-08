@@ -40,7 +40,7 @@ class Relu6CPU(Relu6, ActivationCPU):
         capped_relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False), self.cap)
         return self.y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray | None:        
+    def backward(self, dy: np.ndarray) -> np.ndarray:        
         # return dy * self.mask
         dy *= self.mask
         return dy

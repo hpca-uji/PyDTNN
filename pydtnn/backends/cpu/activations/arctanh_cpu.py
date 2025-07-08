@@ -33,7 +33,7 @@ class ArctanhCPU(ActivationCPU, Arctanh):
         self.y = np.arctan(x, casting="unsafe", dtype=x.dtype)
         return self.y
 
-    def backward(self, dy: ndarray) -> ndarray | None:        
+    def backward(self, dy: ndarray) -> ndarray:
         # return 1 / (1 + dy ** 2)
         dy **= 2
         dy += 1

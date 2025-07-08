@@ -67,7 +67,7 @@ class PointwiseVariant(Conv2D, ABC):
         return y
     # --- END _forward_pointwise_nchw --- #
 
-    def _backward_pointwise_nhwc(self, dy: np.ndarray) -> np.ndarray | None:
+    def _backward_pointwise_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
@@ -108,7 +108,7 @@ class PointwiseVariant(Conv2D, ABC):
         return dx
     # --- END _backward_pointwise_nhwc --- #
 
-    def _backward_pointwise_nchw(self, dy: np.ndarray) -> np.ndarray | None:
+    def _backward_pointwise_nchw(self, dy: np.ndarray) -> np.ndarray:
         
         _n, _c, _h, _w = dy.shape
         _dim = _n * _h * _w

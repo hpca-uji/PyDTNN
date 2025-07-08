@@ -55,7 +55,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
                                   self.y.desc, self.y.ptr)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU | None:
+    def backward(self, dy: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha,
                                     self.y.desc, self.y.ptr,

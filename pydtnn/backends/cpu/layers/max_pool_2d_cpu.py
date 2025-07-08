@@ -113,7 +113,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
-    def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray | None:
+    def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         dy_rows = np.zeros((np.prod(dy.shape), self.kh * self.kw), dtype=self.model.dtype)
         dy_rows[self.idx_max] = dy.flatten()
         dx = np.zeros_like(dy, dtype=self.model.dtype)
@@ -126,7 +126,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
 
-    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray | None:
+    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
         # NOTE: It's necessary to initalize dx with "zeros" in every call due there are some position that "max_pool_2d_bwd_nhwc_cython" doesn't set.
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype= self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -138,7 +138,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx
 
-    def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray | None:
+    def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype)
         dy_cols[self.idx_max] = dy.flatten().astype(dtype=self.model.dtype, copy=False)
         dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype= self.model.dtype)
@@ -153,7 +153,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         dx:np.ndarray = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
         return dx
 
-    def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray | None:
+    def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
         # NOTE: It's necessary to initalize dx with "zeros" in every call due there are some position that "max_pool_2d_bwd_nhwc_cython" doesn't set.
         dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype= self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)          

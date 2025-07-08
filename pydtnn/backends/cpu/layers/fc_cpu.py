@@ -74,7 +74,7 @@ class FCCPU(LayerCPU, FC):
 
         return dy
 
-    def backward(self, dy: np.ndarray) -> np.ndarray | None:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
 
         # self.model.mode = TRAIN_MODE is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
