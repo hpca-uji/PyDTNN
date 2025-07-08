@@ -67,7 +67,3 @@ class SGDCPU(OptimizerCPU, SGD):
             _w += v
             _w *= self.learning_rate
             w -= _w
-
-            # TODO: check if "del" worths to reduce the memory without increasing the execution time.
-            del v
-            del _w

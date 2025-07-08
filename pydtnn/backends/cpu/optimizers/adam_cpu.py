@@ -72,7 +72,8 @@ class AdamCPU(OptimizerCPU, Adam):
             _w = self.decay * w
             
             vt += self.epsilon
-            mt /= np.sqrt(vt)
+            np.sqrt(vt, out=vt)
+            mt /= vt
 
             _w += mt
             _w *= self.learning_rate

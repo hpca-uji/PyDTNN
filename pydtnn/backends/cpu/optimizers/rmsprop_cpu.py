@@ -58,7 +58,7 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
             #w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
             w -= (self.learning_rate * self.decay) * w
             _cache = cache + self.epsilon
-            _cache = np.sqrt(_cache)
+            np.sqrt(_cache, out=_cache)
             _dw = dw / _cache 
             _dw *= self.learning_rate
             w -= _dw
