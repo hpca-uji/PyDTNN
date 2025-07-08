@@ -382,7 +382,7 @@ class Model:
         self.mode:ModelModeEnum = UNSPECIFIED_MODE
 
         # Memory cache optimization
-        self.enable_memory_cache: bool # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+        self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         if self.enable_memory_cache:
             MemoryCache.enable()
         else:
@@ -890,10 +890,10 @@ class Model:
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
                 model_sync_count += 1
 
-                if i_batch < train_batches_min:
-                    rank_mask = [1] * self.comm_size
-                else:
+                if i_batch >= train_batches_min and sync_model:
                     rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                else:
+                    rank_mask = [1] * self.comm_size
                 rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
