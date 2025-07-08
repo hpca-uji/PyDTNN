@@ -46,8 +46,6 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         AdaptiveAveragePool2D.initialize(self, prev_shape)
         LayerCPU.initialize(self, prev_shape)
 
-        
-
         if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype = self.model.dtype)
             self.dx = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
@@ -85,7 +83,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y
 
     def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
-        y = self.y[:x.shape[0] , :]
+        y = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)        
         adaptive_avg_pooling_fwd_nchw_cython(x, y, self.ho, self.wo)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -93,7 +91,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = self.dx[dy.shape[0]: ,:]
+        dx = self.dx[:dy.shape[0],:]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nhwc_cython(dy, dx, self.hi, self.wi)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -101,7 +99,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     # --- END _backward_nhwc_cython --- #
         
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = self.dx[dy.shape[0]: ,:]
+        dx = self.dx[:dy.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nchw_cython(dy, dx, self.hi, self.wi)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
