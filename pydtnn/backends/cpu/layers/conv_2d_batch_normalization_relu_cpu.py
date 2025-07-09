@@ -19,7 +19,7 @@
 
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DBatchNormalizationRelu
-from pydtnn.model import TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 from numpy import ndarray
@@ -46,7 +46,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
     def _forward_nchw_cw(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convWinograd + BatchNorm + Relu"""
 
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
@@ -65,7 +65,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
     def _forward_nchw_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
 
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
@@ -82,7 +82,7 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
     def _forward_nhwc_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
 
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             raise RuntimeError("Fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None

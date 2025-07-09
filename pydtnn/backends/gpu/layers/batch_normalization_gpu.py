@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -27,7 +27,7 @@ import pycuda.gpuarray as gpuarray
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import BatchNormalization
-from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
@@ -120,27 +120,28 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
-        if self.model.mode == TRAIN_MODE:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-            cudnn.cudnnBatchNormalizationForwardTraining(self.model.cudnn_handle, self.mode,
-                                                         alpha, beta, x.desc, x.ptr,
-                                                         self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
-                                                         self.gamma.ptr,
-                                                         self.beta.ptr, self.factor, self.running_mean.ptr,
-                                                         self.running_var.ptr,
-                                                         self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        elif self.model.mode == EVALUATE_MODE:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-            cudnn.cudnnBatchNormalizationForwardInference(self.model.cudnn_handle, self.mode,
-                                                          alpha, beta, x.desc, x.ptr,
-                                                          self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
-                                                          self.gamma.ptr,
-                                                          self.beta.ptr, self.running_mean.ptr, self.running_var.ptr,
-                                                          self.epsilon)
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        else:
-            raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
+        match self.model.mode:
+            case ModelModeEnum.TRAIN:
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+                cudnn.cudnnBatchNormalizationForwardTraining(self.model.cudnn_handle, self.mode,
+                                                            alpha, beta, x.desc, x.ptr,
+                                                            self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
+                                                            self.gamma.ptr,
+                                                            self.beta.ptr, self.factor, self.running_mean.ptr,
+                                                            self.running_var.ptr,
+                                                            self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+            case ModelModeEnum.EVALUATE:
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+                cudnn.cudnnBatchNormalizationForwardInference(self.model.cudnn_handle, self.mode,
+                                                            alpha, beta, x.desc, x.ptr,
+                                                            self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
+                                                            self.gamma.ptr,
+                                                            self.beta.ptr, self.running_mean.ptr, self.running_var.ptr,
+                                                            self.epsilon)
+                self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+            case _:
+                raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
         return self.y
 
     def backward(self, dy):

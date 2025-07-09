@@ -6,7 +6,7 @@ from torch.nn import Module as PyTorch_Model
 import torch.nn as nn
 import torch
 
-from pydtnn.model import EVALUATE_MODE, TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.activations import *
 from pydtnn.layers import *
@@ -29,8 +29,8 @@ from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
 import pydtnn
 
 # CONSTANTS
-N = 2
-SHAPE = (3, 3, 20) # CHW
+N = 100
+SHAPE = (3, 20, 20) # NCHW
 CONV_IN_CHANNELS = SHAPE[0] # Shape format: CHW
 CONV_OUT_CHANNELS = 64 # = PyTorch's Number filters
 CONV_KERNEL_SIZE = (2,2)
@@ -65,7 +65,7 @@ KWARGS = {
         "dtype": DTYPE,
         "tracing": False,
         "tracer_output": "",
-        "batch_size": min(64, N)
+        "batch_size": N
     }
 # --- END EXECUTION PARAMETERS --- #
 
@@ -88,7 +88,7 @@ DICT_SUPPORTED_LAYERS:Dict[str, Tuple[nn.Module, float]] = {
     # Dropout layers:
     "Dropout": (nn.Dropout(), 1e10), # It varies due the chosen distribution. In p=0, p=1 and testing mode they have the same results.
     # Linear layers:
-    "Linear": (nn.Linear(LINEAR_IN_FEATURES, LINEAR_OUT_FEATURES), 2e-3),
+    #"Linear": (nn.Linear(LINEAR_IN_FEATURES, LINEAR_OUT_FEATURES), 2e-3),
     # Normalization layers:
     "BatchNorm2d": (nn.BatchNorm2d(BATCH_NORM_IN_FEATURES), 1e-5),
     "Flatten": (nn.Flatten(), 1e-5),
@@ -237,7 +237,7 @@ def test_layers(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, A
                                            default_output_activation_layer=None, 
                                            is_input_shape_in_format=True, **kwargs)
     
-    new_model.mode = TRAIN_MODE
+    new_model.mode = ModelModeEnum.TRAIN
     #new_model.show()
     #new_model.dataset = dataset
     print("-----")
@@ -327,7 +327,7 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
                                               default_output_activation_layer=None, 
                                               is_input_shape_in_format=True, **kwargs)
     
-    #pydtnn_model.mode = EVALUATE_MODE
+    #pydtnn_model.mode = ModelModeEnum.EVALUATE
     #pydtnn_model.show()
     torch_dataset = torch.from_numpy(dataset).to(device)
     print("-----")
@@ -364,17 +364,27 @@ def test_add_and_concat(name:str, pytorch_model: TEST_PyTorch_Model, kwargs: Dic
 def main():
 
     kwargs = KWARGS
+    quarter_elements = prod((N, *SHAPE))/4
 
     device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("cuda")
-    dataset = np.arange(prod((N, *SHAPE)), dtype=DTYPE).reshape((N, *SHAPE))
+    dataset_p = np.arange(quarter_elements, dtype=DTYPE) / 3
+    dataset_p_int = np.arange(quarter_elements, dtype=DTYPE) 
+    dataset_n = np.arange(quarter_elements, dtype=DTYPE) * (-1/3)
+    dataset_n_int = np.arange(quarter_elements, dtype=DTYPE) * (-1)    
+
+    dataset = np.concat([dataset_p, dataset_p_int, dataset_n, dataset_n_int]).reshape((N, *SHAPE))  
     
     function_to_test_layers = (test_layers_gpu if device.type == "cuda" else forward_pydtnn_model)
     for name in DICT_SUPPORTED_LAYERS.keys():
         layer, threshold = DICT_SUPPORTED_LAYERS[name]
         model = TEST_PyTorch_Model(layer)
         print(f"Testing: {name}")
+        print(f"{dataset.shape=}")
+        print(f"{dataset.min()=}")
+        print(f"{dataset.max()=}\n")        
+
         test_layers(name = name, pytorch_model = model, kwargs = kwargs, input_shape = SHAPE, 
-                    device=device, dataset = deepcopy(dataset), threshold = threshold,
+                    device=device, dataset = np.copy(dataset), threshold = threshold,
                     function_to_test_layers = function_to_test_layers
                     )
    

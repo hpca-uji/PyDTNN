@@ -70,7 +70,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def forward(self, x:np.ndarray) -> np.ndarray:
 
-        if self.model.mode == ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+        if self.model.mode is ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             y = np.zeros_like(x, order="C", dtype=x.dtype)
             bn_inference_nchw_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
             return y

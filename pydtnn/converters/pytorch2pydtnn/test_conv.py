@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.model import Model, TRAIN_MODE
+from pydtnn.model import Model, ModelModeEnum
 from pydtnn.layers import Input, Conv2D, Layer
 from pydtnn.activations import LeakyRelu, Relu6
 from copy import deepcopy
@@ -88,7 +88,7 @@ def main():
     for name, model in models:
         print(f"{name}")
 
-        model.mode = TRAIN_MODE
+        model.mode = ModelModeEnum.TRAIN
         #model.show()
 
         x = deepcopy(dataset)

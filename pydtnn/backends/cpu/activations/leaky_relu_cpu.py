@@ -20,7 +20,6 @@
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from pydtnn.cython_modules import leaky_relu_cython
-from pydtnn.model import TRAIN_MODE
 
 import numpy as np
 

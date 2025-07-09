@@ -78,15 +78,21 @@ class Conv2D(Layer, ABC):
                 self.weights_shape = (self.ci, *self.filter_shape)
             case GroupingEnum.POINTWISE:
                 self.kh = self.kw = 1
-                if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                    self.weights_shape = (self.co, self.ci)
-                else:
-                    self.weights_shape = (self.ci, self.co)
+                match self.model.tensor_format:
+                    case PYDTNN_TENSOR_FORMAT.NCHW:
+                        self.weights_shape = (self.co, self.ci)
+                    case PYDTNN_TENSOR_FORMAT.NHWC:
+                        self.weights_shape = (self.ci, self.co)
+                    case _:
+                        raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
             case _:
-                if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                    self.weights_shape = (self.co, self.ci, *self.filter_shape)
-                else:
-                    self.weights_shape = (self.ci, *self.filter_shape, self.co)
+                match self.model.tensor_format:
+                    case PYDTNN_TENSOR_FORMAT.NCHW:
+                        self.weights_shape = (self.co, self.ci, *self.filter_shape)
+                    case PYDTNN_TENSOR_FORMAT.NHWC:
+                        self.weights_shape = (self.ci, *self.filter_shape, self.co)
+                    case _:
+                        raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1

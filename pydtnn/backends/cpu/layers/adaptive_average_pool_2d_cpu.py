@@ -46,18 +46,21 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         AdaptiveAveragePool2D.initialize(self, prev_shape)
         LayerCPU.initialize(self, prev_shape)
 
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-            self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype = self.model.dtype)
-            self.dx = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
-        
-            self._forward = self._forward_nchw_cython
-            self._backward = self._backward_nchw_cython
-        else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
-            self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype = self.model.dtype)
-            self.dx = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype = self.model.dtype)
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype = self.model.dtype)
+                self.dx = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
+            
+                self._forward = self._forward_nchw_cython
+                self._backward = self._backward_nchw_cython
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype = self.model.dtype)
+                self.dx = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype = self.model.dtype)
 
-            self._forward = self._forward_nhwc_cython
-            self._backward = self._backward_nhwc_cython
+                self._forward = self._forward_nhwc_cython
+                self._backward = self._backward_nhwc_cython
+            case _:
+                raise NotImplementedError(f"\"AdaptiveAveragePool2DCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)
@@ -65,12 +68,10 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
 
     # -- END initialize -- #
     
-    @override
     def forward(self, x: np.ndarray) -> np.ndarray:
         return self._forward(x)
     # --- END forward --- #
 
-    @override    
     def backward(self, dy: np.ndarray) -> np.ndarray:
         return self._backward(dy)
     # --- END backward --- #

@@ -95,7 +95,7 @@ class ImageNet(Dataset):
             # Extract x[offset:offset+nsamples] and y[offset:offset+nsamples] from file
             values = np.load(filename)
             x = self._normalize_image(values['x'][offset:offset + nsamples].astype(self.model.dtype))
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 x = self._nchw2nhwc(x)
             y = np.zeros(list(x.shape[0]) + self.output_shape, dtype=self.model.dtype, order="C")
             self._decode_class(y, values['y'][offset:offset + nsamples].astype(np.int16).flatten() - 1)

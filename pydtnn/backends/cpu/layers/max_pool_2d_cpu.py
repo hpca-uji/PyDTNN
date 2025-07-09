@@ -25,7 +25,7 @@ from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
                                   max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython, \
                                   max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd_nchw_cython
 from pydtnn.layers import MaxPool2D
-from pydtnn.model import TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
@@ -64,7 +64,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         idx_max = argmax_cython(x_rows, y, amax, rng, axis=1)        
         
         idx_max:np.ndarray
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             self.idx_max = idx_max
         return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
 
@@ -97,7 +97,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         idx_max = argmax_cython(x_cols, y, amax, rng, axis=0)
         idx_max: np.ndarray
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             self.idx_max = idx_max
         return y.reshape((-1, self.co, self.ho, self.wo), copy=False)
 

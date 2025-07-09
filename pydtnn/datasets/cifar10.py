@@ -61,7 +61,7 @@ class CIFAR10(Dataset):
                 self._y[part] = np.concatenate((self._y[part], y), axis=0)
             self._x[part] = self._x[part] / 255.0
             self._x[part] = self._normalize_image(self._x[part])
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 self._x[part] = self._nchw2nhwc(self._x[part])
 
     def _read_file(self, filename, offset, nsamples):

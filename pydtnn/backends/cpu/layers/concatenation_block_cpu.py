@@ -39,18 +39,21 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def initialize_block_layer(self):
         super().initialize_block_layer()        
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-            assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
-            self.out_co = [s[0] for s in self.out_shapes]
-            self.idx_co = np.cumsum(self.out_co, axis=0)
-            self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
-            self.concat_dim = CONCAT_DIM_NCHW
-        else: # Assuming PYDTNN_TENSOR_FORMAT_NHWC
-            assert all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes])
-            self.out_co = [s[-1] for s in self.out_shapes]
-            self.idx_co:np.ndarray = np.cumsum(self.out_co, axis=0)
-            self.shape:tuple[int] = (*self.out_shapes[0][:-1], sum(self.out_co))
-            self.concat_dim = CONCAT_DIM_NHWC
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
+                self.out_co = [s[0] for s in self.out_shapes]
+                self.idx_co = np.cumsum(self.out_co, axis=0)
+                self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
+                self.concat_dim = CONCAT_DIM_NCHW
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                assert all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes])
+                self.out_co = [s[-1] for s in self.out_shapes]
+                self.idx_co:np.ndarray = np.cumsum(self.out_co, axis=0)
+                self.shape:tuple[int] = (*self.out_shapes[0][:-1], sum(self.out_co))
+                self.concat_dim = CONCAT_DIM_NHWC
+            case _:
+                raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
     def forward(self, x:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)

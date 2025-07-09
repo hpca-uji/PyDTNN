@@ -104,26 +104,27 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         _dimension_index_code = ""
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]  
         
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-            _func_name.append("_nchw")            
-            _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
-            _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
-            _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
-            _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
-            _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
-            # -- END cuda_adaptive_average_pooling_fwd_nchw --
-        elif self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            # NOTE: It has been tested and it return values that seems to make sense, 
-            #   but they hadn't been compared with other model's output due the format (Torch is NCHW).
-            _func_name.append("_nhwc")
-            _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
-            _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
-            _full_macro_index_w = _FULL_MACRO_INDEX_W_NHWC
-            _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
-            _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
-            # -- END cuda_adaptive_average_pooling_fwd_nhwc --
-        else:
-            NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                _func_name.append("_nchw")            
+                _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
+                _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
+                _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
+                _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
+                _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
+                # -- END cuda_adaptive_average_pooling_fwd_nchw --
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                # NOTE: It has been tested and it return values that seems to make sense, 
+                #   but they hadn't been compared with other model's output due the format (Torch is NCHW).
+                _func_name.append("_nhwc")
+                _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
+                _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
+                _full_macro_index_w = _FULL_MACRO_INDEX_W_NHWC
+                _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
+                _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
+                # -- END cuda_adaptive_average_pooling_fwd_nhwc --
+            case _:
+                NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
@@ -233,24 +234,23 @@ __global__ void {func_name}({T}* x, {T}* y,
         _dimension_index_code = ""
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
 
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-            _func_name.append("_nchw")            
-            _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
-            _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
-            _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
-            _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
-            _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
-            # -- END cuda_adaptive_average_pooling_bwd_nchw --
-        elif self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            _func_name.append("_nhwc")
-            _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
-            _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
-            _full_macro_index_w = _FULL_MACRO_INDEX_W_NHWC
-            _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
-            _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
-            # -- END cuda_adaptive_average_pooling_bwd_nhwc --
-        else:
-            NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                _func_name.append("_nchw")            
+                _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
+                _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
+                _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
+                _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
+                _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                _func_name.append("_nhwc")
+                _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
+                _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
+                _full_macro_index_w = _FULL_MACRO_INDEX_W_NHWC
+                _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
+                _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
+            case _:
+                NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
@@ -353,7 +353,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
         
-        pooling_shape = (self.co, self.ho, self.wo) if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (self.ho, self.wo, self.co)
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                pooling_shape = (self.co, self.ho, self.wo)
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                (self.ho, self.wo, self.co)
+            case _:
+                raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
         
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
@@ -379,10 +385,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         if self.pooling_not_needed:
             self.y = x
         else:
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                n, c, h, w = x.shape
-            else:
-                n, h, w, c = x.shape
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    n, c, h, w = x.shape
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    n, h, w, c = x.shape
+                case _:
+                    raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
             # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be np.prod(x.shape),
             #   but in this case we are putting elements in the output instead of processing the input's elements.
@@ -410,10 +419,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
     def backward(self, dy: TensorGPU) -> TensorGPU:
         if self.need_dx:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                n, c, h, w = dy.shape
-            else:
-                n, h, w, c = dy.shape
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    n, c, h, w = dy.shape
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    n, h, w, c = dy.shape
+                case _:
+                    raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
             num_elements = np.prod( (n, c, self.ho, self.wo), dtype=np.int32)
             
