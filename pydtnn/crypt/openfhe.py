@@ -58,10 +58,10 @@ class Context:
 
         # Context
         self._slots = 8192
-        config = openfhe.CCParamsCKKSRNS()
-        config.SetScalingModSize(40)
-        config.SetRingDim(self._slots * 2)
-        self._context = openfhe.GenCryptoContext(config)
+        parameters = openfhe.CCParamsCKKSRNS()
+        parameters.SetScalingModSize(40)
+        parameters.SetRingDim(self._slots * 2)
+        self._context = openfhe.GenCryptoContext(parameters)
         self._context.Enable(openfhe.PKESchemeFeature.PKE)
         self._context.Enable(openfhe.PKESchemeFeature.KEYSWITCH)
         self._context.Enable(openfhe.PKESchemeFeature.LEVELEDSHE)
