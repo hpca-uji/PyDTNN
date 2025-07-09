@@ -20,7 +20,6 @@
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from pydtnn.cython_modules import relu_cython
-from pydtnn.model import TRAIN_MODE
 import numpy as np
 
 class ReluCPU(ActivationCPU, Relu):

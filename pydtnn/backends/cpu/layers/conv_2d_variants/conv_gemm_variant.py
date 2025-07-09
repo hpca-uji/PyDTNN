@@ -23,7 +23,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.libs import ConvGemm
 from pydtnn.layers import Conv2D
-from pydtnn.model import TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 class ConvGemmVariant(Conv2D, ABC):
@@ -42,7 +42,7 @@ class ConvGemmVariant(Conv2D, ABC):
     def _forward_cg_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""
 
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             self.cg_x = x
 
         biases_vector = self.biases if self.use_bias else None
@@ -60,7 +60,7 @@ class ConvGemmVariant(Conv2D, ABC):
     def _forward_cg_nchw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""
 
-        if self.model.mode == TRAIN_MODE:
+        if self.model.mode is ModelModeEnum.TRAIN:
             self.cg_x = x
 
         biases_vector = self.biases if self.use_bias else None

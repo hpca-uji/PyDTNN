@@ -22,7 +22,7 @@ from typing import Optional, Callable, List
 
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_direct_variant import ConvDirectVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_winograd_variant import ConvWinogradVariant
-from pydtnn.model import TRAIN_MODE, EVALUATE_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.utils.best_of import BestOf
 
 from enum import StrEnum, auto
@@ -96,14 +96,15 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
                 getattr(self.__class__, f'_backward_{variant}_{self.model.tensor_format}')]
 
     def _fw_bw_best_of(self, stage, x_or_y):
-        if self.model.mode == TRAIN_MODE:
-            # noinspection PyTypeChecker
-            return self._best_fw_bw_pipeline(stage, self, x_or_y)
-        elif self.model.mode == EVALUATE_MODE:
-            # noinspection PyTypeChecker
-            return self._best_fw(self, x_or_y)
-        else:
-            raise RuntimeError("Conv2D BestOf variant requires Model.mode to be set to EVALUATE_MODE or TRAIN_MODE")
+        match self.model.mode:    
+            case ModelModeEnum.TRAIN:
+                # noinspection PyTypeChecker
+                return self._best_fw_bw_pipeline(stage, self, x_or_y)
+            case ModelModeEnum.EVALUATE:
+                # noinspection PyTypeChecker
+                return self._best_fw(self, x_or_y)
+            case _ :
+                raise RuntimeError("Conv2D BestOf variant requires Model.mode to be set to ModelModeEnum.EVALUATE or ModelModeEnum.TRAIN")
 
     def _forward_best_of_nhwc(self, x):
         return self._fw_bw_best_of(0, x)

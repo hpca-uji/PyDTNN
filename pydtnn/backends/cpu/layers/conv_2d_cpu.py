@@ -124,7 +124,7 @@ class Conv2DCPU(LayerCPU,
         if self.hstride != 1 or self.vstride != 1:
             return
         # #l kn wo ho t kh kw ci wi hi"
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
             ci, hi, wi = self.prev_shape
         else:
             hi, wi, ci = self.prev_shape

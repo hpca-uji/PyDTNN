@@ -148,7 +148,7 @@ class Dataset(ABC):
         x_test, y_test = map(np.concat, zip(*gen_test))
 
         # Ensure dataset is in NCHW
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
+        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
             x_train = x_train.transpose(0, 3, 1, 2)
             x_test = x_test.transpose(0, 3, 1, 2)
 
@@ -246,7 +246,7 @@ class Dataset(ABC):
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = min(local_batches, self.max_batches_online) * self.model.batch_size
             x_shape = [nsamples] + self.input_shape
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 x_shape = [x_shape[i] for i in (0, 2, 3, 1)]
             y_shape = [nsamples] + self.output_shape
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
@@ -360,12 +360,16 @@ class Dataset(ABC):
             yield x_batch[:0], y_batch[:0], 0
 
     def _do_flip_images(self, data: Array) -> Array:
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-            n, c, h, w = data.shape
-            width_dim = -1
-        else:
-            n, h, w, c = data.shape
-            width_dim = 2
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                n, c, h, w = data.shape
+                width_dim = -1
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                n, h, w, c = data.shape
+                width_dim = 2
+            case _:
+                raise NotImplementedError(f"\"Dataset _do_flip_image\" is not implemented for \"{self.model.tensor_format}\" format.")
+            
         limit = min(n, int(n * self.model.flip_images_prob))
         s = np.arange(n)
         np.random.shuffle(s)
@@ -374,10 +378,13 @@ class Dataset(ABC):
         return data
 
     def _do_crop_images(self, data: Array) -> Array:
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-            n, c, h, w = data.shape
-        else:
-            n, h, w, c = data.shape
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                n, c, h, w = data.shape
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                n, h, w, c = data.shape
+            case _:
+                raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
         crop_size = min(self.model.crop_images_size, h, w)
         limit = min(n, int(n * self.model.crop_images_prob))
         s = np.arange(n)
@@ -388,12 +395,15 @@ class Dataset(ABC):
         for i, ri in enumerate(s):
             b, r = t[i] + crop_size, ll[i] + crop_size
             # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-                data[ri, :, :t[i], :ll[i]] = 0.0
-                data[ri, :, b:, r:] = 0.0
-            else:
-                data[ri, :t[i], :ll[i], :] = 0.0
-                data[ri, b:, r:, :] = 0.0
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    data[ri, :, :t[i], :ll[i]] = 0.0
+                    data[ri, :, b:, r:] = 0.0
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    data[ri, :t[i], :ll[i], :] = 0.0
+                    data[ri, b:, r:, :] = 0.0
+                case _:
+                    raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
         return data

@@ -20,7 +20,6 @@
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from pydtnn.cython_modules import capped_relu_cython
-from pydtnn.model import TRAIN_MODE
 import numpy as np
 
 

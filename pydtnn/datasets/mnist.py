@@ -56,7 +56,7 @@ class MNIST(Dataset):
             self._x[part] = self._read_file(x_filename[part], offset, nbytes) \
                                 .reshape(self._local_nsamples[part], *self.input_shape) / 255.0
             self._x[part] = self._x[part].astype(self.model.dtype)
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 self._x[part] = self._nchw2nhwc(self._x[part])
             offset = labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
             nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number

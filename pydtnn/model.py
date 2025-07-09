@@ -113,10 +113,6 @@ class ModelModeEnum(enum.Enum):
     TRAIN = enum.auto()
     UNSPECIFIED = enum.auto()
 
-EVALUATE_MODE = ModelModeEnum.EVALUATE
-TRAIN_MODE = ModelModeEnum.TRAIN
-UNSPECIFIED_MODE = ModelModeEnum.UNSPECIFIED
-
 DEFAULT_BACH_SIZE = 64
 
 class LoadStoreMode(enum.Enum):
@@ -379,7 +375,7 @@ class Model:
         self.matmul = utils.matmul
         
         # Set current mode to unspecified
-        self.mode:ModelModeEnum = UNSPECIFIED_MODE
+        self.mode:ModelModeEnum = ModelModeEnum.UNSPECIFIED
 
         # Memory cache optimization
         self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
@@ -980,7 +976,7 @@ class Model:
     # --- END train_dataset --- #
 
     def _train_batch(self, x_batch: Array, y_batch: Array, current_batch_size:int, sync_model=True) -> np.ndarray:
-        self.mode = TRAIN_MODE
+        self.mode = ModelModeEnum.TRAIN
 
         # LR schedulers begin
         for lr_sched in self.lr_schedulers:
@@ -1075,7 +1071,7 @@ class Model:
     # --- END _compute_rank_weight --- #
 
     def _evaluate_batch(self, x_batch:Array, y_batch:Array, current_batch_size:int, sync_model=True) -> Array:
-        self.mode = EVALUATE_MODE
+        self.mode = ModelModeEnum.EVALUATE
 
         try:
             x, y_targ = self._get_x_y_targ(x_batch, y_batch, current_batch_size)

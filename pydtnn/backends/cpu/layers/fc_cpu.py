@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -21,7 +21,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import FC
-from pydtnn.model import TRAIN_MODE
+from pydtnn.model import ModelModeEnum
 from pydtnn.performance_models import matmul_time
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
@@ -60,8 +60,8 @@ class FCCPU(LayerCPU, FC):
                         dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        if self.model.mode == TRAIN_MODE:
-            self.x = x        
+        if self.model.mode is ModelModeEnum.TRAIN:
+            self.x = x
         dy = self.dy[ : x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
@@ -76,7 +76,7 @@ class FCCPU(LayerCPU, FC):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
-        # self.model.mode = TRAIN_MODE is asumed from this point.
+        # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         #self.dw = np.matmul(self.x.T, dy)
         np.matmul(self.x.T, dy, self.dw)
