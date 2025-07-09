@@ -40,7 +40,7 @@ class CustomDataset(Dataset):
 
     def __init__(self, model:Model, x_train:Array, y_train:Array, x_test:Array|None = None, y_test:Array|None = None, 
                  input_shape:shape_t|None = None, output_shape:shape_t|None = None, 
-                 force_test_as_validation = True):
+                 force_test_as_validation = False):
         if x_test is None or y_test is None:
             if x_test is None and y_test is None:
                 x_test = x_train
