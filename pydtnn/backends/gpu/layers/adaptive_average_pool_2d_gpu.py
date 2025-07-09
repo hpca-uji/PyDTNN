@@ -24,7 +24,7 @@ from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 
 # Import from AbstractPool2DLayerGPU
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN, PYDTNN_OPS_BACKWARD_CUDNN_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
@@ -36,8 +36,7 @@ from pycuda.compiler import SourceModule
 from pycuda.driver import Function
 
 import numpy as np
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT_NHWC, PYDTNN_TENSOR_FORMAT_NCHW
-from pydtnn.model import Model
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 # --- CONSTANTS --- # 
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
@@ -105,7 +104,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         _dimension_index_code = ""
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]  
         
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
             _func_name.append("_nchw")            
             _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
             _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
@@ -113,7 +112,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
             _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
             _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
             # -- END cuda_adaptive_average_pooling_fwd_nchw --
-        elif self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+        elif self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
             # NOTE: It has been tested and it return values that seems to make sense, 
             #   but they hadn't been compared with other model's output due the format (Torch is NCHW).
             _func_name.append("_nhwc")
@@ -234,7 +233,7 @@ __global__ void {func_name}({T}* x, {T}* y,
         _dimension_index_code = ""
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
 
-        if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
             _func_name.append("_nchw")            
             _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
             _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
@@ -242,7 +241,7 @@ __global__ void {func_name}({T}* x, {T}* y,
             _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
             _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
             # -- END cuda_adaptive_average_pooling_bwd_nchw --
-        elif self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NHWC:
+        elif self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
             _func_name.append("_nhwc")
             _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
             _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
@@ -354,7 +353,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
         
-        pooling_shape = (self.co, self.ho, self.wo) if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW else (self.ho, self.wo, self.co)
+        pooling_shape = (self.co, self.ho, self.wo) if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (self.ho, self.wo, self.co)
         
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
@@ -375,12 +374,12 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         # --- END initialize_pool_2d_gpu --- #
 
     def forward(self, x: TensorGPU) -> TensorGPU:
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
         if self.pooling_not_needed:
             self.y = x
         else:
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = x.shape
             else:
                 n, h, w, c = x.shape
@@ -410,8 +409,8 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
         if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
-            if self.model.tensor_format == PYDTNN_TENSOR_FORMAT_NCHW:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = dy.shape
             else:
                 n, h, w, c = dy.shape
