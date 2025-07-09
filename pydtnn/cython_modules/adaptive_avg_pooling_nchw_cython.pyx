@@ -37,12 +37,14 @@ cdef inline int index_last_element(int index, int dim_in, int dim_out) nogil:
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def adaptive_avg_pooling_fwd_nchw_cython(npDT[:,:,:,::1] x,
-                                         npDT[:,:,:,::1] pooled_x,
-                                         int new_h, int new_w) -> None:
+                                         npDT[:,:,:,::1] pooled_x) -> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
     cdef int w = x.shape[3]
+
+    cdef int new_h = pooled_x.shape[2]
+    cdef int new_w = pooled_x.shape[3]
 
     cdef int h_start, h_end, w_start, w_end
     cdef int nn, cc, hi, wi, i, j
@@ -82,12 +84,14 @@ def adaptive_avg_pooling_fwd_nchw_cython(npDT[:,:,:,::1] x,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def adaptive_avg_pooling_bwd_nchw_cython(npDT[:,:,:,::1] dy, 
-                                         npDT[:,:,:,::1] dx,
-                                         int new_h, int new_w) -> None:
+                                         npDT[:,:,:,::1] dx) -> None:
     cdef int n = dy.shape[0]
     cdef int c = dy.shape[1]
     cdef int h = dy.shape[2]
     cdef int w = dy.shape[3]
+
+    cdef int new_h = dx.shape[2]
+    cdef int new_w = dx.shape[3]
 
     cdef int h_start, h_end, w_start, w_end
     cdef int nn, cc, ho, wo, i, j

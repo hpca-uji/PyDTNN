@@ -8,28 +8,22 @@ type npDT_1Dims[T] = np.ndarray[tuple[int], T]
 ##############################
 # ADAPTIVE AVG. POOLING NCHW #
 ##############################
-def adaptive_avg_pooling_fwd_nchw_cython[T: npDT](x: npDT_4Dims[T], pooled_x: npDT_4Dims[T], new_h: int, new_w:int) -> None:
+def adaptive_avg_pooling_fwd_nchw_cython[T: npDT](x: npDT_4Dims[T], pooled_x: npDT_4Dims[T]) -> None:
     """
     Args:
         x (npDT_4Dims): data input.
         pooled_x (npDT_4Dims): ndarray where the output will be stored.
-        new_h (int): pooled_x's heigth.
-        new_w (int): pooled_x's width.
-
     Returns:
         Nothing; the return is stored in "dx".
     """
     ...
 # ---
 
-def adaptive_avg_pooling_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4Dims[T], new_h: int, new_w:int) -> None:
+def adaptive_avg_pooling_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4Dims[T]) -> None:
     """
     Args:
         dy (npDT_4Dims): data input.
         dx (npDT_4Dims): ndarray where the output will be stored.
-        new_h (int): pooled_x's heigth.
-        new_w (int): pooled_x's width.
-
     Returns:
         Nothing; the return is stored in "dx".
     """
@@ -40,28 +34,22 @@ def adaptive_avg_pooling_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4D
 # ADAPTIVE AVG. POOLING NCHW #
 ##############################
 
-def adaptive_avg_pooling_fwd_nhwc_cython[T: npDT](x: npDT_4Dims[T], pooled_x: npDT_4Dims[T], new_h: int, new_w:int) -> None:
+def adaptive_avg_pooling_fwd_nhwc_cython[T: npDT](x: npDT_4Dims[T], pooled_x: npDT_4Dims[T]) -> None:
     """
     Args:
         x (npDT_4Dims): data input.
         pooled_x (npDT_4Dims): ndarray where the output will be stored.
-        new_h (int): pooled_x's heigth.
-        new_w (int): pooled_x's width.
-
     Returns:
         Nothing; the return is stored in "dx".
     """
     ...
 # ---
 
-def adaptive_avg_pooling_bwd_nhwc_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4Dims[T], new_h: int, new_w:int) -> None:
+def adaptive_avg_pooling_bwd_nhwc_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4Dims[T]) -> None:
     """
     Args:
         dy (npDT_4Dims): data input.
         dx (npDT_4Dims): ndarray where the output will be stored.
-        new_h (int): pooled_x's heigth.
-        new_w (int): pooled_x's width.
-
     Returns:
         Nothing; the return is stored in "dx".
     """
