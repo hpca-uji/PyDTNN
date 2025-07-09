@@ -100,19 +100,19 @@ def adaptive_avg_pooling_bwd_nchw_cython(npDT[:,:,:,::1] dy,
 
     for nn in prange(n, nogil=True):
         for cc in range(c):
-            for ho in range(new_h):
-                h_start = index_first_element(ho, h, new_h)
-                h_end = index_last_element(ho, h, new_h)
+            for ho in range(h):
+                h_start = index_first_element(ho, new_h, h)
+                h_end = index_last_element(ho, new_h, h)
                 elements_h = h_end - h_start            
-                for wo in range(new_w):
-                    w_start = index_first_element(wo, w, new_w)
-                    w_end = index_last_element(wo, w, new_w)
+                for wo in range(w):
+                    w_start = index_first_element(wo, new_w, w)
+                    w_end = index_last_element(wo, new_w, w)
                     elements = elements_h * (w_end - w_start)
 
                     delta = dy[nn, cc, ho, wo] / elements
                     for i in range(h_start, h_end):
                         for j in range(w_start, w_end):
-                                dx[nn, cc, i, j] += delta
+                            dx[nn, cc, i, j] += delta
 # --- END adaptive_avg_pooling_bwd_nchw_cython --- #
 
 # --- END BACKWARD --- #
