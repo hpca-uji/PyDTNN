@@ -23,8 +23,7 @@ cimport cython
 from cython.parallel import prange
 
 __all__ = (
-    "add_nhwc_cython",
-    "add_nchw_cython"
+    "add_cython",
 )
 
 # --- COMMON --- #
@@ -36,33 +35,13 @@ ctypedef fused npDT:
 # -- END npDT -- #
 # --- END COMMON --- #
 
-# ================== #
-# ====== NHWC ====== #
-# ================== #
-
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
-def add_nhwc_cython(npDT[:,::1] x, npDT[::1] b) -> None:
+def add_cython(npDT[:,::1] x, npDT[::1] b) -> None:
     cdef int i, j
 
-    for i in prange(x.shape[0], nogil=True):
-        for j in range(x.shape[1]):
-            x[i, j] += b[j]
-# --- END add_nhwc_cython --- #
-
-# ================== #
-# ====== NCHW ====== #
-# ================== #
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.initializedcheck(False)
-def add_nchw_cython(npDT[:,::1] x, npDT[::1] b) -> None:
-  
-    cdef int i, j
-    
     for i in prange(x.shape[0], nogil=True):
         for j in range(x.shape[1]):
             x[i, j] += b[i]
-# --- END add_nchw_cython --- #
+# --- END add_cython --- #
