@@ -53,7 +53,9 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
         int n = x.shape[0]
         int h = x.shape[1]
         int w = x.shape[2]
-        int c = x.shape[3]     
+        int c = x.shape[3]
+    
+    #rows = np.zeros((n * ho * wo, c * kh * kw), dtype=x.dtype)
 
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
     if n >= ho:
