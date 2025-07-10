@@ -60,11 +60,11 @@ def depthwise_conv_nhwc_cython(npDT[:,:,:,::1] x,
     cdef int kw = k.shape[2]
 
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y
-
-    for cc in prange(c, nogil=True):
+    
+    for nn in prange(n, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-                for nn in range(n):
+                for cc in range(c):                
                     for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
@@ -104,12 +104,12 @@ def depthwise_conv_backward_nhwc_cython(npDT[:,:,:,::1] dy,
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y
     cdef npDT val_k
 
-    for cc in prange(c, nogil=True):
+    
+    for nn in prange(n, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-
-                val_k = k[cc, ii, jj]
-                for nn in range(n):
+                for cc in range(c):
+                    val_k = k[cc, ii, jj]
                     for xx in range(h):
 
                         x_x = vstride * xx + vdilation * ii - vpadding                        
