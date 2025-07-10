@@ -178,7 +178,7 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
         w_cols = self.weights.reshape((self.co, -1), copy=False).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
+        
         res = self.res_bw[: , :(dy.shape[0] * self.ho * self.wo)]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         np.matmul(w_cols, dy_cols, out=res)
@@ -187,10 +187,11 @@ class I2CVariant(Conv2D, ABC):
         dx = self.dx[:dy.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        dx:np.ndarray = col2im_nchw_cython(res, dx,
-                                           dy.shape[0], self.ci, self.hi, self.wi,
-                                           self.kh, self.kw, self.ho, self.wo,
-                                           self.vpadding, self.hpadding,
-                                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+        col2im_nchw_cython(res, dx,
+                           dy.shape[0], self.ci, self.hi, self.wi,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
         return dx
