@@ -60,26 +60,15 @@ def adaptive_avg_pooling_bwd_nhwc_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4D
 # ADD #
 #######
 
-def add_nchw_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
-    """    
-    Args:
-    x (npDT_2Dims): A contiguous memory view of the data. Since all the operations are made inplace, it's also where the output it's stored.
-    b (npDT_1Dims): A contiguous memory view of the bias.
+def add_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
 
-    Returns:
-    - Nothing. The output is stored in x.
     """
-    ...
-# ---
-
-def add_nhwc_cython[T: npDT](x: npDT_2Dims[T], b: npDT_1Dims[T]) -> None:
-    """    
     Args:
         x (npDT_2Dims): A contiguous memory view of the data. Since all the operations are made inplace, it's also where the output it's stored.
         b (npDT_1Dims): A contiguous memory view of the bias.
 
     Returns:
-        Nothing. The output is stored in x.
+        Nothing. The output is stored in \"x\".
     """
     ...
 # ---

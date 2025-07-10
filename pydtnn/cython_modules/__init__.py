@@ -18,7 +18,7 @@
 #
 
 __all__ = (
-    "add_nhwc_cython", "add_nchw_cython",
+    "add_cython",
     "argmax_cython",
     "average_pool_2d_fwd_nchw_cython", "average_pool_2d_bwd_nchw_cython",
     "average_pool_2d_fwd_nhwc_cython", "average_pool_2d_bwd_nhwc_cython",
@@ -44,7 +44,7 @@ __all__ = (
     "round",
 )
 
-from add_cython import add_nhwc_cython, add_nchw_cython
+from add_cython import add_cython
 from argmax_cython import argmax_cython
 from average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
 from average_pool_2d_nhwc_cython import average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython
