@@ -30,7 +30,7 @@ class Ciphertext:
     """TenSEAL ciphertext"""
     _type: np.number
     _shape: tuple[int, ...]
-    _chunks: list[CKKSVector]
+    _chunks: tuple[CKKSVector, ...]
 
     def __add__(self, other):
         """Add two ciphertexts"""
@@ -43,7 +43,7 @@ class Ciphertext:
         if other._shape != self._shape:
             raise TypeError(f"Different underlying shapes ({other._shape} != {self._shape})")
 
-        chunks = list(itertools.starmap(operator.add, zip(self._chunks, other._chunks)))
+        chunks = tuple(itertools.starmap(operator.add, zip(self._chunks, other._chunks)))
 
         return Ciphertext(
             _type=self._type,
@@ -89,7 +89,7 @@ class Context:
 
     def encrypt(self, obj: np.ndarray) -> Ciphertext:
         """Encode numpy array to ciphertext"""
-        data = list(map(self._encrypt, self._pack(obj)))
+        data = tuple(map(self._encrypt, self._pack(obj)))
 
         return Ciphertext(
             _type=obj.dtype.type,
