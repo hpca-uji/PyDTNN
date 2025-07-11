@@ -59,7 +59,7 @@ class Context:
         # Context
         self._slots = 4096
         parameters = openfhe.CCParamsCKKSRNS()
-        parameters.SetScalingModSize(20)
+        parameters.SetScalingModSize(40)
         parameters.SetMultiplicativeDepth(0)
         parameters.SetRingDim(self._slots * 2)
         self._context = openfhe.GenCryptoContext(parameters)

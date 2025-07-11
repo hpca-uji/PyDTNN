@@ -62,11 +62,11 @@ class Context:
         self._private_context = tenseal.context(
             scheme=tenseal.SCHEME_TYPE.CKKS,
             poly_modulus_degree=self._slots * 2,
-            coeff_mod_bit_sizes=[40, 20, 20, 20, 40]
+            coeff_mod_bit_sizes=[40, 40, 40, 40, 40]
         )
 
         # Keys
-        self._private_context.global_scale = 2 ** 20
+        self._private_context.global_scale = 2 ** 40
         self._private_context.generate_galois_keys()
         self._private_context.generate_relin_keys()
 
