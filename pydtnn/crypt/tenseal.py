@@ -1,7 +1,11 @@
 """TenSEAL encryption"""
 
 import sys
+import math
 import copyreg
+import operator
+import itertools
+from collections import abc
 from dataclasses import dataclass
 
 # Make sure global package is not confused with current package
@@ -26,7 +30,7 @@ class Ciphertext:
     """TenSEAL ciphertext"""
     _type: np.number
     _shape: tuple[int, ...]
-    _data: CKKSVector
+    _chunks: tuple[CKKSVector, ...]
 
     def __add__(self, other):
         """Add two ciphertexts"""
@@ -39,12 +43,12 @@ class Ciphertext:
         if other._shape != self._shape:
             raise TypeError(f"Different underlying shapes ({other._shape} != {self._shape})")
 
-        data = self._data.add(other._data)
+        chunks = tuple(itertools.starmap(operator.add, zip(self._chunks, other._chunks)))
 
         return Ciphertext(
             _type=self._type,
             _shape=self._shape,
-            _data=data
+            _chunks=chunks
         )
 
 
@@ -54,10 +58,10 @@ class Context:
     def __init__(self):
         """Inizialize context"""
         # Context
-        self._slots = 8192
+        self._slots = 4096
         self._private_context = tenseal.context(
             scheme=tenseal.SCHEME_TYPE.CKKS,
-            poly_modulus_degree=self._slots,
+            poly_modulus_degree=self._slots * 2,
             coeff_mod_bit_sizes=[40, 20, 20, 20, 40]
         )
 
@@ -70,28 +74,41 @@ class Context:
         self._public_context = self._private_context.copy()
         self._public_context.make_context_public()
 
+    def _pack(self, obj: np.ndarray) -> abc.Generator[list]:
+        """Transform numpy array into batched lists"""
+        for part in np.array_split(obj.reshape(-1), range(self._slots, obj.size, self._slots)):
+            yield part.tolist()
+
+    def _encrypt(self, plain: list) -> CKKSVector:
+        """Encode list to ciphertext"""
+        return tenseal.ckks_vector(self._public_context, plain)
+
+    def _decrypt(self, cipher: CKKSVector) -> list:
+        """Decode cypertext to list"""
+        return cipher.decrypt(secret_key=self._private_context.secret_key())
+
     def encrypt(self, obj: np.ndarray) -> Ciphertext:
-        """Encode object to ciphertext"""
-        data = tenseal.ckks_vector(self._private_context, obj.flat)
-        data.link_context(self._public_context)
+        """Encode numpy array to ciphertext"""
+        data = tuple(map(self._encrypt, self._pack(obj)))
 
         return Ciphertext(
             _type=obj.dtype.type,
             _shape=obj.shape,
-            _data=data
+            _chunks=data
         )
 
     def decrypt(self, obj: Ciphertext) -> np.ndarray:
-        """Decode cypertext to object"""
-        data = obj._data.decrypt(secret_key=self._private_context.secret_key())
+        """Decode cypertext to numpy array"""
+        data = itertools.chain.from_iterable(map(self._decrypt, obj._chunks))
 
-        return np.array(
-            object=data,
-            dtype=obj._type
+        return np.fromiter(
+            iter=data,
+            dtype=obj._type,
+            count=math.prod(obj._shape)
         ).reshape(obj._shape)
 
 
-# Serialization
+# Pickle support
 def context_reducer(context: SealContext):
     """TenSEAL context pickle reducer"""
     cls = context.load
