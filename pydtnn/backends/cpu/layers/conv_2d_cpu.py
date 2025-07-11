@@ -58,12 +58,13 @@ class Conv2DCPU(LayerCPU,
         # dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
         dim_n = self.model.batch_size * self.ho * self.wo
         dim_c = self.ci * self.kh * self.kw
+        self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self.x_cols = empty(shape=(dim_c, dim_n), dtype=self.model.dtype)
                 self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype)
 
-                self.dw = empty(shape=(self.co, dim_c), dtype=self.model.dtype)
+                self._dw = empty(shape=(self.co, dim_c), dtype=self.model.dtype)
                 self.res_bw = empty(shape=(dim_c, dim_n), dtype=self.model.dtype)
                 self.dx = empty(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
@@ -71,7 +72,7 @@ class Conv2DCPU(LayerCPU,
                 self.x_rows = empty(shape=(dim_n, dim_c), dtype=self.model.dtype)                
                 self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype)
 
-                self.dw = empty(shape=(dim_c, self.co), dtype=self.model.dtype)
+                self._dw = empty(shape=(dim_c, self.co), dtype=self.model.dtype)
                 self.res_bw = empty( shape=(dim_n, dim_c), dtype=self.model.dtype)
                 self.dx = empty(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
@@ -80,7 +81,7 @@ class Conv2DCPU(LayerCPU,
     # ---
             
     def initialize_depthwise(self):
-        self._dw = empty(self.weights_shape, dtype=self.model.dtype)
+        self.dw = empty(self.weights_shape, dtype=self.model.dtype)
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
