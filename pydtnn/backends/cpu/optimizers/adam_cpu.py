@@ -37,7 +37,7 @@ class AdamCPU(OptimizerCPU, Adam):
             self.context[layer]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
-                w = getattr(layer, w_)
+                w:np.ndarray = getattr(layer, w_)
                 self.context[layer]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
                 self.context[layer]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
 
@@ -56,7 +56,7 @@ class AdamCPU(OptimizerCPU, Adam):
 
             # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
             # m = self.beta1 * m + (1 - self.beta1) * dw
-            m *= self.beta1 
+            m *= self.beta1
             m += (1 - self.beta1) * dw
 
             # v = self.beta2 * v + (1 - self.beta2) * dw ** 2

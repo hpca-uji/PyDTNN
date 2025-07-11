@@ -38,7 +38,7 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
             if len(list_grad_vars) != 0:
                 self.context[layer] = dict[str, np.ndarray]()
                 for w_ in list_grad_vars:
-                    w = getattr(layer, w_)
+                    w:np.ndarray = getattr(layer, w_)
                     self.context[layer]["cache_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
 
     def update(self, layer: LayerCPU) -> None:
