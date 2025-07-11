@@ -32,7 +32,7 @@ class DepthwiseVariant(Conv2D, ABC):
     # NOTE: Attributes defined in conv_2d_cpu.
     res:np.ndarray
     dx:np.ndarray
-    _dw:np.ndarray
+    dw:np.ndarray
     db:np.ndarray
     #---
 
@@ -86,7 +86,6 @@ class DepthwiseVariant(Conv2D, ABC):
     def _backward_depthwise_nhwc(self, dy:np.ndarray) -> np.ndarray:
         
         dx = self.dx[: dy.shape[0], :]
-        self.dw = self._dw[: dy.shape[0], :]
 
         depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
                                             dx, self.dw,
@@ -105,7 +104,6 @@ class DepthwiseVariant(Conv2D, ABC):
     def _backward_depthwise_nchw(self, dy:np.ndarray) -> np.ndarray:
         
         dx = self.dx[: dy.shape[0], :]
-        self.dw = self._dw[: dy.shape[0], :]
     
         depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,
                                             dx, self.dw,
