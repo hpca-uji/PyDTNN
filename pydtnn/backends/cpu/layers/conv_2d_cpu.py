@@ -32,7 +32,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.memory_cache import MemoryCache
 
-from numpy import ndarray, empty
+from numpy import ndarray, empty, zeros
 from pydtnn.layers.conv_2d import GroupingEnum
 from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import ConvVariantEnum
 class Conv2DCPU(LayerCPU,
@@ -61,35 +61,35 @@ class Conv2DCPU(LayerCPU,
         self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.x_cols = empty(shape=(dim_c, dim_n), dtype=self.model.dtype)
+                self.x_cols = zeros(shape=(dim_c, dim_n), dtype=self.model.dtype)
                 self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype)
 
                 self._dw = empty(shape=(self.co, dim_c), dtype=self.model.dtype)
                 self.res_bw = empty(shape=(dim_c, dim_n), dtype=self.model.dtype)
-                self.dx = empty(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
+                self.dx = zeros(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.x_rows = empty(shape=(dim_n, dim_c), dtype=self.model.dtype)                
+                self.x_rows = zeros(shape=(dim_n, dim_c), dtype=self.model.dtype)
                 self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype)
 
                 self._dw = empty(shape=(dim_c, self.co), dtype=self.model.dtype)
                 self.res_bw = empty( shape=(dim_n, dim_c), dtype=self.model.dtype)
-                self.dx = empty(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
+                self.dx = zeros(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
-            case _ :
+            case _:
                 raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
             
     def initialize_depthwise(self):
-        self.dw = empty(self.weights_shape, dtype=self.model.dtype)
+        self.dw = zeros(self.weights_shape, dtype=self.model.dtype)
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.res = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
-                self.dx = empty(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
+                self.res = zeros(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
+                self.dx = zeros(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.res = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
-                self.dx = empty(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
+                self.res = zeros(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
+                self.dx = zeros(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
@@ -102,7 +102,7 @@ class Conv2DCPU(LayerCPU,
                 self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
                 self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.y = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)                
+                self.y = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
                 self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")

@@ -109,7 +109,7 @@ class PointwiseVariant(Conv2D, ABC):
         dx = self.dx[:, :_dim]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w, reshaped_dy, dx)
+        np.matmul(w, reshaped_dy, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
         return dx.reshape(x_shape, copy=False)
