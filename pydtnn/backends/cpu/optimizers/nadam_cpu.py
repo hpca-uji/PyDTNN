@@ -37,7 +37,7 @@ class NadamCPU(OptimizerCPU, Nadam):
             self.context[layer]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
-                w = getattr(layer, w_)
+                w:np.ndarray = getattr(layer, w_)
                 self.context[layer]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
                 self.context[layer]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
 
