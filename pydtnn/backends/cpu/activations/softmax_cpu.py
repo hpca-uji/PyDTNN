@@ -25,12 +25,13 @@ from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 class SoftmaxCPU(ActivationCPU, Softmax):
 
     def __init__(self, shape:np.ndarray = (1,)):
-        super().__init__(shape)        
+        super().__init__(shape)
 
     def forward(self, x:np.ndarray) -> np.ndarray:
         #self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
         #self.y /= np.sum(self.y, axis=1, keepdims=True)
         #return self.y
+        
         x -= np.max(x, axis=1, keepdims=True)
         self.y = np.exp(x)
         self.y /= np.sum(self.y, axis=1, keepdims=True)

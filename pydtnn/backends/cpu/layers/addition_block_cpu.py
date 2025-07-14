@@ -51,8 +51,12 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
                 x_forward = layer.forward(x_forward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ELTW_SUM)
-            eltw_sum_cython(sum_forwards.reshape(-1, copy=False), x_forward.reshape(-1, copy=False))
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
+            #eltw_sum_cython(sum_forwards.reshape(-1, copy=False), x_forward.reshape(-1, copy=False))
+            sum_forwards += x_forward
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        #print(f"sum_forwards\n{sum_forwards}")
+        #print(f"sum_forwards2\n{sum_forwards2}")
+
         return sum_forwards
     # --- END forward --- #
 
@@ -75,7 +79,8 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-            eltw_sum_cython(dx.reshape(-1, copy=False), dx_backward.reshape(-1, copy=False))
+            #eltw_sum_cython(dx.reshape(-1, copy=False), dx_backward.reshape(-1, copy=False))
+            dx += dx_backward
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx
     # --- END backward --- #

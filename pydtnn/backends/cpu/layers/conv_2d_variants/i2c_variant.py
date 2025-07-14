@@ -21,8 +21,7 @@ from abc import ABC
 
 import numpy as np
 
-from pydtnn.cython_modules import im2row_nhwc_cython, add_cython, im2col_nchw_cython, add_cython, \
-    row2im_nhwc_cython, col2im_nchw_cython
+from pydtnn.cython_modules import im2row_nhwc_cython, im2col_nchw_cython, row2im_nhwc_cython, col2im_nchw_cython
 from pydtnn.layers import Conv2D
 from pydtnn.model import ModelModeEnum
 
@@ -68,9 +67,11 @@ class I2CVariant(Conv2D, ABC):
         np.matmul(x_rows, w_cols, out=res)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-        add_cython(res.reshape((self.co, -1), copy=False), self.biases) if self.use_bias else res
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            for i in range(self.co):
+                res.reshape((self.co, -1), copy=False)[i] += self.biases[i]
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y = res.reshape((-1, self.ho, self.wo, self.co), copy=False)
@@ -102,9 +103,11 @@ class I2CVariant(Conv2D, ABC):
         np.matmul(w_cols, x_cols, out=res)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-        add_cython(res.reshape((self.co, -1), copy=False), self.biases) if self.use_bias else res
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            for i in range(self.co):
+                res.reshape((self.co, -1), copy=False)[i] += self.biases[i]
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y:np.ndarray = best_transpose_1023(res.reshape((self.co, -1, self.ho, self.wo), copy=False))

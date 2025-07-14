@@ -19,11 +19,13 @@
 
 import numpy as np
 
-from pydtnn.cython_modules import bn_inference_cython, bn_inference_nchw_cython, bn_training_bwd_cython
+from pydtnn.cython_modules import bn_inference_nchw_cython, bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
 from .layer_cpu import LayerCPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+
+from time import time
 
 try:
     # noinspection PyUnresolvedReferences
@@ -31,7 +33,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
-
+# TODO: REVISAR: NOTE [BORRAR]: no puedes machacar "beta", "dbeta" "gamma", "dgamma"
 class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def initialize(self, prev_shape):
@@ -41,6 +43,11 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         self.dgamma:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.dbeta:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
         self.std:np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+        if self.spatial:
+            self.dx:np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype)
+        else:
+            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
+            self.dx:np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype)
         
         if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
             self.mean = self.mean_all_reduce
@@ -84,7 +91,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         #var = self.mean(xc ** 2, n, self.model.comm)
         self.mean(self.xn ** 2, self.n, self.var)
 
-        self.std = np.sqrt(self.var + self.epsilon)
+        np.sqrt(self.var + self.epsilon, out=self.std)
         self.xn /= self.std
         y = self.gamma * self.xn 
         y += self.beta
@@ -113,14 +120,13 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         if self.spatial:
+            dx:np.ndarray = self.dx[: (dy.shape[0] * self.hi * self.wi),:]
             dy = dy.reshape((-1, self.ci), copy=True)
+        else:
+            dx:np.ndarray = self.dx[: dy.shape[0],:]
 
         np.sum(dy * self.xn, axis=0, out=self.dgamma)
         np.sum(dy, axis=0, out=self.dbeta)
-
-        # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
-        # dx = dx.astype(self.model.dtype)
-        dx:np.ndarray = np.empty(shape=dy.shape, dtype=self.model.dtype, order="C")
         
         bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
