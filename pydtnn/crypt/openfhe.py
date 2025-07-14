@@ -29,7 +29,6 @@ class Ciphertext:
     _type: np.number
     _shape: tuple[int, ...]
     _chunks: tuple[openfhe.Ciphertext, ...]
-    _context: openfhe.CryptoContext
 
     def __add__(self, other):
         """Add two ciphertexts"""
@@ -47,8 +46,7 @@ class Ciphertext:
         return Ciphertext(
             _type=self._type,
             _shape=self._shape,
-            _chunks=chunks,
-            _context=self._context
+            _chunks=chunks
         )
 
 
@@ -61,7 +59,7 @@ class Context:
         # Context
         self._slots = 4096
         parameters = openfhe.CCParamsCKKSRNS()
-        parameters.SetScalingModSize(20)
+        parameters.SetScalingModSize(40)
         parameters.SetMultiplicativeDepth(0)
         parameters.SetRingDim(self._slots * 2)
         self._context = openfhe.GenCryptoContext(parameters)
@@ -98,8 +96,7 @@ class Context:
         return Ciphertext(
             _type=obj.dtype.type,
             _shape=obj.shape,
-            _chunks=data,
-            _context=self._context
+            _chunks=data
         )
 
     def decrypt(self, obj: Ciphertext) -> np.ndarray:
