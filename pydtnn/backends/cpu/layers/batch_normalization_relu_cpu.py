@@ -25,12 +25,13 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
-from numpy import ndarray, zeros_like
+from numpy import ndarray, empty
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
+        self.y = empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
 
     def forward(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the BN + Relu"""
@@ -41,10 +42,10 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
         if self.spatial:
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
-            x = x.reshape((-1, self.ci))
+            x = x.reshape((-1, self.ci), copy=False)
         
-        y: ndarray = zeros_like(x, order="C", dtype=x.dtype)
-        bn_relu_inference_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
+        y = self.y[: x.shape[0], :]
+        bn_relu_inference_cython(x, y.reshape((-1, self.ci), copy=False), self.running_mean, self.inv_std, self.gamma, self.beta)
 
         if self.spatial:
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)

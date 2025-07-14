@@ -22,20 +22,22 @@ import numpy as np
 from pydtnn.activations.log import Log
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from numpy import ndarray
+from pydtnn.cython_modules import log_fwd_cython, log_bwd_cython 
 
 class LogCPU(ActivationCPU, Log):
 
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
+        self.y = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
+        self.dx = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
+
     def forward(self, x:ndarray) -> ndarray:
-        # return np.log(1 / (1 + np.exp(-x)))
-        x *= -1
-        np.exp(x, out=x, casting='unsafe', dtype=x.dtype)
-        x += 1
-        np.reciprocal(x, out=x)
-        return np.log(x).astype(dtype=self.model.dtype, copy=False)
+        y = self.y[:x.shape[0], :]
+        log_fwd_cython(x.reshape(-1, copy=False), y.reshape(-1, copy=False))
+        return y
 
     def backward(self, dy:ndarray) -> ndarray:
-        # return 1 / (np.exp(dy) + 1)
-        np.exp(dy, out=dy, casting='unsafe', dtype=dy.dtype)
-        dy += 1
-        np.reciprocal(dy, out=dy)
-        return dy
+        dx = self.dx[:dy.shape[0], :]
+        log_bwd_cython(dy.reshape(-1, copy=False), dx.reshape(-1, copy=False))
+
+        return dx

@@ -50,7 +50,8 @@ class DepthwiseVariant(Conv2D, ABC):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            add_cython(res.reshape((self.co, -1), copy=False), self.biases)
+            for i in range(self.co):
+                res.reshape((self.co, -1), copy=False)[i] += self.biases[i]
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -71,11 +72,11 @@ class DepthwiseVariant(Conv2D, ABC):
                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        _res = res.reshape((self.co, -1), copy=False)
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-        add_cython(_res.reshape((self.co, -1), copy=False), self.biases) if self.use_bias else res
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            for i in range(self.co):
+                res.reshape((self.co, -1), copy=False)[i] += self.biases[i]
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y = best_transpose_1023(res.reshape((self.co, -1, self.ho, self.wo), copy=False))
