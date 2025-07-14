@@ -24,7 +24,8 @@ from pydtnn.tests.tools import print_with_header
 from pydtnn.cython_modules import im2row_nhwc_cython
 
 
-def _conv_gemm_and_im2row_mm(weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
+def _conv_gemm_and_im2row_mm(weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None=None, 
+                             vpadding=0, hpadding=0, vstride=1, hstride=1,
                              vdilation=1, hdilation=1):
     if verbose_test():
         print()
@@ -32,17 +33,28 @@ def _conv_gemm_and_im2row_mm(weights, x, biases=None, vpadding=0, hpadding=0, vs
     # b, c, h, w = x.shape
     conv_gemm = ConvGemm(debug=verbose_test())
     cg_biases = biases.copy() if biases is not None else None
-    conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x, biases=cg_biases,
+    conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x, biases=cg_biases,
                                                 vpadding=vpadding, hpadding=hpadding,
                                                 vstride=vstride, hstride=hstride,
                                                 vdilation=vdilation, hdilation=hdilation)
-    conv_gemm_result = conv_gemm_result.reshape(-1, kn)
-    x_c = im2row_nhwc_cython(x, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
-    w_c = weights.reshape(-1, kn)
+    conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, kn), copy=False)
+
+    n,h,w,c = x.shape
+
+    ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
+    wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
+
+    dim_n = n * ho * wo
+    dim_c = c * kh * kw
+
+    x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+    im2row_nhwc_cython(x, x_c, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    w_c = weights.reshape((-1, kn), copy=False)
     if biases is None:
         im2row_mm_result = x_c @ w_c
     else:
-        im2row_mm_result = x_c @ w_c + biases.reshape(-1, kn)
+        im2row_mm_result = x_c @ w_c + biases.reshape((-1, kn), copy=False)
     if verbose_test():
         print_with_header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
         print("Shape: ", conv_gemm_result.shape,
@@ -285,14 +297,24 @@ class ConvGemmTestCase(PyDTNNTestCase):
         np_all_close_for_all_cases = True
         for kn in range(1, 32):
             weights = np.random.rand(d.c, d.kh, d.kw, kn).astype(np.float32, order='C')
-            conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+            conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                         vpadding=d.vpadding, hpadding=d.hpadding,
                                                         vstride=d.vstride, hstride=d.hstride,
                                                         vdilation=d.vdilation, hdilation=d.hdilation)
-            conv_gemm_result = conv_gemm_result.reshape(-1, kn)
-            x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
+            conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, kn), copy=False)
+            n,h,w,c = x.shape
+
+            ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
+            wo = (w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
+
+            dim_n = n * ho * wo
+            dim_c = c * d.kh * d.kw
+
+            x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding,
                                      d.vstride, d.hstride, d.vdilation, d.hdilation)
-            w_c = weights.reshape(-1, kn)
+            w_c = weights.reshape((-1, kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}             {:11.2f}"
@@ -314,14 +336,24 @@ class ConvGemmTestCase(PyDTNNTestCase):
         np_all_close_for_all_cases = True
         for b in range(1, 32):
             x = np.random.rand(b, d.h, d.w, d.c).astype(np.float32, order='C')
-            conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+            conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                         vpadding=d.vpadding, hpadding=d.hpadding,
                                                         vstride=d.vstride, hstride=d.hstride,
                                                         vdilation=d.vdilation, hdilation=d.hdilation)
-            conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
-            x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding,
+            conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, d.kn), copy=False)
+            n,h,w,c = x.shape
+
+            ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
+            wo = (w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
+
+            dim_n = n * ho * wo
+            dim_c = c * d.kh * d.kw
+
+            x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding,
                                      d.vstride, d.hstride, d.vdilation, d.hdilation)
-            w_c = weights.reshape(-1, d.kn)
+            w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(b,
@@ -343,14 +375,24 @@ class ConvGemmTestCase(PyDTNNTestCase):
         x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for padding in range(0, 5):
-            conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+            conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                         vpadding=padding, hpadding=padding,
                                                         vstride=d.vstride, hstride=d.hstride,
                                                         vdilation=d.vdilation, hdilation=d.hdilation)
-            conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
-            x_c = im2row_nhwc_cython(x, d.kh, d.kw, padding, padding,
+            conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, d.kn), copy=False)
+            n,h,w,c = x.shape
+
+            ho = (h + 2 * padding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
+            wo = (w + 2 * padding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
+
+            dim_n = n * ho * wo
+            dim_c = c * d.kh * d.kw
+
+            x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+            im2row_nhwc_cython(x, x_c, d.kh, d.kw, padding, padding,
                                      d.vstride, d.hstride, d.vdilation, d.hdilation)
-            w_c = weights.reshape(-1, d.kn)
+            w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(padding,
@@ -372,14 +414,24 @@ class ConvGemmTestCase(PyDTNNTestCase):
         x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for stride in range(1, 6):
-            conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+            conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                         vpadding=d.vpadding, hpadding=d.hpadding,
                                                         vstride=stride, hstride=stride,
                                                         vdilation=d.vdilation, hdilation=d.hdilation)
-            conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
-            x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride,
+            conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, d.kn), copy=False)
+            n,h,w,c = x.shape
+
+            ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // stride + 1
+            wo = (w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // stride + 1
+
+            dim_n = n * ho * wo
+            dim_c = c * d.kh * d.kw
+
+            x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride,
                                      d.vdilation, d.hdilation)
-            w_c = weights.reshape(-1, d.kn)
+            w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(stride,
@@ -403,14 +455,24 @@ class ConvGemmTestCase(PyDTNNTestCase):
             for hstride in range(1, 5):
                 if vstride == hstride:
                     continue
-                conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+                conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                             vpadding=d.vpadding, hpadding=d.hpadding,
                                                             vstride=vstride, hstride=hstride,
                                                             vdilation=d.vdilation, hdilation=d.hdilation)
-                conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
-                x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
+                conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, d.kn), copy=False)
+                n,h,w,c = x.shape
+
+                ho = (h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // vstride + 1
+                wo = (w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // hstride + 1
+
+                dim_n = n * ho * wo
+                dim_c = c * d.kh * d.kw
+
+                x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+                im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
                                          d.vdilation, d.hdilation)
-                w_c = weights.reshape(-1, d.kn)
+                w_c = weights.reshape((-1, d.kn), copy=False)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
                     print("{:3} {:3}    {:9.7f}".format(vstride, hstride,
@@ -432,14 +494,24 @@ class ConvGemmTestCase(PyDTNNTestCase):
         x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for dilation in range(1, 3):
-            conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+            conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                         vpadding=d.vpadding, hpadding=d.hpadding,
                                                         vstride=d.vstride, hstride=d.hstride,
                                                         vdilation=dilation, hdilation=dilation)
-            conv_gemm_result = conv_gemm_result.reshape(-1, d.kn)
-            x_c = im2row_nhwc_cython(x, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
+            conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, d.kn), copy=False)
+            n,h,w,c = x.shape
+
+            ho = (h + 2 * d.vpadding - dilation * (d.kh - 1) - 1) // d.vstride + 1
+            wo = (w + 2 * d.hpadding - dilation * (d.kw - 1) - 1) // d.hstride + 1
+
+            dim_n = n * ho * wo
+            dim_c = c * d.kh * d.kw
+
+            x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
                                      dilation, dilation)
-            w_c = weights.reshape(-1, d.kn)
+            w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(dilation,
@@ -460,12 +532,19 @@ class ConvGemmTestCase(PyDTNNTestCase):
         for n, layer in enumerate(layers):
             weights = np.random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
             x = np.random.rand(layer.b, layer.h, layer.w, layer.c).astype(np.float32, order='C')
-            conv_gemm_result = conv_gemm.conv_gemm_nhwc(weights, x,
+            conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                         vpadding=layer.vpadding, hpadding=layer.hpadding,
                                                         vstride=layer.vstride, hstride=layer.hstride,
                                                         vdilation=layer.vdilation, hdilation=layer.hdilation)
-            conv_gemm_result = conv_gemm_result.reshape(-1, layer.kn)
-            x_c = im2row_nhwc_cython(x, layer.kh, layer.kw, layer.vpadding, layer.hpadding,
+            conv_gemm_result: np.ndarray = conv_gemm_result.reshape(-1, layer.kn)
+            n,h,w,c = x.shape
+
+            dim_n = n * layer.ho * layer.wo
+            dim_c = c * layer.kh * layer.kw
+
+            x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+
+            im2row_nhwc_cython(x, x_c, layer.kh, layer.kw, layer.vpadding, layer.hpadding,
                                      layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
             w_c = weights.reshape(-1, layer.kn)
             im2row_mm_result = x_c @ w_c
@@ -493,7 +572,7 @@ class ConvGemmTestCase(PyDTNNTestCase):
     #         dy = np.random.rand(layer.b, layer.ho, layer.wo, layer.kn).astype(np.float32, order='C')
     #         dx = np.empty((layer.b, layer.h, layer.w, layer.c), dtype=np.float32, order='C')
     #         # deconv_gemm
-    #         deconv_gemm_result = conv_gemm.deconv_gemm_nhwc(weights, dy, dx,
+    #         deconv_gemm_result: np.ndarray = conv_gemm.deconv_gemm_nhwc(weights, dy, dx,
     #                                                    vpadding=layer.vpadding, hpadding=layer.hpadding,
     #                                                    vstride=layer.vstride, hstride=layer.hstride,
     #                                                    vdilation=layer.vdilation, hdilation=layer.hdilation)
