@@ -521,10 +521,10 @@ def col2im_1ch_nchw_cython[T: npDT](cols:npDT_2Dims[T],
 # IM2COL NCHW #
 ###############
 def im2col_nchw_cython[T: npDT](x:npDT_4Dims[T],
-                                    kh:int, kw:int, 
-                                    vpadding:int, hpadding:int,
-                                    vstride:int, hstride:int, 
-                                    vdilation:int, hdilation:int) -> None:
+                                kh:int, kw:int, 
+                                vpadding:int, hpadding:int,
+                                vstride:int, hstride:int, 
+                                vdilation:int, hdilation:int) -> None:
     """
     Args:
         x (npDT_4Dims): The 4 dimensional array (the image).
@@ -594,7 +594,6 @@ def im2row_1ch_nhwc_cython[T: npDT](x:npDT_4Dims[T],
     """
     ...
 # ---
-
 def row2im_1ch_nhwc_cython[T: npDT](rows:npDT_2Dims[T],
                                     x: npDT_4Dims[T],
                                     n: int, h: int, w: int, c: int,
@@ -646,7 +645,6 @@ def im2row_nhwc_cython[T: npDT](x:npDT_4Dims[T],
     """
     ...
 # ---
-
 def row2im_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
                                 x: npDT_4Dims[T],
                                 n: int, h: int, w: int, c: int,
@@ -671,6 +669,36 @@ def row2im_nhwc_cython[T: npDT](cols:npDT_2Dims[T],
     """
     ...
 # ---
+
+
+##################
+# LOG ACTIVATION #
+##################
+
+def log_fwd_cython[T:npDT](x: npDT_1Dims[T], 
+                           y: npDT_1Dims[T]) -> None:
+    """
+    Args:
+        x (npDT_1Dims): 1-dimensional input's array.
+        y (npDT_1Dims): 1-dimensional array where the ouput is stored
+    Returns:
+        Nothing. The output is stored in "y".
+    """
+    ...
+#---
+
+def log_bwd_cython[T:npDT](dy: npDT_1Dims[T],    
+                           dx: npDT_1Dims[T]) -> None:
+    """
+    Args:
+        dy (npDT_1Dims): 1-dimensional input's array.
+        dx (npDT_1Dims): 1-dimensional array where the output will be stored.
+    Returns:
+        Nothing. The output is stored in "dx".
+    """
+    ...
+#---
+
 
 #################
 # MAX POOL NCHW #
@@ -892,6 +920,35 @@ def leaky_relu_cython[T:npDT](x: npDT_1Dims[T],
     """
     ...
 # ---
+
+###########
+# SIGMOID #
+###########
+def sigmoid_fwd_cython[T:npDT](x: npDT_1Dims[T], 
+                               y: npDT_1Dims[T]) -> None:
+    """
+    Args:
+        x (npDT_1Dims): 1-dimensional input's array.
+        y (npDT_1Dims): 1-dimensional array where the ouput is stored
+    Returns:
+        Nothing. The output is stored in "y".
+    """
+    ...
+#---
+
+def sigmoid_bwd_cython[T:npDT](dy: npDT_1Dims[T], 
+                               y: npDT_1Dims[T], 
+                               dx: npDT_1Dims[T]) -> None:
+    """
+    Args:
+        dy (npDT_1Dims): 1-dimensional backward input's array.
+        y (npDT_1Dims): 1-dimensional forward output's array.
+        dx (npDT_1Dims): 1-dimensional array where the output will be stored.
+    Returns:
+        Nothing. The output is stored in "dx".
+    """
+    ...
+#---
 
 #############
 # TRANSPOSE #
