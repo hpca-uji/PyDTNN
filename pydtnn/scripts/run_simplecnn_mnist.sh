@@ -1,10 +1,10 @@
 #!/bin/bash
 
-export OMP_NUM_THREADS=4
+export OMP_NUM_THREADS=16
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
-  --model=simplecnn \
+  --model=resnet \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
@@ -13,7 +13,7 @@ pydtnn_benchmark \
   --batch_size=64 \
   --validation_split=0.2 \
   --num_epochs=1 \
-  --steps_per_epoch=3 \
+  --steps_per_epoch=0 \
   --evaluate=True \
   --optimizer=sgd \
   --learning_rate=0.01 \
