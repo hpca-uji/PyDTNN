@@ -233,7 +233,7 @@ class LayerGPU(Layer, ABC):
                 dw_cpu *= self.model.rank_weight
                 if self.model.crypt:
                     dw_cpu = self.model.crypt.encrypt(dw_cpu)
-                if isinstance(dw, abc.Buffer):
+                if self.model.use_mpi_buffers:
                     self.model.comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 else:
                     dw_cpu = self.model.comm.allreduce(dw_cpu, op=MPI.SUM)

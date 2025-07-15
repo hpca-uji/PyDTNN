@@ -285,7 +285,7 @@ class Packer:
     """
 
     __slots__ = ()
-    _format_size = "!q"
+    _format_size = "!Q"
     _sizeof_size = struct.calcsize(_format_size)
 
     def unpack(self, lower: Stream) -> Stream:

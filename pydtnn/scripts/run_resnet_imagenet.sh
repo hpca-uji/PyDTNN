@@ -40,7 +40,7 @@ mpirun -np 2 \
   --stop_at_loss_metric=val_categorical_accuracy \
   --stop_at_loss_threshold=70.0 \
   --parallel=sequential \
-  --non_blocking_mpi=False \
+  --use_blocking_mpi=True \
   --tracing=False \
   --profile=False \
   --enable_gpu=True \

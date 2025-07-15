@@ -46,7 +46,7 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
   --stop_at_loss_metric=val_categorical_accuracy \
   --stop_at_loss_threshold=70.0 \
   --parallel=data \
-  --non_blocking_mpi=True \
+  --use_blocking_mpi=False \
   --tracing=True \
   --profile=False \
   --enable_gpu=False \
