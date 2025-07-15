@@ -861,7 +861,7 @@ class Model:
 
         terminate = False # True: ends the following loop.
 
-        model_sync_count = 1
+        model_sync_count = 0
         train_batches_min = min(self.comm_nsamples[DatasetEnum.TRAIN]) / (self.batch_size * self.nprocs)
         val_batches_min = min(self.comm_nsamples[DatasetEnum.VAL]) / (self.batch_size * self.nprocs)
 
@@ -1128,7 +1128,7 @@ class Model:
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
-        model_sync_count = 1
+        model_sync_count = 0
         for i_batch, (x_batch, y_batch, batch_size) in enumerate(test_batch_generator):
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
