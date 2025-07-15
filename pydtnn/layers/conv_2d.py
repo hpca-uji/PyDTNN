@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -35,7 +35,7 @@ class Conv2D(Layer, ABC):
 
     def __init__(self, nfilters:int=1, 
                  filter_shape:tuple[int, int] | int = (3, 3), 
-                 grouping:GroupingEnum | None  = None, 
+                 grouping:GroupingEnum = GroupingEnum.STANDARD, 
                  padding:tuple[int, int] | int = 0, 
                  stride: tuple[int, int] | int = 1,
                  dilation:tuple[int, int] | int = 1, 
@@ -103,4 +103,6 @@ class Conv2D(Layer, ABC):
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
-                                                f"dilat=({self.vdilation},{self.hdilation})"))
+                                                f"dilat=({self.vdilation},{self.hdilation})"
+                                                f"{self.grouping}"
+                                                ))
