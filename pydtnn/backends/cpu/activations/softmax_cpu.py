@@ -26,14 +26,19 @@ class SoftmaxCPU(ActivationCPU, Softmax):
 
     def __init__(self, shape:np.ndarray = (1,)):
         super().__init__(shape)
+    
+    def initialize(self, prev_shape):
+        super().initialize(prev_shape)
+        self._y = np.empty(shape=(self.model.batch_size, *self.shape), 
+                           dtype=self.model.dtype)
 
     def forward(self, x:np.ndarray) -> np.ndarray:
         #self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
         #self.y /= np.sum(self.y, axis=1, keepdims=True)
         #return self.y
-        
+        self.y = self._y[:x.shape[0], :]
         x -= np.max(x, axis=1, keepdims=True)
-        self.y = np.exp(x)
+        np.exp(x, out=self.y)
         self.y /= np.sum(self.y, axis=1, keepdims=True)
         self.y = self.y.astype(dtype=self.model.dtype, copy=False)
         return self.y
@@ -43,4 +48,5 @@ class SoftmaxCPU(ActivationCPU, Softmax):
         _dy = (dy * self.y)
         _dy = _dy.sum(axis=1, keepdims=True)
         dy -= _dy
-        return self.y * dy
+        self.y *= dy
+        return self.y
