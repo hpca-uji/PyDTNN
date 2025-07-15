@@ -129,8 +129,6 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         return dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        # NOTE: It's necessary to initalize dx with "zeros" in every call due there are some position that "max_pool_2d_bwd_nhwc_cython" doesn't set.
-        #dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype= self.model.dtype)
         dx = self.dx[:dy.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         max_pool_2d_bwd_nhwc_cython(dy, self.idx_max, dx,
@@ -157,8 +155,6 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         return dx
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        # NOTE: It's necessary to initalize dx with "zeros" in every call due there are some position that "max_pool_2d_bwd_nhwc_cython" doesn't set.
-        #dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype= self.model.dtype)
         dx = self.dx[:dy.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)          
         max_pool_2d_bwd_nchw_cython(dy, self.idx_max, dx, 
