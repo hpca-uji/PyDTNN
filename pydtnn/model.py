@@ -321,13 +321,13 @@ class Model:
     PyDTNN Model
     """
 
-    def __init__(self, parallel:str="sequential", non_blocking_mpi:bool=False, enable_gpu:bool=False, enable_gpudirect:bool=False,
+    def __init__(self, parallel:str="sequential", use_blocking_mpi:bool=False, enable_gpu:bool=False, enable_gpudirect:bool=False,
                  enable_nccl:bool=False, dtype:np.dtype=np.float32, tracing: bool=False, tracer_output:str="",
                  tracer_pmlib_server:str="127.0.0.1", tracer_pmlib_port:int=6526, tracer_pmlib_device:str="",
                  **kwargs):
         # Attributes related to the given arguments
         self.parallel: bool = parallel
-        self.blocking_mpi: bool = not non_blocking_mpi
+        self.blocking_mpi: bool = use_blocking_mpi
         global enable_cudnn
         enable_cudnn = self.enable_cudnn = enable_gpu
         self.gpudirect:bool = enable_gpudirect
@@ -861,7 +861,7 @@ class Model:
 
         terminate = False # True: ends the following loop.
 
-        model_sync_count = 0
+        model_sync_count = 1
         train_batches_min = min(self.comm_nsamples[DatasetEnum.TRAIN]) / (self.batch_size * self.nprocs)
         val_batches_min = min(self.comm_nsamples[DatasetEnum.VAL]) / (self.batch_size * self.nprocs)
 
@@ -1124,7 +1124,7 @@ class Model:
                         ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                         desc="Testing", unit=" samples")
 
-        model_sync_count = 0
+        model_sync_count = 1
         for i_batch, (x_batch, y_batch, batch_size) in enumerate(test_batch_generator):
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
             model_sync_count += 1

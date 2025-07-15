@@ -1,11 +1,14 @@
 #!/bin/bash
 
+cd /home/miguel/Documentos/PyDTNN-FL/pydtnn
+. ../.venv/bin/activate
+
 export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-mpirun -np 4 \
+mpirun -np 1 \
   pydtnn_benchmark \
-  --model=simplecnn \
+  --model=resnet \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
@@ -13,9 +16,13 @@ mpirun -np 4 \
   --flip_images=True \
   --batch_size=64 \
   --validation_split=0.2 \
-  --num_epochs=50 \
+  --encryption= \
+  --model_sync_freq=1 \
+  --num_epochs=1 \
+  --final_model_sync=False \
   --evaluate=True \
-  --optimizer=adam \
+  --steps_per_epoch=25 \
+  --optimizer=sgd \
   --learning_rate=0.01 \
   --loss_func=categorical_cross_entropy \
   --lr_schedulers=warm_up,reduce_lr_every_nepochs \
@@ -25,7 +32,7 @@ mpirun -np 4 \
   --early_stopping_metric=val_categorical_cross_entropy \
   --early_stopping_patience=20 \
   --parallel=data \
-  --non_blocking_mpi=False \
+  --use_blocking_mpi=True \
   --tracing=False \
   --profile=False \
   --enable_gpu=False \

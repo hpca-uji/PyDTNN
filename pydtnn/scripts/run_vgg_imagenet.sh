@@ -30,7 +30,7 @@ pydtnn_benchmark \
   --reduce_lr_on_plateau_patience=5 \
   --reduce_lr_on_plateau_min_lr=0 \
   --parallel=sequential \
-  --non_blocking_mpi=False \
+  --use_blocking_mpi=True \
   --tracing=False \
   --profile=False \
   --enable_gpu=False \
