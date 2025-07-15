@@ -21,7 +21,7 @@ mpirun -np 1 \
   --num_epochs=1 \
   --final_model_sync=False \
   --evaluate=True \
-  --steps_per_epoch=25 \
+  --steps_per_epoch=0 \
   --optimizer=sgd \
   --learning_rate=0.01 \
   --loss_func=categorical_cross_entropy \
