@@ -46,7 +46,7 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
   --reduce_lr_on_plateau_patience=4 \
   --reduce_lr_on_plateau_min_lr=0 \
   --parallel=data \
-  --non_blocking_mpi=False \
+  --use_blocking_mpi=True \
   --tracing=False \
   --profile=False \
   --enable_gpu=False \

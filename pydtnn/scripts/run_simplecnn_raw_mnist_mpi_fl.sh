@@ -28,7 +28,7 @@ mpirun -np 4 \
   --early_stopping_patience=20 \
   --parallel=data \
   --shared_storage=False \
-  --non_blocking_mpi=False \
+  --use_blocking_mpi=True \
   --tracing=False \
   --profile=False \
   --enable_gpu=False \

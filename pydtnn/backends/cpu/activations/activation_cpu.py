@@ -51,7 +51,7 @@ class ActivationCPU(Activation, ABC):
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
-            if isinstance(dw, abc.Buffer):
+            if self.model.use_mpi_buffers:
                 req = self.model.comm.Iallreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             else:
                 req = self.model.comm.iallreduce(dw, op=MPI.SUM)
@@ -83,7 +83,7 @@ class ActivationCPU(Activation, ABC):
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
-            if isinstance(dw, abc.Buffer):
+            if self.model.use_mpi_buffers:
                 self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             else:
                 dw = self.model.comm.allreduce(dw, op=MPI.SUM)

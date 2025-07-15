@@ -40,7 +40,7 @@ for procs in 6 4 2 1; do
       --stop_at_loss_metric=val_categorical_accuracy \
       --stop_at_loss_threshold=70.0 \
       --parallel=data \
-      --non_blocking_mpi=False \
+      --use_blocking_mpi=True \
       --tracing=False \
       --profile=False \
       --enable_gpu=False \
