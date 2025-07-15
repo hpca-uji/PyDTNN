@@ -26,7 +26,7 @@ mpirun -np 4 \
   --early_stopping_metric=val_categorical_cross_entropy \
   --early_stopping_patience=20 \
   --parallel=data \
-  --non_blocking_mpi=False \
+  --use_blocking_mpi=True \
   --tracing=False \
   --profile=False \
   --enable_gpu=False \
