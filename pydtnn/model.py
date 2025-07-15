@@ -884,6 +884,10 @@ class Model:
 
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+                if model_sync_count == 0 and not self.initial_model_sync:
+                    sync_model = False
+
                 model_sync_count += 1
 
                 if i_batch >= train_batches_min and sync_model:
@@ -1127,6 +1131,10 @@ class Model:
         model_sync_count = 1
         for i_batch, (x_batch, y_batch, batch_size) in enumerate(test_batch_generator):
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+            if model_sync_count == 0 and not self.initial_model_sync:
+                sync_model = False
+
             model_sync_count += 1
 
             if i_batch < test_batches_min:
