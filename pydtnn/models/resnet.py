@@ -42,6 +42,7 @@ def resNet50(input_shape, output_shape):
     _(AveragePool2D(pool_shape=(1, 1)))
     _(Flatten())
     _(FC(shape=(512 * expansion,), activation=relu))
+    _(BatchNormalization())
     _(FC(shape=output_shape, activation=softmax))
 
     return model
