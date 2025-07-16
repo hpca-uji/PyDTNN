@@ -67,17 +67,18 @@ def _generate_distribution(shape: tuple[int, ...], scale:float, mode:Distributio
         case ProbabilisticDistributionEnum.NORMAL:            
             stddev:float = np.sqrt(scale) / STD_DEV_CONST
             # Truncated normal distribution [-2*stddev, 2*stddev]
-            x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype)
+            x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False)
         case ProbabilisticDistributionEnum.UNIFORM:
             limit = np.sqrt(3. * scale)
-            x = np.random.uniform(-limit, limit, shape).astype(dtype, copy=True)
+            x = np.random.uniform(-limit, limit, shape).astype(dtype, copy=False)
         case _:
             raise NotImplementedError(f"distribution: \'{distribution}\' not implemented")
     return x
 
 
 def glorot_uniform(shape: tuple[int, ...], dtype: np.dtype) -> np.ndarray:
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistributionEnum.UNIFORM, dtype)
+    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, 
+                                  ProbabilisticDistributionEnum.UNIFORM, dtype)
 
 
 def glorot_normal(shape: tuple[int, ...], dtype: np.dtype) -> np.ndarray:

@@ -45,7 +45,7 @@ class SoftmaxCPU(ActivationCPU, Softmax):
 
     def backward(self, dy:np.ndarray) -> np.ndarray:        
         #return self.y * (dy - (dy * self.y).sum(axis=1, keepdims=True))
-        _dy = (dy * self.y)
+        _dy:np.ndarray = dy * self.y
         _dy = _dy.sum(axis=1, keepdims=True)
         dy -= _dy
         self.y *= dy

@@ -47,8 +47,8 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
                                npDT[:,:,::1] k,
                                npDT[:,:,:,::1] res,
                                int ho, int wo,
-                               int vpadding, int hpadding, 
-                               int vstride, int hstride, 
+                               int vpadding, int hpadding,
+                               int vstride, int hstride,
                                int vdilation, int hdilation)-> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -85,8 +85,8 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                                         npDT[:,:,::1] k,
                                         npDT[:,:,:,::1] dx,
                                         npDT[:,:,::1] dw,
-                                        int vpadding, int hpadding, 
-                                        int vstride, int hstride, 
+                                        int vpadding, int hpadding,
+                                        int vstride, int hstride,
                                         int vdilation, int hdilation)-> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -101,26 +101,21 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
 
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y
     cdef npDT val_k, val_dy
-    
+
     for cc in prange(c, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-
                 val_k = k[cc, ii, jj]
                 for nn in range(n):
                     for xx in range(h):
-
-                        x_x = vstride * xx + vdilation * ii - vpadding                        
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < ho:
                             for yy in range(w):
-                                
-                                val_dy = dy[nn, cc, xx, yy]
                                 x_y = hstride * yy + hdilation * jj - hpadding
+                                val_dy = dy[nn, cc, xx, yy]
                                 if 0 <= x_y < wo:
-                                    
                                     dw[cc, ii, jj] = x[nn, cc, x_x, x_y] * val_dy
                                     dx[nn, cc, x_x, x_y] += val_k * val_dy
-    
     return dx, dw
 # --- END depthwise_conv_cython --- #
 # --- END FORWARD --- #
