@@ -85,6 +85,7 @@ class PointwiseVariant(Conv2D, ABC):
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
+        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy = dy.reshape((_dim, _c), copy = False)
@@ -106,8 +107,6 @@ class PointwiseVariant(Conv2D, ABC):
 
         reshaped_dy:np.ndarray = dy.reshape((self.co, -1), copy=False)
 
-        dx = self.dx[:, :_dim]
-
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         np.matmul(w, reshaped_dy, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -120,6 +119,7 @@ class PointwiseVariant(Conv2D, ABC):
         _n, _c, _h, _w = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
+        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy = dy.reshape((_dim, _c), copy=False)
@@ -139,9 +139,7 @@ class PointwiseVariant(Conv2D, ABC):
         w = self.weights.reshape((self.co, -1), copy=False).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        reshaped_dy:np.ndarray = dy.reshape((self.co, -1), copy=False)
-
-        dx = self.dx[:, :_dim]
+        reshaped_dy:np.ndarray = dy.reshape((self.co, -1), copy=False)        
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         np.matmul(w, reshaped_dy, out=dx)
