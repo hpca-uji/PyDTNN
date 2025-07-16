@@ -33,6 +33,8 @@ class I2CVariant(Conv2D, ABC):
     
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray
+    _x_rows: np.ndarray    
+    _x_cols: np.ndarray
     x_rows: np.ndarray
     x_cols: np.ndarray
     dw: np.ndarray
@@ -46,7 +48,7 @@ class I2CVariant(Conv2D, ABC):
         """Version of the forward function that uses im2col and matmul"""
 
         dim_n = x.shape[0] * self.ho * self.wo
-        x_rows = self.x_rows[: dim_n, :]
+        x_rows = self._x_rows[: dim_n, :]
         res = self.res[ : dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -82,8 +84,8 @@ class I2CVariant(Conv2D, ABC):
         """Version of the forward function that uses im2col and matmul"""
 
         dim_n = x.shape[0] * self.ho * self.wo
-        x_cols = self.x_cols[:, : dim_n]
-        res = self.res[ : , : dim_n]
+        x_cols = np.asarray(self._x_cols[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)
+        res = np.asarray(self.res[ : , : dim_n], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_nchw_cython(x, x_cols,
@@ -159,6 +161,10 @@ class I2CVariant(Conv2D, ABC):
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
+
+        res = np.asarray(self.res_bw[: , :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
+        dx = self.dx[:dy.shape[0], :]
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         dy_cols:np.ndarray = best_transpose_1023(dy).reshape((self.co, -1), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -182,13 +188,10 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
         w_cols = self.weights.reshape((self.co, -1), copy=False).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        
-        res = self.res_bw[: , :(dy.shape[0] * self.ho * self.wo)]
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         np.matmul(w_cols, dy_cols, out=res)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        dx = self.dx[:dy.shape[0], :]
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)        
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         col2im_nchw_cython(res, dx,
