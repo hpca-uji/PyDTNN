@@ -14,7 +14,7 @@ pydtnn_benchmark \
   --tensor_format=NCHW \
   --batch_size=64 \
   --validation_split=0.2 \
-  --num_epochs=1 \
+  --num_epochs=10 \
   --evaluate=True \
   --optimizer=adam \
   --learning_rate=0.0001 \

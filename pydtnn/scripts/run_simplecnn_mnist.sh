@@ -4,7 +4,7 @@ export OMP_NUM_THREADS=16
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
-  --model=resnet \
+  --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
@@ -12,7 +12,7 @@ pydtnn_benchmark \
   --flip_images=True \
   --batch_size=64 \
   --validation_split=0.2 \
-  --num_epochs=1 \
+  --num_epochs=50 \
   --steps_per_epoch=0 \
   --evaluate=True \
   --optimizer=sgd \
