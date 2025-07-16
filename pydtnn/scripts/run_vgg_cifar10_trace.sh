@@ -28,7 +28,7 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
   --batch_size=64 \
   --validation_split=0.2 \
   --steps_per_epoch=10 \
-  --num_epochs=1 \
+  --num_epochs=50 \
   --evaluate=False \
   --optimizer=sgd \
   --learning_rate=0.001 \
