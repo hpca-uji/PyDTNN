@@ -64,7 +64,7 @@ def depthwise_conv_nhwc_cython(npDT[:,:,:,::1] x,
     for nn in prange(n, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-                for cc in range(c):                
+                for cc in range(c):
                     for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < h:
@@ -87,7 +87,7 @@ def depthwise_conv_backward_nhwc_cython(npDT[:,:,:,::1] dy,
                                         npDT[:,:,::1] k,
                                         npDT[:,:,:,::1] dx,
                                         npDT[:,:,::1] dw,
-                                        int vpadding, int hpadding, 
+                                        int vpadding, int hpadding,
                                         int vstride, int hstride, 
                                         int vdilation, int hdilation)-> None:
     cdef int n = x.shape[0]
@@ -103,23 +103,19 @@ def depthwise_conv_backward_nhwc_cython(npDT[:,:,:,::1] dy,
 
     cdef int cc, ii, jj, yy, xx, nn, x_x, x_y
     cdef npDT val_k, val_dy
-
     
-    for nn in prange(n, nogil=True):
+    for cc in prange(c, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-                for cc in range(c):
-                    val_k = k[cc, ii, jj]                    
+                for nn in range(n):
+                    val_k = k[cc, ii, jj]
                     for xx in range(h):
-
-                        x_x = vstride * xx + vdilation * ii - vpadding                        
+                        x_x = vstride * xx + vdilation * ii - vpadding
                         if 0 <= x_x < ho:
                             for yy in range(w):
-
-                                val_dy = dy[nn, xx, yy, cc]
                                 x_y = hstride * yy + hdilation * jj - hpadding
+                                val_dy = dy[nn, xx, yy, cc]
                                 if 0 <= x_y < wo:
-                                    
                                     dw[cc, ii, jj] = x[nn, x_x, x_y, cc] * val_dy
                                     dx[nn, x_x, x_y, cc] += val_k * val_dy
 # --- END depthwise_conv_backward_nhwc_cython --- #
