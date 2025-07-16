@@ -8,7 +8,7 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 mpirun -np 1 \
   pydtnn_benchmark \
-  --model=resnet \
+  --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
@@ -17,8 +17,8 @@ mpirun -np 1 \
   --batch_size=64 \
   --validation_split=0.2 \
   --encryption= \
-  --model_sync_freq=1 \
-  --num_epochs=1 \
+  --model_sync_freq=0 \
+  --num_epochs=50 \
   --final_model_sync=False \
   --evaluate=True \
   --steps_per_epoch=0 \
