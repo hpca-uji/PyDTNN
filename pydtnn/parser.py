@@ -173,8 +173,8 @@ parser.add_argument('--model_sync_freq', type=int, default=0)
 parser.add_argument('--model_sync_alg', type=str, default="avg")
 parser.add_argument('--model_sync_participation', type=str, default="all")
 parser.add_argument('--model_sync_min_avail', type=int, default=0)
-parser.add_argument('--initial_model_sync', type=bool, default=True)
-parser.add_argument('--final_model_sync', type=bool, default=True)
+parser.add_argument('--initial_model_sync', type=bool_lambda, default=True)
+parser.add_argument('--final_model_sync', type=bool_lambda, default=True)
 parser.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
 
 # Dataset options
