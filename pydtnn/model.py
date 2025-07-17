@@ -929,6 +929,10 @@ class Model:
 
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+                if model_sync_count == 0 and not self.initial_model_sync:
+                    sync_model = False
+
                 model_sync_count += 1
 
                 if i_batch < val_batches_min:
@@ -1082,20 +1086,11 @@ class Model:
         except ValueError:
             return self.total_metrics
 
-        #print("_evaluate_batch")
-        #print(f"{self.mode=}")
-        #self.show()
         # Forward pass (FP)
         if x_batch.shape[0] > 0:
-            #print("Input:")
-            #print(f"\t{x.max()=}")
-            #print(f"\t{x.min()=}")
             for i in range(1, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
-                #print(f"{self.layers[i]}")
                 x = self.layers[i].forward(x)
-                #print(f"\t{x.max()=}")
-                #print(f"\t{x.min()=}")
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)            
 
             y_pred = self.layers[-1].y
