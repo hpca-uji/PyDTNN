@@ -42,7 +42,7 @@ class Protocol(comms.Communicator):
 
     def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
         """Communication initialization"""
-        super().__init__({**options, "max_payload": options.get("max_payload", 4 * 1024 ** 2) - self._transport_overhead()})
+        super().__init__({**options, "workers": 1, "max_payload": options.get("max_payload", 4 * 1024 ** 2) - self._transport_overhead()})
 
         # State
         self._ack_queue = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}.acks")

@@ -29,7 +29,7 @@ class Server(Protocol):
 
     def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Server initialization"""
-        super().__init__({**options, "workers": options.get("workers", 4)})
+        super().__init__(options)
 
         # State
         self._lock = threading.Condition()
