@@ -24,8 +24,8 @@ from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
 from .layer_cpu import LayerCPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-
-from time import time
+from pydtnn.utils.best_transpose_0231 import best_transpose_0231
+from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 try:
     # noinspection PyUnresolvedReferences
@@ -77,12 +77,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def forward(self, x:np.ndarray) -> np.ndarray:
 
-        if self.model.mode is ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+        if self.model.mode is ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
             y = np.zeros_like(x, order="C", dtype=x.dtype)
             bn_inference_nchw_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
             return y
 
         if self.spatial:
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                x = best_transpose_0231(x)
             x:np.ndarray = x.reshape((-1, self.ci), copy=False)
 
         self.xn = x
@@ -107,20 +109,18 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             self.running_var *= self.momentum                
             self.running_var += self.var
 
-        if self.spatial:                
-            match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
-                    y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
-                    y = y.reshape((-1, self.ci, self.hi, self.wi), copy=False)
-                case _:
-                    raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
+        if self.spatial:
+            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                y = best_transpose_0312(y)
         return y
     # --- END forward --- #
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         if self.spatial:
             dx:np.ndarray = self.dx[: (dy.shape[0] * self.hi * self.wi),:]
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                dy = best_transpose_0231(dy)
             dy = dy.reshape((-1, self.ci), copy=True)
         else:
             dx:np.ndarray = self.dx[: dy.shape[0],:]
@@ -131,13 +131,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
-            match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
-                    dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
-                    dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
-                case _:
-                    raise NotImplementedError(f"Operation not implemented in \'{self.model.tensor_format}\' format")
-
+            dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                dx = best_transpose_0312(dx)
         return dx
     # --- END backward --- #
