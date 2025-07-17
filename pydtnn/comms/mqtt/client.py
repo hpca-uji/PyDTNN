@@ -27,7 +27,7 @@ class Client(Protocol):
 
     def __init__(self, options: CommunicatorOptions = {}) -> None:
         """Client initialization"""
-        super().__init__({**options, "workers": 1})
+        super().__init__(options)
 
         # State
         self._lock = threading.Condition()
