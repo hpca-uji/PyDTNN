@@ -231,7 +231,11 @@ class Server(Protocol):
             while self._peers:
                 self._lock.wait()
 
+        # Unlock inflight external API:
+        for _ in range(threading.active_count()):
+            self._get_event.put(UUID_MAX)
+
         # Close resources
-        self._client.disconnect()
         self._pool.shutdown()
+        self._stop_loop()
         super()._close()
