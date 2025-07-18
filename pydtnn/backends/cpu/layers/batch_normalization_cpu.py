@@ -100,14 +100,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         if self.model.mode is ModelModeEnum.TRAIN:
             #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
-            self.mu *= (1.0 - self.momentum)
+            #self.mu *= (1.0 - self.momentum)
             self.running_mean *= self.momentum
-            self.running_mean += self.mu
+            self.running_mean += (self.mu * (1.0 - self.momentum))
 
             #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
-            self.var *= (1.0 - self.momentum)                
+            #self.var *= (1.0 - self.momentum)
             self.running_var *= self.momentum                
-            self.running_var += self.var
+            self.running_var += (self.var * (1.0 - self.momentum))
 
         if self.spatial:
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
@@ -117,13 +117,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     # --- END forward --- #
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
+        n = dy.shape[0]
         if self.spatial:
-            dx:np.ndarray = self.dx[: (dy.shape[0] * self.hi * self.wi),:]
+            dx:np.ndarray = self.dx[: (n * self.hi * self.wi),:]
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 dy = best_transpose_0231(dy)
             dy = dy.reshape((-1, self.ci), copy=True)
         else:
-            dx:np.ndarray = self.dx[: dy.shape[0],:]
+            dx:np.ndarray = self.dx[:n,:]
 
         np.sum(dy * self.xn, axis=0, out=self.dgamma)
         np.sum(dy, axis=0, out=self.dbeta)
