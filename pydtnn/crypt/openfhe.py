@@ -55,13 +55,16 @@ class Context:
 
     def __init__(self):
         """Inizialize context"""
+        self._slots = 4096
+        ring_dim = self._slots * 2
+        level = openfhe.SecurityLevel.HEStd_128_classic
 
         # Context
-        self._slots = 4096
         parameters = openfhe.CCParamsCKKSRNS()
+        parameters.SetSecurityLevel(level)
+        parameters.SetRingDim(ring_dim)
         parameters.SetScalingModSize(40)
         parameters.SetMultiplicativeDepth(0)
-        parameters.SetRingDim(self._slots * 2)
         self._context = openfhe.GenCryptoContext(parameters)
         self._context.Enable(openfhe.PKESchemeFeature.PKE)
         self._context.Enable(openfhe.PKESchemeFeature.KEYSWITCH)
