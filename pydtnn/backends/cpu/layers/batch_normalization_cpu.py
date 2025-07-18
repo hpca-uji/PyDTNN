@@ -100,12 +100,10 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         if self.model.mode is ModelModeEnum.TRAIN:
             #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
-            #self.mu *= (1.0 - self.momentum)
             self.running_mean *= self.momentum
             self.running_mean += (self.mu * (1.0 - self.momentum))
 
             #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
-            #self.var *= (1.0 - self.momentum)
             self.running_var *= self.momentum                
             self.running_var += (self.var * (1.0 - self.momentum))
 
