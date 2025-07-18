@@ -90,12 +90,12 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         self.xn = x
         self.mean(self.xn, self.n, self.mu)
         self.xn -= self.mu
-        #var = self.mean(xc ** 2, n, self.model.comm)
+        #var = self.mean(xc ** 2, n, self.model.comm)        
         self.mean(self.xn ** 2, self.n, self.var)
 
-        np.sqrt(self.var + self.epsilon, out=self.std)
-        self.xn /= self.std
-        y = self.gamma * self.xn 
+        np.sqrt(self.var + self.epsilon, out=self.std)        
+        y = self.xn / self.std
+        y *= self.gamma
         y += self.beta
 
         if self.model.mode is ModelModeEnum.TRAIN:

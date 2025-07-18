@@ -106,7 +106,7 @@ def bn_training_bwd_cython(npDT[:, ::1] dx,
     for i in prange(n, nogil=True, schedule='static'):
         for j in range(dy.shape[1]):
             # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta) 
-            dx[i, j] = (<npDT> (gamma[j] / (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j]))
+            dx[i, j] = (gamma[j] // (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j])
 # --- bn_training_bwd_cython --- #
 
 # --- END BACKWARD --- #
