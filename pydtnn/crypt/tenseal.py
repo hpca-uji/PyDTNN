@@ -17,6 +17,8 @@ finally:
 
 import numpy as np
 from tenseal.tensors import CKKSVector
+from tenseal.sealapi import CoeffModulus
+from tenseal.sealapi import SEC_LEVEL_TYPE
 from tenseal.enc_context import Context as SealContext
 
 
@@ -57,12 +59,19 @@ class Context:
 
     def __init__(self):
         """Inizialize context"""
-        # Context
         self._slots = 4096
+        poly_degree = self._slots * 2
+        level = SEC_LEVEL_TYPE.TC128
+
+        # Context
+        modulus = [
+            m.bit_count()
+            for m in CoeffModulus.BFVDefault(poly_degree, level)
+        ]
         self._private_context = tenseal.context(
             scheme=tenseal.SCHEME_TYPE.CKKS,
-            poly_modulus_degree=self._slots * 2,
-            coeff_mod_bit_sizes=[40, 40, 40, 40, 40]
+            poly_modulus_degree=poly_degree,
+            coeff_mod_bit_sizes=modulus
         )
 
         # Keys
