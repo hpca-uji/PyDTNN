@@ -34,7 +34,7 @@ def byteview(b: abc.Buffer) -> memoryview:
 
 # Fast path
 try:
-    from pydtnn.cython_modules import memoryview_index  # type: ignore (opaque symbol)
+    from pydtnn.cython_modules import memoryview_index
 
 # Slow path
 except ImportError:
@@ -62,9 +62,26 @@ class Stream(io.BufferedIOBase):
 
     __slots__ = ("_chunks",)
 
-    def __init__(self):
+    def __init__(self, merge_size: int = 4 * 1024 ** 2, efficient_chunks: int = 256):
         """Initialize stream"""
+        self._merge_size = merge_size
+        self._efficient_chunks = efficient_chunks
         self._chunks = deque[memoryview]()
+
+    def optimize(self) -> None:
+        """Optimize buffer chunks (may copy)"""
+        # TODO: allow control overthis
+        if self.nchunks < self._efficient_chunks:
+            return
+
+        chunks = list[memoryview]()
+        while not self.empty():
+            chunk = self.readchunk()
+            if len(chunk) < self._merge_size:
+                self.unreadchunk(chunk)
+                chunk = self.read(self._merge_size)
+            chunks.append(chunk)
+        self.writechunks(chunks)
 
     # stream methods
     def empty(self) -> bool:
@@ -115,6 +132,7 @@ class Stream(io.BufferedIOBase):
             self._chunks.append(chunk)
         else:
             chunk.release()
+        self.optimize()
         return size
 
     def writechunks(self, chunks: abc.Iterable[memoryview], /) -> int:
