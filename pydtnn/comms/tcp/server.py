@@ -169,7 +169,7 @@ class Server(Protocol):
                 assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
                 return
 
-            state.get_buffer.write(data)
+            state.get_write(data)
             peer = self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:

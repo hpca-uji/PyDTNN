@@ -151,6 +151,28 @@ class ConnectionData:
         self.put_queue.put(stream)
         return Future[None]()
 
+    def get_write(self, b: col_abc.Buffer) -> int:
+        """Write get stream (merging chunks if plausible)"""
+        size = self.get_buffer.write(b)
+        return size
+
+        # TODO: Revise before enable
+        if self.get_buffer.nchunks > 256:
+
+            with Stream() as stream:
+                while not self.get_buffer.empty():
+                    chunk = self.get_buffer.unwritechunk()
+                    if len(chunk) >= len(self._merge_buffer):
+                        self.get_buffer.writechunk(chunk)
+                        break
+                    stream.unreadchunk(chunk)
+
+                if not stream.empty():
+                    chunk = stream.read()
+                    self.get_buffer.writechunk(chunk)
+
+        return size
+
     def put_read(self, size: int = -1) -> memoryview:
         """Read put stream (merging chunks if plausible)"""
         if self.put_buffer.nchunks > 1 and len(self.put_buffer._chunks[0]) < self._merge_size:
