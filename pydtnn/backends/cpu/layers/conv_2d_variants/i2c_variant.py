@@ -23,7 +23,6 @@ import numpy as np
 
 from pydtnn.cython_modules import im2row_nhwc_cython, im2col_nchw_cython, row2im_nhwc_cython, col2im_nchw_cython
 from pydtnn.layers import Conv2D
-from pydtnn.model import ModelModeEnum
 
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
@@ -32,15 +31,13 @@ from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 class I2CVariant(Conv2D, ABC):
     
     # NOTE: Attributes defined in conv_2d_cpu.
-    res: np.ndarray
-    _x_rows: np.ndarray    
-    _x_cols: np.ndarray
+    res: np.ndarray    
+    dim_c:int
     x_rows: np.ndarray
     x_cols: np.ndarray
     dw: np.ndarray
     _dw: np.ndarray
     db: np.ndarray
-    dx: np.ndarray
     res_bw: np.ndarray
     # ----
 
@@ -48,7 +45,7 @@ class I2CVariant(Conv2D, ABC):
         """Version of the forward function that uses im2col and matmul"""
 
         dim_n = x.shape[0] * self.ho * self.wo
-        x_rows = self._x_rows[: dim_n, :]
+        x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
         res = self.res[ : dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -58,8 +55,7 @@ class I2CVariant(Conv2D, ABC):
                            self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.model.mode is ModelModeEnum.TRAIN:
-            self.x_rows = x_rows
+        self.x_rows = x_rows
         
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
         w_cols = self.weights.reshape((-1, self.co), copy=False)
@@ -84,7 +80,7 @@ class I2CVariant(Conv2D, ABC):
         """Version of the forward function that uses im2col and matmul"""
 
         dim_n = x.shape[0] * self.ho * self.wo
-        x_cols = np.asarray(self._x_cols[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)
+        x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
         res = np.asarray(self.res[ : , : dim_n], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -94,8 +90,7 @@ class I2CVariant(Conv2D, ABC):
                            self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.model.mode is ModelModeEnum.TRAIN:
-            self.x_cols = x_cols
+        self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
         w_cols = self.weights.reshape((self.co, -1), copy=False)
@@ -148,7 +143,7 @@ class I2CVariant(Conv2D, ABC):
         np.matmul(dy_rows, w_rows.T, out=res)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
-        dx = self.dx[:dy.shape[0], :]
+        dx = np.zeros(shape=(dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         row2im_nhwc_cython(res, dx,
@@ -163,7 +158,7 @@ class I2CVariant(Conv2D, ABC):
         """Version of the backward function that uses im2col and matmul"""
 
         res = np.asarray(self.res_bw[: , :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
-        dx = self.dx[:dy.shape[0], :]
+        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         dy_cols:np.ndarray = best_transpose_1023(dy).reshape((self.co, -1), copy=False)

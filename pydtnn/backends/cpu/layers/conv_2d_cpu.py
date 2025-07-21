@@ -55,27 +55,19 @@ class Conv2DCPU(LayerCPU,
 
     def initialize_i2c(self) ->  None:
         # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
-        # dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
+        # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
         dim_n = self.model.batch_size * self.ho * self.wo
-        dim_c = self.ci * self.kh * self.kw
+        self.dim_c = self.ci * self.kh * self.kw
         self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self._x_cols = zeros(shape=(dim_c, dim_n), dtype=self.model.dtype)
                 self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype)
-
-                self._dw = empty(shape=(self.co, dim_c), dtype=self.model.dtype)
-                self.res_bw = empty(shape=(dim_c, dim_n), dtype=self.model.dtype)
-                self.dx = zeros(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
-
+                self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype)
+                self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self._x_rows = zeros(shape=(dim_n, dim_c), dtype=self.model.dtype)
                 self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype)
-
-                self._dw = empty(shape=(dim_c, self.co), dtype=self.model.dtype)
-                self.res_bw = empty( shape=(dim_n, dim_c), dtype=self.model.dtype)
-                self.dx = zeros(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
-
+                self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype)
+                self.res_bw = empty( shape=(dim_n, self.dim_c), dtype=self.model.dtype)
             case _:
                 raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
