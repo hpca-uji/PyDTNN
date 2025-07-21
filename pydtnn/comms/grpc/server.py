@@ -121,7 +121,7 @@ class Server(Protocol):
         # Message streaming
         yield from self._s2m(state)
         for data in self._m2d(messages):
-            state.get_buffer.write(data)
+            state.get_write(data)
             peer = self._get_flush(peer)
 
         if not state.state and state.put_empty():
