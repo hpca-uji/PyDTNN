@@ -52,32 +52,34 @@ class NadamCPU(OptimizerCPU, Nadam):
             # Momentum of the weight or bias of the given layer
             m:np.ndarray = self.context[layer]["m_%s" % w_]
             # Velocity of the weight or bias of the given layer
-            v:np.ndarray = self.context[layer]["v_%s" % w_]
+            v:np.ndarray = self.context[layer]["v_%s" % w_]            
 
-            # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+            if self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v):
+                continue
+            else:
+                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+                #m = self.beta1 * m + (1 - self.beta1) * dw
+                m *= self.beta1
+                _dw:np.ndarray = (1 - self.beta1) * dw
+                m += _dw
+                #v = self.beta2 * v + (1 - self.beta2) * dw ** 2
+                v *= self.beta2
+                _dw = dw ** 2
+                _dw *= (1 - self.beta2) 
+                v += _dw
 
-            #m = self.beta1 * m + (1 - self.beta1) * dw
-            m *= self.beta1
-            _dw = (1 - self.beta1) * dw
-            m += _dw
-            #v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-            v *= self.beta2
-            _dw = dw ** 2
-            _dw *= (1 - self.beta2) 
-            v += _dw
+                #mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
+                mt = (1 - self.beta1) * dw
+                mt /= (1 - self.beta1 ** it)
+                mt += m
 
-            #mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
-            mt = (1 - self.beta1) * dw
-            mt /= (1 - self.beta1 ** it)
-            mt += m
+                #vt = v / (1 - self.beta2 ** it)
+                vt = v / (1 - self.beta2 ** it)
 
-            #vt = v / (1 - self.beta2 ** it)
-            vt = v / (1 - self.beta2 ** it)
-
-            #w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon)))
-            w -= (self.learning_rate * self.decay) * w
-            vt += self.epsilon
-            np.sqrt(vt, out=vt)
-            mt /= vt
-            mt *= self.learning_rate
-            w -= mt
+                #w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + epsilon)))
+                w -= (self.learning_rate * self.decay) * w
+                vt += self.epsilon
+                np.sqrt(vt, out=vt)
+                mt /= vt
+                mt *= self.learning_rate
+                w -= mt

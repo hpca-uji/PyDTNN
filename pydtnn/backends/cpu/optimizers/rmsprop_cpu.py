@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -47,18 +47,21 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
             cache:np.ndarray = self.context[layer]["cache_%s" % w_]
             w:np.ndarray
             dw:np.ndarray
+            
+            if self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(cache):
+                continue
+            else:                
+                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
-            # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
-
-            #cache = self.rho * cache + (1 - self.rho) * dw ** 2
-            cache *= self.rho
-            _dw = dw ** 2
-            _dw *= (1 - self.rho)
-            cache += _dw
-            #w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
-            w -= (self.learning_rate * self.decay) * w
-            _cache = cache + self.epsilon
-            np.sqrt(_cache, out=_cache)
-            _dw = dw / _cache 
-            _dw *= self.learning_rate
-            w -= _dw
+                #cache = self.rho * cache + (1 - self.rho) * dw ** 2
+                cache *= self.rho
+                _dw = dw ** 2
+                _dw *= (1 - self.rho)
+                cache += _dw
+                #w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
+                w -= (self.learning_rate * self.decay) * w
+                _cache = cache + self.epsilon
+                np.sqrt(_cache, out=_cache)
+                _dw = dw / _cache 
+                _dw *= self.learning_rate
+                w -= _dw
