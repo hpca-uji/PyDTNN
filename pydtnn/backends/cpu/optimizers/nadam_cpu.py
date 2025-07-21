@@ -54,9 +54,8 @@ class NadamCPU(OptimizerCPU, Nadam):
             # Velocity of the weight or bias of the given layer
             v:np.ndarray = self.context[layer]["v_%s" % w_]            
 
-            if self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v):
-                continue
-            else:
+            if not (self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v)):
+                        
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
                 #m = self.beta1 * m + (1 - self.beta1) * dw
                 m *= self.beta1
@@ -83,3 +82,4 @@ class NadamCPU(OptimizerCPU, Nadam):
                 mt /= vt
                 mt *= self.learning_rate
                 w -= mt
+            #else: continue
