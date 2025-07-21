@@ -58,6 +58,7 @@ class Stream(io.BufferedIOBase):
 
     Operations are not thread-safe.
     Reader is responsible of releasing chunks.
+    Writer hands off responsibility over chunks.
     """
 
     __slots__ = ("_nbytes", "_chunks",)
