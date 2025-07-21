@@ -104,5 +104,4 @@ class Conv2D(Layer, ABC):
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
                                                 f"dilat=({self.vdilation},{self.hdilation})"
-                                                f"{self.grouping}"
                                                 ))

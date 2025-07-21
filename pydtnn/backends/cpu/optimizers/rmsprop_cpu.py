@@ -48,9 +48,7 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
             w:np.ndarray
             dw:np.ndarray
             
-            if self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(cache):
-                continue
-            else:                
+            if not (self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(cache)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
                 #cache = self.rho * cache + (1 - self.rho) * dw ** 2
@@ -65,3 +63,4 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
                 _dw = dw / _cache 
                 _dw *= self.learning_rate
                 w -= _dw
+            #else: continue

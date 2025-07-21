@@ -47,9 +47,7 @@ class SGDCPU(OptimizerCPU, SGD):
             w: np.ndarray
             dw: np.ndarray            
             
-            if self.are_all_zeros(velocity) and self.are_all_zeros(w) and self.are_all_zeros(dw):
-                continue
-            else:
+            if not (self.are_all_zeros(velocity) and self.are_all_zeros(w) and self.are_all_zeros(dw)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
                 # velocity = self.momentum * velocity + dw
@@ -70,3 +68,4 @@ class SGDCPU(OptimizerCPU, SGD):
                 _w += v
                 _w *= self.learning_rate
                 w -= _w
+            #else: continue
