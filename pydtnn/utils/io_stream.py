@@ -60,7 +60,7 @@ class Stream(io.BufferedIOBase):
     Reader is responsible of releasing chunks.
     """
 
-    __slots__ = ("_chunks",)
+    __slots__ = ("_nbytes", "_chunks",)
 
     def __init__(self):
         """Initialize stream"""
