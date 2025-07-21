@@ -53,30 +53,32 @@ class AdamCPU(OptimizerCPU, Adam):
             m:np.ndarray = self.context[layer]["m_%s" % w_]
             # Velocity of the weight or bias of the given layer
             v:np.ndarray = self.context[layer]["v_%s" % w_]
-
-            # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
-            # m = self.beta1 * m + (1 - self.beta1) * dw
-            m *= self.beta1
-            m += (1 - self.beta1) * dw
-
-            # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-            v *= self.beta2 
-            _dw = dw ** 2
-            _dw *= (1 - self.beta2)
-            v += _dw
-
-            mt:np.ndarray = m / (1 - self.beta1 ** it)
-            vt:np.ndarray = v / (1 - self.beta2 ** it)
-
-            # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
-            _w = self.decay * w
             
-            vt += self.epsilon
-            np.sqrt(vt, out=vt)
-            mt /= vt
+            if self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(m) and self.are_all_zeros(v):
+                continue
+            else:
+                # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
+                # m = self.beta1 * m + (1 - self.beta1) * dw
+                m *= self.beta1
+                m += (1 - self.beta1) * dw
 
-            _w += mt
-            _w *= self.learning_rate
+                # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
+                v *= self.beta2 
+                _dw = dw ** 2
+                _dw *= (1 - self.beta2)
+                v += _dw
 
-            w -= _w
-        
+                mt:np.ndarray = m / (1 - self.beta1 ** it)
+                vt:np.ndarray = v / (1 - self.beta2 ** it)
+
+                # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
+                _w = self.decay * w
+
+                vt += self.epsilon
+                np.sqrt(vt, out=vt)
+                mt /= vt
+
+                _w += mt
+                _w *= self.learning_rate
+
+                w -= _w
