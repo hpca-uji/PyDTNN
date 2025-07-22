@@ -38,7 +38,6 @@ class FCCPU(LayerCPU, FC):
         self.weights = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
         # Initialize outputs:
         self.db = np.empty(self.shape, dtype=self.model.dtype)
-
         self.dy = np.empty((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.dw = np.empty(shape=(*self.prev_shape, *self.shape), dtype=self.model.dtype)
         self.dx = np.empty(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)

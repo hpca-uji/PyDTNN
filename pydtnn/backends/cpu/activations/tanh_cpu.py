@@ -27,7 +27,7 @@ class TanhCPU(ActivationCPU, Tanh):
 
     def initialize(self, prev_shape):
         super().initialize(prev_shape)
-        self._y = np.empty((self.model.batch_size, *prev_shape))
+        self._y = np.empty((self.model.batch_size, *prev_shape), dtype=self.model.dtype)
 
     def forward(self, x:np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
