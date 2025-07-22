@@ -214,7 +214,7 @@ class Communicator[T](abc.ABC):
     def _new_state(self) -> ConnectionData:
         """Generate new connection state data"""
         merge = self._options.get("merge_size", self._max_payload)
-        efficient = self._options.get("merge_size", self._max_payload // 64)
+        efficient = self._options.get("efficient_size", self._max_payload // 64)
         return ConnectionData(merge_size=merge, efficient_size=efficient)
 
     @property
