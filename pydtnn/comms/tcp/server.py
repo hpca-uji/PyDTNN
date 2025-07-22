@@ -54,8 +54,8 @@ class Server(Protocol):
         peer = uuid.uuid4()  # temporary ID
 
         sock.setblocking(False)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
+        # sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
+        # sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
 
         with self._lock:
             self._peers[peer] = sock
@@ -172,7 +172,10 @@ class Server(Protocol):
 
         state.get_write(data)
 
-        assert not comms.SSL or sock.pending(), "SSL socket has pending data"
+        if comms.SSL and (pending := sock.pending()):
+            data = sock.recv(pending)
+            state.get_write(data)
+
         peer = self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:

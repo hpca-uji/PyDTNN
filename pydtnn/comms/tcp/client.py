@@ -40,8 +40,8 @@ class Client(Protocol):
             self._socket = context.wrap_socket(self._socket, server_hostname=self._addr)
 
         self._socket.setblocking(False)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
-        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
+        # self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
+        # self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
 
@@ -83,7 +83,10 @@ class Client(Protocol):
 
         state.get_write(data)
 
-        assert not comms.SSL or sock.pending(), "SSL socket has pending data"
+        if comms.SSL and (pending := sock.pending()):
+            data = sock.recv(pending)
+            state.get_write(data)
+
         self._get_flush()
 
     def _get_flush(self) -> None:
