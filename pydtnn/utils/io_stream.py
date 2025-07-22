@@ -169,13 +169,12 @@ class Stream(io.BufferedIOBase):
                 try:
                     i = memoryview_index(chunk, b"\n")
                 except ValueError:
-                    with chunk:
-                        stream.write(chunk)
+                    stream.writechunk(chunk)
                     continue
                 else:
                     self.unreadchunk(chunk)
-                    with self.read1(i) as chunk:
-                        stream.write(chunk)
+                    chunk = self.read1(i)
+                    stream.writechunk(chunk)
                     break
             return stream.read()
 
