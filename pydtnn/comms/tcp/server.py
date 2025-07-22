@@ -54,6 +54,8 @@ class Server(Protocol):
         peer = uuid.uuid4()  # temporary ID
 
         sock.setblocking(False)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
 
         with self._lock:
             self._peers[peer] = sock
@@ -159,18 +161,19 @@ class Server(Protocol):
         peer = self._peers.inverse[sock]
         state = self._state[peer]
 
-        while True:
-            try:
-                data = sock.recv(self._max_payload)
-            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
-                break
+        try:
+            data = sock.recv(self._max_payload)
+        except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            return
 
-            if not data:
-                assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
-                return
+        if not data:
+            assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+            return
 
-            state.get_write(data)
-            peer = self._get_flush(peer)
+        state.get_write(data)
+
+        assert not comms.SSL or sock.pending(), "SSL socket has pending data"
+        peer = self._get_flush(peer)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
