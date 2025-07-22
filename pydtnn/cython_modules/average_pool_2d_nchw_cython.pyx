@@ -71,7 +71,7 @@ def average_pool_2d_fwd_nchw_cython(npDT[:,:,:,::1] x,
                                 if 0 <= x_y < w:
                                     accum = accum + x[nn, cc, x_x, x_y]
                                     items = items + 1
-                    y[nn, cc, xx, yy] = <npDT> (accum // items)
+                    y[nn, cc, xx, yy] = <npDT> (accum / items)
 # --- END average_pool_2d_fwd_nchw_cython --- #
 
 # =================== #
