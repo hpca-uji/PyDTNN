@@ -33,7 +33,6 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
-# TODO: REVISAR: NOTE [BORRAR]: no puedes machacar "beta", "dbeta" "gamma", "dgamma"
 class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def initialize(self, prev_shape):
@@ -90,22 +89,22 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         self.xn = x
         self.mean(self.xn, self.n, self.mu)
         self.xn -= self.mu
-        #var = self.mean(xc ** 2, n, self.model.comm)        
+        #var = self.mean(xc ** 2, n, self.model.comm)
         self.mean(self.xn ** 2, self.n, self.var)
 
-        np.sqrt(self.var + self.epsilon, out=self.std)        
-        y = self.xn / self.std
-        y *= self.gamma
+        np.sqrt(self.var + self.epsilon, out=self.std)
+        self.xn /= self.std
+        y = self.gamma * self.xn
         y += self.beta
 
         if self.model.mode is ModelModeEnum.TRAIN:
             #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
             self.running_mean *= self.momentum
-            self.running_mean += (self.mu * (1.0 - self.momentum))
+            self.running_mean += self.mu * (1.0 - self.momentum)
 
             #self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
             self.running_var *= self.momentum                
-            self.running_var += (self.var * (1.0 - self.momentum))
+            self.running_var += self.var * (1.0 - self.momentum)
 
         if self.spatial:
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
@@ -117,16 +116,17 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         n = dy.shape[0]
         if self.spatial:
-            dx:np.ndarray = self.dx[: (n * self.hi * self.wi),:]
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 dy = best_transpose_0231(dy)
             dy = dy.reshape((-1, self.ci), copy=True)
+            dx:np.ndarray = self.dx[: (n * self.hi * self.wi),:]
         else:
             dx:np.ndarray = self.dx[:n,:]
 
         np.sum(dy * self.xn, axis=0, out=self.dgamma)
         np.sum(dy, axis=0, out=self.dbeta)
         
+        #dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
