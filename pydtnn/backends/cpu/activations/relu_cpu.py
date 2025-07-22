@@ -34,12 +34,11 @@ class ReluCPU(ActivationCPU, Relu):
         self._mask = np.empty((self.model.batch_size, *self.prev_shape), dtype=np.int8)
 
     def forward(self, x:np.ndarray) -> np.ndarray:
-        self.y = self._y[:x.shape[0], :]
-        self.mask = self._mask[:x.shape[0], :]
+        n = x.shape[0]
+        self.y = self._y[:n, :]
+        self.mask = self._mask[:n, :]
         relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False))
         return self.y
 
     def backward(self, dy:np.ndarray) -> np.ndarray:
-        #return dy * self.mask
-        dy *= self.mask
-        return dy
+        return dy * self.mask

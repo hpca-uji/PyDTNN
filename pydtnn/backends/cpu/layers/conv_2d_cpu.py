@@ -61,10 +61,12 @@ class Conv2DCPU(LayerCPU,
         self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
+                self._x_cols= zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
                 self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype)
                 self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype)
                 self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
             case PYDTNN_TENSOR_FORMAT.NHWC:
+                self._x_rows = zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
                 self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype)
                 self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype)
                 self.res_bw = empty( shape=(dim_n, self.dim_c), dtype=self.model.dtype)

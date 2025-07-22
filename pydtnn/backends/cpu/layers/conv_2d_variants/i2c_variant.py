@@ -35,6 +35,8 @@ class I2CVariant(Conv2D, ABC):
     dim_c:int
     x_rows: np.ndarray
     x_cols: np.ndarray
+    _x_rows: np.ndarray
+    _x_cols: np.ndarray
     dw: np.ndarray
     _dw: np.ndarray
     db: np.ndarray
@@ -45,8 +47,9 @@ class I2CVariant(Conv2D, ABC):
         """Version of the forward function that uses im2col and matmul"""
 
         dim_n = x.shape[0] * self.ho * self.wo
-        x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        res = self.res[ : dim_n, :]
+        #x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
+        x_rows = self._x_rows[:dim_n, :]
+        res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_nhwc_cython(x, x_rows,
@@ -80,7 +83,8 @@ class I2CVariant(Conv2D, ABC):
         """Version of the forward function that uses im2col and matmul"""
 
         dim_n = x.shape[0] * self.ho * self.wo
-        x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
+        #x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
+        x_cols = np.asarray(self._x_cols[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)        
         res = np.asarray(self.res[ : , : dim_n], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
