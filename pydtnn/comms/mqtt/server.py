@@ -117,7 +117,7 @@ class Server(Protocol):
         state = self._state[peer]
 
         data = mqtt_message.payload
-        state.get_buffer.write(data)
+        state.get_write(data)
         peer = self._get_flush(peer)
 
     def _fin(self, peer: uuid.UUID) -> None:

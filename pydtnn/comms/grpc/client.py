@@ -128,7 +128,7 @@ class Client(Protocol):
         state = self._state
 
         for data in self._m2d(self._com(self._s2m(state))):
-            state.get_buffer.write(data)
+            state.get_write(data)
             self._get_flush()
 
         if not state.state and state.put_empty():
