@@ -80,7 +80,7 @@ class Client(Protocol):
                 assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
                 return
 
-            state.get_buffer.write(data)
+            state.get_write(data)
             self._get_flush()
 
     def _get_flush(self) -> None:
