@@ -40,8 +40,6 @@ class Client(Protocol):
             self._socket = context.wrap_socket(self._socket, server_hostname=self._addr)
 
         self._socket.setblocking(False)
-        # self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
-        # self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
 
@@ -93,12 +91,7 @@ class Client(Protocol):
         state = self._state
         peer = state.peer
 
-        while True:
-            try:
-                stream = state.get()
-            except BlockingIOError:
-                break
-
+        for stream in state.get_flush():
             if stream.empty():
                 self._handle_session_fin(stream)
 
