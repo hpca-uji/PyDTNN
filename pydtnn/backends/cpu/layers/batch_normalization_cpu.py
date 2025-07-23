@@ -76,28 +76,33 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
     def forward(self, x:np.ndarray) -> np.ndarray:
 
-        if self.model.mode is ModelModeEnum.EVALUATE and self.spatial and self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-            y = np.zeros_like(x, order="C", dtype=x.dtype)
-            bn_inference_nchw_cython(x, y, self.running_mean, self.inv_std, self.gamma, self.beta)
-            return y
-
         if self.spatial:
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
             x:np.ndarray = x.reshape((-1, self.ci), copy=False)
 
-        self.xn = x
-        self.mean(self.xn, self.n, self.mu)
-        self.xn -= self.mu
-        #var = self.mean(xc ** 2, n, self.model.comm)
-        self.mean(self.xn ** 2, self.n, self.var)
+        if self.model.mode is ModelModeEnum.EVALUATE:
+            #y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
+            x -= self.running_mean
+            y = self.gamma * x
 
-        np.sqrt(self.var + self.epsilon, out=self.std)
-        self.xn /= self.std
-        y = self.gamma * self.xn
-        y += self.beta
+            np.sqrt(self.running_var + self.epsilon, out=self.std)
+            y /= self.std
+            y += self.beta
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        else: #ModelModeEnum.TRAIN:
+
+            self.xn = x
+            self.mean(self.xn, self.n, self.mu)
+            self.xn -= self.mu
+            #var = self.mean(xc ** 2, n, self.model.comm)
+            self.mean(self.xn ** 2, self.n, self.var)
+
+            np.sqrt(self.var + self.epsilon, out=self.std)
+            self.xn /= self.std
+            y = self.gamma * self.xn
+            y += self.beta
+        
             #self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
             self.running_mean *= self.momentum
             self.running_mean += self.mu * (1.0 - self.momentum)
