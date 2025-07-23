@@ -40,6 +40,8 @@ class Client(Protocol):
             self._socket = context.wrap_socket(self._socket, server_hostname=self._addr)
 
         self._socket.setblocking(False)
+        # self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, self._max_payload)
+        # self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, self._max_payload)
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
 
@@ -70,18 +72,22 @@ class Client(Protocol):
         """Server to client communication"""
         state = self._state
 
-        while True:
-            try:
-                data = sock.recv(self._max_payload)
-            except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
-                break
+        try:
+            data = sock.recv(self._max_payload)
+        except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
+            return
 
-            if not data:
-                assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
-                return
+        if not data:
+            assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+            return
 
+        state.get_write(data)
+
+        if comms.SSL and (pending := sock.pending()):
+            data = sock.recv(pending)
             state.get_write(data)
-            self._get_flush()
+
+        self._get_flush()
 
     def _get_flush(self) -> None:
         state = self._state
@@ -111,7 +117,7 @@ class Client(Protocol):
         state.put_flush()
         if state.put_buffer.empty():
             return
-        with state.put_read(self._max_payload) as view:
+        with state.put_read() as view:
             try:
                 size = sock.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
