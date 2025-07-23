@@ -1,12 +1,9 @@
 #!/bin/bash
 
-cd /home/miguel/Documentos/PyDTNN-FL/pydtnn
-. ../.venv/bin/activate
-
 export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-mpirun -np 1 \
+mpirun -np 4 \
   pydtnn_benchmark \
   --model=simplecnn \
   --dataset=mnist \
