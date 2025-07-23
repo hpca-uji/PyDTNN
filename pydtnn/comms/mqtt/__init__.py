@@ -42,7 +42,7 @@ class Protocol(comms.Communicator):
 
     def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
         """Communication initialization"""
-        super().__init__({**options, "workers": 1, "max_payload": options.get("max_payload", 4 * 1024 ** 2) - self._transport_overhead()})
+        super().__init__({**options, "workers": 1})
 
         # State
         self._ack_queue = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}.acks")
@@ -60,13 +60,6 @@ class Protocol(comms.Communicator):
 
         self._client.connect(host=self._addr, port=self._port)
         self._client.loop_start()
-
-    def _transport_overhead(self):
-        """Calculate transport layer overhead"""
-        assert self._protocol is mqtt_client.MQTTv311 and self._qos == 0, f"Transport layer overhead calculation not supported for {self._protocol} with QOS {self._qos}"
-        # Control Header (1), Variable Header Length (1-4), Topic Name Length (2), Topic Name (utf8)
-        # Additionally: QOS >=1: Message ID (2); VERSION >=5: Properties (1-4 + packed)
-        return 1 + 4 + 2 + len(UUID_NIL.hex)
 
     def _submit(self, fn, /, *args, **kwargs):
         """Process in the pool with exception handeling"""
