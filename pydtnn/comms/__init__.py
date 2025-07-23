@@ -152,32 +152,45 @@ class ConnectionData:
         return Future[None]()
 
     def get_write(self, b: col_abc.Buffer) -> int:
-        """Write get stream (merging chunks if plausible)"""
+        """Write get buffer (merging chunks if plausible)"""
         size = self.get_buffer.write(b)
+
+        if self.get_buffer.nchunks > 1 and size < self._merge_size:
+            self._get_merge()
+
         return size
 
-        # TODO: Revise before enable
-        if self.get_buffer.nchunks > 256:
-
-            with Stream() as stream:
-                while not self.get_buffer.empty():
-                    chunk = self.get_buffer.unwritechunk()
-                    if len(chunk) >= len(self._merge_buffer):
-                        self.get_buffer.writechunk(chunk)
-                        break
-                    stream.unreadchunk(chunk)
-
-                if not stream.empty():
-                    chunk = stream.read()
+    def _get_merge(self) -> None:
+        """Merge get buffer"""
+        with Stream() as stream:
+            while not self.get_buffer.empty():
+                chunk = self.get_buffer.unwritechunk()
+                if len(chunk) >= self._merge_size:
                     self.get_buffer.writechunk(chunk)
+                    break
+                stream.unreadchunk(chunk)
 
-        return size
+            if not stream.empty():
+                chunk = stream.read()
+                self.get_buffer.writechunk(chunk)
+
+    def get_flush(self) -> col_abc.Iterable[Stream]:
+        """Flush get buffer"""
+        try:
+            while True:
+                yield self.get()
+        except BlockingIOError:
+            pass
+
+    def _put_merge(self) -> None:
+        """Merge put buffer"""
+        merge_size = self.put_buffer.readinto(self._merge_buffer)
+        self.put_buffer.unreadchunk(self._merge_buffer[:merge_size])
 
     def put_read(self, size: int = -1) -> memoryview:
-        """Read put stream (merging chunks if plausible)"""
-        if self.put_buffer.nchunks > 1 and len(self.put_buffer._chunks[0]) < self._merge_size:
-            merge_size = self.put_buffer.readinto(self._merge_buffer)
-            self.put_buffer.unreadchunk(self._merge_buffer[:merge_size])
+        """Read put buffer (merging chunks if plausible)"""
+        if self.put_buffer.nchunks > 1 and len(self.put_buffer.peekchunk()) < self._merge_size:
+            self._put_merge()
 
         return self.put_buffer.read1(size)
 
