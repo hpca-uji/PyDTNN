@@ -163,11 +163,14 @@ class ConnectionData:
     def _get_merge(self) -> None:
         """Merge get buffer"""
         with Stream() as stream:
+
             while not self.get_buffer.empty():
                 chunk = self.get_buffer.unwritechunk()
+
                 if len(chunk) >= self._merge_size:
                     self.get_buffer.writechunk(chunk)
                     break
+
                 stream.unreadchunk(chunk)
 
             if not stream.empty():
