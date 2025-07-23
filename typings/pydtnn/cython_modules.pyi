@@ -226,7 +226,7 @@ def average_pool_2d_bwd_nhwc_cython[T: npDT](dy:npDT_4Dims[T],
 def bn_inference_cython[T: npDT](x: npDT_2Dims[T:npDT],
                                  y: npDT_2Dims[T:npDT],
                                  running_mean: npDT_1Dims[T:npDT], 
-                                 inv_std: npDT_1Dims[T:npDT], 
+                                 std: npDT_1Dims[T:npDT], 
                                  gamma: npDT_1Dims[T:npDT], 
                                  beta: npDT_1Dims[T:npDT]) -> None:
     """
@@ -234,33 +234,12 @@ def bn_inference_cython[T: npDT](x: npDT_2Dims[T:npDT],
         x (npDT_2Dims): The 2 dimensional input's ndarray.
         y (npDT_2Dims): The 2 dimensional outputs's ndarray.
         running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
+        std (npDT_1Dims): The input's 1 dimensions thtat stores the standard deviation
         gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
         beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
 
     Returns:
         Nothing. The output is stored in "y".
-    """
-    ...
-# ---
-
-def bn_inference_nchw_cython[T: npDT](x: npDT_4Dims[T:npDT],
-                                      y: npDT_4Dims[T:npDT],
-                                      running_mean: npDT_1Dims[T:npDT], 
-                                      inv_std: npDT_1Dims[T:npDT], 
-                                      gamma: npDT_1Dims[T:npDT], 
-                                      beta: npDT_1Dims[T:npDT]) -> None:
-    """
-    Args:
-        x (npDT_4Dims): The 4 dimensional input's ndarray.
-        y (npDT_4Dims): The 4 dimensional output's ndarray.
-        running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
-        gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
-        beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
-
-    Returns:
-        Nothing. The output will be stored in \"y\".
     """
     ...
 # ---
