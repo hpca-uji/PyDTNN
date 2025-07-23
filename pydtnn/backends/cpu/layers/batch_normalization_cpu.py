@@ -19,7 +19,7 @@
 
 import numpy as np
 
-from pydtnn.cython_modules import bn_inference_nchw_cython, bn_training_bwd_cython
+from pydtnn.cython_modules import bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
 from .layer_cpu import LayerCPU
