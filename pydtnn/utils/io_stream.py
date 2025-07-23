@@ -97,7 +97,7 @@ class Stream(io.BufferedIOBase):
         return size
 
     def readchunk(self) -> memoryview:
-        """Read a chunks from stream"""
+        """Read a chunk from stream"""
         if self.empty():
             raise BlockingIOError()
 
@@ -125,6 +125,13 @@ class Stream(io.BufferedIOBase):
 
         self._nbytes += size
         return size
+
+    def peekchunk(self) -> memoryview:
+        """Peek a chunk from stream"""
+        if self.empty():
+            return byteview(b"")
+
+        return self._chunks[0]
 
     # stream extended methods
     def readchunks(self) -> abc.Iterable[memoryview]:

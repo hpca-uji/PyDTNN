@@ -88,12 +88,7 @@ class Server(Protocol):
     def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
         state = self._state[peer]
 
-        while True:
-            try:
-                stream = state.get()
-            except BlockingIOError:
-                break
-
+        for stream in state.get_flush():
             if stream.empty():
                 self._handle_session_fin(peer, stream)
                 self._session_fin(peer)
