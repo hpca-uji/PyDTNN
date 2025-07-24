@@ -37,7 +37,6 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.y: np.ndarray = None
-        self.dx: np.ndarray = None
     # -- END __init__ -- #
         
     # Method from AbstractPool2DLayerCPU
@@ -49,13 +48,13 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype = self.model.dtype)
-                self.dx = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
+                #self.dx = np.zeros((self.model.batch_size, self.ci, self.hi, self.wi), dtype = self.model.dtype)
             
                 self._forward = self._forward_nchw_cython
                 self._backward = self._backward_nchw_cython
             case PYDTNN_TENSOR_FORMAT.NHWC:
                 self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype = self.model.dtype)
-                self.dx = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype = self.model.dtype)
+                #self.dx = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype = self.model.dtype)
 
                 self._forward = self._forward_nhwc_cython
                 self._backward = self._backward_nhwc_cython
@@ -92,7 +91,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
         return y
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = self.dx[:dy.shape[0],:]
+        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype = self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nhwc_cython(dy, dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -100,7 +99,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     # --- END _backward_nhwc_cython --- #
         
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = self.dx[:dy.shape[0], :]
+        dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype = self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nchw_cython(dy, dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
