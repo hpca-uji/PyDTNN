@@ -109,13 +109,13 @@ def depthwise_conv_backward_nhwc_cython(npDT[:,:,:,::1] dy,
             for jj in range(kw):
                 for nn in range(n):
                     val_k = k[cc, ii, jj]
-                    for xx in range(h):
+                    for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
-                        if 0 <= x_x < ho:
-                            for yy in range(w):
+                        if 0 <= x_x < h:
+                            for yy in range(wo):
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 val_dy = dy[nn, xx, yy, cc]
-                                if 0 <= x_y < wo:
+                                if 0 <= x_y < w:
                                     dw[cc, ii, jj] = x[nn, x_x, x_y, cc] * val_dy
                                     dx[nn, x_x, x_y, cc] += val_k * val_dy
 # --- END depthwise_conv_backward_nhwc_cython --- #

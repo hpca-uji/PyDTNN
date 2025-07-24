@@ -76,16 +76,6 @@ class Conv2DCPU(LayerCPU,
             
     def initialize_depthwise(self):
         self.dw = zeros(self.weights_shape, dtype=self.model.dtype)
-
-        match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.res = zeros(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
-                self.dx = zeros(shape=(self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
-            case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.res = zeros(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
-                self.dx = zeros(shape=(self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
-            case _:
-                raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
 
     def initialize_pointwise(self):        
