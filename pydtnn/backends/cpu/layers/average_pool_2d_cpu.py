@@ -37,9 +37,9 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
         super().initialize(prev_shape)
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.dx = np.zeros((self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
+                self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.dx = np.zeros((self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
+                self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
             case _:
                 raise NotImplementedError(f"\"AveragePool2DCPU\" layer is not implemted for the format: {self.model.tensor_format}")
 
@@ -58,8 +58,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
     def _forward_nhwc_cython(self, x:np.ndarray) -> np.ndarray:
 
-        #y = self.y[:x.shape[0], :]
-        y = np.zeros((x.shape[0], self.ho, self.wo, self.co), dtype=self.model.dtype)
+        y = self.y[:x.shape[0], :]        
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)        
         average_pool_2d_fwd_nhwc_cython(x, y, 
                                         self.kh, self.kw, self.ho, self.wo, 
@@ -84,8 +83,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
     def _forward_nchw_cython(self, x:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        #y = self.y[:x.shape[0], :]
-        y = np.zeros((x.shape[0], self.co, self.ho, self.wo), dtype=self.model.dtype)
+        y = self.y[:x.shape[0], :]
         average_pool_2d_fwd_nchw_cython(x, y,
                                         self.kh, self.kw, self.ho, self.wo, 
                                         self.vpadding, self.hpadding,
