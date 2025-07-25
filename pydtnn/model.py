@@ -99,6 +99,7 @@ enable_cudnn: bool = False
 #import warnings
 #warnings.filterwarnings("error")
 
+from pydtnn.comms import PROTOCOL
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     from pydtnn.libs.mpi import MPI
@@ -348,7 +349,15 @@ class Model:
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = vars(parser.parse_args([]))
         self.kwargs.update(kwargs)
-        
+
+        use_mpi_buffers = self.kwargs["use_mpi_buffers"]
+        match use_mpi_buffers:
+            case None:
+                self.use_mpi_buffers: bool = PROTOCOL is None
+            case bool():
+                self.use_mpi_buffers: bool = use_mpi_buffers
+            case _:
+                raise SystemExit(f"MPI buffers option '{use_mpi_buffers}' not recognized.")
         self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
         
         # Set MPI and comm          
