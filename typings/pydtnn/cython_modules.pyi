@@ -12,7 +12,7 @@ def adaptive_avg_pooling_fwd_nchw_cython[T: npDT](x: npDT_4Dims[T], pooled_x: np
     """
     Args:
         x (npDT_4Dims): data input.
-        pooled_x (npDT_4Dims): ndarray where the output will be stored.
+        pooled_x (npDT_4Dims): ndarray where the output will be stored. It must be filled with zeros.
     Returns:
         Nothing; the return is stored in "dx".
     """
@@ -23,7 +23,7 @@ def adaptive_avg_pooling_bwd_nchw_cython[T: npDT](dy: npDT_4Dims[T], dx: npDT_4D
     """
     Args:
         dy (npDT_4Dims): data input.
-        dx (npDT_4Dims): ndarray where the output will be stored.
+        dx (npDT_4Dims): ndarray where the output will be stored. It must be filled with zeros.
     Returns:
         Nothing; the return is stored in "dx".
     """
@@ -334,7 +334,7 @@ def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
         k (npDT_3Dims): The 3dimensions ndarray that contains the kernel.
-        res (npDT_4Dims): The 4 dimensional output's ndarray.
+        res (npDT_4Dims): The 4 dimensional output's ndarray. Must be filled with zeros.
         ho: (int): Output's height value.
         wo: (int): Output's width value.
         vpadding (int): vertical padding value.
@@ -364,8 +364,8 @@ def depthwise_conv_backward_nchw_cython[T: npDT](dy: npDT_4Dims[T],
         dy (npDT_4Dims): The 4 dimensional array that contains the gradient of the backward's input.
         x (npDT_4Dims): The 4 dimensional array that contains the input forward's.
         k (npDT_3Dims): The 3 dimensional array that contains the kernel.
-        dx npDT_4Dims: The 4 dimensional array that contains the input forward's gradient.
-        dw npDT_3Dims: The 3 dimensional array that contains the kernel's gradient
+        dx npDT_4Dims: The 4 dimensional array that contains the input forward's gradient. Must be filled with zeros.
+        dw npDT_3Dims: The 3 dimensional array that contains the kernel's gradient.
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -389,7 +389,7 @@ def depthwise_conv_nhwc_cython[T: npDT](x: npDT_4Dims[T],
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
         k (npDT_3Dims): The 3dimensions ndarray that contains the kernel.
-        res (npDT_4Dims): The 4 dimensional output's ndarray.
+        res (npDT_4Dims): The 4 dimensional output's ndarray. Must be filled with zeros.
         ho: (int): Output's height value.
         wo: (int): Output's width value.
         vpadding (int): vertical padding value.
@@ -419,7 +419,7 @@ def depthwise_conv_backward_nhwc_cython[T: npDT](dy: npDT_4Dims[T],
         dy (npDT_4Dims): The 4 dimensional array that contains the gradient of the backward's input.
         x (npDT_4Dims): The 4 dimensional array that contains the input forward's.
         k (npDT_3Dims): The 3 dimensional array that contains the kernel.
-        dx npDT_4Dims: The 4 dimensional array that contains the input forward's gradient.
+        dx npDT_4Dims: The 4 dimensional array that contains the input forward's gradient. Must be filled with zeros.
         dw npDT_3Dims: The 3 dimensional array that contains the kernel's gradient
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
