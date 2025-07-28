@@ -2,6 +2,7 @@
 
 import sys
 import math
+import pickle
 import copyreg
 import operator
 import itertools
@@ -17,9 +18,8 @@ finally:
 
 import numpy as np
 from tenseal.tensors import CKKSVector
-from tenseal.sealapi import CoeffModulus
-from tenseal.sealapi import SEC_LEVEL_TYPE
 from tenseal.enc_context import Context as SealContext
+from tenseal.sealapi import CoeffModulus, SEC_LEVEL_TYPE
 
 
 __all__ = (
@@ -33,6 +33,7 @@ class Ciphertext:
     _type: np.number
     _shape: tuple[int, ...]
     _chunks: tuple[CKKSVector, ...]
+    _context: bytes
 
     def __add__(self, other):
         """Add two ciphertexts"""
@@ -45,13 +46,36 @@ class Ciphertext:
         if other._shape != self._shape:
             raise TypeError(f"Different underlying shapes ({other._shape} != {self._shape})")
 
+        if other._context != self._context:
+            raise TypeError(f"Different underlying contexts ({hash(other._context)} != {hash(self._context)})")
+
+        # Relink contexts
+        context = self._get_context() or other._get_context() or self._load_context()
+        for chunk in itertools.chain(self._chunks, other._chunks):
+            chunk.link_context(context)
+
         chunks = tuple(itertools.starmap(operator.add, zip(self._chunks, other._chunks)))
 
         return Ciphertext(
             _type=self._type,
             _shape=self._shape,
-            _chunks=chunks
+            _chunks=chunks,
+            _context=self._context
         )
+
+    def _load_context(self) -> SealContext:
+        """Load stored context"""
+        return pickle.loads(self._context)
+
+    def _get_context(self) -> SealContext | None:
+        """Get loaded context"""
+        if not self._chunks:
+            return None
+        chunk = self._chunks[0]
+        try:
+            return chunk.context()
+        except ValueError:
+            return None
 
 
 class Context:
@@ -83,8 +107,12 @@ class Context:
         self._public_context = self._private_context.copy()
         self._public_context.make_context_public()
 
+        self._context = pickle.dumps(self._public_context)
+
     def _pack(self, obj: np.ndarray) -> abc.Generator[list]:
         """Transform numpy array into batched lists"""
+        if obj.size == 0:
+            return
         for part in np.array_split(obj.reshape(-1), range(self._slots, obj.size, self._slots)):
             yield part.tolist()
 
@@ -94,7 +122,8 @@ class Context:
 
     def _decrypt(self, cipher: CKKSVector) -> list:
         """Decode cypertext to list"""
-        return cipher.decrypt(secret_key=self._private_context.secret_key())
+        cipher.link_context(self._private_context)
+        return cipher.decrypt()
 
     def encrypt(self, obj: np.ndarray) -> Ciphertext:
         """Encode numpy array to ciphertext"""
@@ -103,7 +132,8 @@ class Context:
         return Ciphertext(
             _type=obj.dtype.type,
             _shape=obj.shape,
-            _chunks=data
+            _chunks=data,
+            _context=self._context
         )
 
     def decrypt(self, obj: Ciphertext) -> np.ndarray:
@@ -127,8 +157,8 @@ def context_reducer(context: SealContext):
 
 def ckks_vector_reducer(vector: CKKSVector):
     """TenSEAL CKKS vector pickle reducer"""
-    cls = CKKSVector.load
-    args = (vector.context(), vector.serialize(),)
+    cls = vector.lazy_load
+    args = (vector.serialize(),)
     return (cls, args)
 
 
