@@ -77,6 +77,8 @@ class Context:
 
     def _pack(self, obj: np.ndarray) -> abc.Generator[list]:
         """Transform numpy array into batched lists"""
+        if obj.size == 0:
+            return
         for part in np.array_split(obj.reshape(-1), range(self._slots, obj.size, self._slots)):
             yield part.tolist()
 
