@@ -164,7 +164,7 @@ class ConnectionData:
         """Merge get buffer"""
         with Stream() as stream:
 
-            while not self.get_buffer.empty():
+            while not self.get_buffer.empty() and stream.nbytes < len(self._merge_buffer):
                 chunk = self.get_buffer.unwritechunk()
 
                 if len(chunk) >= self._merge_size:
@@ -173,9 +173,11 @@ class ConnectionData:
 
                 stream.unreadchunk(chunk)
 
-            if not stream.empty():
+            if stream.nbytes >= self._merge_size:
                 chunk = stream.read()
                 self.get_buffer.writechunk(chunk)
+            else:
+                self.get_buffer.writechunks(stream.readchunks())
 
     def get_flush(self) -> col_abc.Iterable[Stream]:
         """Flush get buffer"""
