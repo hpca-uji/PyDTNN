@@ -148,9 +148,24 @@ class Dataset(ABC):
         x_test, y_test = map(np.concat, zip(*gen_test))
 
         # Ensure dataset is in NCHW
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            x_train = x_train.transpose(0, 3, 1, 2)
-            x_test = x_test.transpose(0, 3, 1, 2)
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                pass
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                x_train = x_train.transpose(0, 3, 1, 2)
+                x_test = x_test.transpose(0, 3, 1, 2)
+            case _:
+                raise NotImplementedError(f"Unsupported tensor format {self.model.tensor_format}")
+
+        # Ensure dataset is in float64
+        match self.model.dtype:
+            case np.float64:
+                pass
+            case np.float32:
+                x_train, y_train = x_train.astype(np.float64), y_train.astype(np.float64)
+                x_test, y_test = x_test.astype(np.float64), y_test.astype(np.float64)
+            case _:
+                raise NotImplementedError(f"Unsupported model dtype {self.model.dtype}")
 
         # Calculate percentage splits
         total = sum(split_weights)
