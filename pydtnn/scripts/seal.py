@@ -1,6 +1,7 @@
+import numpy as np
 from tenseal import sealapi
 
-slots = 4096
+slots = 2 ** 12
 poly_degree = slots * 2
 scale = 2 ** 40
 level = sealapi.SEC_LEVEL_TYPE.TC128
@@ -22,27 +23,27 @@ gelios = keygen.create_galois_keys()
 relin = keygen.create_relin_keys()
 
 encoder = sealapi.CKKSEncoder(context)
-encryptor = sealapi.Encryptor(context, public, secret)
+evaluator = sealapi.Evaluator(context)
+encryptor = sealapi.Encryptor(context, public)
 decryptor = sealapi.Decryptor(context, secret)
 
+raw1 = np.array([1.0, 2.0, 3.0])
 plain1 = sealapi.Plaintext()
 cipher1 = sealapi.Ciphertext()
-encoder.encode([1.0, 2.0, 3.0], scale, plain1)
+encoder.encode(raw1, scale, plain1)
 encryptor.encrypt(plain1, cipher1)
 
+raw2 = np.array([4.0, 5.0, 6.0])
 plain2 = sealapi.Plaintext()
 cipher2 = sealapi.Ciphertext()
-encoder.encode([4.0, 5.0, 6.0], scale, plain2)
+encoder.encode(raw2, scale, plain2)
 encryptor.encrypt(plain2, cipher2)
 
-evaluator = sealapi.Evaluator(context)
-
-cipher3 = sealapi.Ciphertext()
-evaluator.add(cipher1, cipher2, cipher3)
 
 plain3 = sealapi.Plaintext()
+cipher3 = sealapi.Ciphertext()
+evaluator.add(cipher1, cipher2, cipher3)
 decryptor.decrypt(cipher3, plain3)
+raw3 = np.array(encoder.decode_double(plain3)[:3])
 
-val = encoder.decode_double(plain3)[:3]
-
-print(val)
+print(raw1 + raw2, raw3)
