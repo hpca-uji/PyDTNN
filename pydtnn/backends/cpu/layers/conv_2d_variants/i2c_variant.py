@@ -114,7 +114,7 @@ class I2CVariant(Conv2D, ABC):
         y:np.ndarray = best_transpose_1023(res.reshape((self.co, -1, self.ho, self.wo), copy=False))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return y
+        return y.copy(order="C")
 
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""

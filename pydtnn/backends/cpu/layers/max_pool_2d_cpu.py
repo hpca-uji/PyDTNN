@@ -64,7 +64,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         idx_max:np.ndarray
         if self.model.mode is ModelModeEnum.TRAIN:
             self.idx_max = idx_max
-        return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        return y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=True)
 
     def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
         
@@ -97,7 +97,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         idx_max: np.ndarray
         if self.model.mode is ModelModeEnum.TRAIN:
             self.idx_max = idx_max
-        return y.reshape((-1, self.co, self.ho, self.wo), copy=False)
+        return y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=True)
 
     def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
         y = self.y[:x.shape[0], :]
@@ -124,7 +124,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
                                 self.vpadding, self.hpadding,
                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+        return dx.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=True)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype= self.model.dtype)
@@ -139,7 +139,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         dy_cols = np.zeros((self.kh * self.kw, np.prod(dy.shape)), dtype=self.model.dtype)
-        dy_cols[self.idx_max] = dy.flatten().astype(dtype=self.model.dtype, copy=False)
+        dy_cols[self.idx_max] = dy.flatten().view(dtype=self.model.dtype)
         dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype= self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -149,7 +149,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
                                 self.vpadding, self.hpadding,
                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        dx:np.ndarray = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+        dx:np.ndarray = dx.reshape((-1, self.ci, self.hi, self.wi), order="C", copy=True)
         return dx
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:

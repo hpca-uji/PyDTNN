@@ -40,7 +40,7 @@ class SoftmaxCPU(ActivationCPU, Softmax):
         x -= np.max(x, axis=1, keepdims=True)
         np.exp(x, out=self.y)
         self.y /= np.sum(self.y, axis=1, keepdims=True)
-        self.y = self.y.astype(dtype=self.model.dtype, copy=False)
+        self.y = self.y.view(dtype=self.model.dtype)
         return self.y
 
     def backward(self, dy:np.ndarray) -> np.ndarray:        
