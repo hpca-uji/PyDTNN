@@ -161,6 +161,8 @@ if TYPE_CHECKING:
 else:
     MPI_COMM = ModuleType
 
+from pydtnn import crypt
+
 
 def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MODULE, MPI_COMM]:
     match parallel:
@@ -461,7 +463,7 @@ class Model:
 
         # Encryption
         if self.encryption_name:
-            self._init_crypt(self.encryption_name)
+            self.crypt = self._init_crypt(self.encryption_name)
         else:
             self.crypt = None
 
@@ -515,7 +517,7 @@ class Model:
             raise AttributeError(f"Model object has no attribute '{item}'!") from None
     # --- End __getattr__ --- #
 
-    def _init_crypt(self, encryption_name:str) -> None:
+    def _init_crypt(self, encryption_name:str) -> crypt.Context:
         """Inizialize encryption context"""
         try:
             module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
@@ -525,12 +527,13 @@ class Model:
             sys.exit(-1)
 
         if self.comm_rank == 0:
-            self.crypt = module.Context()
+            crypt = module.Context()
 
         if self.comm:
-            self.crypt = self.comm.bcast(self.crypt if self.comm_rank == 0 else None)
+            crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
 
-        assert self.crypt is not None
+        assert crypt is not None
+        return crypt
 
     def _read_model(self, model_name:str) -> None:
         try:
