@@ -54,7 +54,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y:np.ndarray = np.mean(x_rows, axis=1)
-        return y.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        return y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=None)
 
     def _forward_nhwc_cython(self, x:np.ndarray) -> np.ndarray:
 
@@ -79,7 +79,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y:np.ndarray = np.mean(x_cols, axis=0)
-        return y.reshape((-1, self.co, self.ho, self.wo), copy=False)
+        return y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=True)
 
     def _forward_nchw_cython(self, x:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -104,8 +104,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
                                 self.vpadding, self.hpadding,
                                 self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-        return dx
+        return dx.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=True)
 
     def _backward_nhwc_cython(self, dy:np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)

@@ -52,7 +52,7 @@ class DepthwiseVariant(Conv2D, ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y:np.ndarray = y.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        y:np.ndarray = y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=None)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
         return y
@@ -76,7 +76,7 @@ class DepthwiseVariant(Conv2D, ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y:np.ndarray = y.reshape((-1, self.co, self.ho, self.wo), copy=False)
+        y:np.ndarray = y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=None)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y

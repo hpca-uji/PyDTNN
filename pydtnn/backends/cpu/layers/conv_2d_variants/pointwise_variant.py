@@ -111,7 +111,7 @@ class PointwiseVariant(Conv2D, ABC):
         np.matmul(w, reshaped_dy, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
-        return dx.reshape(x_shape, copy=False)
+        return dx.reshape(x_shape, order='C', copy=None)
     # --- END _backward_pointwise_nhwc --- #
 
     def _backward_pointwise_nchw(self, dy: np.ndarray) -> np.ndarray:
@@ -145,5 +145,5 @@ class PointwiseVariant(Conv2D, ABC):
         np.matmul(w, reshaped_dy, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return dx.reshape(x_shape, copy=False)
+        return dx.reshape(x_shape, order='C', copy=None)
     # --- END _backward_pointwise_nchw --- #

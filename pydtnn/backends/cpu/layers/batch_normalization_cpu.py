@@ -115,6 +115,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
+            y = y.copy()
         return y
     # --- END forward --- #
 
@@ -138,5 +139,6 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 dx = best_transpose_0312(dx)
+            dx = dx.copy()
         return dx
     # --- END backward --- #
