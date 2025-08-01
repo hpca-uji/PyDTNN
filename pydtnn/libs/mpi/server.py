@@ -4,6 +4,7 @@
 
 # FIXME: serve_until_... exit when no clients, not when no clients and no operations
 
+import copy
 import uuid
 import typing
 import warnings
@@ -30,7 +31,6 @@ arg_parser = ArgumentParser(
     prog="mpi_server",
     description="MPI server"
 )
-arg_parser.add_argument("-np", dest="size", type=int, default=4)
 arg_parser.add_argument("--oneshot", action="store_true")
 
 
@@ -71,10 +71,10 @@ class Operation:
 class Server:
     """MPI server"""
 
-    def __init__(self, thread_pool: ThreadPoolExecutor, comm_options: comms.CommunicatorOptions = {}) -> None:
+    def __init__(self, thread_pool: ThreadPoolExecutor, comm_options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Server initialization"""
         super().__init__()
-        self._comm_options = {**comm_options, "addr": mpi_comm.get_addr(), "port": mpi_comm.get_port()}
+        self._comm_options = copy.replace(comm_options, netloc=comms.NetworkLocation(host=mpi_comm.get_addr(), port=mpi_comm.get_port()), workers=mpi_comm.get_size())
 
         # State
         self._shutdown = False
@@ -91,12 +91,6 @@ class Server:
     def _size(self):
         """Get the approximate number of clients"""
         return len(self._peers)
-
-    def _submit(self, fn, /, *args, **kwargs):
-        """Process in the pool with exception handeling"""
-        future = self._pool.submit(fn, *args, **kwargs)
-        future.add_done_callback(lambda future: future.result())
-        return future
 
     @functools.cached_property
     def _comm(self) -> comms.Communicator:
@@ -212,7 +206,8 @@ class Server:
 
         # Start operation compute
         if operation.compute is None and operation.src_ready:
-            operation.compute = self._submit(self._handle_operation, operation)
+            operation.compute = self._pool.submit(self._handle_operation, operation)
+            operation.compute.add_done_callback(lambda future: future.result())
 
         # Operation queuing finished
         if operation.src_ready and operation.dst_ready:
@@ -249,33 +244,21 @@ class Server:
 
 def background_server() -> Future:
     """Start a background server"""
-    from time import sleep
-    pool = ThreadPoolExecutor(max_workers=4, thread_name_prefix=f"{__name__}")
-    server = Server(pool)
+    from pydtnn.utils import thread_func
 
-    # Serve and finalize handler
-    # should close as clients should close
     def serve_oneshot():
-        server.serve_util_finalize()
+        with ThreadPoolExecutor(thread_name_prefix=f"{__name__}") as pool:
+            with Server(pool) as server:
+                server.serve_util_finalize()
 
-        # NOTE: Allow some time for communications to flush
-        sleep(0.5)
-
-        server.shutdown()
-
-        # NOTE: Can not wait for pool shutdown from inside pool,
-        # however since serve_util_finalize waits until all clients
-        # disconnect, there should not any active threads anyway.
-        pool.shutdown(wait=False)
-
-    future = pool.submit(serve_oneshot)
+    future = thread_func(serve_oneshot)
     future.add_done_callback(lambda future: future.result())
     return future
 
 
 def main(config: Namespace) -> None:
     """Application entrypoint"""
-    with ThreadPoolExecutor(max_workers=config.size, thread_name_prefix=f"{__name__}.main") as pool:
+    with ThreadPoolExecutor(thread_name_prefix=f"{__name__}") as pool:
         with Server(pool) as server:
             if config.oneshot:
                 server.serve_util_finalize()

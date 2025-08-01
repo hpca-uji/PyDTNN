@@ -25,7 +25,7 @@ END_COMM = b""
 class Client(Protocol):
     """MQTT client"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Client initialization"""
         super().__init__(options)
 
@@ -105,7 +105,7 @@ class Client(Protocol):
     def _put(self, stream: Stream) -> Future[None]:
         """Put stream into queue and notify"""
         future = self._state.put(stream)
-        self._submit(self._c2s)
+        self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
         return future
 
     def _c2s(self):
@@ -113,7 +113,7 @@ class Client(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_payload) as view:
+            with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:
