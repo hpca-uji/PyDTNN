@@ -30,9 +30,9 @@ END_COMM = None
 class Server(Protocol):
     """gRPC server"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Server initialization"""
-        super().__init__({**options, "workers": options.get("workers", 4)})
+        super().__init__(options)
 
         # State
         self._lock = threading.Condition()
@@ -43,14 +43,14 @@ class Server(Protocol):
         # gRPC
         self._server = grpc.server(
             thread_pool=self._pool,
-            options=list(self._options.items()),
+            options=list(self._grpc_options.items()),
             compression=self._compression
         )
         handler = grpc.stream_stream_rpc_method_handler(behavior=self._com, request_deserializer=lambda x: x, response_serializer=bytes)
         self._server.add_registered_method_handlers(service_name="grpc", method_handlers={"com": handler})  # type: ignore
 
         config: abc.MutableMapping = {
-            "address": f"{self._addr}:{self._port}"
+            "address": str(self._options.netloc)
         }
 
         if comms.SSL:

@@ -5,7 +5,7 @@ import selectors
 from collections import abc
 from queue import Empty, SimpleQueue
 
-from pydtnn import comms
+from pydtnn import comms, utils
 
 
 __all__ = (
@@ -24,16 +24,16 @@ CONTROL_EVENT = b"\0"
 class Protocol(comms.Communicator):
     """Shared base TCP implementation"""
 
-    def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
+    def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Inizialize comunicator"""
-        super().__init__({**options, "workers": 1 + options.get("workers", 1)})
+        super().__init__(options)
 
         self._selector = selectors.DefaultSelector()
         self._control_socket = socket.socketpair()
         self._control_socket[1].setblocking(False)
         self._selector.register(self._control_socket[0], selectors.EVENT_READ, self._handle_control_socket)
 
-        self._loop_thread = self._pool.submit(self._handle_selector_loop)
+        self._loop_thread = utils.thread_func(self._handle_selector_loop)
         self._loop_thread.add_done_callback(lambda future: future.result())
         self._task_queue = SimpleQueue[Task]()
 
@@ -61,7 +61,7 @@ class Protocol(comms.Communicator):
 
     def _handle_control_socket(self, sock: socket.socket, mask):
         """Handle selector notification"""
-        if len(sock.recv(self._max_payload)) == 0:
+        if len(sock.recv(self._options.connection.max_size)) == 0:
             return CONTROL_STOP
 
         # Handle tasks
@@ -93,5 +93,4 @@ class Protocol(comms.Communicator):
         self._loop_thread.result()
         self._control_socket[0].close()
         self._selector.close()
-        self._pool.shutdown()
         super()._close()

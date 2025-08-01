@@ -2,6 +2,7 @@
 
 import ssl
 import uuid
+import copy
 import socket
 import selectors
 import threading
@@ -23,9 +24,9 @@ __all__ = (
 class Client(Protocol):
     """TCP client"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Client initialization"""
-        super().__init__({**options, "workers": 1})
+        super().__init__(copy.replace(options, workers=1))
 
         # State
         self._lock = threading.Condition()
@@ -33,11 +34,11 @@ class Client(Protocol):
         self._state = self._new_state()
 
         # TCP
-        self._socket = socket.create_connection((self._addr, self._port))
+        self._socket = socket.create_connection(self._options.netloc)
 
         if comms.SSL:
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=comms.SSL_CERT)
-            self._socket = context.wrap_socket(self._socket, server_hostname=self._addr)
+            self._socket = context.wrap_socket(self._socket, server_hostname=self._options.netloc.host)
 
         self._socket.setblocking(False)
 
@@ -71,7 +72,7 @@ class Client(Protocol):
         state = self._state
 
         try:
-            data = sock.recv(self._max_payload)
+            data = sock.recv(self._options.connection.max_size)
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             return
 
@@ -81,7 +82,7 @@ class Client(Protocol):
 
         state.get_write(data)
 
-        if comms.SSL and (pending := sock.pending()):
+        if comms.SSL and (pending := sock.pending()):  # type: ignore
             data = sock.recv(pending)
             state.get_write(data)
 
