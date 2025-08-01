@@ -17,7 +17,7 @@ def main():
     bop = BestOfProfiler("Transpose 0231 comparison", best_transpose_0231)
     for layer in layers:
         d0, d1, d2, d3 = layer.shape
-        original = np.random.rand(d0, d1, d2, d3).astype(layer.dtype, order="C")
+        original = np.random.rand(d0, d1, d2, d3).astype(layer.dtype, order="C", copy=None)
         bop(original)
     bop.print_results()
 
