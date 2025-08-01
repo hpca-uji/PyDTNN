@@ -96,7 +96,7 @@ class ConvWinograd:
             The layer that is using it (for tracing purposes).
         """
 
-        def register_winograd_function(m:int, r:int , g:np.ndarray, bt:np.ndarray, at:np.ndarray) -> None
+        def register_winograd_function(m:int, r:int , g:np.ndarray, bt:np.ndarray, at:np.ndarray) -> None:
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
