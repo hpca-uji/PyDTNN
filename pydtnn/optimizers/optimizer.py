@@ -23,10 +23,6 @@ from pydtnn.backends import PromoteToBackendMixin
 import numpy as np
 
 from pydtnn.layers import Layer
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.optimizers import Layer_types
-else: Layer_types = None
 
 class Optimizer(PromoteToBackendMixin, ABC):
     """
@@ -40,7 +36,7 @@ class Optimizer(PromoteToBackendMixin, ABC):
         self.context:dict = dict()
 
     @abstractmethod
-    def initialize(self, list_layers: list[Layer_types]) -> None:
+    def initialize(self, list_layers: list[Layer]) -> None:
         raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
 
     @abstractmethod

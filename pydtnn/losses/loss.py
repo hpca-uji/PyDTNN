@@ -23,7 +23,8 @@ from ..backends import PromoteToBackendMixin
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else: Model = None
+else:
+    Model = object
 from numpy import ndarray
 from pydtnn.backends.gpu import TensorGPU
 type Array = ndarray | TensorGPU

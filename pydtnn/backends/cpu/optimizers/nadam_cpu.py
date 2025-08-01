@@ -23,14 +23,9 @@ from pydtnn.backends.cpu.optimizers import OptimizerCPU
 from pydtnn.optimizers import Nadam
 from pydtnn.backends.cpu.layers import LayerCPU
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.optimizers import Layer_types
-else: Layer_types = None
-
 class NadamCPU(OptimizerCPU, Nadam):
 
-    def initialize(self, list_layers: list[Layer_types]) -> None:
+    def initialize(self, list_layers: list[LayerCPU]) -> None:
 
         for layer in list_layers:
             self.context[layer] = dict[str, int | np.ndarray]()
