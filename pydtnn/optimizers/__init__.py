@@ -36,15 +36,10 @@ from ..utils import get_derived_classes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn.optimizers import Layer_types
     from pydtnn import Model
-else: 
-    Layer_types = None
-    Model = None
+else:
+    Model = object
 
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from pydtnn.backends import PromoteToBackendMixin
-type Layer_types = LayerAndActivationBase | PromoteToBackendMixin
 
 # Search this module for Optimizer derived classes and expose them
 get_derived_classes(Optimizer, locals())
@@ -56,9 +51,8 @@ rmsprop = RMSProp
 sgd = SGD
 
 
-def get_optimizer(model) -> Optimizer:
+def get_optimizer(model: Model) -> Optimizer:
     """Get optimizer object from model attributes"""
-    model: Model
     match model.optimizer_name:
         
         case "rmsprop":

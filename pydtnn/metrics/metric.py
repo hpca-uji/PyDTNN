@@ -24,9 +24,8 @@ from ..backends import PromoteToBackendMixin
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from model import Model
-else: 
-    from types import ModuleType
-    Model = ModuleType
+else:
+    Model = object
 
 from numpy import ndarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU

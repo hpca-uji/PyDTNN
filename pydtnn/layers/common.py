@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -21,6 +21,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import ModelModeEnum, Model
+else:
+    ModelModeEnum = object
+    Model = object
 
 # @todo: will be used when layer.initialize includes model: initialize(model, id, ...)
 class ForwardToBackward:

@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -26,7 +26,8 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from typing import TYPE_CHECKING, Self
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else: Model = None
+else:
+    Model = object
 from pydtnn.backends.gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
 type shape_t  = tuple[int, ...]
