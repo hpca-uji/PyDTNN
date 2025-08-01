@@ -59,6 +59,7 @@ from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDT
 from .utils.best_of import BestOf
 from .utils.memory_cache import MemoryCache
 from .utils.performance_counter import PerformanceCounter
+from .layers import Layer
 import enum
 
 # --- CUDA related imports --- #
@@ -130,7 +131,6 @@ PyCuda_Stream_Type  = TypeVar("PyCuda_Stream_Type")
 Cudnn_dtype = TypeVar("Cudnn_dtype")
 
 type Array = np.ndarray | TensorGPU
-type Layer = LayerAndActivationBase | PromoteToBackendMixin
 
 def _layer_id_generator() -> Iterable[int]:
     """To obtain consecutive layer ids. See Layer.set_model()."""

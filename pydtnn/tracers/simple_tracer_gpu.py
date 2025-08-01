@@ -24,19 +24,26 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydtnn.libs.mpi.client import Comm as MPI_COMM
+else:
+    from types import ModuleType
+    MPI_COMM = ModuleType
 
 class SimpleTracerGPU(SimpleTracer):
     """
     SimpleTracerGPU
     """
 
-    def __init__(self, tracing, output_filename, comm):
+    def __init__(self, tracing:bool, output_filename:str, comm: MPI_COMM | None):
         super().__init__(tracing, output_filename, comm)
         self.event_vars = []
         # Attributes that will be initialized later
         self.stream = None
 
-    def _get_start_end_event(self):
+    def _get_start_end_event(self) -> tuple:
         if len(self.event_vars) == 0:
             self.event_vars.append((drv.Event(), drv.Event()))
         return self.event_vars.pop()
@@ -44,7 +51,7 @@ class SimpleTracerGPU(SimpleTracer):
     def _release_start_end_event(self, start, end):
         self.event_vars.append((start, end))
 
-    def _emit_event(self, evt_type_val, evt_val, stream=None):
+    def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         if stream is None:
             stream = self.stream
@@ -65,7 +72,7 @@ class SimpleTracerGPU(SimpleTracer):
             previous_calls, previous_time = self.events[_evt_type_val][_evt_val]
             self.events[_evt_type_val][_evt_val] = [previous_calls + 1, previous_time + evt_time]
 
-    def _emit_nevent(self, evt_type_val_list, evt_val_list, stream=None):
+    def _emit_nevent(self, evt_type_val_list: list, evt_val_list: list, stream=None):
         """This method will be called only if tracing is enabled"""
         zipped_list = list(zip(evt_type_val_list, evt_val_list))
         if evt_val_list[0] == 0:

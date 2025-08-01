@@ -50,7 +50,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
     }
 
     @staticmethod
-    def get_model2(model_name):
+    def get_model2(model_name: str):
         # Tensor format NCHW
         params = Params()
         params.model_name = model_name
@@ -61,11 +61,11 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         return Model(**vars(params))
 
     @staticmethod
-    def nhwc2nchw(x):
+    def nhwc2nchw(x: np.ndarray):
         return best_transpose_0312(x) if len(x.shape) == 4 else x
 
     @staticmethod
-    def copy_weights_and_biases(model1, model2):
+    def copy_weights_and_biases(model1: Model, model2: Model):
         """
         Copy weights and biases from Model 1 to Model 2
         """
@@ -76,7 +76,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
                 layer2.weights = layer1.weights.copy()
             layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
 
-    def do_model2_forward_pass(self, model2, x1):
+    def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 forward pass in NCHW format
         """
@@ -90,7 +90,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
                 x2.append(layer.forward(self.nhwc2nchw(x1[i - 1])))
         return x2
 
-    def do_model2_backward_pass(self, model2, dx1):
+    def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 backward pass in NCHW format
         """
@@ -102,7 +102,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
             dx2[i] = layer.backward(self.nhwc2nchw(dx1[i + 1]))
         return dx2
 
-    def compare_forward(self, model1, x1, model2, x2):
+    def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
@@ -115,7 +115,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
                                 f"Forward result from layers {layer.canonical_name_with_id} differ"
                                 f" (max diff: {self.max_diff(self.nhwc2nchw(x1[i]), x2[i])}, rtol: {rtol}, atol: {atol})")
 
-    def compare_backward(self, model1, dx1, model2, dx2):
+    def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
         if verbose_test():
             print()
@@ -124,6 +124,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
             if layer.canonical_name in ["Conv2D", "FC"]:
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
+                    #layer.dw:np.ndarray
                     if layer.dw.transpose(1, 2, 3, 0).shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol,
                                                atol=atol)
@@ -142,6 +143,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         for i, layer in reversed(list(enumerate(model2.layers[1:], 1))):
             if layer.canonical_name in ["Conv2D", "FC"] and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
+                #layer.db:np.ndarray
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
                                 f"Backward db from layer {layer.canonical_name_with_id} differ"

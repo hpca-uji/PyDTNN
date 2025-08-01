@@ -24,12 +24,19 @@ from importlib import import_module
 from .tracer import Tracer
 
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn import Model
+else:
+    from types import ModuleType
+    Model = ModuleType
+
 class ExtraeTracer(Tracer):
     """
     ExtraTracer
     """
 
-    def __init__(self, tracing):
+    def __init__(self, tracing: bool):
         super().__init__(tracing)
         self.pyextrae = None  # Declared here, will be initialized on enable_tracing()
 
@@ -37,7 +44,7 @@ class ExtraeTracer(Tracer):
         super().enable_tracing()
         self.pyextrae = import_module('pyextrae.common.extrae')
 
-    def _define_event_types(self, model):
+    def _define_event_types(self, model: Model):
         """This method will be called only if tracing is enabled"""
         super()._define_event_types(model)
         for event_type_value, event_type in self.event_types.items():
@@ -55,11 +62,11 @@ class ExtraeTracer(Tracer):
                 ctypes.pointer(values),
                 ctypes.pointer(descriptions))
 
-    def _emit_event(self, evt_type, val, stream=None):
+    def _emit_event(self, evt_type: int, val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         self.pyextrae.eventandcounters(evt_type, val)
 
-    def _emit_nevent(self, evt, val, stream=None):
+    def _emit_nevent(self, evt: int, val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         self.pyextrae.neventandcounters(evt, val)
 

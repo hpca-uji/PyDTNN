@@ -26,7 +26,7 @@ from pydtnn.cython_modules import im2row_nhwc_cython
 
 def _conv_gemm_and_im2row_mm(weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None=None, 
                              vpadding=0, hpadding=0, vstride=1, hstride=1,
-                             vdilation=1, hdilation=1):
+                             vdilation=1, hdilation=1) -> tuple[np.ndarray, np.ndarray]:
     if verbose_test():
         print()
     c, kh, kw, kn = weights.shape
@@ -47,14 +47,14 @@ def _conv_gemm_and_im2row_mm(weights:np.ndarray, x:np.ndarray, biases:np.ndarray
     dim_n = n * ho * wo
     dim_c = c * kh * kw
 
-    x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
+    x_c:np.ndarray = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
     im2row_nhwc_cython(x, x_c, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape((-1, kn), copy=False)
     if biases is None:
-        im2row_mm_result = x_c @ w_c
+        im2row_mm_result:np.ndarray = x_c @ w_c
     else:
-        im2row_mm_result = x_c @ w_c + biases.reshape((-1, kn), copy=False)
+        im2row_mm_result:np.ndarray = x_c @ w_c + biases.reshape((-1, kn), copy=False)
     if verbose_test():
         print_with_header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
         print("Shape: ", conv_gemm_result.shape,

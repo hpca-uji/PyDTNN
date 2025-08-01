@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -22,7 +22,7 @@ import types
 from collections import defaultdict
 from contextlib import suppress
 from timeit import default_timer as timer
-from typing import Hashable, Callable, Tuple, Union, List, Any, Dict, Optional
+from typing import Hashable, Callable, Union, Any, Optional
 
 import numpy as np
 from rich import box
@@ -44,7 +44,7 @@ class _BestOfExecution:
         self.best_of = best_of
         self.execution_id = execution_id
         self.parent = parent
-        self.children: List[_BestOfExecution] = []
+        self.children: list[_BestOfExecution] = []
         self.problem_sizes = defaultdict(lambda: 0)
         if self.best_of is None:
             self.name = "Execution root"
@@ -185,12 +185,12 @@ class BestOf:
     """
 
     _use_first_alternative: bool = False
-    _current_parents: List[_BestOfExecution] = [_BestOfExecution(best_of=None, execution_id=None, parent=None)]
+    _current_parents: list[_BestOfExecution] = [_BestOfExecution(best_of=None, execution_id=None, parent=None)]
     _root: _BestOfExecution = _current_parents[0]
 
     def __init__(self,
                  name: str,
-                 alternatives: List[Tuple[str, Union[Callable, List[Callable]]]],
+                 alternatives: list[tuple[str, Union[Callable, list[Callable]]]],
                  get_problem_size: Callable[..., Hashable],
                  rounds: int = 10,
                  pruning_speedup: float = 10.0,
@@ -225,27 +225,27 @@ class BestOf:
         self.pruning_speedup = pruning_speedup
         self.best_idx = defaultdict(lambda: -1)
         self.best_name = defaultdict(lambda: 'None')
-        self.best_method: Dict[Callable] = defaultdict(lambda: None)
-        self.best_pipeline: Dict[List[Callable]] = defaultdict(lambda: None)
+        self.best_method: dict[Callable] = defaultdict(lambda: None)
+        self.best_pipeline: dict[list[Callable]] = defaultdict(lambda: None)
         self.total_alternatives = len(self.alternatives)
         # Protected members
         self._current_round = defaultdict(lambda: 0)
         self._current_alternative = defaultdict(lambda: 0)
-        self._executions: Dict[List[_BestOfExecution]] = defaultdict(lambda: [])
+        self._executions: dict[list[_BestOfExecution]] = defaultdict(lambda: [])
         self._times = defaultdict(self._times_arrays)
         self._stages_times = defaultdict(self._stages_times_arrays)
         self._stages_executions = defaultdict(lambda: [0] * self.stages)
         # Set __call__() for this instance
         self._set_instance_call()
 
-    def _times_arrays(self) -> List[List]:
+    def _times_arrays(self) -> list[list]:
         """Returns an array with n empty arrays, where n is the number of alternatives to be evaluated"""
         v = []
         for i in range(self.total_alternatives):
             v.append([])
         return v
 
-    def _stages_times_arrays(self) -> List[List]:
+    def _stages_times_arrays(self) -> list[list]:
         """
         Returns an array with n arrays with m Nones each, where n is the number of
         alternatives to be evaluated, and m is the number of stages.

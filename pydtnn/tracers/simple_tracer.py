@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -23,13 +23,20 @@ from timeit import default_timer as timer
 
 from .tracer import Tracer
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydtnn.libs.mpi.client import Comm as MPI_COMM
+else:
+    from types import ModuleType
+    MPI_COMM = ModuleType
 
 class SimpleTracer(Tracer):
     """
     SimpleTracer
     """
 
-    def __init__(self, tracing, output_filename, comm):
+    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None):
         super().__init__(tracing)
         self.output_filename = output_filename
         self.rank = 0
@@ -43,7 +50,7 @@ class SimpleTracer(Tracer):
         # If tracing is enabled at least once, register self.write_output to be executed at exit
         atexit.register(self._write_output)
 
-    def _emit_event(self, evt_type_val, evt_val, stream=None):
+    def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         if evt_val != 0:
             self.pending_events.append((evt_type_val, evt_val, timer()))
@@ -57,7 +64,7 @@ class SimpleTracer(Tracer):
             self.events[_evt_type_val][_evt_val][0] += 1
             self.events[_evt_type_val][_evt_val][1].append(toc - tic)
 
-    def _emit_nevent(self, evt_type_val_list, evt_val_list, stream=None):
+    def _emit_nevent(self, evt_type_val_list: list[int], evt_val_list: list[int], stream=None):
         """This method will be called only if tracing is enabled"""
         zipped_list = list(zip(evt_type_val_list, evt_val_list))
         if evt_val_list[0] == 0:
@@ -65,10 +72,10 @@ class SimpleTracer(Tracer):
         for evt_type_val, evt_val in zipped_list:
             self.emit_event(evt_type_val, evt_val)
 
-    def _output_header(self):
+    def _output_header(self) -> str:
         return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
-    def _output_row(self, event_type_value, event_value):
+    def _output_row(self, event_type_value:int, event_value:int) -> str:
         event_type = self.event_types[event_type_value]
         event_type_name = event_type.name
         _calls, _times = self.events[event_type_value][event_value]

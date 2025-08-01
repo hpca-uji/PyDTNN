@@ -29,7 +29,7 @@ class Params:
     pass
 
 
-def get_conv2d_cpu_layers(d, deconv=False, trans=False):
+def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
@@ -106,13 +106,13 @@ class Conv2DConvGemmTestCase(PyDTNNTestCase):
                         [1, 1, 1],
                         [1, 1, 1]]]]).astype(np.float32, order='C')
 
-    def _test_forward_backward(self, d, x, weights, print_times=False):
+    def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False):
         self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=False, trans=False)
         self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=True, trans=False)
         self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=False, trans=True)
         self._test_forward_backward_inner(d, x, weights, print_times=print_times, deconv=True, trans=True)
 
-    def _test_forward_backward_inner(self, d, x, weights, print_times=False, deconv=False, trans=False):
+    def _test_forward_backward_inner(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False, deconv=False, trans=False):
         from timeit import timeit
         conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d, deconv, trans)
         conv2d_i2c.weights = weights.copy()

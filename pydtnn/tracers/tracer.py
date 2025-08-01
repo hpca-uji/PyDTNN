@@ -23,6 +23,15 @@ from abc import abstractmethod
 
 from .events import *
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pydtnn import Model
+    from pydtnn.layers import Layer
+else:
+    from types import ModuleType
+    Model = ModuleType
+    Layer = ModuleType
 
 class EventType:
     """
@@ -64,7 +73,7 @@ class Tracer(metaclass=PostInitCaller):
     Tracer base class
     """
 
-    def __init__(self, tracing):
+    def __init__(self, tracing:bool):
         self.event_types = {
             PYDTNN_MDL_EVENT: EventType("Model"),
             PYDTNN_OPS_EVENT: EventType("Operations"),
@@ -104,30 +113,30 @@ class Tracer(metaclass=PostInitCaller):
         """Actions that must be done if print memory usage is disabled"""
         setattr(self, "print_memory_usage", lambda *args, **kwargs: None)
 
-    def define_event_types(self, model):
+    def define_event_types(self, model: Model):
         """Fake method, will be replaced by lambda: None or _define_event_types()"""
         pass
 
-    def emit_event(self, evt_type, evt_val, stream=None):
+    def emit_event(self, evt_type: int, evt_val: int, stream=None):
         """Fake method, will be replaced by lambda: None or _emit_event()"""
         pass
 
-    def emit_nevent(self, evt_evt, evt_val, stream=None):
+    def emit_nevent(self, evt_evt: list[int, int], evt_val: list[int, int], stream=None):
         """Fake method, will be replaced by lambda: None or _emit_nevent()"""
         pass
 
-    def print_memory_usage(self, text):
+    def print_memory_usage(self, text: str):
         """Fake method, will be replaced by lambda: None or _print_memory_usage()"""
         pass
 
-    def _get_layers_recursively(self, layers):
+    def _get_layers_recursively(self, layers: list[Layer]) -> list[Layer]:
         all_layers = []
         for layer in layers:
             all_layers.append(layer)
             all_layers += self._get_layers_recursively(layer.children)
         return all_layers
 
-    def _define_event_types(self, model):
+    def _define_event_types(self, model: Model):
         """This method will be called only if tracing is enabled"""
         mdl_event = self.event_types[PYDTNN_MDL_EVENT]
         ops_event = self.event_types[PYDTNN_OPS_EVENT]
@@ -143,12 +152,12 @@ class Tracer(metaclass=PostInitCaller):
                     layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.canonical_name}_{name[11:].lower()}"
 
     @abstractmethod
-    def _emit_event(self, evt_type, evt_val, stream=None):
+    def _emit_event(self, evt_type: int, evt_val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         pass
 
     @abstractmethod
-    def _emit_nevent(self, evt_evt, evt_val, stream=None):
+    def _emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream=None):
         """This method will be called only if tracing is enabled"""
         pass
 

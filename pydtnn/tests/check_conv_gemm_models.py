@@ -23,7 +23,6 @@ from pydtnn.tests.common import verbose_test
 from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
 from pydtnn.tests.tools import print_with_header
 
-
 class Params:
     pass
 
@@ -57,7 +56,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return rtol, atol
 
     @staticmethod
-    def get_model1_and_loss_func(model_name, overwrite_params=None):
+    def get_model1_and_loss_func(model_name: str, overwrite_params: dict|None = None) -> tuple[Model, losses.Loss]:
         # CPU model with no convGemm
         params = Params()
         # Begin of params configuration
@@ -80,7 +79,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return model1, loss_func
 
     @staticmethod
-    def get_model2(model_name, overwrite_params=None):
+    def get_model2(model_name:str, overwrite_params:dict|None = None) -> Model:
         # CPU model with convGemm
         params = Params()
         # Begin of params configuration
@@ -100,7 +99,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return Model(**params_dict)
 
     @staticmethod
-    def copy_weights_and_biases(model1, model2):
+    def copy_weights_and_biases(model1: Model, model2: Model):
         """
         Copy weights and biases from Model 1 to Model 2
         """
@@ -109,7 +108,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
             layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
 
     @staticmethod
-    def get_first_dx(model, loss_func, x):
+    def get_first_dx(model: Model, loss_func: losses.Loss, x: np.ndarray) -> np.ndarray:
         # random y target
         y_targ = np.random.rand(*x.shape).astype(np.float32, order='C')
         # obtain first dx1
@@ -118,11 +117,11 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return dx
 
     @staticmethod
-    def max_diff(x1, x2):
+    def max_diff(x1: list[np.ndarray], x2: list[np.ndarray]) -> list[np.ndarray]:
         return np.max([abs(x1 - x2) for x1, x2 in zip(x1, x2)])
 
     @staticmethod
-    def do_model1_forward_pass(model1):
+    def do_model1_forward_pass(model1: Model) -> list[np.ndarray]:
         """
         Model 1 forward pass
         """
@@ -135,7 +134,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return x1
 
     @staticmethod
-    def do_model2_forward_pass(model2, x1):
+    def do_model2_forward_pass(model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 forward pass
         """
@@ -147,7 +146,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return x2
 
     @staticmethod
-    def do_model1_backward_pass(model1, first_dx):
+    def do_model1_backward_pass(model1: Model, first_dx: np.ndarray) -> list[np.ndarray]:
         """
         Model 1 backward pass
         """
@@ -160,7 +159,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return dx1
 
     @staticmethod
-    def do_model2_backward_pass(model2, dx1):
+    def do_model2_backward_pass(model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 backward pass
         """
@@ -172,7 +171,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
             dx2[i] = layer.backward(dx1[i + 1])
         return dx2
 
-    def compare_forward(self, model1, x1, model2, x2):
+    def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
         assert len(x1) == len(x2), "x1 and x2 should have the same length"
         if verbose_test():
             print()
@@ -185,7 +184,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
                                 f"Forward result from layers {layer.canonical_name_with_id} differ"
                                 f" (max diff: {self.max_diff(x1[i], x2[i])}, rtol: {rtol}, atol: {atol})")
 
-    def compare_backward(self, model1, dx1, model2, dx2):
+    def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
         if verbose_test():
             print()
@@ -205,7 +204,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
                                 f"Backward result from layer {layer.canonical_name_with_id} differ"
                                 f" (max diff: {self.max_diff(dx1[i], dx2[i])}, rtol: {rtol}, atol: {atol})")
 
-    def do_test_model(self, model_name):
+    def do_test_model(self, model_name: str):
         """
         Compares results between a model that uses I2C and other that uses ConvGemm
         """

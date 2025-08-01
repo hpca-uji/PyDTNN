@@ -16,7 +16,7 @@ import unittest
 
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
-
+from pydtnn.losses import Loss
 
 class Params:
     pass
@@ -32,13 +32,13 @@ class CheckConvGemmNCHWModels(CheckConvGemmModels):
     model2_desc = "using ConvGemm"
 
     @staticmethod
-    def get_model1_and_loss_func(model_name):
+    def get_model1_and_loss_func(model_name: str) -> tuple[Model, Loss]:
         model1, loss_func = CheckConvGemmModels.get_model1_and_loss_func(model_name,
                                                                          overwrite_params={'tensor_format': 'NCHW'})
         return model1, loss_func
 
     @staticmethod
-    def get_model2(model_name):
+    def get_model2(model_name: str) -> Model:
         model2 = CheckConvGemmModels.get_model2(model_name,
                                                 overwrite_params={'tensor_format': 'NCHW'})
         return model2

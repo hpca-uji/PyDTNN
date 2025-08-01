@@ -71,7 +71,7 @@ class Params:
     pass
 
 
-def get_conv2d_layers(d):
+def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
