@@ -348,7 +348,6 @@ def depthwise_conv_nchw_cython[T: npDT](x: npDT_4Dims[T],
         Nothing. The value is stores in \"res\".
     """
     ...
-    ...
 # ---
 
 def depthwise_conv_backward_nchw_cython[T: npDT](dy: npDT_4Dims[T],
@@ -402,7 +401,6 @@ def depthwise_conv_nhwc_cython[T: npDT](x: npDT_4Dims[T],
     Returns:
         Nothing. The value is stores in \"res\".
     """
-    ...
     ...
 # ---
 
@@ -961,7 +959,6 @@ def transpose_0231_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
         Nothing. The output is stored in "transposed"
     """
     ...
-    ...
 # ---
 
 def transpose_0312_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
@@ -976,7 +973,6 @@ def transpose_0312_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
     Returns:
         Nothing. The output is stored in "transposed"
     """
-    ...
     ...
 # ---
 
@@ -993,7 +989,6 @@ def transpose_1023_jik_cython[T:npDT](original: npDT_3Dims[T:npDT],
         Nothing. The output is stored in "transposed"
     """
     ...
-    ...
 # ---
 
 def transpose_1023_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
@@ -1008,7 +1003,6 @@ def transpose_1023_ijk_cython[T:npDT](original: npDT_3Dims[T:npDT],
     Returns:
         Nothing. The output is stored in "transposed"
     """
-    ...
     ...
 # ---
 

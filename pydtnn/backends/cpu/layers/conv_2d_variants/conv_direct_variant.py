@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -23,6 +23,7 @@ from functools import partialmethod
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.layers import Conv2D
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from numpy import ndarray
 
 class ConvDirectVariant(Conv2D, ABC):
 
@@ -50,7 +51,7 @@ class ConvDirectVariant(Conv2D, ABC):
                     setattr(ConvDirectVariant, f"_backward_cd{n}_nhwc", partialmethod(ConvDirectVariant._backward_cd, n=n))
                     setattr(ConvDirectVariant, f"_backward_cd{n}_nchw", partialmethod(ConvDirectVariant._backward_cd, n=n))
 
-    def _forward_cd(self, x, n=0):
+    def _forward_cd(self, x: ndarray, n=0) -> ndarray:
         """Version of the forward function that uses the convDirect library"""
 
         biases = None
@@ -64,5 +65,5 @@ class ConvDirectVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
-    def _backward_cd(self, y, n=0):
+    def _backward_cd(self, y: ndarray, n=0) -> ndarray:
         raise RuntimeError("Backward not implemented yet!")

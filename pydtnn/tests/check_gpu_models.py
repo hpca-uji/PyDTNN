@@ -25,7 +25,6 @@ from pydtnn.tests.common import verbose_test
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn import losses
 
-
 class Params:
     pass
 
@@ -53,7 +52,7 @@ class CheckGPUModels(CheckConvGemmModels):
     }
 
     @staticmethod
-    def get_model1_and_loss_func(model_name):
+    def get_model1_and_loss_func(model_name: str) -> tuple[Model, losses.Loss]:
         # CPU model with no convGemm
         params = Params()
         params.model_name = model_name
@@ -71,7 +70,7 @@ class CheckGPUModels(CheckConvGemmModels):
         return model1, loss_func
 
     @staticmethod
-    def get_model2(model_name):
+    def get_model2(model_name: str) -> Model:
         # GPU model
         params = Params()
         params.model_name = model_name
@@ -84,7 +83,7 @@ class CheckGPUModels(CheckConvGemmModels):
         return Model(**vars(params))
 
     @staticmethod
-    def copy_weights_and_biases(model1, model2):
+    def copy_weights_and_biases(model1: Model, model2: Model):
         """
         Copy weights and biases from Model 1 to Model 2
         """
@@ -92,7 +91,7 @@ class CheckGPUModels(CheckConvGemmModels):
             if len(cpu_layer.weights.shape) == 1:
                 continue
             if "Conv2D" in type(gpu_layer).__name__:
-                if model2.tensor_format == PYDTNN_TENSOR_FORMAT.NHWC:
+                if model2.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                     gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
                 else:
                     gpu_layer.weights_cpu = cpu_layer.weights.copy()
@@ -112,7 +111,7 @@ class CheckGPUModels(CheckConvGemmModels):
                                                  gpu_layer.model.cudnn_dtype)
 
     @staticmethod
-    def do_model2_forward_pass(model2, x1):
+    def do_model2_forward_pass(model2: Model, x1: list[TensorGPU]) -> list[TensorGPU]:
         """
         Model 2 forward pass
         """
@@ -131,7 +130,7 @@ class CheckGPUModels(CheckConvGemmModels):
         return x2
 
     @staticmethod
-    def do_model2_backward_pass(model2, dx1):
+    def do_model2_backward_pass(model2: Model, dx1: list[TensorGPU]) -> list[TensorGPU]:
         """
         Model 2 backward pass
         """

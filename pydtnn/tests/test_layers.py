@@ -16,10 +16,10 @@ SEED = 1234
 np.random.seed(SEED)
 # ---
 
-N = 500
+N = 200
 C = 3
-H = 524
-W = 524
+H = 1024
+W = 1024
 FORMAT = "NHWC"
 SHAPE = (C, H, W) if FORMAT == "NCHW" else (H, W, C)
 NUM_REPETITIONS = 10
@@ -151,7 +151,7 @@ def test_layers_activations(_x:np.ndarray, opt:Optimizer) -> None:
             model = Model(**KWARGS)
             model.add(Input(SHAPE, True))
             if name == "FC":
-                model.add(Flatten())    
+                model.add(Flatten())
             model.add(test_elem)
             model.mode = ModelModeEnum.TRAIN
             model._initialize()
@@ -163,24 +163,26 @@ def test_layers_activations(_x:np.ndarray, opt:Optimizer) -> None:
             t_backward = 0.0
             t_opt = 0.0
 
-            with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{name}.bin", native_traces=True):
-                for _ in range(NUM_REPETITIONS):
+            for i in range(NUM_REPETITIONS):
+                if True:
+                #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{name}_{i}.bin", native_traces=True):
+                
                     t = time()
                     for layer in model.layers:
                         x = layer.forward(x)
                     t_forward += time() - t
 
-            x = x.copy()
+                x = x.copy()
 
-            with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{name}.bin", native_traces=True):
-                for _ in range(NUM_REPETITIONS):
+                if True:
+                #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{name}_{i}.bin", native_traces=True):                
                     t = time()
                     for layer in reversed(model.layers):
                         x = layer.backward(x)
                     t_backward += time() - t
                                                 
-            with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{name}_{opt.canonical_name}.bin", native_traces=True):
-                for _ in range(NUM_REPETITIONS):
+                if True:
+                #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{name}_{opt.canonical_name}_{i}.bin", native_traces=True):
                     t = time()
                     for layer in reversed(model.layers):
                         layer.update_weights(opt)
@@ -209,24 +211,24 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_backward = 0
         t_opt = 0
 
-        with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{test}.bin", native_traces=True):
-            for _ in range(NUM_REPETITIONS):
+        for i in range(NUM_REPETITIONS):
+            if True:
+            #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{test}_{i}.bin", native_traces=True):
+            
                 t = time()
                 for layer in model.layers:                       
                     x = layer.forward(x)
                 t_forward += time() - t
 
-        x = x.copy()
-
-        with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{test}.bin", native_traces=True):
-            for _ in range(NUM_REPETITIONS):
+            x = x.copy()
+            if True:
+            #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{test}_{i}.bin", native_traces=True):                
                 t = time()
                 for layer in reversed(model.layers):
                     x = layer.backward(x)
                 t_backward += time() - t
-       
-        with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{test}_{opt.canonical_name}.bin", native_traces=True):
-            for _ in range(NUM_REPETITIONS):
+            if True:
+            #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{test}_{opt.canonical_name}_{i}.bin", native_traces=True, ):            
                 t = time()
                 for layer in reversed(model.layers):
                     layer.update_weights(opt)
