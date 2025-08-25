@@ -27,10 +27,6 @@ if TYPE_CHECKING:
     from pydtnn.model import Model, Array
     from pydtnn.activations.activation import Activation
     from ..optimizers.optimizer import Optimizer
-else: Array = None
-
-from ..backends.gpu.tensor_gpu import TensorGPU
-from numpy import ndarray
 
 drv_Stream = TypeVar("pycuda_driver_Stream") # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
 
@@ -39,8 +35,8 @@ class LayerAndActivationBase(ABC):
     def __init__(self, shape:tuple[int, ...]=()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
-        self.weights: np.ndarray = None
-        self.biases: np.ndarray = None
+        self.weights: Array = None
+        self.biases: Array = None
         self.act: Activation | None = None
         self.grad_vars:dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
