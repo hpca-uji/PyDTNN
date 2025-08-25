@@ -14,18 +14,17 @@
 # could starve the server of threads. Additionaly, if a streaming direction
 # was already closed, messages could end up queued forever if not restarted.
 
-from concurrent.futures import ThreadPoolExecutor
 import sys
 from collections import abc
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
 try:
-    import grpc  # noqa: F401
+    import grpc
 finally:
     sys.path.insert(0, _pkg)
 
-from pydtnn import comms
+from pydtnn import comms  # noqa: E402
 
 __all__ = (
     "Protocol",
@@ -36,10 +35,10 @@ class Protocol(comms.Communicator):
     """Shared base gRPC implementation"""
     _compression = grpc.Compression.NoCompression
 
-    def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
+    def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Initialize protocol"""
-        max_payload = options.get("max_payload", 4 * 1024 ** 2)
-        super().__init__({**options, "grpc.max_receive_message_length": max_payload, "grpc.max_send_message_length": max_payload})
+        super().__init__(options)
+        self._grpc_options = {"grpc.max_receive_message_length": self._options.connection.max_size, "grpc.max_send_message_length": self._options.connection.max_size}
 
     def _m2d(self, messages: abc.Iterable[abc.Buffer]) -> abc.Generator[abc.Buffer]:
         """Transforms gRPC messages to bytes"""
@@ -49,5 +48,5 @@ class Protocol(comms.Communicator):
         """Transforms state to message"""
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_payload) as view:
+            with state.put_read(self._options.connection.max_size) as view:
                 yield view

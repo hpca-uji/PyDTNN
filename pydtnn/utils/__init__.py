@@ -30,8 +30,11 @@ from ctypes.util import find_library
 from glob import glob
 from importlib import import_module
 from enum import StrEnum, auto
+from collections import abc
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
+
 
 class PYDTNN_TENSOR_FORMAT_enum(StrEnum):
 
@@ -39,10 +42,11 @@ class PYDTNN_TENSOR_FORMAT_enum(StrEnum):
     def get_num_formats():
         return len(PYDTNN_TENSOR_FORMAT_enum)
 
-    # Constants: 
-    NHWC = auto()    
+    # Constants:
+    NHWC = auto()
     NCHW = auto()
 # --- END PYDTNN_OPS_EVENT_enum --- #
+
 
 PYDTNN_TENSOR_FORMAT = PYDTNN_TENSOR_FORMAT_enum
 PYDTNN_TENSOR_FORMATS = PYDTNN_TENSOR_FORMAT.get_num_formats()
@@ -92,6 +96,19 @@ def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC):
         return shape[1], shape[2], shape[0]
     else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
         return shape
+
+
+def thread_queue(name: str = ""):
+    """Background single-thread task queue"""
+    return ThreadPoolExecutor(max_workers=1, thread_name_prefix=name)
+
+
+def thread_func(func: abc.Callable, /, *args, **kwds):
+    """Background function as future"""
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=func.__name__)
+    future = pool.submit(func, *args, **kwds)
+    pool.shutdown(wait=False)
+    return future
 
 
 def load_library(name):
@@ -149,7 +166,7 @@ def mkl():
 
 def convert_size(units: int, scale: int = 1000):
     size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
-    if units > 0:        
+    if units > 0:
         i = int(math.log(units, scale))
         p = math.pow(scale, i)
         s = round(units / p, 2)

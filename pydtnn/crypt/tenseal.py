@@ -1,7 +1,6 @@
 """TenSEAL encryption"""
 
-# NOTE: Dataclasses with slots can not use zero-arg super()
-# Reference: https://github.com/python/cpython/issues/90562
+# NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
 
 import sys
 import pickle
@@ -12,7 +11,7 @@ from dataclasses import dataclass
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
 try:
-    import tenseal  # noqa: F401
+    import tenseal
 finally:
     sys.path.insert(0, _pkg)
 
@@ -131,4 +130,4 @@ def ckks_vector_reducer(vector: CKKSVector):
 
 
 copyreg.pickle(SealContext, context_reducer)
-copyreg.pickle(CKKSVector, ckks_vector_reducer)
+copyreg.pickle(CKKSVector, ckks_vector_reducer)  # type: ignore (wrong inferred typing)

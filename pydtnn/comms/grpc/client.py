@@ -2,6 +2,7 @@
 
 import uuid
 import grpc
+import copy
 import threading
 from collections import abc
 from queue import SimpleQueue, Empty
@@ -26,9 +27,9 @@ ARG_MISSING = object()
 class Client(Protocol):
     """gRPC client"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Client initialization"""
-        super().__init__({**options, "workers": 1})
+        super().__init__(copy.replace(options, workers=1))
 
         # State
         self._lock = threading.Condition()
@@ -40,8 +41,8 @@ class Client(Protocol):
 
         # gRPC
         config: abc.MutableMapping = {
-            "target": f"{self._addr}:{self._port}",
-            "options": list(self._options.items()),
+            "target": str(self._options.netloc),
+            "options": list(self._grpc_options.items()),
             "compression": self._compression
         }
 
