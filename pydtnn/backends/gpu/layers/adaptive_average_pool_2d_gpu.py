@@ -24,7 +24,7 @@ from .layer_gpu import LayerGPU
 from ..libs import libcudnn as cudnn
 
 # Import from AbstractPool2DLayerGPU
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
@@ -412,7 +412,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
                            grid=self.grid, block=self.block,
                            stream=self.model.stream)
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
     # --- END forward --- #
 
@@ -442,7 +442,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
                                 grid=self.grid, block=self.block,
                                 stream=self.model.stream)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx
     # --- END backward --- #
 
