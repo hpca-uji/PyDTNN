@@ -26,9 +26,9 @@ __all__ = (
 class Server(Protocol):
     """TCP server"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Server initialization"""
-        super().__init__({**options, "workers": options.get("workers", 4)})
+        super().__init__(options)
 
         # State
         self._lock = threading.Condition()
@@ -37,9 +37,11 @@ class Server(Protocol):
         self._state = dict[uuid.UUID, ConnectionData]()
 
         # TCP
-        self._socket = socket.create_server((self._addr, self._port), reuse_port=True)
+        self._socket = socket.create_server(self._options.netloc, reuse_port=True)
 
         if comms.SSL:
+            if comms.SSL_CERT is None or comms.SSL_KEY is None:
+                raise RuntimeError("SSL certificate or key not provided")
             context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SSL_CERT)
             context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
             self._socket = context.wrap_socket(self._socket, server_side=True, do_handshake_on_connect=True)
@@ -155,7 +157,7 @@ class Server(Protocol):
         state = self._state[peer]
 
         try:
-            data = sock.recv(self._max_payload)
+            data = sock.recv(self._options.connection.max_size)
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             return
 
@@ -165,7 +167,7 @@ class Server(Protocol):
 
         state.get_write(data)
 
-        if comms.SSL and (pending := sock.pending()):
+        if comms.SSL and (pending := sock.pending()):  # type: ignore
             data = sock.recv(pending)
             state.get_write(data)
 
@@ -179,7 +181,7 @@ class Server(Protocol):
         state.put_flush()
         if state.put_buffer.empty():
             return
-        with state.put_read(self._max_payload) as view:
+        with state.put_read(self._options.connection.max_size) as view:
             try:
                 size = sock.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):

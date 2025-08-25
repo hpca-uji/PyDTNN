@@ -27,7 +27,7 @@ END_COMM = b""
 class Server(Protocol):
     """MQTT server"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Server initialization"""
         super().__init__(options)
 
@@ -181,7 +181,7 @@ class Server(Protocol):
             future = state.put(stream)
         except (KeyError, ResourceClosed):
             raise ResourceClosed(peer)
-        self._submit(self._s2c, peer)
+        self._pool.submit(self._s2c, peer).add_done_callback(lambda future: future.result())
         return future
 
     def _s2c(self, peer: uuid.UUID):
@@ -189,7 +189,7 @@ class Server(Protocol):
 
         state.put_flush()
         while not state.put_buffer.empty():
-            with state.put_read(self._max_payload) as view:
+            with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"s2c/{peer.hex}", bytes(view))
 
         if not state.state and state.put_empty():

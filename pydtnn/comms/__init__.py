@@ -66,10 +66,10 @@ import os
 import abc
 import uuid
 import enum
-import typing
 import importlib
 import threading
 from pathlib import Path
+from typing import NamedTuple
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
 from collections import abc as col_abc
@@ -94,7 +94,7 @@ __all__ = (
 )
 
 
-type CommunicatorOptions = col_abc.Mapping[str, typing.Any]
+# type CommunicatorOptions = col_abc.Mapping[str, typing.Any]
 
 
 class Protocol(enum.StrEnum):
@@ -214,46 +214,63 @@ class ResourceClosed(RuntimeError):
     """Resource closed"""
 
 
+class NetworkLocation(NamedTuple):
+    """Network location"""
+    host: str = "127.0.0.0"
+    port: int = 5000
+
+    def __str__(self):
+        """Unified network location"""
+        return f"{self.host}:{self.port}"
+
+
+@dataclass(order=False, slots=True, frozen=True)
+class ConnectionOptions:
+    """Conncetion data options"""
+    max_size: int
+    merge_size: int
+    efficient_size: int
+
+    def __init__(self, max_size: int = 0, merge_size: int = 0, efficient_size: int = 0):
+        """Inizialize connection options"""
+        # NOTE: Frozen dataclasess must use object.__setattr__ during __init__
+        object.__setattr__(self, "max_size", max_size if max_size else 4 * 1024 ** 2)
+        object.__setattr__(self, "merge_size", merge_size if merge_size else self.max_size)
+        object.__setattr__(self, "efficient_size", efficient_size if efficient_size else self.max_size // 64)
+
+
+@dataclass(order=False, slots=True, frozen=True)
+class CommunicatorOptions:
+    """Comunicatior options"""
+    netloc: NetworkLocation = NetworkLocation()
+    workers: int = 1
+    connection: ConnectionOptions = ConnectionOptions()
+
+
 class Communicator[T](abc.ABC):
     """Base communicator implementation"""
 
-    def __init__(self, options: CommunicatorOptions = {}) -> None:
+    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Communicator initialization"""
         super().__init__()
         self._options = options
 
         self._id = uuid.uuid4()
-        self._close_lock = threading.Lock()
+        self._close_init = threading.Lock()
+        self._close_done = threading.Event()
 
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
-        self._pool = ThreadPoolExecutor(max_workers=self._options.get("workers", 1), thread_name_prefix=f"{thread_prefix}")
+        self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
 
     def _new_state(self) -> ConnectionData:
         """Generate new connection state data"""
-        merge = self._options.get("merge_size", self._max_payload)
-        efficient = self._options.get("efficient_size", self._max_payload // 64)
-        return ConnectionData(merge_size=merge, efficient_size=efficient)
-
-    @property
-    def _max_payload(self) -> int:
-        """Maximun payload size"""
-        return self._options.get("max_payload", 4 * 1024 ** 2)
-
-    @property
-    def _addr(self) -> str:
-        """Address of service"""
-        return self._options.get("addr", "127.0.0.1")
-
-    @property
-    def _port(self) -> int:
-        """Port of service"""
-        return self._options.get("port", 50000)
+        return ConnectionData(merge_size=self._options.connection.merge_size, efficient_size=self._options.connection.efficient_size)
 
     @property
     def _closed(self):
         """Is communicator closed"""
-        return self._close_lock.locked()
+        return self._close_init.locked()
 
     @abc.abstractmethod
     def get(self, *peers: uuid.UUID) -> Message[T]:
@@ -267,11 +284,14 @@ class Communicator[T](abc.ABC):
 
     def _close(self) -> None:
         """Communicator finalizer"""
+        self._pool.shutdown()
 
     def close(self) -> None:
         """Close the communicator"""
-        if self._close_lock.acquire(blocking=False):
+        if self._close_init.acquire(blocking=False):
             self._close()
+            self._close_done.set()
+        self._close_done.wait()
 
     def __enter__(self):
         """Context manager start"""

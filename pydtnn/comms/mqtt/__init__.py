@@ -15,13 +15,13 @@
 # implemented using grouping requests that generate new UUID per group.
 # This would reduce also reduce load on the broker.
 
-from concurrent.futures import ThreadPoolExecutor
+import copy
 
 import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
 
 from pydtnn import comms
-from pydtnn.utils import UUID_NIL
+from pydtnn.utils import thread_queue
 
 
 __all__ = (
@@ -40,12 +40,12 @@ class Protocol(comms.Communicator):
     _transport = "tcp"
     _protocol = mqtt_client.MQTTv311
 
-    def __init__(self, options: comms.CommunicatorOptions = {}) -> None:
+    def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Communication initialization"""
-        super().__init__({**options, "workers": 1})
+        super().__init__(copy.replace(options, workers=1))
 
         # State
-        self._ack_queue = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}.acks")
+        self._ack_queue = thread_queue(f"{__name__}.{self.__class__.__qualname__}:{id(self)}.acks")
 
         # MQTT
         self._client = mqtt_client.Client(
@@ -58,14 +58,8 @@ class Protocol(comms.Communicator):
         if comms.SSL:
             self._client.tls_set(ca_certs=str(comms.SSL_CERT) if comms.SSL_CERT else None)
 
-        self._client.connect(host=self._addr, port=self._port)
+        self._client.connect(host=self._options.netloc.host, port=self._options.netloc.port)
         self._client.loop_start()
-
-    def _submit(self, fn, /, *args, **kwargs):
-        """Process in the pool with exception handeling"""
-        future = self._pool.submit(fn, *args, **kwargs)
-        future.add_done_callback(lambda future: future.result())
-        return future
 
     def _start_loop(self) -> None:
         """Start connection handling loop"""

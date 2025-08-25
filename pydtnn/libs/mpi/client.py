@@ -33,9 +33,8 @@ import functools
 import threading
 import itertools
 from collections import abc
-from concurrent.futures import ThreadPoolExecutor
 
-from pydtnn import comms
+from pydtnn import comms, utils
 from pydtnn.utils.io_stream import byteview
 from pydtnn.libs.mpi import comm as mpi_comm
 
@@ -112,7 +111,7 @@ class Comm:
 
         self._requests = dict[uuid.UUID, Request]()
         self._responses = dict[uuid.UUID, typing.Any]()
-        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+        self._comm_queue = utils.thread_queue(f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
 
     def _recive_response(self) -> None:
         """Recive one response from communication"""
@@ -145,7 +144,7 @@ class Comm:
             else:
                 break
 
-    def _submit_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any) -> Request:
+    def _shedule_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any) -> Request:
         """Schedule a new operation"""
 
         # Create appropriate request according to participation
@@ -162,8 +161,8 @@ class Comm:
         self._requests[operation.id] = request
         self._comm.put(operation)
         if self.rank in comm.dst:
-            self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
-            self._pool.submit(self._recive_response).add_done_callback(lambda future: future.result())
+            self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
+            self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         return request
 
     @property
@@ -202,9 +201,10 @@ class Comm:
 
         addr = mpi_comm.get_addr()
         port = mpi_comm.get_port()
+        comm_options = comms.CommunicatorOptions(netloc=comms.NetworkLocation(host=addr, port=port))
         state = mpi_comm.RankInit(rank=self.rank)
         try:
-            comm = comms.Client({"addr": addr, "port": port})
+            comm = comms.Client(comm_options)
             comm.put(state)
             while True:
                 response = comm.get().obj
@@ -261,7 +261,7 @@ class Comm:
         if comm := self.__dict__.pop("_comm", None):
             self._close_comm(comm)
 
-        self._pool.shutdown()
+        self._comm_queue.shutdown()
 
     def Disconnect(self) -> None:
         """Disconnect from a communicator."""
@@ -279,7 +279,7 @@ class Comm:
         """Broadcast."""
         context = mpi_comm.BroadcastContext(root=root)
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context).wait()
+        return self._shedule_operation(comm=comm, obj=obj, context=context).wait()
 
     def barrier(self) -> None:
         """Barrier synchronization."""
@@ -289,7 +289,7 @@ class Comm:
         """Gather to All."""
         context = mpi_comm.AllGatherContext()
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context).wait()
+        return self._shedule_operation(comm=comm, obj=obj, context=context).wait()
 
     def allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All."""
@@ -299,7 +299,7 @@ class Comm:
         """Reduce to All."""
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
-        return self._submit_operation(comm=comm, obj=obj, context=context)
+        return self._shedule_operation(comm=comm, obj=obj, context=context)
 
     def _phased_allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All (with steps)."""
@@ -307,7 +307,7 @@ class Comm:
 
         for phase in itertools.count():
             comm = context.comm(rank=self.rank, size=self.size, phase=phase)
-            obj = self._submit_operation(comm=comm, obj=obj, context=context).wait()
+            obj = self._shedule_operation(comm=comm, obj=obj, context=context).wait()
             if len(comm.dst) == self.size:
                 break
 

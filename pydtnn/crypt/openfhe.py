@@ -7,7 +7,7 @@ from dataclasses import dataclass
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
 try:
-    import openfhe  # noqa: F401
+    import openfhe
 finally:
     sys.path.insert(0, _pkg)
 
