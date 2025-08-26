@@ -590,7 +590,7 @@ __global__ void {func_name}({T}* dy, {T}* db
 
         n, c, h, w = dy.shape
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
                       dx.ary, self.dw.ary,
                       np.int32(self.vpadding), np.int32(self.hpadding),
@@ -600,9 +600,10 @@ __global__ void {func_name}({T}* dy, {T}* db
                       np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
                       self.total_num_threads, 
                       grid=self.grid, block=self.block, stream=self.model.stream)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
                               np.int32(c), np.int32(h), np.int32(w), 
                               np.int32(n*c*h*w), self.total_num_threads, 
@@ -616,9 +617,9 @@ __global__ void {func_name}({T}* dy, {T}* db
         dx_gpu = gpuarray.to_gpu(np.zeros(shape = (dy.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
         dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        n, c, h, w = dy.shape
+        n, h, w, c = dy.shape
 
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
                       dx.ary, self.dw.ary,
                       np.int32(self.vpadding), np.int32(self.hpadding),
@@ -628,11 +629,12 @@ __global__ void {func_name}({T}* dy, {T}* db
                       np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
                       self.total_num_threads, grid=self.grid, block=self.block,
                       stream=self.model.stream)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
     
         if self.use_bias:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
-                              np.int32(c), np.int32(n*c*h*w), 
+                              np.int32(c), np.int32(n*h*w*c), 
                               self.total_num_threads, 
                               grid=self.grid, block=self.block, stream=self.model.stream)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
