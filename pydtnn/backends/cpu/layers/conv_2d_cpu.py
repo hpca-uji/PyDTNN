@@ -109,7 +109,7 @@ class Conv2DCPU(LayerCPU,
                 case GroupingEnum.POINTWISE:
                     variant = ConvVariantEnum.POINTWISE
                 case GroupingEnum.DEPTHWISE:
-                    variant = GroupingEnum.DEPTHWISE
+                    variant = ConvVariantEnum.DEPTHWISE
                 case convWinograd_or_Gemm_or_Direct:
                     # Check colliding options
                     # -> WINOGRAD:
