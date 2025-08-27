@@ -38,6 +38,27 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.layers.conv_2d import GroupingEnum
 
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
+MACROS_NCHW = \
+"""
+#define SHIFT_POINTER(p, c, h, w, ni, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
+#define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (yci * c + ci)
+#define INDEX_N(idx, N, n) idx * n / N
+#define INDEX_C(idx, c, h, w) (idx / (h * w)) % c
+#define INDEX_H(idx, c, h, w) (idx / w) % h
+#define INDEX_W(idx, c, h, w) idx % w
+"""
+#---
+
+MACROS_NHWC = \
+"""
+#define SHIFT_POINTER(p, c, h, w, ni, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci
+#define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (ci * yc + yci)
+#define INDEX_N(idx, N, n) idx * n / N
+#define INDEX_H(idx, h, w, c) (idx / (w * c)) % h
+#define INDEX_W(idx, h, w, c) (idx / c) % w
+#define INDEX_C(idx, h, w, c) idx % c
+"""
+#---
 
 class Conv2DGPU(LayerGPU, Conv2D):
 
@@ -268,18 +289,75 @@ class Conv2DGPU(LayerGPU, Conv2D):
     # ----
 
     ####################
+    ###### COMMON ######
+    ####################
+
+    def cuda_sum_bias_axis_023(self, _func_name:str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
+        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
+
+        # np.sum(dy, axis=(0, 2, 3), out=self.db)
+        code = \
+"""
+__global__ void {func_name}({T}* dy, {T}* db
+                            int c, int h, int w,  
+                            int N, int num_workers)
+{{
+    int idx, index_c;
+
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
+    {{  
+        index_c = (idx / (h*w)) % c;
+        *(db + index_c) += *(dy + idx);
+    }}
+}}
+"""
+
+        code = code.format(func_name = _func_name,
+                           T = _t
+                           )
+        module = SourceModule(code).get_function(_func_name)
+        
+        return module
+    #----
+
+    def cuda_sum_bias_axis_012(self, _func_name:str = "bias_sum_bwd_depthwise_conv_nhwc") -> Function:
+        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
+
+        # np.sum(dy, axis=(0, 1, 2), out=self.db)
+        code = \
+"""
+__global__ void {func_name}({T}* dy, {T}* db,
+                            int c, int N,
+                            int num_workers)
+{{
+    int idx;
+
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
+    {{  
+        *(db + (idx % c)) += *(dy + idx);
+    }}
+}}
+"""
+
+        code = code.format(func_name = _func_name,
+                           T = _t
+                           )
+        module = SourceModule(code).get_function(_func_name)
+        
+        return module
+    #----
+
+    #---
+
+    ####################
     ## DEPTHWISE CONV ##
     ####################
 
-    def cuda_depthwise_conv_2d_fwd(self, _func_name: str, _macro_shift_pointer: str) -> Function:
+    def cuda_depthwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
 """
-{macro_shift_pointer}
-#define INDEX_C (idx, c, kh, kw) (idx / (kh * kw)) % c;
-#define INDEX_KH (idx, kh, kw) (idx / kw) % kh;
-#define INDEX_KW (idx, kw) idx % kw;
-
+{macros}
 __global__ void {func_name}({T}* x, {T}* k, {T}* res, 
                             int vpadding, int hpadding,
                             int vstride, int hstride, 
@@ -321,7 +399,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
 """
         _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
 
-        code = code.format(macro_shift_pointer = _macro_shift_pointer,
+        code = code.format(macros = _macros,
                            func_name = _func_name,
                            T = _t
                            )
@@ -330,14 +408,11 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
         return module
     # ---
 
-    def cuda_depthwise_conv_2d_bwd(self, _func_name: str, _macro_shift_pointer: str) -> Function:
+    def cuda_depthwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
 """
-{macro_shift_pointer}
-#define INDEX_C (idx, c, kh, kw) (idx / (kh * kw)) % c;
-#define INDEX_KH (idx, kh, kw) (idx / kw) % kh;
-#define INDEX_KW (idx, kw) idx % kw;
+{macros}
 
 __global__ void {func_name}({T}* dy, {T}* x, {T}* k, 
                             {T}* dx, {T}* dw,
@@ -357,8 +432,8 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     {{
         val_k = *(k+idx);
         cc = INDEX_C(idx, c, kh, kw);
-        ii = INDEX_KH(idx, kh, kw);
-        jj = INDEX_KW(idx, kw);
+        ii = INDEX_H(idx, c, kh, kw);
+        jj = INDEX_W(idx, c, kh, kw);
 
         for (nn = 0; nn < n; nn++)
         {{
@@ -384,7 +459,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
 """
         _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
 
-        code = code.format(macro_shift_pointer = _macro_shift_pointer,
+        code = code.format(macro_shift_pointer = _macros,
                            func_name = _func_name,
                            T = _t
                            )
@@ -398,7 +473,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
 
         code = \
 """
-__global__ void {func_name}({T}* x, {T}* bias
+__global__ void {func_name}({T}* x, {T}* bias,
                             int co, int N, 
                             int num_workers)
 {{
@@ -419,77 +494,22 @@ __global__ void {func_name}({T}* x, {T}* bias
         return module
     #----
 
-    def cuda_bias_sum_bwd_depthwise_conv_nchw(self, _func_name:str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
-
-        # np.sum(dy, axis=(0, 2, 3), out=self.db)
-        code = \
-"""
-__global__ void {func_name}({T}* dy, {T}* db
-                            int c, int h, int w,  
-                            int N, int num_workers)
-{{
-    int idx, index_c;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{  
-        index_c = (idx / (h*w)) % c;
-        *(db + index_c) += *(dy + idx);
-    }}
-}}
-"""
-
-        code = code.format(func_name = _func_name,
-                           T = _t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-        
-        return module
-    #----
-
-    def cuda_bias_sum_bwd_depthwise_conv_nhwc(self, _func_name:str = "bias_sum_bwd_depthwise_conv_nhwc") -> Function:
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
-
-        # np.sum(dy, axis=(0, 1, 2), out=self.db)
-        code = \
-"""
-__global__ void {func_name}({T}* dy, {T}* db
-                            int c, int N,
-                            int num_workers)
-{{
-    int idx;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{  
-        *(db + (idx % c)) += *(dy + idx);
-    }}
-}}
-"""
-
-        code = code.format(func_name = _func_name,
-                           T = _t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-        
-        return module
-    #----
-
     def initialize_depthwise_grouping(self):
         func_name:str = None
-        shift_pointer_macro:str = None
+        macros:str = None
         self.bias_sum_bwd:Function = None
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nchw"
-                shift_pointer_macro = "#define SHIFT_POINTER (p, c, h, w, ni, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi"
-                self.bias_sum_bwd = self.cuda_bias_sum_bwd_depthwise_conv_nchw()
+                macros = MACROS_NCHW
+                self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
                 self.forward = self._forward_depthwise_nchw
                 self.backward = self._backward_depthwise_nchw
             case PYDTNN_TENSOR_FORMAT.NHWC:
                 func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nhwc"
-                shift_pointer_macro = "#define SHIFT_POINTER (p, c, h, w, ni, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci"
-                self.bias_sum_bwd = self.cuda_bias_sum_bwd_depthwise_conv_nhwc()
+                macros = MACROS_NHWC
+                self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
                 self.forward = self._forward_depthwise_nhwc
                 self.backward = self._backward_depthwise_nhwc
             case _:
@@ -497,8 +517,8 @@ __global__ void {func_name}({T}* dy, {T}* db
 
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
-        self.fwd_func:Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), shift_pointer_macro)
-        self.bwd_func:Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), shift_pointer_macro)
+        self.fwd_func:Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
+        self.bwd_func:Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
         self.bias_sum_fwd:Function = self.cuda_bias_sum_fwd_depthwise_conv()
 
         # Derivative dw and derivative db
@@ -516,14 +536,13 @@ __global__ void {func_name}({T}* dy, {T}* db
             if self.use_bias:
                 self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
                 db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
+                # noinspection PyUnboundLocalVariable
+                self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
+                                gpudirect=self.model.gpudirect)
 
         self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
                             tensor_type="filter", gpudirect=self.model.gpudirect)
-
-        if self.use_bias:
-            # noinspection PyUnboundLocalVariable
-            self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                                gpudirect=self.model.gpudirect)
+            
     # ---- 
 
     def _forward_depthwise_nchw(self, x: TensorGPU) -> TensorGPU:
@@ -647,17 +666,253 @@ __global__ void {func_name}({T}* dy, {T}* db
     ####################
 
     def initialize_pointwise_grouping(self):
-        pass
 
-    def _forward_pointwise_nchw(self, x: TensorGPU) -> TensorGPU:
-        pass
+        # Derivative dw and derivative db
+        if self.model.gpudirect:
+            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
+            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
+                                                            flags=drv.mem_host_register_flags.DEVICEMAP)
+            if self.use_bias:
+                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.model.dtype)
+                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
+                                                                flags=drv.mem_host_register_flags.DEVICEMAP)
+        else:
+            self.dw_cpu = np.zeros(self.weights.ary.shape, self.model.dtype)
+            dw_gpu = gpuarray.empty(self.weights.ary.shape, self.model.dtype)
+            if self.use_bias:
+                self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
+                db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
+                # noinspection PyUnboundLocalVariable
+                self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
+                                gpudirect=self.model.gpudirect)
 
-    def _backward_pointwise_nchw(self, dy: TensorGPU) -> TensorGPU:
-        pass
+        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
+                            tensor_type="filter", gpudirect=self.model.gpudirect)
+        
+        func_name:str = None
+        macros:str = None
+        self.bias_sum_bwd:Function = None
 
-    def _forward_pointwise_nhwc(self, x: TensorGPU) -> TensorGPU:
-        pass
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nchw"
+                macros = MACROS_NCHW
+                self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
+                self.backward = self._backward_pointwise_nchw
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nhwc"
+                macros = MACROS_NHWC
+                self.bias_sum_bwd = self.cuda_sum_bias_axis_012()                
+                self.backward = self._backward_pointwise_nhwc
+            case _:
+                raise NotImplementedError(f"\"conv_2d_gpu_depthwise\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-    def _backward_pointwise_nhwc(self, dy: TensorGPU) -> TensorGPU:
-        pass
+        self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
+        self.forward = self._forward_pointwise
+        self.fwd_func:Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
+        self.bwd_func:Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
+        self.bias_sum_fwd:Function = self.cuda_bias_pointwise_conv_2d_fwd(self, "bias_pointwise_conv_2d_fwd", macros)
+    #-----
+
+    def cuda_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
+
+        code = \
+"""
+{macros}
+
+__global__ void {func_name}({T}* x, {T}* k, {T}* y, 
+                            int n, int c, int h, int w, 
+                            int yc, int num_workers)
+{{
+    int idx, ni, ci, hi, wi, yci;
+    {T}* val_k, val_x;
+
+    int N = n*c*h*w;
+
+    // k.shape = (yc, x's c)
+
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
+    {{
+        ni = INDEX_N(idx, N, n);
+        ci = INDEX_C(idx, c, h, w);
+        hi = INDEX_H(idx, c, h, w);
+        wi = INDEX_W(idx, c, h, w);
+                
+        val_x = (*SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi));
+        for(yci = 0; yci < yc; yci++)
+        {{
+            //y = x * k
+            //val_k = k[yci][ci]; ==> val_k = k + (yci * c + ci);
+            //val_k = k[ci][yci]; ==> val_k = k + (ci * kc + yci);
+            val_k = (*SHIFT_POINTER_K(k, c, yc, ci, yci));
+            (*SHIFT_POINTER(y, yc, h, w, ni, yci, hi, wi)) += ({T}) (val_x * val_k);
+        }}
+    }}
+}}
+"""
+        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
+
+        code = code.format(macro_shift_pointer = _macros,
+                           func_name = _func_name,
+                           T = _t
+                           )
+        module = SourceModule(code).get_function(_func_name)
+        
+        return module
+    # ---
+
+    def cuda_pointwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
+
+        code = \
+"""
+{macros}
+
+__global__ void {func_name}({T}* dy, {T}* x, {T}* k, 
+                            {T}* dx, {T}* dw,
+                            int n, int c, int h, int w, 
+                            int xc, int num_workers)
+{{
+    int idx, ni, ci, hi, wi, xci;
+    {T}* val_dy, val_k, val_x;
+
+    int N = n*c*h*w;
+
+    // NCHW: k.shape = dw.shape = (dy's c , x's c)
+    // NHWC: k.shape = dw.shape = (x's c, dy's c)
+
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
+    {{
+        ni = INDEX_N(idx, N, n);
+        ci = INDEX_C(idx, c, h, w);
+        hi = INDEX_H(idx, c, h, w);
+        wi = INDEX_W(idx, c, h, w);
+                
+        val_dy = *SHIFT_POINTER(dy, c, h, w, ni, ci, hi, wi);
+        for(xci = 0; xci < kc; xci++)
+        {{
+            //dw = x * dy
+            val_x = (*SHIFT_POINTER(x, xc, h, w, ni, xci, hi, wi));
+            (*SHIFT_POINTER_K(dw, c, xc, ci, xci)) = ({T}) (val_x * val_dy);
+
+            //dx = w * dy
+            val_k = (*SHIFT_POINTER_K(k, c, xc, ci, xci));
+            (*SHIFT_POINTER(dx, kc, h, w, nn, xci, hi, wi)) += ({T}) (val_k * val_dy);
+        }}
+    }}
+}}
+"""
+        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
+
+        code = code.format(macros = _macros,
+                           func_name = _func_name,
+                           T = _t
+                           )
+        module = SourceModule(code).get_function(_func_name)
+        
+        return module
+    # ---
+
+    def cuda_bias_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
+
+        code = \
+"""
+{macros}
+
+__global__ void {func_name}({T}* y, {T}* b, 
+                            int n, int c, int h, int w,
+                            int N,
+                            int num_workers)
+{{
+    int idx, ni, ci, hi, wi;
+
+    // self.biases.shape = (self.co,)
+
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
+    {{  
+        ni = INDEX_N(idx, N, n);
+        ci = INDEX_C(idx, c, h, w);
+        hi = INDEX_H(idx, c, h, w);
+        wi = INDEX_W(idx, c, h, w);
+
+        (*SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi)) += (*(b+ci));
+    }}
+}}
+"""
+        _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
+
+        code = code.format(macros = _macros,
+                           func_name = _func_name,
+                           T = _t
+                           )
+        module = SourceModule(code).get_function(_func_name)
+        
+        return module
+    # ---
+
+    def _forward_pointwise(self, x: TensorGPU) -> TensorGPU:
+        
+        self.x = x
+        
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                n, c, h, w = x.shape
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                n, h, w, c = x.shape
+            case _:
+                raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+        self.fwd_func(x.ary, self.weights.ary, self.y.ary,                      
+                      np.int32(n), np.int32(c), np.int32(h), np.int32(w), 
+                      np.int32(self.co), self.total_num_threads, 
+                      grid=self.grid, block=self.block, stream=self.model.stream)
+                
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
+            self.bias_sum_fwd(x.ary, self.biases.ary,
+                              np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                              np.int32(n * c * h * w),
+                              self.total_num_threads,                               
+                              grid=self.grid, block=self.block, stream=self.model.stream)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        return self.y
+    #-----
+
+    def _backward_pointwise(self, dy: TensorGPU) -> TensorGPU:
+        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (dy.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
+        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                n, c, h, w = dy.shape
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                n, h, w, c = dy.shape
+            case _:
+                raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
+                      dx.ary, self.dw.ary,
+                      np.int32(self.vpadding), np.int32(self.hpadding),
+                      np.int32(self.vstride), np.int32(self.hstride),
+                      np.int32(self.vdilation), np.int32(self.hdilation),      
+                      np.int32(n), np.int32(c), np.int32(h), np.int32(w), 
+                      np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
+                      self.total_num_threads, 
+                      grid=self.grid, block=self.block, stream=self.model.stream)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
+            self.bias_sum_bwd(dy.ary, self.db.ary,
+                              np.int32(c), np.int32(h), np.int32(w), 
+                              np.int32(n*c*h*w), self.total_num_threads, 
+                              grid=self.grid, block=self.block, stream=self.model.stream)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        return dx.ary
+    #-----
