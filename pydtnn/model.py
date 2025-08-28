@@ -281,7 +281,7 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
     cudnn_dtype: Cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
     tracer.set_default_stream(stream)
         
-    return nccl_type, nccl_comm, cudnn_handle, cudnn_handle, cublas_handle, stream, cudnn_dtype
+    return nccl_type, nccl_comm, cudnn_handle, cublas_handle, stream, cudnn_dtype
 # --- END _initialize_cuda --- #
 
 def _set_data_format(tensor_format:str, enable_cudnn:bool) -> PYDTNN_TENSOR_FORMAT:
