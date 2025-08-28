@@ -61,9 +61,7 @@ class SGDGPU(OptimizerGPU, SGD):
                                              ).get_function("SGD_kernel")
     # --- END __init__ --- #
 
-    def initialize(self, list_layers: list[LayerGPU]) -> None:
-        super().__init__(list_layers)
-        
+    def initialize(self, list_layers: list[LayerGPU]) -> None:        
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
                     

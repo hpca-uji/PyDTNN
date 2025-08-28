@@ -66,8 +66,6 @@ class AdamGPU(OptimizerGPU, Adam):
                                              ).get_function("Adam_kernel")
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
-        super().__init__(list_layers)
-
         for layer in list_layers:
             self.context[layer] = dict[str, int | np.ndarray]()
             self.context[layer]["it"] = 0

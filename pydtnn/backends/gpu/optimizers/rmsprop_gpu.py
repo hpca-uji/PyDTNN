@@ -60,8 +60,6 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
 
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
-        super().__init__(list_layers)
-
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
                     
