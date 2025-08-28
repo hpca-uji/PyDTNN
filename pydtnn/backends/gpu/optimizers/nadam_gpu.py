@@ -29,7 +29,6 @@ from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import Nadam
 
 from pydtnn.backends.gpu.layers import LayerGPU
-from pydtnn.optimizers import Layer_types
 
 class NadamGPU(OptimizerGPU, Nadam):
     """
@@ -67,7 +66,7 @@ class NadamGPU(OptimizerGPU, Nadam):
                                              replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
                                              ).get_function("Nadam_kernel")
         
-    def initialize(self, list_layers: list[Layer_types]) -> None:
+    def initialize(self, list_layers: list[LayerGPU]) -> None:
         super().__init__(list_layers)
 
         for layer in list_layers:
