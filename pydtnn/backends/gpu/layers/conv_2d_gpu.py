@@ -40,7 +40,7 @@ from pydtnn.layers.conv_2d import GroupingEnum
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 MACROS_NCHW = \
 """
-#define SHIFT_POINTER(p, c, h, w, ni, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
+#define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
 #define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (yci * c + ci)
 #define INDEX_N(idx, N, n) idx * n / N
 #define INDEX_C(idx, c, h, w) (idx / (h * w)) % c
@@ -51,7 +51,7 @@ MACROS_NCHW = \
 
 MACROS_NHWC = \
 """
-#define SHIFT_POINTER(p, c, h, w, ni, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci
+#define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci
 #define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (ci * yc + yci)
 #define INDEX_N(idx, N, n) idx * n / N
 #define INDEX_H(idx, h, w, c) (idx / (w * c)) % h
@@ -358,43 +358,39 @@ __global__ void {func_name}({T}* dy, {T}* db,
         code = \
 """
 {macros}
-__global__ void {func_name}({T}* x, {T}* k, {T}* res, 
+__global__ void {func_name}({T}* x, {T}* k, {T}* res,
                             int vpadding, int hpadding,
-                            int vstride, int hstride, 
-                            int vdilation, int hdilation, 
-                            int n, int c, int h, int w, 
-                            int kh, int kw, int ho, int wo
+                            int vstride, int hstride,
+                            int vdilation, int hdilation,
+                            int n, int c, int h, int w,
+                            int kh, int kw, int ho, int wo,
                             int num_workers)
 {{
     int idx, cc, ii, jj, yy, xx, nn, x_x, x_y;
-    int N = c * kh * kw; 
+    int N = n * c * ho * wo;
+    {T}* val_k, val_x;
 
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += num_workers)
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
     {{
-        cc = INDEX_C(idx, c, kh, kw);
-        ii = INDEX_KH(idx, kh, kw);
-        jj = INDEX_KW(idx, kw);
+        cc = INDEX_C(idx, c, ho, wo);
+        xx = INDEX_H(idx, c, ho, wo);
+        yy = INDEX_W(idx, c, ho, wo);
 
-        for (nn = 0; nn < n; nn++)
+        for (ii = 0; ii < kh; ii++)
         {{
-            for (xx = 0; xx < ho; xx++)
-            {{
+            for (jj = 0; jj < kw; jj++)
+            {{                
                 x_x = vstride * xx + vdilation * ii - vpadding
-                if ((0 <= x_x) && (x_x < h))
+                x_y = hstride * yy + hdilation * jj - hpadding
+                if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w)) 
                 {{
-                    for (yy = 0; y < wo; y++)
-                    {{
-                        x_y = hstride * yy + hdilation * jj - hpadding
-                        if ((0 <= x_y) && (x_y < w)) 
-                        {{
-                            (*SHIFT_POINTER(res, c, h, w, nn, cc, xx, xy)) += ({T}) (*(k+idx) * (*SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y)))
-                        }}
-                    }}
+                    val_k = (*SHIFT_POINTER(p, c, h, w, 0, hi, wi));
+                    val_x = (*SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
+                    (*SHIFT_POINTER(res, c, h, w, nn, cc, xx, xy)) += ({T}) (val_k * val_x);
                 }}
             }}
-        }}   
-    }}            
-
+        }} 
+    }}
 }}
 """
         _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
@@ -413,48 +409,41 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
         code = \
 """
 {macros}
-
-__global__ void {func_name}({T}* dy, {T}* x, {T}* k, 
+__global__ void {func_name}({T}* dy, {T}* x, {T}* k,
                             {T}* dx, {T}* dw,
                             int vpadding, int hpadding,
-                            int vstride, int hstride, 
-                            int vdilation, int hdilation, 
-                            int n, int c, int h, int w, 
-                            int kh, int kw, int ho, int wo
+                            int vstride, int hstride,
+                            int vdilation, int hdilation,
+                            int n, int c, int h, int w,
+                            int kh, int kw, int ho, int wo,
                             int num_workers)
 {{
-    int idx, cc, ii, jj, yy, xx, nn, x_x, x_y;
-    {T}* val_k, val_dy;
+    int idx, cc, khi, kwi, yy, xx, nn, x_x, x_y;
+    {T}* val_k, val_dy, val_x;
+    int N = n * c * ho * wo;
 
-    int N = c * kh * kw; 
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; i < N; i += num_workers)
+    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
     {{
-        val_k = *(k+idx);
-        cc = INDEX_C(idx, c, kh, kw);
-        ii = INDEX_H(idx, c, kh, kw);
-        jj = INDEX_W(idx, c, kh, kw);
+        cc = INDEX_C(idx, c, ho, wo);
+        xx = INDEX_H(idx, c, ho, wo);
+        yy = INDEX_W(idx, c, ho, wo);
 
-        for (nn = 0; nn < n; nn++)
+        val_dy = ({T}) (*SHIFT_POINTER(dy, c, h, w, nn, cc, xx, yy));
+        for (khi = 0; khi < kh; khi++)
         {{
-            for (xx = 0; xx < ho; xx++)
+            for (kwi = 0; kwi < kw; kwi++)
             {{
-                x_x = vstride * xx + vdilation * ii - vpadding;
-                if ((0 <= x_x) && (x_x < h)){{
-                    for (yy = 0; y < wo; y++)
-                    {{
-                        x_y = hstride * yy + hdilation * jj - hpadding;
-                        val_dy = ({T}) *(SHIFT_POINTER(dy, c, h, w, nn, cc, xx, yy));
-                        if ((0 <= x_y) && (x_y < w)) {{
-                            *(dw + idx) = ({T}) (*SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y)) * val_dy;
-                            (*SHIFT_POINTER(dx, c, h, w, nn, cc, x_x, x_y)) += ({T}) (val_k * val_dy);
-                        }}
-                    }}
+                x_x = vstride * xx + vdilation * khi - vpadding;
+                x_y = hstride * yy + hdilation * kwi - hpadding;
+                if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w)){{
+                    val_k = (*SHIFT_POINTER(p, c, h, w, 0, khi, kwi));
+                    val_x = (*SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
+                    (*SHIFT_POINTER(dw, c, h, w, 0, khi, kwi)) = ({T}) (val_x * val_dy);
+                    (*SHIFT_POINTER(dx, c, h, w, nn, cc, x_x, x_y)) += ({T}) (val_k * val_dy);
                 }}
             }}
-        }}   
-    }}            
-
+        }}
+    }}
 }}
 """
         _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
