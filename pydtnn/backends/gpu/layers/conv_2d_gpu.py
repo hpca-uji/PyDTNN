@@ -371,9 +371,9 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
                             int kh, int kw, int ho, int wo,
                             int num_workers)
 {{
-    int idx, cc, ii, jj, yy, xx, nn, x_x, x_y;
+    int idx, cc, hi, wi, yy, xx, nn, x_x, x_y;
     int N = n * c * ho * wo;
-    {T}* val_k, val_x;
+    {T} val_k, val_x;
 
     for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
     {{
@@ -381,17 +381,17 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
         xx = INDEX_H(idx, c, ho, wo);
         yy = INDEX_W(idx, c, ho, wo);
 
-        for (ii = 0; ii < kh; ii++)
+        for (hi = 0; hi < kh; hi++)
         {{
-            for (jj = 0; jj < kw; jj++)
+            for (wi = 0; wi < kw; wi++)
             {{                
-                x_x = vstride * xx + vdilation * ii - vpadding
-                x_y = hstride * yy + hdilation * jj - hpadding
+                x_x = vstride * xx + vdilation * hi - vpadding;
+                x_y = hstride * yy + hdilation * wi - hpadding;
                 if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w)) 
                 {{
-                    val_k = (*SHIFT_POINTER(p, c, h, w, 0, hi, wi));
-                    val_x = (*SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
-                    (*SHIFT_POINTER(res, c, h, w, nn, cc, xx, xy)) += ({T}) (val_k * val_x);
+                    val_k = *(SHIFT_POINTER(k, c, h, w, 0, cc, hi, wi));
+                    val_x = *(SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
+                    *(SHIFT_POINTER(res, c, h, w, nn, cc, xx, yy)) += ({T}) (val_k * val_x);
                 }}
             }}
         }} 
@@ -424,7 +424,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
                             int num_workers)
 {{
     int idx, cc, khi, kwi, yy, xx, nn, x_x, x_y;
-    {T}* val_k, val_dy, val_x;
+    {T} val_k, val_dy, val_x;
     int N = n * c * ho * wo;
 
     for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
@@ -433,7 +433,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
         xx = INDEX_H(idx, c, ho, wo);
         yy = INDEX_W(idx, c, ho, wo);
 
-        val_dy = ({T}) (*SHIFT_POINTER(dy, c, h, w, nn, cc, xx, yy));
+        val_dy = ({T}) *(SHIFT_POINTER(dy, c, h, w, nn, cc, xx, yy));
         for (khi = 0; khi < kh; khi++)
         {{
             for (kwi = 0; kwi < kw; kwi++)
@@ -441,10 +441,10 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
                 x_x = vstride * xx + vdilation * khi - vpadding;
                 x_y = hstride * yy + hdilation * kwi - hpadding;
                 if ((0 <= x_x) && (x_x < h) && (0 <= x_y) && (x_y < w)){{
-                    val_k = (*SHIFT_POINTER(p, c, h, w, 0, khi, kwi));
-                    val_x = (*SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
-                    (*SHIFT_POINTER(dw, c, h, w, 0, khi, kwi)) = ({T}) (val_x * val_dy);
-                    (*SHIFT_POINTER(dx, c, h, w, nn, cc, x_x, x_y)) += ({T}) (val_k * val_dy);
+                    val_k = *(SHIFT_POINTER(k, c, h, w, 0, cc, khi, kwi));
+                    val_x = *(SHIFT_POINTER(x, c, h, w, nn, cc, x_x, x_y));
+                    *(SHIFT_POINTER(dw, c, h, w, 0, cc, khi, kwi)) = ({T}) (val_x * val_dy);
+                    *(SHIFT_POINTER(dx, c, h, w, nn, cc, x_x, x_y)) += ({T}) (val_k * val_dy);
                 }}
             }}
         }}
@@ -453,7 +453,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
 """
         _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
 
-        code = code.format(macro_shift_pointer = _macros,
+        code = code.format(macros = _macros,
                            func_name = _func_name,
                            T = _t
                            )
@@ -733,7 +733,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* y,
                             int yc, int num_workers)
 {{
     int idx, ni, ci, hi, wi, yci;
-    {T}* val_k, val_x;
+    {T} val_k, val_x;
 
     int N = n*c*h*w;
 
@@ -746,21 +746,21 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* y,
         hi = INDEX_H(idx, c, h, w);
         wi = INDEX_W(idx, c, h, w);
                 
-        val_x = (*SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi));
+        val_x = *(SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi));
         for(yci = 0; yci < yc; yci++)
         {{
             //y = x * k
             //val_k = k[yci][ci]; ==> val_k = k + (yci * c + ci);
             //val_k = k[ci][yci]; ==> val_k = k + (ci * kc + yci);
-            val_k = (*SHIFT_POINTER_K(k, c, yc, ci, yci));
-            (*SHIFT_POINTER(y, yc, h, w, ni, yci, hi, wi)) += ({T}) (val_x * val_k);
+            val_k = *(SHIFT_POINTER_K(k, c, yc, ci, yci));
+            *(SHIFT_POINTER(y, yc, h, w, ni, yci, hi, wi)) += ({T}) (val_x * val_k);
         }}
     }}
 }}
 """
         _t = DICT_SUPPORTED_TYPES[self.model.dtype] # variable Type
 
-        code = code.format(macro_shift_pointer = _macros,
+        code = code.format(macros = _macros,
                            func_name = _func_name,
                            T = _t
                            )
@@ -781,7 +781,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
                             int xc, int num_workers)
 {{
     int idx, ni, ci, hi, wi, xci;
-    {T}* val_dy, val_k, val_x;
+    {T} val_dy, val_k, val_x;
 
     int N = n*c*h*w;
 
@@ -799,12 +799,12 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
         for(xci = 0; xci < kc; xci++)
         {{
             //dw = x * dy
-            val_x = (*SHIFT_POINTER(x, xc, h, w, ni, xci, hi, wi));
-            (*SHIFT_POINTER_K(dw, c, xc, ci, xci)) = ({T}) (val_x * val_dy);
+            val_x = *(SHIFT_POINTER(x, xc, h, w, ni, xci, hi, wi));
+            *(SHIFT_POINTER_K(dw, c, xc, ci, xci)) = ({T}) (val_x * val_dy);
 
             //dx = w * dy
-            val_k = (*SHIFT_POINTER_K(k, c, xc, ci, xci));
-            (*SHIFT_POINTER(dx, kc, h, w, nn, xci, hi, wi)) += ({T}) (val_k * val_dy);
+            val_k = *(SHIFT_POINTER_K(k, c, xc, ci, xci));
+            *(SHIFT_POINTER(dx, kc, h, w, nn, xci, hi, wi)) += ({T}) (val_k * val_dy);
         }}
     }}
 }}
@@ -842,7 +842,7 @@ __global__ void {func_name}({T}* y, {T}* b,
         hi = INDEX_H(idx, c, h, w);
         wi = INDEX_W(idx, c, h, w);
 
-        (*SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi)) += (*(b+ci));
+        *(SHIFT_POINTER(x, c, h, w, ni, ci, hi, wi)) += (*(b+ci));
     }}
 }}
 """
