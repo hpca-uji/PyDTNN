@@ -27,7 +27,6 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import RMSProp
-from pydtnn.optimizers import Layer_types
 from pydtnn.backends.gpu.layers import LayerGPU
 
 class RMSPropGPU(OptimizerGPU, RMSProp):
@@ -60,7 +59,7 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
                                              ).get_function("RMSProp_kernel")
 
 
-    def initialize(self, list_layers: list[Layer_types]) -> None:
+    def initialize(self, list_layers: list[LayerGPU]) -> None:
         super().__init__(list_layers)
 
         for layer in list_layers:

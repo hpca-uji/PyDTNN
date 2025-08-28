@@ -27,7 +27,6 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers import SGD
-from pydtnn.optimizers import Layer_types
 from pydtnn.backends.gpu.layers import LayerGPU
 
 class SGDGPU(OptimizerGPU, SGD):
@@ -62,7 +61,7 @@ class SGDGPU(OptimizerGPU, SGD):
                                              ).get_function("SGD_kernel")
     # --- END __init__ --- #
 
-    def initialize(self, list_layers: list[Layer_types]) -> None:
+    def initialize(self, list_layers: list[LayerGPU]) -> None:
         super().__init__(list_layers)
         
         for layer in list_layers:
