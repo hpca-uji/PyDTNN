@@ -69,10 +69,6 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.bwd_dw_algo = None
         self.bwd_dx_algo = None
         self.conv_desc = None
-
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
-        self.grid = (self.blocks, 1, 1)
-        self.block = (self.threads, 1, 1)
     # ---
 
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
@@ -110,6 +106,15 @@ class Conv2DGPU(LayerGPU, Conv2D):
             case GroupingEnum.POINTWISE:
                 self.initialize_pointwise_grouping()
     # -----
+
+    def forward(self, x:TensorGPU)->TensorGPU:
+        msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""
+        NotImplementedError(f"Conv2DGPU forward: {msg}")
+
+    def backward(self, dy:TensorGPU) -> TensorGPU:
+        msg = """This is a fake backward function. It must be masked on initialization by a _backward implementation"""
+        NotImplementedError(f"Conv2DGPU backward: {msg}")
+
 
     ####################
     ## STANDARD CONV. ##
@@ -484,6 +489,13 @@ __global__ void {func_name}({T}* x, {T}* bias,
     #----
 
     def initialize_depthwise_grouping(self):
+
+        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
+        self.threads = min(self.model.batch_size, 1024)
+        self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
+        self.grid = (self.blocks, 1, 1)
+        self.block = (self.threads, 1, 1)
+
         func_name:str = None
         macros:str = None
         self.bias_sum_bwd:Function = None
@@ -655,6 +667,12 @@ __global__ void {func_name}({T}* x, {T}* bias,
     ####################
 
     def initialize_pointwise_grouping(self):
+
+        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
+        self.threads = min(self.model.batch_size, 1024)
+        self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
+        self.grid = (self.blocks, 1, 1)
+        self.block = (self.threads, 1, 1)
 
         # Derivative dw and derivative db
         if self.model.gpudirect:
