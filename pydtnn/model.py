@@ -129,6 +129,7 @@ Cudnn_Handle_Type = TypeVar("Cudnn_Handle_Type")
 Cublas_Handle_Type = TypeVar("Cublas_Handle_Type")
 PyCuda_Stream_Type  = TypeVar("PyCuda_Stream_Type")
 Cudnn_dtype = TypeVar("Cudnn_dtype")
+Cudnn_Contex_Type = TypeVar("Cuda_Context")
 
 type Array = np.ndarray | TensorGPU
 
@@ -224,7 +225,8 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
 
     device_id:int = comm_rank % drv.Device.count()
     drv.init()
-    context:int = drv.Device(device_id).make_context()
+    context:Cudnn_Contex_Type = drv.Device(device_id).make_context()
+    #context:int = drv.Device(device_id).retain_primary_context()    
     
     atexit.register(context.pop)
     
@@ -332,7 +334,7 @@ class Model:
         self.parallel: bool = parallel
         self.blocking_mpi: bool = use_blocking_mpi
         global enable_cudnn
-        enable_cudnn = self.enable_cudnn = enable_gpu
+        self.enable_gpu = enable_cudnn = self.enable_cudnn = enable_gpu        
         self.gpudirect:bool = enable_gpudirect
         self.enable_nccl:bool = enable_nccl
         self.dtype:np.dtype = dtype
