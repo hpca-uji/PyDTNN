@@ -18,9 +18,10 @@
 #
 
 from abc import ABC
+from typing import TypeVar
 
 from pydtnn.optimizers import Optimizer
-
+gpuarray_t = TypeVar("gpuarray_t")
 
 class OptimizerGPU(Optimizer, ABC):
     """
@@ -31,5 +32,5 @@ class OptimizerGPU(Optimizer, ABC):
         super().__init__(*args, **kwargs)
         self.gpudirect = False
 
-    def set_gpudirect(self, gpudirect):
+    def set_gpudirect(self, gpudirect:bool):
         self.gpudirect = gpudirect

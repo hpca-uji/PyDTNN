@@ -25,10 +25,11 @@ from pycuda.compiler import SourceModule
 # noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
+from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
 from pydtnn.optimizers import Nadam
 
 from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu import TensorGPU
 
 class NadamGPU(OptimizerGPU, Nadam):
     """
@@ -68,7 +69,7 @@ class NadamGPU(OptimizerGPU, Nadam):
         
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
-            self.context[layer] = dict[str, int | np.ndarray]()
+            self.context[layer] = dict[str, int | gpuarray_t]()
             self.context[layer]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
@@ -84,6 +85,10 @@ class NadamGPU(OptimizerGPU, Nadam):
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = self.context[layer]["m_%s" % w_]
             v = self.context[layer]["v_%s" % w_]
+            w:TensorGPU
+            dw:TensorGPU
+            m:gpuarray
+            v:gpuarray
 
             if self.gpudirect:
                 rows, cols = w.shape[0], np.prod(w.shape[1:])

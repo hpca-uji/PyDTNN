@@ -25,9 +25,10 @@ from pycuda.compiler import SourceModule
 # noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
+from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
 from pydtnn.optimizers import RMSProp
 from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu import TensorGPU
 
 class RMSPropGPU(OptimizerGPU, RMSProp):
     """
@@ -64,7 +65,7 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
             list_grad_vars = list(layer.grad_vars.keys())
                     
             if len(list_grad_vars) != 0:
-                self.context[layer] = dict[str, np.ndarray]()
+                self.context[layer] = dict[str, gpuarray_t]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
                     self.context[layer]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
@@ -75,6 +76,9 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = self.context[layer]["cache_%s" % w_]
+            w:TensorGPU
+            dw:TensorGPU
+            cache:gpuarray
 
             if self.gpudirect:
                 rows, cols = w.shape[0], np.prod(w.shape[1:])
