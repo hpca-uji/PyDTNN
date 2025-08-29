@@ -548,7 +548,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
 
     def _forward_depthwise_nchw(self, x: TensorGPU) -> TensorGPU:
         self.x = x
-        y_gpu = gpuarray.to_gpu(np.zeros(shape = (x.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
+        y_gpu = gpuarray.to_gpu(np.zeros(shape = (x.shape[0], *self.shape), dtype=self.model.dtype))
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         n, c, h, w = x.shape
@@ -567,9 +567,12 @@ __global__ void {func_name}({T}* x, {T}* bias,
         
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
-            self.bias_sum_fwd(x.ary, self.biases.ary, n * c * h * w,
-                          self.total_num_threads, grid=self.grid, block=self.block,
-                          stream=self.model.stream)
+            self.bias_sum_fwd(x.ary, self.biases.ary, 
+                              np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                              np.int32(n * h * w * c),
+                              self.total_num_threads, 
+                              grid=self.grid, block=self.block,
+                              stream=self.model.stream)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.y
@@ -577,10 +580,10 @@ __global__ void {func_name}({T}* x, {T}* bias,
 
     def _forward_depthwise_nhwc(self, x: TensorGPU) -> TensorGPU:
         self.x = x
-        y_gpu = gpuarray.to_gpu(np.zeros(shape = (x.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        n, h, w, c = x.shape  
 
-        n, h, w, c = x.shape        
+        y_gpu = gpuarray.to_gpu(np.zeros(shape = (n, *self.shape), dtype=self.model.dtype))
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)              
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.fwd_func(x.ary, self.weights.ary, self.y.ary,
@@ -596,19 +599,23 @@ __global__ void {func_name}({T}* x, {T}* bias,
         
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
-            self.bias_sum_fwd(x.ary, self.biases.ary, n * h * w * c,
-                          self.total_num_threads, grid=self.grid, block=self.block,
-                          stream=self.model.stream)
+            self.bias_sum_fwd(x.ary, self.biases.ary, 
+                              np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                              np.int32(n * h * w * c),
+                              self.total_num_threads, 
+                              grid=self.grid, block=self.block,
+                              stream=self.model.stream)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self.y
     # ----
 
     def _backward_depthwise_nchw(self, dy: TensorGPU) -> TensorGPU:
-        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (dy.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
-        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         n, c, h, w = dy.shape
+
+        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (n, *self.shape), dtype=self.model.dtype))
+        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
@@ -633,11 +640,11 @@ __global__ void {func_name}({T}* x, {T}* bias,
         return dx.ary
     # -----
 
-    def _backward_depthwise_nhwc(self, dy: TensorGPU) -> TensorGPU:
-        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (dy.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
-        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-
+    def _backward_depthwise_nhwc(self, dy: TensorGPU) -> TensorGPU:      
         n, h, w, c = dy.shape
+
+        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (n, *self.shape), dtype=self.model.dtype))
+        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
@@ -889,10 +896,7 @@ __global__ void {func_name}({T}* y, {T}* b,
         return self.y
     #-----
 
-    def _backward_pointwise(self, dy: TensorGPU) -> TensorGPU:
-        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (dy.shape[0], *self.shape), dtype=self.model.dtype), self.model.dtype)
-        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-
+    def _backward_pointwise(self, dy: TensorGPU) -> TensorGPU:     
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = dy.shape
@@ -900,6 +904,9 @@ __global__ void {func_name}({T}* y, {T}* b,
                 n, h, w, c = dy.shape
             case _:
                 raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+            
+        dx_gpu = gpuarray.to_gpu(np.zeros(shape = (n, *self.shape), dtype=self.model.dtype))
+        dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
