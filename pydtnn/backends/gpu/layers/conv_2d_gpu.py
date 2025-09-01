@@ -84,7 +84,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
 
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, "filter")
+        self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.FILTER)
         # Biases
         if self.use_bias:
             self.biases_cpu = self.biases_initializer((1, self.co, 1, 1) \
@@ -149,7 +149,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                 db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
 
         self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                            tensor_type="filter", gpudirect=self.model.gpudirect)
+                            tensor_type=TensorGPU.TensorTypeEnum.FILTER, gpudirect=self.model.gpudirect)
 
         if self.use_bias:
             # noinspection PyUnboundLocalVariable
@@ -694,7 +694,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
                                 gpudirect=self.model.gpudirect)
 
         self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                            tensor_type="filter", gpudirect=self.model.gpudirect)
+                            tensor_type=TensorGPU.TensorTypeEnum.FILTER, gpudirect=self.model.gpudirect)
         
         func_name:str = None
         macros:str = None
