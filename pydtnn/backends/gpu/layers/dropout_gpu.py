@@ -53,10 +53,10 @@ class DropoutGPU(LayerGPU, Dropout):
         self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
 
         space_gpu = gpuarray.empty((self.space_size.value,), np.byte)
-        self.space = TensorGPU(space_gpu, self.model.tensor_format, self.model.cudnn_dtype, "other")
+        self.space = TensorGPU(space_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
 
         states_gpu = gpuarray.empty((self.states_size.value,), np.byte)
-        self.states = TensorGPU(states_gpu, self.model.tensor_format, self.model.cudnn_dtype, "other")
+        self.states = TensorGPU(states_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
 
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 
