@@ -6,14 +6,14 @@ import copy
 import socket
 import selectors
 import threading
-from queue import SimpleQueue
 from concurrent.futures import Future
 
 from pydtnn import comms
+from pydtnn.comms import client
+from pydtnn.utils import UUID_MAX
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_NIL, UUID_MAX
-from pydtnn.comms import CommunicatorOptions, ConnectionState, Message, ResourceClosed
+from pydtnn.comms import CommunicatorOptions, Message, ResourceClosed
 
 
 __all__ = (
@@ -21,17 +21,12 @@ __all__ = (
 )
 
 
-class Client(Protocol):
+class Client(Protocol, client.Client):
     """TCP client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Client initialization"""
         super().__init__(copy.replace(options, workers=1))
-
-        # State
-        self._lock = threading.Condition()
-        self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = self._new_state()
 
         # TCP
         self._socket = socket.create_connection(self._options.netloc)
@@ -44,7 +39,7 @@ class Client(Protocol):
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
 
-        self._session_ini()
+        self._put(self._session_ini())
 
     def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection events"""
@@ -87,22 +82,6 @@ class Client(Protocol):
             state.get_write(data)
 
         self._get_flush()
-
-    def _get_flush(self) -> None:
-        state = self._state
-        peer = state.peer
-
-        for stream in state.get_flush():
-            if stream.empty():
-                self._handle_session_fin(stream)
-
-            elif state.peer == UUID_NIL:
-                self._handle_session_ini(stream)
-                peer = state.peer
-
-            else:
-                state.get_queue.put(stream)
-                self._get_event.put(peer)
 
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
@@ -161,42 +140,9 @@ class Client(Protocol):
 
         return Message(peer=state.peer, obj=obj)
 
-    def _session_ini(self) -> None:
-        """Send session ini message"""
-        state = self._state
-        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
-        state.state |= ConnectionState.WRITABLE
-        self.put(self._id)
-
-    def _session_fin(self) -> None:
-        """Send session fin message"""
-        state = self._state
-        assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
-        state.state &= ~ConnectionState.WRITABLE
-        self._put(Stream())
-
-    def _handle_session_ini(self, stream: Stream) -> None:
-        """Handle session initialize message"""
-        state = self._state
-        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
-
-        # Set peer in state
-        with stream:
-            id = self._serializer.load(stream)
-        state.peer = id
-        state.state |= ConnectionState.READABLE
-
-    def _handle_session_fin(self, stream: Stream) -> None:
-        """Handle session finalize message"""
-        state = self._state
-        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
-
-        stream.close()
-        state.state &= ~ConnectionState.READABLE
-
     def _close(self) -> None:
         """Close the client"""
-        self._session_fin()
+        self._put(self._session_fin())
 
         with self._lock:
             while hasattr(self, "_socket"):
