@@ -71,17 +71,17 @@ def DeserializeCryptoContext(str: bytes) -> openfhe.CryptoContext:
 
 
 def DeserializeCiphertext(str: bytes) -> openfhe.Ciphertext:
-    """OpenFHE context deserializer"""
+    """OpenFHE cipher text deserializer"""
     return openfhe.DeserializeCiphertextString(str, openfhe.BINARY)
 
 
 def DeserializePublicKey(str: bytes) -> openfhe.PublicKey:
-    """OpenFHE context deserializer"""
+    """OpenFHE public key deserializer"""
     return openfhe.DeserializePublicKeyString(str, openfhe.BINARY)
 
 
 def DeserializePrivateKey(str: bytes) -> openfhe.PrivateKey:
-    """OpenFHE context deserializer"""
+    """OpenFHE private key deserializer"""
     return openfhe.DeserializePrivateKeyString(str, openfhe.BINARY)
 
 
@@ -94,7 +94,7 @@ def context_reducer(context: openfhe.CryptoContext):
 
 
 def ciphertext_reducer(ciphertext: openfhe.Ciphertext):
-    """OpenFHE ciphertext pickle reducer"""
+    """OpenFHE cipher text pickle reducer"""
     cls = DeserializeCiphertext
     args = (openfhe.Serialize(ciphertext, openfhe.BINARY),)
     return (cls, args)

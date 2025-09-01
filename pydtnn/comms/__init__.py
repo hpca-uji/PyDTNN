@@ -76,7 +76,7 @@ from collections import abc as col_abc
 from concurrent.futures import Future, ThreadPoolExecutor
 
 
-from pydtnn.utils import UUID_NIL, parse_bool
+from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool
 from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
@@ -216,8 +216,8 @@ class ResourceClosed(RuntimeError):
 
 class NetworkLocation(NamedTuple):
     """Network location"""
-    host: str = "127.0.0.0"
-    port: int = 5000
+    host: str = "127.0.0.1"
+    port: int = 50000
 
     def __str__(self):
         """Unified network location"""
@@ -259,6 +259,9 @@ class Communicator[T](abc.ABC):
         self._close_init = threading.Lock()
         self._close_done = threading.Event()
 
+        self._lock = threading.Condition()
+        self._get_event = SimpleQueue[uuid.UUID]()
+
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
         self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
@@ -267,15 +270,71 @@ class Communicator[T](abc.ABC):
         """Generate new connection state data"""
         return ConnectionData(merge_size=self._options.connection.merge_size, efficient_size=self._options.connection.efficient_size)
 
+    def _session_ini(self, state: ConnectionData) -> Stream:
+        """Send session ini message"""
+        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
+        state.state |= ConnectionState.WRITABLE
+        return self._serializer.dump(self._id)
+
+    def _session_fin(self, state: ConnectionData) -> Stream:
+        """Send session fin message"""
+        assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
+        state.state &= ~ConnectionState.WRITABLE
+        return Stream()
+
+    def _handle_session_ini(self, state: ConnectionData, stream: Stream) -> None:
+        """Handle session initialize message"""
+        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
+
+        # Set peer in state
+        with stream:
+            id = self._serializer.load(stream)
+        state.peer = id
+        state.state |= ConnectionState.READABLE
+
+    def _handle_session_fin(self, state: ConnectionData, stream: Stream) -> None:
+        """Handle session finalize message"""
+        stream.close()
+        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
+        state.state &= ~ConnectionState.READABLE
+
+    @abc.abstractmethod
+    def _get_state(self, peer: uuid.UUID) -> ConnectionData:
+        raise NotImplementedError()
+
+    def _get(self, *peers: uuid.UUID) -> uuid.UUID:
+        return self._get_event.get()
+
+    def get(self, *peers: uuid.UUID) -> Message:
+        """Get data from a client"""
+        # NOTE: peers could be missing or disconnect creating infinite wait, which is an expected state during startup
+        assert len(peers) == 0, "Server can not get from specific client"
+        peer = self._get(*peers)
+
+        # Exit signaled
+        if peer == UUID_MAX:
+            raise ResourceClosed()
+
+        state = self._get_state(peer)
+        get_queue = state.get_queue
+
+        # Get object
+        stream = get_queue.get_nowait()
+
+        self._peer_cleanup(peer)
+
+        with stream:
+            obj = self._serializer.load(stream)
+
+        return Message(peer=peer, obj=obj)
+
+    def _peer_cleanup(self, peer: uuid.UUID) -> None:
+        pass
+
     @property
     def _closed(self):
         """Is communicator closed"""
         return self._close_init.locked()
-
-    @abc.abstractmethod
-    def get(self, *peers: uuid.UUID) -> Message[T]:
-        """Get data from peer"""
-        raise NotImplementedError()
 
     @abc.abstractmethod
     def put(self, obj: T, *peers: uuid.UUID) -> Future[None]:
