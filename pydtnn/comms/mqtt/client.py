@@ -2,15 +2,15 @@
 
 import uuid
 import threading
-from queue import SimpleQueue
 from concurrent.futures import Future
 
 import paho.mqtt.client as mqtt_client
 
+from pydtnn.comms import client
+from pydtnn.utils import UUID_MAX
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.comms import CommunicatorOptions, ConnectionState, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ResourceClosed, Message
 
 
 __all__ = (
@@ -22,54 +22,17 @@ __all__ = (
 END_COMM = b""
 
 
-class Client(Protocol):
+class Client(Protocol, client.Client):
     """MQTT client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Client initialization"""
         super().__init__(options)
 
-        # State
-        self._lock = threading.Condition()
-        self._get_event = SimpleQueue[uuid.UUID]()
-        self._state = self._new_state()
-
         # MQTT
         self._register_handler(topic=f"s2c/{self._id.hex}", handler=self._handle_message)
 
-        self._session_ini()
-
-    def _session_ini(self) -> None:
-        """Send session ini message"""
-        state = self._state
-        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
-        state.state |= ConnectionState.WRITABLE
-        self.put(self._id)
-
-    def _session_fin(self) -> None:
-        """Send session fin message"""
-        state = self._state
-        assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
-        state.state &= ~ConnectionState.WRITABLE
-        self._put(Stream())
-
-    def _handle_session_ini(self, stream: Stream) -> None:
-        """Handle session initialize message"""
-        state = self._state
-        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
-
-        # Set peer in state
-        with stream:
-            id = self._serializer.load(stream)
-        state.peer = id
-        state.state |= ConnectionState.READABLE
-
-    def _handle_session_fin(self, stream: Stream) -> None:
-        """Handle session finalize message"""
-        state = self._state
-        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
-        stream.close()
-        state.state &= ~ConnectionState.READABLE
+        self._put(self._session_ini())
 
     def _handle_message(self, client: mqtt_client.Client, userdata, message: mqtt_client.MQTTMessage) -> None:
         """Broker message handler"""
@@ -85,22 +48,6 @@ class Client(Protocol):
         with self._lock:
             # del self._client
             self._lock.notify_all()
-
-    def _get_flush(self) -> None:
-        state = self._state
-        peer = state.peer
-
-        for stream in state.get_flush():
-            if stream.empty():
-                self._handle_session_fin(stream)
-
-            elif state.peer == UUID_NIL:
-                self._handle_session_ini(stream)
-                peer = state.peer
-
-            else:
-                state.get_queue.put(stream)
-                self._get_event.put(peer)
 
     def _put(self, stream: Stream) -> Future[None]:
         """Put stream into queue and notify"""
@@ -144,7 +91,7 @@ class Client(Protocol):
 
     def _close(self) -> None:
         """Close the client"""
-        self._session_fin()
+        self._put(self._session_fin())
 
         # Request loop thread to stop
         self._pool.shutdown()
