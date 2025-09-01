@@ -1,4 +1,4 @@
-import memray
+#import memray
 
 from pydtnn.activations import *
 from pydtnn.layers import *
@@ -11,18 +11,24 @@ from pydtnn.model import ModelModeEnum
 import numpy as np
 from time import time
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
+    import pycuda.gpuarray as gpuarray
+from pydtnn.backends.gpu import TensorGPU
+
 # setting random seed
 SEED = 1234
 np.random.seed(SEED)
 # ---
 
-N = 200
+N = 2
 C = 3
-H = 1024
-W = 1024
+H = 10
+W = 12
 FORMAT = "NHWC"
 SHAPE = (C, H, W) if FORMAT == "NCHW" else (H, W, C)
-NUM_REPETITIONS = 10
+NUM_REPETITIONS = 2
 
 KWARGS = {
         "model_name": None,
@@ -32,7 +38,7 @@ KWARGS = {
         "parallel": "data",
         "tensor_format": FORMAT, # "NCHW" # "NHWC",
         "loss_func": "categorical_cross_entropy",
-        "enable_gpu" : False, #True,
+        "enable_gpu": False, #False, #True,
         "omm": None,
         "dtype": np.float32,
         "tracing": False,
@@ -40,30 +46,32 @@ KWARGS = {
         "batch_size": N
     }
 
+ignore_model = Model(**KWARGS)
+
 list_layers =[
-    ("AdaptiveAveragePool2D",AdaptiveAveragePool2D(output_shape=(3, 3))), # Not in older versions
-    ("AveragePool2D",AveragePool2D()),
-    ("BatchNormalization",BatchNormalization()),
+    #("AdaptiveAveragePool2D",AdaptiveAveragePool2D(output_shape=(3, 3))), # Not in older versions
+    #("AveragePool2D",AveragePool2D()),
+    #("BatchNormalization",BatchNormalization()),
     ("Conv2D_STANDARD",Conv2D(grouping=GroupingEnum.STANDARD)),
     ("Conv2D_DEPTHWISE",Conv2D(grouping=GroupingEnum.DEPTHWISE)),
     ("Conv2D_POINTWISE",Conv2D(grouping=GroupingEnum.POINTWISE)),
-    ("Dropout",Dropout()),
-    ("FC",FC()),
-    ("Flatten",Flatten()),
-    ("MaxPool2D",MaxPool2D()),
+    #("Dropout",Dropout()),
+    #("FC",FC()),
+    #("Flatten",Flatten()),
+    #("MaxPool2D",MaxPool2D()),
     #-----
     #("BatchNormalizationRelu",BatchNormalizationRelu()),
     
     ]
 list_activations = [
-    ("Sigmoid", Sigmoid()),
-    ("Relu", Relu()), 
-    ("Relu6", Relu6()), # Not in older versions.
-    ("LeakyRelu", LeakyRelu()), # Not in older versions.
-    ("Tanh", Tanh()), 
-    ("Arctanh", Arctanh()), 
-    ("Log", Log()), 
-    ("Softmax", Softmax())
+    #("Sigmoid", Sigmoid()),
+    #("Relu", Relu()), 
+    #("Relu6", Relu6()), # Not in older versions.
+    #("LeakyRelu", LeakyRelu()), # Not in older versions.
+    #("Tanh", Tanh()), 
+    #("Arctanh", Arctanh()), 
+    #("Log", Log()), 
+    #("Softmax", Softmax())
     ]
 
 #list_optimizers = [Adam(), Nadam(), RMSProp(), SGD()]
@@ -159,6 +167,9 @@ def test_layers_activations(_x:np.ndarray, opt:Optimizer) -> None:
 
             x = np.copy(_x)
 
+            if KWARGS["enable_gpu"]:
+                x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
+
             t_forward = 0.0
             t_backward = 0.0
             t_opt = 0.0
@@ -172,7 +183,8 @@ def test_layers_activations(_x:np.ndarray, opt:Optimizer) -> None:
                         x = layer.forward(x)
                     t_forward += time() - t
 
-                x = x.copy()
+                if not KWARGS["enable_gpu"]:
+                    x = x.copy()
 
                 if True:
                 #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{name}_{i}.bin", native_traces=True):                
@@ -211,6 +223,9 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_backward = 0
         t_opt = 0
 
+        if KWARGS["enable_gpu"]:
+            x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
+
         for i in range(NUM_REPETITIONS):
             if True:
             #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/fwd/{test}_{i}.bin", native_traces=True):
@@ -220,7 +235,9 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                     x = layer.forward(x)
                 t_forward += time() - t
 
-            x = x.copy()
+            if not KWARGS["enable_gpu"]:
+                x = x.copy()
+
             if True:
             #with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/bwd/{test}_{i}.bin", native_traces=True):                
                 t = time()
@@ -256,7 +273,7 @@ def main():
     #test_keras(_x)
     #test_torch(_x)
     test_layers_activations(_x, opt)
-    test_add_concat(_x, opt)
+    #test_add_concat(_x, opt)
 
 if __name__ == "__main__":
     main()
