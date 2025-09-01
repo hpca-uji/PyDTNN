@@ -18,12 +18,14 @@
 #
 
 import ctypes
+import typing
 
 import numpy as np
 from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
 
 # noinspection PyUnresolvedReferences
-import pycuda.gpuarray as gpuarray
+if typing.TYPE_CHECKING:
+    import pycuda.gpuarray as gpuarray
 try:
     from .libs import libcudnn as cudnn
 except OSError:
@@ -31,7 +33,7 @@ except OSError:
 
 
 class TensorGPU:
-    def __init__(self, gpu_arr:gpuarray, tensor_format:PYDTNN_TENSOR_FORMAT, cudnn_dtype:int, tensor_type="tensor", desc=None, gpudirect=False,
+    def __init__(self, gpu_arr: "gpuarray", tensor_format:PYDTNN_TENSOR_FORMAT, cudnn_dtype:int, tensor_type="tensor", desc=None, gpudirect=False,
                  cublas=False):
         self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
         if len(gpu_arr.shape) == 2:
