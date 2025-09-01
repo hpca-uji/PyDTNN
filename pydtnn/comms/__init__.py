@@ -216,8 +216,8 @@ class ResourceClosed(RuntimeError):
 
 class NetworkLocation(NamedTuple):
     """Network location"""
-    host: str = "127.0.0.0"
-    port: int = 5000
+    host: str = "127.0.0.1"
+    port: int = 50000
 
     def __str__(self):
         """Unified network location"""
