@@ -13,7 +13,7 @@ from pydtnn.comms import client
 from pydtnn.utils import UUID_MAX
 from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import CommunicatorOptions, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions, ResourceClosed
 
 
 __all__ = (
@@ -52,24 +52,15 @@ class Client(Protocol, client.Client):
         self._client = True
         self._com = self._channel.stream_stream(method="/grpc/com", request_serializer=bytes, response_deserializer=lambda x: x)
 
-        self._put(self._session_ini())
+        self._put(self._session_ini(self._state))
 
     def _put(self, stream: Stream) -> Future[None]:
         """Put stream into queue and notify"""
-        future = self._state.put(stream)
+        future = super()._put(stream)
         self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
         return future
 
-    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
-        """Publish data to server"""
-        assert len(peers) == 0, "Client can not publish to another client"
-        stream = self._serializer.dump(obj)
-        return self._put(stream)
-
-    def get(self, *peers: uuid.UUID) -> Message:
-        """Get from the server"""
-        assert len(peers) == 0, "Client can not get from another client"
-
+    def _get(self, *peers: uuid.UUID) -> uuid.UUID:
         try:
             peer = self._get_event.get_nowait()
         except Empty:
@@ -78,21 +69,7 @@ class Client(Protocol, client.Client):
             self._pool.submit(self._s2c)
             peer = self._get_event.get()
             self._get_grpc.put(None)
-
-        # Exit signaled
-        if peer == UUID_MAX:
-            raise ResourceClosed()
-
-        state = self._state
-        get_queue = state.get_queue
-
-        # Get object
-        stream = get_queue.get_nowait()
-
-        with stream:
-            obj = self._serializer.load(stream)
-
-        return Message(peer=state.peer, obj=obj)
+        return peer
 
     def _handle_connection(self) -> None:
         """Communication round"""
@@ -151,15 +128,13 @@ class Client(Protocol, client.Client):
             self._handle_connection()
         self._get_grpc.get_nowait()
 
-    def _fin(self) -> None:
+    def _extra_fin(self) -> None:
         """Communication finalization"""
-        with self._lock:
-            del self._client
-            self._lock.notify_all()
+        del self._client
 
     def _close(self) -> None:
         """Close the client"""
-        self._put(self._session_fin())
+        self._put(self._session_fin(self._state))
 
         while self._state.state:
             self._pool.submit(self._s2c).result()

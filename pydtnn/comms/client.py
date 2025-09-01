@@ -1,11 +1,12 @@
 
+from concurrent.futures import Future
 import uuid
 import threading
 from queue import SimpleQueue
 
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_NIL
-from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionState
+from pydtnn.utils import UUID_MAX, UUID_NIL
+from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, Message, ResourceClosed
 
 
 class Client[T](Communicator):
@@ -17,55 +18,51 @@ class Client[T](Communicator):
 
         # State
         self._state = self._new_state()
-        self._get_event = SimpleQueue[uuid.UUID]()
-        self._lock = threading.Condition()
 
     def _get_flush(self) -> None:
-        state = self._state
+        state = self._get_state(self._id)
         peer = state.peer
 
         for stream in state.get_flush():
             if stream.empty():
-                self._handle_session_fin(stream)
+                self._handle_session_fin(state, stream)
 
             elif state.peer == UUID_NIL:
-                self._handle_session_ini(stream)
+                self._handle_session_ini(state, stream)
                 peer = state.peer
 
             else:
                 state.get_queue.put(stream)
                 self._get_event.put(peer)
 
-    def _session_ini(self) -> Stream:
-        """Send session ini message"""
-        state = self._state
-        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
-        state.state |= ConnectionState.WRITABLE
-        return self._serializer.dump(self._id)
+    def _get_state(self, peer: uuid.UUID) -> ConnectionData:
+        return self._state
 
-    def _session_fin(self) -> Stream:
-        """Send session fin message"""
-        state = self._state
-        assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
-        state.state &= ~ConnectionState.WRITABLE
-        return Stream()
+    def _peer_cleanup(self, peer: uuid.UUID) -> None:
+        pass
 
-    def _handle_session_ini(self, stream: Stream) -> None:
-        """Handle session initialize message"""
-        state = self._state
-        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
+    def _extra_fin(self) -> None:
+        pass
 
-        # Set peer in state
-        with stream:
-            id = self._serializer.load(stream)
-        state.peer = id
-        state.state |= ConnectionState.READABLE
+    def _fin(self) -> None:
+        """Communication finalization"""
+        with self._lock:
+            self._extra_fin()
+            self._lock.notify_all()
 
-    def _handle_session_fin(self, stream: Stream) -> None:
+    def _put(self, stream: Stream) -> Future[None]:
+        """Put stream into queue and notify"""
+        return self._state.put(stream)
+
+    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
+        """Publish data to server"""
+        assert len(peers) == 0, "Client can not publish to another client"
+        stream = self._serializer.dump(obj)
+        return self._put(stream)
+
+    def _handle_session_fin(self, state: ConnectionData, stream: Stream) -> None:
         """Handle session finalize message"""
-        state = self._state
-        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
+        super()._handle_session_fin(state, stream)
 
-        state.state &= ~ConnectionState.READABLE
         with self._lock:
             self._lock.notify_all()

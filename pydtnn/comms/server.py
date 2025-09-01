@@ -1,11 +1,14 @@
 
+from concurrent.futures import Future
 import uuid
 import threading
 from queue import SimpleQueue
 
 from bidict import bidict
+from pydtnn.utils import UUID_MAX, UUID_NIL
+from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, ConnectionState
+from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, Message, ResourceClosed
 
 
 class Server[T](Communicator):
@@ -16,36 +19,68 @@ class Server[T](Communicator):
         super().__init__(options)
 
         # State
-        self._lock = threading.Condition()
-        self._get_event = SimpleQueue[uuid.UUID]()
         self._peers = bidict[uuid.UUID, T]()
         self._state = dict[uuid.UUID, ConnectionData]()
 
-    def _session_ini(self, peer: uuid.UUID) -> Stream:
-        """Send session ini message"""
-        state = self._state[peer]
-        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
-        state.state |= ConnectionState.WRITABLE
-        return self._serializer.dump(self._id)
+    def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
+        """Put stream into queue and notify"""
+        try:
+            state = self._state[peer]
+            future = state.put(stream)
+        except (KeyError, ResourceClosed):
+            raise ResourceClosed(peer)
+        return future
 
-    def _session_fin(self, peer: uuid.UUID) -> Stream:
-        """Send session fin message"""
-        state = self._state[peer]
-        assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
-        state.state &= ~ConnectionState.WRITABLE
-        return Stream()
+    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
+        """Publish data to clients"""
+        if not peers:
+            with self._lock:
+                peers = tuple(self._peers)
 
-    def _handle_session_ini(self, peer: uuid.UUID, stream: Stream) -> None:
+        futures = list[Future[None]]()
+        errors = list[ResourceClosed]()
+        with self._serializer.dump(obj) as stream:
+            for peer in peers:
+                try:
+                    future = self._put(stream.copy(), peer)
+                except ResourceClosed as exc:
+                    errors.append(exc)
+                    continue
+                else:
+                    futures.append(future)
+
+        if errors:
+            raise ExceptionGroup("Peer does not exist", errors)
+
+        return merge_futures(futures)
+
+    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
+        state = self._get_state(peer)
+
+        for stream in state.get_flush():
+            if stream.empty():
+                self._handle_session_fin(state, stream)
+                self._put(self._session_fin(state), peer)
+
+            elif state.peer == UUID_NIL:
+                self._handle_session_ini(state, peer, stream)
+                peer = state.peer
+
+            else:
+                state.get_queue.put(stream)
+                self._get_event.put(peer)
+
+        return peer
+
+    def _get_state(self, peer: uuid.UUID) -> ConnectionData:
+        return self._state[peer]
+
+    def _handle_session_ini(self, state: ConnectionData, peer: uuid.UUID, stream: Stream) -> None:
         """Handle session initialize message"""
         sock = self._peers[peer]
-        state = self._state[peer]
-        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
 
-        # Set peer in state
-        with stream:
-            id = self._serializer.load(stream)
-        state.peer = id
-        state.state |= ConnectionState.READABLE
+        super()._handle_session_ini(state, stream)
+        id = state.peer
 
         # New ID, move state from tmp ID
         if id not in self._peers:
@@ -56,12 +91,18 @@ class Server[T](Communicator):
         with self._lock:
             self._peers.inverse[sock] = id
 
-    def _handle_session_fin(self, peer: uuid.UUID, stream: Stream) -> None:
-        """Handle session finalize message"""
-        state = self._state[peer]
-        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
-        stream.close()
-        state.state &= ~ConnectionState.READABLE
+    def _extra_fin(self, peer: uuid.UUID) -> None:
+        del self._peers[peer]
+
+        # TODO: reuse peer_cleanup
+        if self._state[peer].get_empty():
+            del self._state[peer]
+
+    def _fin(self, peer: uuid.UUID) -> None:
+        """Close connection"""
+        with self._lock:
+            self._extra_fin(peer)
+            self._lock.notify_all()
 
     def _peer_cleanup(self, peer: uuid.UUID) -> None:
         """Remove finalized drained peer"""
