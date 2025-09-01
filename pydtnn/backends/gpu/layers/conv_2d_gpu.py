@@ -73,11 +73,14 @@ class Conv2DGPU(LayerGPU, Conv2D):
 
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
-        # This weight shape is required for cuDNN when NHWC is seleted!
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            self.weights_shape = (self.co, *self.filter_shape, self.ci)
 
         self.stream_2 = drv.Stream()
+
+        if self.grouping is GroupingEnum.DEPTHWISE:
+            self.weights_shape = (1, *self.weights_shape)
+        elif self.grouping is GroupingEnum.STANDARD:
+            # This weight shape is required for cuDNN when NHWC is seleted!
+            self.weights_shape = (self.co, *self.filter_shape, self.ci)
 
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
@@ -120,15 +123,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
     ## STANDARD CONV. ##
     ####################
 
-    def initialize_standard_grouping(self, x: TensorGPU):
-
-        # This weight shape is required for cuDNN when NHWC is seleted!
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            self.weights_shape = (self.co, *self.filter_shape, self.ci)
-        
-        self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
-        weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, "filter")
+    def initialize_standard_grouping(self, x: TensorGPU):        
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
@@ -547,7 +542,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
 
     def _forward_depthwise_nchw(self, x: TensorGPU) -> TensorGPU:
         self.x = x
-        y_gpu = gpuarray.to_gpu(np.zeros(shape = (x.shape[0], *self.shape), dtype=self.model.dtype))
+        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         n, c, h, w = x.shape
