@@ -1,6 +1,5 @@
 """MQTT client"""
 
-import uuid
 import threading
 from concurrent.futures import Future
 
@@ -10,7 +9,7 @@ from pydtnn.comms import client
 from pydtnn.utils import UUID_MAX
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import CommunicatorOptions, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions
 
 
 __all__ = (
@@ -32,7 +31,7 @@ class Client(Protocol, client.Client):
         # MQTT
         self._register_handler(topic=f"s2c/{self._id.hex}", handler=self._handle_message)
 
-        self._put(self._session_ini())
+        self._put(self._session_ini(self._state))
 
     def _handle_message(self, client: mqtt_client.Client, userdata, message: mqtt_client.MQTTMessage) -> None:
         """Broker message handler"""
@@ -43,15 +42,9 @@ class Client(Protocol, client.Client):
         if not state.state and state.put_empty():
             self._fin()
 
-    def _fin(self) -> None:
-        """Communication finalization"""
-        with self._lock:
-            # del self._client
-            self._lock.notify_all()
-
     def _put(self, stream: Stream) -> Future[None]:
         """Put stream into queue and notify"""
-        future = self._state.put(stream)
+        future = super()._put(stream)
         self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
         return future
 
@@ -63,35 +56,9 @@ class Client(Protocol, client.Client):
             with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
 
-    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
-        """Publish data to server"""
-        assert len(peers) == 0, "Client can not publish to another client"
-        stream = self._serializer.dump(obj)
-        return self._put(stream)
-
-    def get(self, *peers: uuid.UUID) -> Message:
-        """Get from the server"""
-        assert len(peers) == 0, "Client can not get from another client"
-        peer = self._get_event.get()
-
-        # Exit signaled
-        if peer == UUID_MAX:
-            raise ResourceClosed()
-
-        state = self._state
-        get_queue = state.get_queue
-
-        # Get object
-        stream = get_queue.get_nowait()
-
-        with stream:
-            obj = self._serializer.load(stream)
-
-        return Message(peer=state.peer, obj=obj)
-
     def _close(self) -> None:
         """Close the client"""
-        self._put(self._session_fin())
+        self._put(self._session_fin(self._state))
 
         # Request loop thread to stop
         self._pool.shutdown()

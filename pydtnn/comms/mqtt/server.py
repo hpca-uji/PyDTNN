@@ -7,11 +7,10 @@ from concurrent.futures import Future
 import paho.mqtt.client as mqtt_client
 
 from pydtnn.comms import server
+from pydtnn.utils import UUID_MAX
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.utils.asynctools import merge_futures
-from pydtnn.comms import CommunicatorOptions, ResourceClosed, Message
+from pydtnn.comms import CommunicatorOptions
 
 
 __all__ = (
@@ -40,10 +39,10 @@ class Server(Protocol, server.Server):
 
         with self._lock:
             self._peers[peer] = sock
-            self._state[peer] = self._new_state()
+            self._state[peer] = state = self._new_state()
 
             # ACK
-            self._put(self._session_ini(peer), peer)
+            self._put(self._session_ini(state), peer)
             self._lock.notify_all()
 
         return peer
@@ -62,67 +61,9 @@ class Server(Protocol, server.Server):
         state.get_write(data)
         peer = self._get_flush(peer)
 
-    def _fin(self, peer: uuid.UUID) -> None:
-        """Close connection"""
-
-        # Remove peer
-        with self._lock:
-            del self._peers[peer]
-
-            # TODO: reuse peer_cleanup
-            if self._state[peer].get_empty():
-                del self._state[peer]
-
-            self._lock.notify_all()
-
-    def _get_flush(self, peer: uuid.UUID) -> uuid.UUID:
-        state = self._state[peer]
-
-        for stream in state.get_flush():
-            if stream.empty():
-                self._handle_session_fin(peer, stream)
-                self._put(self._session_fin(peer), peer)
-
-            elif state.peer == UUID_NIL:
-                self._handle_session_ini(peer, stream)
-                peer = state.peer
-
-            else:
-                state.get_queue.put(stream)
-                self._get_event.put(peer)
-
-        return peer
-
-    def get(self, *peers: uuid.UUID) -> Message:
-        """Get data from a client"""
-        # NOTE: peers could be missing or disconnect creating infinite wait, which is an expected state during startup
-        assert len(peers) == 0, "Server can not get from specific client"
-        peer = self._get_event.get()
-
-        # Exit signaled
-        if peer == UUID_MAX:
-            raise ResourceClosed()
-
-        state = self._state[peer]
-        get_queue = state.get_queue
-
-        # Get object
-        stream = get_queue.get_nowait()
-
-        self._peer_cleanup(peer)
-
-        with stream:
-            obj = self._serializer.load(stream)
-
-        return Message(peer=peer, obj=obj)
-
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
-        try:
-            state = self._state[peer]
-            future = state.put(stream)
-        except (KeyError, ResourceClosed):
-            raise ResourceClosed(peer)
+        future = super()._put(stream, peer)
         self._pool.submit(self._s2c, peer).add_done_callback(lambda future: future.result())
         return future
 
@@ -136,29 +77,6 @@ class Server(Protocol, server.Server):
 
         if not state.state and state.put_empty():
             self._fin(peer)
-
-    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
-        """Publish data to clients"""
-        if not peers:
-            with self._lock:
-                peers = tuple(self._peers)
-
-        futures = list[Future[None]]()
-        errors = list[ResourceClosed]()
-        with self._serializer.dump(obj) as stream:
-            for peer in peers:
-                try:
-                    future = self._put(stream.copy(), peer)
-                except ResourceClosed as exc:
-                    errors.append(exc)
-                    continue
-                else:
-                    futures.append(future)
-
-        if errors:
-            raise ExceptionGroup("Peer does not exist", errors)
-
-        return merge_futures(futures)
 
     def _close(self) -> None:
         """Close the server"""
