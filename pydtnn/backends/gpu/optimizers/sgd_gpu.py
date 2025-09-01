@@ -76,7 +76,7 @@ class SGDGPU(OptimizerGPU, SGD):
     def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity = self.context[layer]["velocity_%s" % w_]            
+            velocity = self.context[layer]["velocity_%s" % w_]
             w: TensorGPU
             dw: TensorGPU
             velocity: gpuarray
