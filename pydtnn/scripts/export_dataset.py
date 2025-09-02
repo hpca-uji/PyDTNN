@@ -28,8 +28,8 @@ Exports a PyDTNN dataset.
 
 
 from pydtnn.model import Model
-from pydtnn.parser import parser
+from pydtnn.parser import PydtnnArgumentParser
 
-params = parser.parse_args()
-model = Model(**vars(params))
+parser = PydtnnArgumentParser()
+model = Model(**parser.to_dict())
 model.dataset.export()

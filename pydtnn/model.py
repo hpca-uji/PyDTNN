@@ -52,7 +52,7 @@ from .datasets import CustomDataset, get_dataset
 from .datasets.dataset import DatasetEnum
 from .lr_schedulers import get_lr_schedulers
 from .optimizers import get_optimizer
-from .parser import parser
+from .parser import PydtnnArgumentParser
 from .performance_models import *
 from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, ExtraeTracer, SimpleTracer, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
@@ -61,6 +61,7 @@ from .utils.memory_cache import MemoryCache
 from .utils.performance_counter import PerformanceCounter
 from .layers import Layer
 import enum
+from warnings import warn
 
 # --- CUDA related imports --- #
 import atexit
@@ -85,7 +86,7 @@ try:
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
 except (ImportError, ModuleNotFoundError, OSError) as e: 
-    cublas = None
+    cublas: ModuleType = None
     cuda_error_msg.append(f"Import: \"from skcuda import cublas\". Error: {e}")
 except Exception as e: raise(e)
 # --- END CUDA related imports --- #
@@ -141,16 +142,21 @@ def _layer_id_generator() -> Iterable[int]:
         current_layer_id += 1
 # --- END _layer_id_generator --- #
 
-def ensure_model_is_initialized(method:Callable):
+def ensure_model_is_runnable(method:Callable):
     @functools.wraps(method)
-    def wrapper_ensure_model_is_initialized(*args, **kwargs) -> Callable:
+    def wrapper_ensure_model_is_runnable(*args, **kwargs) -> Callable:
         self:Model = args[0]
         if not self._initialized:
             self._initialize()
+        are_layers = bool(self.layers)
+        if not are_layers:
+            warn("The model has no layers in it.", RuntimeWarning)
+        elif not self.dataset:
+            raise ValueError("There is no dataset and the model has layers.")
         return method(*args, **kwargs)
 
-    return wrapper_ensure_model_is_initialized
-# --- END ensure_model_is_initialized --- #
+    return wrapper_ensure_model_is_runnable
+# --- END ensure_model_is_runnable --- #
 
 
 # NOTE: can not specify a particular module
@@ -348,10 +354,9 @@ class Model:
         self.cublas_handle: Cublas_Handle_Type | None = None
         self.stream: PyCuda_Stream_Type | None = None
         self.cudnn_dtype: Cudnn_dtype | None = None
-
-        # FIXME | TODO: Get the parser's value from other place.
+       
         # Get default values from parser and update them from the received kwargs
-        self.kwargs: dict[str, Any] = vars(parser.parse_args([]))
+        self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
 
         use_mpi_buffers = self.kwargs["use_mpi_buffers"]
@@ -362,7 +367,7 @@ class Model:
                 self.use_mpi_buffers: bool = use_mpi_buffers
             case _:
                 raise SystemExit(f"MPI buffers option '{use_mpi_buffers}' not recognized.")
-        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser"
         
         # Set MPI and comm          
         self.MPI, self.comm = _initilize_communications(parallel = parallel)
@@ -382,7 +387,7 @@ class Model:
         # Layers' attributes
         self.layers: list[LayerAndActivationBase] = []
         self.layer_id:int = _layer_id_generator()
-        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser"
         
         # Matmul
         self.matmul = utils.matmul
@@ -391,7 +396,7 @@ class Model:
         self.mode:ModelModeEnum = ModelModeEnum.UNSPECIFIED
 
         # Memory cache optimization
-        self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+        self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser"
         if self.enable_memory_cache:
             MemoryCache.enable()
         else:
@@ -402,7 +407,7 @@ class Model:
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
-                self.gpus_per_node: int # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+                self.gpus_per_node: int # NOTE: This parameter comes from "Parser"
                 (self.nccl_type, self.nccl_comm, self.cudnn_handle, 
                  self.cublas_handle, self.stream, self.cudnn_dtype) = _initialize_cuda(comm = self.comm, comm_rank = self.comm_rank, rank = self.rank,
                                                                               nprocs = self.nprocs, gpus_per_node = self.gpus_per_node, 
@@ -418,15 +423,15 @@ class Model:
 
         # Disable BestOf globally if not enabled
         if self.kwargs['enable_best_of'] is False: 
-            # NOTE: comes from "Parser" (vars(parser.parse_args([])))
+            # NOTE: comes from "Parser"
             BestOf.use_always_the_first_alternative()
         
-        self.batch_size = _calculate_batch_size(batch_size = self.kwargs['batch_size'], # NOTE: This parameters comes from "Parser" (vars(parser.parse_args([])))
-                                                global_batch_size = self.kwargs['global_batch_size'], # NOTE: This parameters comes from "Parser" (vars(parser.parse_args([])))
+        self.batch_size = _calculate_batch_size(batch_size = self.kwargs['batch_size'], # NOTE: This parameters comes from "Parser"
+                                                global_batch_size = self.kwargs['global_batch_size'], # NOTE: This parameters comes from "Parser"
                                                 comm_size= self.comm_size)
         
         # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
-        #   NOTE: The following parameters come from "Parser" (vars(parser.parse_args([])))
+        #   NOTE: The following parameters come from "Parser"
         self.steps_per_epoch:int = self.kwargs['steps_per_epoch']
         self.cpu_speed:float = self.kwargs['cpu_speed']
         self.memory_bw:float = self.kwargs['memory_bw']
@@ -452,6 +457,7 @@ class Model:
         self.profile:bool = self.kwargs['profile']
         self.history_file:str = self.kwargs['history_file']
         self.model_sync_min_avail:int = self.kwargs['model_sync_min_avail']
+        self.dataset_name:str = self.kwargs['dataset_name']
         # ---
 
         # Attributes that will be properly initialized elsewhere
@@ -469,7 +475,7 @@ class Model:
         else:
             self.crypt = None
 
-        self.weights_and_bias_filename:str # NOTE: This parameter comes from "Parser" (vars(parser.parse_args([])))
+        self.weights_and_bias_filename:str # NOTE: This parameter comes from "Parser"
         # Load weights and bias
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
@@ -478,7 +484,7 @@ class Model:
             self.dataset: Dataset = get_dataset(self)
         
         # Optimizers and LRSchedulers
-        # NOTE: 'self.kwargs["learning_rate_scaling"]' comes from "Parser" (vars(parser.parse_args([])))
+        # NOTE: 'self.kwargs["learning_rate_scaling"]' comes from "Parser"
         if self.kwargs["learning_rate_scaling"]:
             # using comm_size instead of nprocs might not be appropriate,
             # as it differs to how learning_rate is defined elsewhere,
@@ -861,7 +867,7 @@ class Model:
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
     # --- END _weight_update --- #
 
-    @ensure_model_is_initialized
+    @ensure_model_is_runnable
     def train_dataset(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
@@ -1118,7 +1124,7 @@ class Model:
         return self.total_metrics
     # --- END _evaluate_batch --- #
 
-    @ensure_model_is_initialized
+    @ensure_model_is_runnable
     def evaluate_dataset(self, bar_width=BAR_WIDTH):
         if self.enable_cudnn and self.y_batch is None:
             self.y_batch = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
