@@ -1,12 +1,10 @@
 
 from concurrent.futures import Future
 import uuid
-import threading
-from queue import SimpleQueue
 
 from pydtnn.utils.io_stream import Stream
-from pydtnn.utils import UUID_MAX, UUID_NIL
-from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, Message, ResourceClosed
+from pydtnn.utils import UUID_NIL
+from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData
 
 
 class Client[T](Communicator):

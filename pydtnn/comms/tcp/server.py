@@ -20,7 +20,7 @@ __all__ = (
 )
 
 
-class Server(Protocol, server.Server):
+class Server(Protocol, server.Server[socket.socket]):
     """TCP server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -37,33 +37,19 @@ class Server(Protocol, server.Server):
             context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
             self._socket = context.wrap_socket(self._socket, server_side=True, do_handshake_on_connect=True)
 
-        self._selector.register(self._socket, selectors.EVENT_READ, self._new_connection)
+        self._selector.register(self._socket, selectors.EVENT_READ, self._new_socket)
         self._notify_selector()
 
-    def _new_connection(self, sock: socket.socket, event) -> None:
-        """Handle new incomming connections"""
-        # NOTE: communication thead
+    def _new_socket(self, sock: socket.socket, event) -> None:
         sock, _ = self._socket.accept()
-        peer = uuid.uuid4()  # temporary ID
-
         sock.setblocking(False)
-
-        with self._lock:
-            self._peers[peer] = sock
-            self._state[peer] = state = self._new_state()
-            self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
-
-            # ACK
-            self._lock.notify_all()
-            self._put(self._session_ini(state), peer)
-
-        self._notify_selector()
+        self._selector.register(sock, selectors.EVENT_READ, self._handle_connection)
 
     def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection events"""
         # NOTE: communication thead
-        peer = self._peers.inverse[sock]
-        state = self._state[peer]
+        peer = self._get_peer(sock)
+        state = self._get_state(peer)
 
         if state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ)
@@ -80,13 +66,13 @@ class Server(Protocol, server.Server):
         self._notify_selector()
 
         if not state.state and state.put_empty():
-            peer = self._peers.inverse[sock]
+            peer = self._get_peer(sock)
             self._fin(peer)
 
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
-        peer = self._peers.inverse[sock]
-        state = self._state[peer]
+        peer = self._get_peer(sock)
+        state = self._get_state(peer)
 
         try:
             data = sock.recv(self._options.connection.max_size)
@@ -107,8 +93,8 @@ class Server(Protocol, server.Server):
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
-        peer = self._peers.inverse[sock]
-        state = self._state[peer]
+        peer = self._get_peer(sock)
+        state = self._get_state(peer)
 
         state.put_flush()
         if state.put_buffer.empty():

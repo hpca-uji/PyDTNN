@@ -289,11 +289,13 @@ class Communicator[T](abc.ABC):
         # Set peer in state
         with stream:
             id = self._serializer.load(stream)
+        assert isinstance(id, uuid.UUID), f"Ini handshake message corrupted (got: {id!r})"
         state.peer = id
         state.state |= ConnectionState.READABLE
 
     def _handle_session_fin(self, state: ConnectionData, stream: Stream) -> None:
         """Handle session finalize message"""
+        assert stream.nbytes == 0, f"Fin handshake message corrupted (got: {stream.nbytes} bytes)"
         stream.close()
         assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
         state.state &= ~ConnectionState.READABLE
