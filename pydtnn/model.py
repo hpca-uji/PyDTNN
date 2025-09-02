@@ -221,9 +221,9 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
 
 def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int, 
                      gpus_per_node:int, parallel:str, dtype: np.dtype, 
-                     enable_nccl: bool, tracer: SimpleTracer) -> tuple[NCCL_DataType | None, NCCL_Comm_Type | None, 
-                                                                 Cudnn_Handle_Type, Cublas_Handle_Type, 
-                                                                 PyCuda_Stream_Type, Cudnn_dtype]:
+                     enable_nccl: bool, tracer: SimpleTracer, gpudirect:bool) -> tuple[NCCL_DataType | None, NCCL_Comm_Type | None, 
+                                                                                       Cudnn_Handle_Type, Cublas_Handle_Type, 
+                                                                                       PyCuda_Stream_Type, Cudnn_dtype]:
         
     global supported_cudnn, supported_nccl
     supported_cudnn = True
@@ -238,6 +238,9 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
     
     nccl_type = None
     nccl_comm = None
+    
+    if not gpudirect and enable_nccl:
+        raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
     if comm and enable_nccl:
         try:
@@ -292,7 +295,7 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
     return nccl_type, nccl_comm, cudnn_handle, cublas_handle, stream, cudnn_dtype
 # --- END _initialize_cuda --- #
 
-def _set_data_format(tensor_format:str, enable_cudnn:bool) -> PYDTNN_TENSOR_FORMAT:
+def _set_data_format(tensor_format:str=Literal["AUTO", "NCHW", "NHWC"], enable_cudnn:bool=False) -> PYDTNN_TENSOR_FORMAT:
     match tensor_format:
         case "AUTO":
             tensor_format = PYDTNN_TENSOR_FORMAT.NCHW if enable_cudnn else PYDTNN_TENSOR_FORMAT.NHWC
@@ -361,36 +364,36 @@ class Model:
 
         # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
         #   NOTE: The following parameters come from "Parser"
-        self.steps_per_epoch:int = self.kwargs['steps_per_epoch']
-        self.cpu_speed:float = self.kwargs['cpu_speed']
-        self.memory_bw:float = self.kwargs['memory_bw']
-        self.network_bw:float = self.kwargs['network_bw']
-        self.network_lat:float = self.kwargs['network_lat']
-        self.network_alg:str = self.kwargs['network_alg']
-        self.loss_func_name:str = self.kwargs['loss_func_name']
+        self.steps_per_epoch: int = self.kwargs['steps_per_epoch']
+        self.cpu_speed: float = self.kwargs['cpu_speed']
+        self.memory_bw: float = self.kwargs['memory_bw']
+        self.network_bw: float = self.kwargs['network_bw']
+        self.network_lat: float = self.kwargs['network_lat']
+        self.network_alg: str = self.kwargs['network_alg']
+        self.loss_func_name: str = self.kwargs['loss_func_name']
         self.num_epochs: int = self.kwargs['num_epochs']
-        self.model_sync_freq:int = self.kwargs['model_sync_freq']
-        self.final_model_sync:bool = self.kwargs['final_model_sync']
-        self.test_as_validation:bool = self.kwargs['test_as_validation']
-        self.validation_split:float = self.kwargs['validation_split']
-        self.use_synthetic_data:bool = self.kwargs['use_synthetic_data']
-        self.dataset_train_path:str = self.kwargs['dataset_train_path']
-        self.dataset_test_path:str = self.kwargs['dataset_test_path']
-        self.enable_best_of:bool = self.kwargs['enable_best_of']
-        self.enable_conv_i2c:bool = self.kwargs['enable_conv_i2c']
-        self.enable_conv_winograd:bool = self.kwargs['enable_conv_winograd']
-        self.enable_conv_gemm:bool = self.kwargs['enable_conv_gemm']
-        self.enable_conv_direct:bool = self.kwargs['enable_conv_direct']
-        self.evaluate_only:bool = self.kwargs['evaluate_only']
-        self.evaluate_on_train:bool = self.kwargs['evaluate_on_train']
-        self.profile:bool = self.kwargs['profile']
-        self.history_file:str = self.kwargs['history_file']
-        self.model_sync_min_avail:int = self.kwargs['model_sync_min_avail']
-        self.dataset_name:str = self.kwargs['dataset_name']
-        use_mpi_buffers = self.kwargs["use_mpi_buffers"]
-        self.shared_storage:bool = self.kwargs["shared_storage"]
-        self.encryption_name:str = self.kwargs["encryption_name"]
+        self.model_sync_freq: int = self.kwargs['model_sync_freq']
+        self.final_model_sync: bool = self.kwargs['final_model_sync']
+        self.test_as_validation: bool = self.kwargs['test_as_validation']
+        self.validation_split: float = self.kwargs['validation_split']
+        self.use_synthetic_data: bool = self.kwargs['use_synthetic_data']
+        self.dataset_train_path: str = self.kwargs['dataset_train_path']
+        self.dataset_test_path: str = self.kwargs['dataset_test_path']
+        self.enable_best_of: bool = self.kwargs['enable_best_of']
+        self.enable_conv_i2c: bool = self.kwargs['enable_conv_i2c']
+        self.enable_conv_winograd: bool = self.kwargs['enable_conv_winograd']
+        self.enable_conv_gemm: bool = self.kwargs['enable_conv_gemm']
+        self.enable_conv_direct: bool = self.kwargs['enable_conv_direct']
+        self.evaluate_only: bool = self.kwargs['evaluate_only']
+        self.evaluate_on_train: bool = self.kwargs['evaluate_on_train']
+        self.profile: bool = self.kwargs['profile']
+        self.history_file: str = self.kwargs['history_file']
+        self.model_sync_min_avail: int = self.kwargs['model_sync_min_avail']
+        self.dataset_name: str = self.kwargs['dataset_name']        
+        self.shared_storage: bool = self.kwargs["shared_storage"]
+        self.encryption_name: str = self.kwargs["encryption_name"]        
         # ---
+        use_mpi_buffers:bool = self.kwargs["use_mpi_buffers"]
         
         match use_mpi_buffers:
             case None:
@@ -443,7 +446,8 @@ class Model:
                                                                                        rank = self.rank, nprocs = self.nprocs, 
                                                                                        gpus_per_node = self.gpus_per_node, 
                                                                                        parallel = self.parallel, dtype = self.dtype, 
-                                                                                       enable_nccl = self.enable_nccl, tracer = self.tracer)
+                                                                                       enable_nccl = self.enable_nccl, tracer = self.tracer, 
+                                                                                       gpudirect=self.gpudirect)
             else:
                 raise ImportError("\n".join(cuda_error_msg))
         else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
@@ -465,7 +469,7 @@ class Model:
         self.y_batch: Array = None
         self.history: dict[str, list[np.ndarray]] = None
         self.loss_func: Loss = None
-        self.metrics_funcs:list[metrics.Metric] = None
+        self.metrics_funcs: list[metrics.Metric] = None
         self.loss_and_metrics: list[str] # Is a list with the name of the loss function and the metrics's names.
         self.total_metrics: Array
         # ---
@@ -473,6 +477,7 @@ class Model:
         # Encryption
         if self.encryption_name:
             self.crypt = self._init_crypt(self.encryption_name)
+
         else:
             self.crypt = None
 
@@ -498,8 +503,8 @@ class Model:
         self.metrics: str # NOTE: This variable comes from the Parser.
         self.metrics_list: list[metrics.Metric] = [m for m in self.metrics.replace(" ", "").split(",")]
         # Private attributes
-        self._evaluate_round:int = 0
-        self._initialized:bool = False        
+        self._evaluate_round: int = 0
+        self._initialized: bool = False        
         # Read the model (must be the last action, as it calls self._initialize() if there is a model)
         self.model_name: str | None = self.kwargs.get("model_name")
         if self.model_name:
@@ -542,6 +547,9 @@ class Model:
             crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
 
         assert crypt is not None
+        if self.enable_nccl:
+            warn("If NCCL is active, is like there are no encryption", RuntimeWarning) # TODO: Put a more explicative warning text here.
+            
         return crypt
 
     def _read_model(self, model_name:str) -> None:
