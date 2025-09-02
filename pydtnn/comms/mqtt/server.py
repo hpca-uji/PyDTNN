@@ -22,7 +22,7 @@ __all__ = (
 END_COMM = b""
 
 
-class Server(Protocol, server.Server):
+class Server(Protocol, server.Server[str]):
     """MQTT server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -32,30 +32,19 @@ class Server(Protocol, server.Server):
         # MQTT
         self._register_handler(topic="c2s/+", handler=self._c2s)
 
-    def _new_connection(self, sock: str) -> uuid.UUID:
-        """Handle new incomming connections"""
-        # NOTE: communication thead
+    def _extra_ini(self, peer: uuid.UUID) -> None:
+        sock = self._peers.pop(peer)
+        state = self._state.pop(peer)
         peer = uuid.UUID(hex=sock)
-
-        with self._lock:
-            self._peers[peer] = sock
-            self._state[peer] = state = self._new_state()
-
-            # ACK
-            self._put(self._session_ini(state), peer)
-            self._lock.notify_all()
-
-        return peer
+        self._peers[peer] = sock
+        self._state[peer] = state
 
     def _c2s(self, client: mqtt_client.Client, userdata, mqtt_message: mqtt_client.MQTTMessage) -> None:
         """Client message handler"""
         # NOTE: communication thead
         sock = self._peer(mqtt_message)
-        try:
-            peer = self._peers.inverse[sock]
-        except KeyError:
-            peer = self._new_connection(sock)
-        state = self._state[peer]
+        peer = self._get_peer(sock)
+        state = self._get_state(peer)
 
         data = mqtt_message.payload
         state.get_write(data)
@@ -68,7 +57,7 @@ class Server(Protocol, server.Server):
         return future
 
     def _s2c(self, peer: uuid.UUID):
-        state = self._state[peer]
+        state = self._get_state(peer)
 
         state.put_flush()
         while not state.put_buffer.empty():
@@ -86,11 +75,12 @@ class Server(Protocol, server.Server):
             while self._peers:
                 self._lock.wait()
 
+        # Close resources
+        self._pool.shutdown()
+        self._stop_loop()
+
         # Unlock inflight external API:
         for _ in range(threading.active_count()):
             self._get_event.put(UUID_MAX)
 
-        # Close resources
-        self._pool.shutdown()
-        self._stop_loop()
         super()._close()

@@ -1,14 +1,12 @@
 
-from concurrent.futures import Future
 import uuid
-import threading
-from queue import SimpleQueue
+from concurrent.futures import Future
 
 from bidict import bidict
-from pydtnn.utils import UUID_MAX, UUID_NIL
+from pydtnn.utils import UUID_NIL
 from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, Message, ResourceClosed
+from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, ResourceClosed
 
 
 class Server[T](Communicator):
@@ -21,6 +19,36 @@ class Server[T](Communicator):
         # State
         self._peers = bidict[uuid.UUID, T]()
         self._state = dict[uuid.UUID, ConnectionData]()
+
+    def _get_peer(self, sock: T) -> uuid.UUID:
+        try:
+            return self._peers.inverse[sock]
+        except KeyError:
+            return self._new_connection(sock)
+
+    def _get_state(self, peer: uuid.UUID) -> ConnectionData:
+        return self._state[peer]
+
+    def _extra_ini(self, peer: uuid.UUID) -> None:
+        pass
+
+    def _new_connection(self, sock: T) -> uuid.UUID:
+        """Handle new incomming connections"""
+        # NOTE: communication thead
+        peer = uuid.uuid4()  # temporary ID
+
+        with self._lock:
+            self._peers[peer] = sock
+            self._state[peer] = state = self._new_state()
+            self._extra_ini(peer)
+
+            # ACK
+            peer = self._peers.inverse[sock]
+            state = self._state[peer]
+            self._put(self._session_ini(state), peer)
+            self._lock.notify_all()
+
+        return peer
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
@@ -71,9 +99,6 @@ class Server[T](Communicator):
                 self._get_event.put(peer)
 
         return peer
-
-    def _get_state(self, peer: uuid.UUID) -> ConnectionData:
-        return self._state[peer]
 
     def _handle_session_ini(self, state: ConnectionData, peer: uuid.UUID, stream: Stream) -> None:
         """Handle session initialize message"""

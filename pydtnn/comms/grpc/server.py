@@ -1,6 +1,5 @@
 """gRPC server"""
 
-import uuid
 import grpc
 import threading
 import traceback
@@ -22,7 +21,7 @@ __all__ = (
 END_COMM = None
 
 
-class Server(Protocol, server.Server):
+class Server(Protocol, server.Server[str]):
     """gRPC server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -59,30 +58,12 @@ class Server(Protocol, server.Server):
             traceback.print_exception(exc)
             context.set_code(grpc.StatusCode.INTERNAL)
 
-    def _new_connection(self, sock: str) -> uuid.UUID:
-        """Handle new incomming connections"""
-        # NOTE: communication thead
-        peer = uuid.uuid4()  # temporary ID
-
-        with self._lock:
-            self._peers[peer] = sock
-            self._state[peer] = state = self._new_state()
-
-            # ACK
-            self._put(self._session_ini(state), peer)
-            self._lock.notify_all()
-
-        return peer
-
     def _handle_connection(self, messages: abc.Iterable[abc.Buffer], context: grpc.ServicerContext) -> abc.Iterable[abc.Buffer]:
         """Client to server communication"""
         # NOTE: communication thread
         sock = context.peer()
-        try:
-            peer = self._peers.inverse[sock]
-        except KeyError:
-            peer = self._new_connection(sock)
-        state = self._state[peer]
+        peer = self._get_peer(sock)
+        state = self._get_state(peer)
 
         # Message streaming
         yield from self._s2m(state)
@@ -93,15 +74,6 @@ class Server(Protocol, server.Server):
         if not state.state and state.put_empty():
             self._fin(peer)
 
-    def _peer_cleanup(self, peer: uuid.UUID) -> None:
-        """Remove finalized drained peer"""
-        state = self._state[peer]
-
-        if peer not in self._peers and state.get_empty():
-            with self._lock:
-                if peer not in self._peers and state.get_empty():
-                    del self._state[peer]
-
     def _close(self) -> None:
         """Close the server"""
 
@@ -110,12 +82,12 @@ class Server(Protocol, server.Server):
             while self._peers:
                 self._lock.wait()
 
-        # Unlock inflight external API
-        for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
-
         # Close resources
         # Allow some time for RPC taredown
         self._server.stop(grace=0.5)
         self._pool.shutdown()
+
+        # Unlock inflight external API
+        for _ in range(threading.active_count()):
+            self._get_event.put(UUID_MAX)
         super()._close()
