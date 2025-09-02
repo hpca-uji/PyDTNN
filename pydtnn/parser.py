@@ -7,7 +7,7 @@ command line arguments.
 And what is even more important, it will also be loaded by the Model class to
 obtain default values to its non-mandatory attributes. This way, when a model
 object is instantiated (even if it is not from 'pydtnn_benchmark') it will
-initially have default values for all the attributes declared on the parser.
+initially have default values for all the attributes declared on the self.
 
 If you want to define a new option, just declare it here. It will automatically
 be available as a Model attribute.
@@ -16,7 +16,7 @@ be available as a Model attribute.
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -38,7 +38,9 @@ import os
 
 import numpy as np
 from pydtnn.utils import parse_bool as bool_lambda
+from functools import cache
 
+from typing import Any
 
 def factor(x):
     """Returns x, which must be 0.0 < x <= 1.0"""
@@ -107,9 +109,147 @@ def _get_mpi_port():
     from pydtnn.libs.mpi.comm import get_port
     return get_port()
 
-
+# NOTE: with @cache it's not possible to extend the class.
+@cache # <== Singleton
 class PydtnnArgumentParser(argparse.ArgumentParser):
     lines = []
+
+    def __init__(self):
+        super().__init__(description=_desc, epilog=_epilogue)
+        # Parser and the supported arguments with their default values
+        # (argparse.SUPPRESS is used to avoid showing them on the message)
+
+        # Model
+        self.add_argument('--model', dest="model_name", type=str, default=None) # "simplecnn"
+        self.add_argument('--batch_size', type=int, default=None)
+        self.add_argument('--global_batch_size', type=int, defadault=None)
+        self.add_argument('--dtype', type=np_dtype, default=np.float32)
+        self.add_argument('--num_epochs', type=int, default=1)
+        self.add_argument('--steps_per_epoch', type=int, default=0)
+        self.add_argument('--evaluate', dest="evaluate_on_train", default=False, type=bool_lambda)
+        self.add_argument('--evaluate_only', default=False, type=bool_lambda)
+        self.add_argument('--weights_and_bias_filename', type=str, default=None)
+        self.add_argument('--history_file', type=str, default=None)
+        self.add_argument('--shared_storage', default=True, type=bool_lambda)
+        self.add_argument('--model_sync_freq', type=int, default=0)
+        self.add_argument('--model_sync_alg', type=str, default="avg")
+        self.add_argument('--model_sync_participation', type=str, default="all")
+        self.add_argument('--model_sync_min_avail', type=int, default=0)
+        self.add_argument('--initial_model_sync', type=bool_lambda, default=True)
+        self.add_argument('--final_model_sync', type=bool_lambda, default=True)
+        self.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
+
+        # Dataset options
+        _ds_group = self.add_argument_group("Dataset options")
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None) # "mnist"
+        _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
+        _ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path)
+        _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path)
+        _ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path)
+        _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1")
+        _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda)
+        _ds_group.add_argument('--flip_images', default=False, type=bool_lambda)
+        _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5)
+        _ds_group.add_argument('--crop_images', default=False, type=bool_lambda)
+        _ds_group.add_argument('--crop_images_size', type=int, default=16)
+        _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5)
+        _ds_group.add_argument('--validation_split', type=factor, default=0.2)
+
+        # Optimization options
+        _oo_group = self.add_argument_group("Optimization options")
+        _oo_group.add_argument('--enable_best_of', type=bool_lambda, default=False)
+        _oo_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
+        _oo_group.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
+        _oo_group.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
+        _oo_group.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
+        _oo_group.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
+
+        # Convolution methods
+        _cm_group = self.add_argument_group("Convolution options")
+        _cm_group.add_argument('--enable_conv_i2c', type=bool_lambda, default=True)
+        _cm_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
+        _cm_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False)
+        _cm_group.add_argument('--enable_conv_direct', type=bool_lambda, default=False)
+        _cm_group.add_argument('--conv_direct_method', type=str, default="")
+        _cm_group.add_argument('--conv_direct_methods_for_best_of', type=str, default="")
+
+        # Optimizer options
+        _op_group = self.add_argument_group("Optimizer options")
+        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd")
+        _op_group.add_argument('--learning_rate', type=float, default=1e-2)
+        _op_group.add_argument('--learning_rate_scaling', default=False, type=bool_lambda)
+        _op_group.add_argument('--momentum', type=float, default=0.9)
+        _op_group.add_argument('--decay', type=float, default=0.0)
+        _op_group.add_argument('--nesterov', default=False, type=bool_lambda)
+        _op_group.add_argument('--beta1', type=float, default=0.99)
+        _op_group.add_argument('--beta2', type=float, default=0.999)
+        _op_group.add_argument('--epsilon', type=float, default=1e-7)
+        _op_group.add_argument('--rho', type=float, default=0.9)
+        _op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy")
+        _op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
+
+        # Learning rate schedulers options
+        _lr_group = self.add_argument_group("Learning rate schedulers options")
+        _lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
+                            default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
+        _lr_group.add_argument('--warm_up_epochs', type=int, default=5)
+        _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
+        _lr_group.add_argument('--early_stopping_patience', type=int, default=10)
+        _lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True)
+        _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy")
+        _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1)
+        _lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5)
+        _lr_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0)
+        _lr_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1)
+        _lr_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5)
+        _lr_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0)
+        _lr_group.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy")
+        _lr_group.add_argument('--stop_at_loss_threshold', type=float, default=0)
+        _lr_group.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy")
+        _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2)
+
+        # Parallel execution options
+        _pe_group = self.add_argument_group("Parallel execution options")
+        _pe_group.add_argument('--parallel', type=str, default="sequential")
+        _pe_group.add_argument('--use_blocking_mpi', type=bool_lambda, default=True)
+        _pe_group.add_argument('--use_mpi_buffers', type=bool_lambda, default=None)
+        _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
+        _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
+        _pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
+        _pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default=True)
+
+        # Encryption options
+        _cy_group = self.add_argument_group("Encryption options")
+        _cy_group.add_argument('--encryption', dest="encryption_name", type=str, default="")
+
+        # Tracing and profiling
+        _tr_group = self.add_argument_group("Tracing options")
+        _tr_group.add_argument('--tracing', type=bool_lambda, default=False)
+        _tr_group.add_argument('--tracer_output', type=str, default="")
+        _tr_group.add_argument('--tracer_pmlib_server', type=str, default="127.0.0.1")
+        _tr_group.add_argument('--tracer_pmlib_port', type=int, default=6526)
+        _tr_group.add_argument('--tracer_pmlib_device', type=str, default="")
+        _tr_group.add_argument('--profile', type=bool_lambda, default=False)
+
+        # Performance modeling options
+        _pm_group = self.add_argument_group("Performance modeling options")
+        _pm_group.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network_bw', type=float, default=1e9, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network_lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network_alg', type=str, default="vdg", help=argparse.SUPPRESS)
+
+        # Add Runtime parallel execution options
+        _re_group = self.add_argument_group("Runtime parallel execution options")
+        _re_group.add_argument('--mpi_processes', type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument('--threads_per_process', type=int, default=-1, help=argparse.SUPPRESS)
+        _re_group.add_argument('--gpus_per_node', type=int, default=-1, help=argparse.SUPPRESS)
+
+        # Add Communication options
+        _cm_group = self.add_argument_group("Communication options")
+        _cm_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
+        _cm_group.add_argument('--mpi_server', type=str, default="", help=argparse.SUPPRESS)
+        _cm_group.add_argument('--mpi_port', type=int, default=-1, help=argparse.SUPPRESS)
 
     def parse_args(self, args=None, namespace=None):
         # Call super.parse_args
@@ -149,142 +289,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
             self.lines = lines
         return result
 
-    def print_args(self):
+    def print_args(self) -> None:
         print("\n".join(self.lines))
 
+    def get_default_values(self) -> dict[str, Any]:
+        return vars(self.parse_args([]))
 
-# Parser and the supported arguments with their default values
-# (argparse.SUPPRESS is used to avoid showing them on the message)
-parser = PydtnnArgumentParser(description=_desc, epilog=_epilogue)
-
-# Model
-parser.add_argument('--model', dest="model_name", type=str, default="simplecnn")
-parser.add_argument('--batch_size', type=int, default=None)
-parser.add_argument('--global_batch_size', type=int, default=None)
-parser.add_argument('--dtype', type=np_dtype, default=np.float32)
-parser.add_argument('--num_epochs', type=int, default=1)
-parser.add_argument('--steps_per_epoch', type=int, default=0)
-parser.add_argument('--evaluate', dest="evaluate_on_train", default=False, type=bool_lambda)
-parser.add_argument('--evaluate_only', default=False, type=bool_lambda)
-parser.add_argument('--weights_and_bias_filename', type=str, default=None)
-parser.add_argument('--history_file', type=str, default=None)
-parser.add_argument('--shared_storage', default=True, type=bool_lambda)
-parser.add_argument('--model_sync_freq', type=int, default=0)
-parser.add_argument('--model_sync_alg', type=str, default="avg")
-parser.add_argument('--model_sync_participation', type=str, default="all")
-parser.add_argument('--model_sync_min_avail', type=int, default=0)
-parser.add_argument('--initial_model_sync', type=bool_lambda, default=True)
-parser.add_argument('--final_model_sync', type=bool_lambda, default=True)
-parser.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
-
-# Dataset options
-_ds_group = parser.add_argument_group("Dataset options")
-_ds_group.add_argument('--dataset', dest="dataset_name", type=str, default="mnist")
-_ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
-_ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path)
-_ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path)
-_ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path)
-_ds_group.add_argument('--dataset_export_split_weights', type=str, default="1")
-_ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda)
-_ds_group.add_argument('--flip_images', default=False, type=bool_lambda)
-_ds_group.add_argument('--flip_images_prob', type=factor, default=0.5)
-_ds_group.add_argument('--crop_images', default=False, type=bool_lambda)
-_ds_group.add_argument('--crop_images_size', type=int, default=16)
-_ds_group.add_argument('--crop_images_prob', type=factor, default=0.5)
-_ds_group.add_argument('--validation_split', type=factor, default=0.2)
-
-# Optimization options
-_oo_group = parser.add_argument_group("Optimization options")
-_oo_group.add_argument('--enable_best_of', type=bool_lambda, default=False)
-_oo_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
-_oo_group.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
-_oo_group.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
-_oo_group.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
-_oo_group.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
-
-# Convolution methods
-_cm_group = parser.add_argument_group("Convolution options")
-_cm_group.add_argument('--enable_conv_i2c', type=bool_lambda, default=True)
-_cm_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
-_cm_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False)
-_cm_group.add_argument('--enable_conv_direct', type=bool_lambda, default=False)
-_cm_group.add_argument('--conv_direct_method', type=str, default="")
-_cm_group.add_argument('--conv_direct_methods_for_best_of', type=str, default="")
-
-# Optimizer options
-_op_group = parser.add_argument_group("Optimizer options")
-_op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd")
-_op_group.add_argument('--learning_rate', type=float, default=1e-2)
-_op_group.add_argument('--learning_rate_scaling', default=False, type=bool_lambda)
-_op_group.add_argument('--momentum', type=float, default=0.9)
-_op_group.add_argument('--decay', type=float, default=0.0)
-_op_group.add_argument('--nesterov', default=False, type=bool_lambda)
-_op_group.add_argument('--beta1', type=float, default=0.99)
-_op_group.add_argument('--beta2', type=float, default=0.999)
-_op_group.add_argument('--epsilon', type=float, default=1e-7)
-_op_group.add_argument('--rho', type=float, default=0.9)
-_op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy")
-_op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
-
-# Learning rate schedulers options
-_lr_group = parser.add_argument_group("Learning rate schedulers options")
-_lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
-                       default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
-_lr_group.add_argument('--warm_up_epochs', type=int, default=5)
-_lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
-_lr_group.add_argument('--early_stopping_patience', type=int, default=10)
-_lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True)
-_lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy")
-_lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1)
-_lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5)
-_lr_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0)
-_lr_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1)
-_lr_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5)
-_lr_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0)
-_lr_group.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy")
-_lr_group.add_argument('--stop_at_loss_threshold', type=float, default=0)
-_lr_group.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy")
-_lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2)
-
-# Parallel execution options
-_pe_group = parser.add_argument_group("Parallel execution options")
-_pe_group.add_argument('--parallel', type=str, default="sequential")
-_pe_group.add_argument('--use_blocking_mpi', type=bool_lambda, default=True)
-_pe_group.add_argument('--use_mpi_buffers', type=bool_lambda, default=None)
-_pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False)
-_pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False)
-_pe_group.add_argument('--enable_nccl', type=bool_lambda, default=False)
-_pe_group.add_argument('--enable_cudnn_auto_conv_alg', type=bool_lambda, default=True)
-
-# Encryption options
-_cy_group = parser.add_argument_group("Encryption options")
-_cy_group.add_argument('--encryption', dest="encryption_name", type=str, default="")
-
-# Tracing and profiling
-_tr_group = parser.add_argument_group("Tracing options")
-_tr_group.add_argument('--tracing', type=bool_lambda, default=False)
-_tr_group.add_argument('--tracer_output', type=str, default="")
-_tr_group.add_argument('--tracer_pmlib_server', type=str, default="127.0.0.1")
-_tr_group.add_argument('--tracer_pmlib_port', type=int, default=6526)
-_tr_group.add_argument('--tracer_pmlib_device', type=str, default="")
-_tr_group.add_argument('--profile', type=bool_lambda, default=False)
-
-# Performance modeling options
-_pm_group = parser.add_argument_group("Performance modeling options")
-_pm_group.add_argument('--cpu_speed', type=float, default=4e12, help=argparse.SUPPRESS)
-_pm_group.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)
-_pm_group.add_argument('--network_bw', type=float, default=1e9, help=argparse.SUPPRESS)
-_pm_group.add_argument('--network_lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
-_pm_group.add_argument('--network_alg', type=str, default="vdg", help=argparse.SUPPRESS)
-
-# Add Runtime parallel execution options
-_re_group = parser.add_argument_group("Runtime parallel execution options")
-_re_group.add_argument('--mpi_processes', type=int, default=-1, help=argparse.SUPPRESS)
-_re_group.add_argument('--threads_per_process', type=int, default=-1, help=argparse.SUPPRESS)
-_re_group.add_argument('--gpus_per_node', type=int, default=-1, help=argparse.SUPPRESS)
-
-# Add Communication options
-_cm_group = parser.add_argument_group("Communication options")
-_cm_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
-_cm_group.add_argument('--mpi_server', type=str, default="", help=argparse.SUPPRESS)
-_cm_group.add_argument('--mpi_port', type=int, default=-1, help=argparse.SUPPRESS)
+    def to_dict(self) -> dict[str, Any]:
+        return vars(self.parse_args())

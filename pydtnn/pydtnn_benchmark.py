@@ -35,7 +35,7 @@ from io import StringIO
 import numpy as np
 
 from pydtnn.model import Model
-from pydtnn.parser import parser
+from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.best_of import BestOf
 
 ompi_stdout_rank = os.environ.get("OMPI_STDOUT_RANK", None)
@@ -70,12 +70,12 @@ def print_model_reports(model):
 
 def main():
     # Parse options
-    params = parser.parse_args()
+    parser = PydtnnArgumentParser()
     # Initialize random seeds to 0
     random.seed(0)
     np.random.seed(0)
     # Create model
-    model = Model(**vars(params))
+    model = Model(**parser.to_dict())
     # Print model
     if model.comm_rank == 0:
         print(f'**** {model.model_name} model...')

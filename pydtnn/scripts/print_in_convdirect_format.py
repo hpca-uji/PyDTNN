@@ -25,12 +25,12 @@ PyDTNN print in convdirect format script
 # from __future__ import print_function
 
 from pydtnn.model import Model
-from pydtnn.parser import parser
+from pydtnn.parser import PydtnnArgumentParser
 
 # Parse options
-params = parser.parse_args()
+parser = PydtnnArgumentParser()
 # Create model
-model = Model(**vars(params))
+model = Model(**parser.to_dict())
 # Call print_in_convdirect_format
 # print(f"#Model: {model.model_name}")
 model.print_in_convdirect_format()
