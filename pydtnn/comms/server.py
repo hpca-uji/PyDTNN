@@ -2,32 +2,20 @@
 import uuid
 from concurrent.futures import Future
 
-from bidict import bidict
 from pydtnn.utils import UUID_NIL
-from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import Communicator, CommunicatorOptions, ConnectionData, ResourceClosed
+from pydtnn.utils.asynctools import merge_futures
+from pydtnn.comms import Communicator, ConnectionData, ResourceClosed
 
 
 class Server[T](Communicator):
     """Base server implementation"""
-
-    def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
-        """Server initialization"""
-        super().__init__(options)
-
-        # State
-        self._peers = bidict[uuid.UUID, T]()
-        self._state = dict[uuid.UUID, ConnectionData]()
 
     def _get_peer(self, sock: T) -> uuid.UUID:
         try:
             return self._peers.inverse[sock]
         except KeyError:
             return self._new_connection(sock)
-
-    def _get_state(self, peer: uuid.UUID) -> ConnectionData:
-        return self._state[peer]
 
     def _extra_ini(self, peer: uuid.UUID) -> None:
         pass
@@ -49,15 +37,6 @@ class Server[T](Communicator):
             self._lock.notify_all()
 
         return peer
-
-    def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
-        """Put stream into queue and notify"""
-        try:
-            state = self._state[peer]
-            future = state.put(stream)
-        except (KeyError, ResourceClosed):
-            raise ResourceClosed(peer)
-        return future
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:
         """Publish data to clients"""
@@ -107,13 +86,16 @@ class Server[T](Communicator):
         super()._handle_session_ini(state, stream)
         id = state.peer
 
-        # New ID, move state from tmp ID
-        if id not in self._peers:
-            with self._lock:
+        with self._lock:
+            # New ID, move state from tmp ID
+            if id not in self._peers:
                 self._state[id] = state = self._state.pop(peer)
 
-        # Change socket ID association
-        with self._lock:
+            # Old ID, reconnection, drop tmp ID
+            else:
+                del self._state[peer]
+
+            # Update socket ID association
             self._peers.inverse[sock] = id
 
     def _extra_fin(self, peer: uuid.UUID) -> None:

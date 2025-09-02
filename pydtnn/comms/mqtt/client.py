@@ -2,6 +2,7 @@
 
 import threading
 from concurrent.futures import Future
+import uuid
 
 import paho.mqtt.client as mqtt_client
 
@@ -31,25 +32,25 @@ class Client(Protocol, client.Client):
         # MQTT
         self._register_handler(topic=f"s2c/{self._id.hex}", handler=self._handle_message)
 
-        self._put(self._session_ini(self._state))
+        self._put(self._session_ini(self._get_state(self._id)), self._id)
 
     def _handle_message(self, client: mqtt_client.Client, userdata, message: mqtt_client.MQTTMessage) -> None:
         """Broker message handler"""
-        state = self._state
-        self._state.get_buffer.write(message.payload)
+        state = self._get_state(self._id)
+        state.get_buffer.write(message.payload)
         self._get_flush()
 
         if not state.state and state.put_empty():
             self._fin()
 
-    def _put(self, stream: Stream) -> Future[None]:
+    def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
-        future = super()._put(stream)
+        future = super()._put(stream, peer)
         self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
         return future
 
     def _c2s(self):
-        state = self._state
+        state = self._get_state(self._id)
 
         state.put_flush()
         while not state.put_buffer.empty():
@@ -58,7 +59,7 @@ class Client(Protocol, client.Client):
 
     def _close(self) -> None:
         """Close the client"""
-        self._put(self._session_fin(self._state))
+        self._put(self._session_fin(self._get_state(self._id)), self._id)
 
         # Request loop thread to stop
         self._pool.shutdown()
