@@ -52,11 +52,11 @@ class Client(Protocol, client.Client):
         self._client = True
         self._com = self._channel.stream_stream(method="/grpc/com", request_serializer=bytes, response_deserializer=lambda x: x)
 
-        self._put(self._session_ini(self._state))
+        self._put(self._session_ini(self._get_state(self._id)), self._id)
 
-    def _put(self, stream: Stream) -> Future[None]:
+    def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
-        future = super()._put(stream)
+        future = super()._put(stream, peer)
         self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
         return future
 
@@ -73,7 +73,7 @@ class Client(Protocol, client.Client):
 
     def _handle_connection(self) -> None:
         """Communication round"""
-        state = self._state
+        state = self._get_state(self._id)
 
         for data in self._m2d(self._com(self._s2m(state))):
             state.get_write(data)
@@ -100,7 +100,7 @@ class Client(Protocol, client.Client):
     def _c2s(self) -> None:
         """Communication client to server"""
         # Check if already handled
-        state = self._state
+        state = self._get_state(self._id)
         if state.put_empty():
             return
         self._handle_connection()
@@ -134,9 +134,10 @@ class Client(Protocol, client.Client):
 
     def _close(self) -> None:
         """Close the client"""
-        self._put(self._session_fin(self._state))
+        state = self._get_state(self._id)
+        self._put(self._session_fin(state), self._id)
 
-        while self._state.state:
+        while state.state:
             self._pool.submit(self._s2c).result()
 
         with self._lock:

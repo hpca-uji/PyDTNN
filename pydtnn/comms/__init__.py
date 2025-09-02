@@ -75,8 +75,11 @@ from queue import Empty, SimpleQueue
 from collections import abc as col_abc
 from concurrent.futures import Future, ThreadPoolExecutor
 
+from bidict import bidict
+
 
 from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool
+from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
@@ -261,6 +264,8 @@ class Communicator[T](abc.ABC):
 
         self._lock = threading.Condition()
         self._get_event = SimpleQueue[uuid.UUID]()
+        self._peers = bidict[uuid.UUID, T]()
+        self._state = dict[uuid.UUID, ConnectionData]()
 
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
@@ -300,9 +305,17 @@ class Communicator[T](abc.ABC):
         assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
         state.state &= ~ConnectionState.READABLE
 
-    @abc.abstractmethod
     def _get_state(self, peer: uuid.UUID) -> ConnectionData:
-        raise NotImplementedError()
+        return self._state[peer]
+
+    def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
+        """Put stream into queue and notify"""
+        try:
+            state = self._get_state(peer)
+            future = state.put(stream)
+        except (KeyError, ResourceClosed):
+            raise ResourceClosed(peer)
+        return future
 
     def _get(self, *peers: uuid.UUID) -> uuid.UUID:
         return self._get_event.get()
@@ -338,10 +351,28 @@ class Communicator[T](abc.ABC):
         """Is communicator closed"""
         return self._close_init.locked()
 
-    @abc.abstractmethod
-    def put(self, obj: T, *peers: uuid.UUID) -> Future[None]:
-        """Publish data to peer"""
-        raise NotImplementedError()
+    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
+        """Publish data to clients"""
+        if not peers:
+            with self._lock:
+                peers = tuple(self._peers)
+
+        futures = list[Future[None]]()
+        errors = list[ResourceClosed]()
+        with self._serializer.dump(obj) as stream:
+            for peer in peers:
+                try:
+                    future = self._put(stream.copy(), peer)
+                except ResourceClosed as exc:
+                    errors.append(exc)
+                    continue
+                else:
+                    futures.append(future)
+
+        if errors:
+            raise ExceptionGroup("Peer does not exist", errors)
+
+        return merge_futures(futures)
 
     def _close(self) -> None:
         """Communicator finalizer"""
