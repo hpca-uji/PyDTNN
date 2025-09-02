@@ -122,7 +122,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Model
         self.add_argument('--model', dest="model_name", type=str, default=None) # "simplecnn"
         self.add_argument('--batch_size', type=int, default=None)
-        self.add_argument('--global_batch_size', type=int, defadault=None)
+        self.add_argument('--global_batch_size', type=int, default=None)
         self.add_argument('--dtype', type=np_dtype, default=np.float32)
         self.add_argument('--num_epochs', type=int, default=1)
         self.add_argument('--steps_per_epoch', type=int, default=0)

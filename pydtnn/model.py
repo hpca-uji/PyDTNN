@@ -28,7 +28,7 @@ import time
 from timeit import default_timer as timer
 
 # Typing-related import
-from typing import Any, TypeVar, Callable, TYPE_CHECKING
+from typing import Any, TypeVar, Callable, TYPE_CHECKING, Literal
 from collections.abc import Iterable
 from .tracers import SimpleTracerGPU
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -86,7 +86,7 @@ try:
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
 except (ImportError, ModuleNotFoundError, OSError) as e: 
-    cublas: ModuleType = None
+    cublas: ModuleType | None = None
     cuda_error_msg.append(f"Import: \"from skcuda import cublas\". Error: {e}")
 except Exception as e: raise(e)
 # --- END CUDA related imports --- #
@@ -332,10 +332,10 @@ class Model:
     PyDTNN Model
     """
 
-    def __init__(self, parallel:str="sequential", use_blocking_mpi:bool=False, enable_gpu:bool=False, enable_gpudirect:bool=False,
-                 enable_nccl:bool=False, dtype:np.dtype=np.float32, tracing: bool=False, tracer_output:str="",
-                 tracer_pmlib_server:str="127.0.0.1", tracer_pmlib_port:int=6526, tracer_pmlib_device:str="",
-                 **kwargs):
+    def __init__(self, parallel:str=Literal["sequential", "data"], use_blocking_mpi:bool=False, enable_gpu:bool=False, 
+                 enable_gpudirect:bool=False, enable_nccl:bool=False, dtype:np.dtype=np.float32, tracing: bool=False, 
+                 tracer_output:str="", tracer_pmlib_server:str="127.0.0.1", tracer_pmlib_port:int=6526, 
+                 tracer_pmlib_device:str="", **kwargs):
         # Attributes related to the given arguments
         self.parallel: bool = parallel
         self.blocking_mpi: bool = use_blocking_mpi
@@ -359,77 +359,6 @@ class Model:
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
 
-        use_mpi_buffers = self.kwargs["use_mpi_buffers"]
-        match use_mpi_buffers:
-            case None:
-                self.use_mpi_buffers: bool = PROTOCOL is None
-            case bool():
-                self.use_mpi_buffers: bool = use_mpi_buffers
-            case _:
-                raise SystemExit(f"MPI buffers option '{use_mpi_buffers}' not recognized.")
-        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser"
-        
-        # Set MPI and comm          
-        self.MPI, self.comm = _initilize_communications(parallel = parallel)
-        
-        # Execution attributes
-        (self.rank_weight, self.comm_rank, self.comm_size, 
-         self.rank, self.nprocs, self.comm_groups) = _set_execution_attributes(comm = self.comm, shared_storage = self.shared_storage)        
-        
-        # Set tracer
-        self.tracer = _initilize_and_get_tracer(tracer_output = tracer_output, tracing = tracing, comm = self.comm, enable_gpu = enable_gpu,
-                                                tracer_pmlib_server = tracer_pmlib_server, tracer_pmlib_port = tracer_pmlib_port, 
-                                                tracer_pmlib_device = tracer_pmlib_device)
-
-        # Set performance counter
-        self.perf_counter = PerformanceCounter()
-        
-        # Layers' attributes
-        self.layers: list[LayerAndActivationBase] = []
-        self.layer_id:int = _layer_id_generator()
-        self.shared_storage:bool = self.kwargs["shared_storage"] # NOTE: This parameter comes from "Parser"
-        
-        # Matmul
-        self.matmul = utils.matmul
-        
-        # Set current mode to unspecified
-        self.mode:ModelModeEnum = ModelModeEnum.UNSPECIFIED
-
-        # Memory cache optimization
-        self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser"
-        if self.enable_memory_cache:
-            MemoryCache.enable()
-        else:
-            MemoryCache.disable()        
-        
-        global cuda_error_msg
-
-        # Cuda
-        if self.enable_cudnn:
-            if gpuarray and drv and cublas:
-                self.gpus_per_node: int # NOTE: This parameter comes from "Parser"
-                (self.nccl_type, self.nccl_comm, self.cudnn_handle, 
-                 self.cublas_handle, self.stream, self.cudnn_dtype) = _initialize_cuda(comm = self.comm, comm_rank = self.comm_rank, rank = self.rank,
-                                                                              nprocs = self.nprocs, gpus_per_node = self.gpus_per_node, 
-                                                                              parallel = self.parallel, dtype = self.dtype, enable_nccl = 
-                                                                              self.enable_nccl, tracer = self.tracer)
-            else:
-                raise ImportError("\n".join(cuda_error_msg))
-        else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
-        
-        # Data format
-        # NOTE: self.kwargs["tensor_format"] value comes from Parser.
-        self.tensor_format:PYDTNN_TENSOR_FORMAT = _set_data_format(tensor_format = self.kwargs["tensor_format"], enable_cudnn = self.enable_cudnn)
-
-        # Disable BestOf globally if not enabled
-        if self.kwargs['enable_best_of'] is False: 
-            # NOTE: comes from "Parser"
-            BestOf.use_always_the_first_alternative()
-        
-        self.batch_size = _calculate_batch_size(batch_size = self.kwargs['batch_size'], # NOTE: This parameters comes from "Parser"
-                                                global_batch_size = self.kwargs['global_batch_size'], # NOTE: This parameters comes from "Parser"
-                                                comm_size= self.comm_size)
-        
         # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
         #   NOTE: The following parameters come from "Parser"
         self.steps_per_epoch:int = self.kwargs['steps_per_epoch']
@@ -453,12 +382,84 @@ class Model:
         self.enable_conv_gemm:bool = self.kwargs['enable_conv_gemm']
         self.enable_conv_direct:bool = self.kwargs['enable_conv_direct']
         self.evaluate_only:bool = self.kwargs['evaluate_only']
-        self.evaluate_on_train:bool = self.kwargs['evaluate_on_train']      
+        self.evaluate_on_train:bool = self.kwargs['evaluate_on_train']
         self.profile:bool = self.kwargs['profile']
         self.history_file:str = self.kwargs['history_file']
         self.model_sync_min_avail:int = self.kwargs['model_sync_min_avail']
         self.dataset_name:str = self.kwargs['dataset_name']
+        use_mpi_buffers = self.kwargs["use_mpi_buffers"]
+        self.shared_storage:bool = self.kwargs["shared_storage"]
+        self.encryption_name:str = self.kwargs["encryption_name"]
         # ---
+        
+        match use_mpi_buffers:
+            case None:
+                self.use_mpi_buffers: bool = PROTOCOL is None
+            case bool():
+                self.use_mpi_buffers: bool = use_mpi_buffers
+            case _:
+                raise SystemExit(f"MPI buffers option '{use_mpi_buffers}' not recognized.")
+        
+        # Set MPI and comm          
+        self.MPI, self.comm = _initilize_communications(parallel = parallel)
+        
+        # Execution attributes
+        (self.rank_weight, self.comm_rank, self.comm_size,
+         self.rank, self.nprocs, self.comm_groups) = _set_execution_attributes(comm = self.comm, shared_storage = self.shared_storage)
+        
+        # Set tracer
+        self.tracer = _initilize_and_get_tracer(tracer_output = tracer_output, tracing = tracing, comm = self.comm, enable_gpu = enable_gpu,
+                                                tracer_pmlib_server = tracer_pmlib_server, tracer_pmlib_port = tracer_pmlib_port, 
+                                                tracer_pmlib_device = tracer_pmlib_device)
+
+        # Set performance counter
+        self.perf_counter = PerformanceCounter()
+        
+        # Layers' attributes
+        self.layers: list[LayerAndActivationBase] = []
+        self.layer_id:int = _layer_id_generator()
+        
+        # Matmul
+        self.matmul = utils.matmul
+        
+        # Set current mode to unspecified
+        self.mode:ModelModeEnum = ModelModeEnum.UNSPECIFIED
+
+        # Memory cache optimization
+        self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser"
+        if self.enable_memory_cache:
+            MemoryCache.enable()
+        else:
+            MemoryCache.disable()        
+        
+        global cuda_error_msg
+
+        # Cuda
+        if self.enable_cudnn:
+            if gpuarray and drv and cublas:
+                self.gpus_per_node: int # NOTE: This parameter comes from "Parser"
+                (self.nccl_type, self.nccl_comm, self.cudnn_handle, 
+                 self.cublas_handle, self.stream, self.cudnn_dtype) = _initialize_cuda(comm = self.comm, comm_rank = self.comm_rank, 
+                                                                                       rank = self.rank, nprocs = self.nprocs, 
+                                                                                       gpus_per_node = self.gpus_per_node, 
+                                                                                       parallel = self.parallel, dtype = self.dtype, 
+                                                                                       enable_nccl = self.enable_nccl, tracer = self.tracer)
+            else:
+                raise ImportError("\n".join(cuda_error_msg))
+        else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
+        
+        # Data format
+        # NOTE: self.kwargs["tensor_format"] value comes from Parser.
+        self.tensor_format:PYDTNN_TENSOR_FORMAT = _set_data_format(tensor_format = self.kwargs["tensor_format"], enable_cudnn = self.enable_cudnn)
+
+        # Disable BestOf globally if not enabled
+        if self.kwargs['enable_best_of'] is False: 
+            # NOTE: comes from "Parser"
+            BestOf.use_always_the_first_alternative()
+        
+        self.batch_size = _calculate_batch_size(batch_size = self.kwargs['batch_size'], # NOTE: This parameters comes from "Parser"
+                                                global_batch_size = self.kwargs['global_batch_size'], # NOTE: This parameters comes from "Parser"
+                                                comm_size= self.comm_size)
 
         # Attributes that will be properly initialized elsewhere
         self.y_batch: Array = None
