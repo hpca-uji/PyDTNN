@@ -29,8 +29,6 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT, string_substitute
 from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else: 
-    Model = object
 from enum import IntEnum
 from pydtnn.backends.gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
@@ -71,7 +69,7 @@ class Dataset(ABC):
     # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
     # NOTE: Dataset.data_generator(y) is expected to be in NC format
 
-    def __init__(self, model: Model, train_nsamples:int, test_nsamples:int, input_shape:shape_t, output_shape:shape_t, 
+    def __init__(self, model: "Model", train_nsamples:int, test_nsamples:int, input_shape:shape_t, output_shape:shape_t, 
                  max_batches_online = 40, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
@@ -226,7 +224,7 @@ class Dataset(ABC):
                   )
         desc = ["train", "val", "test"]
         for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
-            prefix = f"{self.model.rank}: " if part == DatasetEnum.TRAIN else "   "
+            prefix = f"{self.model.rank}: " if part is DatasetEnum.TRAIN else "   "
             print(f"{prefix}"
                   f" {desc[part]} offset: {self._local_offset[part]}"
                   f" {desc[part]} local nsamples: {self._local_nsamples[part]}"
@@ -337,7 +335,7 @@ class Dataset(ABC):
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
             s = memoryview(np.arange(local_nsamples))
-            if part == DatasetEnum.TRAIN:
+            if part is DatasetEnum.TRAIN:
                 np.random.shuffle(s)
                 if not self.model.use_synthetic_data and (self.model.flip_images or self.model.crop_images):
                     x_data = self._do_data_augmentation(x_data)
