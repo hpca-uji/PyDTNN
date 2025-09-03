@@ -24,7 +24,7 @@ from ..tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 
 import numpy as np
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_FORWARD_CUDNN, PYDTNN_OPS_BACKWARD_CUDNN_DX
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
@@ -121,7 +121,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
 
 
     def forward(self, x: TensorGPU) -> TensorGPU:
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_FORWARD_CUDNN)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         
         n = np.prod(x.shape, dtype=np.int32)
 
@@ -137,7 +137,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
     # --- END forward --- #
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_BACKWARD_CUDNN_DX)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
         n = np.prod(dy.shape, dtype=np.int32)
 
