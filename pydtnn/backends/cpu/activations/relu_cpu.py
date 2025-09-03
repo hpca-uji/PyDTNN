@@ -32,6 +32,7 @@ class ReluCPU(ActivationCPU, Relu):
         super().initialize(prev_shape)
         self._y = np.empty((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
         self._mask = np.empty((self.model.batch_size, *self.prev_shape), dtype=np.int8)
+        self.dx = np.empty((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
 
     def forward(self, x:np.ndarray) -> np.ndarray:
         n = x.shape[0]
@@ -41,4 +42,6 @@ class ReluCPU(ActivationCPU, Relu):
         return self.y
 
     def backward(self, dy:np.ndarray) -> np.ndarray:
-        return dy * self.mask
+        dx = self.dx[:dy.shape[0], :]
+        np.multiply(dy, self.mask, dx)
+        return dx
