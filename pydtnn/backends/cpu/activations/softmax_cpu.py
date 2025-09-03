@@ -29,6 +29,7 @@ class SoftmaxCPU(ActivationCPU, Softmax):
     
     def initialize(self, prev_shape):
         super().initialize(prev_shape)
+        self.y:np.ndarray
         self._y = np.empty(shape=(self.model.batch_size, *self.shape), 
                            dtype=self.model.dtype)
 
