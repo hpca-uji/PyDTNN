@@ -842,23 +842,12 @@ class Model:
     def _sync_x_y(self, x_batch:Array, y_batch:Array, current_batch_size:int) -> tuple[Array, Array]:
         if self.enable_cudnn:
             # TODO/FIXME  This is a HOT FIX. Fix CUDA Layers
-            # ==> Right now the self.batch_size and CUDA's x_batch.shape[0] must be the same.
-            # ==> Real fix: Make GPU's array support "N" of value lower or equal to self.batch_size.
-
-            diff_n = self.batch_size - x_batch.shape[0]
-            if diff_n != 0:
-                padd_x = [(0, diff_n)]                
-                padd_x.extend((0,0) for _ in range(len(self.layers[0].y.ary.shape) -1 ))
-                
-                padd_y = [(0, diff_n)]
-                padd_y.extend((0,0) for _ in range(len(self.y_batch.ary.shape) -1 ))
-                
-                x_batch = np.pad(x_batch, padd_x)
-                y_batch = np.pad(y_batch, padd_y)
-            # -- END FIXME
-
-            self.layers[0].y.ary.set(x_batch)
-            self.y_batch.ary.set(y_batch)
+            # ==> Right now the self.batch_size and CUDA's x_batch.shape[0] must be the same (we're reusing the previous batch)
+            # ==> Real fix: Make GPU's array support "N" of value lower or equal to self.batch_size
+            if x_batch.shape[0] == self.batch_size:
+            # END FIX
+                self.layers[0].y.ary.set(x_batch)
+                self.y_batch.ary.set(y_batch)
             x, y_targ = self.layers[0].y, self.y_batch
         else:
             x, y_targ = x_batch, y_batch
