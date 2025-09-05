@@ -31,7 +31,7 @@ __all__ = (
 )
 
 
-class Protocol(comms.Communicator):
+class Protocol[T](comms.Communicator[T]):
     """Shared base gRPC implementation"""
     _compression = grpc.Compression.NoCompression
 

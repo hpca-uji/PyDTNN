@@ -4,12 +4,10 @@ import ssl
 import uuid
 import socket
 import selectors
-import threading
 from concurrent.futures import Future
 
 from pydtnn import comms
 from pydtnn.comms import server
-from pydtnn.utils import UUID_MAX
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.comms import CommunicatorOptions, ResourceClosed
@@ -20,7 +18,7 @@ __all__ = (
 )
 
 
-class Server(Protocol, server.Server[socket.socket]):
+class Server(Protocol[socket.socket], server.Server[socket.socket]):
     """TCP server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -49,7 +47,7 @@ class Server(Protocol, server.Server[socket.socket]):
         """Handle connection events"""
         # NOTE: communication thead
         peer = self._get_peer(sock)
-        state = self._get_state(peer)
+        state = self._state[peer]
 
         if state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ)
@@ -66,13 +64,12 @@ class Server(Protocol, server.Server[socket.socket]):
         self._notify_selector()
 
         if not state.state and state.put_empty():
-            peer = self._get_peer(sock)
-            self._fin(peer)
+            self._fin(sock)
 
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
         peer = self._get_peer(sock)
-        state = self._get_state(peer)
+        state = self._state[peer]
 
         try:
             data = sock.recv(self._options.connection.max_size)
@@ -89,12 +86,12 @@ class Server(Protocol, server.Server[socket.socket]):
             data = sock.recv(pending)
             state.get_write(data)
 
-        peer = self._get_flush(peer)
+        peer = self._process_session(peer)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
         peer = self._get_peer(sock)
-        state = self._get_state(peer)
+        state = self._state[peer]
 
         state.put_flush()
         if state.put_buffer.empty():
@@ -138,9 +135,5 @@ class Server(Protocol, server.Server[socket.socket]):
         with self._lock:
             while self._peers:
                 self._lock.wait()
-
-        # Unlock inflight external API
-        for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
 
         super()._close()

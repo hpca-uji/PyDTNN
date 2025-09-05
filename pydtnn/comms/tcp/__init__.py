@@ -21,7 +21,7 @@ CONTROL_STOP = object()
 CONTROL_EVENT = b"\0"
 
 
-class Protocol(comms.Communicator):
+class Protocol[T](comms.Communicator[T]):
     """Shared base TCP implementation"""
 
     def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:

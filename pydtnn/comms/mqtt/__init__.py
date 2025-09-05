@@ -33,7 +33,7 @@ __all__ = (
 ARG_MISSING = object()
 
 
-class Protocol(comms.Communicator):
+class Protocol[T](comms.Communicator[T]):
     """Shared base MQTT implementation"""
 
     _qos = 2
