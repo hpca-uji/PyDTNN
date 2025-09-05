@@ -1,13 +1,11 @@
 """gRPC server"""
 
 import grpc
-import threading
 import traceback
 from collections import abc
 
 from pydtnn import comms
 from pydtnn.comms import server
-from pydtnn.utils import UUID_MAX
 from pydtnn.comms.grpc import Protocol
 from pydtnn.comms import CommunicatorOptions
 
@@ -21,7 +19,7 @@ __all__ = (
 END_COMM = None
 
 
-class Server(Protocol, server.Server[str]):
+class Server(Protocol[str], server.Server[str]):
     """gRPC server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -63,16 +61,16 @@ class Server(Protocol, server.Server[str]):
         # NOTE: communication thread
         sock = context.peer()
         peer = self._get_peer(sock)
-        state = self._get_state(peer)
+        state = self._state[peer]
 
         # Message streaming
         yield from self._s2m(state)
         for data in self._m2d(messages):
             state.get_write(data)
-            peer = self._get_flush(peer)
+            peer = self._process_session(peer)
 
         if not state.state and state.put_empty():
-            self._fin(peer)
+            self._fin(sock)
 
     def _close(self) -> None:
         """Close the server"""
@@ -87,7 +85,4 @@ class Server(Protocol, server.Server[str]):
         self._server.stop(grace=0.5)
         self._pool.shutdown()
 
-        # Unlock inflight external API
-        for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
         super()._close()

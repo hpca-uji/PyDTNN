@@ -1,13 +1,11 @@
 """MQTT client"""
 
-import threading
-from concurrent.futures import Future
 import uuid
+from concurrent.futures import Future
 
 import paho.mqtt.client as mqtt_client
 
 from pydtnn.comms import client
-from pydtnn.utils import UUID_MAX
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.comms import CommunicatorOptions
@@ -22,7 +20,7 @@ __all__ = (
 END_COMM = b""
 
 
-class Client(Protocol, client.Client):
+class Client(Protocol[str], client.Client[str]):
     """MQTT client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -30,27 +28,31 @@ class Client(Protocol, client.Client):
         super().__init__(options)
 
         # MQTT
-        self._register_handler(topic=f"s2c/{self._id.hex}", handler=self._handle_message)
+        self._sock = self._id.hex
+        self._register_handler(topic=f"s2c/{self._sock}", handler=self._handle_message)
 
-        self._put(self._session_ini(self._get_state(self._id)), self._id)
+        self._ini(self._sock)
 
     def _handle_message(self, client: mqtt_client.Client, userdata, message: mqtt_client.MQTTMessage) -> None:
         """Broker message handler"""
-        state = self._get_state(self._id)
+        sock = self._peer(message)
+        peer = self._get_peer(sock)
+        state = self._state[peer]
         state.get_buffer.write(message.payload)
-        self._get_flush()
+        self._process_session(peer)
 
         if not state.state and state.put_empty():
-            self._fin()
+            self._fin(sock)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
-        self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
+        self._pool.submit(self._c2s, self._sock).add_done_callback(lambda future: future.result())
         return future
 
-    def _c2s(self):
-        state = self._get_state(self._id)
+    def _c2s(self, sock: str):
+        peer = self._get_peer(sock)
+        state = self._state[peer]
 
         state.put_flush()
         while not state.put_buffer.empty():
@@ -59,15 +61,13 @@ class Client(Protocol, client.Client):
 
     def _close(self) -> None:
         """Close the client"""
-        self._put(self._session_fin(self._get_state(self._id)), self._id)
+        sock = self._sock
+        peer = self._get_peer(sock)
+        state = self._state[peer]
+        self._put(self._session_fin(state), peer)
 
         # Request loop thread to stop
         self._pool.shutdown()
         self._stop_loop()
 
-        # Unlock inflight external API:
-        for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
-
-        # Close resources
         super()._close()

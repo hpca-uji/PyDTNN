@@ -4,13 +4,11 @@ import ssl
 import copy
 import socket
 import selectors
-import threading
 from concurrent.futures import Future
 import uuid
 
 from pydtnn import comms
 from pydtnn.comms import client
-from pydtnn.utils import UUID_MAX
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.comms import CommunicatorOptions
@@ -21,7 +19,7 @@ __all__ = (
 )
 
 
-class Client(Protocol, client.Client):
+class Client(Protocol[socket.socket], client.Client[socket.socket]):
     """TCP client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -39,11 +37,12 @@ class Client(Protocol, client.Client):
 
         self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
 
-        self._put(self._session_ini(self._get_state(self._id)), self._id)
+        self._ini(self._socket)
 
     def _handle_connection(self, sock: socket.socket, event) -> None:
         """Handle connection events"""
-        state = self._get_state(self._id)
+        peer = self._get_peer(sock)
+        state = self._state[peer]
 
         if state.put_empty():
             self._modify_selector(sock, selectors.EVENT_READ)
@@ -60,11 +59,12 @@ class Client(Protocol, client.Client):
         self._notify_selector()
 
         if not state.state and state.put_empty():
-            self._fin()
+            self._fin(sock)
 
     def _s2c(self, sock: socket.socket) -> None:
         """Server to client communication"""
-        state = self._get_state(self._id)
+        peer = self._get_peer(sock)
+        state = self._state[peer]
 
         try:
             data = sock.recv(self._options.connection.max_size)
@@ -81,11 +81,12 @@ class Client(Protocol, client.Client):
             data = sock.recv(pending)
             state.get_write(data)
 
-        self._get_flush()
+        self._process_session(peer)
 
     def _c2s(self, sock: socket.socket) -> None:
         """Client to server communication"""
-        state = self._get_state(self._id)
+        peer = self._get_peer(sock)
+        state = self._state[peer]
 
         state.put_flush()
         if state.put_buffer.empty():
@@ -98,11 +99,12 @@ class Client(Protocol, client.Client):
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
 
-    def _extra_fin(self) -> None:
+    def _extra_fin(self, peer: uuid.UUID) -> None:
         """Close connection"""
         self._selector.unregister(self._socket)
         self._socket.close()
         del self._socket
+        super()._extra_fin(peer)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
@@ -113,14 +115,13 @@ class Client(Protocol, client.Client):
 
     def _close(self) -> None:
         """Close the client"""
-        self._put(self._session_fin(self._get_state(self._id)), self._id)
+        sock = self._socket
+        peer = self._get_peer(sock)
+        state = self._state[peer]
+        self._put(self._session_fin(state), peer)
 
         with self._lock:
             while hasattr(self, "_socket"):
                 self._lock.wait()
-
-        # Unlock inflight external API:
-        for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
 
         super()._close()

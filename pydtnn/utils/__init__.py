@@ -298,7 +298,7 @@ def string_substitute(template, /, **mappings):
     return string.Template(template).safe_substitute(mappings)
 
 
-def debug_stack():
+def debug_stack(*args):
     """Get stack trace"""
     log = print
 
@@ -311,7 +311,7 @@ def debug_stack():
     finally:
         del stack
 
-    log(f"{context} from {os.getpid()}:{threading.get_native_id()}")
+    log(f"{context} from {os.getpid()}:{threading.get_native_id()}", *args)
 
 
 def debug_func(func):

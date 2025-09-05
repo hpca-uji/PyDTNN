@@ -10,7 +10,6 @@ from concurrent.futures import Future
 
 from pydtnn import comms
 from pydtnn.comms import client
-from pydtnn.utils import UUID_MAX
 from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.comms import CommunicatorOptions, ResourceClosed
@@ -25,7 +24,7 @@ __all__ = (
 ARG_MISSING = object()
 
 
-class Client(Protocol, client.Client):
+class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.StreamStreamMultiCallable]):
     """gRPC client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -52,12 +51,13 @@ class Client(Protocol, client.Client):
         self._client = True
         self._com = self._channel.stream_stream(method="/grpc/com", request_serializer=bytes, response_deserializer=lambda x: x)
 
-        self._put(self._session_ini(self._get_state(self._id)), self._id)
+        self._ini(self._com)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
-        self._pool.submit(self._c2s).add_done_callback(lambda future: future.result())
+        sock = self._peers[peer]
+        self._pool.submit(self._c2s, sock).add_done_callback(lambda future: future.result())
         return future
 
     def _get(self, *peers: uuid.UUID) -> uuid.UUID:
@@ -66,21 +66,23 @@ class Client(Protocol, client.Client):
         except Empty:
             if not hasattr(self, "_client"):
                 raise ResourceClosed()
-            self._pool.submit(self._s2c)
+            sock = self._com
+            self._pool.submit(self._s2c, sock)
             peer = self._get_event.get()
             self._get_grpc.put(None)
         return peer
 
-    def _handle_connection(self) -> None:
+    def _handle_connection(self, sock: grpc.StreamStreamMultiCallable) -> None:
         """Communication round"""
-        state = self._get_state(self._id)
+        peer = self._get_peer(sock)
+        state = self._state[peer]
 
-        for data in self._m2d(self._com(self._s2m(state))):
+        for data in self._m2d(sock(self._s2m(state))):
             state.get_write(data)
-            self._get_flush()
+            self._process_session(peer)
 
         if not state.state and state.put_empty():
-            self._fin()
+            self._fin(sock)
 
     @staticmethod
     def _new_backoff(start=-10, end=0) -> abc.Generator[float]:
@@ -97,15 +99,16 @@ class Client(Protocol, client.Client):
         while True:
             yield backoff
 
-    def _c2s(self) -> None:
+    def _c2s(self, sock: grpc.StreamStreamMultiCallable) -> None:
         """Communication client to server"""
         # Check if already handled
-        state = self._get_state(self._id)
+        peer = self._get_peer(sock)
+        state = self._state[peer]
         if state.put_empty():
             return
-        self._handle_connection()
+        self._handle_connection(sock)
 
-    def _s2c(self) -> None:
+    def _s2c(self, sock: grpc.StreamStreamMultiCallable) -> None:
         """Communication server to client"""
         # Check if already handled
         try:
@@ -125,20 +128,23 @@ class Client(Protocol, client.Client):
                 self._put_grpc.clear()
             else:
                 backoff = self._new_backoff()
-            self._handle_connection()
+            self._handle_connection(sock)
         self._get_grpc.get_nowait()
 
-    def _extra_fin(self) -> None:
+    def _extra_fin(self, peer: uuid.UUID) -> None:
         """Communication finalization"""
         del self._client
+        super()._extra_fin(peer)
 
     def _close(self) -> None:
         """Close the client"""
-        state = self._get_state(self._id)
-        self._put(self._session_fin(state), self._id)
+        sock = self._com
+        peer = self._get_peer(sock)
+        state = self._state[peer]
+        self._put(self._session_fin(state), peer)
 
         while state.state:
-            self._pool.submit(self._s2c).result()
+            self._pool.submit(self._s2c, sock).result()
 
         with self._lock:
             while hasattr(self, "_client"):
@@ -146,9 +152,5 @@ class Client(Protocol, client.Client):
 
         self._pool.shutdown()
         self._channel.close()
-
-        # Unlock inflight external API:
-        for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
 
         super()._close()
