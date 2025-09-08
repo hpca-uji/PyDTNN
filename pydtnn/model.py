@@ -1022,10 +1022,7 @@ class Model:
         for lr_sched in self.lr_schedulers:
             lr_sched.on_batch_begin()
 
-        try:
-            x, y_targ = self._sync_x_y(x_batch, y_batch, current_batch_size)
-        except ValueError:
-            return self.total_metrics
+        x, y_targ = self._sync_x_y(x_batch, y_batch, current_batch_size)
 
         num_layers = len(self.layers)
 
