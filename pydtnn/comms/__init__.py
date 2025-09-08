@@ -91,7 +91,7 @@ __all__ = (
     "Message",
     "ResourceClosed",
     "Communicator",
-    "ConnectionData",
+    "SessionData",
     "Server",
     "Client"
 )
@@ -120,7 +120,7 @@ class ConnectionState(enum.Flag):
     WRITABLE = enum.auto()
 
 
-class ConnectionData:
+class SessionData:
     """Connection data"""
 
     def __init__(self, merge_size: int = 4 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 1 - 1) -> None:
@@ -263,35 +263,42 @@ class Communicator[T](abc.ABC):
 
         self._id = uuid.uuid4()
         self._lock = threading.Condition()
-        self._get_event = SimpleQueue[uuid.UUID]()
+        self._get_events = SimpleQueue[uuid.UUID]()
 
-        self._peers = bidict[uuid.UUID, T]()
-        self._state = dict[uuid.UUID, ConnectionData]()
+        self._comms = bidict[uuid.UUID, T]()
+        self._states = dict[uuid.UUID, SessionData]()
 
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
         self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
 
-    def _new_state(self) -> ConnectionData:
+    def _new_session_data(self) -> SessionData:
         """Generate new connection state data"""
-        return ConnectionData(merge_size=self._options.connection.merge_size, efficient_size=self._options.connection.efficient_size)
+        return SessionData(merge_size=self._options.connection.merge_size, efficient_size=self._options.connection.efficient_size)
 
-    def _session_ini(self, state: ConnectionData) -> Stream:
+    def _session_ini(self, peer: uuid.UUID) -> None:
         """Send session ini message"""
-        # assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
+        state = self._states[peer]
+        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
         state.state |= ConnectionState.WRITABLE
-        return self._serializer.dump(self._id)
+        stream = self._serializer.dump(self._id)
+        self._put(stream, peer)
 
-    def _session_fin(self, state: ConnectionData) -> Stream:
+    def _session_fin(self, peer: uuid.UUID) -> None:
         """Send session fin message"""
+        state = self._states[peer]
         assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
         state.state &= ~ConnectionState.WRITABLE
-        return Stream()
+        stream = Stream()
+        self._put(stream, peer)
 
-    def _handle_session_ini(self, state: ConnectionData, peer: uuid.UUID, stream: Stream) -> None:
+    def _handle_session_ini(self, peer: uuid.UUID, stream: Stream) -> None:
         """Handle session initialize message"""
+        state = self._states[peer]
         assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
-        sock = self._peers[peer]
+
+        comm = self._comms[peer]
+
         # Set peer in state
         with stream:
             id = self._serializer.load(stream)
@@ -301,99 +308,98 @@ class Communicator[T](abc.ABC):
 
         with self._lock:
             # New ID, move state from tmp ID
-            if id not in self._peers:
-                self._state[id] = state = self._state.pop(peer)
+            if id not in self._comms:
+                self._states[id] = state = self._states.pop(peer)
 
             # Old ID, reconnection, drop tmp ID
             elif peer != id:
                 # FIXME: Transfer queues over
-                del self._state[peer]
+                del self._states[peer]
 
-            # Update socket ID association
-            self._peers.inverse[sock] = id
+            # Update communicator ID association
+            self._comms.inverse[comm] = id
 
-    def _handle_session_fin(self, state: ConnectionData, peer: uuid.UUID, stream: Stream) -> None:
+    def _handle_session_fin(self, peer: uuid.UUID, stream: Stream) -> None:
         """Handle session finalize message"""
+        state = self._states[peer]
+        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
         assert stream.nbytes == 0, f"Fin handshake message corrupted (got: {stream.nbytes} bytes)"
         stream.close()
-        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
         state.state &= ~ConnectionState.READABLE
 
-    def _process_session(self, peer: uuid.UUID) -> uuid.UUID:
-        state = self._state[peer]
+    def _process_gets(self, peer: uuid.UUID) -> None:
+        """Handle pending get packets"""
+        state = self._states[peer]
 
         for stream in state.get_flush():
             if stream.empty():
-                self._handle_session_fin(state, peer, stream)
+                self._handle_session_fin(peer, stream)
 
             elif state.peer == UUID_NIL:
-                self._handle_session_ini(state, peer, stream)
+                self._handle_session_ini(peer, stream)
                 peer = state.peer
 
             else:
                 state.get_queue.put(stream)
-                self._get_event.put(peer)
+                self._get_events.put(peer)
 
-        return peer
-
-    def _get_peer(self, sock: T) -> uuid.UUID:
-        """Get associated peer (or create a new one)"""
+    def _set_default_peer(self, comm: T) -> uuid.UUID:
+        """Get associated peer or create a new one if missing"""
         try:
-            return self._peers.inverse[sock]
+            return self._comms.inverse[comm]
         except KeyError:
-            return self._ini(sock)
+            return self._connection_ini(comm)
 
-    def _extra_ini(self, peer: uuid.UUID) -> None:
-        pass
+    def _connection_post_ini(self, peer: uuid.UUID) -> None:
+        """Additional connection ini after peer setup"""
 
-    def _extra_fin(self, peer: uuid.UUID) -> None:
-        pass
+    def _connection_pre_fin(self, peer: uuid.UUID) -> None:
+        """Additional connection fin before peer taredown"""
 
-    def _ini(self, sock: T) -> uuid.UUID:
+    def _connection_ini(self, comm: T) -> uuid.UUID:
         """Handle new incomming connections"""
         # NOTE: communication thead
         peer = uuid.uuid4()  # temporary ID
 
         with self._lock:
-            self._peers[peer] = sock
-            self._state[peer] = state = self._new_state()
-            self._extra_ini(peer)
+            self._comms[peer] = comm
+            self._states[peer] = self._new_session_data()
+            self._connection_post_ini(peer)
 
             # ACK
-            peer = self._peers.inverse[sock]
-            state = self._state[peer]
-            self._put(self._session_ini(state), peer)
+            peer = self._comms.inverse[comm]
+            self._session_ini(peer)
             self._lock.notify_all()
 
         return peer
 
-    def _fin(self, sock: T) -> None:
+    def _connection_fin(self, comm: T) -> None:
         """Close connection"""
         with self._lock:
-            peer = self._peers.inverse[sock]
+            peer = self._comms.inverse[comm]
 
-            self._extra_fin(peer)
+            self._connection_pre_fin(peer)
 
-            del self._peers[peer]
+            del self._comms[peer]
 
             # TODO: reuse peer_cleanup
-            if self._state[peer].get_empty():
-                del self._state[peer]
+            if self._states[peer].get_empty():
+                del self._states[peer]
 
             self._lock.notify_all()
 
-    def _clean_session(self, peer: uuid.UUID) -> None:
+    def _session_cleanup(self, peer: uuid.UUID) -> None:
         """Remove finalized drained peer"""
-        state = self._state[peer]
+        state = self._states[peer]
 
-        if peer not in self._peers and state.get_empty():
+        if peer not in self._comms and state.get_empty():
             with self._lock:
-                if peer not in self._peers and state.get_empty():
-                    del self._state[peer]
+                if peer not in self._comms and state.get_empty():
+                    del self._states[peer]
 
     def _get(self, *peers: uuid.UUID) -> uuid.UUID:
         """Wait for a message from peer group, return which peer is ready"""
-        return self._get_event.get()
+        return self._get_events.get()
 
     def get(self, *peers: uuid.UUID) -> Message:
         """Get data from a client"""
@@ -405,13 +411,13 @@ class Communicator[T](abc.ABC):
         if peer == UUID_MAX:
             raise ResourceClosed()
 
-        state = self._state[peer]
+        state = self._states[peer]
         get_queue = state.get_queue
 
         # Get object
         stream = get_queue.get_nowait()
 
-        self._clean_session(peer)
+        self._session_cleanup(peer)
 
         with stream:
             obj = self._serializer.load(stream)
@@ -421,7 +427,7 @@ class Communicator[T](abc.ABC):
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into state"""
         try:
-            state = self._state[peer]
+            state = self._states[peer]
             future = state.put(stream)
         except (KeyError, ResourceClosed):
             raise ResourceClosed(peer)
@@ -431,7 +437,7 @@ class Communicator[T](abc.ABC):
         """Publish data to peers"""
         if not peers:
             with self._lock:
-                peers = tuple(self._peers)
+                peers = tuple(self._comms)
 
         futures = list[Future[None]]()
         errors = list[ResourceClosed]()
@@ -459,7 +465,7 @@ class Communicator[T](abc.ABC):
         """Communicator finalizer"""
         # Unlock inflight external API:
         for _ in range(threading.active_count()):
-            self._get_event.put(UUID_MAX)
+            self._get_events.put(UUID_MAX)
         self._pool.shutdown()
 
     def close(self) -> None:
