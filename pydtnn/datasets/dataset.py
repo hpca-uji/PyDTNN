@@ -74,12 +74,13 @@ class Dataset(ABC):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+        # if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
+        elif not (input_shape[0] < input_shape[2]):
+            warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
 
+        # TODO: Check if this makes sense.
         if len(output_shape) != 1:
             warnings.warn(f"Output shape does not have 1 dimension ({output_shape}), it may cause issues!", RuntimeWarning)
-
-        if len(input_shape) == 3 and not (input_shape[0] < input_shape[2]):
-            warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
 
         self.model:Model = model
         self.max_batches_online:int = max_batches_online
