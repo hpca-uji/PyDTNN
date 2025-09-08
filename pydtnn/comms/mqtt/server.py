@@ -30,23 +30,24 @@ class Server(Protocol, server.Server[str]):
         # MQTT
         self._register_handler(topic="c2s/+", handler=self._c2s)
 
-    def _extra_ini(self, peer: uuid.UUID) -> None:
-        sock = self._peers.pop(peer)
-        state = self._state.pop(peer)
-        peer = uuid.UUID(hex=sock)
-        self._peers[peer] = sock
-        self._state[peer] = state
+    def _connection_post_ini(self, peer: uuid.UUID) -> None:
+        comm = self._comms.pop(peer)
+        state = self._states.pop(peer)
+        peer = uuid.UUID(hex=comm)
+        self._comms[peer] = comm
+        self._states[peer] = state
 
     def _c2s(self, client: mqtt_client.Client, userdata, mqtt_message: mqtt_client.MQTTMessage) -> None:
         """Client message handler"""
         # NOTE: communication thead
-        sock = self._peer(mqtt_message)
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        comm = self._peer(mqtt_message)
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
         data = mqtt_message.payload
         state.get_write(data)
-        peer = self._process_session(peer)
+        self._process_gets(peer)
+        peer = state.peer
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
@@ -55,23 +56,23 @@ class Server(Protocol, server.Server[str]):
         return future
 
     def _s2c(self, peer: uuid.UUID):
-        sock = self._peers[peer]
-        state = self._state[peer]
+        comm = self._comms[peer]
+        state = self._states[peer]
 
         state.put_flush()
         while not state.put_buffer.empty():
             with state.put_read(self._options.connection.max_size) as view:
-                self._publish(f"s2c/{sock}", bytes(view))
+                self._publish(f"s2c/{comm}", bytes(view))
 
         if not state.state and state.put_empty():
-            self._fin(sock)
+            self._connection_fin(comm)
 
     def _close(self) -> None:
         """Close the server"""
 
         # Wait peers to drain
         with self._lock:
-            while self._peers:
+            while self._comms:
                 self._lock.wait()
 
         # Close resources

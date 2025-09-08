@@ -48,41 +48,42 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
         else:
             self._channel = grpc.insecure_channel(**config)
 
-        self._client = True
-        self._com = self._channel.stream_stream(method="/grpc/com", request_serializer=bytes, response_deserializer=lambda x: x)
+        self._conntected = True
+        self._comm = self._channel.stream_stream(method="/grpc/comm", request_serializer=bytes, response_deserializer=lambda x: x)
 
-        self._ini(self._com)
+        self._connection_ini(self._comm)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
-        sock = self._peers[peer]
-        self._pool.submit(self._c2s, sock).add_done_callback(lambda future: future.result())
+        comm = self._comms[peer]
+        self._pool.submit(self._c2s, comm).add_done_callback(lambda future: future.result())
         return future
 
     def _get(self, *peers: uuid.UUID) -> uuid.UUID:
         try:
-            peer = self._get_event.get_nowait()
+            peer = self._get_events.get_nowait()
         except Empty:
-            if not hasattr(self, "_client"):
+            if not hasattr(self, "_conntected"):
                 raise ResourceClosed()
-            sock = self._com
-            self._pool.submit(self._s2c, sock)
-            peer = self._get_event.get()
+            comm = self._comm
+            self._pool.submit(self._s2c, comm)
+            peer = self._get_events.get()
             self._get_grpc.put(None)
         return peer
 
-    def _handle_connection(self, sock: grpc.StreamStreamMultiCallable) -> None:
+    def _handle_connection(self, comm: grpc.StreamStreamMultiCallable) -> None:
         """Communication round"""
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
-        for data in self._m2d(sock(self._s2m(state))):
+        for data in self._m2d(comm(self._s2m(state))):
             state.get_write(data)
-            self._process_session(peer)
+            self._process_gets(peer)
+            peer = state.peer
 
         if not state.state and state.put_empty():
-            self._fin(sock)
+            self._connection_fin(comm)
 
     @staticmethod
     def _new_backoff(start=-10, end=0) -> abc.Generator[float]:
@@ -99,16 +100,16 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
         while True:
             yield backoff
 
-    def _c2s(self, sock: grpc.StreamStreamMultiCallable) -> None:
+    def _c2s(self, comm: grpc.StreamStreamMultiCallable) -> None:
         """Communication client to server"""
         # Check if already handled
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
         if state.put_empty():
             return
-        self._handle_connection(sock)
+        self._handle_connection(comm)
 
-    def _s2c(self, sock: grpc.StreamStreamMultiCallable) -> None:
+    def _s2c(self, comm: grpc.StreamStreamMultiCallable) -> None:
         """Communication server to client"""
         # Check if already handled
         try:
@@ -121,33 +122,33 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
         # Handle recive loop
         backoff = None
         while self._get_grpc.empty():
-            if not hasattr(self, "_client"):
+            if not hasattr(self, "_conntected"):
                 return
             elif backoff:
                 self._put_grpc.wait(next(backoff))
                 self._put_grpc.clear()
             else:
                 backoff = self._new_backoff()
-            self._handle_connection(sock)
+            self._handle_connection(comm)
         self._get_grpc.get_nowait()
 
-    def _extra_fin(self, peer: uuid.UUID) -> None:
+    def _connection_pre_fin(self, peer: uuid.UUID) -> None:
         """Communication finalization"""
-        del self._client
-        super()._extra_fin(peer)
+        del self._conntected
+        super()._connection_pre_fin(peer)
 
     def _close(self) -> None:
         """Close the client"""
-        sock = self._com
-        peer = self._get_peer(sock)
-        state = self._state[peer]
-        self._put(self._session_fin(state), peer)
+        comm = self._comm
+        peer = self._comms.inverse[comm]
+        state = self._states[peer]
+        self._session_fin(peer)
 
         while state.state:
-            self._pool.submit(self._s2c, sock).result()
+            self._pool.submit(self._s2c, comm).result()
 
         with self._lock:
-            while hasattr(self, "_client"):
+            while hasattr(self, "_conntected"):
                 self._lock.wait()
 
         self._pool.shutdown()
