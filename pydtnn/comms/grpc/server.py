@@ -33,7 +33,7 @@ class Server(Protocol[str], server.Server[str]):
             compression=self._compression
         )
         handler = grpc.stream_stream_rpc_method_handler(behavior=self._com, request_deserializer=lambda x: x, response_serializer=bytes)
-        self._server.add_registered_method_handlers(service_name="grpc", method_handlers={"com": handler})  # type: ignore
+        self._server.add_registered_method_handlers(service_name="grpc", method_handlers={"comm": handler})  # type: ignore
 
         config: abc.MutableMapping = {
             "address": str(self._options.netloc)
@@ -59,25 +59,26 @@ class Server(Protocol[str], server.Server[str]):
     def _handle_connection(self, messages: abc.Iterable[abc.Buffer], context: grpc.ServicerContext) -> abc.Iterable[abc.Buffer]:
         """Client to server communication"""
         # NOTE: communication thread
-        sock = context.peer()
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        comm = context.peer()
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
         # Message streaming
         yield from self._s2m(state)
         for data in self._m2d(messages):
             state.get_write(data)
-            peer = self._process_session(peer)
+            self._process_gets(peer)
+            peer = state.peer
 
         if not state.state and state.put_empty():
-            self._fin(sock)
+            self._connection_fin(comm)
 
     def _close(self) -> None:
         """Close the server"""
 
         # Wait peers to drain
         with self._lock:
-            while self._peers:
+            while self._comms:
                 self._lock.wait()
 
         # Close resources

@@ -27,47 +27,47 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
         super().__init__(copy.replace(options, workers=1))
 
         # TCP
-        self._socket = socket.create_connection(self._options.netloc)
+        self._comm = socket.create_connection(self._options.netloc)
 
         if comms.SSL:
             context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=comms.SSL_CERT)
-            self._socket = context.wrap_socket(self._socket, server_hostname=self._options.netloc.host)
+            self._comm = context.wrap_socket(self._comm, server_hostname=self._options.netloc.host)
 
-        self._socket.setblocking(False)
+        self._comm.setblocking(False)
 
-        self._selector.register(self._socket, selectors.EVENT_READ, self._handle_connection)
+        self._selector.register(self._comm, selectors.EVENT_READ, self._handle_connection)
 
-        self._ini(self._socket)
+        self._connection_ini(self._comm)
 
-    def _handle_connection(self, sock: socket.socket, event) -> None:
+    def _handle_connection(self, comm: socket.socket, event) -> None:
         """Handle connection events"""
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
         if state.put_empty():
-            self._modify_selector(sock, selectors.EVENT_READ)
+            self._modify_selector(comm, selectors.EVENT_READ)
 
         if event & selectors.EVENT_WRITE:
-            self._c2s(sock)
+            self._c2s(comm)
 
         if event & selectors.EVENT_READ:
-            self._s2c(sock)
+            self._s2c(comm)
 
         if not state.put_empty():
-            self._modify_selector(sock, selectors.EVENT_READ | selectors.EVENT_WRITE)
+            self._modify_selector(comm, selectors.EVENT_READ | selectors.EVENT_WRITE)
 
         self._notify_selector()
 
         if not state.state and state.put_empty():
-            self._fin(sock)
+            self._connection_fin(comm)
 
-    def _s2c(self, sock: socket.socket) -> None:
+    def _s2c(self, comm: socket.socket) -> None:
         """Server to client communication"""
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
         try:
-            data = sock.recv(self._options.connection.max_size)
+            data = comm.recv(self._options.connection.max_size)
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             return
 
@@ -77,51 +77,51 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
 
         state.get_write(data)
 
-        if comms.SSL and (pending := sock.pending()):  # type: ignore
-            data = sock.recv(pending)
+        if comms.SSL and (pending := comm.pending()):  # type: ignore
+            data = comm.recv(pending)
             state.get_write(data)
 
-        self._process_session(peer)
+        self._process_gets(peer)
+        peer = state.peer
 
-    def _c2s(self, sock: socket.socket) -> None:
+    def _c2s(self, comm: socket.socket) -> None:
         """Client to server communication"""
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
         state.put_flush()
         if state.put_buffer.empty():
             return
         with state.put_read() as view:
             try:
-                size = sock.send(view)
+                size = comm.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 size = 0
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
 
-    def _extra_fin(self, peer: uuid.UUID) -> None:
+    def _connection_pre_fin(self, peer: uuid.UUID) -> None:
         """Close connection"""
-        self._selector.unregister(self._socket)
-        self._socket.close()
-        del self._socket
-        super()._extra_fin(peer)
+        self._selector.unregister(self._comm)
+        self._comm.close()
+        del self._comm
+        super()._connection_pre_fin(peer)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
-        self._modify_selector(self._socket, selectors.EVENT_READ | selectors.EVENT_WRITE)
+        self._modify_selector(self._comm, selectors.EVENT_READ | selectors.EVENT_WRITE)
         self._notify_selector()
         return future
 
     def _close(self) -> None:
         """Close the client"""
-        sock = self._socket
-        peer = self._get_peer(sock)
-        state = self._state[peer]
-        self._put(self._session_fin(state), peer)
+        comm = self._comm
+        peer = self._comms.inverse[comm]
+        self._session_fin(peer)
 
         with self._lock:
-            while hasattr(self, "_socket"):
+            while hasattr(self, "_comm"):
                 self._lock.wait()
 
         super()._close()
