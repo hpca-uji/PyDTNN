@@ -44,7 +44,7 @@ class Protocol[T](comms.Communicator[T]):
         """Transforms gRPC messages to bytes"""
         yield from messages
 
-    def _s2m(self, state: comms.ConnectionData) -> abc.Generator[abc.Buffer]:
+    def _s2m(self, state: comms.SessionData) -> abc.Generator[abc.Buffer]:
         """Transforms state to message"""
         state.put_flush()
         while not state.put_buffer.empty():

@@ -28,31 +28,32 @@ class Client(Protocol[str], client.Client[str]):
         super().__init__(options)
 
         # MQTT
-        self._sock = self._id.hex
-        self._register_handler(topic=f"s2c/{self._sock}", handler=self._handle_message)
+        self._comm = self._id.hex
+        self._register_handler(topic=f"s2c/{self._comm}", handler=self._handle_message)
 
-        self._ini(self._sock)
+        self._connection_ini(self._comm)
 
     def _handle_message(self, client: mqtt_client.Client, userdata, message: mqtt_client.MQTTMessage) -> None:
         """Broker message handler"""
-        sock = self._peer(message)
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+        comm = self._peer(message)
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
         state.get_buffer.write(message.payload)
-        self._process_session(peer)
+        self._process_gets(peer)
+        peer = state.peer
 
         if not state.state and state.put_empty():
-            self._fin(sock)
+            self._connection_fin(comm)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
-        self._pool.submit(self._c2s, self._sock).add_done_callback(lambda future: future.result())
+        self._pool.submit(self._c2s, self._comm).add_done_callback(lambda future: future.result())
         return future
 
-    def _c2s(self, sock: str):
-        peer = self._get_peer(sock)
-        state = self._state[peer]
+    def _c2s(self, comm: str):
+        peer = self._set_default_peer(comm)
+        state = self._states[peer]
 
         state.put_flush()
         while not state.put_buffer.empty():
@@ -61,10 +62,9 @@ class Client(Protocol[str], client.Client[str]):
 
     def _close(self) -> None:
         """Close the client"""
-        sock = self._sock
-        peer = self._get_peer(sock)
-        state = self._state[peer]
-        self._put(self._session_fin(state), peer)
+        comm = self._comm
+        peer = self._comms.inverse[comm]
+        self._session_fin(peer)
 
         # Request loop thread to stop
         self._pool.shutdown()
