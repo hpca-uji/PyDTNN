@@ -21,15 +21,20 @@ import numpy as np
 from random import shuffle
 from PIL import Image
 
-from time import time
-from typing import Iterable
-type DataPath = str
-type ClassName = str
+from dataset import Dataset, shape_t, DatasetEnum, Array
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
-class FolderLoader():
+from typing import TYPE_CHECKING, override, Generator
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+
+type DataPath = str
+type ClassName = np.number
+
+class DatasetFolderLoader(Dataset):
     """
     This class will receive the path to a dataset divided in different sub-folders where every sub-folder is a different data class, and will
-    generate [COMPLETAR].
+    generate the samples.
     For example:    
     - Dataset:
         - A: img1, img2
@@ -38,42 +43,70 @@ class FolderLoader():
 
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
-    def __init__(self, dataset_path:str, files_extention: None | str | list[str] = None, preserve_class_name:bool = True):
-        """
-        - dataset_path (str): Path to the dataset.
-        - files_extention (None, str, list[str]): The supported file extetions. If it is None, then all extentions are supported.
-        - preserve_class_name (bool): If it's \'True\', the name of the classes will be the same as the directories. If it's \'False\', then the classes's name will be numbers starting from zero.
-        - type_data_loading (Literal["static", "dynamic"]): If it's \'static\', all the data will be loaded. If it's \'dinamic\', the data will be loaded as thery are used.
-        - shuffle_data_set (bool): If it's \'True\' it will give the dataset's data in a random order.
-        """
-        assert os.path.isdir(dataset_path), f"\'{dataset_path}\' should be a directory."
         
-        self.path = dataset_path
-        self._dict_class_file = dict[ClassName, set[DataPath]]()
-        self._data_load_funcion: list[tuple[ClassName, Image.Image]] | Iterable[tuple[ClassName, Image.Image]] = None        
-        self.num_images = 0       
-                
-        for file in os.listdir(self.path):
-            path_folder = os.path.join(self.path, file)
-            if os.path.isdir(path_folder): 
-                # TODO/NOTE: Should I short this?                 
-                class_name = file if preserve_class_name else len(self._dict_class_file)                
-                data_set = set(file for file in [os.path.join(path_folder, file) for file in os.listdir(path_folder)] if os.path.isfile(file) and (files_extention is None or file.endswith(files_extention)))                
-                assert len(data_set) != 0, f"There are not files in \'{path_folder}\'{'.' if files_extention is None else f' with any of the following extensions: {str(files_extention).replace('[', '').replace(']', '')}.'}"
-                self._dict_class_file[class_name] = data_set
-                self.num_images += len(data_set)
-        assert len(self._dict_class_file), f"There are no directories in \'{self.path}\'."        
-    # --- END __init__ --- #
-    
-    def get_number_element_per_class(self) -> dict[ClassName, int]:
-        return {key: len(self._dict_class_file[key]) for key in self._dict_class_file.keys()}
+    def __init__(self, model: "Model", input_shape:shape_t, output_shape:shape_t,
+                 test_dataset_path:str, train_dataset_path:str, val_dataset_path:str,
+                 new_size:int|tuple[int, ...]|None= None,
+                 max_batches_online = 40, force_test_as_validation=False, debug=False):
+        """
+        Args:
+            model (Model): Model's object.
+            input_shape (shape_t): input's shape
+            output_shape (shape_t): output's shape
+            new_size (tuple[int, ...]|int|None): the new_size of the image after being resized. If it's a int, then the resize dimensions will be (new_size, new_size). If it's None, no resize will be applied to the image.
+            max_batches_online (int): The maximum number of batches in memory. default: 40.
+            force_test_as_validation (bool): True to force the use of the test dataset as validation. default: False.
+            debug (bool): True to show debug prints. default: False.
+        """
+        
+        # TODO: los paths se sacan de model, que viene de parser.
+        # --> no existe val_path; unirlos.        
+        assert os.path.isdir(self.model.dataset_train_path), f"\'{self.model.dataset_train_path}\' should be a directory."
+        assert os.path.isdir(self.model.dataset_test_path), f"\'{self.model.dataset_test_path}\' should be a directory."
+        
+        self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
+        self._nsamples:list[int, int, int] = [0,0,0] # train, val, test
+        self.labels_and_images = dict[DatasetEnum, list[tuple[ClassName, DataPath]]]()
+        self.max_nsamples_online = self.max_batches_online * self.model.batch_size
 
-    def set_class_names(self, new_names: list[str] | dict[ClassName, str]) -> None:
+        self.labels_and_images[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path = train_dataset_path)
+        self.labels_and_images[DatasetEnum.TEST], self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path = test_dataset_path)
+
+        super.__init__(model, input_shape, output_shape, max_batches_online, force_test_as_validation, debug)
+    # --- END __init__ --- #
+
+
+    def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath], int]]:
+        dict_class_file = dict[ClassName, set[DataPath]]()
+        num_images = 0
+        list_dir = os.listdir(path).sort()
+        for class_name in range(list_dir):
+            file = list_dir[class_name]
+            path_folder = os.path.join(path, file)
+            if os.path.isdir(path_folder):                
+                data_set = set(file for file in [os.path.join(path_folder, file) for file in sorted(os.listdir(path_folder))] if os.path.isfile(file))
+                dict_class_file[class_name] = data_set
+                num_images += len(data_set)
+        assert len(dict_class_file) != 0, f"There are no directories in \'{path}\'."
+
+        labels_and_images = [(class_name, path_image) for class_name, set_path_image in dict_class_file.items() for path_image in set_path_image]
+
+        return (labels_and_images, num_images)
+    # ---
+
+    
+    def get_number_element_per_class(self, dict_class_file: dict[ClassName, set[DataPath]]) -> dict[ClassName, int]:
+        return {key: len(dict_class_file[key]) for key in dict_class_file.keys()}
+    # ---
+
+
+    def set_class_names(self, dict_class_file: dict[ClassName, set[DataPath]], 
+                        new_names: list[str] | dict[ClassName, str]) -> None:
         """
         This method set classes names with the values passed as parameters, that can be a dictionary or a list.
         - new_names (list[str]): the new names will be set with the same order as you get from dict.keys().
 
-        OR        
+        OR
 
         - new_names (dict[ClassName, str]): will change the name from the dictionary's key to it's value (ClassName -> new_names[ClassName]).
         
@@ -81,50 +114,81 @@ class FolderLoader():
         - ClassName is a string that represents a name of a class.
         - The number of elements of the list or the number of keys of the dictionary must be the same as classes; if not, the method will raise an AssertionError.
         - If the parameter is a dictionary and there is a key that is not a class name, then it will raise an KeyError.
+
+        Args:
+            dict_class_file (dict[ClassName, set[DataPath]]): the dataset with the original names.
+            new_names (list[str] | dict[ClassName, str]): the new names.
+        Returns:
+            Nothing. The changes will be updated in \'dict_class_file\'.
         """
-        num_classes = len(self._dict_class_file)
+        num_classes = len(dict_class_file)
         assert num_classes == len(new_names), f"The number of classes ({num_classes}) is not the same as the number of elements passed as parameter ({len(new_names)})."
         
         if isinstance(new_names, list):
-            list_keys = self._dict_class_file.keys()
+            list_keys = dict_class_file.keys()
             for i in range(num_classes):
-                self._dict_class_file[new_names[i]] = self._dict_class_file[list_keys[i]]
-                del self._dict_class_file[list_keys[i]]
+                dict_class_file[new_names[i]] = dict_class_file[list_keys[i]]
+                del dict_class_file[list_keys[i]]
         else: # isinstance(new_names, dict):
             for old_key in new_names.keys():
-                self._dict_class_file[old_key] = new_names[old_key] # new_key=new_names[old_key]
-                del self._dict_class_file[old_key]
+                dict_class_file[old_key] = new_names[old_key] # new_key=new_names[old_key]
+                del dict_class_file[old_key]
     # --- End set_class_names --- #
 
-    def static_data_load(self, shuffle_data_set:bool = False) -> list[tuple[ClassName, np.ndarray]]:
-        
-        
-        labels_and_images = list()
 
-        for class_name, set_images in self._dict_class_file.items():
-            for path_image in set_images:
-                image = Image.open(path_image)
-                labels_and_images.append((class_name, np.array(image)))
+    def _get_image_as_np_ndarray(self, path_image:str) -> np.ndarray:
+        image = Image.open(path_image)
+        image = image.convert("RGB")
+        if self.new_size is not None:
+            image = image.resize(self.new_size)
+        #else: The image size is ok.
+        np_array = np.asarray(image, dtype=self.model.dtype, order="C", copy=False)
+        # Convert to NCHW format (.copy() to apply the transpose and not return a view).
+        return np_array.transpose((2, 0, 1)).copy() 
+    # --- END _get_image_as_np_ndarray --- #
 
-        if shuffle_data_set:
-            shuffle(labels_and_images)        
-        labels, images = zip(*labels_and_images)
+    @override
+    def _init_actual_data(self):
+        # There is no initialization, as the data is huge, it will be read from the corresponding files as required
+        pass
+    # ---
+
+    @override
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
+        
+        batch_size = 0       
+
+        if part is DatasetEnum.TRAIN: 
+            shuffle(self.labels_and_images[part])
+        
+        images = list[np.ndarray]()
+        labels = list[ClassName]()
+
+        for label, path_image in self.labels_and_images[part]:
+            image = self._get_image_as_np_ndarray(path_image)
+                
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+                image = self._nchw2nhwc(image)
+            # else: Tensor format is OK.
             
-        return np.ndarray(labels), np.ndarray(images)
-    # --- END _static_data_load --- #
+            images.append(image)
+            labels.append(label)            
 
-    def dynamic_data_load(self, shuffle_data_set:bool = False) -> Iterable[tuple[ClassName, np.ndarray]]:
-        labels_and_images = [(class_name, path_image) for class_name, set_path_image in self._dict_class_file.items() for path_image in set_path_image]
+            if batch_size < self.max_nsamples_online:
+                batch_size += 1                
+            else:
+                x = np.stack(images, dtype=self.model.dtype)
+                y = np.stack(labels, dtype=self.model.dtype)
+                yield x, y
+                
+        #} - for
         
-        if shuffle_data_set:
-            shuffle(labels_and_images)
+        if batch_size < self.max_nsamples_online:
+            x = np.stack(images, dtype=self.model.dtype)
+            y = np.stack(labels, dtype=self.model.dtype)
+            yield x, y
+        #else: Since all the data was already yielded inside the for, do nothing.
 
-        # TODO: Mirar el cargador de Mnist
-
-        for _ in range(len(labels_and_images)):
-            label, path_image = labels_and_images.pop()
-            image = Image.open(path_image)
-            yield (label, np.array(image))
-    # --- END _dynamic_data_load --- #
+    # --- END _actual_data_generator --- #
 
 # --- END FolderLoader --- #
