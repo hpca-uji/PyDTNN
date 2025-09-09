@@ -38,7 +38,8 @@ def server(config: Namespace):
         clients.add(client_msg.peer)
 
     print(f"{server}-s2c-global: {server_msg}")
-    server.put(obj=server_msg)
+    future = server.put(obj=server_msg)
+    future.result()
 
     for client in clients:
         print(f"{server}-s2c-local: {server_msg}")
@@ -54,7 +55,8 @@ def client(config: Namespace):
     client = comms.Client()
 
     print(f"{client}-c2s: {client_msg}")
-    client.put(client_msg)
+    future = client.put(client_msg)
+    future.result()
 
     server_msg = client.get()
     print(f"{client}-s2c-global: {server_msg}")

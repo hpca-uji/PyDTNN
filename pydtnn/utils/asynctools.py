@@ -7,7 +7,18 @@ from concurrent.futures import Future
 
 __all__ = (
     "merge_futures",
+    "future_set_running",
+    "future_set_result",
+    "future_set_exception"
 )
+
+
+def future_set_running(future: Future) -> None:
+    """Set future running (if plausible)"""
+    try:
+        future.set_running_or_notify_cancel()
+    except RuntimeError:
+        pass
 
 
 def future_set_result(future: Future, result) -> None:
@@ -57,6 +68,9 @@ def merge_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -
         # Multi case
         if len(done) >= len(fs):
             future_set_result(future, None)
+
+    future.futures = fs  # type: ignore
+    future_set_running(future)
 
     for future in fs:
         future.add_done_callback(handle_done)
