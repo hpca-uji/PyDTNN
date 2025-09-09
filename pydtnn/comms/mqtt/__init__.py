@@ -36,7 +36,7 @@ ARG_MISSING = object()
 class Protocol[T](comms.Communicator[T]):
     """Shared base MQTT implementation"""
 
-    _qos = 2
+    _qos = 0
     _transport = "tcp"
     _protocol = mqtt_client.MQTTv311
 
