@@ -49,25 +49,26 @@ class DatasetFolderLoader(Dataset):
     """
         
     def __init__(self, model: "Model", train_nsamples:int=-1, test_nsamples:int=-1, input_shape:shape_t = INPUT_SHAPE, output_shape:shape_t= OUTPUT_SHAPE, 
-                 max_batches_online = 40, force_test_as_validation=False, debug=False, new_size:int|tuple[int, ...]|None= None,):
+                 max_batches_online = 2, force_test_as_validation=False, debug=False):
         """
         Args:
             model (Model): Model's object.
-            input_shape (shape_t): input's shape
-            output_shape (shape_t): output's shape
-            new_size (tuple[int, ...]|int|None): the new_size of the image after being resized. If it's a int, then the resize dimensions will be (new_size, new_size). If it's None, no resize will be applied to the image.
+            train_nsamples (int): number of train samples. This value will be ignored, the real value will be obtained later.
+            test_nsamples (int): number of test samples. This value will be ignored, the real value will be obtained later.
+            input_shape (shape_t): input's shape.
+            output_shape (shape_t): output's shape.
             max_batches_online (int): The maximum number of batches in memory. default: 40.
             force_test_as_validation (bool): True to force the use of the test dataset as validation. default: False.
             debug (bool): True to show debug prints. default: False.
         """
+        # TODO: add all the transformations.
         
-        # TODO: los paths se sacan de model, que viene de parser.
-        # --> no existe val_path; unirlos.
+        # NOTE: Validation dataset is extracted from the Test one.
         self.model = model
         assert os.path.isdir(self.model.dataset_train_path), f"\'{self.model.dataset_train_path}\' should be a directory."
         assert os.path.isdir(self.model.dataset_test_path), f"\'{self.model.dataset_test_path}\' should be a directory."
         
-        self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
+        #self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples:list[int, int, int] = [0,0,0] # train, val, test
         self.labels_and_images = dict[DatasetEnum, list[tuple[ClassName, DataPath]]]()
         self.max_nsamples_online = max_batches_online * self.model.batch_size
@@ -147,19 +148,28 @@ class DatasetFolderLoader(Dataset):
     def _get_image_as_np_ndarray(self, path_image:str) -> np.ndarray:
         image = Image.open(path_image)
         image = image.convert("RGB")
-        if self.new_size is not None:
-            image = image.resize(self.new_size)
+        # TODO: add the transformations
+        #if self.new_size is not None:
+        #    image = image.resize(self.new_size)
         #else: The image size is ok.
         np_array = np.asarray(image, dtype=self.model.dtype, order="C")
         # Convert to NCHW format (.copy() to apply the transpose and not return a view).
         return np_array.transpose((2, 0, 1)).copy() 
     # --- END _get_image_as_np_ndarray --- #
 
+    def _prepare_label(self, label:np.number, output_shape:shape_t) -> np.ndarray:
+        np_label = np.zeros(shape=output_shape, dtype=self.model.dtype, order="C")
+        np_label[label] = 1
+        return np_label
+    # --- END _prepare_label ---#
+
+
     @override
     def _init_actual_data(self):
         # There is no initialization, as the data is huge, it will be read from the corresponding files as required
         pass
     # ---
+
 
     @override
     def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
@@ -174,23 +184,23 @@ class DatasetFolderLoader(Dataset):
 
         for label, path_image in self.labels_and_images[part]:
             image = self._get_image_as_np_ndarray(path_image)
+            label = self._prepare_label(label, self.output_shape)
                 
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 image = self._nchw2nhwc(image)
             # else: Tensor format is OK.
             
             images.append(image)
-            labels.append(label)            
+            labels.append(label)
 
             if batch_size < self.max_nsamples_online:
-                batch_size += 1                
+                batch_size += 1
             else:
                 x = np.stack(images, dtype=self.model.dtype)
                 y = np.stack(labels, dtype=self.model.dtype)
                 images.clear()
                 labels.clear()
                 yield x, y
-                
         #} - for
         
         if batch_size < self.max_nsamples_online:
@@ -200,7 +210,7 @@ class DatasetFolderLoader(Dataset):
             labels.clear()
             yield x, y
         #else: Since all the data was already yielded inside the for, do nothing.
-
     # --- END _actual_data_generator --- #
+
 
 # --- END FolderLoader --- #
