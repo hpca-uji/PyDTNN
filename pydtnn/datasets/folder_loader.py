@@ -31,6 +31,10 @@ if TYPE_CHECKING:
 type DataPath = str
 type ClassName = np.number
 
+# TODO: Why is the output_shape in dataset??
+INPUT_SHAPE = (3,600,600)
+OUTPUT_SHAPE = (5,)
+
 class DatasetFolderLoader(Dataset):
     """
     This class will receive the path to a dataset divided in different sub-folders where every sub-folder is a different data class, and will
@@ -44,10 +48,8 @@ class DatasetFolderLoader(Dataset):
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
         
-    def __init__(self, model: "Model", input_shape:shape_t, output_shape:shape_t,
-                 test_dataset_path:str, train_dataset_path:str, val_dataset_path:str,
-                 new_size:int|tuple[int, ...]|None= None,
-                 max_batches_online = 40, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", train_nsamples:int=-1, test_nsamples:int=-1, input_shape:shape_t = INPUT_SHAPE, output_shape:shape_t= OUTPUT_SHAPE, 
+                 max_batches_online = 40, force_test_as_validation=False, debug=False, new_size:int|tuple[int, ...]|None= None,):
         """
         Args:
             model (Model): Model's object.
@@ -60,27 +62,33 @@ class DatasetFolderLoader(Dataset):
         """
         
         # TODO: los paths se sacan de model, que viene de parser.
-        # --> no existe val_path; unirlos.        
+        # --> no existe val_path; unirlos.
+        self.model = model
         assert os.path.isdir(self.model.dataset_train_path), f"\'{self.model.dataset_train_path}\' should be a directory."
         assert os.path.isdir(self.model.dataset_test_path), f"\'{self.model.dataset_test_path}\' should be a directory."
         
         self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples:list[int, int, int] = [0,0,0] # train, val, test
         self.labels_and_images = dict[DatasetEnum, list[tuple[ClassName, DataPath]]]()
-        self.max_nsamples_online = self.max_batches_online * self.model.batch_size
+        self.max_nsamples_online = max_batches_online * self.model.batch_size
 
-        self.labels_and_images[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path = train_dataset_path)
-        self.labels_and_images[DatasetEnum.TEST], self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path = test_dataset_path)
+        self.labels_and_images[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path = self.model.dataset_train_path)
+        self.labels_and_images[DatasetEnum.TEST], self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path = self.model.dataset_test_path)
 
-        super.__init__(model, input_shape, output_shape, max_batches_online, force_test_as_validation, debug)
+        super().__init__(model=model, train_nsamples=self._nsamples[DatasetEnum.TRAIN],
+                         test_nsamples=self._nsamples[DatasetEnum.TEST], 
+                         input_shape=input_shape, output_shape=output_shape, 
+                         max_batches_online=max_batches_online, 
+                         force_test_as_validation=force_test_as_validation, 
+                         debug=debug)
     # --- END __init__ --- #
 
 
     def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath], int]]:
         dict_class_file = dict[ClassName, set[DataPath]]()
         num_images = 0
-        list_dir = os.listdir(path).sort()
-        for class_name in range(list_dir):
+        list_dir = sorted(os.listdir(path))
+        for class_name in range(len(list_dir)):
             file = list_dir[class_name]
             path_folder = os.path.join(path, file)
             if os.path.isdir(path_folder):                
@@ -142,7 +150,7 @@ class DatasetFolderLoader(Dataset):
         if self.new_size is not None:
             image = image.resize(self.new_size)
         #else: The image size is ok.
-        np_array = np.asarray(image, dtype=self.model.dtype, order="C", copy=False)
+        np_array = np.asarray(image, dtype=self.model.dtype, order="C")
         # Convert to NCHW format (.copy() to apply the transpose and not return a view).
         return np_array.transpose((2, 0, 1)).copy() 
     # --- END _get_image_as_np_ndarray --- #
@@ -179,6 +187,8 @@ class DatasetFolderLoader(Dataset):
             else:
                 x = np.stack(images, dtype=self.model.dtype)
                 y = np.stack(labels, dtype=self.model.dtype)
+                images.clear()
+                labels.clear()
                 yield x, y
                 
         #} - for
@@ -186,6 +196,8 @@ class DatasetFolderLoader(Dataset):
         if batch_size < self.max_nsamples_online:
             x = np.stack(images, dtype=self.model.dtype)
             y = np.stack(labels, dtype=self.model.dtype)
+            images.clear()
+            labels.clear()
             yield x, y
         #else: Since all the data was already yielded inside the for, do nothing.
 
