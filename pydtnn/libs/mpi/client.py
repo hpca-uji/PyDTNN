@@ -176,16 +176,6 @@ class Comm:
             self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         return request
 
-    @property
-    def size(self) -> int:
-        """Communication size"""
-        return mpi_comm.get_size()
-
-    @property
-    def rank(self) -> mpi_comm.Rank:
-        """Communication identifier"""
-        return mpi_comm.get_rank()
-
     @functools.cached_property
     def _comm(self) -> comms.Communicator:
         """Communication connection"""
@@ -286,32 +276,129 @@ class Comm:
         except:  # noqa: E722
             pass
 
-    def bcast[T](self, obj: T, root: mpi_comm.Rank = 0) -> T:
+    # Properties
+    @property
+    def size(self) -> int:
+        """Communication size"""
+        return mpi_comm.get_size()
+
+    @property
+    def rank(self) -> mpi_comm.Rank:
+        """Communication identifier"""
+        return mpi_comm.get_rank()
+
+    def Get_rank(self) -> int:
+        """Return the rank of this process in a communicator."""
+        return self.rank
+
+    def Get_size(self) -> int:
+        """Return the number of processes in a communicator."""
+        return self.size
+
+    # Broadcast
+    def ibcast[T](self, obj: T, root: mpi_comm.Rank = 0) -> Request[T]:
         """Broadcast."""
         context = mpi_comm.BroadcastContext(root=root)
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=obj, context=context).wait()
+        return self._shedule_operation(comm=comm, obj=obj, context=context)
+
+    def bcast[T](self, obj: T, root: mpi_comm.Rank = 0) -> T:
+        """Broadcast."""
+        return self.ibcast(obj=obj, root=root).wait()
+
+    def Ibcast[T: abc.Buffer](self, buf: T, root: mpi_comm.Rank = 0) -> Request[None]:
+        """Nonblocking Gather to All."""
+
+        def callback(result: T) -> None:
+            with byteview(result) as src, byteview(buf) as dst:
+                dst[:] = src
+
+        req = self.ibcast(obj=buf, root=root)
+        req._callback = callback  # type: ignore
+        return req  # type: ignore
+
+    def Bcast[T: abc.Buffer](self, buf: T, root: mpi_comm.Rank = 0) -> None:
+        """Gather to All."""
+        self.Ibcast(buf, root).wait()
+
+    # Barrier synchronization
+    def ibarrier(self) -> Request[None]:
+        """Nonblocking Barrier synchronization."""
+        return self.iallreduce(None, mpi_comm.ReduceOperation.LAND)
 
     def barrier(self) -> None:
         """Barrier synchronization."""
-        self.allreduce(0)
+        return self.ibarrier().wait()
+
+    def Ibarrier(self) -> Request[None]:
+        """Nonblocking Barrier synchronization."""
+        return self.ibarrier()
+
+    def Barrier(self) -> None:
+        """Barrier synchronization."""
+        return self.Ibarrier().wait()
+
+    # Gather to All
+    def iallgather[T](self, obj: T) -> Request[list[T]]:
+        """Nonblocking Gather to All."""
+        context = mpi_comm.AllGatherContext()
+        comm = context.comm(size=self.size)
+        return self._shedule_operation(comm=comm, obj=obj, context=context)
 
     def allgather[T](self, obj: T) -> list[T]:
         """Gather to All."""
-        context = mpi_comm.AllGatherContext()
-        comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=obj, context=context).wait()
+        return self.iallgather(obj=obj).wait()
 
-    def allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
-        """Reduce to All."""
-        return self.iallreduce(obj=obj, op=op).wait()
+    def Iallgather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T) -> Request[None]:
+        """Nonblocking Gather to All."""
+        if sendbuf is InPlace.IN_PLACE:
+            sendbuf = recvbuf
 
+        def callback(results: list[T]) -> None:
+            offset = 0
+            with byteview(recvbuf) as dst:
+                for result in results:
+                    with byteview(result) as src:
+                        dst[offset:offset+len(src)] = src
+                        offset += len(src)
+
+        req = self.iallgather(obj=sendbuf)
+        req._callback = callback  # type: ignore
+        return req  # type: ignore
+
+    def Allgather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T) -> None:
+        """Gather to All."""
+        self.Iallgather(sendbuf, recvbuf).wait()
+
+    # Reduce to All
     def iallreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> Request[T]:
         """Reduce to All."""
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
         return self._shedule_operation(comm=comm, obj=obj, context=context)
 
+    def allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
+        """Reduce to All."""
+        return self.iallreduce(obj=obj, op=op).wait()
+
+    def Iallreduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> Request[None]:
+        """Nonblocking Reduce to All."""
+        if sendbuf is InPlace.IN_PLACE:
+            sendbuf = recvbuf
+
+        def callback(result: T) -> None:
+            with byteview(result) as src, byteview(recvbuf) as dst:
+                dst[:] = src
+
+        req = self.iallreduce(obj=sendbuf, op=op)
+        req._callback = callback  # type: ignore
+        return req  # type: ignore
+
+    def Allreduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> None:
+        """Reduce to All."""
+        self.Iallreduce(sendbuf, recvbuf, op).wait()
+
+    # Reduce to All (with steps)
     def _phased_allreduce[T](self, obj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All (with steps)."""
         context = mpi_comm.AllPhasedReduceContext(op=op)
@@ -323,35 +410,6 @@ class Comm:
                 break
 
         return obj
-
-    def Get_rank(self) -> int:
-        """Return the rank of this process in a communicator."""
-        return self.rank
-
-    def Get_size(self) -> int:
-        """Return the number of processes in a communicator."""
-        return self.size
-
-    def Barrier(self) -> None:
-        """Barrier synchronization."""
-        self.barrier()
-
-    def Allreduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> None:
-        """Reduce to All."""
-        self.Iallreduce(sendbuf, recvbuf, op).wait()
-
-    def Iallreduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> Request[T]:
-        """Nonblocking Reduce to All."""
-        if sendbuf is InPlace.IN_PLACE:
-            sendbuf = recvbuf
-
-        def callback(result: T):
-            with byteview(result) as src, byteview(recvbuf) as dst:
-                dst[:] = src
-
-        req = self.iallreduce(obj=sendbuf, op=op)
-        req._callback = callback  # type: ignore
-        return req
 
 
 # Exports
