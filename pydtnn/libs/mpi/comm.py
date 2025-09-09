@@ -70,7 +70,7 @@ def get_port() -> int:
     """Service port"""
     return int(
         os.environ.get("PYDTNN_MPI_PORT")
-        or 50000
+        or 61642
     )
 
 
