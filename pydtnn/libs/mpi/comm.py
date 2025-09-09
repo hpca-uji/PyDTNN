@@ -164,7 +164,7 @@ class OperationContext[T](abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> typing.Any:
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, typing.Any]:
         """Apply operation over objects"""
         raise NotImplementedError()
 
@@ -178,9 +178,9 @@ class BroadcastContext[T](OperationContext[T]):
         """Compute operation's communication group"""
         return CommmunicationGroup([self.root], range(size))
 
-    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> T:
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
         """Apply operation over objects"""
-        return objs[self.root]
+        return dict.fromkeys(dst, src[self.root])
 
 
 @dataclass(slots=True, frozen=True)
@@ -191,10 +191,10 @@ class AllGatherContext[T](OperationContext[T]):
         """Compute operation's communication group"""
         return CommmunicationGroup(range(size), range(size))
 
-    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> list[T]:
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, list[T]]:
         """Apply operation over objects"""
-        objs = dict(sorted(objs.items(), key=lambda item: item[0]))
-        return list(objs.values())
+        src = dict(sorted(src.items(), key=lambda item: item[0]))
+        return dict.fromkeys(dst, list(src.values()))
 
 
 @dataclass(slots=True, frozen=True)
@@ -206,13 +206,14 @@ class AllReduceContext[T](OperationContext[T]):
         """Compute operation's communication group"""
         return CommmunicationGroup(range(size), range(size))
 
-    def apply(self, objs: coll_abc.Mapping[Rank, T]) -> T:
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
         """Apply operation over objects"""
         match self.op:
             case ReduceOperation.SUM:
-                return functools.reduce(operator.add, objs.values())  # type: ignore (T should be addable)
+                result = functools.reduce(operator.add, src.values())  # type: ignore (T should be addable)
             case _:
                 raise NotImplementedError(f"op with not {self.op}")
+        return dict.fromkeys(dst, result)  # type: ignore
 
 
 @dataclass(slots=True, frozen=True)
