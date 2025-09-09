@@ -99,6 +99,7 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
                 size = 0
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
+            state.put_commit(size)
 
     def _connection_pre_fin(self, peer: uuid.UUID) -> None:
         """Close connection"""

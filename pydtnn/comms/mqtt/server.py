@@ -63,6 +63,7 @@ class Server(Protocol, server.Server[str]):
         while not state.put_buffer.empty():
             with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"s2c/{comm}", bytes(view))
+                state.put_commit(len(view))
 
         if not state.state and state.put_empty():
             self._connection_fin(comm)

@@ -41,26 +41,20 @@
 #
 # Get
 # - Always block
-# - Returns a message or raises ResouceClosed
-# - Once closed it continues working until exhausted then it raises ResouceClosed
+# - Returns a message or raises ResourceClosed
+# - Once closed it continues working until exhausted then it raises ResourceClosed
 #
 # Close
 # - Always block
 # - Server waits for peers to disconnect
 
-# FIXME: Implement put future handling
-
 # TODO: Implement client reconnection
-
-# TODO: Change ResouceClosed for queue.Empty exception
 
 # TODO: Implement two-way connection expiration and keep-alives. There
 # is no reliable way to track connection drops between communication
 # implementations. Most of them end up with memory leaks. If desired
 # expiration periods could be long and client reconnections could be
 # allowed, enabling MQTT-like reliability without the cost.
-
-# TODO: Review Apache Kafka communication
 
 import os
 import abc
@@ -72,13 +66,14 @@ from pathlib import Path
 from typing import NamedTuple
 from dataclasses import dataclass
 from queue import Empty, SimpleQueue
-from collections import abc as col_abc
+from collections import abc as col_abc, deque
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from bidict import bidict
 
 
 from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool
+from pydtnn.utils import asynctools
 from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
@@ -137,6 +132,9 @@ class SessionData:
         self.put_buffer = Stream()
         self.get_buffer = Stream()
 
+        self._ack_queue = SimpleQueue[Future]()
+        self._ack_buffer = deque[int]()
+
     def get_empty(self) -> bool:
         """Is get connection flushed"""
         return self.get_queue.empty() and self.get_buffer.empty()
@@ -151,8 +149,11 @@ class SessionData:
 
     def put(self, stream: Stream) -> Future[None]:
         """Push stream to put queue"""
+        future = Future[None]()
+        asynctools.future_set_running(future)  # TODO: Move to put_flush
+        self._ack_queue.put(future)
         self.put_queue.put(stream)
-        return Future[None]()
+        return future
 
     def get_write(self, b: col_abc.Buffer) -> int:
         """Write get buffer (merging chunks if plausible)"""
@@ -202,6 +203,21 @@ class SessionData:
 
         return self.put_buffer.read1(size)
 
+    def put_commit(self, size: int) -> None:
+        """Mark size's bytes as fully transmitted (or freeable)"""
+        while size > 0:
+            pending = self._ack_buffer[0]
+            shared = min(size, pending)
+            pending -= shared
+            size -= shared
+
+            if pending > 0:
+                break
+
+            self._ack_buffer.popleft()
+            future = self._ack_queue.get_nowait()
+            asynctools.future_set_result(future, None)
+
     def put_flush(self) -> None:
         """Flush put queue"""
         while True:
@@ -210,7 +226,8 @@ class SessionData:
             except Empty:
                 break
             else:
-                self._packer.pack(self.put_buffer, stream)
+                size = self._packer.pack(self.put_buffer, stream)
+                self._ack_buffer.append(size)
 
 
 class ResourceClosed(RuntimeError):
@@ -220,7 +237,7 @@ class ResourceClosed(RuntimeError):
 class NetworkLocation(NamedTuple):
     """Network location"""
     host: str = "127.0.0.1"
-    port: int = 50000
+    port: int = 51966
 
     def __str__(self):
         """Unified network location"""
@@ -409,7 +426,7 @@ class Communicator[T](abc.ABC):
 
         # Exit signaled
         if peer == UUID_MAX:
-            raise ResourceClosed()
+            raise ResourceClosed(self._id)
 
         state = self._states[peer]
         get_queue = state.get_queue
@@ -428,9 +445,15 @@ class Communicator[T](abc.ABC):
         """Put stream into state"""
         try:
             state = self._states[peer]
+        except KeyError:
+            state = None
+        if state:
             future = state.put(stream)
-        except (KeyError, ResourceClosed):
-            raise ResourceClosed(peer)
+        else:
+            future = Future[None]()
+            asynctools.future_set_exception(future, ResourceClosed(peer))
+        if self._closed:
+            asynctools.future_set_exception(future, ResourceClosed(self._id))
         return future
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:
@@ -440,19 +463,10 @@ class Communicator[T](abc.ABC):
                 peers = tuple(self._comms)
 
         futures = list[Future[None]]()
-        errors = list[ResourceClosed]()
         with self._serializer.dump(obj) as stream:
             for peer in peers:
-                try:
-                    future = self._put(stream.copy(), peer)
-                except ResourceClosed as exc:
-                    errors.append(exc)
-                    continue
-                else:
-                    futures.append(future)
-
-        if errors:
-            raise ExceptionGroup("Peer does not exist", errors)
+                future = self._put(stream.copy(), peer)
+                futures.append(future)
 
         return merge_futures(futures)
 
