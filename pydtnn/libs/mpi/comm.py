@@ -129,7 +129,18 @@ class CommmunicationGroup:
 
 class ReduceOperation(enum.Enum):
     """Reduction operation."""
+    MAX = enum.auto()
+    MIN = enum.auto()
     SUM = enum.auto()
+    PROD = enum.auto()
+    LAND = enum.auto()
+    BAND = enum.auto()
+    LOR = enum.auto()
+    BOR = enum.auto()
+    LXOR = enum.auto()
+    BXOR = enum.auto()
+    MINLOC = enum.auto()
+    MAXLOC = enum.auto()
 
 
 @dataclass(slots=True, frozen=True)
@@ -209,8 +220,32 @@ class AllReduceContext[T](OperationContext[T]):
     def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
         """Apply operation over objects"""
         match self.op:
+            case ReduceOperation.MAX:
+                result = max(src.values())  # type: ignore
+            case ReduceOperation.MIN:
+                result = min(src.values())  # type: ignore
             case ReduceOperation.SUM:
-                result = functools.reduce(operator.add, src.values())  # type: ignore (T should be addable)
+                result = functools.reduce(operator.add, src.values())
+            case ReduceOperation.PROD:
+                result = functools.reduce(operator.mul, src.values())
+            case ReduceOperation.LAND:
+                result = all(src.values())
+            case ReduceOperation.BAND:
+                result = functools.reduce(operator.and_, src.values())
+            case ReduceOperation.LOR:
+                result = any(src.values())
+            case ReduceOperation.BOR:
+                result = functools.reduce(operator.or_, src.values())
+            case ReduceOperation.LXOR:
+                result = functools.reduce(lambda a, b: bool(a) != bool(b), src.values())
+            case ReduceOperation.BXOR:
+                result = functools.reduce(operator.xor, src.values())
+            case ReduceOperation.MINLOC:
+                rank = min(src, key=src.__getitem__)  # type: ignore
+                result = (src[rank], rank)
+            case ReduceOperation.MAXLOC:
+                rank = max(src, key=src.__getitem__)  # type: ignore
+                result = (src[rank], rank)
             case _:
                 raise NotImplementedError(f"op with not {self.op}")
         return dict.fromkeys(dst, result)  # type: ignore

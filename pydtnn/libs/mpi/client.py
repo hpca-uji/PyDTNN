@@ -42,7 +42,18 @@ from pydtnn.libs.mpi import comm as mpi_comm
 __all__ = (
     "Finalize",
     "IN_PLACE",
+    "MAX",
+    "MIN",
     "SUM",
+    "PROD",
+    "LAND",
+    "BAND",
+    "LOR",
+    "BOR",
+    "LXOR",
+    "BXOR",
+    "MINLOC",
+    "MAXLOC",
     "COMM_WORLD",
 )
 
@@ -346,7 +357,18 @@ class Comm:
 # Exports
 IN_PLACE = InPlace.IN_PLACE
 
+MAX = mpi_comm.ReduceOperation.MAX
+MIN = mpi_comm.ReduceOperation.MIN
 SUM = mpi_comm.ReduceOperation.SUM
+PROD = mpi_comm.ReduceOperation.PROD
+LAND = mpi_comm.ReduceOperation.LAND
+BAND = mpi_comm.ReduceOperation.BAND
+LOR = mpi_comm.ReduceOperation.LOR
+BOR = mpi_comm.ReduceOperation.BOR
+LXOR = mpi_comm.ReduceOperation.LXOR
+BXOR = mpi_comm.ReduceOperation.BXOR
+MINLOC = mpi_comm.ReduceOperation.MINLOC
+MAXLOC = mpi_comm.ReduceOperation.MAXLOC
 
 COMM_WORLD = Comm()
 
