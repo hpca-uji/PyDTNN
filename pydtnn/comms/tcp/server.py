@@ -104,6 +104,7 @@ class Server(Protocol[socket.socket], server.Server[socket.socket]):
                 size = 0
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
+            state.put_commit(size)
 
     def _connection_pre_fin(self, peer: uuid.UUID) -> None:
         comm = self._comms[peer]

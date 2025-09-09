@@ -49,4 +49,7 @@ class Protocol[T](comms.Communicator[T]):
         state.put_flush()
         while not state.put_buffer.empty():
             with state.put_read(self._options.connection.max_size) as view:
+                size = len(view)
                 yield view
+                # NOTE: view should be consumed, if not, yield bytes copies
+                state.put_commit(size)
