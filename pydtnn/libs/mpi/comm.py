@@ -16,6 +16,7 @@ import enum
 import uuid
 import typing
 import operator
+import itertools
 import functools
 import dataclasses
 from dataclasses import dataclass
@@ -202,7 +203,7 @@ class AllGatherContext[T](OperationContext[T]):
         """Compute operation's communication group"""
         return CommmunicationGroup(range(size), range(size))
 
-    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, list[T]]:
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, coll_abc.Sequence[T]]:
         """Apply operation over objects"""
         src = dict(sorted(src.items(), key=lambda item: item[0]))
         return dict.fromkeys(dst, list(src.values()))
@@ -262,6 +263,93 @@ class AllPhasedReduceContext(AllReduceContext):
         step = (group ** (phase))
         stop = min(start + phase_size, size)
         return CommmunicationGroup(range(start, stop, step), range(start, stop))
+
+
+@dataclass(slots=True, frozen=True)
+class ScatterContext[T](OperationContext[T]):
+    """Scatter operation"""
+    root: Rank = 0
+
+    def comm(self, size: int) -> CommmunicationGroup:
+        """Compute operation's communication group"""
+        return CommmunicationGroup([self.root], range(size))
+
+    def apply(self, src: coll_abc.Mapping[Rank, coll_abc.Sequence[T]], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
+        """Apply operation over objects"""
+        return dict(zip(sorted(dst), src[self.root]))
+
+
+@dataclass(slots=True, frozen=True)
+class AllToAllContext[T](OperationContext[T]):
+    """All to all operation"""
+
+    def comm(self, size: int) -> CommmunicationGroup:
+        """Compute operation's communication group"""
+        return CommmunicationGroup(range(size), range(size))
+
+    def apply(self, src: coll_abc.Mapping[Rank, coll_abc.Sequence[T]], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, coll_abc.Sequence[T]]:
+        """Apply operation over objects"""
+        src = dict(sorted(src.items(), key=lambda item: item[0]))
+        return dict(zip(sorted(dst), map(list, zip(*src.values()))))
+
+
+@dataclass(slots=True, frozen=True)
+class GatherContext[T](OperationContext[T]):
+    """Gather operation"""
+    root: Rank = 0
+
+    def comm(self, size: int) -> CommmunicationGroup:
+        """Compute operation's communication group"""
+        return CommmunicationGroup(range(size), [self.root])
+
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, coll_abc.Sequence[T]]:
+        """Apply operation over objects"""
+        src = dict(sorted(src.items(), key=lambda item: item[0]))
+        return {self.root: list(src.values())}
+
+
+@dataclass(slots=True, frozen=True)
+class ReduceContext[T](OperationContext[T]):
+    """Reduce operation"""
+    op: ReduceOperation = ReduceOperation.SUM
+    root: Rank = 0
+
+    def comm(self, size: int) -> CommmunicationGroup:
+        """Compute operation's communication group"""
+        return CommmunicationGroup(range(size), [self.root])
+
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
+        """Apply operation over objects"""
+        match self.op:
+            case ReduceOperation.MAX:
+                result = max(src.values())  # type: ignore
+            case ReduceOperation.MIN:
+                result = min(src.values())  # type: ignore
+            case ReduceOperation.SUM:
+                result = functools.reduce(operator.add, src.values())
+            case ReduceOperation.PROD:
+                result = functools.reduce(operator.mul, src.values())
+            case ReduceOperation.LAND:
+                result = all(src.values())
+            case ReduceOperation.BAND:
+                result = functools.reduce(operator.and_, src.values())
+            case ReduceOperation.LOR:
+                result = any(src.values())
+            case ReduceOperation.BOR:
+                result = functools.reduce(operator.or_, src.values())
+            case ReduceOperation.LXOR:
+                result = functools.reduce(lambda a, b: bool(a) != bool(b), src.values())
+            case ReduceOperation.BXOR:
+                result = functools.reduce(operator.xor, src.values())
+            case ReduceOperation.MINLOC:
+                rank = min(src, key=src.__getitem__)  # type: ignore
+                result = (src[rank], rank)
+            case ReduceOperation.MAXLOC:
+                rank = max(src, key=src.__getitem__)  # type: ignore
+                result = (src[rank], rank)
+            case _:
+                raise NotImplementedError(f"op with not {self.op}")
+        return {self.root: result}  # type: ignore
 
 
 @dataclass(slots=True, frozen=True)
