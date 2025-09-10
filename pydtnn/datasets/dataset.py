@@ -286,7 +286,7 @@ class Dataset(ABC):
     
     @staticmethod
     def _chw2hwc(x: Array) -> Array:
-        return x.transpose(2, 3, 1).copy()
+        return x.transpose(1, 2, 0).copy()
 
     @staticmethod
     def _decode_class(y: Array, classes_list: np.ndarray) -> None:
