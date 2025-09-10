@@ -19,7 +19,7 @@ class Peer(enum.StrEnum):
 
 
 # Argument pasrser
-parser = ArgumentParser(prog="test_comms_iops", description="Communications mix IOPS test")
+parser = ArgumentParser(prog="test_comms_mix", description="Communications mix IOPS test")
 parser.add_argument("peer", choices=list(Peer))
 parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--delay", type=float, default=0.0)
