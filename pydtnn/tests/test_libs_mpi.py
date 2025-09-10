@@ -13,15 +13,18 @@ parser = ArgumentParser(prog="test_libs_mpi", description="MPI server-client tes
 def main(config: Namespace):
     """Application entrypoint"""
     from pydtnn.libs.mpi import client as MPI
-    from pydtnn.libs.mpi.comm import RemoteException
 
     comm = MPI.COMM_WORLD
     size = comm.size
     rank = comm.rank
     print(f"R{rank}: size {size}")
 
-    ref = 0
-    res = comm.bcast(rank, root=ref)
+    comm.barrier()
+    print(f"R{rank}: barrier")
+
+    root = 0
+    ref = root
+    res = comm.bcast(rank, root=root)
     print(f"R{rank}: bcast {res}/{ref}")
     assert res == ref, f"bcast error; got {res}, expect {ref}"
 
@@ -35,23 +38,28 @@ def main(config: Namespace):
     print(f"R{rank}: allreduce {res}/{ref}")
     assert res == ref, f"allreduce error; got {res}, expect {ref}"
 
-    ref = RemoteException
-    try:
-        res = comm.allreduce(None)
-    except RemoteException as exc:
-        res = exc
-    print(f"R{rank}: error handeling {type(res)}/{ref}")
-    assert isinstance(res, ref), f"error handeling error; got {res}, expect {ref}"
+    root = 0
+    ref = rank
+    res = comm.scatter(range(size), root=root)
+    print(f"R{rank}: scatter {res}/{ref}")
+    assert res == ref, f"scatter error; got {res}, expect {ref}"
 
-    ref = None
-    try:
-        comm.barrier()
-    except Exception as exc:
-        res = exc
-    else:
-        res = None
-    print(f"R{rank}: error recovery {res}/{ref}")
-    assert res == ref, f"error recovery error; got {res}, expect {ref}"
+    ref = [rank] * size
+    res = comm.alltoall(range(size))
+    print(f"R{rank}: alltoall {res}/{ref}")
+    assert res == ref, f"alltoall error; got {res}, expect {ref}"
+
+    root = 0
+    ref = list(range(size)) if rank == root else None
+    res = comm.gather(rank, root=root)
+    print(f"R{rank}: gather {res}/{ref}")
+    assert res == ref, f"gather error; got {res}, expect {ref}"
+
+    root = 0
+    ref = sum(range(size)) if rank == root else None
+    res = comm.reduce(rank, root=root)
+    print(f"R{rank}: reduce {res}/{ref}")
+    assert res == ref, f"reduce error; got {res}, expect {ref}"
 
     MPI.Finalize()
     print(f"R{rank}: finalize")

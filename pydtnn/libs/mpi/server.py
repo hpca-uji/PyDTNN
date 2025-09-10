@@ -10,6 +10,7 @@ import typing
 import warnings
 import functools
 import threading
+from collections import defaultdict
 from concurrent.futures import Future
 from argparse import ArgumentParser, Namespace
 from concurrent.futures import ThreadPoolExecutor
@@ -217,20 +218,27 @@ class Server:
         """Dispatch operation to relevant handler"""
         # Setup compute
         context = operation.context
-        objs = operation.objs
+        src = operation.objs
 
         # Compute result
         try:
-            result = context.apply(objs)
+            dst = context.apply(src, operation.comm.dst)
         except Exception as exc:
-            result = mpi_comm.RemoteException.from_exception(exc)
+            exc = mpi_comm.RemoteException.from_exception(exc)
+            dst = dict.fromkeys(operation.comm.dst, exc)
+
+        # Group result
+        results = {}
+        ranks = defaultdict(set)
+        for rank, result in dst.items():
+            ranks[id(result)].add(rank)
+            results[id(result)] = result
 
         # Send result
-        response = mpi_comm.OperationResponse(id=operation.id, obj=result)
-        self._comm.put(response, *(
-            self._peers[rank]
-            for rank in operation.comm.dst
-        ))
+        for result_id, ranks in ranks.items():
+            result = results[result_id]
+            response = mpi_comm.OperationResponse(id=operation.id, obj=result)
+            self._comm.put(response, *(self._peers[rank] for rank in ranks))
 
     def shutdown(self) -> None:
         """Close the server"""
