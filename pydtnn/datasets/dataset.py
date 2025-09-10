@@ -24,6 +24,7 @@ import threading
 from abc import ABC, abstractmethod
 
 import numpy as np
+from PIL import Image
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT, string_substitute
 from typing import TYPE_CHECKING, Generator
@@ -96,9 +97,15 @@ class Dataset(ABC):
                                                    max(self.model.nprocs, 
                                                        int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
-
-        self.input_shape = list(input_shape)
+        
+        if self.model.resize:
+            self.input_shape = list((input_shape[0], *self.model.resize_dimension))
+            self.real_input_shape = list(input_shape)
+        else:
+            self.input_shape = list(input_shape)
+            self.real_input_shape = self.input_shape
         self.output_shape = list(output_shape)
+
         self._initial_nsamples = [self._nsamples[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.VAL], self._nsamples[DatasetEnum.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
         self._local_offset = [0] * 3
@@ -112,7 +119,8 @@ class Dataset(ABC):
              ) = self._compute_local_workload(self._nsamples[part])
             
         # Declare _x and _y for train, val and test dataset parts
-        self._x = [np.zeros((0, *self.input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
+        # FIXME: This input shape must be the real one.
+        self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
         self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(DatasetEnum)
 
         if self.model.use_synthetic_data:
@@ -275,6 +283,10 @@ class Dataset(ABC):
     @staticmethod
     def _nchw2nhwc(x: Array) -> Array:
         return x.transpose(0, 2, 3, 1).copy()
+    
+    @staticmethod
+    def _chw2hwc(x: Array) -> Array:
+        return x.transpose(2, 3, 1).copy()
 
     @staticmethod
     def _decode_class(y: Array, classes_list: np.ndarray) -> None:
@@ -336,9 +348,11 @@ class Dataset(ABC):
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
             s = memoryview(np.arange(local_nsamples))
+            if self.model.resize and not self.model.use_synthetic_data:
+                x_data = self._do_resize(x_data)
             if part is DatasetEnum.TRAIN:
                 np.random.shuffle(s)
-                if not self.model.use_synthetic_data and (self.model.flip_images or self.model.crop_images):
+                if not self.model.use_synthetic_data:
                     x_data = self._do_data_augmentation(x_data)
             # Initialize end to 0 (in case there are no batches of local_batch_size)
             end = 0
@@ -422,6 +436,17 @@ class Dataset(ABC):
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
         return data
+    
+    def _do_resize(self, data: Array) -> Array:
+        n = data.shape[0]
+        new_data = np.empty(shape = (n, *self.input_shape), dtype=self.model.dtype, order="C")
+        for i in range(n):
+            image = Image.fromarray(data[i], mode="RGB")
+            # NOTE: resize: The requested size in pixels, as a tuple or array: (width, height), but we work with NC*HW* or N*HW*C; self.model.resize_dimension[-1:0:-1]
+            resized = np.asarray(image.resize(self.model.resize_dimension[::-1]), dtype=self.model.dtype, order="C")
+            new_data[i] = resized.transpose((2, 0, 1)).copy()
+        return new_data
+    # ---
 
     def _do_data_augmentation(self, x_data: Array) -> Array:
         # Preserve the original version when producing new data

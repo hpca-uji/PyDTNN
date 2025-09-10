@@ -154,6 +154,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument('--crop_images_size', type=int, default=16)
         _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5)
         _ds_group.add_argument('--validation_split', type=factor, default=0.2)
+        _ds_group.add_argument('--resize', type=bool, default=False)
+        _ds_group.add_argument('--resize_dimension', type=int, default=300)
 
         # Optimization options
         _oo_group = self.add_argument_group("Optimization options")

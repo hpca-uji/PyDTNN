@@ -148,10 +148,6 @@ class DatasetFolderLoader(Dataset):
     def _get_image_as_np_ndarray(self, path_image:str) -> np.ndarray:
         image = Image.open(path_image)
         image = image.convert("RGB")
-        # TODO: add the transformations
-        #if self.new_size is not None:
-        #    image = image.resize(self.new_size)
-        #else: The image size is ok.
         np_array = np.asarray(image, dtype=self.model.dtype, order="C")
         # Convert to NCHW format (.copy() to apply the transpose and not return a view).
         return np_array.transpose((2, 0, 1)).copy() 
@@ -187,7 +183,7 @@ class DatasetFolderLoader(Dataset):
             label = self._prepare_label(label, self.output_shape)
                 
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-                image = self._nchw2nhwc(image)
+                image = self._chw2hwc(image)
             # else: Tensor format is OK.
             
             images.append(image)
