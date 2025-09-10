@@ -93,7 +93,7 @@ class ImageNet(Dataset):
                                                              self._local_offset[part],
                                                              self._local_nsamples[part]):
             # Extract x[offset:offset+nsamples] and y[offset:offset+nsamples] from file
-            values = np.load(filename)
+            values: np.ndarray = np.load(filename)
             x = self._normalize_image(values['x'][offset:offset + nsamples].astype(self.model.dtype))
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 x = self._nchw2nhwc(x)

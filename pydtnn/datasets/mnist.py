@@ -51,10 +51,10 @@ class MNIST(Dataset):
         images_header_offset = 16  # 4 + 4 * 3
         labels_header_offset = 8  # 4 + 4 * 1
         for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
-            offset = images_header_offset + self._local_offset[part] * np.prod(self.input_shape)
-            nbytes = self._local_nsamples[part] * np.prod(self.input_shape)
+            offset = images_header_offset + self._local_offset[part] * np.prod(self.real_input_shape)
+            nbytes = self._local_nsamples[part] * np.prod(self.real_input_shape)
             self._x[part] = self._read_file(x_filename[part], offset, nbytes) \
-                                .reshape(self._local_nsamples[part], *self.input_shape) / 255.0
+                                .reshape(self._local_nsamples[part], *self.real_input_shape) / 255.0
             self._x[part] = self._x[part].astype(self.model.dtype)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 self._x[part] = self._nchw2nhwc(self._x[part])
