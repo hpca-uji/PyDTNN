@@ -577,6 +577,9 @@ class Model:
                 warning_text = None
             output_shape = tuple(self.dataset.output_shape)
 
+            self.input_shape = input_shape
+            self.output_shape = output_shape
+
             layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
             self.add_layers(layers)
         except (ModuleNotFoundError, AttributeError):
