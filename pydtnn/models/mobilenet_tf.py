@@ -2,9 +2,12 @@ from pydtnn.layers import *
 from pydtnn.activations import *
 from pydtnn.layers.conv_2d import GroupingEnum
 
+from collections.abc import Sequence
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 
-def mobileNetTF(input_shape, output_shape):
+def mobileNetTF(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     """
     Mobilenet v1's TF.Keras-like version.
     """
@@ -14,7 +17,7 @@ def mobileNetTF(input_shape, output_shape):
     epsilon = 1e-3
     momentum = 0.99
 
-    model = []
+    model = list[LayerAndActivationBase]()
     _ = model.append
     _( Input(shape=input_shape) )
     _( Conv2D(nfilters=first_filters, filter_shape=(3,3), grouping=GroupingEnum.STANDARD, padding=0, stride=2, use_bias=False) )

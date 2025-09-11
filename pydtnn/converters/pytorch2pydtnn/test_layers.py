@@ -99,7 +99,7 @@ DICT_SUPPORTED_LAYERS:Dict[str, Tuple[nn.Module, float]] = {
 }
 # END CONSTANTS
 
-def print_model_reports(model):
+def print_model_reports(model: PyDTNN_Model):
     # Print performance counter report
     model.perf_counter.print_report()
     # Print BestOf report

@@ -2,13 +2,16 @@ from pydtnn.layers import *
 from pydtnn.activations import *
 from pydtnn.initializers import he_uniform
 
+from collections.abc import Sequence
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow uses BatchNormalization with 1.001e-5 epsilon and 0.99 momentum
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 # NOTE: TensorFlow uses FC with 1024 shape
 
-def resNet50(input_shape, output_shape):
-    model = []
+def resNet50(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
     _ = model.append
     _(Input(shape=input_shape))
     _(Conv2D(nfilters=64, filter_shape=(7, 7), stride=2, padding=3, weights_initializer=he_uniform))

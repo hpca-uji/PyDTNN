@@ -7,13 +7,13 @@ from torchvision.models import densenet121, densenet201, resnet18, resnet34, res
 
 from torchmetrics import Accuracy, Metric
 
-from pydtnn.datasets.dataset import TRAIN, VAL, TEST, Dataset
+from pydtnn.datasets.dataset import Dataset, DatasetEnum
 from pydtnn.activations import *
 from pydtnn.layers import *
 
 from pydtnn.models.vgg11 import create_vgg11
 from pydtnn.models.vgg16 import create_vgg16
-from pydtnn.models.vgg19_imagenet import create_vgg19_imagenet10
+from pydtnn.models.vgg19_imagenet import create_vgg19_imagenet
 from pydtnn.models.alexnet_cifar10 import create_alexnet_cifar10
 from pydtnn.models.densenet121_cifar10 import create_densenet121_cifar10
 from pydtnn.models.densenet169_cifar10 import create_densenet169_cifar10
@@ -35,7 +35,7 @@ from torch.nn import CrossEntropyLoss
 dict_test = {
    "vgg11": (vgg11, create_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None), # (224, 224, 3)
    "vgg16": (vgg16, create_vgg16, (524, 524, 3), "cifar10", {"num_classes": 5}, None), # (224, 224, 3)
-   "vgg19": (vgg19, create_vgg19_imagenet10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+   "vgg19": (vgg19, create_vgg19_imagenet, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
    "alexnet": (alexnet, create_alexnet_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
    "densenet121": (densenet121, create_densenet121_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
    "densenet169": (densenet169, create_densenet169_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
@@ -210,8 +210,8 @@ def _pytorch_inference(pytorch_model, dataloader, kwargs, device):
 
 def pydtnn_training(model:PyDTNN_Model, dataset: Dataset, num_samples = 64 * 2):
 
-    #history = model.train(x_train=dataset._x[TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples], 
-    #                      y_train=dataset._y[TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
+    #history = model.train(x_train=dataset._x[DatasetEnum.TRAIN][:num_samples], x_val=dataset._x[VAL][:num_samples], 
+    #                      y_train=dataset._y[DatasetEnum.TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
     history = model.train_dataset()
     print(f"history: {history}")
 # --- END pydtnn_training --- #
@@ -220,7 +220,7 @@ def main():
     test = TEST
 
     pytorch_model, create_pydtnn_model, shape, dataset, args, weight = dict_test[test]
-    pytorch_model = pytorch_model(**args)
+    pytorch_model:torch.Module = pytorch_model(**args)
 
     KWARGS["dataset"] = dataset
     KWARGS["dataset_name"] = dataset
@@ -287,7 +287,7 @@ def main():
 
     dataset: Dataset = get_dataset(old_model)    
 
-    dataloader = list(dataset._actual_batch_generator(TRAIN))
+    dataloader = list(dataset._actual_batch_generator(DatasetEnum.TRAIN))
 
     print("dataset:")
     print(dataset)
