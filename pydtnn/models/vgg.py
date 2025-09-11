@@ -1,11 +1,14 @@
 from pydtnn.layers import *
 from pydtnn.activations import *
 
+from collections.abc import Sequence
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow does not includes Dropout layers after final ReLUs
 
-def vgg16(input_shape, output_shape):
-    model = []
+def vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
     _ = model.append
     _(Input(shape=input_shape))
 
@@ -23,8 +26,8 @@ def vgg16(input_shape, output_shape):
     return model
 
 
-def vgg8(input_shape, output_shape):
-    model = []
+def vgg8(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
     _ = model.append
     _(Input(shape=input_shape))
 
@@ -41,8 +44,8 @@ def vgg8(input_shape, output_shape):
     return model
 
 
-def vgg6(input_shape, output_shape):
-    model = []
+def vgg6(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+    model = list[LayerAndActivationBase]()
     _ = model.append
     _(Input(shape=input_shape))
 

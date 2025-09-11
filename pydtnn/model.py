@@ -26,6 +26,9 @@ import os
 import sys
 import time
 from timeit import default_timer as timer
+import warnings
+from warnings import warn
+#warnings.filterwarnings("error")
 
 # Typing-related import
 from typing import Any, TypeVar, Callable, TYPE_CHECKING, Literal
@@ -61,7 +64,7 @@ from .utils.memory_cache import MemoryCache
 from .utils.performance_counter import PerformanceCounter
 from .layers import Layer
 import enum
-from warnings import warn
+
 
 # --- CUDA related imports --- #
 import atexit
@@ -97,9 +100,6 @@ supported_cudnn: bool = True
 supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
-
-#import warnings
-#warnings.filterwarnings("error")
 
 from pydtnn.comms import PROTOCOL
 try:
@@ -357,6 +357,8 @@ class Model:
         self.cublas_handle: Cublas_Handle_Type | None = None
         self.stream: PyCuda_Stream_Type | None = None
         self.cudnn_dtype: Cudnn_dtype | None = None
+        self.input_shape: tuple[int, ...] = None
+        self.output_shape: tuple[int, ...] = None
        
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
@@ -389,9 +391,16 @@ class Model:
         self.profile: bool = self.kwargs['profile']
         self.history_file: str = self.kwargs['history_file']
         self.model_sync_min_avail: int = self.kwargs['model_sync_min_avail']
-        self.dataset_name: str = self.kwargs['dataset_name']        
+        self.dataset_name: str = self.kwargs['dataset_name']
         self.shared_storage: bool = self.kwargs["shared_storage"]
-        self.encryption_name: str = self.kwargs["encryption_name"]        
+        self.encryption_name: str = self.kwargs["encryption_name"]
+        self.flip_images: bool = self.kwargs["flip_images"]
+        self.crop_images:bool = self.kwargs["crop_images"]        
+        self.resize:bool = self.kwargs["resize"]
+        self.resize_dimension:tuple[int, ...] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
+        self.flip_images_prob:float = self.kwargs["flip_images_prob"]
+        self.crop_images_size:int = self.kwargs["crop_images_size"]
+        self.crop_images_prob:float = self.kwargs["crop_images_prob"]
         # ---
         use_mpi_buffers:bool = self.kwargs["use_mpi_buffers"]
         
@@ -555,10 +564,19 @@ class Model:
     def _read_model(self, model_name:str) -> None:
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
-            # NOTE: Dataset is always in NCHW, but Layer always wants NHWC
+            # NOTE: Dataset is always in NCHW
             c, h, w = self.dataset.input_shape
-            input_shape = (h, w, c)
+            input_shape = (h, w, c) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC else (c, h, w)
+            if len(input_shape) != 3:
+                warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+            launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC \
+                                   else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
+            if launch_shape_warning:
+                warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! " 
+                warn(warning_text, RuntimeWarning)
+                warning_text = None
             output_shape = tuple(self.dataset.output_shape)
+
             layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
             self.add_layers(layers)
         except (ModuleNotFoundError, AttributeError):
@@ -765,19 +783,20 @@ class Model:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
         total_time:np.ndarray = np.zeros((4,), dtype=np.float32)
 
+        first_layer = 1
         last_layer = len(self.layers) - 1
         # Forward pass (FP)
-        for layer in range(1, len(self.layers)):
+        for layer in range(first_layer, last_layer + 1):
             total_time += self.layers[layer].fwd_time
 
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(last_layer, 0, -1):
+            for layer in range(last_layer, first_layer-1, -1):
                 total_time += self.layers[layer].bwd_time
 
             # Weight update (WU)
-            for layer in range(last_layer, 0, -1):
+            for layer in range(last_layer, first_layer-1, -1):
                 if self.comm and self.layers[layer].weights.size > 0:
                     total_time += allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
                                                  self.cpu_speed, self.network_bw, self.network_lat,
@@ -786,7 +805,7 @@ class Model:
             total_time_iar:int = 0
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(last_layer, 0, -1):
+            for layer in range(last_layer, -1, -1):
                 total_time += self.layers[layer].bwd_time
                 if self.comm and self.layers[layer].weights.size > 0:
                     time_iar = allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
@@ -856,22 +875,23 @@ class Model:
 
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
-        last_layer_index = len(self.layers) - 1
+        first_layer = 1
+        last_layer = len(self.layers) - 1
         if blocking:
-            for i in range(last_layer_index, 0, -1):
+            for i in range(last_layer, first_layer-1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
                 self.layers[i].reduce_weights_sync(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         else:
-            for i in range(last_layer_index, 0, -1):
+            for i in range(last_layer, first_layer-1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
                 self.layers[i].reduce_weights_async(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-            for i in range(last_layer_index, 0, -1):
+            for i in range(last_layer, first_layer-1, -1):
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                         [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW,
                                         self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
@@ -1024,11 +1044,12 @@ class Model:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch, current_batch_size)
 
+        first_layer = 1
         num_layers = len(self.layers)
 
         if x_batch.shape[0] > 0:
             # Forward pass (FP)
-            for i in range(1, num_layers):
+            for i in range(first_layer, num_layers):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1042,7 +1063,7 @@ class Model:
         last_layer = num_layers - 1
         if x_batch.shape[0] > 0:
             # Backward pass (BP)
-            for i in range(last_layer, 0, -1):
+            for i in range(last_layer, first_layer-1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
                 dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1057,7 +1078,7 @@ class Model:
         if x_batch.shape[0] > 0 or sync_model:
 
             # Optimizer
-            for i in range(last_layer, 0, -1):
+            for i in range(last_layer, first_layer-1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1067,7 +1088,7 @@ class Model:
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         if self.enable_cudnn:
-            for i in range(last_layer, 0, -1):
+            for i in range(last_layer, first_layer-1, -1):
                 if self.layers[i].grad_vars:
                     self.layers[i].stream_2.synchronize()
 
@@ -1112,9 +1133,11 @@ class Model:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch, current_batch_size)
 
+        first_layer = 1
+
         # Forward pass (FP)
         if x_batch.shape[0] > 0:
-            for i in range(1, len(self.layers)):
+            for i in range(first_layer, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)            
