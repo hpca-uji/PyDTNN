@@ -82,10 +82,17 @@ class DatasetFolderLoader(Dataset):
                          max_batches_online=max_batches_online, 
                          force_test_as_validation=force_test_as_validation, 
                          debug=debug)
+        
+        # Splitting the Train and the Validation dataset.
+        if self.test_as_validation:
+            self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST]
+        else:
+            shuffle(self.labels_and_images[DatasetEnum.TRAIN])
+            self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TRAIN][:self._nsamples[DatasetEnum.VAL]]
+            self.labels_and_images[DatasetEnum.TRAIN] = self.labels_and_images[DatasetEnum.TRAIN][self._nsamples[DatasetEnum.VAL]:]
     # --- END __init__ --- #
 
-
-    def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath], int]]:
+    def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int]:
         dict_class_file = dict[ClassName, set[DataPath]]()
         num_images = 0
         list_dir = sorted(os.listdir(path))
