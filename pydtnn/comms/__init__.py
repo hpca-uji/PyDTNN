@@ -167,8 +167,8 @@ class SessionData:
         self.put_buffer = Stream()
         self.get_buffer = Stream()
 
-        self._ack_queue = SimpleQueue[Future]()
-        self._ack_buffer = deque[int]()
+        self._ack_queue = dict[Stream, Future]()
+        self._ack_buffer = deque[tuple[int, Future]]()
 
     def get_empty(self) -> bool:
         """Is get connection flushed"""
@@ -185,8 +185,7 @@ class SessionData:
     def put(self, stream: Stream) -> Future[None]:
         """Push stream to put queue"""
         future = Future[None]()
-        asynctools.future_set_running(future)  # TODO: Move to put_flush
-        self._ack_queue.put(future)
+        self._ack_queue[stream] = future
         self.put_queue.put(stream)
         return future
 
@@ -241,7 +240,7 @@ class SessionData:
     def put_commit(self, size: int) -> None:
         """Mark size's bytes as fully transmitted (or freeable)"""
         while size > 0:
-            pending = self._ack_buffer[0]
+            pending, future = self._ack_buffer[0]
             shared = min(size, pending)
             pending -= shared
             size -= shared
@@ -249,11 +248,10 @@ class SessionData:
             assert size >= 0, "Commited more puts than queued"
 
             if pending > 0:
-                self._ack_buffer[0] = pending
+                self._ack_buffer[0] = (pending, future)
                 break
 
             self._ack_buffer.popleft()
-            future = self._ack_queue.get_nowait()
             asynctools.future_set_result(future, None)
 
     def put_flush(self) -> None:
@@ -264,8 +262,12 @@ class SessionData:
             except Empty:
                 break
             else:
+                future = self._ack_queue.pop(stream)
+                asynctools.future_set_running(future)
+                if future.cancelled():
+                    continue
                 size = self._packer.pack(self.put_buffer, stream)
-                self._ack_buffer.append(size)
+                self._ack_buffer.append((size, future))
 
 
 class Communicator[T](abc.ABC):
