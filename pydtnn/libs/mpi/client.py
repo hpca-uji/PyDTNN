@@ -263,11 +263,13 @@ class Comm:
 
     def _close(self) -> None:
         """Communicator finalizer"""
-        self.barrier()
-        self._comm_queue.shutdown()
-
         # Close comunicator if initialized
         if comm := self.__dict__.pop("_comm", None):
+            self.barrier()
+
+        self._comm_queue.shutdown()
+
+        if comm is not None:
             self._close_comm(comm)
 
     def Disconnect(self) -> None:
