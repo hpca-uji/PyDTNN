@@ -13,28 +13,32 @@ __all__ = (
 )
 
 
-def future_set_running(future: Future) -> None:
+def future_set_running(future: Future) -> bool:
     """Set future running (if plausible)"""
     try:
-        future.set_running_or_notify_cancel()
+        return future.set_running_or_notify_cancel()
     except RuntimeError:
-        pass
+        return False
 
 
-def future_set_result(future: Future, result) -> None:
+def future_set_result(future: Future, result) -> bool:
     """Set future result (if plausible)"""
     try:
         future.set_result(result)
     except futures.InvalidStateError:
-        pass
+        return False
+    else:
+        return True
 
 
-def future_set_exception(future: Future, exc: BaseException) -> None:
+def future_set_exception(future: Future, exc: BaseException) -> bool:
     """Set future exception (if plausible)"""
     try:
         future.set_exception(exc)
     except futures.InvalidStateError:
-        pass
+        return False
+    else:
+        return True
 
 
 def merge_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> Future:
