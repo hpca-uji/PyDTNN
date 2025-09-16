@@ -55,11 +55,13 @@ class Client(Protocol[str], client.Client[str]):
         peer = self._set_default_peer(comm)
         state = self._states[peer]
 
+        size = 0
         state.put_flush()
         while not state.put_buffer.empty():
             with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
-                state.put_commit(len(view))
+                size += len(view)
+        state.put_commit(size)
 
     def _close(self) -> None:
         """Close the client"""
