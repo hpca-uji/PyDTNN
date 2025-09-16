@@ -1,7 +1,7 @@
 #
 #  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
 #
-#  Copyright (C) 2021-22 Universitat Jaume I
+#  Copyright (C) 2021-25 Universitat Jaume I
 #
 #  PyDTNN is free software: you can redistribute it and/or modify it under the
 #  terms of the GNU General Public License as published by the Free Software
@@ -17,6 +17,8 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
+import os
+from glob import glob
 from Cython.Build import cythonize
 from setuptools import setup, find_packages
 
@@ -59,3 +61,11 @@ setup(
     },
     ext_modules=cythonize(s.ext_modules, language_level=3),
 )
+
+for cython_compiled_file in glob("./*.so"):
+    path = os.path.dirname(cython_compiled_file)
+    name = os.path.basename(cython_compiled_file)
+    path = os.path.join(path, "pydtnn", "cython_compiled_files")
+    if not os.path.isdir(path):
+        os.mkdir(path)
+    os.rename(cython_compiled_file, os.path.join(path, name))
