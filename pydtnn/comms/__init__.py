@@ -48,6 +48,8 @@
 # - Always block
 # - Server waits for peers to disconnect
 
+# TODO: Move set_result to thread_queue to avoid callback costs
+
 # TODO: Implement client reconnection
 
 # TODO: Implement two-way connection expiration and keep-alives. There
