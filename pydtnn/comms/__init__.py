@@ -92,7 +92,8 @@ __all__ = (
 )
 
 
-# type CommunicatorOptions = col_abc.Mapping[str, typing.Any]
+class ResourceClosed(RuntimeError):
+    """Resource closed"""
 
 
 class Protocol(enum.StrEnum):
@@ -115,16 +116,50 @@ class ConnectionState(enum.Flag):
     WRITABLE = enum.auto()
 
 
+class NetworkLocation(NamedTuple):
+    """Network location"""
+    host: str = "127.0.0.1"
+    port: int = 51966
+
+    def __str__(self):
+        """Unified network location"""
+        return f"{self.host}:{self.port}"
+
+
+@dataclass(order=False, slots=True, frozen=True)
+class ConnectionOptions:
+    """Connection data options"""
+    max_size: int
+    merge_size: int
+    efficient_size: int
+
+    def __init__(self, max_size: int = 0, merge_size: int = 0, efficient_size: int = 0):
+        """Inizialize connection options"""
+        # NOTE: Frozen dataclasess must use object.__setattr__ during __init__
+        object.__setattr__(self, "max_size", max_size if max_size else 4 * 1024 ** 2)
+        object.__setattr__(self, "merge_size", merge_size if merge_size else self.max_size)
+        object.__setattr__(self, "efficient_size", efficient_size if efficient_size else self.max_size // 64)
+
+
+@dataclass(order=False, slots=True, frozen=True)
+class CommunicatorOptions:
+    """Comunicatior options"""
+    netloc: NetworkLocation = NetworkLocation()
+    workers: int = 1
+    connection: ConnectionOptions = ConnectionOptions()
+
+
 class SessionData:
     """Connection data"""
 
-    def __init__(self, merge_size: int = 4 * 1024 ** 2 - 1, efficient_size: int = 64 * 1024 ** 1 - 1) -> None:
+    def __init__(self, options: ConnectionOptions = ConnectionOptions()) -> None:
         """Initialize connection state"""
+        self._options = options
         self.peer = UUID_NIL
         self.state = ConnectionState(value=0)
 
-        self._merge_buffer = byteview(bytearray(merge_size))
-        self._merge_size = min(merge_size, efficient_size)
+        self._merge_buffer = byteview(bytearray(self._options.merge_size))
+        self._merge_size = min(self._options.merge_size, self._options.efficient_size)
         self._packer = Packer()
 
         self.put_queue = SimpleQueue[Stream]()
@@ -168,7 +203,7 @@ class SessionData:
         """Merge get buffer"""
         with Stream() as stream:
 
-            while not self.get_buffer.empty() and stream.nbytes < len(self._merge_buffer):
+            while not self.get_buffer.empty() and stream.nbytes < self._options.merge_size:
                 chunk = self.get_buffer.unwritechunk()
 
                 if len(chunk) >= self._merge_size:
@@ -211,7 +246,10 @@ class SessionData:
             pending -= shared
             size -= shared
 
+            assert size >= 0, "Commited more puts than queued"
+
             if pending > 0:
+                self._ack_buffer[0] = pending
                 break
 
             self._ack_buffer.popleft()
@@ -220,7 +258,7 @@ class SessionData:
 
     def put_flush(self) -> None:
         """Flush put queue"""
-        while True:
+        while self.put_buffer.nbytes < self._options.max_size:
             try:
                 stream = self.put_queue.get_nowait()
             except Empty:
@@ -228,43 +266,6 @@ class SessionData:
             else:
                 size = self._packer.pack(self.put_buffer, stream)
                 self._ack_buffer.append(size)
-
-
-class ResourceClosed(RuntimeError):
-    """Resource closed"""
-
-
-class NetworkLocation(NamedTuple):
-    """Network location"""
-    host: str = "127.0.0.1"
-    port: int = 51966
-
-    def __str__(self):
-        """Unified network location"""
-        return f"{self.host}:{self.port}"
-
-
-@dataclass(order=False, slots=True, frozen=True)
-class ConnectionOptions:
-    """Conncetion data options"""
-    max_size: int
-    merge_size: int
-    efficient_size: int
-
-    def __init__(self, max_size: int = 0, merge_size: int = 0, efficient_size: int = 0):
-        """Inizialize connection options"""
-        # NOTE: Frozen dataclasess must use object.__setattr__ during __init__
-        object.__setattr__(self, "max_size", max_size if max_size else 4 * 1024 ** 2)
-        object.__setattr__(self, "merge_size", merge_size if merge_size else self.max_size)
-        object.__setattr__(self, "efficient_size", efficient_size if efficient_size else self.max_size // 64)
-
-
-@dataclass(order=False, slots=True, frozen=True)
-class CommunicatorOptions:
-    """Comunicatior options"""
-    netloc: NetworkLocation = NetworkLocation()
-    workers: int = 1
-    connection: ConnectionOptions = ConnectionOptions()
 
 
 class Communicator[T](abc.ABC):
@@ -291,7 +292,7 @@ class Communicator[T](abc.ABC):
 
     def _new_session_data(self) -> SessionData:
         """Generate new connection state data"""
-        return SessionData(merge_size=self._options.connection.merge_size, efficient_size=self._options.connection.efficient_size)
+        return SessionData(options=self._options.connection)
 
     def _session_ini(self, peer: uuid.UUID) -> None:
         """Send session ini message"""
