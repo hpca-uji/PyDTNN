@@ -20,6 +20,8 @@
 # call Finalize, and ensure it is always called, even when exceptions might be
 # unhandled and lead to thread termination.
 
+# TODO: Move request.callback to thread_queue to avoid callback costs
+
 # TODO: Revise gather v-variants
 
 # FIXME: Move backgroud_server logic from communicator to module. Currently it is
