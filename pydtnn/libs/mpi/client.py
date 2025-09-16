@@ -20,6 +20,8 @@
 # call Finalize, and ensure it is always called, even when exceptions might be
 # unhandled and lead to thread termination.
 
+# TODO: Move request.callback to thread_queue to avoid callback costs
+
 # TODO: Revise gather v-variants
 
 # FIXME: Move backgroud_server logic from communicator to module. Currently it is
@@ -119,8 +121,10 @@ class Comm:
 
     def __init__(self) -> None:
         """Communicator initialization"""
-        self._close_lock = threading.Lock()
         self._comm_lock = threading.Lock()
+
+        self._close_init = threading.Lock()
+        self._close_done = threading.Event()
 
         self._requests = dict[uuid.UUID, Request]()
         self._responses = dict[uuid.UUID, typing.Any]()
@@ -172,13 +176,13 @@ class Comm:
 
         request = Request()
         self._requests[operation.id] = request
-        self._comm.put(operation)
+        future = self._comm.put(operation)
         if self.rank in comm.dst:
             self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
             self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         else:
             request._put(operation.id)
-            request._put(None)
+            future.add_done_callback(lambda future: request._put(None))
         return request
 
     @functools.cached_property
@@ -264,18 +268,21 @@ class Comm:
     def _close(self) -> None:
         """Communicator finalizer"""
         # Close comunicator if initialized
-        if comm := self.__dict__.pop("_comm", None):
-            self.barrier()
+        with self._comm_lock:
+            if "_comm" in self.__dict__:
+                self.barrier()
 
-        self._comm_queue.shutdown()
+            self._comm_queue.shutdown()
 
-        if comm is not None:
-            self._close_comm(comm)
+            if comm := self.__dict__.pop("_comm", None):
+                self._close_comm(comm)
 
     def Disconnect(self) -> None:
         """Disconnect from a communicator."""
-        if self._close_lock.acquire(blocking=False):
+        if self._close_init.acquire(blocking=False):
             self._close()
+            self._close_done.set()
+        self._close_done.wait()
 
     def __del__(self) -> None:
         """Best effort finalizer"""

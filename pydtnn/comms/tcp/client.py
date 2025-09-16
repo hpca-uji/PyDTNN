@@ -92,7 +92,7 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
         state.put_flush()
         if state.put_buffer.empty():
             return
-        with state.put_read() as view:
+        with state.put_read(self._options.connection.max_size) as view:
             try:
                 size = comm.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):

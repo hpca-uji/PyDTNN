@@ -59,11 +59,13 @@ class Server(Protocol, server.Server[str]):
         comm = self._comms[peer]
         state = self._states[peer]
 
+        size = 0
         state.put_flush()
         while not state.put_buffer.empty():
             with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"s2c/{comm}", bytes(view))
-                state.put_commit(len(view))
+                size += len(view)
+        state.put_commit(size)
 
         if not state.state and state.put_empty():
             self._connection_fin(comm)
