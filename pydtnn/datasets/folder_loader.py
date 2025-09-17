@@ -177,7 +177,7 @@ class DatasetFolderLoader(Dataset):
     @override
     def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
         
-        batch_size = 0       
+        batch_size = 0
 
         if part is DatasetEnum.TRAIN: 
             shuffle(self.labels_and_images[part])
