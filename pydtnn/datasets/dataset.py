@@ -341,6 +341,8 @@ class Dataset(ABC):
         yield self._x[part], self._y[part]
 
     def _actual_batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
+        # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
+        # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
         generator = self._data_generator(part)
