@@ -40,6 +40,7 @@ class EarlyStopping(LRSchedulerWithLossOrMetric):
         self.best_epoch:int = 0
         self.best_loss:float = np.inf * {True: -1, False: 1}[not self.minimize]
         self.best_weights_filename:str | None = None
+        self.time:str = time.strftime("%Y%m%d")
     
     def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
         idx = self._get_idx()
@@ -51,8 +52,8 @@ class EarlyStopping(LRSchedulerWithLossOrMetric):
             self.best_epoch = self.epoch_count
             # Save weights + bias
             if not self.best_weights_filename:
-                self.best_weights_filename = "./model-{}-weights-{}.npz" \
-                    .format(self.model.model_name, time.strftime("%Y%m%d"))
+                self.best_weights_filename = "./model-{}-weights-rank_{}-{}.npz" \
+                    .format(self.model.model_name, self.model.comm_rank, self.time)
             self.model.store_weights_and_bias(self.best_weights_filename)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True
