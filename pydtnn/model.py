@@ -915,6 +915,7 @@ class Model:
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
         terminate = False # True: ends the following loop.
+        global_terminate = False
 
         model_sync_count = 0
         train_batches_min = min(self.comm_nsamples[DatasetEnum.TRAIN]) / (self.batch_size * self.nprocs)
@@ -938,6 +939,11 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
+                if terminate:
+                    x_batch = x_batch[:0]
+                    y_batch = y_batch[:0]
+                    batch_size = 0
+
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
                 if model_sync_count == 0 and not self.initial_model_sync:
@@ -951,7 +957,10 @@ class Model:
                     rank_mask = [1] * self.comm_size
                 rank_avail = sum(rank_mask)
 
-                if rank_avail <= 0:
+                if sync_model:
+                    global_terminate = self.comm.allreduce(terminate, op=MPI.LAND) if self.comm else terminate
+
+                if rank_avail <= 0 or global_terminate:
                     break
 
                 if rank_avail < self.model_sync_min_avail:
@@ -983,6 +992,11 @@ class Model:
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
 
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
+                if terminate:
+                    x_batch = x_batch[:0]
+                    y_batch = y_batch[:0]
+                    batch_size = 0
+
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
                 if model_sync_count == 0 and not self.initial_model_sync:
@@ -1027,7 +1041,7 @@ class Model:
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(.5)
 
-            if terminate:
+            if global_terminate:
                 break
 
         # Syncronize model

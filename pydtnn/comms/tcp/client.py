@@ -89,6 +89,7 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
         peer = self._set_default_peer(comm)
         state = self._states[peer]
 
+        size = 0
         state.put_flush()
         if state.put_buffer.empty():
             return
@@ -96,10 +97,10 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
             try:
                 size = comm.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
-                size = 0
+                pass
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
-            state.put_commit(size)
+        self._process_puts(state, size)
 
     def _connection_pre_fin(self, peer: uuid.UUID) -> None:
         """Close connection"""

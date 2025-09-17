@@ -182,6 +182,7 @@ class Comm:
             self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         else:
             request._put(operation.id)
+            self._requests.pop(operation.id)
             future.add_done_callback(lambda future: request._put(None))
         return request
 
