@@ -65,7 +65,7 @@ class Server(Protocol, server.Server[str]):
             with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"s2c/{comm}", bytes(view))
                 size += len(view)
-        state.put_commit(size)
+        self._process_puts(state, size)
 
         if not state.state and state.put_empty():
             self._connection_fin(comm)

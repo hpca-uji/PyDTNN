@@ -61,7 +61,7 @@ class Client(Protocol[str], client.Client[str]):
             with state.put_read(self._options.connection.max_size) as view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
                 size += len(view)
-        state.put_commit(size)
+        self._process_puts(state, size)
 
     def _close(self) -> None:
         """Close the client"""
