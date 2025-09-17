@@ -74,7 +74,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from bidict import bidict
 
 
-from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool
+from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool, thread_queue
 from pydtnn.utils import asynctools
 from pydtnn.utils.asynctools import merge_futures
 from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
@@ -239,7 +239,7 @@ class SessionData:
 
         return self.put_buffer.read1(size)
 
-    def put_commit(self, size: int) -> None:
+    def put_commit(self, size: int) -> col_abc.Iterable[Future[None]]:
         """Mark size's bytes as fully transmitted (or freeable)"""
         while size > 0:
             pending, future = self._ack_buffer[0]
@@ -254,7 +254,7 @@ class SessionData:
                 break
 
             self._ack_buffer.popleft()
-            asynctools.future_set_result(future, None)
+            yield future
 
     def put_flush(self) -> None:
         """Flush put queue"""
@@ -292,7 +292,9 @@ class Communicator[T](abc.ABC):
 
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
+
         self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
+        self._resolve_queue = thread_queue(f"{thread_prefix}.acks")
 
     def _new_session_data(self) -> SessionData:
         """Generate new connection state data"""
@@ -364,6 +366,10 @@ class Communicator[T](abc.ABC):
             else:
                 state.get_queue.put(stream)
                 self._get_events.put(peer)
+
+    def _process_puts(self, state: SessionData, size: int) -> None:
+        for future in state.put_commit(size):
+            self._resolve_queue.submit(asynctools.future_set_result, future, None).add_done_callback(lambda future: future.result())
 
     def _set_default_peer(self, comm: T) -> uuid.UUID:
         """Get associated peer or create a new one if missing"""
@@ -486,6 +492,7 @@ class Communicator[T](abc.ABC):
         for _ in range(threading.active_count()):
             self._get_events.put(UUID_MAX)
         self._pool.shutdown()
+        self._resolve_queue.shutdown()
 
     def close(self) -> None:
         """Close the communicator"""
