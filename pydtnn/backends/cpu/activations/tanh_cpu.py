@@ -37,5 +37,7 @@ class TanhCPU(ActivationCPU, Tanh):
     def backward(self, dy:np.ndarray) -> np.ndarray:
         # return 1 - np.tanh(dy) ** 2
         np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
-        dy **= 2
-        return 1 - dy
+        np.power(dy, 2, out=dy)
+        np.subtract(1, dy, out=dy)
+        
+        return dy
