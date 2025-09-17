@@ -777,10 +777,9 @@ class Model:
         ARGS:
             filename: Path to the file were the weights and biases will be stored.
         """
-        if self.shared_storage and self.comm_rank == 0:
-            d = {}
-            self.load_store_path(self.layers, d, LoadStoreMode.STORE)
-            np.savez_compressed(filename, **d)
+        d = {}
+        self.load_store_path(self.layers, d, LoadStoreMode.STORE)
+        np.savez_compressed(filename, **d)
 
     def calculate_time(self) -> np.ndarray:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
