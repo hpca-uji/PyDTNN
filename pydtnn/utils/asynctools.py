@@ -13,6 +13,14 @@ __all__ = (
 )
 
 
+def future_logger_disable():
+    """Disable future logger"""
+    import sys
+    import logging
+    logger = logging.getLogger("concurrent.futures")
+    logger.setLevel(sys.maxsize)
+
+
 def future_set_running(future: Future) -> bool:
     """Set future running (if plausible)"""
     try:
@@ -84,3 +92,6 @@ def merge_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -
         future_set_result(future, None)
 
     return future
+
+
+future_logger_disable()
