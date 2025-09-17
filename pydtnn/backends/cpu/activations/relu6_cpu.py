@@ -42,5 +42,5 @@ class Relu6CPU(Relu6, ActivationCPU):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:        
         # return dy * self.mask
-        dy *= self.mask
+        np.multiply(dy, self.mask, out=dy)
         return dy
