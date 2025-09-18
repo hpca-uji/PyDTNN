@@ -128,7 +128,9 @@ class Comm:
 
         self._requests = dict[uuid.UUID, Request]()
         self._responses = dict[uuid.UUID, typing.Any]()
-        self._comm_queue = utils.thread_queue(f"{__name__}.{self.__class__.__qualname__}:{id(self)}")
+
+        thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
+        self._comm_queue = utils.thread_queue(f"{thread_prefix}.comm")
 
     def _recive_response(self) -> None:
         """Recive one response from communication"""
