@@ -25,7 +25,7 @@ def main(config: Namespace):
     print(f"R{rank}: bcast {res}/{ref}")
     assert res == ref, f"bcast error; got {res}, expect {ref}"
 
-    ref = RemoteException
+    ref = RemoteException if size > 1 else type(None)
     try:
         res = comm.allreduce(None)
     except RemoteException as exc:
