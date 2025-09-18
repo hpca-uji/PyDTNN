@@ -922,6 +922,7 @@ class Model:
 
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
+            sync_epoch = False
 
             train_total_loss, train_batch_count = np.zeros(len(self.loss_and_metrics)), 0
             val_total_loss, val_batch_count = np.zeros(len(self.loss_and_metrics)), 0
@@ -941,9 +942,11 @@ class Model:
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
-                    batch_size = 0
 
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+                if sync_model:
+                    sync_epoch = True
 
                 if model_sync_count == 0 and not self.initial_model_sync:
                     sync_model = False
@@ -951,13 +954,10 @@ class Model:
                 model_sync_count += 1
 
                 if i_batch >= train_batches_min and sync_model:
-                    rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                    rank_mask = self.comm.allgather(min(1, x_batch.shape[0])) if self.comm else [min(1, x_batch.shape[0])]
                 else:
                     rank_mask = [1] * self.comm_size
                 rank_avail = sum(rank_mask)
-
-                if sync_model:
-                    global_terminate = self.comm.allreduce(terminate, op=MPI.LAND) if self.comm else terminate
 
                 if rank_avail <= 0 or global_terminate:
                     break
@@ -966,6 +966,9 @@ class Model:
                     sync_model = False
 
                 self.rank_weight = self._compute_rank_weight(rank_mask, DatasetEnum.TRAIN)
+
+                # NOTE: Improve global_batch_size aproximation without comms, since dataset fake it
+                batch_size = round(batch_size * (rank_avail / self.comm_size))
 
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
@@ -994,9 +997,11 @@ class Model:
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
-                    batch_size = 0
 
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
+
+                if sync_model:
+                    sync_epoch = True
 
                 if model_sync_count == 0 and not self.initial_model_sync:
                     sync_model = False
@@ -1006,7 +1011,7 @@ class Model:
                 if i_batch < val_batches_min:
                     rank_mask = [1] * self.comm_size
                 else:
-                    rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                    rank_mask = self.comm.allgather(min(1, x_batch.shape[0])) if self.comm else [min(1, x_batch.shape[0])]
                 rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
@@ -1014,6 +1019,9 @@ class Model:
 
                 if rank_avail < self.model_sync_min_avail:
                     sync_model = False
+
+                # NOTE: Improve global_batch_size aproximation without comms, since dataset fake it
+                batch_size = round(batch_size * (rank_avail / self.comm_size))
 
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=False and sync_model)
 
@@ -1039,6 +1047,9 @@ class Model:
                 pbar.close()
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(.5)
+
+            if sync_epoch:
+                global_terminate = self.comm.allreduce(terminate, op=MPI.LAND) if self.comm else terminate
 
             if global_terminate:
                 break
@@ -1200,7 +1211,7 @@ class Model:
             if i_batch < test_batches_min:
                 rank_mask = [1] * self.comm_size
             else:
-                rank_mask = self.comm.allgather(min(1, batch_size)) if self.comm else [min(1, batch_size)]
+                rank_mask = self.comm.allgather(min(1, x_batch.shape[0])) if self.comm else [min(1, x_batch.shape[0])]
             rank_avail = sum(rank_mask)
 
             if rank_avail <= 0:
@@ -1208,6 +1219,8 @@ class Model:
 
             if rank_avail < self.model_sync_min_avail:
                 sync_model = False
+
+            batch_size = round(batch_size * (rank_avail / self.comm_size))
 
             tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)

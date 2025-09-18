@@ -77,7 +77,7 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
         peer = self._set_default_peer(comm)
         state = self._states[peer]
 
-        for data in self._m2d(comm(self._s2m(state))):
+        for data in comm(self._put_flush(peer)):
             state.get_write(data)
             self._process_gets(peer)
             peer = state.peer

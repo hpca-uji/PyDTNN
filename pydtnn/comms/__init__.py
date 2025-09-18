@@ -219,7 +219,7 @@ class SessionData:
             else:
                 self.get_buffer.writechunks(stream.readchunks())
 
-    def get_flush(self) -> col_abc.Iterable[Stream]:
+    def get_flush_buffer(self) -> col_abc.Iterable[Stream]:
         """Flush get buffer"""
         try:
             while True:
@@ -232,12 +232,12 @@ class SessionData:
         merge_size = self.put_buffer.readinto(self._merge_buffer)
         self.put_buffer.unreadchunk(self._merge_buffer[:merge_size])
 
-    def put_read(self, size: int = -1) -> memoryview:
+    def put_read(self) -> memoryview:
         """Read put buffer (merging chunks if plausible)"""
         if self.put_buffer.nchunks > 1 and len(self.put_buffer.peekchunk()) < self._merge_size:
             self._put_merge()
 
-        return self.put_buffer.read1(size)
+        return self.put_buffer.read1(self._options.max_size)
 
     def put_commit(self, size: int) -> col_abc.Iterable[Future[None]]:
         """Mark size's bytes as fully transmitted (or freeable)"""
@@ -256,7 +256,7 @@ class SessionData:
             self._ack_buffer.popleft()
             yield future
 
-    def put_flush(self) -> None:
+    def put_flush_queue(self) -> None:
         """Flush put queue"""
         while self.put_buffer.nbytes < self._options.max_size:
             try:
@@ -266,10 +266,16 @@ class SessionData:
             else:
                 future = self._ack_queue.pop(stream)
                 asynctools.future_set_running(future)
+
                 if future.cancelled():
                     continue
+
                 size = self._packer.pack(self.put_buffer, stream)
                 self._ack_buffer.append((size, future))
+
+    def put_flush_buffer(self) -> col_abc.Iterable[memoryview]:
+        while not self.put_buffer.empty():
+            yield self.put_read()
 
 
 class Communicator[T](abc.ABC):
@@ -293,8 +299,8 @@ class Communicator[T](abc.ABC):
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
 
-        self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
-        self._resolve_queue = thread_queue(f"{thread_prefix}.acks")
+        self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}.worker")
+        self._put_queue = thread_queue(f"{thread_prefix}.put")
 
     def _new_session_data(self) -> SessionData:
         """Generate new connection state data"""
@@ -355,7 +361,7 @@ class Communicator[T](abc.ABC):
         """Handle pending get packets"""
         state = self._states[peer]
 
-        for stream in state.get_flush():
+        for stream in state.get_flush_buffer():
             if stream.empty():
                 self._handle_session_fin(peer, stream)
 
@@ -367,9 +373,12 @@ class Communicator[T](abc.ABC):
                 state.get_queue.put(stream)
                 self._get_events.put(peer)
 
-    def _process_puts(self, state: SessionData, size: int) -> None:
+    def _put_commit(self, peer: uuid.UUID, size: int) -> None:
+        """Commit size bytes as transmitted and resolve callbacks"""
+        state = self._states[peer]
+
         for future in state.put_commit(size):
-            self._resolve_queue.submit(asynctools.future_set_result, future, None).add_done_callback(lambda future: future.result())
+            self._put_queue.submit(asynctools.future_set_result, future, None).add_done_callback(lambda future: future.result())
 
     def _set_default_peer(self, comm: T) -> uuid.UUID:
         """Get associated peer or create a new one if missing"""
@@ -492,7 +501,7 @@ class Communicator[T](abc.ABC):
         for _ in range(threading.active_count()):
             self._get_events.put(UUID_MAX)
         self._pool.shutdown()
-        self._resolve_queue.shutdown()
+        self._put_queue.shutdown()
 
     def close(self) -> None:
         """Close the communicator"""
