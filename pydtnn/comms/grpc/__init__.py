@@ -15,6 +15,7 @@
 # was already closed, messages could end up queued forever if not restarted.
 
 import sys
+import uuid
 from collections import abc
 
 # Make sure global package is not confused with current package
@@ -40,17 +41,15 @@ class Protocol[T](comms.Communicator[T]):
         super().__init__(options)
         self._grpc_options = {"grpc.max_receive_message_length": self._options.connection.max_size, "grpc.max_send_message_length": self._options.connection.max_size}
 
-    def _m2d(self, messages: abc.Iterable[abc.Buffer]) -> abc.Generator[abc.Buffer]:
-        """Transforms gRPC messages to bytes"""
-        yield from messages
-
-    def _s2m(self, state: comms.SessionData) -> abc.Generator[abc.Buffer]:
+    def _put_flush(self, peer: uuid.UUID) -> abc.Generator[abc.Buffer]:
         """Transforms state to message"""
+        state = self._states[peer]
+
         size = 0
-        state.put_flush()
-        while not state.put_buffer.empty():
-            with state.put_read(self._options.connection.max_size) as view:
-                size += len(view)
+        state.put_flush_queue()
+        for view in state.put_flush_buffer():
+            with view:
                 yield view
                 # NOTE: view should be consumed, if not, yield bytes copies
-        self._process_puts(state, size)
+                size += len(view)
+        self._put_commit(peer, size)

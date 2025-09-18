@@ -64,8 +64,8 @@ class Server(Protocol[str], server.Server[str]):
         state = self._states[peer]
 
         # Message streaming
-        yield from self._s2m(state)
-        for data in self._m2d(messages):
+        yield from self._put_flush(peer)
+        for data in messages:
             state.get_write(data)
             self._process_gets(peer)
             peer = state.peer
