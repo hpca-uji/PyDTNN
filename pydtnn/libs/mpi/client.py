@@ -134,7 +134,7 @@ class Comm:
 
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
         self._comm_queue = utils.thread_queue(f"{thread_prefix}.comm")
-        self._task_queue = utils.thread_queue(f"{thread_prefix}.task")
+        self._post_queue = utils.thread_queue(f"{thread_prefix}.post")
 
     def _recive_response(self) -> None:
         """Recive one response from communication"""
@@ -167,7 +167,7 @@ class Comm:
                     request._state = RequestState.RES
                     if isinstance(response, mpi_comm.RemoteException):
                         request._process = Request._process  # Remove callback
-                    future = self._task_queue.submit(request._process, response)
+                    future = self._post_queue.submit(request._process, response)
                     future.add_done_callback(request._resolve)
                 case _:
                     raise RuntimeError(f"Invalid request state {request._state}")
@@ -290,7 +290,7 @@ class Comm:
                 self.barrier()
 
             self._comm_queue.shutdown()
-            self._task_queue.shutdown()
+            self._post_queue.shutdown()
 
             if comm := self.__dict__.pop("_comm", None):
                 self._close_comm(comm)
