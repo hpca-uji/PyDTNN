@@ -299,7 +299,7 @@ class Communicator[T](abc.ABC):
         self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
 
-        self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
+        self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}.worker")
         self._put_queue = thread_queue(f"{thread_prefix}.put")
 
     def _new_session_data(self) -> SessionData:
