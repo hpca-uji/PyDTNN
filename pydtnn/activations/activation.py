@@ -29,7 +29,7 @@ class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
 
     def __init__(self, shape: tuple[int,...] = (1,)):
         super().__init__(shape)
-        self.y: ndarray | TensorGPU | None = None
+        self.y: ndarray | TensorGPU = None
 
     def initialize(self, prev_shape: tuple[int,...]):
         super().initialize(prev_shape)
