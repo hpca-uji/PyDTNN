@@ -288,6 +288,10 @@ class Dataset(ABC):
     @staticmethod
     def _chw2hwc(x: Array) -> Array:
         return x.transpose(1, 2, 0).copy()
+    
+    @staticmethod
+    def _hwc2chw(x: Array) -> Array:
+        return x.transpose(2, 0, 1).copy()
 
     @staticmethod
     def _decode_class(y: Array, classes_list: np.ndarray) -> None:
@@ -445,8 +449,12 @@ class Dataset(ABC):
         new_data = np.empty(shape = (n, *self.resize_shape), dtype=self.model.dtype, order="C")
         for i in range(n):
             image = Image.fromarray(data[i], mode="RGB")
-            # NOTE: resize: The requested size in pixels, as a tuple or array: (width, height), but we work with NC*HW* or N*HW*C; self.model.resize_dimension[-1:0:-1]
-            new_data[i] = np.asarray(image.resize(self.model.resize_dimension[::-1]), dtype=self.model.dtype, order="C")
+            # NOTE: resize: The requested size in pixels, as a tuple or array: (width, height), but we work with NC*HW* or N*HW*C ==> self.model.resize_dimension[::-1]
+            resized_data = np.asarray(image.resize(self.model.resize_dimension[::-1]), dtype=self.model.dtype, order="C")
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                resized_data = self._hwc2chw(resized_data)
+            # else: Do nothing, the resized_data.shape is correct.
+            new_data[i] = resized_data
         return new_data
     # ---
 
