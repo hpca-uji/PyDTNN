@@ -37,8 +37,10 @@ import functools
 import threading
 import itertools
 from collections import abc
+from concurrent.futures import Future
 
 from pydtnn import comms, utils
+from pydtnn.utils import asynctools
 from pydtnn.utils.io_stream import byteview
 from pydtnn.libs.mpi import comm as mpi_comm
 
@@ -75,45 +77,46 @@ class InPlace(enum.Enum):
 class RequestState(enum.Enum):
     INI = enum.auto()
     ACK = enum.auto()
+    RES = enum.auto()
     FIN = enum.auto()
 
 
 class Request[T]:
     """Request handler."""
-    _result: T
-    _callback: abc.Callable[[T], T]
 
     def __init__(self) -> None:
         """Inizialize request"""
         self._state = RequestState.INI
-        self._lock = threading.Condition()
+        self._lock = threading.Lock()
+        self._future = Future[T]()
 
-    def _put(self, value) -> uuid.UUID | None:
-        """Process state change"""
-        match self._state:
-            case RequestState.INI:
-                self._state = RequestState.ACK
-                return value
+    @staticmethod
+    def _process[O](result: O) -> O:
+        """Result post-processing"""
+        if isinstance(result, mpi_comm.RemoteException):
+            raise result
+        return result
 
-            case RequestState.ACK:
-                self._result = value
-                with self._lock:
-                    self._state = RequestState.FIN
-                    self._lock.notify_all()
-                return None
+    def _resolve(self, future: Future[T]) -> None:
+        """Resolve request according to future"""
+        exc = future.exception()
+        self._state = RequestState.FIN
 
-            case _:
-                raise RuntimeError(f"Invalid request state {self._state}")
+        if exc is None:
+            result = future.result()
+            asynctools.future_set_result(self._future, result)
+        else:
+            asynctools.future_set_exception(self._future, exc)
 
     def wait(self) -> T:
         """Wait for a non-blocking operation to complete."""
         with self._lock:
-            self._lock.wait_for(lambda: self._state == RequestState.FIN)
-        result = self.__dict__.pop("_result", None)
-        if isinstance(result, mpi_comm.RemoteException):
-            raise result
-        callback = self.__dict__.pop("_callback", lambda result: result)
-        return callback(result)
+            if "_future" in self.__dict__:
+                result = self._future.result()
+                del self._future
+            else:
+                result = None
+        return result  # type: ignore
 
 
 class Comm:
@@ -131,6 +134,7 @@ class Comm:
 
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
         self._comm_queue = utils.thread_queue(f"{thread_prefix}.comm")
+        self._task_queue = utils.thread_queue(f"{thread_prefix}.task")
 
     def _recive_response(self) -> None:
         """Recive one response from communication"""
@@ -150,20 +154,25 @@ class Comm:
     def _handle_request(self, id: uuid.UUID) -> None:
         """Handle a request"""
         # While matching request and response
-        while request := self._requests.pop(id, None):
-            if (response := self._responses.pop(id, self)) is self:
-                self._requests[id] = request
-                break
+        while id in self._requests and id in self._responses:
+            request = self._requests.pop(id)
+            response = self._responses.pop(id)
 
-            # Continue request
-            if id := request._put(response):  # type: ignore
-                self._requests[id] = request
+            match request._state:
+                case RequestState.INI:
+                    id = response
+                    self._requests[id] = request
+                    request._state = RequestState.ACK
+                case RequestState.ACK:
+                    request._state = RequestState.RES
+                    if isinstance(response, mpi_comm.RemoteException):
+                        request._process = Request._process  # Remove callback
+                    future = self._task_queue.submit(request._process, response)
+                    future.add_done_callback(request._resolve)
+                case _:
+                    raise RuntimeError(f"Invalid request state {request._state}")
 
-            # Finish request
-            else:
-                break
-
-    def _shedule_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any) -> Request:
+    def _shedule_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any, process: abc.Callable = Request._process) -> Request:
         """Schedule a new operation"""
 
         # Create appropriate request according to participation
@@ -177,15 +186,20 @@ class Comm:
             raise RuntimeError("Tried to schedule operation without participating")
 
         request = Request()
-        self._requests[operation.id] = request
+        request._process = process
+        asynctools.future_set_running(request._future)
+
+        if self.rank in comm.dst:
+            self._requests[operation.id] = request
+
         future = self._comm.put(operation)
+
         if self.rank in comm.dst:
             self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
             self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         else:
-            request._put(operation.id)
-            self._requests.pop(operation.id)
-            future.add_done_callback(lambda future: request._put(None))
+            future.add_done_callback(request._resolve)
+
         return request
 
     @functools.cached_property
@@ -276,6 +290,7 @@ class Comm:
                 self.barrier()
 
             self._comm_queue.shutdown()
+            self._task_queue.shutdown()
 
             if comm := self.__dict__.pop("_comm", None):
                 self._close_comm(comm)
@@ -335,7 +350,7 @@ class Comm:
         """Broadcast."""
         context = mpi_comm.BroadcastContext(root=root)
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=obj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=obj)
 
     def bcast[T](self, obj: T, root: mpi_comm.Rank = 0) -> T:
         """Broadcast."""
@@ -343,14 +358,14 @@ class Comm:
 
     def Ibcast[T: abc.Buffer](self, buf: T, root: mpi_comm.Rank = 0) -> Request[None]:
         """Nonblocking Gather to All."""
+        context = mpi_comm.BroadcastContext(root=root)
+        comm = context.comm(size=self.size)
 
-        def callback(result: T) -> None:
+        def process(result: T) -> None:
             with byteview(result) as src, byteview(buf) as dst:
                 dst[:] = src
 
-        req = self.ibcast(obj=buf, root=root)
-        req._callback = callback  # type: ignore
-        return req  # type: ignore
+        return self._shedule_operation(comm=comm, context=context, obj=buf, process=process)
 
     def Bcast[T: abc.Buffer](self, buf: T, root: mpi_comm.Rank = 0) -> None:
         """Gather to All."""
@@ -361,7 +376,7 @@ class Comm:
         """Nonblocking Gather to All."""
         context = mpi_comm.AllGatherContext()
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=sendobj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=sendobj)
 
     def allgather[T](self, sendobj: T) -> list[T]:
         """Gather to All."""
@@ -372,7 +387,7 @@ class Comm:
         if sendbuf is InPlace.IN_PLACE:
             sendbuf = recvbuf
 
-        def callback(results: list[T]) -> None:
+        def process(results: list[T]) -> None:
             offset = 0
             with byteview(recvbuf) as dst:
                 for result in results:
@@ -380,9 +395,9 @@ class Comm:
                         dst[offset:offset + len(src)] = src
                         offset += len(src)
 
-        req = self.iallgather(sendobj=sendbuf)
-        req._callback = callback  # type: ignore
-        return req  # type: ignore
+        context = mpi_comm.AllGatherContext()
+        comm = context.comm(size=self.size)
+        return self._shedule_operation(comm=comm, context=context, obj=sendbuf, process=process)
 
     def Allgather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T) -> None:
         """Gather to All."""
@@ -393,7 +408,7 @@ class Comm:
         """Reduce to All."""
         context = mpi_comm.AllReduceContext(op=op)
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=sendobj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=sendobj)
 
     def allreduce[T](self, sendobj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> T:
         """Reduce to All."""
@@ -404,13 +419,13 @@ class Comm:
         if sendbuf is InPlace.IN_PLACE:
             sendbuf = recvbuf
 
-        def callback(result: T) -> None:
+        def process(result: T) -> None:
             with byteview(result) as src, byteview(recvbuf) as dst:
                 dst[:] = src
 
-        req = self.iallreduce(sendobj=sendbuf, op=op)
-        req._callback = callback  # type: ignore
-        return req  # type: ignore
+        context = mpi_comm.AllReduceContext(op=op)
+        comm = context.comm(size=self.size)
+        return self._shedule_operation(comm=comm, context=context, obj=sendbuf, process=process)
 
     def Allreduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> None:
         """Reduce to All."""
@@ -423,7 +438,7 @@ class Comm:
 
         for phase in itertools.count():
             comm = context.comm(rank=self.rank, size=self.size, phase=phase)
-            sendobj = self._shedule_operation(comm=comm, obj=sendobj, context=context).wait()
+            sendobj = self._shedule_operation(comm=comm, context=context, obj=sendobj).wait()
             if len(comm.dst) == self.size:
                 break
 
@@ -434,7 +449,7 @@ class Comm:
         """Nonblocking Scatter."""
         context = mpi_comm.ScatterContext(root=root)
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=sendobj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=sendobj)
 
     def scatter[T](self, sendobj: abc.Sequence[T], root: mpi_comm.Rank = 0) -> T:
         """Scatter."""
@@ -445,7 +460,7 @@ class Comm:
         """All to All Scatter/Gather."""
         context = mpi_comm.AllToAllContext()
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=sendobj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=sendobj)
 
     def alltoall[T](self, sendobj: abc.Sequence[T]) -> list[T]:
         """All to All Scatter/Gather."""
@@ -456,7 +471,7 @@ class Comm:
         """Nonblocking Gather."""
         context = mpi_comm.GatherContext(root=root)
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=sendobj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=sendobj)
 
     def gather[T](self, sendobj: T, root: mpi_comm.Rank = 0) -> list[T]:
         """Gather."""
@@ -467,7 +482,7 @@ class Comm:
         if sendbuf is InPlace.IN_PLACE:
             sendbuf = recvbuf
 
-        def callback(results: list[T]) -> None:
+        def process(results: list[T]) -> None:
             offset = 0
             with byteview(recvbuf) as dst:
                 for result in results:
@@ -475,9 +490,9 @@ class Comm:
                         dst[offset:offset + len(src)] = src
                         offset += len(src)
 
-        req = self.igather(sendobj=sendbuf, root=root)
-        req._callback = callback  # type: ignore
-        return req  # type: ignore
+        context = mpi_comm.GatherContext(root=root)
+        comm = context.comm(size=self.size)
+        return self._shedule_operation(comm=comm, context=context, obj=sendbuf, process=process)
 
     def Gather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, root: mpi_comm.Rank = 0) -> None:
         """Gather."""
@@ -488,7 +503,7 @@ class Comm:
         """Reduce to All."""
         context = mpi_comm.ReduceContext(op=op, root=root)
         comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, obj=sendobj, context=context)
+        return self._shedule_operation(comm=comm, context=context, obj=sendobj)
 
     def reduce[T](self, sendobj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM, root: mpi_comm.Rank = 0) -> T:
         """Reduce to All."""
@@ -499,13 +514,13 @@ class Comm:
         if sendbuf is InPlace.IN_PLACE:
             sendbuf = recvbuf
 
-        def callback(result: T) -> None:
+        def process(result: T) -> None:
             with byteview(result) as src, byteview(recvbuf) as dst:
                 dst[:] = src
 
-        req = self.ireduce(sendobj=sendbuf, op=op, root=root)
-        req._callback = callback  # type: ignore
-        return req  # type: ignore
+        context = mpi_comm.ReduceContext(op=op, root=root)
+        comm = context.comm(size=self.size)
+        return self._shedule_operation(comm=comm, context=context, obj=sendbuf, process=process)
 
     def Reduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM, root: mpi_comm.Rank = 0) -> None:
         """Reduce to All."""
