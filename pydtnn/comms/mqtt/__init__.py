@@ -45,7 +45,7 @@ class Protocol[T](comms.Communicator[T]):
         super().__init__(copy.replace(options, workers=1))
 
         # State
-        self._ack_queue = thread_queue(f"{__name__}.{self.__class__.__qualname__}:{id(self)}.acks")
+        self._publish_queue = thread_queue(f"{__name__}.{self.__class__.__qualname__}:{id(self)}.publish")
 
         # MQTT
         self._client = mqtt_client.Client(
@@ -66,7 +66,7 @@ class Protocol[T](comms.Communicator[T]):
         self._client.loop_start()
 
     def _stop_loop(self) -> None:
-        self._ack_queue.shutdown()
+        self._publish_queue.shutdown()
         self._client.loop_stop()
 
     def _register_handler(self, topic: str, handler: mqtt_client.CallbackOnMessage) -> None:
@@ -81,4 +81,4 @@ class Protocol[T](comms.Communicator[T]):
     def _publish(self, topic: str, data=None) -> None:
         """Generic MQTT publish"""
         message = self._client.publish(topic=topic, payload=data, qos=self._qos)
-        self._ack_queue.submit(message.wait_for_publish).add_done_callback(lambda future: future.result())
+        self._publish_queue.submit(message.wait_for_publish).add_done_callback(lambda future: future.result())

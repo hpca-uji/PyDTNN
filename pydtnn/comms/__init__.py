@@ -300,7 +300,7 @@ class Communicator[T](abc.ABC):
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
 
         self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}")
-        self._resolve_queue = thread_queue(f"{thread_prefix}.acks")
+        self._put_queue = thread_queue(f"{thread_prefix}.put")
 
     def _new_session_data(self) -> SessionData:
         """Generate new connection state data"""
@@ -378,7 +378,7 @@ class Communicator[T](abc.ABC):
         state = self._states[peer]
 
         for future in state.put_commit(size):
-            self._resolve_queue.submit(asynctools.future_set_result, future, None).add_done_callback(lambda future: future.result())
+            self._put_queue.submit(asynctools.future_set_result, future, None).add_done_callback(lambda future: future.result())
 
     def _set_default_peer(self, comm: T) -> uuid.UUID:
         """Get associated peer or create a new one if missing"""
@@ -501,7 +501,7 @@ class Communicator[T](abc.ABC):
         for _ in range(threading.active_count()):
             self._get_events.put(UUID_MAX)
         self._pool.shutdown()
-        self._resolve_queue.shutdown()
+        self._put_queue.shutdown()
 
     def close(self) -> None:
         """Close the communicator"""
