@@ -3,7 +3,14 @@
 export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-mpirun -np 4 \
+
+MPI_ARGS=()
+export MPICH_UNBUFFERED_STDIO="true"
+if $(mpirun --version | grep -q 'Open MPI) [5-9].'); then
+  MPI_ARGS+=("--output=:raw")
+fi
+
+mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=simplecnn \
   --dataset=raw \
