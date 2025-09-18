@@ -95,17 +95,17 @@ class Server(Protocol[socket.socket], server.Server[socket.socket]):
         state = self._states[peer]
 
         size = 0
-        state.put_flush()
+        state.put_flush_queue()
         if state.put_buffer.empty():
             return
-        with state.put_read(self._options.connection.max_size) as view:
+        with state.put_read() as view:
             try:
                 size = comm.send(view)
             except (ssl.SSLWantReadError, ssl.SSLWantWriteError):
                 pass
             if size < len(view):
                 state.put_buffer.unreadchunk(view[size:])
-        self._process_puts(state, size)
+        self._put_commit(peer, size)
 
     def _connection_pre_fin(self, peer: uuid.UUID) -> None:
         comm = self._comms[peer]

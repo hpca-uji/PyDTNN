@@ -56,16 +56,17 @@ class Server(Protocol, server.Server[str]):
         return future
 
     def _s2c(self, peer: uuid.UUID):
+        """Server to client communication"""
         comm = self._comms[peer]
         state = self._states[peer]
 
         size = 0
-        state.put_flush()
-        while not state.put_buffer.empty():
-            with state.put_read(self._options.connection.max_size) as view:
+        state.put_flush_queue()
+        for view in state.put_flush_buffer():
+            with view:
                 self._publish(f"s2c/{comm}", bytes(view))
                 size += len(view)
-        self._process_puts(state, size)
+        self._put_commit(peer, size)
 
         if not state.state and state.put_empty():
             self._connection_fin(comm)

@@ -52,16 +52,17 @@ class Client(Protocol[str], client.Client[str]):
         return future
 
     def _c2s(self, comm: str):
+        """Client to server communication"""
         peer = self._set_default_peer(comm)
         state = self._states[peer]
 
         size = 0
-        state.put_flush()
-        while not state.put_buffer.empty():
-            with state.put_read(self._options.connection.max_size) as view:
+        state.put_flush_queue()
+        for view in state.put_flush_buffer():
+            with view:
                 self._publish(f"c2s/{self._id.hex}", bytes(view))
                 size += len(view)
-        self._process_puts(state, size)
+        self._put_commit(peer, size)
 
     def _close(self) -> None:
         """Close the client"""
