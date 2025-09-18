@@ -19,9 +19,11 @@
 
 from abc import ABC
 
+from typing import TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from pydtnn.activations import Activation
 from .layer import Layer
-from pydtnn.activations import Activation 
-from ..initializers import InitializerFunc, glorot_uniform, zeros, ones
+from ..initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
 import numpy as np
 from enum import StrEnum, auto
@@ -39,7 +41,7 @@ class Conv2D(Layer, ABC):
                  padding:tuple[int, int] | int = 0, 
                  stride: tuple[int, int] | int = 1,
                  dilation:tuple[int, int] | int = 1, 
-                 activation:Activation | None = None, 
+                 activation: Optional["Activation"] = None, 
                  use_bias=True, 
                  weights_initializer:InitializerFunc = glorot_uniform,
                  biases_initializer:InitializerFunc = zeros):

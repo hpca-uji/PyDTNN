@@ -26,7 +26,6 @@ import os
 import sys
 import time
 from timeit import default_timer as timer
-import warnings
 from warnings import warn
 #warnings.filterwarnings("error")
 
@@ -34,12 +33,10 @@ from warnings import warn
 from typing import Any, TypeVar, Callable, TYPE_CHECKING, Literal
 from collections.abc import Iterable
 from .tracers import SimpleTracerGPU
-from pydtnn.layers.batch_normalization import BatchNormalization
 
 from types import ModuleType
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from .activations import Activation
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.backends import PromoteToBackendMixin
 from .tracers.tracer import Tracer
 from .datasets import Dataset
 from .losses import Loss
@@ -428,7 +425,7 @@ class Model:
         self.perf_counter = PerformanceCounter()
         
         # Layers' attributes
-        self.layers: list[LayerAndActivationBase] = []
+        self.layers: list[Layer | Activation] = []
         self.layer_id:int = _layer_id_generator()
         
         # Matmul
@@ -614,7 +611,7 @@ class Model:
             layer.print_in_convdirect_format()
     # --- END print_in_convdirect_format --- #
 
-    def add(self, layer: LayerAndActivationBase) -> None:
+    def add(self, layer: Layer | Activation) -> None:
         layer.set_model(self)
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
         if self.enable_cudnn:
@@ -630,12 +627,12 @@ class Model:
             self.add(layer.act())
     # --- END add --- #
 
-    def add_layers(self, list_layers: list[LayerAndActivationBase]) -> None:
+    def add_layers(self, list_layers: list[Layer | Activation]) -> None:
         for layer in list_layers:
             self.add(layer)
     # --- END add_layers ---
 
-    def get_all_layers(self, from_layers: list[LayerAndActivationBase] | None = None) -> list[LayerAndActivationBase]:
+    def get_all_layers(self, from_layers: list[Layer | Activation] | None = None) -> list[Layer | Activation]:
         if from_layers is None:
             from_layers = self.layers
         this_recursion_layers = []
@@ -860,7 +857,7 @@ class Model:
         return total, count + batch_size, string
     # --- END _update_running_average --- # 
 
-    def _sync_x_y(self, x_batch:Array, y_batch:Array, current_batch_size:int) -> tuple[Array, Array]:
+    def _sync_x_y(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[Array, Array]:
         if self.enable_cudnn:
             # TODO/FIXME  This is a HOT FIX. Fix CUDA Layers
             # ==> Right now the self.batch_size and CUDA's x_batch.shape[0] must be the same (we're reusing the previous batch)
@@ -971,7 +968,7 @@ class Model:
                 batch_size = round(batch_size * (rank_avail / self.comm_size))
 
                 tic = timer()
-                train_batch_loss = self._train_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
+                train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
                 toc = timer()
 
                 if batch_size <= 0:
@@ -1023,7 +1020,7 @@ class Model:
                 # NOTE: Improve global_batch_size aproximation without comms, since dataset fake it
                 batch_size = round(batch_size * (rank_avail / self.comm_size))
 
-                val_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=False and sync_model)
+                val_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=False and sync_model)
 
                 if batch_size <= 0:
                     continue
@@ -1062,14 +1059,14 @@ class Model:
         return self.history
     # --- END train_dataset --- #
 
-    def _train_batch(self, x_batch: Array, y_batch: Array, current_batch_size:int, sync_model=True) -> np.ndarray:
+    def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> Array:
         self.mode = ModelModeEnum.TRAIN
 
         # LR schedulers begin
         for lr_sched in self.lr_schedulers:
             lr_sched.on_batch_begin()
 
-        x, y_targ = self._sync_x_y(x_batch, y_batch, current_batch_size)
+        x, y_targ = self._sync_x_y(x_batch, y_batch)
 
         first_layer = 1
         num_layers = len(self.layers)
@@ -1155,10 +1152,10 @@ class Model:
                 raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
     # --- END _compute_rank_weight --- #
 
-    def _evaluate_batch(self, x_batch:Array, y_batch:Array, current_batch_size:int, sync_model=True) -> Array:
+    def _evaluate_batch(self, x_batch:np.ndarray, y_batch:np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = ModelModeEnum.EVALUATE
 
-        x, y_targ = self._sync_x_y(x_batch, y_batch, current_batch_size)
+        x, y_targ = self._sync_x_y(x_batch, y_batch)
 
         first_layer = 1
 
@@ -1223,7 +1220,7 @@ class Model:
             batch_size = round(batch_size * (rank_avail / self.comm_size))
 
             tic = timer()
-            test_batch_loss = self._evaluate_batch(x_batch, y_batch, batch_size, sync_model=sync_model)
+            test_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)
             toc = timer()
 
             if batch_size <= 0:
