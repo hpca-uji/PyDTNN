@@ -136,6 +136,11 @@ class Comm:
         self._comm_queue = utils.thread_queue(f"{thread_prefix}.comm")
         self._post_queue = utils.thread_queue(f"{thread_prefix}.post")
 
+    @property
+    def _closed(self):
+        """Is communicator closed"""
+        return self._close_init.locked()
+
     def _recive_response(self) -> None:
         """Recive one response from communication"""
         response = self._comm.get().obj
@@ -382,27 +387,6 @@ class Comm:
         """Gather to All."""
         return self.iallgather(sendobj=sendobj).wait()
 
-    def Iallgather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T) -> Request[None]:
-        """Nonblocking Gather to All."""
-        if sendbuf is InPlace.IN_PLACE:
-            sendbuf = recvbuf
-
-        def process(results: list[T]) -> None:
-            offset = 0
-            with byteview(recvbuf) as dst:
-                for result in results:
-                    with byteview(result) as src:
-                        dst[offset:offset + len(src)] = src
-                        offset += len(src)
-
-        context = mpi_comm.AllGatherContext()
-        comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, context=context, obj=sendbuf, process=process)
-
-    def Allgather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T) -> None:
-        """Gather to All."""
-        self.Iallgather(sendbuf=sendbuf, recvbuf=recvbuf).wait()
-
     # Reduce to All
     def iallreduce[T](self, sendobj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM) -> Request[T]:
         """Reduce to All."""
@@ -476,27 +460,6 @@ class Comm:
     def gather[T](self, sendobj: T, root: mpi_comm.Rank = 0) -> list[T]:
         """Gather."""
         return self.igather(sendobj=sendobj, root=root).wait()
-
-    def Igather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, root: mpi_comm.Rank = 0) -> Request[None]:
-        """Nonblocking Gather."""
-        if sendbuf is InPlace.IN_PLACE:
-            sendbuf = recvbuf
-
-        def process(results: list[T]) -> None:
-            offset = 0
-            with byteview(recvbuf) as dst:
-                for result in results:
-                    with byteview(result) as src:
-                        dst[offset:offset + len(src)] = src
-                        offset += len(src)
-
-        context = mpi_comm.GatherContext(root=root)
-        comm = context.comm(size=self.size)
-        return self._shedule_operation(comm=comm, context=context, obj=sendbuf, process=process)
-
-    def Gather[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, root: mpi_comm.Rank = 0) -> None:
-        """Gather."""
-        self.Igather(sendbuf=sendbuf, recvbuf=recvbuf, root=root).wait()
 
     # Reduce
     def ireduce[T](self, sendobj: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM, root: mpi_comm.Rank = 0) -> Request[T]:
