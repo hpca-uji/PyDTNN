@@ -20,9 +20,9 @@
 # call Finalize, and ensure it is always called, even when exceptions might be
 # unhandled and lead to thread termination.
 
-# TODO: Move request.callback to thread_queue to avoid callback costs
+# TODO: Revise vector variants
 
-# TODO: Revise gather v-variants
+# FIXME: Implement self-messaging
 
 # FIXME: Move backgroud_server logic from communicator to module. Currently it is
 # here because of import restrictions, but it will be an issue when multiple
@@ -62,6 +62,10 @@ __all__ = (
     "MAXLOC",
     "COMM_WORLD",
 )
+
+
+ANY_TAG: mpi_comm.Tag = 0
+ANY_SOURCE: mpi_comm.Rank = -1
 
 
 def Finalize() -> None:
@@ -177,7 +181,7 @@ class Comm:
                 case _:
                     raise RuntimeError(f"Invalid request state {request._state}")
 
-    def _shedule_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any, process: abc.Callable = Request._process) -> Request:
+    def _shedule_operation(self, comm: mpi_comm.CommmunicationGroup, context: mpi_comm.OperationContext, obj: typing.Any = None, process: abc.Callable = Request._process) -> Request:
         """Schedule a new operation"""
 
         # Create appropriate request according to participation
@@ -488,6 +492,96 @@ class Comm:
     def Reduce[T: abc.Buffer](self, sendbuf: T | typing.Literal[InPlace.IN_PLACE], recvbuf: T, op: mpi_comm.ReduceOperation = mpi_comm.ReduceOperation.SUM, root: mpi_comm.Rank = 0) -> None:
         """Reduce to All."""
         self.Ireduce(sendbuf=sendbuf, recvbuf=recvbuf, op=op, root=root).wait()
+
+    # Send
+    def isend[T](self, obj: T, dest: mpi_comm.Rank, tag: mpi_comm.Tag = 0) -> Request[None]:
+        """Nonblocking Send in standard mode."""
+        if dest == self.rank:
+            raise ValueError("Self send not supported")
+
+        if tag:
+            raise ValueError("Tags are not supported")
+
+        context = mpi_comm.SendRecvContext(tag=tag)
+        comm = context.comm(src=self.rank, dst=dest)
+        return self._shedule_operation(comm=comm, context=context, obj=obj)
+
+    def send[T](self, obj: T, dest: mpi_comm.Rank, tag: mpi_comm.Tag = 0) -> None:
+        """Send in standard mode."""
+        return self.isend(obj=obj, dest=dest, tag=tag).wait()
+
+    def Isend[T: abc.Buffer](self, buf: T, dest: mpi_comm.Rank, tag: mpi_comm.Tag = 0) -> Request[None]:
+        """Nonblocking Send in standard mode."""
+        return self.isend(obj=buf, dest=dest, tag=tag)
+
+    def Send[T: abc.Buffer](self, buf: T, dest: mpi_comm.Rank, tag: mpi_comm.Tag = 0) -> None:
+        """Send in standard mode."""
+        return self.Isend(buf=buf, dest=dest, tag=tag).wait()
+
+    # Receive
+    def irecv[T: abc.Buffer](self, buf: T | None = None, source: mpi_comm.Rank = ANY_SOURCE, tag: mpi_comm.Tag = ANY_TAG, status=None) -> Request[T]:
+        """Nonblocking Receive."""
+        if source == self.rank:
+            raise ValueError("Self source not supported")
+
+        if source == ANY_SOURCE:
+            raise ValueError("Any source is not supported")
+
+        if tag:
+            raise ValueError("Tags are not supported")
+
+        if status:
+            raise ValueError("Status are not supported")
+
+        def process(result: T):
+            if buf is None:
+                return result
+            with byteview(result) as src, byteview(buf) as dst:
+                dst[:] = src
+
+        context = mpi_comm.SendRecvContext(tag=tag)
+        comm = context.comm(src=source, dst=self.rank)
+        return self._shedule_operation(comm=comm, context=context, process=process)
+
+    def recv[T: abc.Buffer](self, buf: T | None = None, source: mpi_comm.Rank = ANY_SOURCE, tag: mpi_comm.Tag = ANY_TAG, status=None) -> T:
+        """Nonblocking Receive."""
+        return self.irecv(buf=buf, source=source, tag=tag, status=status).wait()
+
+    # Send and Recevie
+    def isendrecv[S, R: abc.Buffer](self, sendobj: S, dest: mpi_comm.Rank, sendtag: mpi_comm.Rank = 0, recvbuf: R | None = None, source: mpi_comm.Rank = ANY_SOURCE, recvtag: mpi_comm.Tag = ANY_TAG, status=None) -> Request[R]:
+        """Nonblocking Send and Receive."""
+        send = self.isend(obj=sendobj, dest=dest, tag=sendtag)
+        recv = self.irecv(buf=recvbuf, source=source, tag=recvtag, status=status)
+
+        request = Request[R]()
+        future = asynctools.merge_futures([send._future, recv._future])
+        future.add_done_callback(lambda future: request._resolve(recv._future))
+
+        return request
+
+    def sendrecv[S, R: abc.Buffer](self, sendobj: S, dest: mpi_comm.Rank, sendtag: mpi_comm.Rank = 0, recvbuf: R | None = None, source: mpi_comm.Rank = ANY_SOURCE, recvtag: mpi_comm.Tag = ANY_TAG, status=None) -> R:
+        """Nonblocking Send and Receive."""
+        return self.isendrecv(sendobj=sendobj, dest=dest, sendtag=sendtag, recvbuf=recvbuf, source=source, recvtag=recvtag, status=status).wait()
+
+    # Send and Recevie
+    def Isendrecv[S: abc.Buffer, R: abc.Buffer](self, sendbuf: S, dest: mpi_comm.Rank, sendtag: mpi_comm.Rank = 0, recvbuf: R | None = None, source: mpi_comm.Rank = ANY_SOURCE, recvtag: mpi_comm.Tag = ANY_TAG, status=None) -> Request[R]:
+        """Nonblocking Send and Receive."""
+        request = Request[R]()
+        send = self.Isend(buf=sendbuf, dest=dest, tag=sendtag)
+        recv = self.irecv(buf=recvbuf, source=source, tag=recvtag, status=status)
+
+        def process(future: Future[None]) -> None:
+            if send._future.exception():
+                request._resolve(send._future)  # type: ignore
+            request._resolve(recv._future)
+
+        future = asynctools.merge_futures([send._future, recv._future])
+        future.add_done_callback(process)
+        return request
+
+    def Sendrecv[S: abc.Buffer, R: abc.Buffer](self, sendbuf: S, dest: mpi_comm.Rank, sendtag: mpi_comm.Rank = 0, recvbuf: R | None = None, source: mpi_comm.Rank = ANY_SOURCE, recvtag: mpi_comm.Tag = ANY_TAG, status=None) -> R:
+        """Nonblocking Send and Receive."""
+        return self.Isendrecv(sendbuf=sendbuf, dest=dest, sendtag=sendtag, recvbuf=recvbuf, source=source, recvtag=recvtag, status=status).wait()
 
 
 # Exports
