@@ -216,12 +216,10 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
     return tracer
 # --- END _initilize_and_get_tracer --- #
 
-def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int, 
+def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank:int, nprocs:int, 
                      gpus_per_node:int, parallel:str, dtype: np.dtype, 
-                     enable_nccl: bool, tracer: SimpleTracer, gpudirect:bool) -> tuple[NCCL_DataType | None, NCCL_Comm_Type | None, 
-                                                                                       Cudnn_Handle_Type, Cublas_Handle_Type, 
-                                                                                       PyCuda_Stream_Type, Cudnn_dtype]:
-        
+                     enable_nccl: bool, tracer: SimpleTracer, gpudirect:bool) -> None:
+
     global supported_cudnn, supported_nccl
     supported_cudnn = True
     supported_nccl = True
@@ -289,7 +287,12 @@ def _initialize_cuda(comm: ModuleType, comm_rank: int, rank:int, nprocs:int,
     cudnn_dtype: Cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
     tracer.set_default_stream(stream)
         
-    return nccl_type, nccl_comm, cudnn_handle, cublas_handle, stream, cudnn_dtype
+    self.nccl_type = nccl_type
+    self.nccl_comm = nccl_comm
+    self.cudnn_handle = cudnn_handle
+    self.cublas_handle = cublas_handle
+    self.stream = stream
+    self.cudnn_dtype = cudnn_dtype
 # --- END _initialize_cuda --- #
 
 def _set_data_format(tensor_format:str=Literal["AUTO", "NCHW", "NHWC"], enable_cudnn:bool=False) -> PYDTNN_TENSOR_FORMAT:
@@ -447,13 +450,12 @@ class Model:
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
                 self.gpus_per_node: int # NOTE: This parameter comes from "Parser"
-                (self.nccl_type, self.nccl_comm, self.cudnn_handle, 
-                 self.cublas_handle, self.stream, self.cudnn_dtype) = _initialize_cuda(comm = self.comm, comm_rank = self.comm_rank, 
-                                                                                       rank = self.rank, nprocs = self.nprocs, 
-                                                                                       gpus_per_node = self.gpus_per_node, 
-                                                                                       parallel = self.parallel, dtype = self.dtype, 
-                                                                                       enable_nccl = self.enable_nccl, tracer = self.tracer, 
-                                                                                       gpudirect=self.gpudirect)
+                _initialize_cuda(self, comm = self.comm, comm_rank = self.comm_rank, 
+                                 rank = self.rank, nprocs = self.nprocs, 
+                                 gpus_per_node = self.gpus_per_node, 
+                                 parallel = self.parallel, dtype = self.dtype, 
+                                 enable_nccl = self.enable_nccl, tracer = self.tracer, 
+                                 gpudirect=self.gpudirect)
             else:
                 raise ImportError("\n".join(cuda_error_msg))
         else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
@@ -859,13 +861,9 @@ class Model:
 
     def _sync_x_y(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[Array, Array]:
         if self.enable_cudnn:
-            # TODO/FIXME  This is a HOT FIX. Fix CUDA Layers
-            # ==> Right now the self.batch_size and CUDA's x_batch.shape[0] must be the same (we're reusing the previous batch)
-            # ==> Real fix: Make GPU's array support "N" of value lower or equal to self.batch_size
-            if x_batch.shape[0] == self.batch_size:
-            # END FIX
-                self.layers[0].y.ary.set(x_batch)
-                self.y_batch.ary.set(y_batch)
+            if x_batch.shape[0] != self.batch_size:
+                self.layers[0].y.set_ary_from_ndarray(x_batch)
+                self.y_batch.set_ary_from_ndarray(y_batch)
             x, y_targ = self.layers[0].y, self.y_batch
         else:
             x, y_targ = x_batch, y_batch
