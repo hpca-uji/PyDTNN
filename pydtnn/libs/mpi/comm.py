@@ -16,7 +16,6 @@ import enum
 import uuid
 import typing
 import operator
-import itertools
 import functools
 import dataclasses
 from dataclasses import dataclass
@@ -47,6 +46,7 @@ __all__ = (
 
 
 type Rank = int
+type Tag = int
 
 
 @functools.cache
