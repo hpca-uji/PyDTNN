@@ -42,6 +42,7 @@ __all__ = (
     "BroadcastContext",
     "AllGatherContext",
     "AllReduceContext",
+    "SendRecvContext"
 )
 
 
@@ -350,6 +351,22 @@ class ReduceContext[T](OperationContext[T]):
             case _:
                 raise NotImplementedError(f"op with not {self.op}")
         return {self.root: result}  # type: ignore
+
+
+@dataclass(slots=True, frozen=True)
+class SendRecvContext[T](OperationContext[T]):
+    """Send and receive operation"""
+    tag: Tag = 0
+
+    def comm(self, src: int, dst: int) -> CommmunicationGroup:
+        """Compute operation's communication group"""
+        return CommmunicationGroup([src], [dst])
+
+    def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
+        """Apply operation over objects"""
+        rank_dst = next(iter(dst))
+        rank_src = next(iter(src))
+        return {rank_dst: src[rank_src]}
 
 
 @dataclass(slots=True, frozen=True)
