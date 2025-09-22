@@ -21,8 +21,14 @@ HOSTS=altec2,altec3,altec4,altec5,altec7,altec8
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
+MPI_ARGS=()
+export MPICH_UNBUFFERED_STDIO="true"
+if $(mpirun --version | grep -q 'Open MPI) [5-9].'); then
+  MPI_ARGS+=("--output=:raw")
+fi
+
 # -genv LD_PRELOAD $EXTRAELIB
-mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
+mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
