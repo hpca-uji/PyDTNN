@@ -40,8 +40,6 @@ __all__ = (
     "transpose_0312_ikj_cython", "transpose_1023_jik_cython", "transpose_1023_ijk_cython",
     "adaptive_avg_pooling_fwd_nchw_cython", "adaptive_avg_pooling_bwd_nchw_cython",
     "adaptive_avg_pooling_fwd_nhwc_cython", "adaptive_avg_pooling_bwd_nhwc_cython",
-    "memoryview_index",
-    "round",
     "sigmoid_fwd_cython", "sigmoid_bwd_cython", 
     "log_fwd_cython", "log_bwd_cython"
 )
@@ -69,10 +67,5 @@ from pydtnn.cython_compiled_files.transpose_cython import \
     transpose_1023_jik_cython, transpose_1023_ijk_cython
 from pydtnn.cython_compiled_files.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython
 from pydtnn.cython_compiled_files.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
-from pydtnn.cython_compiled_files.memory_cython import memoryview_index
-from pydtnn.cython_compiled_files.decimal_cython import round
-
-
 from pydtnn.cython_compiled_files.sigmoid_cython import sigmoid_fwd_cython, sigmoid_bwd_cython
 from pydtnn.cython_compiled_files.log_activation_cython import log_fwd_cython, log_bwd_cython
-
