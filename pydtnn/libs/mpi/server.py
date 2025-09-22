@@ -82,11 +82,19 @@ class Server:
         self._pool = thread_pool
         self._comm_lock = threading.Lock()
 
+        self._close_init = threading.Lock()
+        self._close_done = threading.Event()
+
         self._state_lock = threading.Lock()
         self._state = list[Operation]()
 
         self._peers_lock = threading.Lock()
         self._peers = bidict[mpi_comm.Rank, uuid.UUID]()
+
+    @property
+    def _closed(self):
+        """Is communicator closed"""
+        return self._close_init.locked()
 
     @property
     def _size(self):
@@ -110,24 +118,24 @@ class Server:
 
     def __exit__(self, cls, exc, tb):
         """Context manager exit"""
-        self.shutdown()
+        self.close()
 
     def __del__(self) -> None:
         """Best effort finalizer"""
         try:
-            self.shutdown()
+            self.close()
         except:  # noqa: E722
             pass
 
     def serve_forever(self) -> None:
         """Handle until shutdown"""
-        while not self._shutdown:
+        while not self._closed:
             self.serve_util_finalize()
 
     def serve_util_finalize(self) -> None:
         """Handle until finalized"""
 
-        while not self._shutdown:
+        while not self._closed:
             message = self._comm.get()
             request = message.obj
 
@@ -240,14 +248,17 @@ class Server:
             response = mpi_comm.OperationResponse(id=operation.id, obj=result)
             self._comm.put(response, *(self._peers[rank] for rank in ranks))
 
-    def shutdown(self) -> None:
-        """Close the server"""
+    def _close(self) -> None:
+        """Close communicator"""
         if comm := self.__dict__.pop("_comm", None):
             comm.close()
 
-        if self._shutdown:
-            return
-        self._shutdown = True
+    def close(self) -> None:
+        """Close the server"""
+        if self._close_init.acquire(blocking=False):
+            self._close()
+            self._close_done.set()
+        self._close_done.wait()
 
 
 def background_server() -> Future:

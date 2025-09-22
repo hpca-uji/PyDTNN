@@ -61,6 +61,27 @@ def main(config: Namespace):
     print(f"R{rank}: reduce {res}/{ref}")
     assert res == ref, f"reduce error; got {res}, expect {ref}"
 
+    ref = rank
+    prev = (rank - 1) % size
+    next = (rank + 1) % size
+    if size > 1:
+        comm.send(next, dest=next)
+        res = comm.recv(source=prev)
+    else:
+        res = ref
+    print(f"R{rank}: send/recv {res}/{ref}")
+    assert res == ref, f"send/recv error; got {res}, expect {ref}"
+
+    ref = rank
+    prev = (rank - 1) % size
+    next = (rank + 1) % size
+    if size > 1:
+        res = comm.sendrecv(next, dest=next, source=prev)
+    else:
+        res = ref
+    print(f"R{rank}: sendrecv {res}/{ref}")
+    assert res == ref, f"sendrecv error; got {res}, expect {ref}"
+
     MPI.Finalize()
     print(f"R{rank}: finalize")
 
