@@ -24,9 +24,9 @@ parser.add_argument("peer", choices=list(Peer))
 parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--delay", type=float, default=0.0)
 parser.add_argument("--min_size", type=int, default=8)
-parser.add_argument("--step_size", type=int, default=9)
-parser.add_argument("--max_size", type=int, default=30)
-parser.add_argument("--reps_expo", type=float, default=0.5)
+parser.add_argument("--step-size", type=int, default=9)
+parser.add_argument("--max-size", type=int, default=30)
+parser.add_argument("--reps-expo", type=float, default=0.5)
 parser.add_argument("--clients", type=int, default=1)
 
 

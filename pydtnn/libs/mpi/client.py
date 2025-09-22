@@ -137,8 +137,8 @@ class Comm:
         self._responses = dict[uuid.UUID, typing.Any]()
 
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
-        self._comm_queue = utils.thread_queue(f"{thread_prefix}.comm")
-        self._post_queue = utils.thread_queue(f"{thread_prefix}.post")
+        self._recv_queue = utils.thread_queue(f"{thread_prefix}.recv")
+        self._proc_queue = utils.thread_queue(f"{thread_prefix}.proc")
 
     @property
     def _closed(self):
@@ -147,18 +147,19 @@ class Comm:
 
     def _recive_response(self) -> None:
         """Recive one response from communication"""
-        response = self._comm.get().obj
+        while self._requests:
+            response = self._comm.get().obj
 
-        match response:
-            case mpi_comm.OperationResponse():
-                pass
-            case _:
-                raise RuntimeError(f"Unknown response {response}")
+            match response:
+                case mpi_comm.OperationResponse():
+                    pass
+                case _:
+                    raise RuntimeError(f"Unknown response {response}")
 
-        self._responses[response.id] = response.obj
+            self._responses[response.id] = response.obj
 
-        # Process pending requests
-        self._handle_request(response.id)
+            # Process pending requests
+            self._handle_request(response.id)
 
     def _handle_request(self, id: uuid.UUID) -> None:
         """Handle a request"""
@@ -173,10 +174,10 @@ class Comm:
                     self._requests[id] = request
                     request._state = RequestState.ACK
                 case RequestState.ACK:
-                    request._state = RequestState.RES
                     if isinstance(response, mpi_comm.RemoteException):
                         request._process = Request._process  # Remove callback
-                    future = self._post_queue.submit(request._process, response)
+                    request._state = RequestState.RES
+                    future = self._proc_queue.submit(request._process, response)
                     future.add_done_callback(request._resolve)
                 case _:
                     raise RuntimeError(f"Invalid request state {request._state}")
@@ -204,8 +205,7 @@ class Comm:
         future = self._comm.put(operation)
 
         if self.rank in comm.dst:
-            self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
-            self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
+            self._recv_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         else:
             future.add_done_callback(request._resolve)
 
@@ -298,8 +298,8 @@ class Comm:
             if "_comm" in self.__dict__:
                 self.barrier()
 
-            self._comm_queue.shutdown()
-            self._post_queue.shutdown()
+            self._recv_queue.shutdown()
+            self._proc_queue.shutdown()
 
             if comm := self.__dict__.pop("_comm", None):
                 self._close_comm(comm)
