@@ -38,7 +38,8 @@ class SGDGPU(OptimizerGPU, SGD):
     def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype:np.dtype=np.float32):
         super().__init__(learning_rate, momentum, nesterov, decay, dtype)
 
-        self.update_gpu = ElementwiseKernel("T *w, T * dw, T * v, \
+        if not self.gpudirect:
+            self.update_gpu = ElementwiseKernel("T *w, T * dw, T * v, \
                                float lr, float decay, float momentum".replace("T",
                                                                               {np.float32: "float",
                                                                                np.float64: "double"}[dtype]),
@@ -46,8 +47,8 @@ class SGDGPU(OptimizerGPU, SGD):
                                             ({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
                                               False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]),
                                             "SGD_kernel")
-
-        self.update_gpudirect = SourceModule(("""
+        else:
+            self.update_gpu = SourceModule(("""
             __global__ void SGD_kernel(T *w, T *dw, T *v, 
                                float lr, float decay, float momentum, int N) {
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
@@ -82,20 +83,17 @@ class SGDGPU(OptimizerGPU, SGD):
             velocity: gpuarray
 
             if self.gpudirect:
-                rows, cols = w.shape[0], np.prod(w.shape[1:])
+                n = batch_size = np.prod(w.shape)
+                threads = min(batch_size, self.LIMIT_THREADS_AND_BLOCKS)
+                blocks = max(batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
 
-                # threads, blocks = 128, 10240
-                # assert threads * blocks >= rows * cols
-                threads = 1024
-                blocks = (rows * cols) // threads + 1
-
-                self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
-                                      np.float32(self.learning_rate), np.float32(self.decay),
-                                      np.float32(self.momentum), np.int32(rows * cols),
-                                      grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
-                                      stream=layer.stream_2)
-
+                self.update_gpu(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
+                                np.float32(self.learning_rate), np.float32(self.decay),
+                                np.float32(self.momentum), np.int32(n),
+                                grid=(int(blocks), 1, 1), block=(int(self.threads), 1, 1),
+                                stream=layer.stream_2)
             else:
+                n = np.int32(np.prod(w.shape))
                 self.update_gpu(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
                                 np.float32(self.decay), np.float32(self.momentum),
                                 stream=layer.stream_2)

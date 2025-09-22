@@ -28,6 +28,8 @@ class OptimizerGPU(Optimizer, ABC):
     Extends an Optimizer class with the attributes and methods required by GPU Optimizers.
     """
 
+    LIMIT_THREADS_AND_BLOCKS = 1024
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gpudirect = False
