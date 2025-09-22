@@ -37,6 +37,7 @@ import functools
 import threading
 import itertools
 from collections import abc
+from concurrent import futures
 from concurrent.futures import Future
 
 from pydtnn import comms, utils
@@ -112,8 +113,11 @@ class Request[T]:
         else:
             asynctools.future_set_exception(self._future, exc)
 
-    def wait(self) -> T:
+    def wait(self, status=None) -> T:
         """Wait for a non-blocking operation to complete."""
+        if status:
+            raise ValueError("Status are not supported")
+
         with self._lock:
             if "_future" in self.__dict__:
                 result = self._future.result()
@@ -121,6 +125,51 @@ class Request[T]:
             else:
                 result = None
         return result  # type: ignore
+
+    @classmethod
+    def Waitall(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[int]:
+        """Wait for all previously initiated requests to complete"""
+        if statuses:
+            raise ValueError("Status are not supported")
+
+        fs = [request._future for request in requests]
+        done = futures.wait(fs=fs, return_when=futures.ALL_COMPLETED).done
+
+        return list(map(fs.index, done))
+
+    @classmethod
+    def Waitsome(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[int]:
+        """Wait for some previously initiated requests to complete"""
+        if statuses:
+            raise ValueError("Status are not supported")
+
+        fs = [request._future for request in requests]
+        done = futures.wait(fs=fs, return_when=futures.FIRST_COMPLETED).done
+
+        return list(map(fs.index, done))
+
+    @classmethod
+    def Waitany(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> int:
+        """Wait for any previously initiated request to complete"""
+        if statuses:
+            raise ValueError("Status are not supported")
+
+        return cls.Waitsome(requests, statuses)[0]
+
+    @classmethod
+    def waitall(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[T]:
+        """Wait for all previously initiated requests to complete"""
+        return [requests[i].wait() for i in cls.Waitall(requests, statuses)]
+
+    @classmethod
+    def waitsome(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[T]:
+        """Wait for some previously initiated requests to complete"""
+        return [requests[i].wait() for i in cls.Waitsome(requests, statuses)]
+
+    @classmethod
+    def waitany(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> T:
+        """Wait for any previously initiated request to complete"""
+        return requests[cls.Waitany(requests, statuses)].wait()
 
 
 class Comm:
