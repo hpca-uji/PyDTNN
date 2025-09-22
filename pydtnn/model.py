@@ -347,6 +347,8 @@ class Model:
         self.gpudirect:bool = enable_gpudirect
         self.enable_nccl:bool = enable_nccl
         self.dtype:np.dtype = dtype
+
+        self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu
         
         self.nparams:int = 0 # NOTE: Model's total number of params
         
@@ -784,7 +786,7 @@ class Model:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
         total_time:np.ndarray = np.zeros((4,), dtype=np.float32)
 
-        first_layer = 1
+        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
         # Forward pass (FP)
         for layer in range(first_layer, last_layer + 1):
@@ -860,6 +862,8 @@ class Model:
     # --- END _update_running_average --- # 
 
     def _sync_x_y(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[Array, Array]:
+        # NOTE: This is an old implementation. It's not removed due "self._sync_x_y" is used (to be reasigned, but it's used).
+        # Please, use the cpu/gpu version.
         if self.enable_cudnn:
             if x_batch.shape[0] != self.batch_size:
                 self.layers[0].y.set_ary_from_ndarray(x_batch)
@@ -870,9 +874,31 @@ class Model:
         return x, y_targ
     # --- _sync_x_y --- #
 
+    def _sync_x_y_cpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        return x_batch, y_batch        
+    # --- _sync_x_y --- #
+
+    def _sync_x_y_gpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[TensorGPU, TensorGPU]:
+        
+        # NOTE: in CUDA it's necessary to always have batches of the same size.
+        if x_batch.shape[0] != self.batch_size:
+            # TODO: añadir una variable para guardarnos x_batch.shape[0] para procesar solo esas más adelante.
+            # TODO-2: rellenar con lotes vacíos o con basura para no perder tiempo generando esa memoria.
+            x_batch = np.repeat(x_batch, self.batch_size, axis=0)
+            y_batch = np.repeat(y_batch, self.batch_size, axis=0)
+        # else: The batch has the right shape ==> Nothing to do.
+
+        self.layers[0].y.ary.set(x_batch)
+        self.y_batch.ary.set(y_batch)
+
+        x, y_targ = self.layers[0].y, self.y_batch
+        return x, y_targ
+    # --- _sync_x_y --- #
+
+
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
-        first_layer = 1
+        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
         if blocking:
             for i in range(last_layer, first_layer-1, -1):
@@ -1066,7 +1092,7 @@ class Model:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
-        first_layer = 1
+        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         num_layers = len(self.layers)
 
         if x_batch.shape[0] > 0:
@@ -1155,7 +1181,7 @@ class Model:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
-        first_layer = 1
+        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
 
         # Forward pass (FP)
         if x_batch.shape[0] > 0:

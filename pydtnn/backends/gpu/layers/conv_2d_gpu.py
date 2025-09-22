@@ -101,6 +101,30 @@ class Conv2DGPU(LayerGPU, Conv2D):
             matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), k=self.co,
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
 
+        # Derivative dw and derivative db
+        if self.model.gpudirect:
+            self.dw_cpu, self.dw = TensorGPU.initialize_gpu_direct(drv, self.weights.ary.shape, self.model.dtype, 
+                                                                   tensor_format=self.model.tensor_format, 
+                                                                   cudnn_dtype=self.model.cudnn_dtype, 
+                                                                   gpudirect=self.model.gpudirect, 
+                                                                   tensor_type=TensorGPU.TensorTypeEnum.FILTER)
+            if self.use_bias:
+                self.db_cpu, self.db = TensorGPU.initialize_gpu_direct(self.biases.ary.shape, self.weights.ary.shape, 
+                                                                       self.model.dtype, tensor_format=self.model.tensor_format, 
+                                                                       cudnn_dtype=self.model.cudnn_dtype, 
+                                                                       gpudirect=self.model.gpudirect)
+        else:
+            self.dw_cpu, self.dw = TensorGPU.initialize_not_gpu_direct(self.weights.ary.shape, self.model.dtype, 
+                                                                       tensor_format=self.model.tensor_format, 
+                                                                       cudnn_dtype=self.model.cudnn_dtype, 
+                                                                       gpudirect=self.model.gpudirect, 
+                                                                       tensor_type=TensorGPU.TensorTypeEnum.FILTER)
+            if self.use_bias:
+                self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype, 
+                                                                           tensor_format=self.model.tensor_format, 
+                                                                           cudnn_dtype=self.model.cudnn_dtype, 
+                                                                           gpudirect=self.model.gpudirect)
+
         match self.grouping:
             case GroupingEnum.STANDARD:
                 self.initialize_standard_grouping(x)
@@ -128,34 +152,10 @@ class Conv2DGPU(LayerGPU, Conv2D):
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-
         # Derivative dx
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        # Derivative dw and derivative db
-        if self.model.gpudirect:
-            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
-            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
-                                                            flags=drv.mem_host_register_flags.DEVICEMAP)
-            if self.use_bias:
-                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.model.dtype)
-                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
-                                                                flags=drv.mem_host_register_flags.DEVICEMAP)
-        else:
-            self.dw_cpu = np.zeros(self.weights.ary.shape, self.model.dtype)
-            dw_gpu = gpuarray.empty(self.weights.ary.shape, self.model.dtype)
-            if self.use_bias:
-                self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
-                db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
 
-        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                            tensor_type=TensorGPU.TensorTypeEnum.FILTER, gpudirect=self.model.gpudirect)
-
-        if self.use_bias:
-            # noinspection PyUnboundLocalVariable
-            self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                                gpudirect=self.model.gpudirect)
-            
         # Convolution params
         conv_mode = cudnn.cudnnConvolutionMode['CUDNN_CROSS_CORRELATION']
         self.fwd_algo = cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
@@ -516,28 +516,6 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.fwd_func:Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
         self.bwd_func:Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
         self.bias_sum_fwd:Function = self.cuda_bias_sum_fwd_depthwise_conv()
-
-        # Derivative dw and derivative db
-        if self.model.gpudirect:
-            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
-            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
-                                                            flags=drv.mem_host_register_flags.DEVICEMAP)
-            if self.use_bias:
-                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.model.dtype)
-                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
-                                                                flags=drv.mem_host_register_flags.DEVICEMAP)
-        else:
-            self.dw_cpu = np.zeros(self.weights.ary.shape, self.model.dtype)
-            dw_gpu = gpuarray.empty(self.weights.ary.shape, self.model.dtype)
-            if self.use_bias:
-                self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
-                db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
-                # noinspection PyUnboundLocalVariable
-                self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                                gpudirect=self.model.gpudirect)
-
-        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype, gpudirect=self.model.gpudirect)
-            
     # ---- 
 
     def _forward_depthwise_nchw(self, x: TensorGPU) -> TensorGPU:
@@ -674,28 +652,6 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.grid = (self.blocks, 1, 1)
         self.block = (self.threads, 1, 1)
 
-        # Derivative dw and derivative db
-        if self.model.gpudirect:
-            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
-            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
-                                                            flags=drv.mem_host_register_flags.DEVICEMAP)
-            if self.use_bias:
-                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.model.dtype)
-                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
-                                                                flags=drv.mem_host_register_flags.DEVICEMAP)
-        else:
-            self.dw_cpu = np.zeros(self.weights.ary.shape, self.model.dtype)
-            dw_gpu = gpuarray.empty(self.weights.ary.shape, self.model.dtype)
-            if self.use_bias:
-                self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
-                db_gpu = gpuarray.empty(self.biases.ary.shape, self.model.dtype)
-                # noinspection PyUnboundLocalVariable
-                self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                                gpudirect=self.model.gpudirect)
-
-        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                            tensor_type=TensorGPU.TensorTypeEnum.FILTER, gpudirect=self.model.gpudirect)
-        
         func_name:str = None
         macros:str = None
         self.bias_sum_bwd:Function = None
