@@ -364,8 +364,8 @@ class SendRecvContext[T](OperationContext[T]):
 
     def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
         """Apply operation over objects"""
-        rank_dst = next(iter(dst))
         rank_src = next(iter(src))
+        rank_dst = next(iter(dst))
         return {rank_dst: src[rank_src]}
 
 
