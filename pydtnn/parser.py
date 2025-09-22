@@ -137,7 +137,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         self.add_argument('--model_sync_min_avail', type=int, default=0)
         self.add_argument('--initial_model_sync', type=bool_lambda, default=True)
         self.add_argument('--final_model_sync', type=bool_lambda, default=True)
-        self.add_argument('--tensor_format', type=lambda s: s.upper(), default="NHWC")
+        self.add_argument('--tensor_format', type=lambda s: str(s).upper(), default="NHWC")
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
