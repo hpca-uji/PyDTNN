@@ -181,20 +181,18 @@ def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MO
 # --- END _initilize_communications --- #
 
 
-def _set_execution_attributes(comm: MPI_COMM | None, shared_storage: bool) -> tuple[float, int, int, int, int, int]:
-    rank_weight = 1.0
-    comm_rank = rank = 0
-    comm_size = nprocs = 1
+def _set_execution_attributes(self: "Model", comm: MPI_COMM | None, shared_storage: bool) -> None:
+    self.rank_weight = 1.0
+    self.comm_rank = self.rank = 0
+    self.comm_size = self.nprocs = 1
     if comm:
-        comm_rank = comm.Get_rank()
-        comm_size = comm.Get_size()
+        self.comm_rank = comm.Get_rank()
+        self.comm_size = comm.Get_size()
         if shared_storage:
-            rank = comm_rank
-            nprocs = comm_size
+            self.rank = self.comm_rank
+            self.nprocs = self.comm_size
         # else: Nothing each rank is independant
-    comm_groups = comm_size // nprocs
-
-    return rank_weight, comm_rank, comm_size, rank, nprocs, comm_groups
+    self.comm_groups = self.comm_size // self.nprocs
 # --- END _set_execution_attributes --- #
 
 
@@ -347,7 +345,15 @@ class Model:
         self.gpudirect:bool = enable_gpudirect
         self.enable_nccl:bool = enable_nccl
         self.dtype:np.dtype = dtype
+        
+        self.rank_weight:int = -1
+        self.comm_rank:int = -1
+        self.comm_size:int = -1
+        self.rank:int = -1
+        self.nprocs:int = -1
+        self.comm_groups:int = -1
 
+        self.num_real_batches:int = -1
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu
         
         self.nparams:int = 0 # NOTE: Model's total number of params
@@ -418,8 +424,7 @@ class Model:
         self.MPI, self.comm = _initilize_communications(parallel = parallel)
         
         # Execution attributes
-        (self.rank_weight, self.comm_rank, self.comm_size,
-         self.rank, self.nprocs, self.comm_groups) = _set_execution_attributes(comm = self.comm, shared_storage = self.shared_storage)
+        _set_execution_attributes(self, comm = self.comm, shared_storage = self.shared_storage)
         
         # Set tracer
         self.tracer = _initilize_and_get_tracer(tracer_output = tracer_output, tracing = tracing, comm = self.comm, enable_gpu = enable_gpu,
@@ -862,28 +867,21 @@ class Model:
     # --- END _update_running_average --- # 
 
     def _sync_x_y(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[Array, Array]:
-        # NOTE: This is an old implementation. It's not removed due "self._sync_x_y" is used (to be reasigned, but it's used).
-        # Please, use the cpu/gpu version.
-        if self.enable_cudnn:
-            if x_batch.shape[0] != self.batch_size:
-                self.layers[0].y.set_ary_from_ndarray(x_batch)
-                self.y_batch.set_ary_from_ndarray(y_batch)
-            x, y_targ = self.layers[0].y, self.y_batch
-        else:
-            x, y_targ = x_batch, y_batch
-        return x, y_targ
+        raise TypeError("Please, use the cpu or gpu version.")
     # --- _sync_x_y --- #
 
     def _sync_x_y_cpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
         return x_batch, y_batch        
     # --- _sync_x_y --- #
 
     def _sync_x_y_gpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[TensorGPU, TensorGPU]:
         
         # NOTE: in CUDA it's necessary to always have batches of the same size.
+        # TODO: añadir una variable para guardarnos x_batch.shape[0] para procesar solo esas más adelante.
+        self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
         if x_batch.shape[0] != self.batch_size:
-            # TODO: añadir una variable para guardarnos x_batch.shape[0] para procesar solo esas más adelante.
-            # TODO-2: rellenar con lotes vacíos o con basura para no perder tiempo generando esa memoria.
+            # NOTE: if x_batch is empty (x_batch.shape[0] = 0), np.repeat will do nothing. This is what we want. If np.repeat behaviour changes this section must also change.
             x_batch = np.repeat(x_batch, self.batch_size, axis=0)
             y_batch = np.repeat(y_batch, self.batch_size, axis=0)
         # else: The batch has the right shape ==> Nothing to do.
@@ -960,9 +958,13 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
+                print(f"1 -- {x_batch.shape[0]=} || {i_batch=} || {train_batches_min=} || {self.comm=} || {self.comm_size=}")
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
+                
+                local_batch_size = x_batch.shape[0]
+                print(f"2 --{local_batch_size=}")
 
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
@@ -975,7 +977,7 @@ class Model:
                 model_sync_count += 1
 
                 if i_batch >= train_batches_min and sync_model:
-                    rank_mask = self.comm.allgather(min(1, x_batch.shape[0])) if self.comm else [min(1, x_batch.shape[0])]
+                    rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
                 else:
                     rank_mask = [1] * self.comm_size
                 rank_avail = sum(rank_mask)
@@ -988,16 +990,15 @@ class Model:
 
                 self.rank_weight = self._compute_rank_weight(rank_mask, DatasetEnum.TRAIN)
 
-                # NOTE: Improve global_batch_size aproximation without comms, since dataset fake it
-                batch_size = round(batch_size * (rank_avail / self.comm_size))
-
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
                 toc = timer()
 
-                if batch_size <= 0:
+                print(f"3 -- {x_batch.shape[0]=} || {i_batch=} || {train_batches_min=} || {sync_model=} || {(i_batch >= train_batches_min and sync_model)=} || {self.comm=} || {self.comm_size=}")
+
+                if local_batch_size <= 0:
                     if self.comm_rank == 0:
-                        pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
+                        pbar.set_postfix_str(s=f"{string}, waiting… | {rank_mask=}", refresh=True)
                     continue
 
                 train_total_loss, train_batch_count, string = \
@@ -1018,12 +1019,15 @@ class Model:
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
+                
+                local_batch_size = x_batch.shape[0]
 
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
                 if sync_model:
                     sync_epoch = True
 
+                # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA. Mira de donde sale esto para que tenga el color bien.
                 if model_sync_count == 0 and not self.initial_model_sync:
                     sync_model = False
 
@@ -1032,7 +1036,7 @@ class Model:
                 if i_batch < val_batches_min:
                     rank_mask = [1] * self.comm_size
                 else:
-                    rank_mask = self.comm.allgather(min(1, x_batch.shape[0])) if self.comm else [min(1, x_batch.shape[0])]
+                    rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
                 rank_avail = sum(rank_mask)
 
                 if rank_avail <= 0:
@@ -1040,9 +1044,6 @@ class Model:
 
                 if rank_avail < self.model_sync_min_avail:
                     sync_model = False
-
-                # NOTE: Improve global_batch_size aproximation without comms, since dataset fake it
-                batch_size = round(batch_size * (rank_avail / self.comm_size))
 
                 val_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=False and sync_model)
 
@@ -1095,13 +1096,15 @@ class Model:
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         num_layers = len(self.layers)
 
-        if x_batch.shape[0] > 0:
+        has_batch = x_batch.shape[0] > 0
+
+        if has_batch:
             # Forward pass (FP)
             for i in range(first_layer, num_layers):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, dx = self.loss_func(x, y_targ, self.batch_size)
+            loss, dx = self.loss_func(x, y_targ, self.num_real_batches)
         else:
             assert y_targ.shape[0] == 0
             loss, dx = 0.0, y_targ
@@ -1109,7 +1112,7 @@ class Model:
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
 
         last_layer = num_layers - 1
-        if x_batch.shape[0] > 0:
+        if has_batch:
             # Backward pass (BP)
             for i in range(last_layer, first_layer-1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
@@ -1123,7 +1126,7 @@ class Model:
         if sync_model:
             self._weight_update(gradient=True, blocking=self.blocking_mpi)
 
-        if x_batch.shape[0] > 0 or sync_model:
+        if has_batch or sync_model:
 
             # Optimizer
             for i in range(last_layer, first_layer-1, -1):
@@ -1183,15 +1186,17 @@ class Model:
 
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
 
+        has_batch = x_batch.shape[0] > 0
+
         # Forward pass (FP)
-        if x_batch.shape[0] > 0:
+        if has_batch:
             for i in range(first_layer, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)            
 
             y_pred = self.layers[-1].y
-            loss, _ = self.loss_func(y_pred, y_targ, self.batch_size)
+            loss, _ = self.loss_func(y_pred, y_targ, self.num_real_batches)
         else:
             y_pred = self.layers[-1].y
             loss = 0.0
@@ -1222,6 +1227,8 @@ class Model:
 
         model_sync_count = 0
         for i_batch, (x_batch, y_batch, batch_size) in enumerate(test_batch_generator):
+            local_batch_size = x_batch.shape[0]
+
             sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
             if model_sync_count == 0 and not self.initial_model_sync:
@@ -1232,7 +1239,7 @@ class Model:
             if i_batch < test_batches_min:
                 rank_mask = [1] * self.comm_size
             else:
-                rank_mask = self.comm.allgather(min(1, x_batch.shape[0])) if self.comm else [min(1, x_batch.shape[0])]
+                rank_mask = self.comm.allgather(min(1, local_batch_size)) if self.comm else [min(1, local_batch_size)]
             rank_avail = sum(rank_mask)
 
             if rank_avail <= 0:
@@ -1240,8 +1247,6 @@ class Model:
 
             if rank_avail < self.model_sync_min_avail:
                 sync_model = False
-
-            batch_size = round(batch_size * (rank_avail / self.comm_size))
 
             tic = timer()
             test_batch_loss = self._evaluate_batch(x_batch, y_batch, sync_model=sync_model)

@@ -83,14 +83,13 @@ class SGDGPU(OptimizerGPU, SGD):
             velocity: gpuarray
 
             if self.gpudirect:
-                n = batch_size = np.prod(w.shape)
-                threads = min(batch_size, self.LIMIT_THREADS_AND_BLOCKS)
-                blocks = max(batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
+                n = self.get_batch_size(w)
+                threads, blocks = self.get_threads_and_blocks()
 
                 self.update_gpu(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
                                 np.float32(self.learning_rate), np.float32(self.decay),
                                 np.float32(self.momentum), np.int32(n),
-                                grid=(int(blocks), 1, 1), block=(int(self.threads), 1, 1),
+                                grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
                                 stream=layer.stream_2)
             else:
                 n = np.int32(np.prod(w.shape))
