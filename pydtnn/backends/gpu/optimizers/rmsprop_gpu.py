@@ -81,9 +81,8 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
             cache:gpuarray
 
             if self.gpudirect:
-                n = batch_size = np.prod(w.shape)
-                threads = min(batch_size, self.LIMIT_THREADS_AND_BLOCKS)
-                blocks = max(batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
+                n = self.get_batch_size(w)
+                threads, blocks = self.get_threads_and_blocks()
 
                 self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, cache.gpudata,
                                       np.float32(self.learning_rate),

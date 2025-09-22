@@ -34,6 +34,8 @@ class Optimizer(PromoteToBackendMixin, ABC):
         self.learning_rate:float = learning_rate
         self.dtype:np.dtype = dtype
         self.context:dict = dict()
+        # Only for GPU implementations:
+        self.num_real_batches:int = None
 
     @abstractmethod
     def initialize(self, list_layers: list[Layer]) -> None:

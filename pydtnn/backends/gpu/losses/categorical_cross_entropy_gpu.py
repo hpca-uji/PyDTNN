@@ -34,7 +34,7 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
     def __init_gpu_kernel__(self) -> Function:
         module = SourceModule("""
         __global__ void categorical_cross_entropy(T *y_targ, T *y_pred, T *res,
-                                                  T *dx, int b, int bs, int n, float eps)
+                                                  T *dx, int b, int n, float eps)
         {
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
             if (idx < b) {
@@ -52,7 +52,7 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
                 if ( pred < eps )          pred = eps;
                 else if ( pred > (1-eps) ) pred = (1-eps);
                 res[idx] = logf(pred);
-                dx[idx * n + max] /= -(pred * bs);
+                dx[idx * n + max] /= -(pred * b);
             }
             return;
         }
@@ -60,12 +60,10 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
         return module.get_function("categorical_cross_entropy")
 
     def __call__(self, y_pred:TensorGPU, y_targ:TensorGPU, batch_size:int) -> tuple[float, TensorGPU]:
-        threads = min(self.model.batch_size, 1024)
-        blocks = max(self.model.batch_size, 1024) // threads + 1
+        threads, blocks = self.get_threads_and_blocks()
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
-                    np.int32(self.model.batch_size), np.int32(batch_size),
-                    np.int32(self.shape[1]), np.float32(self.eps),
+                    np.int32(batch_size), np.int32(self.shape[1]), np.float32(self.eps),
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
-        loss:float = -gpuarray.sum(self.loss).get() / self.model.batch_size
+        loss:float = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
         return loss, self.dx
