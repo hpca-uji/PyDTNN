@@ -37,6 +37,7 @@ import functools
 import threading
 import itertools
 from collections import abc
+from concurrent import futures
 from concurrent.futures import Future
 
 from pydtnn import comms, utils
@@ -112,8 +113,11 @@ class Request[T]:
         else:
             asynctools.future_set_exception(self._future, exc)
 
-    def wait(self) -> T:
+    def wait(self, status=None) -> T:
         """Wait for a non-blocking operation to complete."""
+        if status:
+            raise ValueError("Status are not supported")
+
         with self._lock:
             if "_future" in self.__dict__:
                 result = self._future.result()
@@ -121,6 +125,51 @@ class Request[T]:
             else:
                 result = None
         return result  # type: ignore
+
+    @classmethod
+    def Waitall(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[int]:
+        """Wait for all previously initiated requests to complete"""
+        if statuses:
+            raise ValueError("Status are not supported")
+
+        fs = [request._future for request in requests]
+        done = futures.wait(fs=fs, return_when=futures.ALL_COMPLETED).done
+
+        return list(map(fs.index, done))
+
+    @classmethod
+    def Waitsome(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[int]:
+        """Wait for some previously initiated requests to complete"""
+        if statuses:
+            raise ValueError("Status are not supported")
+
+        fs = [request._future for request in requests]
+        done = futures.wait(fs=fs, return_when=futures.FIRST_COMPLETED).done
+
+        return list(map(fs.index, done))
+
+    @classmethod
+    def Waitany(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> int:
+        """Wait for any previously initiated request to complete"""
+        if statuses:
+            raise ValueError("Status are not supported")
+
+        return cls.Waitsome(requests, statuses)[0]
+
+    @classmethod
+    def waitall(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[T]:
+        """Wait for all previously initiated requests to complete"""
+        return [requests[i].wait() for i in cls.Waitall(requests, statuses)]
+
+    @classmethod
+    def waitsome(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> list[T]:
+        """Wait for some previously initiated requests to complete"""
+        return [requests[i].wait() for i in cls.Waitsome(requests, statuses)]
+
+    @classmethod
+    def waitany(cls, requests: abc.Sequence["Request[T]"], statuses=None) -> T:
+        """Wait for any previously initiated request to complete"""
+        return requests[cls.Waitany(requests, statuses)].wait()
 
 
 class Comm:
@@ -137,8 +186,8 @@ class Comm:
         self._responses = dict[uuid.UUID, typing.Any]()
 
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
-        self._comm_queue = utils.thread_queue(f"{thread_prefix}.comm")
-        self._post_queue = utils.thread_queue(f"{thread_prefix}.post")
+        self._recv_queue = utils.thread_queue(f"{thread_prefix}.recv")
+        self._proc_queue = utils.thread_queue(f"{thread_prefix}.proc")
 
     @property
     def _closed(self):
@@ -147,18 +196,19 @@ class Comm:
 
     def _recive_response(self) -> None:
         """Recive one response from communication"""
-        response = self._comm.get().obj
+        while self._requests:
+            response = self._comm.get().obj
 
-        match response:
-            case mpi_comm.OperationResponse():
-                pass
-            case _:
-                raise RuntimeError(f"Unknown response {response}")
+            match response:
+                case mpi_comm.OperationResponse():
+                    pass
+                case _:
+                    raise RuntimeError(f"Unknown response {response}")
 
-        self._responses[response.id] = response.obj
+            self._responses[response.id] = response.obj
 
-        # Process pending requests
-        self._handle_request(response.id)
+            # Process pending requests
+            self._handle_request(response.id)
 
     def _handle_request(self, id: uuid.UUID) -> None:
         """Handle a request"""
@@ -173,10 +223,10 @@ class Comm:
                     self._requests[id] = request
                     request._state = RequestState.ACK
                 case RequestState.ACK:
-                    request._state = RequestState.RES
                     if isinstance(response, mpi_comm.RemoteException):
                         request._process = Request._process  # Remove callback
-                    future = self._post_queue.submit(request._process, response)
+                    request._state = RequestState.RES
+                    future = self._proc_queue.submit(request._process, response)
                     future.add_done_callback(request._resolve)
                 case _:
                     raise RuntimeError(f"Invalid request state {request._state}")
@@ -204,8 +254,7 @@ class Comm:
         future = self._comm.put(operation)
 
         if self.rank in comm.dst:
-            self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
-            self._comm_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
+            self._recv_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
         else:
             future.add_done_callback(request._resolve)
 
@@ -298,8 +347,8 @@ class Comm:
             if "_comm" in self.__dict__:
                 self.barrier()
 
-            self._comm_queue.shutdown()
-            self._post_queue.shutdown()
+            self._recv_queue.shutdown()
+            self._proc_queue.shutdown()
 
             if comm := self.__dict__.pop("_comm", None):
                 self._close_comm(comm)

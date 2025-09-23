@@ -42,7 +42,7 @@ def get_version():
 
 def get_cython_module_names():
     """Gets cython module names from pyx files in pydtnn/cython_modules/*.pyx"""
-    return [os.path.basename(x)[:-4] for x in glob("pydtnn/cython_modules/*.pyx")]
+    return [x.replace("/", ".")[:-4] for x in glob("pydtnn/cython_modules/*.pyx")]
 
 
 class Settings:
@@ -86,7 +86,7 @@ class Settings:
     ext_modules = [
         Extension(
             module,
-            ["pydtnn/cython_modules/%s.pyx" % module],
+            ["%s.pyx" % module.replace(".", "/")],
             extra_compile_args=['-fopenmp', '-O3', '-march=native', '-g0'],
             extra_link_args=['-fopenmp'],
             include_dirs=[numpy.get_include()],
