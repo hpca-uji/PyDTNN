@@ -42,8 +42,8 @@ from concurrent.futures import Future
 
 from pydtnn import comms, utils
 from pydtnn.utils import asynctools
-from pydtnn.utils.io_stream import byteview
-from pydtnn.libs.mpi import comm as mpi_comm
+from pydtnn.utils.io_stream import byteview, Serializer
+from pydtnn.libs.mpi import comm as mpi_comm, rc as mpi_rc
 
 
 __all__ = (
@@ -254,7 +254,7 @@ class Comm:
         future = self._comm.put(operation)
 
         if self.rank in comm.dst:
-            self._recv_queue.submit(self._recive_response).add_done_callback(lambda future: future.result())
+            self._recv_queue.submit(self._recive_response).add_done_callback(asynctools.future_warn_exception)
         else:
             future.add_done_callback(request._resolve)
 
@@ -275,18 +275,20 @@ class Comm:
         """Create a new communication and inizialize it"""
 
         # If requested, start a local server
-        if mpi_comm.get_init():
+        if mpi_rc.init:
             if self.rank == 0:
                 from pydtnn.libs.mpi.server import background_server
                 self._server = background_server()
 
             # Allow some time for server startup
             from time import sleep
-            sleep(0.5)
+            sleep(mpi_rc.wait)
 
-        addr = mpi_comm.get_addr()
-        port = mpi_comm.get_port()
-        comm_options = comms.CommunicatorOptions(netloc=comms.NetworkLocation(host=addr, port=port))
+        netloc = comms.NetworkLocation(host=mpi_rc.addr, port=mpi_rc.port)
+        serial_restrict = (*mpi_comm.SERIALIZABLE, *mpi_rc.serial) if mpi_rc.serial else None
+        serial = comms.SerializationOptions(load=Serializer(restrict=serial_restrict).load)
+        comm_options = comms.CommunicatorOptions(netloc=netloc, serial=serial)
+
         state = mpi_comm.RankInit(rank=self.rank)
         try:
             comm = comms.Client(comm_options)
@@ -332,13 +334,13 @@ class Comm:
             comm.close()
 
         # If requested, stop a local server
-        if mpi_comm.get_init():
+        if mpi_rc.init:
             if self.rank == 0:
                 self._server.result()
 
             # Allow some time for server shutdown
             from time import sleep
-            sleep(0.5)
+            sleep(mpi_rc.wait)
 
     def _close(self) -> None:
         """Communicator finalizer"""
@@ -371,12 +373,12 @@ class Comm:
     @property
     def size(self) -> int:
         """Communication size"""
-        return mpi_comm.get_size()
+        return mpi_rc.size
 
     @property
     def rank(self) -> mpi_comm.Rank:
         """Communication identifier"""
-        return mpi_comm.get_rank()
+        return mpi_rc.rank
 
     def Get_rank(self) -> int:
         """Return the rank of this process in a communicator."""

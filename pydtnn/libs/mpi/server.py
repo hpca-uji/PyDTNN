@@ -18,7 +18,9 @@ from concurrent.futures import ThreadPoolExecutor
 from bidict import bidict
 
 from pydtnn import comms
-from pydtnn.libs.mpi import comm as mpi_comm
+from pydtnn.utils import asynctools
+from pydtnn.utils.io_stream import Serializer
+from pydtnn.libs.mpi import comm as mpi_comm, rc as mpi_rc
 
 
 __all__ = (
@@ -75,7 +77,11 @@ class Server:
     def __init__(self, thread_pool: ThreadPoolExecutor, comm_options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Server initialization"""
         super().__init__()
-        self._comm_options = copy.replace(comm_options, netloc=comms.NetworkLocation(host=mpi_comm.get_addr(), port=mpi_comm.get_port()), workers=mpi_comm.get_size())
+        workers = mpi_rc.size
+        netloc = comms.NetworkLocation(host=mpi_rc.addr, port=mpi_rc.port)
+        serial_restrict = (*mpi_comm.SERIALIZABLE, *mpi_rc.serial) if mpi_rc.serial else None
+        serial = comms.SerializationOptions(load=Serializer(restrict=serial_restrict).load)
+        self._comm_options = copy.replace(comm_options, netloc=netloc, workers=workers, serial=serial)
 
         # State
         self._shutdown = False
@@ -136,7 +142,10 @@ class Server:
         """Handle until finalized"""
 
         while not self._closed:
-            message = self._comm.get()
+            try:
+                message = self._comm.get()
+            except Exception as exc:
+                warnings.warn(repr(exc), RuntimeWarning)
             request = message.obj
 
             # Handle request
@@ -216,7 +225,7 @@ class Server:
         # Start operation compute
         if operation.compute is None and operation.src_ready:
             operation.compute = self._pool.submit(self._handle_operation, operation)
-            operation.compute.add_done_callback(lambda future: future.result())
+            operation.compute.add_done_callback(asynctools.future_warn_exception)
 
         # Operation queuing finished
         if operation.src_ready and operation.dst_ready:
@@ -271,7 +280,7 @@ def background_server() -> Future:
                 server.serve_util_finalize()
 
     future = thread_func(serve_oneshot)
-    future.add_done_callback(lambda future: future.result())
+    future.add_done_callback(asynctools.future_warn_exception)
     return future
 
 

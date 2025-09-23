@@ -27,14 +27,11 @@ from intbitset import intbitset
 
 __all__ = (
     "Rank",
-    "get_init",
-    "get_addr",
-    "get_port",
-    "get_size",
-    "get_rank",
+    "SERIALIZABLE",
     "CommmunicationGroup",
     "ReduceOperation",
     "StateRequest",
+    "StateResponse",
     "RankInit",
     "RankFinalize",
     "OperationRequest",
@@ -42,7 +39,17 @@ __all__ = (
     "BroadcastContext",
     "AllGatherContext",
     "AllReduceContext",
+    "GatherContext",
+    "ReduceContext",
+    "ScatterContext",
+    "AllToAllContext",
     "SendRecvContext"
+)
+
+SERIALIZABLE = (
+    "uuid.UUID",
+    "intbitset_helper._",
+    *(f"{__name__}.{name}" for name in __all__)
 )
 
 
@@ -239,7 +246,7 @@ class AllReduceContext[T](OperationContext[T]):
             case ReduceOperation.BOR:
                 result = functools.reduce(operator.or_, src.values())
             case ReduceOperation.LXOR:
-                result = functools.reduce(lambda a, b: bool(a) != bool(b), src.values())
+                result = functools.reduce(lambda a, b: bool(a) != bool(b), src.values())  # type: ignore
             case ReduceOperation.BXOR:
                 result = functools.reduce(operator.xor, src.values())
             case ReduceOperation.MINLOC:
@@ -339,7 +346,7 @@ class ReduceContext[T](OperationContext[T]):
             case ReduceOperation.BOR:
                 result = functools.reduce(operator.or_, src.values())
             case ReduceOperation.LXOR:
-                result = functools.reduce(lambda a, b: bool(a) != bool(b), src.values())
+                result = functools.reduce(lambda a, b: bool(a) != bool(b), src.values())  # type: ignore
             case ReduceOperation.BXOR:
                 result = functools.reduce(operator.xor, src.values())
             case ReduceOperation.MINLOC:

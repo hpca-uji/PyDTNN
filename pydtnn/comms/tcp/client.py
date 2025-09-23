@@ -1,13 +1,13 @@
 """TCP client"""
 
 import ssl
+import uuid
 import copy
 import socket
+import warnings
 import selectors
 from concurrent.futures import Future
-import uuid
 
-from pydtnn import comms
 from pydtnn.comms import client
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
@@ -29,8 +29,8 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
         # TCP
         self._comm = socket.create_connection(self._options.netloc)
 
-        if comms.SSL:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=comms.SSL_CERT)
+        if self._options.ssl:
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self._options.ssl.cert)
             self._comm = context.wrap_socket(self._comm, server_hostname=self._options.netloc.host)
 
         self._comm.setblocking(False)
@@ -72,12 +72,13 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
             return
 
         if not data:
-            assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+            if state.state or not state.put_queue.empty():
+                warnings.warn(f"Lost connection unexpectedly ({comm})", RuntimeWarning)
             return
 
         state.get_write(data)
 
-        if comms.SSL and (pending := comm.pending()):  # type: ignore
+        if self._options.ssl and (pending := comm.pending()):  # type: ignore
             data = comm.recv(pending)
             state.get_write(data)
 

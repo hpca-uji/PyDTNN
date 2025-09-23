@@ -48,8 +48,6 @@
 # - Always block
 # - Server waits for peers to disconnect
 
-# TODO: Move set_result to thread_queue to avoid callback costs
-
 # TODO: Implement client reconnection
 
 # TODO: Implement two-way connection expiration and keep-alives. There
@@ -62,6 +60,7 @@ import os
 import abc
 import uuid
 import enum
+import typing
 import importlib
 import threading
 from pathlib import Path
@@ -74,16 +73,21 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from bidict import bidict
 
 
-from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool, thread_queue
 from pydtnn.utils import asynctools
 from pydtnn.utils.asynctools import merge_futures
+from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool, thread_queue
 from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
 __all__ = (
+    "NetworkLocation",
+    "ConnectionOptions",
     "CommunicatorOptions",
+    "SerializationOptions",
     "PROTOCOL",
     "SSL",
+    "SSL_KEY",
+    "SSL_CERT",
     "Protocol",
     "Message",
     "ResourceClosed",
@@ -130,7 +134,7 @@ class NetworkLocation(NamedTuple):
 
 @dataclass(order=False, slots=True, frozen=True)
 class ConnectionOptions:
-    """Connection data options"""
+    """Connection options"""
     max_size: int
     merge_size: int
     efficient_size: int
@@ -144,11 +148,27 @@ class ConnectionOptions:
 
 
 @dataclass(order=False, slots=True, frozen=True)
+class SerializationOptions:
+    """Serialization options"""
+    load: col_abc.Callable[[Stream], typing.Any] = Serializer().load
+    dump: col_abc.Callable[[typing.Any], Stream] = Serializer().dump
+
+
+@dataclass(order=False, slots=True, frozen=True)
+class SSLOptions:
+    """SSL options"""
+    key: Path | None = None
+    cert: Path | None = None
+
+
+@dataclass(order=False, slots=True, frozen=True)
 class CommunicatorOptions:
     """Comunicatior options"""
     netloc: NetworkLocation = NetworkLocation()
     workers: int = 1
     connection: ConnectionOptions = ConnectionOptions()
+    serial: SerializationOptions = SerializationOptions()
+    ssl: SSLOptions | None = None
 
 
 class SessionData:
@@ -156,13 +176,13 @@ class SessionData:
 
     def __init__(self, options: ConnectionOptions = ConnectionOptions()) -> None:
         """Initialize connection state"""
-        self._options = options
         self.peer = UUID_NIL
+        self._options = options
         self.state = ConnectionState(value=0)
 
+        self._packer = Packer()
         self._merge_buffer = byteview(bytearray(self._options.merge_size))
         self._merge_size = min(self._options.merge_size, self._options.efficient_size)
-        self._packer = Packer()
 
         self.put_queue = SimpleQueue[Stream]()
         self.get_queue = SimpleQueue[Stream]()
@@ -296,7 +316,6 @@ class Communicator[T](abc.ABC):
         self._comms = bidict[uuid.UUID, T]()
         self._states = dict[uuid.UUID, SessionData]()
 
-        self._serializer = Serializer()
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
 
         self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}.worker")
@@ -309,15 +328,18 @@ class Communicator[T](abc.ABC):
     def _session_ini(self, peer: uuid.UUID) -> None:
         """Send session ini message"""
         state = self._states[peer]
-        assert ConnectionState.WRITABLE not in state.state, "Sending session ini on writable stream"
+        if ConnectionState.WRITABLE in state.state:
+            raise RuntimeError("Sending session ini on writable stream")
         state.state |= ConnectionState.WRITABLE
-        stream = self._serializer.dump(self._id)
+        stream = Stream()
+        stream.write(self._id.bytes)
         self._put(stream, peer)
 
     def _session_fin(self, peer: uuid.UUID) -> None:
         """Send session fin message"""
         state = self._states[peer]
-        assert ConnectionState.WRITABLE in state.state, "Sending session fin on unwritable stream"
+        if ConnectionState.WRITABLE not in state.state:
+            raise RuntimeError("Sending session fin on unwritable stream")
         state.state &= ~ConnectionState.WRITABLE
         stream = Stream()
         self._put(stream, peer)
@@ -325,14 +347,16 @@ class Communicator[T](abc.ABC):
     def _handle_session_ini(self, peer: uuid.UUID, stream: Stream) -> None:
         """Handle session initialize message"""
         state = self._states[peer]
-        assert ConnectionState.READABLE not in state.state, "Recived session ini on readable stream"
+        if ConnectionState.READABLE in state.state:
+            raise RuntimeError("Recived session ini on readable stream")
 
         comm = self._comms[peer]
 
         # Set peer in state
-        with stream:
-            id = self._serializer.load(stream)
-        assert isinstance(id, uuid.UUID), f"Ini handshake message corrupted (got: {id!r})"
+        if stream.nbytes != len(self._id.bytes):
+            raise RuntimeError(f"Ini handshake message corrupted (got: {stream.nbytes} bytes)")
+        id = uuid.UUID(bytes=stream.read().tobytes())
+
         state.peer = id
         state.state |= ConnectionState.READABLE
 
@@ -352,8 +376,10 @@ class Communicator[T](abc.ABC):
     def _handle_session_fin(self, peer: uuid.UUID, stream: Stream) -> None:
         """Handle session finalize message"""
         state = self._states[peer]
-        assert ConnectionState.READABLE in state.state, "Recived session fin on unreadable stream"
-        assert stream.nbytes == 0, f"Fin handshake message corrupted (got: {stream.nbytes} bytes)"
+        if ConnectionState.READABLE not in state.state:
+            raise RuntimeError("Recived session fin on unreadable stream")
+        if stream.nbytes != 0:
+            raise RuntimeError(f"Fin handshake message corrupted (got: {stream.nbytes} bytes)")
         stream.close()
         state.state &= ~ConnectionState.READABLE
 
@@ -378,7 +404,7 @@ class Communicator[T](abc.ABC):
         state = self._states[peer]
 
         for future in state.put_commit(size):
-            self._put_queue.submit(asynctools.future_set_result, future, None).add_done_callback(lambda future: future.result())
+            self._put_queue.submit(asynctools.future_set_result, future, None).add_done_callback(asynctools.future_warn_exception)
 
     def _set_default_peer(self, comm: T) -> uuid.UUID:
         """Get associated peer or create a new one if missing"""
@@ -457,7 +483,7 @@ class Communicator[T](abc.ABC):
         self._session_cleanup(peer)
 
         with stream:
-            obj = self._serializer.load(stream)
+            obj = self._options.serial.load(stream)
 
         return Message(peer=peer, obj=obj)
 
@@ -483,7 +509,7 @@ class Communicator[T](abc.ABC):
                 peers = tuple(self._comms)
 
         futures = list[Future[None]]()
-        with self._serializer.dump(obj) as stream:
+        with self._options.serial.dump(obj) as stream:
             for peer in peers:
                 future = self._put(stream.copy(), peer)
                 futures.append(future)

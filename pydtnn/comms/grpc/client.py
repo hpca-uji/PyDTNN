@@ -8,8 +8,8 @@ from collections import abc
 from queue import SimpleQueue, Empty
 from concurrent.futures import Future
 
-from pydtnn import comms
 from pydtnn.comms import client
+from pydtnn.utils import asynctools
 from pydtnn.comms.grpc import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.comms import CommunicatorOptions, ResourceClosed
@@ -42,14 +42,18 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
             "compression": self._compression
         }
 
-        if comms.SSL:
-            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=comms.SSL_CERT.read_bytes() if comms.SSL_CERT else None)
+        if self._options.ssl:
+            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self._options.ssl.cert.read_bytes() if self._options.ssl.cert else None)
             self._channel = grpc.secure_channel(**config)
         else:
             self._channel = grpc.insecure_channel(**config)
 
         self._conntected = True
-        self._comm = self._channel.stream_stream(method="/grpc/comm", request_serializer=bytes, response_deserializer=lambda x: x)
+        self._comm = self._channel.stream_stream(
+            method="/grpc/comm",
+            request_serializer=lambda x: x,  # type: ignore (handled externally)
+            response_deserializer=lambda x: x
+        )
 
         self._connection_ini(self._comm)
 
@@ -57,7 +61,7 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
         comm = self._comms[peer]
-        self._pool.submit(self._c2s, comm).add_done_callback(lambda future: future.result())
+        self._pool.submit(self._c2s, comm).add_done_callback(asynctools.future_warn_exception)
         return future
 
     def _get(self, *peers: uuid.UUID) -> uuid.UUID:
