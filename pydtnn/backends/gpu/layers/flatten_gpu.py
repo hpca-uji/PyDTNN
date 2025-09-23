@@ -42,6 +42,5 @@ class FlattenGPU(LayerGPU, Flatten):
     def backward(self, dy:TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DX)
         self.dx = dy.reshape((self.model.batch_size, *self.prev_shape))
-        # self.y.reshape((self.model.batch_size, *self.prev_shape))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

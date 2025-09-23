@@ -62,26 +62,25 @@ class FCGPU(LayerGPU, FC):
         self.dx.reshape((self.model.batch_size, *prev_shape))
 
         if self.model.gpudirect:
-            self.dw_cpu = drv.aligned_zeros(self.weights.ary.shape, self.model.dtype)
-            self.dw_cpu = dw_gpu = drv.register_host_memory(self.dw_cpu,
-                                                            flags=drv.mem_host_register_flags.DEVICEMAP)
+            self.dw_cpu, self.dw = TensorGPU.initialize_gpu_direct(drv, self.weights.ary.shape, self.model.dtype,
+                                                                   tensor_format=self.model.tensor_format,
+                                                                   cudnn_dtype=self.model.cudnn_dtype,
+                                                                   gpudirect=self.model.gpudirect)
             if self.use_bias:
-                self.db_cpu = drv.aligned_zeros(self.biases.ary.shape, self.model.dtype)
-                self.db_cpu = db_gpu = drv.register_host_memory(self.db_cpu,
-                                                                flags=drv.mem_host_register_flags.DEVICEMAP)
+                self.db_cpu, self.db = TensorGPU.initialize_gpu_direct(drv, self.biases.ary.shape, self.model.dtype,
+                                                                       tensor_format=self.model.tensor_format,
+                                                                       cudnn_dtype=self.model.cudnn_dtype,
+                                                                       gpudirect=self.model.gpudirect)
         else:
-            self.dw_cpu = np.zeros(self.weights.ary.shape, self.model.dtype)
-            dw_gpu = gpuarray.empty(self.dw_cpu.shape, self.model.dtype)
+            self.dw_cpu, self.dw = TensorGPU.initialize_not_gpu_direct(self.weights.ary.shape, self.model.dtype, 
+                                                                       tensor_format=self.model.tensor_format, 
+                                                                       cudnn_dtype=self.model.cudnn_dtype, 
+                                                                       gpudirect=self.model.gpudirect)
             if self.use_bias:
-                self.db_cpu = np.zeros(self.biases.ary.shape, self.model.dtype)
-                db_gpu = gpuarray.empty(self.db_cpu.shape, self.model.dtype)
-
-        self.dw = TensorGPU(dw_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                            gpudirect=self.model.gpudirect)
-        if self.use_bias:
-            # noinspection PyUnboundLocalVariable
-            self.db = TensorGPU(db_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                                gpudirect=self.model.gpudirect)
+                self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype, 
+                                                                           tensor_format=self.model.tensor_format, 
+                                                                           cudnn_dtype=self.model.cudnn_dtype, 
+                                                                           gpudirect=self.model.gpudirect)
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
