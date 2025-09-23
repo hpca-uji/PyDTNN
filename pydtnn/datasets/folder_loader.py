@@ -199,11 +199,13 @@ class DatasetFolderLoader(Dataset):
             if batch_size < self.max_nsamples_online:
                 batch_size += 1
             else:
-                x = np.stack(images, dtype=self.model.dtype)
-                y = np.stack(labels, dtype=self.model.dtype)
-                images.clear()
-                labels.clear()
+                x = np.stack(images[:batch_size], dtype=self.model.dtype)
+                y = np.stack(labels[:batch_size], dtype=self.model.dtype)
+                del images[:batch_size]
+                del labels[:batch_size]
+                batch_size -= batch_size
                 yield x, y
+                del x, y
         #} - for
         
         if batch_size < self.max_nsamples_online:
@@ -212,6 +214,7 @@ class DatasetFolderLoader(Dataset):
             images.clear()
             labels.clear()
             yield x, y
+            del x, y
         #else: Since all the data was already yielded inside the for, do nothing.
     # --- END _actual_data_generator --- #
 

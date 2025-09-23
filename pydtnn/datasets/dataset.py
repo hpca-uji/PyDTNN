@@ -371,7 +371,7 @@ class Dataset(ABC):
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
                 global_batch_size = min(nsamples, global_batch_size)
-                yield x_local_batch, y_local_batch, global_batch_size
+                yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
             # Generate the last batch (with size < local_batch_size)
             last_batch_size = local_nsamples % local_batch_size
@@ -382,7 +382,7 @@ class Dataset(ABC):
                 x_local_batch = x_data[indices, ...]
                 y_local_batch = y_data[indices, ...]
                 global_batch_size = min(nsamples, global_batch_size)
-                yield x_local_batch, y_local_batch, global_batch_size
+                yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
 
     def _batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
