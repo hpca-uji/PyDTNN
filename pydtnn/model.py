@@ -405,10 +405,11 @@ class Model:
         self.flip_images: bool = self.kwargs["flip_images"]
         self.crop_images:bool = self.kwargs["crop_images"]        
         self.resize:bool = self.kwargs["resize"]
-        self.resize_dimension:tuple[int, ...] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
+        self.resize_dimension:tuple[int, int] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
         self.flip_images_prob:float = self.kwargs["flip_images_prob"]
         self.crop_images_size:int = self.kwargs["crop_images_size"]
         self.crop_images_prob:float = self.kwargs["crop_images_prob"]
+        self.initial_model_sync:bool = self.kwargs["initial_model_sync"]
         # ---
         use_mpi_buffers:bool = self.kwargs["use_mpi_buffers"]
         
@@ -958,14 +959,11 @@ class Model:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
-                print(f"1 -- {x_batch.shape[0]=} || {i_batch=} || {train_batches_min=} || {self.comm=} || {self.comm_size=}")
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
                 
                 local_batch_size = x_batch.shape[0]
-                print(f"2 --{local_batch_size=}")
-
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
                 if sync_model:
@@ -993,8 +991,6 @@ class Model:
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
                 toc = timer()
-
-                print(f"3 -- {x_batch.shape[0]=} || {i_batch=} || {train_batches_min=} || {sync_model=} || {(i_batch >= train_batches_min and sync_model)=} || {self.comm=} || {self.comm_size=}")
 
                 if local_batch_size <= 0:
                     if self.comm_rank == 0:
@@ -1027,7 +1023,6 @@ class Model:
                 if sync_model:
                     sync_epoch = True
 
-                # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA. Mira de donde sale esto para que tenga el color bien.
                 if model_sync_count == 0 and not self.initial_model_sync:
                     sync_model = False
 
