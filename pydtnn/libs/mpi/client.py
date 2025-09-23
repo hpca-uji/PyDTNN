@@ -47,6 +47,7 @@ from pydtnn.libs.mpi import comm as mpi_comm, rc as mpi_rc
 
 
 __all__ = (
+    "Init",
     "Finalize",
     "IN_PLACE",
     "MAX",
@@ -67,6 +68,10 @@ __all__ = (
 
 ANY_TAG: mpi_comm.Tag = 0
 ANY_SOURCE: mpi_comm.Rank = -1
+
+
+def Init() -> None:
+    """Initialize the MPI execution environment."""
 
 
 def Finalize() -> None:
