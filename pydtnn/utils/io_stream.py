@@ -20,6 +20,7 @@ from collections import abc, deque
 
 __all__ = (
     "byteview",
+    "memoryview_index",
     "Stream",
     "Packer",
     "Serializer"
@@ -32,21 +33,15 @@ def byteview(b: abc.Buffer) -> memoryview:
         return view.cast("B")
 
 
-# Fast path
-try:
-    from pydtnn.cython_modules import memoryview_index
-
-# Slow path
-except ImportError:
-    def memoryview_index(view: memoryview, sub: bytes) -> int:
-        """Find lowest index where substring is found"""
-        if len(sub) != 1:
-            raise TypeError("Only single byte substring are supported")
-        for i, byte in enumerate(view):
-            if byte == sub:
-                return i
-        else:
-            raise ValueError("Substring not found")
+def memoryview_index(view: memoryview, sub: bytes) -> int:
+    """Find lowest index where substring is found"""
+    if len(sub) != 1:
+        raise TypeError("Only single byte substring are supported")
+    for i, byte in enumerate(view):
+        if byte == sub:
+            return i
+    else:
+        raise ValueError("Substring not found")
 
 
 class Stream(io.BufferedIOBase):

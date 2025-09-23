@@ -61,11 +61,3 @@ setup(
     },
     ext_modules=cythonize(s.ext_modules, language_level=3),
 )
-
-for cython_compiled_file in glob("./*.so"):
-    path = os.path.dirname(cython_compiled_file)
-    name = os.path.basename(cython_compiled_file)
-    path = os.path.join(path, "pydtnn", "cython_compiled_files")
-    if not os.path.isdir(path):
-        os.mkdir(path)
-    os.rename(cython_compiled_file, os.path.join(path, name))
