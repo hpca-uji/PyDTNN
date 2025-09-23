@@ -39,15 +39,15 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
-        self.mode = None
-        self.gamma_beta_mean_var_desc = None
-        self.gamma_value = None
-        self.beta_value = None
-        self.dgamma_cpu = None
-        self.dbeta_cpu = None
-        self.save_mean = None
-        self.save_inv_var = None
-        self.factor = None
+        self.mode:int  = None
+        self.gamma_beta_mean_var_desc:int | None  = None
+        self.gamma_cpu:np.ndarray = None
+        self.beta_cpu:np.ndarray = None
+        self.dgamma_cpu:np.ndarray = None
+        self.dbeta_cpu:np.ndarray = None
+        self.save_mean:TensorGPU = None
+        self.save_inv_var:TensorGPU = None
+        self.factor:float = None
 
     def initialize(self, prev_shape:tuple[int, ...], x:TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
@@ -76,33 +76,36 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
             shape_ = (1, self.ci, 1, 1)  # 1 x C x H x W
 
         # gamma
-        self.gamma_value = np.full(shape_, self.gamma_init_val, self.model.dtype)
-        gamma_gpu = gpuarray.to_gpu(self.gamma_value)
+        self.gamma_cpu = np.full(shape_, self.gamma_init_val, self.model.dtype)
+        gamma_gpu = gpuarray.to_gpu(self.gamma_cpu)
         self.gamma = TensorGPU(gamma_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         # beta
-        self.beta_value = np.full(shape_, self.beta_init_val, self.model.dtype)
-        beta_gpu = gpuarray.to_gpu(self.beta_value)
+        self.beta_cpu = np.full(shape_, self.beta_init_val, self.model.dtype)
+        beta_gpu = gpuarray.to_gpu(self.beta_cpu)
         self.beta = TensorGPU(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-        if self.model.gpudirect:
-            self.dgamma_cpu = drv.aligned_zeros(self.gamma.ary.shape, self.model.dtype)
-            self.dgamma_cpu = dgamma_gpu = drv.register_host_memory(self.dgamma_cpu,
-                                                                    flags=drv.mem_host_register_flags.DEVICEMAP)
-            self.dbeta_cpu = drv.aligned_zeros(self.beta.ary.shape, self.model.dtype)
-            self.dbeta_cpu = dbeta_gpu = drv.register_host_memory(self.dbeta_cpu,
-                                                                  flags=drv.mem_host_register_flags.DEVICEMAP)
-        else:
-            self.dgamma_cpu = np.zeros(self.gamma.ary.shape, self.model.dtype)
-            dgamma_gpu = gpuarray.empty(self.gamma.ary.shape, self.model.dtype)
-            self.dbeta_cpu = np.zeros(self.beta.ary.shape, self.model.dtype)
-            dbeta_gpu = gpuarray.empty(self.beta.ary.shape, self.model.dtype)
+        if self.model.gpudirect:            
+            self.dgamma_cpu, self.dgamma = TensorGPU.initialize_gpu_direct(drv, self.gamma.ary.shape, self.model.dtype,
+                                                                           tensor_format=self.model.tensor_format,
+                                                                           cudnn_dtype=self.model.cudnn_dtype,
+                                                                           gpudirect=self.model.gpudirect)
 
-        self.dgamma = TensorGPU(dgamma_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                                gpudirect=self.model.gpudirect)
-        self.dbeta = TensorGPU(dbeta_gpu, self.model.tensor_format, self.model.cudnn_dtype,
-                               gpudirect=self.model.gpudirect)
+            self.dbeta_cpu, self.dbeta = TensorGPU.initialize_gpu_direct(drv, self.beta.ary.shape, self.model.dtype,
+                                                                         tensor_format=self.model.tensor_format,
+                                                                         cudnn_dtype=self.model.cudnn_dtype,
+                                                                         gpudirect=self.model.gpudirect)
+        else:
+            self.dgamma_cpu, self.dgamma = TensorGPU.initialize_not_gpu_direct(self.gamma.ary.shape, self.model.dtype, 
+                                                                               tensor_format=self.model.tensor_format, 
+                                                                               cudnn_dtype=self.model.cudnn_dtype, 
+                                                                               gpudirect=self.model.gpudirect)
+                                                                               
+            self.dbeta_cpu, self.dbeta= TensorGPU.initialize_not_gpu_direct(self.beta.ary.shape, self.model.dtype, 
+                                                                            tensor_format=self.model.tensor_format, 
+                                                                            cudnn_dtype=self.model.cudnn_dtype, 
+                                                                            gpudirect=self.model.gpudirect)
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
         self.running_mean = TensorGPU(running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
@@ -117,6 +120,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         self.save_inv_var = TensorGPU(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.factor = 1.0 - self.momentum
+    # ---
 
     def forward(self, x):
         alpha, beta = 1.0, 0.0
