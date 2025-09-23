@@ -1,3 +1,4 @@
+"""Communications client package"""
 
 from uuid import UUID
 from concurrent.futures import Future

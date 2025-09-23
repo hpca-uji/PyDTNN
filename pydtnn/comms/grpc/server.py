@@ -4,7 +4,6 @@ import grpc
 import traceback
 from collections import abc
 
-from pydtnn import comms
 from pydtnn.comms import server
 from pydtnn.comms.grpc import Protocol
 from pydtnn.comms import CommunicatorOptions
@@ -39,9 +38,11 @@ class Server(Protocol[str], server.Server[str]):
             "address": str(self._options.netloc)
         }
 
-        if comms.SSL:
+        if self._options.ssl:
+            if self._options.ssl.cert is None or self._options.ssl.key is None:
+                raise RuntimeError("SSL certificate or key not provided")
             config["server_credentials"] = grpc.ssl_server_credentials([
-                (comms.SSL_KEY.read_bytes(), comms.SSL_CERT.read_bytes()),  # type: ignore
+                (self._options.ssl.key.read_bytes(), self._options.ssl.cert.read_bytes()),  # type: ignore
             ])
             self._server.add_secure_port(**config)
         else:

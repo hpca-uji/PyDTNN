@@ -49,7 +49,6 @@ class Protocol[T](comms.Communicator[T]):
         state.put_flush_queue()
         for view in state.put_flush_buffer():
             with view:
-                yield view
-                # NOTE: view should be consumed, if not, yield bytes copies
+                yield bytes(view)
                 size += len(view)
         self._put_commit(peer, size)

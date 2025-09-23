@@ -6,6 +6,7 @@ from concurrent.futures import Future
 import paho.mqtt.client as mqtt_client
 
 from pydtnn.comms import client
+from pydtnn.utils import asynctools
 from pydtnn.comms.mqtt import Protocol
 from pydtnn.utils.io_stream import Stream
 from pydtnn.comms import CommunicatorOptions
@@ -48,7 +49,7 @@ class Client(Protocol[str], client.Client[str]):
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into queue and notify"""
         future = super()._put(stream, peer)
-        self._pool.submit(self._c2s, self._comm).add_done_callback(lambda future: future.result())
+        self._pool.submit(self._c2s, self._comm).add_done_callback(asynctools.future_warn_exception)
         return future
 
     def _c2s(self, comm: str):

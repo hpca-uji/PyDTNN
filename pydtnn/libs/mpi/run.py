@@ -2,8 +2,8 @@
 """Basic local mpirun"""
 
 import os
-import typing
 import subprocess
+from collections import abc
 from argparse import ArgumentParser, Namespace
 
 
@@ -20,17 +20,16 @@ arg_parser = ArgumentParser(
 arg_parser.add_argument("-np", dest="size", type=int)
 
 
-def main(*args: str) -> None:
+def main(config: Namespace, args: abc.Sequence[str]) -> None:
     """Application entrypoint"""
-    config, program = arg_parser.parse_known_args(args)
-    config = typing.cast(Namespace, config)
 
     for rank in range(config.size):
         environment = os.environ.copy()
         environment.update({"PMI_RANK": str(rank), "PMI_SIZE": str(config.size)})
-        subprocess.Popen(args=program, env=environment)
+        subprocess.Popen(args=args, env=environment)
 
 
 if __name__ == "__main__":
     import sys
-    main(*sys.argv[1:])
+    config, args = arg_parser.parse_known_args(*sys.argv[1:])
+    main(config, args)  # type: ignore

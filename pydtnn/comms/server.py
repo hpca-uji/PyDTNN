@@ -1,3 +1,4 @@
+"""Communications server package"""
 
 import uuid
 

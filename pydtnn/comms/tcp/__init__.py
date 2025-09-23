@@ -1,11 +1,14 @@
 """TCP communications"""
 
 import socket
+import warnings
 import selectors
 from collections import abc
+from concurrent import futures
 from queue import Empty, SimpleQueue
 
 from pydtnn import comms, utils
+from pydtnn.utils import asynctools
 
 
 __all__ = (
@@ -34,7 +37,7 @@ class Protocol[T](comms.Communicator[T]):
         self._selector.register(self._control_socket[0], selectors.EVENT_READ, self._handle_control_socket)
 
         self._loop_thread = utils.thread_func(self._handle_selector_loop)
-        self._loop_thread.add_done_callback(lambda future: future.result())
+        self._loop_thread.add_done_callback(asynctools.future_warn_exception)
         self._task_queue = SimpleQueue[Task]()
 
     def _modify_selector(self, fileobj, events) -> None:
@@ -83,9 +86,19 @@ class Protocol[T](comms.Communicator[T]):
         """Handle selector loop"""
         running = True
         while running:
-            for result in self._pool.map(self._handle_selector_event, self._selector.select()):
-                if result is CONTROL_STOP:
-                    running = False
+            fs = [
+                self._pool.submit(self._handle_selector_event, event)
+                for event in self._selector.select()
+            ]
+
+            for future in futures.as_completed(fs):
+                try:
+                    result = future.result()
+                except Exception as exc:
+                    warnings.warn(repr(exc), RuntimeWarning)
+                else:
+                    if result is CONTROL_STOP:
+                        running = False
 
     def _close(self) -> None:
         """Close the communication"""

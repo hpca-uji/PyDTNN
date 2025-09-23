@@ -3,10 +3,10 @@
 import ssl
 import uuid
 import socket
+import warnings
 import selectors
 from concurrent.futures import Future
 
-from pydtnn import comms
 from pydtnn.comms import server
 from pydtnn.comms.tcp import Protocol
 from pydtnn.utils.io_stream import Stream
@@ -28,11 +28,11 @@ class Server(Protocol[socket.socket], server.Server[socket.socket]):
         # TCP
         self._comm = socket.create_server(self._options.netloc, reuse_port=True)
 
-        if comms.SSL:
-            if comms.SSL_CERT is None or comms.SSL_KEY is None:
+        if self._options.ssl:
+            if self._options.ssl.cert is None or self._options.ssl.key is None:
                 raise RuntimeError("SSL certificate or key not provided")
-            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=comms.SSL_CERT)
-            context.load_cert_chain(certfile=comms.SSL_CERT, keyfile=comms.SSL_KEY)
+            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self._options.ssl.cert)
+            context.load_cert_chain(certfile=self._options.ssl.cert, keyfile=self._options.ssl.key)
             self._comm = context.wrap_socket(self._comm, server_side=True, do_handshake_on_connect=True)
 
         self._selector.register(self._comm, selectors.EVENT_READ, self._new_connection)
@@ -77,12 +77,13 @@ class Server(Protocol[socket.socket], server.Server[socket.socket]):
             return
 
         if not data:
-            assert not state.state and state.put_queue.empty(), "Lost connection unexpectedly"
+            if state.state or not state.put_queue.empty():
+                warnings.warn(f"Lost connection unexpectedly ({comm})", RuntimeWarning)
             return
 
         state.get_write(data)
 
-        if comms.SSL and (pending := comm.pending()):  # type: ignore
+        if self._options.ssl and (pending := comm.pending()):  # type: ignore
             data = comm.recv(pending)
             state.get_write(data)
 

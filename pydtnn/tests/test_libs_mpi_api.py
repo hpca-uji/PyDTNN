@@ -43,12 +43,12 @@ def main(config: Namespace):
 
     root = 0
     ref = rank
-    res = comm.scatter(range(size), root=root)
+    res = comm.scatter(list(range(size)), root=root)
     print(prefix, f"scatter {res}/{ref}")
     assert res == ref, f"scatter error; got {res}, expect {ref}"
 
     ref = [rank] * size
-    res = comm.alltoall(range(size))
+    res = comm.alltoall(list(range(size)))
     print(prefix, f"alltoall {res}/{ref}")
     assert res == ref, f"alltoall error; got {res}, expect {ref}"
 

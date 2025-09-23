@@ -21,7 +21,7 @@ import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
 
 from pydtnn import comms
-from pydtnn.utils import thread_queue
+from pydtnn.utils import thread_queue, asynctools
 
 
 __all__ = (
@@ -55,8 +55,8 @@ class Protocol[T](comms.Communicator[T]):
             transport=self._transport  # type: ignore
         )
 
-        if comms.SSL:
-            self._client.tls_set(ca_certs=str(comms.SSL_CERT) if comms.SSL_CERT else None)
+        if self._options.ssl:
+            self._client.tls_set(ca_certs=str(self._options.ssl.cert) if self._options.ssl.cert else None)
 
         self._client.connect(host=self._options.netloc.host, port=self._options.netloc.port)
         self._client.loop_start()
@@ -81,4 +81,4 @@ class Protocol[T](comms.Communicator[T]):
     def _publish(self, topic: str, data=None) -> None:
         """Generic MQTT publish"""
         message = self._client.publish(topic=topic, payload=data, qos=self._qos)
-        self._publish_queue.submit(message.wait_for_publish).add_done_callback(lambda future: future.result())
+        self._publish_queue.submit(message.wait_for_publish).add_done_callback(asynctools.future_warn_exception)

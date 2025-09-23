@@ -1,5 +1,6 @@
 """Asynchronous utilities"""
 
+import warnings
 from collections import abc
 from concurrent import futures
 from concurrent.futures import Future
@@ -9,7 +10,8 @@ __all__ = (
     "merge_futures",
     "future_set_running",
     "future_set_result",
-    "future_set_exception"
+    "future_set_exception",
+    "future_warn_exception"
 )
 
 
@@ -47,6 +49,12 @@ def future_set_exception(future: Future, exc: BaseException) -> bool:
         return False
     else:
         return True
+
+
+def future_warn_exception[T](future: Future[T]) -> None:
+    """Future handler that warns about exceptions"""
+    if (exc := future.exception()) is not None:
+        warnings.warn(repr(exc), RuntimeWarning)
 
 
 def merge_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> Future:

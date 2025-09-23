@@ -15,6 +15,7 @@
 import io
 import pickle
 import struct
+import functools
 from collections import abc, deque
 
 
@@ -340,14 +341,47 @@ class Packer:
 class Serializer:
     """Pickle-stream serializer"""
 
-    __slots__ = ()
+    __slots__ = ("_dump", "_load")
+
+    def __init__(self, restrict: abc.Iterable | None = None) -> None:
+        """Initialize serializer"""
+        # Setup context
+        self._dump = pickle.dump
+
+        if restrict is None:
+            self._load = pickle.load
+            return
+        else:
+            restrict = frozenset(restrict)
+
+        # Setup restricted context
+        def allow_class(name: str) -> bool:
+            r, s, _ = name, ".", ""
+            while r:
+                if r in restrict:
+                    return True
+                r, s, _ = r.rpartition(s)
+            return False
+
+        class Deserializer(pickle.Unpickler):
+            def find_class(self, module: str, name: str):
+                global_name = f"{module}.{name}"
+                if allow_class(global_name):
+                    return super().find_class(module, name)
+                raise pickle.UnpicklingError(f"global {global_name} is forbidden")
+
+        @functools.wraps(pickle.load)
+        def load(*args, **kwds):
+            return Deserializer(*args, *kwds).load()
+
+        self._load = load
 
     def dump(self, obj) -> Stream:
         """Transform a object into a stream"""
         stream = Stream()
-        pickle.dump(obj=obj, file=stream, protocol=5)
+        self._dump(obj=obj, file=stream, protocol=5)
         return stream
 
     def load(self, stream: Stream):
         """Transform a stream into a object"""
-        return pickle.load(stream)
+        return self._load(stream)
