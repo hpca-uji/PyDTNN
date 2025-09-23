@@ -879,18 +879,23 @@ class Model:
     def _sync_x_y_gpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[TensorGPU, TensorGPU]:
         
         # NOTE: in CUDA it's necessary to always have batches of the same size.
-        # TODO: añadir una variable para guardarnos x_batch.shape[0] para procesar solo esas más adelante.
-        self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
-        if x_batch.shape[0] != self.batch_size:
-            # NOTE: if x_batch is empty (x_batch.shape[0] = 0), np.repeat will do nothing. This is what we want. If np.repeat behaviour changes this section must also change.
-            x_batch = np.repeat(x_batch, self.batch_size, axis=0)
-            y_batch = np.repeat(y_batch, self.batch_size, axis=0)
-        # else: The batch has the right shape ==> Nothing to do.
+        local_batch_size = x_batch.shape[0]
 
-        self.layers[0].y.ary.set(x_batch)
-        self.y_batch.ary.set(y_batch)
+        self.optimizer.num_real_batches = self.num_real_batches = local_batch_size
+        if local_batch_size != 0: 
+            if local_batch_size != self.batch_size:
+                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
+                num_repetitions = ceil(self.batch_size / local_batch_size)
+                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
+                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
+            # else: The batch has the right shape ==> Nothing to do.
+            
+            self.layers[0].y.ary.set(x_batch)
+            self.y_batch.ary.set(y_batch)
+            x, y_targ = self.layers[0].y, self.y_batch
+        else:
+            x, y_targ = self.layers[0].y[:0], self.y_batch[:0]
 
-        x, y_targ = self.layers[0].y, self.y_batch
         return x, y_targ
     # --- _sync_x_y --- #
 
