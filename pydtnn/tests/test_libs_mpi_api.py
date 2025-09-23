@@ -1,4 +1,4 @@
-"""MPI server-client test"""
+"""MPI server-client API test"""
 
 from argparse import ArgumentParser, Namespace
 
