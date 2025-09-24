@@ -13,7 +13,11 @@ __all__ = (
     "port",
     "rank",
     "port",
-    "serial"
+    "serial",
+    "proto",
+    "ssl",
+    "ssl_key",
+    "ssl_cert"
 )
 
 

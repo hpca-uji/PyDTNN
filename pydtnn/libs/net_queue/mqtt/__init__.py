@@ -1,20 +1,5 @@
 """MQTT communications"""
 
-# NOTE: MQTT broker implementations are not common, so the server provided here
-# is actually another client. Therefore the address and port provided to both,
-# the client and server, should be the one of the actual broker, not where the
-# server is running.
-
-# NOTE: The MQTT library handles comunications single-threaded, therefore
-# operations on related callbacks are limited to pushing or pulling data from
-# queues without blocking, so all operations are minimal and fast.
-
-# FIXME: Peer-groups and global comunications are not optimized. First, chunked
-# message ordering must be resolved. Single chunk order it is guaranteed by
-# the protocol, even on with diferent topics. Second, peer-groups could be
-# implemented using grouping requests that generate new UUID per group.
-# This would reduce also reduce load on the broker.
-
 import copy
 
 import paho.mqtt.enums as mqtte_enum

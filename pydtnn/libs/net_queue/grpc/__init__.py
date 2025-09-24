@@ -1,19 +1,5 @@
 """gRPC communications"""
 
-# NOTE: gRPC does not conform well to a async send & async receive model,
-# it expects remote procedure calls to be called, processed and responded.
-# To simulate this model we created a bidirectional streaming procedure.
-# Sent data is queued at the server, recived data is polled until available.
-
-# NOTE: Polling is implemented with a exponential backoff time and a limit.
-# The gRPC library queues requests, so requests would always be replyed in
-# a timely maner, but we do not want to hogh the CPU or network with
-# usesless requests.
-
-# NOTE: It is important to not hold the prodedures indefinitely, since this
-# could starve the server of threads. Additionaly, if a streaming direction
-# was already closed, messages could end up queued forever if not restarted.
-
 import sys
 import uuid
 from collections import abc
