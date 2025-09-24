@@ -72,10 +72,10 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from bidict import bidict
 
 
-from pydtnn.utils import asynctools
-from pydtnn.utils.asynctools import merge_futures
-from pydtnn.utils import UUID_MAX, UUID_NIL, thread_queue
-from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.net_queue.asynctools import merge_futures
+from pydtnn.libs.net_queue.asynctools import thread_queue
+from pydtnn.libs.net_queue.io_stream import Packer, Serializer, Stream, byteview
 
 
 __all__ = (
@@ -91,6 +91,10 @@ __all__ = (
     "SessionData",
     "new_comm"
 )
+
+
+UUID_NIL = uuid.UUID(int=0)
+UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
 
 
 class ResourceClosed(RuntimeError):
@@ -555,6 +559,6 @@ class Communicator[T](abc.ABC):
 
 def new_comm(protocol: Protocol = Protocol.TCP, purpose: Purpose = Purpose.CLIENT, options: CommunicatorOptions = CommunicatorOptions()) -> Communicator:
     """Generate comunicator"""
-    module = importlib.import_module(f"pydtnn.comms.{protocol}.{purpose}")
+    module = importlib.import_module(f"pydtnn.libs.net_queue.{protocol}.{purpose}")
     cls: type[Communicator] = getattr(module, "Communicator")
     return cls(options)

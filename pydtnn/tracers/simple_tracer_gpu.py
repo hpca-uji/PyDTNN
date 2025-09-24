@@ -27,7 +27,7 @@ except (ImportError, ModuleNotFoundError):
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydtnn.libs.mpi.client import Comm as MPI_COMM
+    from pydtnn.libs.pympi.client import Comm as MPI_COMM
 else:
     from types import ModuleType
     MPI_COMM = ModuleType

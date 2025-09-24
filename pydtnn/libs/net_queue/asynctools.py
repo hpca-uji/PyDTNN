@@ -3,16 +3,31 @@
 import warnings
 from collections import abc
 from concurrent import futures
-from concurrent.futures import Future
+from concurrent.futures import Future, ThreadPoolExecutor
 
 
 __all__ = (
+    "thread_func",
+    "thread_queue",
     "merge_futures",
     "future_set_running",
     "future_set_result",
     "future_set_exception",
     "future_warn_exception"
 )
+
+
+def thread_queue(name: str = ""):
+    """Background single-thread task queue"""
+    return ThreadPoolExecutor(max_workers=1, thread_name_prefix=name)
+
+
+def thread_func(func: abc.Callable, /, *args, **kwds):
+    """Background function as future"""
+    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=func.__name__)
+    future = pool.submit(func, *args, **kwds)
+    pool.shutdown(wait=False)
+    return future
 
 
 def future_logger_disable():

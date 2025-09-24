@@ -13,8 +13,8 @@ parser.add_argument("--rank-offset", type=int, default=45)
 
 def main(config: Namespace):
     """Application entrypoint"""
-    from pydtnn.libs.mpi import client as MPI
-    from pydtnn.libs.mpi.protocol import RemoteException
+    from pydtnn.libs.pympi import client as MPI
+    from pydtnn.libs.pympi.protocol import RemoteException
 
     comm = MPI.COMM_WORLD
     size = comm.size

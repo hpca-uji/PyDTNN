@@ -3,7 +3,7 @@
 from uuid import UUID
 from concurrent.futures import Future
 
-from pydtnn.comms import Communicator
+from pydtnn.libs.net_queue import Communicator
 
 
 class Client[T](Communicator[T]):

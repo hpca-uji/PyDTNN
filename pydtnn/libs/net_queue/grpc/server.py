@@ -4,9 +4,9 @@ import grpc
 import traceback
 from collections import abc
 
-from pydtnn.comms import server
-from pydtnn.comms.grpc import Protocol
-from pydtnn.comms import CommunicatorOptions
+from pydtnn.libs.net_queue import server
+from pydtnn.libs.net_queue.grpc import Protocol
+from pydtnn.libs.net_queue import CommunicatorOptions
 
 
 __all__ = (

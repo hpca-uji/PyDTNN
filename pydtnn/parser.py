@@ -68,7 +68,7 @@ available at: '{_scripts_path}'."""
 def _get_mpi_processes():
     try:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
-        from pydtnn.libs.mpi import MPI
+        from pydtnn.libs.pympi import MPI
     except (ImportError, ModuleNotFoundError):
         mpi_processes = 1
     else:
@@ -93,7 +93,7 @@ def _get_gpus_per_node():
 
 
 def _get_comm_protocol():
-    from pydtnn.libs.mpi.rc import proto as PROTOCOL, ssl as SSL
+    from pydtnn.libs.pympi.rc import proto as PROTOCOL, ssl as SSL
     protocol = str(PROTOCOL)
     if PROTOCOL and SSL:
         protocol = f"{protocol}+tls"
@@ -101,12 +101,12 @@ def _get_comm_protocol():
 
 
 def _get_mpi_server():
-    from pydtnn.libs.mpi.rc import addr
+    from pydtnn.libs.pympi.rc import addr
     return addr
 
 
 def _get_mpi_port():
-    from pydtnn.libs.mpi.rc import port
+    from pydtnn.libs.pympi.rc import port
     return port
 
 # NOTE: with @cache it's not possible to extend the class.

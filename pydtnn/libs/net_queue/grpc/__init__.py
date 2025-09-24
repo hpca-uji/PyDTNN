@@ -25,7 +25,7 @@ try:
 finally:
     sys.path.insert(0, _pkg)
 
-from pydtnn import comms  # noqa: E402
+from pydtnn.libs import net_queue as comms  # noqa: E402
 
 __all__ = (
     "Protocol",

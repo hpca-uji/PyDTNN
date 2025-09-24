@@ -2,14 +2,14 @@
 
 import sys as _sys
 
-from pydtnn.libs.mpi import rc
-from pydtnn import comms as _comms
+from pydtnn.libs.pympi import rc
+from pydtnn.libs import net_queue as _comms
 
 
 # Select implementation
 match rc.proto:
     case _comms.Protocol():
-        from pydtnn.libs.mpi import client as _module
+        from pydtnn.libs.pympi import client as _module
 
     case _:
         from mpi4py import MPI as _module

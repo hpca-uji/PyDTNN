@@ -8,11 +8,11 @@ from collections import abc
 from queue import SimpleQueue, Empty
 from concurrent.futures import Future
 
-from pydtnn.comms import client
-from pydtnn.utils import asynctools
-from pydtnn.comms.grpc import Protocol
-from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import CommunicatorOptions, ResourceClosed
+from pydtnn.libs.net_queue import client
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.net_queue.grpc import Protocol
+from pydtnn.libs.net_queue.io_stream import Stream
+from pydtnn.libs.net_queue import CommunicatorOptions, ResourceClosed
 
 
 __all__ = (

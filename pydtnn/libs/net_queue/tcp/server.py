@@ -7,10 +7,10 @@ import warnings
 import selectors
 from concurrent.futures import Future
 
-from pydtnn.comms import server
-from pydtnn.comms.tcp import Protocol
-from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import CommunicatorOptions, ResourceClosed
+from pydtnn.libs.net_queue import server
+from pydtnn.libs.net_queue.tcp import Protocol
+from pydtnn.libs.net_queue.io_stream import Stream
+from pydtnn.libs.net_queue import CommunicatorOptions, ResourceClosed
 
 
 __all__ = (

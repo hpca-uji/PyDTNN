@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from pydtnn.comms import Protocol
+from pydtnn.libs.net_queue import Protocol
 
 
 __all__ = (

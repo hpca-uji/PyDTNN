@@ -20,8 +20,9 @@ import copy
 import paho.mqtt.enums as mqtte_enum
 import paho.mqtt.client as mqtt_client
 
-from pydtnn import comms
-from pydtnn.utils import thread_queue, asynctools
+from pydtnn.libs import net_queue as comms
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.net_queue.asynctools import thread_queue
 
 
 __all__ = (
