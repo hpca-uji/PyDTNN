@@ -279,25 +279,26 @@ The PyDTNN framework comes with a utility launcher called
 
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data`` (MPI). Default: ``sequential``.
-   -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
-   -  ``--enable_gpu``: Enable GPU, use cuDNN library.
+   -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives. Default: True.
+   -  ``--use_mpi_buffers``: Enable the use of MPI buffers. Default: None.
+   -  ``--enable_gpu``: Enable GPU, use cuDNN library. Default: False.
    -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
-      when using a CUDA-aware MPI version.
+      when using a CUDA-aware MPI version. Default: False.
    -  ``--enable_nccl``: Enable the use of the NCCL library for 
       collective communications on GPUs. This option can only be set 
-      with ``--enable_gpu``.
+      with ``--enable_gpu``. Default. False.
    -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
-      performing convolution algorithm.
+      performing convolution algorithm. Default: True.
 
 -  Tracing and profiling parameters:
 
-   -  ``--tracing``: Obtain Simple/Extrae-based traces.
+   -  ``--tracing``: Obtain Simple/Extrae-based traces. Default: False.
    -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
       traces.
-   -  ``--tracer_pmlib_server``: Address of PMlib tracer server.
-   -  ``--tracer_pmlib_port``: Port of PMlib tracer server.
+   -  ``--tracer_pmlib_server``: Address of PMlib tracer server. Default: ``127.0.0.1``.
+   -  ``--tracer_pmlib_port``: Port of PMlib tracer server. Default: 6526.
    -  ``--tracer_pmlib_device``: Port of PMlib tracer device.
-   -  ``--profile``: Obtain cProfile profiles.
+   -  ``--profile``: Obtain cProfile profiles. Default: False.
 
 Example: distributed training of a CNN for the MNIST dataset
 ------------------------------------------------------------
