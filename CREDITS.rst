@@ -8,6 +8,8 @@ The main contributors, in alphabetically order, to PyDTNN are:
 - Jose Ignacio Mestre Miravet <jmiravet@uji.es>
 - Manuel F. Dolz Zaragozá <dolzm@uji.es>
 - Mar Catalán Carbó <catalama@uji.es>
+- Miguel Ángel Prosper Quirós <mprosper@uji.es>
+- Paul Ximo Pluijter Izquierdo <pluijter@uji.es>
 - Sergio Barrachina Mir <barrachi@uji.es>
 
 If you have questions or comments about PyDTNN, please contact:

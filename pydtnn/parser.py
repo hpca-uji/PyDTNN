@@ -120,95 +120,168 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # (argparse.SUPPRESS is used to avoid showing them on the message)
 
         # Model
-        self.add_argument('--model', dest="model_name", type=str, default=None) # "simplecnn"
-        self.add_argument('--batch_size', type=int, default=None)
-        self.add_argument('--global_batch_size', type=int, default=None)
-        self.add_argument('--dtype', type=np_dtype, default=np.float32)
-        self.add_argument('--num_epochs', type=int, default=1)
-        self.add_argument('--steps_per_epoch', type=int, default=0)
-        self.add_argument('--evaluate', dest="evaluate_on_train", default=False, type=bool_lambda)
-        self.add_argument('--evaluate_only', default=False, type=bool_lambda)
-        self.add_argument('--weights_and_bias_filename', type=str, default=None)
-        self.add_argument('--history_file', type=str, default=None)
-        self.add_argument('--shared_storage', default=True, type=bool_lambda)
-        self.add_argument('--model_sync_freq', type=int, default=0)
-        self.add_argument('--model_sync_alg', type=str, default="avg")
-        self.add_argument('--model_sync_participation', type=str, default="all")
-        self.add_argument('--model_sync_min_avail', type=int, default=0)
-        self.add_argument('--initial_model_sync', type=bool_lambda, default=True)
-        self.add_argument('--final_model_sync', type=bool_lambda, default=True)
-        self.add_argument('--tensor_format', type=lambda s: str(s).upper(), default="NHWC")
+        self.add_argument('--model', dest="model_name", type=str, default=None, 
+                          help="Neural network model: \'simplemlp\', \'simplecnn\', \'alexnet\', \'vgg11\', \'vgg16\', etc. Default: \'None\'." )
+        self.add_argument('--batch_size', type=int, default=None, 
+                          help = "Batch size per MPI rank. Or \'batch_size\' or \'global_batch_size\' must have a value different from \'None\' (but not both). Default: ``None``.")
+        self.add_argument('--global_batch_size', type=int, default=None, 
+                          help="Batch size between all MPI ranks. Or \'batch_size\' or \'global_batch_size\' must have a value different from \'None\' (but not both) Default: ``None``.")
+        self.add_argument('--dtype', type=np_dtype, default=np.float32, 
+                          help="Datatype to use: ``float32``, ``float64``. Default: float32.")
+        self.add_argument('--num_epochs', type=int, default=1, 
+                          help="Number of epochs to perform. Default: 1.")
+        self.add_argument('--steps_per_epoch', type=int, default=0, 
+                          help="Trims the training data depending on the given number of steps per epoch. Default: 0, i.e., do not trim.")
+        self.add_argument('--evaluate', dest="evaluate_on_train", default=False, type=bool_lambda, 
+                          help = "Evaluate the model before and after training the model. Default: False.")
+        self.add_argument('--evaluate_only', default=False, type=bool_lambda, 
+                          help="Only evaluate the model. Default: False.")
+        self.add_argument('--weights_and_bias_filename', type=str, default=None, 
+                          help="Load weights and bias from file. Default: None.")
+        self.add_argument('--history_file', type=str, default=None, 
+                          help="Filename to save training loss and metrics.")
+        self.add_argument('--shared_storage', default=True, type=bool_lambda, 
+                          help="If ``True`` ranks assume they share the file system. Default: True.")
+        self.add_argument('--model_sync_freq', type=int, default=0, 
+                          help="Number of batches between model syncronization. The ``0`` value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Default: 0.")
+        self.add_argument('--model_sync_alg', type=str, default="avg", 
+                          help="Aggregation method used to syncronize models: ``avg``, ``wavg`` or ``invwavg``. Default: ``avg``.")
+        self.add_argument('--model_sync_participation', type=str, default="all", 
+                          help="Rank participation to syncronize models: ``all`` or ``avail2all``. Default: ``all``.")
+        self.add_argument('--model_sync_min_avail', type=int, default=0, 
+                          help="Minumun ranks with data required to syncronize models. Default: 0.")
+        self.add_argument('--initial_model_sync', type=bool_lambda, default=True, 
+                          help="Sincronize models on training begin. Default: True.")
+        self.add_argument('--final_model_sync', type=bool_lambda, default=True, 
+                          help="Sincronize models on training end. Default: True.")
+        self.add_argument('--tensor_format', type=lambda s: str(s).upper(), default="NHWC", 
+                          help="Data format to be used: ``NHWC`` or ``NCHW``. Optionally, the ``AUTO`` value sets ``NCHW`` when the option ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``NHWC``.")
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
-        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None) # "mnist"
-        _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda)
-        _ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path)
-        _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path)
-        _ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path)
-        _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1")
-        _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda)
-        _ds_group.add_argument('--flip_images', default=False, type=bool_lambda)
-        _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5)
-        _ds_group.add_argument('--crop_images', default=False, type=bool_lambda)
-        _ds_group.add_argument('--crop_images_size', type=int, default=16)
-        _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5)
-        _ds_group.add_argument('--validation_split', type=factor, default=0.2)
-        _ds_group.add_argument('--resize', type=bool, default=False)
-        _ds_group.add_argument('--resize_dimension', type=int, default=300)
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, 
+                               help="Dataset to train: ``mnist``, ``cifar10``, ``imagenet``, ``raw`` or ``folder``. Default: ``None``.")
+        _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda, 
+                               help="Use synthetic data. Default: False.")
+        _ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path, 
+                               help="Path to the training dataset.")
+        _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path, 
+                               help="Path to the training dataset.")
+        _ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path, 
+                               help="Path to the raw custom dataset.")
+        _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1", 
+                               help="When exporting, the weights of each split, used to determine the number samples. Defualt: 1.")
+        _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda,
+                               help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
+        _ds_group.add_argument('--flip_images', default=False, type=bool_lambda, 
+                               help="Flip horizontally training images. Default: False.")
+        _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5,
+                               help="Probability to flip training images. Default: 0.5.")
+        _ds_group.add_argument('--crop_images', default=False, type=bool_lambda,
+                               help="Crop training images. Default: False.")
+        _ds_group.add_argument('--crop_images_size', type=int, default=16,
+                               help="Size to crop training images. Default: 16.")
+        _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5,
+                               help="Probability to crop training images. Default: 0.5.")
+        _ds_group.add_argument('--validation_split', type=factor, default=0.2, 
+                               help="Split between training and validation data.")
+        _ds_group.add_argument('--resize', default=False, type=bool_lambda, 
+                               help="Resize the images. True if specified.")
+        _ds_group.add_argument('--resize_dimension', type=int, default=300, 
+                               help="New size of the images. Default: 300.")
 
         # Optimization options
         _oo_group = self.add_argument_group("Optimization options")
-        _oo_group.add_argument('--enable_best_of', type=bool_lambda, default=False)
-        _oo_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True)
-        _oo_group.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False)
-        _oo_group.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False)
-        _oo_group.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False)
-        _oo_group.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False)
+        _oo_group.add_argument('--enable_best_of', type=bool_lambda, default=False, 
+        help="Enable the BestOf auto-tuner.")
+        _oo_group.add_argument('--enable_memory_cache', type=bool_lambda, default=True, 
+        help="Enable the memory cache module to use persistent memory.")
+        _oo_group.add_argument('--enable_fused_bn_relu', type=bool_lambda, default=False, 
+                               help="Fuse BatchNormalization and Relu layers. True if specified.")
+        _oo_group.add_argument('--enable_fused_conv_relu', type=bool_lambda, default=False, 
+                               help="Fuse Conv2D and Relu layers. True if specified.")
+        _oo_group.add_argument('--enable_fused_conv_bn', type=bool_lambda, default=False, 
+                               help="Fuse Conv2D and BatchNormalization layers. True if specified.")
+        _oo_group.add_argument('--enable_fused_conv_bn_relu', type=bool_lambda, default=False, 
+                               help="Fuse Conv2D and BatchNormalization and Relu layers. Default: False.")
 
         # Convolution methods
         _cm_group = self.add_argument_group("Convolution options")
-        _cm_group.add_argument('--enable_conv_i2c', type=bool_lambda, default=True)
-        _cm_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False)
-        _cm_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False)
-        _cm_group.add_argument('--enable_conv_direct', type=bool_lambda, default=False)
-        _cm_group.add_argument('--conv_direct_method', type=str, default="")
-        _cm_group.add_argument('--conv_direct_methods_for_best_of', type=str, default="")
+        _cm_group.add_argument('--enable_conv_i2c', type=bool_lambda, default=True, 
+                               help="Use ConvI2C module to realize convolutions in Conv2D layers. True if specified.")
+        _cm_group.add_argument('--enable_conv_gemm', type=bool_lambda, default=False, 
+                               help="Use ConvGemm (implicit gemm) module to realize convolutions in Conv2D layers. True if specified.")
+        _cm_group.add_argument('--enable_conv_winograd', type=bool_lambda, default=False, 
+                               help="Use the Winograd algorithm to realize convolutions in Conv2D layers. True if specified.")
+        _cm_group.add_argument('--enable_conv_direct', type=bool_lambda, default=False, 
+                               help="The ConvDirect module to realize convolutions in Conv2D layers.")
+        _cm_group.add_argument('--conv_direct_method', type=str, default="", 
+                               help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
+        _cm_group.add_argument('--conv_direct_methods_for_best_of', type=str, default="", 
+                               help="ConvDirect modules to compare in ``best_of`` option if specified.")
 
         # Optimizer options
         _op_group = self.add_argument_group("Optimizer options")
-        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd")
-        _op_group.add_argument('--learning_rate', type=float, default=1e-2)
-        _op_group.add_argument('--learning_rate_scaling', default=False, type=bool_lambda)
-        _op_group.add_argument('--momentum', type=float, default=0.9)
-        _op_group.add_argument('--decay', type=float, default=0.0)
-        _op_group.add_argument('--nesterov', default=False, type=bool_lambda)
-        _op_group.add_argument('--beta1', type=float, default=0.99)
-        _op_group.add_argument('--beta2', type=float, default=0.999)
-        _op_group.add_argument('--epsilon', type=float, default=1e-7)
-        _op_group.add_argument('--rho', type=float, default=0.9)
-        _op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy")
-        _op_group.add_argument('--metrics', type=str, default="categorical_accuracy")
+        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd", 
+                               help="Optimizers: ``sgd``, ``rmsprop``, ``adam``, ``nadam``. Default: ``sgd``. ")
+        _op_group.add_argument('--learning_rate', type=float, default=1e-2, 
+                               help="Learning rate. Default: 0.01.")
+        _op_group.add_argument('--learning_rate_scaling', default=False, type=bool_lambda, 
+                               help="Scale learning rate in data parallelism: new\_lr = lr / num\_procs.  True if specified.")
+        _op_group.add_argument('--momentum', type=float, default=0.9, 
+                               help="Decay rate for ``sgd`` optimizer. Default: 0.9. optimizers. Default: 1e-8.")
+        _op_group.add_argument('--decay', type=float, default=0.0, 
+                               help="Decay rate for optimizers. Default: 0.0.")
+        _op_group.add_argument('--nesterov', default=False, type=bool_lambda, 
+                               help="Whether to apply Nesterov momentum. Default: False.")
+        _op_group.add_argument('--beta1', type=float, default=0.99, 
+                               help="Variable for ``adam``, ``nadam`` optimizers. Default: 0.99.")
+        _op_group.add_argument('--beta2', type=float, default=0.999, 
+                               help="Variable for ``adam``, ``nadam`` optimizers. Default: 0.999.")
+        _op_group.add_argument('--epsilon', type=float, default=1e-7, 
+                               help="Variable for ``rmsprop``, ``adam``, ``nadam``. Default=1e-7.")
+        _op_group.add_argument('--rho', type=float, default=0.9, 
+                               help="Variable for ``rmsprop`` optimizers. Default: 0.99.")
+        _op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy", 
+                               help="Loss functions that is evaluated on each trained batch: ``categorical_cross_entropy``, ``binary_cross_entropy``. Default ``categorical_cross_entropy``.")
+        _op_group.add_argument('--metrics', type=str, default="categorical_accuracy", 
+                               help="List of comma-separated metrics that are evaluated on each trained batch: ``categorical_accuracy``, ``categorical_hinge``, ``categorical_mse``, ``categorical_mae``, ``regression_mse``, ``regression_mae``. Default: ``categorical_accuracy``.")
 
         # Learning rate schedulers options
         _lr_group = self.add_argument_group("Learning rate schedulers options")
         _lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
-                            default="early_stopping,reduce_lr_on_plateau,model_checkpoint")
-        _lr_group.add_argument('--warm_up_epochs', type=int, default=5)
-        _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy")
-        _lr_group.add_argument('--early_stopping_patience', type=int, default=10)
-        _lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True)
-        _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy")
-        _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1)
-        _lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5)
-        _lr_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0)
-        _lr_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1)
-        _lr_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5)
-        _lr_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0)
-        _lr_group.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy")
-        _lr_group.add_argument('--stop_at_loss_threshold', type=float, default=0)
-        _lr_group.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy")
-        _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2)
+                            default="early_stopping,reduce_lr_on_plateau,model_checkpoint", 
+                            help="List of comma-separated LR schedulers: ``warm_up``, ``early_stopping``, ``reduce_lr_on_plateau``, ``reduce_lr_every_nepochs``, ``model_checkpoint``. Default: ``early_stopping,reduce_lr_on_plateau,model_checkpoint``.")
+        _lr_group.add_argument('--warm_up_epochs', type=int, default=5, 
+                               help="Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default: 5.")
+        _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy", 
+                               help="Loss metric monitored by early\_stopping LR scheduler. Default: ``val_categorical_cross_entropy``.")
+        _lr_group.add_argument('--early_stopping_patience', type=int, default=10, 
+                               help="Number of epochs with no improvement after which training will be stopped. Default: 10.")
+        _lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True, 
+                               help="Whether to minize the metic. If False, it will maximize. Default: True.")
+        _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy", 
+                               help="Loss metric monitored by reduce\_lr\_on\_plateau LR scheduler. Default: ``val_categorical_cross_entropy``.")
+        _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1, 
+                               help="Factor by which the learning rate will be reduced. new\_lr = lr \* factor. Default: 0.1.")
+        _lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5, 
+                               help="Number of epochs with no improvement after which LR will be reduced. Default: 5.")
+        _lr_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0, 
+                               help="Lower bound on the learning rate. Default: 0.")
+        _lr_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1, 
+                               help="Factor by which the learning rate will be reduced. new\_lr = lr \* factor. Default: 0.1.")
+        _lr_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5, 
+                               help="Number of epochs after which LR will be periodically reduced. Default: 5.")
+        _lr_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0, 
+                               help="Lower bound on the learning rate. Default: 0.")
+        _lr_group.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy", 
+                               help="Loss metric monitored by stop\_at\_loss LR scheduler. Default: ``val_accuracy``.")
+        _lr_group.add_argument('--stop_at_loss_threshold', type=float, default=0, 
+                               help="Metric threshold monitored by stop\_at\_loss LR scheduler. Default: 0.")
+        _lr_group.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy", 
+                               help="Loss metric monitored by model\_checkpoint LR scheduler. Default: ``val_categorical_cross_entropy``")
+        _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2, 
+                               help="Frequency (in epochs) at which the model weights and bias will be saved by the model\_checkpoint LR scheduler. Default: 2.")
 
         # Parallel execution options
         _pe_group = self.add_argument_group("Parallel execution options")
