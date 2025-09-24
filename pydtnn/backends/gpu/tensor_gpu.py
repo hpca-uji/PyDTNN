@@ -18,17 +18,16 @@
 #
 
 import ctypes
-from typing import TypeVar, Self, TYPE_CHECKING
+from typing import TypeVar, Self
 
 from enum import StrEnum, auto
 
 import numpy as np
 from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
 
-if TYPE_CHECKING:
+try:
     # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
-try:
     from .libs import libcudnn as cudnn
 except OSError:
     pass
