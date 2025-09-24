@@ -26,13 +26,13 @@ class Communicator(Protocol[socket.socket], server.Server[socket.socket]):
         super().__init__(options)
 
         # TCP
-        self._comm = socket.create_server(self._options.netloc, reuse_port=True)
+        self._comm = socket.create_server(self.options.netloc, reuse_port=True)
 
-        if self._options.security:
-            if self._options.security.cert is None or self._options.security.key is None:
+        if self.options.security:
+            if self.options.security.cert is None or self.options.security.key is None:
                 raise RuntimeError("SSL certificate or key not provided")
-            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self._options.security.cert)
-            context.load_cert_chain(certfile=self._options.security.cert, keyfile=self._options.security.key)
+            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self.options.security.cert)
+            context.load_cert_chain(certfile=self.options.security.cert, keyfile=self.options.security.key)
             self._comm = context.wrap_socket(self._comm, server_side=True, do_handshake_on_connect=True)
 
         self._selector.register(self._comm, selectors.EVENT_READ, self._new_connection)
@@ -72,7 +72,7 @@ class Communicator(Protocol[socket.socket], server.Server[socket.socket]):
         state = self._states[peer]
 
         try:
-            data = comm.recv(self._options.connection.max_size)
+            data = comm.recv(self.options.connection.max_size)
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             return
 
@@ -83,7 +83,7 @@ class Communicator(Protocol[socket.socket], server.Server[socket.socket]):
 
         state.get_write(data)
 
-        if self._options.security and (pending := comm.pending()):  # type: ignore
+        if self.options.security and (pending := comm.pending()):  # type: ignore
             data = comm.recv(pending)
             state.get_write(data)
 

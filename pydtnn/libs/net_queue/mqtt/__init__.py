@@ -51,15 +51,15 @@ class Protocol[T](comms.Communicator[T]):
         # MQTT
         self._client = mqtt_client.Client(
             callback_api_version=mqtte_enum.CallbackAPIVersion.VERSION2,
-            client_id=self._id.hex,
+            client_id=self.id.hex,
             protocol=self._protocol,
             transport=self._transport  # type: ignore
         )
 
-        if self._options.security:
-            self._client.tls_set(ca_certs=str(self._options.security.cert) if self._options.security.cert else None)
+        if self.options.security:
+            self._client.tls_set(ca_certs=str(self.options.security.cert) if self.options.security.cert else None)
 
-        self._client.connect(host=self._options.netloc.host, port=self._options.netloc.port)
+        self._client.connect(host=self.options.netloc.host, port=self.options.netloc.port)
         self._client.loop_start()
 
     def _start_loop(self) -> None:

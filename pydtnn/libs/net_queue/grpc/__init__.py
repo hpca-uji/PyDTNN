@@ -39,7 +39,7 @@ class Protocol[T](comms.Communicator[T]):
     def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Initialize protocol"""
         super().__init__(options)
-        self._grpc_options = {"grpc.max_receive_message_length": self._options.connection.max_size, "grpc.max_send_message_length": self._options.connection.max_size}
+        self._grpc_options = {"grpc.max_receive_message_length": self.options.connection.max_size, "grpc.max_send_message_length": self.options.connection.max_size}
 
     def _put_flush(self, peer: uuid.UUID) -> abc.Generator[abc.Buffer]:
         """Transforms state to message"""

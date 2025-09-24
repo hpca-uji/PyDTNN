@@ -35,14 +35,14 @@ class Communicator(Protocol[str], server.Server[str]):
         self._server.add_registered_method_handlers(service_name="grpc", method_handlers={"comm": handler})  # type: ignore
 
         config: abc.MutableMapping = {
-            "address": str(self._options.netloc)
+            "address": str(self.options.netloc)
         }
 
-        if self._options.security:
-            if self._options.security.cert is None or self._options.security.key is None:
+        if self.options.security:
+            if self.options.security.cert is None or self.options.security.key is None:
                 raise RuntimeError("SSL certificate or key not provided")
             config["server_credentials"] = grpc.ssl_server_credentials([
-                (self._options.security.key.read_bytes(), self._options.security.cert.read_bytes()),  # type: ignore
+                (self.options.security.key.read_bytes(), self.options.security.cert.read_bytes()),  # type: ignore
             ])
             self._server.add_secure_port(**config)
         else:

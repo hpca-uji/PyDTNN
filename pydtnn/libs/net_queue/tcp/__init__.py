@@ -65,7 +65,7 @@ class Protocol[T](comms.Communicator[T]):
 
     def _handle_control_socket(self, sock: socket.socket, mask):
         """Handle selector notification"""
-        if len(sock.recv(self._options.connection.max_size)) == 0:
+        if len(sock.recv(self.options.connection.max_size)) == 0:
             return CONTROL_STOP
 
         # Handle tasks
