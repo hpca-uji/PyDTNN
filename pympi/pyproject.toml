@@ -1,0 +1,14 @@
+[project]
+name = "pympi"
+version = "0.1.0"
+description = "Simple Python-based MPI implementation"
+readme = "README.md"
+authors = [
+    {name = "Miguel Ángel Prosper", email = "mprosper@uji.es"}
+]
+requires-python = ">=3.13"
+dependencies = [
+    "net-queue>=0.1.0",
+    "bidict>=0.23.1",
+    "intbitset>=4.0.0",
+]

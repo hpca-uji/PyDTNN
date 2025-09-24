@@ -26,7 +26,7 @@ from .tracer import Tracer
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pydtnn.libs.pympi.client import Comm as MPI_COMM
+    from pympi.client import Comm as MPI_COMM
 else:
     from types import ModuleType
     MPI_COMM = ModuleType
