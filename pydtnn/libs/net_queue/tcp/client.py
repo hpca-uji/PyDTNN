@@ -27,11 +27,11 @@ class Communicator(Protocol[socket.socket], client.Client[socket.socket]):
         super().__init__(copy.replace(options, workers=1))
 
         # TCP
-        self._comm = socket.create_connection(self._options.netloc)
+        self._comm = socket.create_connection(self.options.netloc)
 
-        if self._options.security:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self._options.security.cert)
-            self._comm = context.wrap_socket(self._comm, server_hostname=self._options.netloc.host)
+        if self.options.security:
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self.options.security.cert)
+            self._comm = context.wrap_socket(self._comm, server_hostname=self.options.netloc.host)
 
         self._comm.setblocking(False)
 
@@ -67,7 +67,7 @@ class Communicator(Protocol[socket.socket], client.Client[socket.socket]):
         state = self._states[peer]
 
         try:
-            data = comm.recv(self._options.connection.max_size)
+            data = comm.recv(self.options.connection.max_size)
         except (BlockingIOError, ssl.SSLWantReadError, ssl.SSLWantWriteError):
             return
 
@@ -78,7 +78,7 @@ class Communicator(Protocol[socket.socket], client.Client[socket.socket]):
 
         state.get_write(data)
 
-        if self._options.security and (pending := comm.pending()):  # type: ignore
+        if self.options.security and (pending := comm.pending()):  # type: ignore
             data = comm.recv(pending)
             state.get_write(data)
 

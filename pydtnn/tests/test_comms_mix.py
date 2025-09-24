@@ -4,8 +4,9 @@ import sys
 import time
 import enum
 import random
+from pydtnn import utils
 from threading import Thread
-from pydtnn.libs import net_queue as comms, utils
+from pydtnn.libs import net_queue as comms
 from argparse import ArgumentParser, Namespace
 
 
@@ -20,6 +21,7 @@ class Peer(enum.StrEnum):
 
 # Argument pasrser
 parser = ArgumentParser(prog="test_comms_mix", description="Communications mix IOPS test")
+parser.add_argument("proto", choices=list(comms.Protocol))
 parser.add_argument("peer", choices=list(Peer))
 parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--delay", type=float, default=0.0)
@@ -52,8 +54,8 @@ def print_stats(config: Namespace, sizes: list[int], time: float) -> None:
     size = sum(sizes)
     print(f"Time:       {time:.1f}s")
     print(f"Data:       {utils.convert_size(len(sizes))} @ {utils.convert_size(size)}B")
-    print(f"Transfer:   {utils.convert_size(size)}B @ {utils.convert_size(size * 8 / time):>5}bps")
-    print(f"Operations: {utils.convert_size(ops)} @ {utils.convert_size(ops / time)}IOPS")
+    print(f"Transfer:   {utils.convert_size(size)}B @ {utils.convert_size(size * 8 / time):>5}bps")  # type: ignore
+    print(f"Operations: {utils.convert_size(ops)} @ {utils.convert_size(ops / time)}IOPS")  # type: ignore
 
 
 def server(config: Namespace):
@@ -67,7 +69,7 @@ def server(config: Namespace):
     messages.append(buffer)
     random.shuffle(messages)
 
-    with comms.Server() as server:
+    with comms.new(protocol=config.proto, purpose=comms.Purpose.SERVER) as server:
         get_thread = Thread(target=get, args=(server, messages * config.clients))
         put_thread = Thread(target=put, args=(server, messages))
         for _ in range(config.clients):
@@ -97,7 +99,7 @@ def client(config: Namespace):
     random.shuffle(messages)
 
     time.sleep(config.start_delay)
-    with comms.Client() as client:
+    with comms.new(protocol=config.proto, purpose=comms.Purpose.CLIENT) as client:
         get_thread = Thread(target=get, args=(client, messages))
         put_thread = Thread(target=put, args=(client, messages))
         client.put(None)

@@ -21,6 +21,7 @@ class Mode(enum.StrEnum):
 
 # Argument pasrser
 parser = ArgumentParser(prog="test_comms_api", description="Communications API test")
+parser.add_argument("proto", choices=list(comms.Protocol))
 parser.add_argument("mode", choices=list(Mode))
 parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--size", type=int, default=1)
@@ -30,7 +31,7 @@ def server(config: Namespace):
     """Server mode"""
     clients = set()
     server_msg = MSG
-    server = comms.Server()
+    server = comms.new(protocol=config.proto, purpose=comms.Purpose.SERVER)
 
     for _ in range(config.size):
         client_msg = server.get()
@@ -52,7 +53,7 @@ def client(config: Namespace):
     """Client mode"""
     client_msg = MSG
     time.sleep(config.start_delay)
-    client = comms.Client()
+    client = comms.new(protocol=config.proto, purpose=comms.Purpose.CLIENT)
 
     print(f"{client}-c2s: {client_msg}")
     future = client.put(client_msg)

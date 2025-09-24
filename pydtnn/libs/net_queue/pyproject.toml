@@ -1,0 +1,11 @@
+[project]
+name = "net-queue"
+version = "0.1.0"
+description = "Easy & fast network communications using queues"
+readme = "README.md"
+author = "Miguel Ángel Prosper"
+email = "mprosper@uji.es"
+requires-python = ">=3.13"
+dependencies = [
+    "bidict>=0.23.1",
+]

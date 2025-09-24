@@ -111,7 +111,7 @@ class Server:
                 pass
             else:
                 assert mpi_rc.proto, "MPI comunication protocol not defined!"
-                comm = self.__dict__["_comm"] = comms.new_comm(protocol=mpi_rc.proto, purpose=comms.Purpose.SERVER, options=self._comm_options)
+                comm = self.__dict__["_comm"] = comms.new(protocol=mpi_rc.proto, purpose=comms.Purpose.SERVER, options=self._comm_options)
         return comm
 
     def __enter__(self):

@@ -301,7 +301,7 @@ class Comm:
         state = mpi_comm.RankInit(rank=self.rank)
         try:
             assert mpi_rc.proto, "MPI comunication protocol not defined!"
-            comm = comms.new_comm(protocol=mpi_rc.proto, purpose=comms.Purpose.CLIENT, options=self._comm_options)
+            comm = comms.new(protocol=mpi_rc.proto, purpose=comms.Purpose.CLIENT, options=self._comm_options)
             comm.put(state)
             while True:
                 response = comm.get().obj

@@ -37,13 +37,13 @@ class Communicator(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.
 
         # gRPC
         config: abc.MutableMapping = {
-            "target": str(self._options.netloc),
+            "target": str(self.options.netloc),
             "options": list(self._grpc_options.items()),
             "compression": self._compression
         }
 
-        if self._options.security:
-            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self._options.security.cert.read_bytes() if self._options.security.cert else None)
+        if self.options.security:
+            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self.options.security.cert.read_bytes() if self.options.security.cert else None)
             self._channel = grpc.secure_channel(**config)
         else:
             self._channel = grpc.insecure_channel(**config)

@@ -62,6 +62,7 @@ import enum
 import typing
 import importlib
 import threading
+import dataclasses
 from pathlib import Path
 from typing import NamedTuple
 from dataclasses import dataclass
@@ -89,7 +90,7 @@ __all__ = (
     "ResourceClosed",
     "Communicator",
     "SessionData",
-    "new_comm"
+    "new"
 )
 
 
@@ -169,6 +170,7 @@ class SecurityOptions:
 @dataclass(order=False, slots=True, frozen=True)
 class CommunicatorOptions:
     """Comunicatior options"""
+    id: uuid.UUID = dataclasses.field(default_factory=uuid.uuid4)
     netloc: NetworkLocation = NetworkLocation()
     workers: int = 1
     connection: ConnectionOptions = ConnectionOptions()
@@ -309,12 +311,11 @@ class Communicator[T](abc.ABC):
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Communicator initialization"""
         super().__init__()
-        self._options = options
+        self.options = options
 
         self._close_init = threading.Lock()
         self._close_done = threading.Event()
 
-        self._id = uuid.uuid4()
         self._lock = threading.Condition()
         self._get_events = SimpleQueue[uuid.UUID]()
 
@@ -323,12 +324,17 @@ class Communicator[T](abc.ABC):
 
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
 
-        self._pool = ThreadPoolExecutor(max_workers=self._options.workers, thread_name_prefix=f"{thread_prefix}.worker")
+        self._pool = ThreadPoolExecutor(max_workers=self.options.workers, thread_name_prefix=f"{thread_prefix}.worker")
         self._put_queue = thread_queue(f"{thread_prefix}.put")
+
+    @property
+    def id(self) -> uuid.UUID:
+        """Communicator identifier"""
+        return self.options.id
 
     def _new_session_data(self) -> SessionData:
         """Generate new connection state data"""
-        return SessionData(options=self._options.connection)
+        return SessionData(options=self.options.connection)
 
     def _session_ini(self, peer: uuid.UUID) -> None:
         """Send session ini message"""
@@ -337,7 +343,7 @@ class Communicator[T](abc.ABC):
             raise RuntimeError("Sending session ini on writable stream")
         state.state |= ConnectionState.WRITABLE
         stream = Stream()
-        stream.write(self._id.bytes)
+        stream.write(self.id.bytes)
         self._put(stream, peer)
 
     def _session_fin(self, peer: uuid.UUID) -> None:
@@ -358,7 +364,7 @@ class Communicator[T](abc.ABC):
         comm = self._comms[peer]
 
         # Set peer in state
-        if stream.nbytes != len(self._id.bytes):
+        if stream.nbytes != len(self.id.bytes):
             raise RuntimeError(f"Ini handshake message corrupted (got: {stream.nbytes} bytes)")
         id = uuid.UUID(bytes=stream.read().tobytes())
 
@@ -477,7 +483,7 @@ class Communicator[T](abc.ABC):
 
         # Exit signaled
         if peer == UUID_MAX:
-            raise ResourceClosed(self._id)
+            raise ResourceClosed(self.id)
 
         state = self._states[peer]
         get_queue = state.get_queue
@@ -488,7 +494,7 @@ class Communicator[T](abc.ABC):
         self._session_cleanup(peer)
 
         with stream:
-            obj = self._options.serialization.load(stream)
+            obj = self.options.serialization.load(stream)
 
         return Message(peer=peer, obj=obj)
 
@@ -504,7 +510,7 @@ class Communicator[T](abc.ABC):
             future = Future[None]()
             asynctools.future_set_exception(future, ResourceClosed(peer))
         if self._closed:
-            asynctools.future_set_exception(future, ResourceClosed(self._id))
+            asynctools.future_set_exception(future, ResourceClosed(self.id))
         return future
 
     def put(self, obj, *peers: uuid.UUID) -> Future[None]:
@@ -514,7 +520,7 @@ class Communicator[T](abc.ABC):
                 peers = tuple(self._comms)
 
         futures = list[Future[None]]()
-        with self._options.serialization.dump(obj) as stream:
+        with self.options.serialization.dump(obj) as stream:
             for peer in peers:
                 future = self._put(stream.copy(), peer)
                 futures.append(future)
@@ -557,7 +563,7 @@ class Communicator[T](abc.ABC):
             pass
 
 
-def new_comm(protocol: Protocol = Protocol.TCP, purpose: Purpose = Purpose.CLIENT, options: CommunicatorOptions = CommunicatorOptions()) -> Communicator:
+def new(protocol: Protocol = Protocol.TCP, purpose: Purpose = Purpose.CLIENT, options: CommunicatorOptions = CommunicatorOptions()) -> Communicator:
     """Generate comunicator"""
     module = importlib.import_module(f"pydtnn.libs.net_queue.{protocol}.{purpose}")
     cls: type[Communicator] = getattr(module, "Communicator")

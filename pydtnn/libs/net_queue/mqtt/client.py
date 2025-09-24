@@ -29,7 +29,7 @@ class Communicator(Protocol[str], client.Client[str]):
         super().__init__(options)
 
         # MQTT
-        self._comm = self._id.hex
+        self._comm = self.id.hex
         self._register_handler(topic=f"s2c/{self._comm}", handler=self._handle_message)
 
         self._connection_ini(self._comm)
@@ -61,7 +61,7 @@ class Communicator(Protocol[str], client.Client[str]):
         state.put_flush_queue()
         for view in state.put_flush_buffer():
             with view:
-                self._publish(f"c2s/{self._id.hex}", bytes(view))
+                self._publish(f"c2s/{self.id.hex}", bytes(view))
                 size += len(view)
         self._put_commit(peer, size)
 
