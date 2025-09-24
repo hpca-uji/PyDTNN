@@ -1,5 +1,7 @@
 """Abstract encryption"""
 
+# TODO: Migrate to pyfhel
+
 import math
 import operator
 import itertools

@@ -24,9 +24,9 @@ def main(config: Namespace, args: abc.Sequence[str]) -> None:
     """Application entrypoint"""
 
     for rank in range(config.size):
-        environment = os.environ.copy()
-        environment.update({"PMI_RANK": str(rank), "PMI_SIZE": str(config.size)})
-        subprocess.Popen(args=args, env=environment)
+        environ = os.environ.copy()
+        environ.update({"PMI_RANK": str(rank), "PMI_SIZE": str(config.size)})
+        subprocess.Popen(args=args, env=environ)
 
 
 if __name__ == "__main__":
