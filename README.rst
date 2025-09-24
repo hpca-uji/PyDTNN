@@ -93,37 +93,37 @@ Optionally, if you are going to use CUDA, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install -r requirements_cuda_1.txt
-    $ pip install -r requirements_cuda_2.txt
+    $ pip install -r requirements_nvidia.txt
+    $ pip install -r requirements_cuda.txt
 
 Optionally, if you are going to use TCP, you should enable the protocol with::
 
-    $ export PYDTNN_COMM=tcp
+    $ export PYMPI_PROTO=tcp
 
 Optionally, if you are going to use gRPC, you should install the required Python
 packages, and enable the protocol with::
 
     $ pip install -r requirements_grpc.txt
-    $ export PYDTNN_COMM=grpc
+    $ export PYMPI_PROTO=grpc
 
 Optionally, if you are going to use MQTT, you should have
 installed a MQTT broker server, install the required Python
 packages, and enable the protocol with::
 
     $ pip install -r requirements_mqtt.txt
-    $ export PYDTNN_COMM=mqtt
+    $ export PYMPI_PROTO=mqtt
     
 Optionally, if you are going to use MQTT, you should have installed a MQTT broker
 server, install the required Python packages, and enable the protocol with::
 
     $ pip install -r requirements_mqtt.txt
-    $ export PYDTNN_COMM=mqtt
+    $ export PYMPI_PROTO=mqtt
 
-Optionally, if you are going to use SSL/TLS, you should enable the protocol with::
+Optionally, if you are going to use SSL/TLS, you should enable the transport with::
 
-    $ export PYDTNN_COMM_SSL=yes
-    $ export PYDTNN_COMM_SSL_CERT=comms/ssl/key.pem  # server private key
-    $ export PYDTNN_COMM_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
+    $ export PYMPI_SSL=yes
+    $ export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
+    $ export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
 
 Launcher options
 ----------------
