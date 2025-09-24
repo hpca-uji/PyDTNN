@@ -134,10 +134,10 @@ The PyDTNN framework comes with a utility launcher called
 -  Model parameters:
 
    -  ``--model``: Neural network model: ``simplemlp``, ``simplecnn``,
-      ``alexnet``, ``vgg11``, ``vgg16``, etc. Default: ``simplecnn``.
-   -  ``--batch_size``: Batch size per MPI rank. Default: 64.
-   -  ``--global_batch_size``: Batch size between all MPI ranks.
-   -  ``--dtype``: Datatype to use: ``float32``, ``float64``.
+      ``alexnet``, ``vgg11``, ``vgg16``, etc. Default: ``None``.
+   -  ``--batch_size``: Batch size per MPI rank. Default: ``None``.
+   -  ``--global_batch_size``: Batch size between all MPI ranks. Default: ``None``.
+   -  ``--dtype``: Datatype to use: ``float32``, ``float64``. Default: float32.
    -  ``--num_epochs``: Number of epochs to perform. Default: 1.
    -  ``--steps_per_epoch``: Trims the training data depending on the
       given number of steps per epoch. Default: 0, i.e., do not trim.
@@ -145,9 +145,9 @@ The PyDTNN framework comes with a utility launcher called
       model. Default: False.
    -  ``--evaluate_only``: Only evaluate the model. Default: False.
    -  ``--weights_and_bias_filename``: Load weights and bias from file.
-      Default: None.
+      Default: ``None``.
    -  ``--history_file``: Filename to save training loss and metrics.
-   -  ``--shared_storage``: If true ranks assume they share the file
+   -  ``--shared_storage``: If ``True`` ranks assume they share the file
       system. Default: True.
    -  ``--model_sync_freq``: Number of batches between model syncronization.
       The ``0`` value syncronizes gradients every batch. Positive values
@@ -158,45 +158,49 @@ The PyDTNN framework comes with a utility launcher called
       ``all`` or ``avail2all``. Default: ``all``.
    -  ``--model_sync_min_avail``: Minumun ranks with data required to
       syncronize models. Default: 0.
+   -  ``--initial_model_sync``: Sincronize models on training begin. Default: True.
    -  ``--final_model_sync``: Sincronize models on training end. Default: True.
    -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
-      Optionally, the ``AUTO`` value sets ``NCHW`` when the option 
-      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``AUTO``.
+      Optionally, the ``AUTO`` value sets ``NCHW`` when the option
+      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``NHWC``.
 
 -  Dataset parameters:
 
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
-      ``imagenet`` or ``raw``.
+      ``imagenet``, ``raw`` or ``folder``. Default: ``None``.
    -  ``--use_synthetic_data``: Use synthetic data. Default: False.
    -  ``--dataset_train_path``: Path to the training dataset.
    -  ``--dataset_test_path``: Path to the training dataset.
    -  ``--dataset_raw_path``: Path to the raw custom dataset.
    -  ``--dataset_export_split_weights``: When exporting, the weights
-      of each split, used to determine the number samples.
+      of each split, used to determine the number samples. Default: 1.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.
    -  ``--flip_images``: Flip horizontally training images. Default:
-      False
+      False.
    -  ``--flip_images_prob``: Probability to flip training images.
-      Default: 0.5
-   -  ``--crop_images``: Crop training images. Default: False
-   -  ``--crop_images_size``: Size to crop training images Default: 16
+      Default: 0.5.
+   -  ``--crop_images``: Crop training images. Default: False.
+   -  ``--crop_images_size``: Size to crop training images. Default: 16.
    -  ``--crop_images_prob``: Probability to crop training images.
-      Default: 0.5
+      Default: 0.5.
    -  ``--validation_split``: Split between training and validation
       data.
+   -  ``--resize``: Resize the images. True if specified.
+   -  ``--resize_dimension``: New size of the images. Default: 300.
+
 
 - Optimization -  Optimizer parameters:
    - ``--enable_best_of``: Enable the BestOf auto-tuner.
    - ``--enable_memory_cache``: Enable the memory cache module to use
       persistent memory.
    -  ``--enable_fused_bn_relu``: Fuse BatchNormalization and Relu
-      layers. True if specified
+      layers. True if specified.
    -  ``--enable_fused_conv_relu``: Fuse Conv2D and Relu layers.
-      True if specified
+      True if specified.
    -  ``--enable_fused_conv_bn``: Fuse Conv2D and BatchNormalization
-      layers. True if specified
+      layers. True if specified.
    -  ``--enable_fused_conv_bn_relu``: Fuse Conv2D and
       BatchNormalization and Relu layers. Default: False.
 
@@ -218,10 +222,10 @@ The PyDTNN framework comes with a utility launcher called
 -  Optimizer parameters:
 
    -  ``--optimizer``: Optimizers: ``sgd``, ``rmsprop``, ``adam``,
-      ``nadam``. Default: ``sgd``.
+      ``nadam``. Default: ``sgd``. 
    -  ``--learning_rate``: Learning rate. Default: 0.01.
    -  ``--learning_rate_scaling``: Scale learning rate in data
-      parallelism: new\_lr = lr / num\_procs.
+      parallelism: new\_lr = lr / num\_procs.  True if specified.
    -  ``--momentum``: Decay rate for ``sgd`` optimizer. Default: 0.9.
       optimizers. Default: 1e-8.
    -  ``--decay``: Decay rate for optimizers. Default: 0.0.
@@ -230,56 +234,57 @@ The PyDTNN framework comes with a utility launcher called
       0.99.
    -  ``--beta2``: Variable for ``adam``, ``nadam`` optimizers. Default:
       0.999.
-   -  ``--epsilon``: Variable for ``rmsprop``, ``adam``, ``nadam``
+   -  ``--epsilon``: Variable for ``rmsprop``, ``adam``, ``nadam``. Default=1e-7.
    -  ``--rho``: Variable for ``rmsprop`` optimizers. Default: 0.99.
    -  ``--loss_func``: Loss functions that is evaluated on each trained
-      batch: ``categorical_cross_entropy``, ``binary_cross_entropy``.
+      batch: ``categorical_cross_entropy``, ``binary_cross_entropy``. Default ``categorical_cross_entropy``.
    -  ``--metrics``: List of comma-separated metrics that are evaluated
       on each trained batch:
       ``categorical_accuracy``, ``categorical_hinge``, ``categorical_mse``,
-      ``categorical_mae``, ``regression_mse``, ``regression_mae``.
+      ``categorical_mae``, ``regression_mse``, ``regression_mae``. Default: ``categorical_accuracy``.
 
 -  Learning rate schedulers parameters:
 
    -  ``--lr_schedulers``: List of comma-separated LR schedulers:
       ``warm_up``, ``early_stopping``, ``reduce_lr_on_plateau``,
-      ``reduce_lr_every_nepochs``, ``model_checkpoint``
+      ``reduce_lr_every_nepochs``, ``model_checkpoint``. 
+      Default: ``early_stopping,reduce_lr_on_plateau,model_checkpoint``.
    -  ``--warm_up_batches``: Number of batches (ramp up) that the LR is
-      scaled up from 0 until LR.
+      scaled up from 0 until LR. Default: 5.
    -  ``--early_stopping_metric``: Loss metric monitored by
-      early\_stopping LR scheduler.
+      early\_stopping LR scheduler. Default: ``val_categorical_cross_entropy``.
    -  ``--early_stopping_patience``: Number of epochs with no
-      improvement after which training will be stopped.
+      improvement after which training will be stopped. Default: 10.
    -  ``--early_stopping_minimize``: Whether to minize the metic.
       If False, it will maximize. Default: True.
    -  ``--reduce_lr_on_plateau_metric``: Loss metric monitored by
-      reduce\_lr\_on\_plateau LR scheduler.
+      reduce\_lr\_on\_plateau LR scheduler. Default: ``val_categorical_cross_entropy``.
    -  ``--reduce_lr_on_plateau_factor``: Factor by which the learning
-      rate will be reduced. new\_lr = lr \* factor.
+      rate will be reduced. new\_lr = lr \* factor. Default: 0.1.
    -  ``--reduce_lr_on_plateau_patience``: Number of epochs with no
-      improvement after which LR will be reduced.
+      improvement after which LR will be reduced. Default: 5.
    -  ``--reduce_lr_on_plateau_min_lr``: Lower bound on the learning
-      rate.
+      rate. Default: 0.
    -  ``--reduce_lr_every_nepochs_factor``: Factor by which the learning
-      rate will be reduced. new\_lr = lr \* factor.
+      rate will be reduced. new\_lr = lr \* factor. Default: 0.1.
    -  ``--reduce_lr_every_nepochs_nepochs``: Number of epochs after
-      which LR will be periodically reduced.
+      which LR will be periodically reduced. Default: 5.
    -  ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning
-      rate.
+      rate. Default: 0.
    - ``stop_at_loss_metric``: Loss metric monitored by
-      stop\_at\_loss LR scheduler.
+      stop\_at\_loss LR scheduler. Default: ``val_accuracy``.
    - ``stop_at_loss_threshold``: Metric threshold monitored by
-      stop\_at\_loss LR scheduler.
+      stop\_at\_loss LR scheduler. Default: 0.
    -  ``--model_checkpoint_metric``: Loss metric monitored by
-      model\_checkpoint LR scheduler.
+      model\_checkpoint LR scheduler. Default: ``val_categorical_cross_entropy``
    -  ``--model_checkpoint_save_freq``: Frequency (in epochs) at which
       the model weights and bias will be saved by the model\_checkpoint
-      LR scheduler.
+      LR scheduler. Default: 2.
 
 -  Parallelization and other performance-related parameters:
 
    -  ``--parallel``: Data parallelization modes: ``sequential``,
-      ``data``. Default: ``sequential``.
+      ``data`` (MPI). Default: ``sequential``.
    -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives.
    -  ``--enable_gpu``: Enable GPU, use cuDNN library.
    -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
