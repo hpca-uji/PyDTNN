@@ -56,7 +56,6 @@
 # expiration periods could be long and client reconnections could be
 # allowed, enabling MQTT-like reliability without the cost.
 
-import os
 import abc
 import uuid
 import enum
@@ -75,7 +74,7 @@ from bidict import bidict
 
 from pydtnn.utils import asynctools
 from pydtnn.utils.asynctools import merge_futures
-from pydtnn.utils import UUID_MAX, UUID_NIL, parse_bool, thread_queue
+from pydtnn.utils import UUID_MAX, UUID_NIL, thread_queue
 from pydtnn.utils.io_stream import Packer, Serializer, Stream, byteview
 
 
@@ -84,17 +83,13 @@ __all__ = (
     "ConnectionOptions",
     "CommunicatorOptions",
     "SerializationOptions",
-    "PROTOCOL",
-    "SSL",
-    "SSL_KEY",
-    "SSL_CERT",
     "Protocol",
+    "Purpose",
     "Message",
     "ResourceClosed",
     "Communicator",
     "SessionData",
-    "Server",
-    "Client"
+    "new_comm"
 )
 
 
@@ -107,6 +102,12 @@ class Protocol(enum.StrEnum):
     GRPC = enum.auto()
     MQTT = enum.auto()
     TCP = enum.auto()
+
+
+class Purpose(enum.StrEnum):
+    """Comunication purpose"""
+    SERVER = enum.auto()
+    CLIENT = enum.auto()
 
 
 @dataclass(slots=True, frozen=True)
@@ -155,8 +156,8 @@ class SerializationOptions:
 
 
 @dataclass(order=False, slots=True, frozen=True)
-class SSLOptions:
-    """SSL options"""
+class SecurityOptions:
+    """Security options"""
     key: Path | None = None
     cert: Path | None = None
 
@@ -167,8 +168,8 @@ class CommunicatorOptions:
     netloc: NetworkLocation = NetworkLocation()
     workers: int = 1
     connection: ConnectionOptions = ConnectionOptions()
-    serial: SerializationOptions = SerializationOptions()
-    ssl: SSLOptions | None = None
+    serialization: SerializationOptions = SerializationOptions()
+    security: SecurityOptions | None = None
 
 
 class SessionData:
@@ -483,7 +484,7 @@ class Communicator[T](abc.ABC):
         self._session_cleanup(peer)
 
         with stream:
-            obj = self._options.serial.load(stream)
+            obj = self._options.serialization.load(stream)
 
         return Message(peer=peer, obj=obj)
 
@@ -509,7 +510,7 @@ class Communicator[T](abc.ABC):
                 peers = tuple(self._comms)
 
         futures = list[Future[None]]()
-        with self._options.serial.dump(obj) as stream:
+        with self._options.serialization.dump(obj) as stream:
             for peer in peers:
                 future = self._put(stream.copy(), peer)
                 futures.append(future)
@@ -552,38 +553,8 @@ class Communicator[T](abc.ABC):
             pass
 
 
-# Exports
-# PROTOCOL
-PROTOCOL: Protocol | None
-if _env_protocol := os.environ.get("PYDTNN_COMM"):
-    PROTOCOL = Protocol(_env_protocol)
-else:
-    PROTOCOL = None
-
-# SSL
-SSL = parse_bool(os.environ.get("PYDTNN_COMM_SSL"))
-
-if _ssl_key := os.environ.get("PYDTNN_COMM_SSL_KEY"):
-    SSL_KEY = Path(_ssl_key).resolve()
-else:
-    SSL_KEY = None
-
-if _ssl_cert := os.environ.get("PYDTNN_COMM_SSL_CERT"):
-    SSL_CERT = Path(_ssl_cert).resolve()
-else:
-    SSL_CERT = None
-
-# Proxy
-Server: type[Communicator]
-Client: type[Communicator]
-
-
-def __getattr__(key):
-    """Proxy all attributes to implementation"""
-    if not PROTOCOL:
-        raise AttributeError(key)
-    try:
-        module = importlib.import_module(f"pydtnn.comms.{PROTOCOL}.{key.lower()}")
-    except ModuleNotFoundError:
-        raise AttributeError(key)
-    return getattr(module, key)
+def new_comm(protocol: Protocol = Protocol.TCP, purpose: Purpose = Purpose.CLIENT, options: CommunicatorOptions = CommunicatorOptions()) -> Communicator:
+    """Generate comunicator"""
+    module = importlib.import_module(f"pydtnn.comms.{protocol}.{purpose}")
+    cls: type[Communicator] = getattr(module, "Communicator")
+    return cls(options)

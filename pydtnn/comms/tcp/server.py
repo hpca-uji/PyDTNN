@@ -14,11 +14,11 @@ from pydtnn.comms import CommunicatorOptions, ResourceClosed
 
 
 __all__ = (
-    "Server",
+    "Communicator",
 )
 
 
-class Server(Protocol[socket.socket], server.Server[socket.socket]):
+class Communicator(Protocol[socket.socket], server.Server[socket.socket]):
     """TCP server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -28,11 +28,11 @@ class Server(Protocol[socket.socket], server.Server[socket.socket]):
         # TCP
         self._comm = socket.create_server(self._options.netloc, reuse_port=True)
 
-        if self._options.ssl:
-            if self._options.ssl.cert is None or self._options.ssl.key is None:
+        if self._options.security:
+            if self._options.security.cert is None or self._options.security.key is None:
                 raise RuntimeError("SSL certificate or key not provided")
-            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self._options.ssl.cert)
-            context.load_cert_chain(certfile=self._options.ssl.cert, keyfile=self._options.ssl.key)
+            context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH, cafile=self._options.security.cert)
+            context.load_cert_chain(certfile=self._options.security.cert, keyfile=self._options.security.key)
             self._comm = context.wrap_socket(self._comm, server_side=True, do_handshake_on_connect=True)
 
         self._selector.register(self._comm, selectors.EVENT_READ, self._new_connection)
@@ -83,7 +83,7 @@ class Server(Protocol[socket.socket], server.Server[socket.socket]):
 
         state.get_write(data)
 
-        if self._options.ssl and (pending := comm.pending()):  # type: ignore
+        if self._options.security and (pending := comm.pending()):  # type: ignore
             data = comm.recv(pending)
             state.get_write(data)
 

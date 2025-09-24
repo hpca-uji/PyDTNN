@@ -19,8 +19,7 @@ from bidict import bidict
 
 from pydtnn import comms
 from pydtnn.utils import asynctools
-from pydtnn.utils.io_stream import Serializer
-from pydtnn.libs.mpi import comm as mpi_comm, rc as mpi_rc
+from pydtnn.libs.mpi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
 
 
 __all__ = (
@@ -77,11 +76,7 @@ class Server:
     def __init__(self, thread_pool: ThreadPoolExecutor, comm_options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Server initialization"""
         super().__init__()
-        workers = mpi_rc.size
-        netloc = comms.NetworkLocation(host=mpi_rc.addr, port=mpi_rc.port)
-        serial_restrict = (*mpi_comm.SERIALIZABLE, *mpi_rc.serial) if mpi_rc.serial else None
-        serial = comms.SerializationOptions(load=Serializer(restrict=serial_restrict).load)
-        self._comm_options = copy.replace(comm_options, netloc=netloc, workers=workers, serial=serial)
+        self._comm_options = copy.replace(mpi_util.comm_options(comm_options), workers=mpi_rc.size)
 
         # State
         self._shutdown = False
@@ -115,7 +110,8 @@ class Server:
             if comm := self.__dict__.get("_comm"):
                 pass
             else:
-                comm = self.__dict__["_comm"] = comms.Server(self._comm_options)
+                assert mpi_rc.proto, "MPI comunication protocol not defined!"
+                comm = self.__dict__["_comm"] = comms.new_comm(protocol=mpi_rc.proto, purpose=comms.Purpose.SERVER, options=self._comm_options)
         return comm
 
     def __enter__(self):
@@ -146,6 +142,7 @@ class Server:
                 message = self._comm.get()
             except Exception as exc:
                 warnings.warn(repr(exc), RuntimeWarning)
+                continue
             request = message.obj
 
             # Handle request

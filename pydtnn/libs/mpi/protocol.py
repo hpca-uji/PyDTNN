@@ -10,7 +10,6 @@
 # TODO: Check which lazy inizializations are actually required now, if not necessary
 # inizialize eagerly and avoid complex handeling.
 
-import os
 import abc
 import enum
 import uuid
@@ -26,6 +25,7 @@ from intbitset import intbitset
 
 
 __all__ = (
+    "Tag",
     "Rank",
     "SERIALIZABLE",
     "CommmunicationGroup",
@@ -55,56 +55,6 @@ SERIALIZABLE = (
 
 type Rank = int
 type Tag = int
-
-
-@functools.cache
-def get_init() -> bool:
-    """Should service auto initialize"""
-    return bool(
-        not os.environ.get("PYDTNN_MPI_ADDR")
-    )
-
-
-@functools.cache
-def get_addr() -> str:
-    """Service address"""
-    return (
-        os.environ.get("PYDTNN_MPI_ADDR")
-        or "127.0.0.1"
-    )
-
-
-@functools.cache
-def get_port() -> int:
-    """Service port"""
-    return int(
-        os.environ.get("PYDTNN_MPI_PORT")
-        or 61642
-    )
-
-
-@functools.cache
-def get_size() -> int:
-    """Communication size"""
-    return int(
-        os.environ.get("PYDTNN_MPI_SIZE")
-        or os.environ.get("OMPI_COMM_WORLD_SIZE")
-        or os.environ.get("PMI_SIZE")
-        or os.environ.get("SLUM_NPROCS")
-        or 1
-    )
-
-
-@functools.cache
-def get_rank() -> Rank:
-    """Communication identifier"""
-    return int(
-        os.environ.get("PYDTNN_MPI_RANK")
-        or os.environ.get("OMPI_COMM_WORLD_RANK")
-        or os.environ.get("PMI_RANK")
-        or os.environ.get("SLUM_PROCID")
-        or 0
-    )
 
 
 class RemoteException(RuntimeError):

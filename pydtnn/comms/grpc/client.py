@@ -16,7 +16,7 @@ from pydtnn.comms import CommunicatorOptions, ResourceClosed
 
 
 __all__ = (
-    "Client",
+    "Communicator",
 )
 
 
@@ -24,7 +24,7 @@ __all__ = (
 ARG_MISSING = object()
 
 
-class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.StreamStreamMultiCallable]):
+class Communicator(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.StreamStreamMultiCallable]):
     """gRPC client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -42,8 +42,8 @@ class Client(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.Stream
             "compression": self._compression
         }
 
-        if self._options.ssl:
-            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self._options.ssl.cert.read_bytes() if self._options.ssl.cert else None)
+        if self._options.security:
+            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self._options.security.cert.read_bytes() if self._options.security.cert else None)
             self._channel = grpc.secure_channel(**config)
         else:
             self._channel = grpc.insecure_channel(**config)

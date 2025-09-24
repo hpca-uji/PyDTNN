@@ -2,11 +2,12 @@
 
 import sys as _sys
 
+from pydtnn.libs.mpi import rc
 from pydtnn import comms as _comms
 
 
 # Select implementation
-match _comms.PROTOCOL:
+match rc.proto:
     case _comms.Protocol():
         from pydtnn.libs.mpi import client as _module
 

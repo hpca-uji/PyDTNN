@@ -15,11 +15,11 @@ from pydtnn.comms import CommunicatorOptions
 
 
 __all__ = (
-    "Client",
+    "Communicator",
 )
 
 
-class Client(Protocol[socket.socket], client.Client[socket.socket]):
+class Communicator(Protocol[socket.socket], client.Client[socket.socket]):
     """TCP client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -29,8 +29,8 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
         # TCP
         self._comm = socket.create_connection(self._options.netloc)
 
-        if self._options.ssl:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self._options.ssl.cert)
+        if self._options.security:
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self._options.security.cert)
             self._comm = context.wrap_socket(self._comm, server_hostname=self._options.netloc.host)
 
         self._comm.setblocking(False)
@@ -78,7 +78,7 @@ class Client(Protocol[socket.socket], client.Client[socket.socket]):
 
         state.get_write(data)
 
-        if self._options.ssl and (pending := comm.pending()):  # type: ignore
+        if self._options.security and (pending := comm.pending()):  # type: ignore
             data = comm.recv(pending)
             state.get_write(data)
 

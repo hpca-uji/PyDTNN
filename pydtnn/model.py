@@ -98,7 +98,7 @@ supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
 
-from pydtnn.comms import PROTOCOL
+from pydtnn.libs.mpi.rc import proto as PROTOCOL
 try:
     # noinspection PyUnresolvedReferences,PyPackageRequirements
     from pydtnn.libs.mpi import MPI

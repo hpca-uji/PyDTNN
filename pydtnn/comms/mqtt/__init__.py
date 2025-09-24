@@ -55,8 +55,8 @@ class Protocol[T](comms.Communicator[T]):
             transport=self._transport  # type: ignore
         )
 
-        if self._options.ssl:
-            self._client.tls_set(ca_certs=str(self._options.ssl.cert) if self._options.ssl.cert else None)
+        if self._options.security:
+            self._client.tls_set(ca_certs=str(self._options.security.cert) if self._options.security.cert else None)
 
         self._client.connect(host=self._options.netloc.host, port=self._options.netloc.port)
         self._client.loop_start()

@@ -93,7 +93,7 @@ def _get_gpus_per_node():
 
 
 def _get_comm_protocol():
-    from pydtnn.comms import PROTOCOL, SSL
+    from pydtnn.libs.mpi.rc import proto as PROTOCOL, ssl as SSL
     protocol = str(PROTOCOL)
     if PROTOCOL and SSL:
         protocol = f"{protocol}+tls"
@@ -101,13 +101,13 @@ def _get_comm_protocol():
 
 
 def _get_mpi_server():
-    from pydtnn.libs.mpi.comm import get_addr
-    return get_addr()
+    from pydtnn.libs.mpi.rc import addr
+    return addr
 
 
 def _get_mpi_port():
-    from pydtnn.libs.mpi.comm import get_port
-    return get_port()
+    from pydtnn.libs.mpi.rc import port
+    return port
 
 # NOTE: with @cache it's not possible to extend the class.
 @cache # <== Singleton
