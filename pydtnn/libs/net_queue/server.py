@@ -2,8 +2,8 @@
 
 import uuid
 
-from pydtnn.comms import Communicator
-from pydtnn.utils.io_stream import Stream
+from pydtnn.libs.net_queue import Communicator
+from pydtnn.libs.net_queue.io_stream import Stream
 
 
 class Server[T](Communicator[T]):

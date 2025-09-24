@@ -17,9 +17,9 @@ from concurrent.futures import ThreadPoolExecutor
 
 from bidict import bidict
 
-from pydtnn import comms
-from pydtnn.utils import asynctools
-from pydtnn.libs.mpi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
+from pydtnn.libs import net_queue as comms
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.pympi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
 
 
 __all__ = (
@@ -269,7 +269,7 @@ class Server:
 
 def background_server() -> Future:
     """Start a background server"""
-    from pydtnn.utils import thread_func
+    from pydtnn.libs.net_queue.asynctools import thread_func
 
     def serve_oneshot():
         with ThreadPoolExecutor(thread_name_prefix=f"{__name__}") as pool:

@@ -5,11 +5,11 @@ from concurrent.futures import Future
 
 import paho.mqtt.client as mqtt_client
 
-from pydtnn.comms import server
-from pydtnn.utils import asynctools
-from pydtnn.comms.mqtt import Protocol
-from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import CommunicatorOptions
+from pydtnn.libs.net_queue import server
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.net_queue.mqtt import Protocol
+from pydtnn.libs.net_queue.io_stream import Stream
+from pydtnn.libs.net_queue import CommunicatorOptions
 
 
 __all__ = (

@@ -51,9 +51,6 @@ class PYDTNN_TENSOR_FORMAT_enum(StrEnum):
 PYDTNN_TENSOR_FORMAT = PYDTNN_TENSOR_FORMAT_enum
 PYDTNN_TENSOR_FORMATS = PYDTNN_TENSOR_FORMAT.get_num_formats()
 
-UUID_NIL = uuid.UUID(int=0)
-UUID_MAX = uuid.UUID(int=2 ** 128 - 1)
-
 
 def parse_bool(x):
     """Returns True if value is a user truthy value"""
@@ -96,19 +93,6 @@ def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC):
         return shape[1], shape[2], shape[0]
     else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
         return shape
-
-
-def thread_queue(name: str = ""):
-    """Background single-thread task queue"""
-    return ThreadPoolExecutor(max_workers=1, thread_name_prefix=name)
-
-
-def thread_func(func: abc.Callable, /, *args, **kwds):
-    """Background function as future"""
-    pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix=func.__name__)
-    future = pool.submit(func, *args, **kwds)
-    pool.shutdown(wait=False)
-    return future
 
 
 def load_library(name):

@@ -5,7 +5,7 @@ import time
 import enum
 import numpy
 from threading import Thread
-from pydtnn import comms, utils
+from pydtnn.libs import net_queue as comms, utils
 from argparse import ArgumentParser, Namespace
 
 

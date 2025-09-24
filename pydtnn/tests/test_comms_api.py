@@ -3,7 +3,7 @@
 import sys
 import time
 import enum
-from pydtnn import comms
+from pydtnn.libs import net_queue as comms
 from argparse import ArgumentParser, Namespace
 
 

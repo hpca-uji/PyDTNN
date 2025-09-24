@@ -40,7 +40,7 @@ def main(config: Namespace):
     """Application entrypoint"""
     message = numpy.arange(config.size, dtype=numpy.uint8)
 
-    from pydtnn.libs.mpi import client as MPI
+    from pydtnn.libs.pympi import client as MPI
 
     comm = MPI.COMM_WORLD
     size = comm.size

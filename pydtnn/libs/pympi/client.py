@@ -41,10 +41,11 @@ from collections import abc
 from concurrent import futures
 from concurrent.futures import Future
 
-from pydtnn import comms, utils
-from pydtnn.utils import asynctools
-from pydtnn.utils.io_stream import byteview
-from pydtnn.libs.mpi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
+from pydtnn.libs import net_queue as comms
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.net_queue.io_stream import byteview
+from pydtnn.libs.net_queue.asynctools import thread_queue
+from pydtnn.libs.pympi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
 
 
 __all__ = (
@@ -194,8 +195,8 @@ class Comm:
         self._responses = dict[uuid.UUID, typing.Any]()
 
         thread_prefix = f"{__name__}.{self.__class__.__qualname__}:{id(self)}"
-        self._recv_queue = utils.thread_queue(f"{thread_prefix}.recv")
-        self._proc_queue = utils.thread_queue(f"{thread_prefix}.proc")
+        self._recv_queue = thread_queue(f"{thread_prefix}.recv")
+        self._proc_queue = thread_queue(f"{thread_prefix}.proc")
 
     @property
     def _closed(self):
@@ -290,7 +291,7 @@ class Comm:
         # If requested, start a local server
         if mpi_rc.init:
             if self.rank == 0:
-                from pydtnn.libs.mpi.server import background_server
+                from pydtnn.libs.pympi.server import background_server
                 self._server = background_server()
 
             # Allow some time for server startup

@@ -7,8 +7,9 @@ from collections import abc
 from concurrent import futures
 from queue import Empty, SimpleQueue
 
-from pydtnn import comms, utils
-from pydtnn.utils import asynctools
+from pydtnn.libs import net_queue as comms
+from pydtnn.libs.net_queue import asynctools
+from pydtnn.libs.net_queue.asynctools import thread_func
 
 
 __all__ = (
@@ -36,7 +37,7 @@ class Protocol[T](comms.Communicator[T]):
         self._control_socket[1].setblocking(False)
         self._selector.register(self._control_socket[0], selectors.EVENT_READ, self._handle_control_socket)
 
-        self._loop_thread = utils.thread_func(self._handle_selector_loop)
+        self._loop_thread = thread_func(self._handle_selector_loop)
         self._loop_thread.add_done_callback(asynctools.future_warn_exception)
         self._task_queue = SimpleQueue[Task]()
 

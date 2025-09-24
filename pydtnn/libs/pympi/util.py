@@ -1,9 +1,9 @@
 import copy
 
-from pydtnn import comms
-from pydtnn.comms import CommunicatorOptions
-from pydtnn.utils.io_stream import Serializer
-from pydtnn.libs.mpi import rc as mpi_rc, protocol as mpi_comm
+from pydtnn.libs import net_queue as comms
+from pydtnn.libs.net_queue import CommunicatorOptions
+from pydtnn.libs.net_queue.io_stream import Serializer
+from pydtnn.libs.pympi import rc as mpi_rc, protocol as mpi_comm
 
 
 def comm_options(base: CommunicatorOptions = CommunicatorOptions()):

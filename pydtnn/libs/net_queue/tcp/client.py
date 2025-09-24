@@ -8,10 +8,10 @@ import warnings
 import selectors
 from concurrent.futures import Future
 
-from pydtnn.comms import client
-from pydtnn.comms.tcp import Protocol
-from pydtnn.utils.io_stream import Stream
-from pydtnn.comms import CommunicatorOptions
+from pydtnn.libs.net_queue import client
+from pydtnn.libs.net_queue.tcp import Protocol
+from pydtnn.libs.net_queue.io_stream import Stream
+from pydtnn.libs.net_queue import CommunicatorOptions
 
 
 __all__ = (
