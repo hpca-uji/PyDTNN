@@ -10,7 +10,7 @@ from pydtnn.comms import CommunicatorOptions
 
 
 __all__ = (
-    "Server",
+    "Communicator",
 )
 
 
@@ -18,7 +18,7 @@ __all__ = (
 END_COMM = None
 
 
-class Server(Protocol[str], server.Server[str]):
+class Communicator(Protocol[str], server.Server[str]):
     """gRPC server"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
@@ -38,11 +38,11 @@ class Server(Protocol[str], server.Server[str]):
             "address": str(self._options.netloc)
         }
 
-        if self._options.ssl:
-            if self._options.ssl.cert is None or self._options.ssl.key is None:
+        if self._options.security:
+            if self._options.security.cert is None or self._options.security.key is None:
                 raise RuntimeError("SSL certificate or key not provided")
             config["server_credentials"] = grpc.ssl_server_credentials([
-                (self._options.ssl.key.read_bytes(), self._options.ssl.cert.read_bytes()),  # type: ignore
+                (self._options.security.key.read_bytes(), self._options.security.cert.read_bytes()),  # type: ignore
             ])
             self._server.add_secure_port(**config)
         else:

@@ -10,8 +10,6 @@
 
 # TODO: Use uintvar (VLQ) insted of uint64 in packer
 
-# TODO: Builtins only serializer
-
 import io
 import pickle
 import struct

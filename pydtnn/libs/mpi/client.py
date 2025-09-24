@@ -28,6 +28,7 @@
 # here because of import restrictions, but it will be an issue when multiple
 # communicator are open.
 
+import copy
 import uuid
 import enum
 import typing
@@ -42,8 +43,8 @@ from concurrent.futures import Future
 
 from pydtnn import comms, utils
 from pydtnn.utils import asynctools
-from pydtnn.utils.io_stream import byteview, Serializer
-from pydtnn.libs.mpi import comm as mpi_comm, rc as mpi_rc
+from pydtnn.utils.io_stream import byteview
+from pydtnn.libs.mpi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
 
 
 __all__ = (
@@ -180,8 +181,10 @@ class Request[T]:
 class Comm:
     """Communicator."""
 
-    def __init__(self) -> None:
+    def __init__(self, comm_options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
         """Communicator initialization"""
+        self._comm_options = copy.replace(mpi_util.comm_options(comm_options))
+
         self._comm_lock = threading.Lock()
 
         self._close_init = threading.Lock()
@@ -202,7 +205,11 @@ class Comm:
     def _recive_response(self) -> None:
         """Recive one response from communication"""
         while self._requests:
-            response = self._comm.get().obj
+            try:
+                response = self._comm.get().obj
+            except Exception as exc:
+                warnings.warn(repr(exc), RuntimeWarning)
+                continue
 
             match response:
                 case mpi_comm.OperationResponse():
@@ -259,6 +266,7 @@ class Comm:
         future = self._comm.put(operation)
 
         if self.rank in comm.dst:
+            future.add_done_callback(lambda future: future.exception() and request._resolve(future))
             self._recv_queue.submit(self._recive_response).add_done_callback(asynctools.future_warn_exception)
         else:
             future.add_done_callback(request._resolve)
@@ -289,14 +297,10 @@ class Comm:
             from time import sleep
             sleep(mpi_rc.wait)
 
-        netloc = comms.NetworkLocation(host=mpi_rc.addr, port=mpi_rc.port)
-        serial_restrict = (*mpi_comm.SERIALIZABLE, *mpi_rc.serial) if mpi_rc.serial else None
-        serial = comms.SerializationOptions(load=Serializer(restrict=serial_restrict).load)
-        comm_options = comms.CommunicatorOptions(netloc=netloc, serial=serial)
-
         state = mpi_comm.RankInit(rank=self.rank)
         try:
-            comm = comms.Client(comm_options)
+            assert mpi_rc.proto, "MPI comunication protocol not defined!"
+            comm = comms.new_comm(protocol=mpi_rc.proto, purpose=comms.Purpose.CLIENT, options=self._comm_options)
             comm.put(state)
             while True:
                 response = comm.get().obj

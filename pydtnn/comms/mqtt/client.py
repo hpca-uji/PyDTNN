@@ -13,7 +13,7 @@ from pydtnn.comms import CommunicatorOptions
 
 
 __all__ = (
-    "Client",
+    "Communicator",
 )
 
 
@@ -21,7 +21,7 @@ __all__ = (
 END_COMM = b""
 
 
-class Client(Protocol[str], client.Client[str]):
+class Communicator(Protocol[str], client.Client[str]):
     """MQTT client"""
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
