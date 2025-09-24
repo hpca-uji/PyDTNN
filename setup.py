@@ -17,8 +17,6 @@
 #  with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import os
-from glob import glob
 from Cython.Build import cythonize
 from setuptools import setup, find_packages
 
