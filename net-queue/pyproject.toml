@@ -1,0 +1,16 @@
+[project]
+name = "net-queue"
+version = "0.1.0"
+description = "Easy & fast network communications using queues"
+readme = "README.md"
+authors = [
+    {name = "Miguel Ángel Prosper", email = "mprosper@uji.es"}
+]
+requires-python = ">=3.13"
+dependencies = [
+    "bidict>=0.23.1",
+]
+
+[project.optional-dependencies]
+grpc = ["grpcio>=1.74.0"]
+mqtt = ["paho-mqtt>=2.1.0"]
