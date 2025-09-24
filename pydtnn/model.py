@@ -98,8 +98,8 @@ supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
 
-from pydtnn.libs.pympi.rc import proto as PROTOCOL
-from pydtnn.libs.pympi import MPI
+from pympi.rc import proto as PROTOCOL
+from pympi import MPI
 try:
     pass
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -162,7 +162,7 @@ type MPI_MODULE = ModuleType
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
-    from pydtnn.libs.pympi.client import Comm as MPI_COMM
+    from pympi.client import Comm as MPI_COMM
 else:
     MPI_COMM = ModuleType
 
