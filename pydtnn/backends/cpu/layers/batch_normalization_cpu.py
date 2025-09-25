@@ -29,7 +29,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 try:
     # noinspection PyUnresolvedReferences
-    from pympi import MPI
+    from pydtnn.comm import MPI
 except (ImportError, ModuleNotFoundError):
     pass
 

@@ -9,8 +9,8 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "bidict>=0.23.1",
+    "grpcio>=1.74.0",
+    "paho-mqtt>=2.1.0"
 ]
 
-[project.optional-dependencies]
-grpc = ["grpcio>=1.74.0"]
-mqtt = ["paho-mqtt>=2.1.0"]
+# TODO: export protos as sub-packages
