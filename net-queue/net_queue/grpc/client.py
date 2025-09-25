@@ -43,7 +43,7 @@ class Communicator(Protocol[grpc.StreamStreamMultiCallable], client.Client[grpc.
         }
 
         if self.options.security:
-            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self.options.security.cert.read_bytes() if self.options.security.cert else None)
+            config["credentials"] = grpc.ssl_channel_credentials(root_certificates=self.options.security.certificate.read_bytes() if self.options.security.certificate else None)
             self._channel = grpc.secure_channel(**config)
         else:
             self._channel = grpc.insecure_channel(**config)
