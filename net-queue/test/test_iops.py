@@ -34,6 +34,7 @@ parser.add_argument("--start-delay", type=float, default=3.0)
 parser.add_argument("--delay", type=float, default=0.0)
 parser.add_argument("--size", type=int, default=1_000)
 parser.add_argument("--reps", type=int, default=1_000_000)
+parser.add_argument("--clients", type=int, default=1)
 
 
 def get(comm: comms.Communicator, msg: numpy.ndarray, reps: int):
@@ -41,7 +42,7 @@ def get(comm: comms.Communicator, msg: numpy.ndarray, reps: int):
     for i in range(reps):
         print(i, end="\r", flush=True)
         got = comm.get().obj
-        assert len(got) == len(msg), "Lost message data"
+        assert len(got) == len(msg), f"Lost message data (got {len(got)}, expect {len(msg)})"
     assert numpy.array_equal(got, msg), "Corrupted message data"
     print(i)
     return got
@@ -71,9 +72,11 @@ def server(config: Namespace):
     message = numpy.arange(config.size, dtype=numpy.uint8)
 
     with comms.new(protocol=config.proto, purpose=comms.Purpose.SERVER) as server:
-        get_thread = Thread(target=get, args=(server, message, config.reps))
+        get_thread = Thread(target=get, args=(server, message, config.reps * config.clients))
         put_thread = Thread(target=put, args=(server, message, config.reps))
-        server.get()
+        for _ in range(config.clients):
+            server.get()
+        server.put(None)
         start_time = time.time()
 
         match config.mode:
@@ -103,6 +106,7 @@ def client(config: Namespace):
         get_thread = Thread(target=get, args=(client, message, config.reps))
         put_thread = Thread(target=put, args=(client, message, config.reps))
         client.put(None)
+        client.get()
         start_time = time.time()
 
         match config.mode:
