@@ -109,7 +109,7 @@ class SerializationOptions:
 class SecurityOptions:
     """Security options"""
     key: Path | None = None
-    cert: Path | None = None
+    certificate: Path | None = None
 
 
 @dataclass(order=False, slots=True, frozen=True)
@@ -271,6 +271,10 @@ class Communicator[T](abc.ABC):
 
         self._pool = ThreadPoolExecutor(max_workers=self.options.workers, thread_name_prefix=f"{thread_prefix}.worker")
         self._put_queue = thread_queue(f"{thread_prefix}.put")
+
+    def __repr__(self) -> str:
+        """Comunicator representation"""
+        return f"{self.__class__.__name__}(options={self.options!r})"
 
     @property
     def id(self) -> uuid.UUID:

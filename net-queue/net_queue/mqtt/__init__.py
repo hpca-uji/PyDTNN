@@ -42,7 +42,7 @@ class Protocol[T](comms.Communicator[T]):
         )
 
         if self.options.security:
-            self._client.tls_set(ca_certs=str(self.options.security.cert) if self.options.security.cert else None)
+            self._client.tls_set(ca_certs=str(self.options.security.certificate) if self.options.security.certificate else None)
 
         self._client.connect(host=self.options.netloc.host, port=self.options.netloc.port)
         self._client.loop_start()
