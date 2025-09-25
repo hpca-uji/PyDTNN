@@ -1,60 +1,6 @@
 """Communications package"""
 
-# NOTE: Communication conventions:
-# - syc: connection state (generic)
-# - ini: connection start (identify)
-# - fin: connection stop  (flush)
-# - com: message exchange (generic)
-# - c2s: message exchange (client -> server)
-# - s2c: message exchange (server -> client)
-
-# NOTE: Communication handshakes:
-# Ini:
-# - Server & client sends ID
-# - Server & client wait for ID
-# - Server create session or continues session
-#
-# Fin:
-# - Server & client flushes message queue
-# - Server & client sends empty message
-# - Server & client wait for empty message
-
-# NOTE: Communication persistency:
-# Ini:
-# - Must be done on first or changing connection
-#
-# Fin:
-# - Must be done on session end (not connection)
-
-# NOTE: Communication contract:
-# Constructor
-# - Never blocks
-# - Only one communicator per ID
-# - Reusing ID retain server queues
-#
-# Put
-# - Never blocks
-# - Communication will not modify object
-# - Consumer must not modify object util future resolved
-# - Resolved futures acknowledge peer reception
-# - Cancelled futures indicates peer diconnected
-#
-# Get
-# - Always block
-# - Returns a message or raises ResourceClosed
-# - Once closed it continues working until exhausted then it raises ResourceClosed
-#
-# Close
-# - Always block
-# - Server waits for peers to disconnect
-
-# TODO: Implement client reconnection
-
-# TODO: Implement two-way connection expiration and keep-alives. There
-# is no reliable way to track connection drops between communication
-# implementations. Most of them end up with memory leaks. If desired
-# expiration periods could be long and client reconnections could be
-# allowed, enabling MQTT-like reliability without the cost.
+# FIXME: session_ini/fin export future or surface error
 
 import abc
 import uuid
@@ -71,7 +17,6 @@ from collections import abc as col_abc, deque
 from concurrent.futures import Future, ThreadPoolExecutor
 
 from bidict import bidict
-
 
 from net_queue import asynctools
 from net_queue.asynctools import merge_futures

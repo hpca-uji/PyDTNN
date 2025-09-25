@@ -23,7 +23,54 @@ with nq.new(purpose=nq.Purpose.CLIENT) as queue:
 ## Documentation
 
 
-## Implementation
+## Notes
+### Communication conventions
+- ini: connection start (identify)
+- fin: connection stop  (flush)
+- com: message exchange (generic)
+- c2s: message exchange (client -> server)
+- s2c: message exchange (server -> client)
+
+### Communication handshakes
+Ini:
+- Server & client sends ID
+- Server & client wait for ID
+- Server create session or continues session
+
+Fin:
+- Server & client flushes message queue
+- Server & client sends empty message
+- Server & client wait for empty message
+
+### Communication persistency
+Ini:
+- Must be done on first or changing connection
+
+Fin:
+- Must be done on session end (not connection)
+
+### Communication contract
+Constructor
+- Never blocks
+- Only one communicator per ID
+- Reusing ID retain server queues
+
+Put
+- Never blocks
+- Communication will not modify object
+- Consumer must not modify object util future resolved
+- Resolved futures acknowledge peer reception
+- Cancelled futures indicates peer diconnected
+
+Get
+- Always block
+- Returns a message or raises ResourceClosed
+- Once closed it continues working until exhausted then it raises ResourceClosed
+
+Close
+- Always block
+- Server waits for peers to disconnect
+
 ### gRPC
 gRPC does not conform well to a async send & async receive model, it expects remote procedure calls to be called, processed and responded. To simulate this model we created a bidirectional streaming procedure. Sent data is queued at the server, recived data is polled until available.
 
@@ -36,4 +83,11 @@ MQTT broker implementations are not common, so the server provided here is actua
 
 The MQTT library handles comunications single-threaded, therefore operations on related callbacks are limited to pushing or pulling data from queues without blocking, so all operations are minimal and fast.
 
-Peer-groups and global comunications are not optimized. First, chunked message ordering must be resolved. Single chunk order it is guaranteed by the protocol, even on with diferent topics. Second, peer-groups could be implemented using grouping requests that generate new UUID per group. This would reduce also reduce load on the broker.
+Peer-groups and global comunications are not optimized.
+
+First, chunked message ordering must be resolved. Single chunk order it is guaranteed by the protocol, even on with diferent topics. Second, peer-groups could be implemented using grouping requests that generate new UUID per group. This would reduce also reduce load on the broker.
+
+## Planned
+Implement reconnection support. The protocol already has support for it, server support is done, clients can reconnect but can not yet disconnect without flushing.
+
+Implement two-way connection expiration and keep-alives. There is no reliable way to track connection drops between communication implementations. Most of them end up with memory leaks. If desired expiration periods could be long and automatic client reconnections could be allowed, enabling MQTT-like reliability without the cost.

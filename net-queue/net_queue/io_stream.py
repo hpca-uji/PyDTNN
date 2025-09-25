@@ -55,7 +55,7 @@ class Stream(io.BufferedIOBase):
     Writer hands off responsibility over chunks.
     """
 
-    __slots__ = ("_nbytes", "_chunks",)
+    __slots__ = ("_nbytes", "_chunks")
 
     def __init__(self):
         """Initialize stream"""
