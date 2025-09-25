@@ -404,13 +404,14 @@ class Model:
         self.shared_storage: bool = self.kwargs["shared_storage"]
         self.encryption_name: str = self.kwargs["encryption_name"]
         self.flip_images: bool = self.kwargs["flip_images"]
-        self.crop_images:bool = self.kwargs["crop_images"]        
+        self.crop_images:bool = self.kwargs["crop_images"]
         self.resize:bool = self.kwargs["resize"]
         self.resize_dimension:tuple[int, int] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
         self.flip_images_prob:float = self.kwargs["flip_images_prob"]
         self.crop_images_size:int = self.kwargs["crop_images_size"]
         self.crop_images_prob:float = self.kwargs["crop_images_prob"]
         self.initial_model_sync:bool = self.kwargs["initial_model_sync"]
+        self.dataset_percentage:float = self.kwargs["dataset_percentage"]
         # ---
         use_mpi_buffers:bool = self.kwargs["use_mpi_buffers"]
         
@@ -451,7 +452,7 @@ class Model:
         if self.enable_memory_cache:
             MemoryCache.enable()
         else:
-            MemoryCache.disable()        
+            MemoryCache.disable()
         
         global cuda_error_msg
 
@@ -511,7 +512,7 @@ class Model:
         if self.kwargs["learning_rate_scaling"]:
             # using comm_size instead of nprocs might not be appropriate,
             # as it differs to how learning_rate is defined elsewhere,
-            # but for now it just a parser option difference that helps testing            
+            # but for now it just a parser option difference that helps testing
             self.learning_rate:float = self.kwargs["learning_rate"] / self.comm_size
 
         self.optimizer = get_optimizer(self)
@@ -521,7 +522,7 @@ class Model:
         self.metrics_list: list[metrics.Metric] = [m for m in self.metrics.replace(" ", "").split(",")]
         # Private attributes
         self._evaluate_round: int = 0
-        self._initialized: bool = False        
+        self._initialized: bool = False
         # Read the model (must be the last action, as it calls self._initialize() if there is a model)
         self.model_name: str | None = self.kwargs.get("model_name")
         if self.model_name:
@@ -874,7 +875,7 @@ class Model:
 
     def _sync_x_y_cpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
-        return x_batch, y_batch        
+        return x_batch, y_batch
     # --- _sync_x_y --- #
 
     def _sync_x_y_gpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[TensorGPU, TensorGPU]:
@@ -1194,7 +1195,7 @@ class Model:
             for i in range(first_layer, len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)            
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             y_pred = self.layers[-1].y
             loss, _ = self.loss_func(y_pred, y_targ, self.num_real_batches)

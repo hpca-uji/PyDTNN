@@ -241,12 +241,16 @@ class Dataset(ABC):
                   f" {desc[part]} nsamples: {self._nsamples[part]}"
                   )
 
-    def _compute_local_workload(self, nsamples):
+    def _compute_local_workload(self, nsamples: int):
         """Computes the offset (in number of samples) and the number of samples for the current rank"""
 
         # Reduce nsamples according to steps per epoch
         global_batch_size = self.model.batch_size * self.model.nprocs
         batches_per_worker = nsamples / global_batch_size
+        
+        if self.model.dataset_percentage != 0:
+            nsamples *= self.model.dataset_percentage
+
         if batches_per_worker > self.model.steps_per_epoch > 0:
             batches_per_worker = self.model.steps_per_epoch
             nsamples = batches_per_worker * global_batch_size
@@ -263,7 +267,7 @@ class Dataset(ABC):
             local_nsamples = nsamples_per_worker
             local_offset = nsamples_per_big_worker * big_workers + nsamples_per_worker * (self.model.rank - big_workers)
 
-        return local_offset, local_nsamples, nsamples
+        return int(local_offset), int(local_nsamples), int(nsamples)
 
     def _init_synthetic_data(self):
         for part in DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST:
@@ -331,7 +335,7 @@ class Dataset(ABC):
         self._local_remaining_nsamples[part] = -1
 
     @staticmethod
-    def _offset2files(filenames, images_per_file, local_offset, local_nsamples):
+    def _offset2files(filenames:list[str], images_per_file:int, local_offset:int, local_nsamples:int) -> list[tuple[str, int, int]]:
         i = local_offset // images_per_file
         offset_in_file = local_offset - i * images_per_file
         output = []
