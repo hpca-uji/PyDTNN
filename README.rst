@@ -152,7 +152,7 @@ The PyDTNN framework comes with a utility launcher called
       ``all`` or ``avail2all``. Default: ``all``.
    -  ``--model_sync_min_avail``: Minumun ranks with data required to
       syncronize models. Default: 0.
-   -  ``--initial_model_sync``: Sincronize models on training begin. Default: True.
+   -  ``--initial_model_sync``: Sincronize models on training start. Default: True.
    -  ``--final_model_sync``: Sincronize models on training end. Default: True.
    -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
       Optionally, the ``AUTO`` value sets ``NCHW`` when the option
@@ -280,7 +280,8 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data`` (MPI). Default: ``sequential``.
    -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives. Default: True.
-   -  ``--use_mpi_buffers``: Enable the use of MPI buffers. Default: None.
+   -  ``--use_mpi_buffers``: Enable the use of MPI buffers. 
+      Possible values: ``True`` (MPI operations by buffer), ``False`` (MPI operations by object) or undefined (auto-select the better option). Default: undefined.
    -  ``--enable_gpu``: Enable GPU, use cuDNN library. Default: False.
    -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
       when using a CUDA-aware MPI version. Default: False.
