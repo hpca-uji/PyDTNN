@@ -27,7 +27,7 @@ from ..power_meters import PMLib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pympi.client import Comm as MPI_COMM
+    from pympi.MPI import Comm as MPI_COMM
 else:
     from types import ModuleType
     MPI_COMM = ModuleType

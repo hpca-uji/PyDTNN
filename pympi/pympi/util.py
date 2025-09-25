@@ -3,7 +3,7 @@ import copy
 import net_queue as comms
 from net_queue import CommunicatorOptions
 from net_queue.io_stream import Serializer
-from pympi import rc as mpi_rc, protocol as mpi_comm
+from pympi import proto as mpi_comm, rc as mpi_rc
 
 
 def comm_options(base: CommunicatorOptions = CommunicatorOptions()):

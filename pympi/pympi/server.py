@@ -19,7 +19,7 @@ from bidict import bidict
 
 import net_queue as comms
 from net_queue import asynctools
-from pympi import protocol as mpi_comm, rc as mpi_rc, util as mpi_util
+from pympi import proto as mpi_comm, rc as mpi_rc, util as mpi_util
 
 
 __all__ = (

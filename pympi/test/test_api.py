@@ -13,7 +13,7 @@ parser.add_argument("--rank-offset", type=int, default=45)
 
 def main(config: Namespace):
     """Application entrypoint"""
-    from pympi import client as MPI
+    from pympi import MPI
 
     comm = MPI.COMM_WORLD
     size = comm.size

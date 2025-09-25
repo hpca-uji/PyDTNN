@@ -73,10 +73,9 @@ serial = list(filter(None, (
 ).split(",")))
 
 """Communication protocol"""
-proto = (
-    Protocol(proto)
-    if (proto := os.environ.get("PYMPI_PROTO"))
-    else None
+proto = Protocol(
+    os.environ.get("PYMPI_PROTO")
+    or "tcp"
 )
 
 """Use secure communications"""
