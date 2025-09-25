@@ -30,7 +30,7 @@ class Communicator(Protocol[socket.socket], client.Client[socket.socket]):
         self._comm = socket.create_connection(self.options.netloc)
 
         if self.options.security:
-            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self.options.security.cert)
+            context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile=self.options.security.certificate)
             self._comm = context.wrap_socket(self._comm, server_hostname=self.options.netloc.host)
 
         self._comm.setblocking(False)

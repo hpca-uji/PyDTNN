@@ -11,5 +11,5 @@ def comm_options(base: CommunicatorOptions = CommunicatorOptions()):
     netloc = comms.NetworkLocation(host=mpi_rc.addr, port=mpi_rc.port)
     serialization_restrict = (*mpi_comm.SERIALIZABLE, *mpi_rc.serial) if mpi_rc.serial else None
     serialization = comms.SerializationOptions(load=Serializer(restrict=serialization_restrict).load)
-    security = comms.SecurityOptions(key=mpi_rc.ssl_key, cert=mpi_rc.ssl_cert) if mpi_rc.ssl else None
+    security = comms.SecurityOptions(key=mpi_rc.ssl_key, certificate=mpi_rc.ssl_cert) if mpi_rc.ssl else None
     return copy.replace(base, netloc=netloc, serialization=serialization, security=security)

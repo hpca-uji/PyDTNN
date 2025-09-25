@@ -39,10 +39,10 @@ class Communicator(Protocol[str], server.Server[str]):
         }
 
         if self.options.security:
-            if self.options.security.cert is None or self.options.security.key is None:
+            if self.options.security.certificate is None or self.options.security.key is None:
                 raise RuntimeError("SSL certificate or key not provided")
             config["server_credentials"] = grpc.ssl_server_credentials([
-                (self.options.security.key.read_bytes(), self.options.security.cert.read_bytes()),  # type: ignore
+                (self.options.security.key.read_bytes(), self.options.security.certificate.read_bytes()),  # type: ignore
             ])
             self._server.add_secure_port(**config)
         else:
