@@ -68,7 +68,7 @@ available at: '{_scripts_path}'."""
 def _get_mpi_processes():
     try:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
-        from pydtnn.comm import MPI
+        from pympi import MPI
     except (ImportError, ModuleNotFoundError):
         mpi_processes = 1
     else:
@@ -93,7 +93,7 @@ def _get_gpus_per_node():
 
 
 def _get_comm_protocol():
-    from pydtnn.comm import proto as PROTOCOL, ssl as SSL
+    from pympi.rc import proto as PROTOCOL, ssl as SSL
     protocol = str(PROTOCOL)
     if PROTOCOL and SSL:
         protocol = f"{protocol}+tls"
@@ -161,6 +161,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group = self.add_argument_group("Dataset options")
         _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, 
                                help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'raw\' or \'folder\'. Default: \'None\'.")
+        _ds_group.add_argument('--dataset_percentage', type=float, default=0.0, 
+                               help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda, 
                                help="Use synthetic data. Default: False.")
         _ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path, 
