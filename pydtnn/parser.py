@@ -263,13 +263,13 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy", 
                                help="Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default: \'val_categorical_cross_entropy\'.")
         _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1, 
-                               help="Factor by which the learning rate will be reduced. new_lr = lr \* factor. Default: 0.1.")
+                               help="Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1.")
         _lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5, 
                                help="Number of epochs with no improvement after which LR will be reduced. Default: 5.")
         _lr_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0, 
                                help="Lower bound on the learning rate. Default: 0.")
         _lr_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1, 
-                               help="Factor by which the learning rate will be reduced. new_lr = lr \* factor. Default: 0.1.")
+                               help="Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1.")
         _lr_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5, 
                                help="Number of epochs after which LR will be periodically reduced. Default: 5.")
         _lr_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0, 
