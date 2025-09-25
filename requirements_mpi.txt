@@ -1,4 +1,4 @@
-# -e ./path --config-settings editable_mode=strict
+# -e ./path --config-settings editable_mode=compat
 ./net-queue
 ./pympi
 mpi4py
