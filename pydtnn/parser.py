@@ -151,7 +151,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         self.add_argument('--model_sync_min_avail', type=int, default=0, 
                           help="Minumun ranks with data required to syncronize models. Default: 0.")
         self.add_argument('--initial_model_sync', type=bool_lambda, default=True, 
-                          help="Sincronize models on training begin. Default: True.")
+                          help="Sincronize models on training start. Default: True.")
         self.add_argument('--final_model_sync', type=bool_lambda, default=True, 
                           help="Sincronize models on training end. Default: True.")
         self.add_argument('--tensor_format', type=lambda s: str(s).upper(), default="NHWC", 
@@ -290,7 +290,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _pe_group.add_argument('--use_blocking_mpi', type=bool, default=True, 
                                help="Enable non-blocking MPI primitives. Default: True.")
         _pe_group.add_argument('--use_mpi_buffers', type=bool, default=None, 
-                               help="Enable the use of MPI buffers. Default: None.")
+                               help="Enable the use of MPI buffers. Possible values: \'True\' (MPI operations by buffer), \'False\' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
         _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False, 
                                help="Enable GPU, use cuDNN library. Default: False.")
         _pe_group.add_argument('--enable_gpudirect', type=bool_lambda, default=False, 
