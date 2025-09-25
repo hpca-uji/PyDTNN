@@ -13,7 +13,7 @@ ranks = comm.allgather(comm.rank)
 
 ## Documentation
 
-## Implementation
+## Notes
 Due to how Python and external libraries handle threading, there is no reliable way to track when the MPI context should be automatically finalized.
 
 MPI for Python finalizes its context via a atexit handler, which waits for all non-daemon threads to finish before automatically finalizing (if not disabled).
