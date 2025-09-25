@@ -69,10 +69,7 @@ def future_set_exception(future: Future, exc: BaseException) -> bool:
 def future_warn_exception[T](future: Future[T]) -> None:
     """Future handler that warns about exceptions"""
     if (exc := future.exception()) is not None:
-        from traceback import TracebackException
-        tb = TracebackException.from_exception(exc)
-        message = "".join(tb.format())
-        warnings.warn(message, RuntimeWarning)
+        warnings.warn(repr(exc), RuntimeWarning)
 
 
 def merge_futures(fs: abc.Iterable[Future], return_when=futures.ALL_COMPLETED) -> Future:
