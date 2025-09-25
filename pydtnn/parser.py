@@ -92,7 +92,7 @@ def _get_gpus_per_node():
     return gpus_per_node
 
 
-def _get_comm_protocol():
+def _get_mpi_protocol():
     from pydtnn.comm import proto as PROTOCOL, ssl as SSL
     protocol = str(PROTOCOL)
     if PROTOCOL and SSL:
@@ -335,7 +335,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Add Communication options
         _cm_group = self.add_argument_group("Communication options")
-        _cm_group.add_argument('--comm_protocol', type=str, default="", help=argparse.SUPPRESS)
+        _cm_group.add_argument('--mpi_protocol', type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument('--mpi_server', type=str, default="", help=argparse.SUPPRESS)
         _cm_group.add_argument('--mpi_port', type=int, default=-1, help=argparse.SUPPRESS)
 
@@ -346,7 +346,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         result.mpi_processes = _get_mpi_processes()
         result.threads_per_process = _get_threads_per_process()
         result.gpus_per_node = _get_gpus_per_node()
-        result.comm_protocol = _get_comm_protocol()
+        result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()
         # Populate self.lines (for self.print_args())
