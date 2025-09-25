@@ -13,7 +13,8 @@ else:
 # Replace module
 _sys.modules[__name__] = _module
 
-__all__ = _module.__all__  # type: ignore
+if hasattr(_module, "__all__"):
+    __all__ = _module.__all__  # type: ignore
 
 
 def __getattr__(key):
