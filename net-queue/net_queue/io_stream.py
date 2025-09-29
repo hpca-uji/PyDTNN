@@ -79,7 +79,7 @@ class Stream(io.BufferedIOBase):
 
     # stream base methods
     def unreadchunk(self, chunk: memoryview) -> int:
-        """Unread a chunk into the steam"""
+        """Unread a chunk into the stream"""
         size = len(chunk)
 
         if size > 0:
@@ -100,7 +100,7 @@ class Stream(io.BufferedIOBase):
         return chunk
 
     def unwritechunk(self) -> memoryview:
-        """Unwrite a chunk from the steam"""
+        """Unwrite a chunk from the stream"""
         if self.empty():
             raise BlockingIOError()
 
@@ -109,7 +109,7 @@ class Stream(io.BufferedIOBase):
         return chunk
 
     def writechunk(self, chunk: memoryview) -> int:
-        """Write a chunk into the steam"""
+        """Write a chunk into the stream"""
         size = len(chunk)
 
         if size > 0:
@@ -129,12 +129,12 @@ class Stream(io.BufferedIOBase):
 
     # stream extended methods
     def readchunks(self) -> abc.Iterable[memoryview]:
-        """Read all chunks from steam"""
+        """Read all chunks from stream"""
         while not self.empty():
             yield self.readchunk()
 
     def writechunks(self, chunks: abc.Iterable[memoryview], /) -> int:
-        """Write many chunks into the steam"""
+        """Write many chunks into the stream"""
         size = 0
 
         for chunk in chunks:
@@ -142,11 +142,24 @@ class Stream(io.BufferedIOBase):
 
         return size
 
+    def update(self, bs: abc.Iterable[abc.Buffer]) -> int:
+        """Write many buffers into the stream"""
+        size = 0
+
+        for b in bs:
+            size += self.write(b)
+
+        return size
+
+    def clear(self) -> None:
+        """Release all chunks"""
+        for chunk in self.readchunks():
+            chunk.release()
+
     def copy(self):
         """Shallow copy of stream"""
         other = self.__class__()
-        for chunk in self._chunks:
-            other.write(chunk)
+        other.update(self._chunks)
         return other
 
     def __copy__(self):
@@ -238,11 +251,6 @@ class Stream(io.BufferedIOBase):
         except:  # noqa: E722
             pass
 
-    def close(self) -> None:
-        """Release stream chunks"""
-        for chunk in self.readchunks():
-            chunk.release()
-
     # io stubs
     def __iter__(self) -> abc.Iterable[memoryview]:
         return self.readlines()
@@ -279,11 +287,13 @@ class Stream(io.BufferedIOBase):
         return True
 
     def writelines(self, lines: abc.Iterable[abc.Buffer], /) -> None:
-        for line in lines:
-            self.write(line)
+        self.update(lines)
 
     def detach(self) -> abc.Buffer:
         raise io.UnsupportedOperation()
+
+    def close(self) -> None:
+        self.clear()
 
 
 class Packer:
@@ -374,12 +384,12 @@ class Serializer:
 
         self._load = load
 
-    def dump(self, obj) -> Stream:
-        """Transform a object into a stream"""
+    def dump(self, data) -> Stream:
+        """Transform a data into a stream"""
         stream = Stream()
-        self._dump(obj=obj, file=stream, protocol=5)
+        self._dump(obj=data, file=stream, protocol=5)
         return stream
 
-    def load(self, stream: Stream):
-        """Transform a stream into a object"""
-        return self._load(stream)
+    def load(self, data: Stream):
+        """Transform a stream into useful data"""
+        return self._load(data)

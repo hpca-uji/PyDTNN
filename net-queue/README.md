@@ -21,6 +21,154 @@ with nq.new(purpose=nq.Purpose.CLIENT) as queue:
 ```
 
 ## Documentation
+### Constatns
+- `Protocol`:
+
+  Underlying protocol to use.
+
+  - `TCP`
+  - `MQTT` (requires external broker)
+  - `GRPC`
+
+- `Purpose`:
+
+  Use context of comunicator.
+
+  - `CLIENT` (default)
+  - `SERVER`
+
+### Structures
+- `CommunicatorOptions`
+
+  - `id`: uuid.UUID (default: `uuid.uuid4()`)
+  - `netloc`: NetworkLocation(namedtuple) (default: `('127.0.0.1', 51966)`)
+  - `workers`: int (default: `1`)
+
+  Maximun number of threads to use for connection handeling.
+  Depending on the protocol 1~3 more maybe used, however they will be idle most of the time.
+  On high throughput aplications or high latency networks this may need increasing.
+
+  - `connection`: ConnectionOptions (default: ConnectionOptions())
+  - `serialization`: SerializationOptions (default: SerializationOptions())
+  - `security`: SecurityOptions (default: `None`)
+
+- `ConnectionOptions`
+  - `max_size`: int (default: `4 * 1024 ** 2` / 4 MiB)
+
+      Maximun message size to send to underlying protocol before splitting.
+
+  - `merge_size`: int (default: `max_size`)
+
+      Maximun message size to merge to when chunks are too small to efficently send.
+      Internally a buffer of this size is preallocated on construction.
+
+  - `efficient_size`: (default: `max_size` / 64)
+
+      Minimum message size to consider the send efficient before attempting merging.
+
+- `SerializationOptions`
+  - `load`: Callable[[Stream], Any] (default: `Serializer().load`)
+
+      Message deserialization handler.
+      Default deserializer uses `pickle`.
+
+      **Warning**: The `pickle` module is not secure. Only unpickle data you trust.
+      Serializer may be created with the `restrict` option to limit the trusted types.
+
+  - `dump`: Callable[[Any], Stream] (default: `Serializer().dump`)
+
+      Message serialization handler.
+      Default serializer uses `pickle`.
+
+- `SecurityOptions`
+
+    TLS/SSL options (default: `None` / disabled)
+
+  - `key`: Path (default: `None`)
+
+      Server's private key.
+      Required for servers, for clients always `None`.
+
+  - `certificate`: Path (default: `None`)
+
+      Server's certifcate chain or client's trust chain.
+      Required for servers, for clients if not provided, it defaults to the system's chain.
+
+### Functions
+- `nq.new(protocol, purpose, options)`
+
+  Create a comunicator.
+
+  - `protocol`: Protocol (default: `Purpose.TCP`)
+  - `purpose`: Purpose (default: `Purpose.Client`)
+  - `options`: ComunicatorOptions (default: `ComunicatorOptions()`)
+
+### Classes
+- `Comunicator(options)`
+
+  - `options`: ComunicatorOptions (default: `ComunicatorOptions()`)
+
+  - `id`: uuid.UUID
+
+    Helper property, derived from `options.id`.
+
+  - `options`: ComunicatorOptions
+  - `put(data, *peers)`
+
+    Publish data to peers.
+    For clients if no peers are defined, data is send to the server.
+    For servers if no peers are defined, data is send to all clients.
+
+    It is prefered to specify multiple peers insted of issuing multiple puts,
+    as data will only be serialized once and protocols may use optimized routes.
+
+    Note: Only servers can send to a particular client.
+
+  - `get(*peers)`
+
+    Get data from peers.
+    If no peers are defined, data is returned from the first available peer.
+
+    Note: Currently peers can not be specified.
+
+  - `close()`
+
+  Note: Comunicator has context manager support, so it can be used in `with` statments.
+  Note: Comunicator is thread-safe, so it can be used safely by multiple threads without locking.
+
+- `{protocol}.{purpose}.Comuicator(options)`
+
+  Concrete implementation of protocol for the given purpose.
+
+- `io_stream.Stream`
+
+  Extends `BufferedIOBase`
+
+  - `empty`
+  - `nchunks`
+  - `nbytes`
+
+  - `readchunk()`
+  - `writechunk(chunk)`
+  - `peekchunk()`
+  - `writehunks(chunks)`
+  - `readchunks()`
+
+  - `update(bs)`
+  - `clear()`
+  - `copy()`
+
+  Note: Stream has context manager support, so it can be used in `with` statments.
+
+  Note: Stream has copy support, so it can be used in `copy.copy()`, however it can not be deepcopied.
+
+  Note: Stream is not thread-safe, an can not be used safely by multiple threads, external locking is required.
+
+
+- `io_stream.Serializer`
+
+  - `load(data)`
+  - `dump(data)`
 
 
 ## Notes
