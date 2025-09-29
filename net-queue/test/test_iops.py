@@ -6,7 +6,7 @@ import enum
 import numpy
 from threading import Thread
 from pydtnn import utils
-import net_queue as comms
+import net_queue as nq
 from argparse import ArgumentParser, Namespace
 
 
@@ -27,7 +27,7 @@ class Mode(enum.StrEnum):
 
 # Argument pasrser
 parser = ArgumentParser(prog="test_comms_iops", description="Communications IOPS test")
-parser.add_argument("proto", choices=list(comms.Protocol))
+parser.add_argument("proto", choices=list(nq.Protocol))
 parser.add_argument("peer", choices=list(Peer))
 parser.add_argument("mode", choices=list(Mode))
 parser.add_argument("--start-delay", type=float, default=3.0)
@@ -37,18 +37,18 @@ parser.add_argument("--reps", type=int, default=1_000_000)
 parser.add_argument("--clients", type=int, default=1)
 
 
-def get(comm: comms.Communicator, msg: numpy.ndarray, reps: int):
+def get(comm: nq.Communicator, msg: numpy.ndarray, reps: int):
     """Communication get handler"""
     for i in range(reps):
         print(i, end="\r", flush=True)
-        got = comm.get().obj
+        got = comm.get().data
         assert len(got) == len(msg), f"Lost message data (got {len(got)}, expect {len(msg)})"
     assert numpy.array_equal(got, msg), "Corrupted message data"
     print(i)
     return got
 
 
-def put(comm: comms.Communicator, msg: numpy.ndarray, reps: int):
+def put(comm: nq.Communicator, msg: numpy.ndarray, reps: int):
     """Communication put handler"""
     for i in range(reps):
         print(i, end="\r", flush=True)
@@ -71,7 +71,7 @@ def server(config: Namespace):
     """Server peer"""
     message = numpy.arange(config.size, dtype=numpy.uint8)
 
-    with comms.new(protocol=config.proto, purpose=comms.Purpose.SERVER) as server:
+    with nq.new(protocol=config.proto, purpose=nq.Purpose.SERVER) as server:
         get_thread = Thread(target=get, args=(server, message, config.reps * config.clients))
         put_thread = Thread(target=put, args=(server, message, config.reps))
         for _ in range(config.clients):
@@ -102,7 +102,7 @@ def client(config: Namespace):
     message = numpy.arange(config.size, dtype=numpy.uint8)
 
     time.sleep(config.start_delay)
-    with comms.new(protocol=config.proto, purpose=comms.Purpose.CLIENT) as client:
+    with nq.new(protocol=config.proto, purpose=nq.Purpose.CLIENT) as client:
         get_thread = Thread(target=get, args=(client, message, config.reps))
         put_thread = Thread(target=put, args=(client, message, config.reps))
         client.put(None)

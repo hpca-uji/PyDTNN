@@ -1,15 +1,15 @@
 import copy
 
-import net_queue as comms
+import net_queue as nq
 from net_queue import CommunicatorOptions
 from net_queue.io_stream import Serializer
-from pympi import proto as mpi_comm, rc as mpi_rc
+from pympi import proto as proto, rc as rc
 
 
 def comm_options(base: CommunicatorOptions = CommunicatorOptions()):
     """Generate MPI specific comunicator options"""
-    netloc = comms.NetworkLocation(host=mpi_rc.addr, port=mpi_rc.port)
-    serialization_restrict = (*mpi_comm.SERIALIZABLE, *mpi_rc.serial) if mpi_rc.serial else None
-    serialization = comms.SerializationOptions(load=Serializer(restrict=serialization_restrict).load)
-    security = comms.SecurityOptions(key=mpi_rc.ssl_key, certificate=mpi_rc.ssl_cert) if mpi_rc.ssl else None
+    netloc = nq.NetworkLocation(host=rc.addr, port=rc.port)
+    serialization_restrict = (*proto.SERIALIZABLE, *rc.serial) if rc.serial else None
+    serialization = nq.SerializationOptions(load=Serializer(restrict=serialization_restrict).load)
+    security = nq.SecurityOptions(key=rc.ssl_key, certificate=rc.ssl_cert) if rc.ssl else None
     return copy.replace(base, netloc=netloc, serialization=serialization, security=security)
