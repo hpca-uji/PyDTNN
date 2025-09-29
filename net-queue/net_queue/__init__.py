@@ -64,7 +64,7 @@ class Purpose(enum.StrEnum):
 class Message[T]:
     """Message object"""
     peer: uuid.UUID
-    obj: T
+    data: T
 
 
 class ConnectionState(enum.Flag):
@@ -159,6 +159,7 @@ class SessionData:
     def put(self, stream: Stream) -> Future[None]:
         """Push stream to put queue"""
         future = Future[None]()
+        asynctools.future_set_running(future)
         self._ack_queue[stream] = future
         self.put_queue.put(stream)
         return future
@@ -237,15 +238,11 @@ class SessionData:
                 break
             else:
                 future = self._ack_queue.pop(stream)
-                asynctools.future_set_running(future)
-
-                if future.cancelled():
-                    continue
-
                 size = self._packer.pack(self.put_buffer, stream)
                 self._ack_buffer.append((size, future))
 
     def put_flush_buffer(self) -> col_abc.Iterable[memoryview]:
+        """Flush put buffer"""
         while not self.put_buffer.empty():
             yield self.put_read()
 
@@ -443,9 +440,9 @@ class Communicator[T](abc.ABC):
         self._session_cleanup(peer)
 
         with stream:
-            obj = self.options.serialization.load(stream)
+            data = self.options.serialization.load(stream)
 
-        return Message(peer=peer, obj=obj)
+        return Message(peer=peer, data=data)
 
     def _put(self, stream: Stream, peer: uuid.UUID) -> Future[None]:
         """Put stream into state"""
@@ -462,14 +459,14 @@ class Communicator[T](abc.ABC):
             asynctools.future_set_exception(future, ResourceClosed(self.id))
         return future
 
-    def put(self, obj, *peers: uuid.UUID) -> Future[None]:
+    def put(self, data, *peers: uuid.UUID) -> Future[None]:
         """Publish data to peers"""
         if not peers:
             with self._lock:
                 peers = tuple(self._comms)
 
         futures = list[Future[None]]()
-        with self.options.serialization.dump(obj) as stream:
+        with self.options.serialization.dump(data) as stream:
             for peer in peers:
                 future = self._put(stream.copy(), peer)
                 futures.append(future)

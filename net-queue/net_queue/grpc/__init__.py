@@ -11,18 +11,18 @@ try:
 finally:
     sys.path.insert(0, _pkg)
 
-import net_queue as comms  # noqa: E402
+import net_queue as nq  # noqa: E402
 
 __all__ = (
     "Protocol",
 )
 
 
-class Protocol[T](comms.Communicator[T]):
+class Protocol[T](nq.Communicator[T]):
     """Shared base gRPC implementation"""
     _compression = grpc.Compression.NoCompression
 
-    def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
+    def __init__(self, options: nq.CommunicatorOptions = nq.CommunicatorOptions()) -> None:
         """Initialize protocol"""
         super().__init__(options)
         self._grpc_options = {"grpc.max_receive_message_length": self.options.connection.max_size, "grpc.max_send_message_length": self.options.connection.max_size}

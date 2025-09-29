@@ -7,7 +7,7 @@ from collections import abc
 from concurrent import futures
 from queue import Empty, SimpleQueue
 
-import net_queue as comms
+import net_queue as nq
 from net_queue import asynctools
 from net_queue.asynctools import thread_func
 
@@ -25,10 +25,10 @@ CONTROL_STOP = object()
 CONTROL_EVENT = b"\0"
 
 
-class Protocol[T](comms.Communicator[T]):
+class Protocol[T](nq.Communicator[T]):
     """Shared base TCP implementation"""
 
-    def __init__(self, options: comms.CommunicatorOptions = comms.CommunicatorOptions()) -> None:
+    def __init__(self, options: nq.CommunicatorOptions = nq.CommunicatorOptions()) -> None:
         """Inizialize comunicator"""
         super().__init__(options)
 
