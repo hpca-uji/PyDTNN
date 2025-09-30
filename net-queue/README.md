@@ -42,7 +42,7 @@ with nq.new(purpose=nq.Purpose.CLIENT) as queue:
 
   Comunicatior options
 
-  - `id: uuid.UUID = uuid.uuid4()`
+  - `id: uuid.UUID = uuid.uuid4()` (random)
   - `netloc: NetworkLocation = NetworkLocation('127.0.0.1', 51966)`
   - `workers: int = 1`
 

@@ -124,10 +124,10 @@ class StateResponse:
 
 @dataclass(slots=True, frozen=True)
 class OperationContext[T](abc.ABC):
-    """Operation context"""
+    """Abstract dataclass base for operation contexts"""
 
     @abc.abstractmethod
-    def group(self, size: int) -> CommmunicationGroup:
+    def group(self) -> CommmunicationGroup:
         """Compute operation's communication group"""
         raise NotImplementedError()
 

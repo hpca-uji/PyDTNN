@@ -1,17 +1,213 @@
 # pympi
-Simple Python-based MPI implementation
+Python-based MPI implementation for reasearch and experimentation
 
 ## Example
 ```python
+# example.py
 from pympi import MPI
 comm = MPI.COMM_WORLD
+size = comm.size
+rank = comm.rank
 
+# Synchronization
+comm.barrier()
+
+# Collective
 message = comm.bcast("Hello, World!")
 
-ranks = comm.allgather(comm.rank)
+ranks = comm.allgather(rank)
+
+# Point-to-point
+match rank:
+    case 0:
+        comm.send("Hello, 1!", dest=1)
+    case 1:
+        comm.recv(source=1)
+
+# Nonblocking
+req = comm.ireduce(rank)
+
+result = req.wait()
+
+# Buffer-based
+buffer = bytearray(10)
+
+comm.Allreduce(MPI.IN_PLACE, buffer)
+```
+
+Execute with 2 processes:
+```bash
+python -m pympi -np 2 python example.py
+```
+
+Note: `mpirun`, `srun` and other job managers can also be used*
+
+## Limitations
+
+Note: all the features mentioned here are planned for implementation,
+however they are not currently available.
+
+For comunicators, only `COMM_WORLD` is supported.
+`COMM_SELF`, `COMM_NULL`, subcommunicators and others can not be created.
+
+Buffer-based operations are limited to the ones which the send and receive buffer are equally sized.
+
+For point-to-point comuncations, only `send`, and its asynchronous and buffer-based variants, is supported.
+`ssend`, `bsend` and `rsend` can not be used. Additionally, self-messaging and message tagging are also not supported.
+
+## Implementation
+
+For most cases `pympi` is a drop-in replacement for `mpi4py`,
+therefore only mayor diferences will be documented.
+
+Documentation for `mpi4py` available here: <https://mpi4py.readthedocs.io/en/stable/>
+
+However, unlike `mpi4py`, asynchronous respones will be available without needing to call `wait` on them.
+
+---
+
+For communications `net-queue` is used,
+options can be customized via the `rc` module and enviroment variables.
+
+Documentation for `net-queue` available here: _Publish pending_
+
+Following it's memory handeling methodology, no internal buffering is currently preformed,
+so requests that typically block until a local copy is done, will block until the data is fully transmitted.
+This is only meaningfully observed on the point-to-point `send`, elsewhere this difference is negligible.
+
+---
+
+`pympi` follows a client-server architecture, by default rank `0` lauches the server on a separed thread.
+
+The server can also be started externally by:
+```bash
+python -m pympi.server
 ```
 
 ## Documentation
+### Constatns
+- `rc.init: bool = not ${PYMPI_ADDR}`
+
+  Should server auto initialize
+
+- `rc.wait: float = ${PYMPI_WAIT} | 0.5`
+
+  Wait for auto server transitions
+
+  If `init` is `False`, `wait` is ignored.
+
+- `rc.addr: str = ${PYMPI_ADDR} | "127.0.0.1"`
+
+  Server address
+
+- `rc.port: int = ${PYMPI_PORT} | 61642`
+
+  Server port
+
+- `rc.size: int = ${PYMPI_SIZE} | 1`
+
+  Communication size
+
+  Additional environment variables checked:
+  - `OMPI_COMM_WORLD_SIZE`
+  - `PMI_SIZE`
+  - `SLUM_NPROCS`
+
+- `rc.rank: int = ${PYMPI_RANK} | 0`
+
+  Communication identifier
+
+  Additional environment variables checked:
+  - `OMPI_COMM_WORLD_RANK`
+  - `PMI_RANK`
+  - `SLUM_PROCID`
+
+- `rc.serial: Iterable[str] = ${PYMPI_SERIAL} | []`
+
+  Serializable global names
+
+  `PYMPI_SERIAL` is a comma separted list of global names.
+
+  See `nq.io_stream.Serializer(restrict)` for more information.
+
+- `rc.proto: nq.Protocol = ${PYMPI_PROTO} | Protocol.TCP`
+
+  Communication protocol
+
+- `rc.ssl: bool = ${PYMPI_SSL} | False`
+
+  Use secure communications
+
+- `rc.ssl_key: Path | None = ${PYMPI_SSL_KEY} | None`
+
+  Secure communications private key
+
+- `rc.ssl_cert: Path | None = ${PYMPI_SSL_CERT} | None`
+
+  Secure communications certificate chain
+
+- `rc.comm: nq.CommunicatorOptions = nq.CommunicatorOptions()`
+
+  Additional net-queue communicator options
+
+### Structures
+- `proto.CommmunicationGroup(...)`
+
+  Communication group
+
+  - `src: frozenset[Rank]`
+  - `dst: frozenset[Rank]`
+
+- `OperationContext(...)`
+
+  Abstract dataclass base for operation contexts
+
+  - `group(...) -> CommmunicationGroup`
+
+    Compute operation's communication group
+
+  - `apply(src: Mapping[Rank, Any], dst: Set[Rank]) -> Mapping[Rank, Any]`
+
+    Apply operation over objects
+
+- `proto.OperationRequest(...)`
+
+  Operation request
+
+  - `group: CommmunicationGroup`
+  - `ctx: OperationContext | None = None`
+  - `data: typing.Any | None = None`
+
+  ---
+
+  - `id: uuid.UUID = uuid.uuid4()` (random)
+
+### Classes
+- `Comm(comm_options)`
+
+  Communicator
+
+  - `comm_options: nq.ComunicatorOptions = nq.ComunicatorOptions()`
+
+  ---
+
+  - `submit(op, callback) -> Request`
+
+    Schedule a new operation
+
+    Operation can be a user defined instance, allowing for custom operations.
+
+    - `op: proto.OperationRequest`
+    - `callback: abc.Callable = lambda x: x`
+
+      Called with the result of the operation prior to resolving the request, the return value of this function is the one provided to `wait`.
+
+- `server.Server(thread_pool, comm_options)`
+
+  MPI server
+
+  - `thread_pool: concurrent.futures.ThreadPoolExecutor`
+  - `comm_options: nq.ComunicatorOptions = nq.ComunicatorOptions()`
 
 ## Notes
 Due to how Python and external libraries handle threading, there is no reliable way to track when the MPI context should be automatically finalized.

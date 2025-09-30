@@ -229,7 +229,11 @@ class Comm:
                     raise RuntimeError(f"Invalid request state {request._state}")
 
     def submit(self, op: proto.OperationRequest, callback: abc.Callable = Request._callback) -> Request:
-        """Schedule a new operation"""
+        """
+        Schedule a new operation
+
+        Operation can be a user defined instance, allowing for custom operations.
+        """
 
         # Create appropriate request according to participation
         op = copy.replace(op, **{
@@ -665,7 +669,7 @@ BXOR = proto.ReduceOperation.BXOR
 MINLOC = proto.ReduceOperation.MINLOC
 MAXLOC = proto.ReduceOperation.MAXLOC
 
-COMM_WORLD = Comm()
+COMM_WORLD = Comm(rc.extra)
 
 # Best effort finalizer
 try:

@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 
-from net_queue import Protocol
+from net_queue import Protocol, CommunicatorOptions
 
 
 __all__ = (
@@ -11,13 +11,14 @@ __all__ = (
     "wait",
     "addr",
     "port",
+    "size",
     "rank",
-    "port",
     "serial",
     "proto",
     "ssl",
     "ssl_key",
-    "ssl_cert"
+    "ssl_cert",
+    "comm"
 )
 
 
@@ -33,14 +34,14 @@ wait = float(
 )
 
 
-"""Service address"""
+"""Server address"""
 addr = (
     os.environ.get("PYMPI_ADDR")
     or "127.0.0.1"
 )
 
 
-"""Service port"""
+"""Server port"""
 port = int(
     os.environ.get("PYMPI_PORT")
     or 61642
@@ -85,16 +86,19 @@ ssl = bool(
 )
 
 
-"""Secure communications key"""
+"""Secure communications private key"""
 ssl_key = (
     Path(key)
     if (key := os.environ.get("PYMPI_SSL_KEY"))
     else None
 )
 
-"""Secure communications certificate"""
+"""Secure communications certificate chain"""
 ssl_cert = (
     Path(key)
     if (key := os.environ.get("PYMPI_SSL_CERT"))
     else None
 )
+
+"""Additional net-queue communicator options"""
+comm = CommunicatorOptions()
