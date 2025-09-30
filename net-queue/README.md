@@ -1,5 +1,5 @@
 # net-queue
-Easy & fast network communications using queues
+Lock-free & memory efficient network communications using queues
 
 ## Example
 ```python
@@ -24,7 +24,7 @@ with nq.new(purpose=nq.Purpose.CLIENT) as queue:
 ### Constatns
 - `Protocol`:
 
-  Underlying protocol to use.
+  Comunication protocol
 
   - `TCP`
   - `MQTT` (requires external broker)
@@ -32,90 +32,111 @@ with nq.new(purpose=nq.Purpose.CLIENT) as queue:
 
 - `Purpose`:
 
-  Use context of comunicator.
+  Comunication purpose
 
-  - `CLIENT` (default)
+  - `CLIENT`
   - `SERVER`
 
 ### Structures
-- `CommunicatorOptions`
+- `CommunicatorOptions(...)`
 
-  - `id`: uuid.UUID (default: `uuid.uuid4()`)
-  - `netloc`: NetworkLocation(namedtuple) (default: `('127.0.0.1', 51966)`)
-  - `workers`: int (default: `1`)
+  Comunicatior options
 
-  Maximun number of threads to use for connection handeling.
-  Depending on the protocol 1~3 more maybe used, however they will be idle most of the time.
-  On high throughput aplications or high latency networks this may need increasing.
+  - `id: uuid.UUID = uuid.uuid4()`
+  - `netloc: NetworkLocation = NetworkLocation('127.0.0.1', 51966)`
+  - `workers: int = 1`
 
-  - `connection`: ConnectionOptions (default: ConnectionOptions())
-  - `serialization`: SerializationOptions (default: SerializationOptions())
-  - `security`: SecurityOptions (default: `None`)
+    Maximun number of threads to use for connection handeling.
+    Depending on the protocol 1~3 more maybe used, however they will be idle most of the time.
+    On high throughput aplications or high latency networks this may need increasing.
 
-- `ConnectionOptions`
-  - `max_size`: int (default: `4 * 1024 ** 2` / 4 MiB)
+  - `connection: ConnectionOptions = ConnectionOptions()`
+  - `serialization: SerializationOptions = SerializationOptions()`
+  - `security: SecurityOptions | None = None`
 
-      Maximun message size to send to underlying protocol before splitting.
+- `ConnectionOptions(...)`
 
-  - `merge_size`: int (default: `max_size`)
+  Connection options
 
-      Maximun message size to merge to when chunks are too small to efficently send.
-      Internally a buffer of this size is preallocated on construction.
+  - `max_size: int = 4 * 1024 ** 2` (4 MiB)
 
-  - `efficient_size`: (default: `max_size` / 64)
+    Maximun message size to send to underlying protocol before splitting.
 
-      Minimum message size to consider the send efficient before attempting merging.
+  - `merge_size: int = max_size`
 
-- `SerializationOptions`
-  - `load`: Callable[[Stream], Any] (default: `Serializer().load`)
+    Maximun message size to merge to when chunks are too small to efficently send.
+    Internally a buffer of this size is preallocated on construction.
 
-      Message deserialization handler.
-      Default deserializer uses `pickle`.
+  - `efficient_size: int = max_size / 64`
 
-      **Warning**: The `pickle` module is not secure. Only unpickle data you trust.
-      Serializer may be created with the `restrict` option to limit the trusted types.
+    Minimum message size to consider the send efficient before attempting merging.
 
-  - `dump`: Callable[[Any], Stream] (default: `Serializer().dump`)
+- `SerializationOptions(...)`
 
-      Message serialization handler.
-      Default serializer uses `pickle`.
+  Serialization options
 
-- `SecurityOptions`
+  - `load: Callable[[Stream], Any] = Serializer().load`
 
-    TLS/SSL options (default: `None` / disabled)
+    Message deserialization handler
 
-  - `key`: Path (default: `None`)
+  - `dump: Callable[[Any], Stream] = Serializer().dump`
 
-      Server's private key.
-      Required for servers, for clients always `None`.
+    Message serialization handler
 
-  - `certificate`: Path (default: `None`)
+- `SecurityOptions(...)`
 
-      Server's certifcate chain or client's trust chain.
-      Required for servers, for clients if not provided, it defaults to the system's chain.
+  Security options
+
+  - `key: Path | None = None`
+
+    Server's private key
+
+    Required for servers, for clients always `None`.
+
+  - `certificate: Path | None = None`
+
+    Server's certifcate chain or client's trust chain
+
+    Required for servers, for clients if not provided, it defaults to the system's chain.
+
+- `NetworkLocation(...)`
+
+  Network location
+
+  Extends: `NamedTuple`
+
+  - `host: str = "127.0.0.1"`
+  - `port: int = 51966`
 
 ### Functions
 - `nq.new(protocol, purpose, options)`
 
   Create a comunicator.
 
-  - `protocol`: Protocol (default: `Purpose.TCP`)
-  - `purpose`: Purpose (default: `Purpose.Client`)
-  - `options`: ComunicatorOptions (default: `ComunicatorOptions()`)
+  - `protocol: Protocol = Purpose.TCP`
+  - `purpose: Purpose = Purpose.Client`
+  - `options: ComunicatorOptions = ComunicatorOptions()`
 
 ### Classes
 - `Comunicator(options)`
 
-  - `options`: ComunicatorOptions (default: `ComunicatorOptions()`)
+  Communicator implementation
 
-  - `id`: uuid.UUID
+  Operations are thread-safe.
 
-    Helper property, derived from `options.id`.
+  Comunicator has `with` support.
 
-  - `options`: ComunicatorOptions
-  - `put(data, *peers)`
+  - `options: ComunicatorOptions = ComunicatorOptions()`
 
-    Publish data to peers.
+  ---
+
+  - `id: uuid.UUID` (helper for `options.id`)
+  - `options: ComunicatorOptions`
+
+  - `put(data: Any, *peers: uuid.UUID) -> Future[None]`
+
+    Publish data to peers
+
     For clients if no peers are defined, data is send to the server.
     For servers if no peers are defined, data is send to all clients.
 
@@ -124,51 +145,121 @@ with nq.new(purpose=nq.Purpose.CLIENT) as queue:
 
     Note: Only servers can send to a particular client.
 
-  - `get(*peers)`
+    Future is resolved when data is safe to mutate again.
+    Future may raise `ResouceClose(uuid.UUID)` if the peer or itself are closed.
+    Future may raise protocol specific exceptions.
 
-    Get data from peers.
+  - `get(*peers: uuid.UUID) -> Any`
+
+    Get data from peers
+
     If no peers are defined, data is returned from the first available peer.
 
     Note: Currently peers can not be specified.
 
-  - `close()`
+  - `close() -> None`
 
-  Note: Comunicator has context manager support, so it can be used in `with` statments.
-  Note: Comunicator is thread-safe, so it can be used safely by multiple threads without locking.
+    Close the communicator
 
-- `{protocol}.{purpose}.Comuicator(options)`
+- `{protocol}.{purpose}.Comunicator(options)`
 
-  Concrete implementation of protocol for the given purpose.
+  Concrete communicator implementation fot the given protocol and purpose
 
-- `io_stream.Stream`
+- `io_stream.Stream()`
 
-  Extends `BufferedIOBase`
+  Zero-copy non-blocking pipe-like
 
-  - `empty`
-  - `nchunks`
-  - `nbytes`
+  Interface mimics a non-blocking BufferedRWPair,
+  but operations return memoryviews insted of bytes.
 
-  - `readchunk()`
-  - `writechunk(chunk)`
-  - `peekchunk()`
-  - `writehunks(chunks)`
-  - `readchunks()`
+  Operations are not thread-safe.
+  Reader is responsible of releasing chunks.
+  Writer hands off responsibility over chunks.
 
-  - `update(bs)`
-  - `clear()`
-  - `copy()`
+  Stream has `with` support.
+  Stream has `copy.copy()` support, however it does not support `copy.deepcopy()`.
 
-  Note: Stream has context manager support, so it can be used in `with` statments.
+  Extends: `BufferedIOBase`
 
-  Note: Stream has copy support, so it can be used in `copy.copy()`, however it can not be deepcopied.
+  - `empty -> bool`
 
-  Note: Stream is not thread-safe, an can not be used safely by multiple threads, external locking is required.
+    Is stream empty (would read block)
 
+  - `nchunks -> int`
 
-- `io_stream.Serializer`
+    Number of chunks held in stream
 
-  - `load(data)`
-  - `dump(data)`
+  - `nbytes -> int`
+
+    Number of bytes held in stream
+
+  - `readchunk() -> memoryview`
+
+    Read a chunk from stream
+
+  - `unreadchunk(chunk: memoryview) -> int`
+
+    Unread a chunk into the stream
+
+  - `readchunk() -> memoryview`
+
+    Read a chunk from stream
+
+  - `unwritechunk() -> memoryview`
+
+    Unwrite a chunk from the stream
+
+  - `writechunk(chunk: memoryview) -> int`
+
+    Write a chunk into the stream
+
+  - `peekchunk() -> memoryview`
+
+    Peek a chunk from stream
+
+  - `readchunks() -> Iterable[memoryview]`
+
+    Read all chunks from stream
+
+  - `writechunks(chunks: Iterable[memoryview]) -> int`
+
+    Write many chunks into the stream
+
+  - `update(bs: Iterable[Buffer]) -> int`
+
+    Write many buffers into the stream
+
+  - `clear() -> None`
+
+    Release all chunks
+  
+  - `copy() -> Stream`
+
+    Shallow copy of stream
+
+- `io_stream.Serializer(...)`
+
+  Pickle-stream serializer
+
+  **Warning**: The `pickle` module is not secure. Only unpickle data you trust.
+
+  - `restrict: Iterable[str] | None = None`
+
+    If defined it limits the range of trusted types.
+
+    Example: `["builtins"]` for a whole module
+
+    Example: `["uuid.UUID"]` for a single class
+
+  ---
+
+  - `load(data: Any) -> Stream`
+
+    Transform a data into a stream
+
+  - `dump(data: Stream) -> Any`
+
+    Transform a stream into useful data
 
 
 ## Notes
