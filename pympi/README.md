@@ -84,6 +84,41 @@ The server can also be started externally by:
 python -m pympi.server
 ```
 
+## Personalized operations
+
+Unlike traditional MPI and `mpi4py`,
+with `pympi` you can define fully personalized operations,
+not just reduce functions.
+
+For example, here we define operation that combines a `alltoall` with `reduce` operation.
+This allows each rank to provide different values for the individual reduces and saves bandwith,
+as insted of the tipical `size` sized response each rank only recieves one value.
+
+```python
+# alltoallreduce.py
+from pympi import MPI, proto
+comm = MPI.COMM_WORLD
+size = comm.size
+rank = comm.rank
+
+# Define operation
+class AllToAllReduceContext(proto.OperationContext):
+    def group(self, size: int) -> proto.CommmunicationGroup:
+        return proto.CommmunicationGroup(range(size), range(size))
+
+    def apply(self, src: Mapping[Rank, list[int]], dst: Set[Rank]) -> Mapping[Rank, int]:
+        return {
+            dst_rank: sum(src[src_rank][dst_rank] for src_rank in src)
+            for dst_rank in dst
+        }
+
+# Execute operation
+ctx = AllToAllReduceContext()
+group = ctx.group(comm.size)
+op = proto.OperationRequest(group, ctx, regions)
+result = comm.submit(op).wait()
+```
+
 ## Documentation
 ### Constatns
 - `rc.init: bool = not ${PYMPI_ADDR}`
