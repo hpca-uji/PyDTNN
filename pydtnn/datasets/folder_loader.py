@@ -83,6 +83,14 @@ class DatasetFolderLoader(Dataset):
                          force_test_as_validation=force_test_as_validation, 
                          debug=debug)
         
+        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+            x_shape = (input_shape[1], input_shape[2], input_shape[0])
+        else:
+            x_shape = input_shape
+
+        self.x = np.ndarray(shape=(self.max_nsamples_online, *x_shape), dtype=self.model.dtype)
+        self.y = np.ndarray(shape=(self.max_nsamples_online, *output_shape), dtype=self.model.dtype)
+
         # Splitting the Train and the Validation dataset.
         if self.test_as_validation:
             self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST]
@@ -176,8 +184,6 @@ class DatasetFolderLoader(Dataset):
 
     @override
     def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
-        
-        batch_size = 0
 
         if part is DatasetEnum.TRAIN: 
             shuffle(self.labels_and_images[part])
@@ -192,29 +198,25 @@ class DatasetFolderLoader(Dataset):
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 image = self._chw2hwc(image)
             # else: Tensor format is OK.
-            
-            images.append(image)
-            labels.append(label)
 
-            if batch_size < self.max_nsamples_online:
-                batch_size += 1
+            if len(images) < self.max_nsamples_online:
+                images.append(image)
+                labels.append(label)
             else:
-                x = np.stack(images[:batch_size], dtype=self.model.dtype)
-                y = np.stack(labels[:batch_size], dtype=self.model.dtype)
-                del images[:batch_size]
-                del labels[:batch_size]
-                batch_size -= batch_size
-                yield x, y
-                del x, y
+                np.stack(images, out=self.x)
+                np.stack(labels, out=self.y)
+                images.clear()
+                labels.clear()
+                yield self.x, self.y
         #} - for
         
-        if batch_size < self.max_nsamples_online:
-            x = np.stack(images, dtype=self.model.dtype)
-            y = np.stack(labels, dtype=self.model.dtype)
+        num_not_processed_images = len(images)
+        if num_not_processed_images != 0:
+            np.stack(images, out=self.x[:num_not_processed_images])
+            np.stack(labels, out=self.y[:num_not_processed_images])
             images.clear()
             labels.clear()
-            yield x, y
-            del x, y
+            yield self.x[:num_not_processed_images], self.y[:num_not_processed_images]
         #else: Since all the data was already yielded inside the for, do nothing.
     # --- END _actual_data_generator --- #
 
