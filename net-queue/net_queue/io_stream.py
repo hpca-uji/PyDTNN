@@ -1,14 +1,5 @@
 """Streaming IO"""
-
-# NOTE: Packed format:
-# - Network byte order (big-endian)
-# - Size only includes stream (not itself)
-#
-# +---------------+-------------------+
-# | Size (uint64) | Stream (variable) |
-# +---------------+-------------------+
-
-# TODO: Use uintvar (VLQ) insted of uint64 in packer
+from __future__ import annotations
 
 import io
 import pickle
@@ -53,7 +44,9 @@ class Stream(io.BufferedIOBase):
     Operations are not thread-safe.
     Reader is responsible of releasing chunks.
     Writer hands off responsibility over chunks.
-    """
+
+    Stream has `with` support.
+    Stream has `copy.copy()` support, however it does not support `copy.deepcopy()`.    """
 
     __slots__ = ("_nbytes", "_chunks")
 
@@ -133,7 +126,7 @@ class Stream(io.BufferedIOBase):
         while not self.empty():
             yield self.readchunk()
 
-    def writechunks(self, chunks: abc.Iterable[memoryview], /) -> int:
+    def writechunks(self, chunks: abc.Iterable[memoryview]) -> int:
         """Write many chunks into the stream"""
         size = 0
 
@@ -156,13 +149,13 @@ class Stream(io.BufferedIOBase):
         for chunk in self.readchunks():
             chunk.release()
 
-    def copy(self):
+    def copy(self) -> Stream:
         """Shallow copy of stream"""
         other = self.__class__()
         other.update(self._chunks)
         return other
 
-    def __copy__(self):
+    def __copy__(self) -> Stream:
         """Shallow copy of stream"""
         return self.copy()
 
@@ -306,6 +299,16 @@ class Packer:
     Operations are not thread-safe.
     """
 
+    # NOTE: Packed format:
+    # - Network byte order (big-endian)
+    # - Size only includes stream (not itself)
+    #
+    # +---------------+-------------------+
+    # | Size (uint64) | Stream (variable) |
+    # +---------------+-------------------+
+
+    # TODO: Use uintvar (VLQ) insted of uint64 in packer
+
     __slots__ = ()
     _format_size = "!Q"
     _sizeof_size = struct.calcsize(_format_size)
@@ -351,7 +354,7 @@ class Serializer:
 
     __slots__ = ("_dump", "_load")
 
-    def __init__(self, restrict: abc.Iterable | None = None) -> None:
+    def __init__(self, restrict: abc.Iterable[str] | None = None) -> None:
         """Initialize serializer"""
         # Setup context
         self._dump = pickle.dump

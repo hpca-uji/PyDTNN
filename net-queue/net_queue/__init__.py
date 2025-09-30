@@ -248,7 +248,13 @@ class SessionData:
 
 
 class Communicator[T](abc.ABC):
-    """Base communicator implementation"""
+    """
+    Communicator implementation
+
+    Operations are thread-safe.
+
+    Comunicator has `with` support.
+    """
 
     def __init__(self, options: CommunicatorOptions = CommunicatorOptions()) -> None:
         """Communicator initialization"""
@@ -422,7 +428,13 @@ class Communicator[T](abc.ABC):
         return self._get_events.get()
 
     def get(self, *peers: uuid.UUID) -> Message:
-        """Get data from a client"""
+        """
+        Get data from peers
+
+        If no peers are defined, data is returned from the first available peer.
+
+        Note: Currently peers can not be specified.
+        """
         # NOTE: peers could be missing or disconnect creating infinite wait, which is an expected state during startup
         assert len(peers) == 0, "Comunicators can not get from specific peer"
         peer = self._get(*peers)
@@ -460,7 +472,21 @@ class Communicator[T](abc.ABC):
         return future
 
     def put(self, data, *peers: uuid.UUID) -> Future[None]:
-        """Publish data to peers"""
+        """
+        Publish data to peers
+
+        For clients if no peers are defined, data is send to the server.
+        For servers if no peers are defined, data is send to all clients.
+
+        It is prefered to specify multiple peers insted of issuing multiple puts,
+        as data will only be serialized once and protocols may use optimized routes.
+
+        Note: Only servers can send to a particular client.
+
+        Future is resolved when data is safe to mutate again.
+        Future may raise `ResouceClose(uuid.UUID)` if the peer or itself are closed.
+        Future may raise protocol specific exceptions.
+        """
         if not peers:
             with self._lock:
                 peers = tuple(self._comms)
