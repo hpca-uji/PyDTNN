@@ -121,65 +121,92 @@ result = comm.submit(op).wait()
 
 ## Documentation
 ### Constatns
-- `rc.init: bool = not ${PYMPI_ADDR}`
+- `rc.init: bool = True`
 
   Should server auto initialize
 
-- `rc.wait: float = ${PYMPI_WAIT} | 0.5`
+  Environment variables checked for defaults:
+  - `PYMPI_ADDR` (if not defined)
+
+- `rc.wait: float = 0.5` (seconds)
 
   Wait for auto server transitions
 
   If `init` is `False`, `wait` is ignored.
 
-- `rc.addr: str = ${PYMPI_ADDR} | "127.0.0.1"`
+  Environment variables checked for defaults:
+  - `PYMPI_WAIT`
+
+- `rc.addr: str = "127.0.0.1"`
 
   Server address
 
-- `rc.port: int = ${PYMPI_PORT} | 61642`
+  Environment variables checked for defaults:
+  - `PYMPI_ADDR`
+
+- `rc.port: int = 61642`
 
   Server port
 
-- `rc.size: int = ${PYMPI_SIZE} | 1`
+  Environment variables checked for defaults:
+  - `PYMPI_PORT`
+
+- `rc.size: int = 1`
 
   Communication size
 
-  Additional environment variables checked:
+  Environment variables checked for defaults:
+  - `PYMPI_SIZE`
   - `OMPI_COMM_WORLD_SIZE`
   - `PMI_SIZE`
   - `SLUM_NPROCS`
 
-- `rc.rank: int = ${PYMPI_RANK} | 0`
+- `rc.rank: int = 0`
 
   Communication identifier
 
-  Additional environment variables checked:
+  Environment variables checked for defaults:
+  - `PYMPI_RANK`
   - `OMPI_COMM_WORLD_RANK`
   - `PMI_RANK`
   - `SLUM_PROCID`
 
-- `rc.serial: Iterable[str] = ${PYMPI_SERIAL} | []`
+- `rc.serial: Iterable[str] = []`
 
   Serializable global names
 
-  `PYMPI_SERIAL` is a comma separted list of global names.
+  Environment variables checked for defaults:
+  - `PYMPI_SERIAL` (comma separted list of global names)
 
   See `nq.io_stream.Serializer(restrict)` for more information.
 
-- `rc.proto: nq.Protocol = ${PYMPI_PROTO} | Protocol.TCP`
+- `rc.proto: nq.Protocol = Protocol.TCP`
 
   Communication protocol
 
-- `rc.ssl: bool = ${PYMPI_SSL} | False`
+  Environment variables checked for defaults:
+  - `PYMPI_PROTO`
+
+- `rc.ssl: bool = False`
 
   Use secure communications
 
-- `rc.ssl_key: Path | None = ${PYMPI_SSL_KEY} | None`
+  Environment variables checked for defaults:
+  - `PYMPI_SSL`
+
+- `rc.ssl_key: Path | None = None`
 
   Secure communications private key
 
-- `rc.ssl_cert: Path | None = ${PYMPI_SSL_CERT} | None`
+  Environment variables checked for defaults:
+  - `PYMPI_SSL_KEY`
+
+- `rc.ssl_cert: Path | None = None`
 
   Secure communications certificate chain
+
+  Environment variables checked for defaults:
+  - `PYMPI_SSL_CERT`
 
 - `rc.comm: nq.CommunicatorOptions = nq.CommunicatorOptions()`
 
