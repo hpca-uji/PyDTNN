@@ -23,6 +23,8 @@ from pydtnn.tests.common import verbose_test
 from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
 from pydtnn.tests.tools import print_with_header
 
+from pydtnn.layers import Layer
+
 class Params:
     pass
 
@@ -47,7 +49,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         "Conv2D": 1e-5,
     }
 
-    def get_tolerance(self, layer):
+    def get_tolerance(self, layer: Layer) -> tuple[float, float]:
         rtol, atol = (self.rtol_dict.get(layer.canonical_name, self.rtol_default),
                       self.atol_dict.get(layer.canonical_name, self.atol_default))
         if layer.canonical_name in ("AdditionBlock", "ConcatenationBlock"):
@@ -64,9 +66,9 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = "NHWC"
-        params.dataset_name = "cifar10"
-        params.dataset_train_path = "datasets/cifar10"
-        params.dataset_test_path = "datasets/cifar10"
+        params.dataset_name = "cifar10" #TODO: change to mnist
+        params.dataset_train_path = "datasets/cifar10" #TODO: change to mnist
+        params.dataset_test_path = "datasets/cifar10" #TODO: change to mnist
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:

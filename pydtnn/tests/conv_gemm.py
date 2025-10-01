@@ -49,7 +49,11 @@ def _conv_gemm_and_im2row_mm(weights:np.ndarray, x:np.ndarray, biases:np.ndarray
 
     x_c:np.ndarray = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-    im2row_nhwc_cython(x, x_c, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    im2row_nhwc_cython(x, x_c, 
+                       kh, kw, ho, wo,
+                       vpadding, hpadding, 
+                       vstride, hstride, 
+                       vdilation, hdilation)
     w_c = weights.reshape((-1, kn), copy=False)
     if biases is None:
         im2row_mm_result:np.ndarray = x_c @ w_c
@@ -284,7 +288,8 @@ class ConvGemmTestCase(PyDTNNTestCase):
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,
                                                                       vstride=d.vstride, hstride=d.hstride,
                                                                       vdilation=d.vdilation, hdilation=d.hdilation)
-        self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result))
+        diff = conv_gemm_result - im2row_mm_result
+        self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result), f"The difference is to big (rtol=1.e-5, atol=1.e-8). max diff: {diff.max()}. min diff: {diff.min()}")
 
     def test_with_different_kn(self):
         d = D()
@@ -312,8 +317,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding,
-                                     d.vstride, d.hstride, d.vdilation, d.hdilation)
+            im2row_nhwc_cython(x, x_c, 
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding,
+                               d.vstride, d.hstride, 
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape((-1, kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
@@ -351,8 +359,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding,
-                                     d.vstride, d.hstride, d.vdilation, d.hdilation)
+            im2row_nhwc_cython(x, x_c,
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding,
+                               d.vstride, d.hstride,
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
@@ -390,8 +401,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-            im2row_nhwc_cython(x, x_c, d.kh, d.kw, padding, padding,
-                                     d.vstride, d.hstride, d.vdilation, d.hdilation)
+            im2row_nhwc_cython(x, x_c, 
+                               d.kh, d.kw, ho, wo,
+                               padding, padding,
+                               d.vstride, d.hstride, 
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
@@ -429,8 +443,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride,
-                                     d.vdilation, d.hdilation)
+            im2row_nhwc_cython(x, x_c, 
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding, 
+                               stride, stride,
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
@@ -470,8 +487,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
                 x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-                im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
-                                         d.vdilation, d.hdilation)
+                im2row_nhwc_cython(x, x_c, 
+                                   d.kh, d.kw, ho, wo, 
+                                   d.vpadding, d.hpadding, 
+                                   vstride, hstride,
+                                   d.vdilation, d.hdilation)
                 w_c = weights.reshape((-1, d.kn), copy=False)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
@@ -509,8 +529,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-            im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
-                                     dilation, dilation)
+            im2row_nhwc_cython(x, x_c, 
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding, 
+                               d.vstride, d.hstride,
+                               dilation, dilation)
             w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
@@ -544,8 +567,11 @@ class ConvGemmTestCase(PyDTNNTestCase):
 
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-            im2row_nhwc_cython(x, x_c, layer.kh, layer.kw, layer.vpadding, layer.hpadding,
-                                     layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
+            im2row_nhwc_cython(x, x_c, 
+                               layer.kh, layer.kw, layer.ho, layer.wo,
+                               layer.vpadding, layer.hpadding,
+                               layer.vstride, layer.hstride, 
+                               layer.vdilation, layer.hdilation)
             w_c = weights.reshape(-1, layer.kn)
             im2row_mm_result = x_c @ w_c
             if verbose_test():

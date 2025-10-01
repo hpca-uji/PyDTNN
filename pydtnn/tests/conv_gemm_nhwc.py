@@ -50,12 +50,16 @@ def _conv_gemm_and_im2row_mm(weights:np.ndarray, x:np.ndarray, biases:np.ndarray
 
     x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-    im2row_nhwc_cython(x, x_c, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+    im2row_nhwc_cython(x, x_c, 
+                       kh, kw, ho , wo,
+                       vpadding, hpadding, 
+                       vstride, hstride, 
+                       vdilation, hdilation)
     w_c = weights.reshape((-1, kn), copy=False)
     if biases is None:
         im2row_mm_result = x_c @ w_c
     else:
-        im2row_mm_result = x_c @ w_c + biases
+        im2row_mm_result = x_c @ w_c + biases.reshape(-1, biases.shape[-1])
     if verbose_test():
         print_with_header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
         print("Shape: ", conv_gemm_result.shape,
@@ -280,7 +284,7 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
         x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         ho = int(math.floor((d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) / d.vstride + 1))
         wo = int(math.floor((d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) / d.hstride + 1))
-        biases = np.random.rand(d.b * ho * wo, d.kn).astype(np.float32, order='C')
+        biases = np.random.rand(d.b, ho, wo, d.kn).astype(np.float32, order='C')
         conv_gemm_result, im2row_mm_result = _conv_gemm_and_im2row_mm(weights, x, biases=biases,
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,
                                                                       vstride=d.vstride, hstride=d.hstride,
@@ -316,8 +320,11 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                                        vstride=d.vstride, hstride=d.hstride,
                                                                        vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape((-1, kn),copy=False)
-                im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding,
-                                   d.vstride, d.hstride, d.vdilation, d.hdilation)
+                im2row_nhwc_cython(x, x_c, 
+                                   d.kh, d.kw, ho, wo,
+                                   d.vpadding, d.hpadding,
+                                   d.vstride, d.hstride,
+                                   d.vdilation, d.hdilation)
                 w_c = weights.reshape((-1, kn),copy=False)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
@@ -359,8 +366,11 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                             vstride=d.vstride, hstride=d.hstride,
                                                             vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
-                im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding,
-                                   d.vstride, d.hstride, d.vdilation, d.hdilation)
+                im2row_nhwc_cython(x, x_c, 
+                                   d.kh, d.kw, ho , wo,
+                                   d.vpadding, d.hpadding,
+                                   d.vstride, d.hstride, 
+                                   d.vdilation, d.hdilation)
                 w_c = weights.reshape(-1, d.kn)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
@@ -401,8 +411,12 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
 
                 x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
-                im2row_nhwc_cython(x, x_c, d.kh, d.kw, padding, padding, 
-                                   d.vstride, d.hstride, d.vdilation, d.hdilation)
+                im2row_nhwc_cython(x, x_c,
+                                   ho, wo,
+                                   d.kh, d.kw,
+                                   padding, padding,
+                                   d.vstride, d.hstride,
+                                   d.vdilation, d.hdilation)
                 
                 w_c = weights.reshape((-1, d.kn), copy=False)
                 im2row_mm_result = x_c @ w_c
@@ -444,7 +458,11 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                             vstride=stride, hstride=stride,
                                                             vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
-                im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, stride, stride, d.vdilation, d.hdilation)
+                im2row_nhwc_cython(x, x_c, 
+                                   d.kh, d.kw, ho, wo,
+                                   d.vpadding, d.hpadding, 
+                                   stride, stride, 
+                                   d.vdilation, d.hdilation)
                 w_c = weights.reshape((-1, d.kn), copy=False)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
@@ -487,8 +505,11 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                                 vstride=vstride, hstride=hstride,
                                                                 vdilation=d.vdilation, hdilation=d.hdilation)
                     conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
-                    im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, vstride, hstride,
-                                             d.vdilation, d.hdilation)
+                    im2row_nhwc_cython(x, x_c, 
+                                       d.kh, d.kw, ho, wo,
+                                       d.vpadding, d.hpadding, 
+                                       vstride, hstride,
+                                       d.vdilation, d.hdilation)
                     w_c = weights.reshape((-1, d.kn), copy=False)
                     im2row_mm_result = x_c @ w_c
                     if verbose_test():
@@ -528,7 +549,10 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                             vstride=d.vstride, hstride=d.hstride,
                                                             vdilation=dilation, hdilation=dilation)
                 conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
-                im2row_nhwc_cython(x, x_c, d.kh, d.kw, d.vpadding, d.hpadding, d.vstride, d.hstride,
+                im2row_nhwc_cython(x, x_c, 
+                                   d.kh, d.kw, ho, wo,
+                                   d.vpadding, d.hpadding, 
+                                   d.vstride, d.hstride,
                                    dilation, dilation)
                 w_c = weights.reshape(-1, d.kn)
                 im2row_mm_result = x_c @ w_c
@@ -564,8 +588,11 @@ class ConvGemmNHWCTestCase(unittest.TestCase):
                                                             vstride=layer.vstride, hstride=layer.hstride,
                                                             vdilation=layer.vdilation, hdilation=layer.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape((-1, layer.kn), copy=False)
-                im2row_nhwc_cython(x, x_c, layer.kh, layer.kw, layer.vpadding, layer.hpadding,
-                                         layer.vstride, layer.hstride, layer.vdilation, layer.hdilation)
+                im2row_nhwc_cython(x, x_c, 
+                                   layer.kh, layer.kw, layer.ho, layer.wo,
+                                   layer.vpadding, layer.hpadding,
+                                   layer.vstride, layer.hstride, 
+                                   layer.vdilation, layer.hdilation)
                 w_c = weights.reshape((-1, layer.kn), copy=False)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
