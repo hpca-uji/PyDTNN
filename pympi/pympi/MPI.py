@@ -409,8 +409,8 @@ class Comm:
     # Broadcast
     def ibcast[T](self, obj: T, root: proto.Rank = 0) -> Request[T]:
         """Broadcast."""
-        ctx = proto.BroadcastContext(root=root)
-        group = ctx.group(size=self.size)
+        ctx = proto.BroadcastContext()
+        group = ctx.group(root=root, size=self.size)
         op = proto.OperationRequest(group=group, ctx=ctx, data=obj)
         return self.submit(op=op)
 
@@ -420,8 +420,8 @@ class Comm:
 
     def Ibcast[T: abc.Buffer](self, buf: T, root: proto.Rank = 0) -> Request[None]:
         """Nonblocking Gather to All."""
-        ctx = proto.BroadcastContext(root=root)
-        group = ctx.group(size=self.size)
+        ctx = proto.BroadcastContext()
+        group = ctx.group(root=root, size=self.size)
 
         def callback(result: T) -> None:
             with byteview(result) as src, byteview(buf) as dst:
@@ -493,8 +493,8 @@ class Comm:
     # Scatter
     def iscatter[T](self, sendobj: abc.Sequence[T], root: proto.Rank = 0) -> Request[T]:
         """Nonblocking Scatter."""
-        ctx = proto.ScatterContext(root=root)
-        group = ctx.group(size=self.size)
+        ctx = proto.ScatterContext()
+        group = ctx.group(root=root, size=self.size)
         op = proto.OperationRequest(group=group, ctx=ctx, data=sendobj)
         return self.submit(op=op)
 
@@ -517,8 +517,8 @@ class Comm:
     # Gather to All
     def igather[T](self, sendobj: T, root: proto.Rank = 0) -> Request[list[T]]:
         """Nonblocking Gather."""
-        ctx = proto.GatherContext(root=root)
-        group = ctx.group(size=self.size)
+        ctx = proto.GatherContext()
+        group = ctx.group(root=root, size=self.size)
         op = proto.OperationRequest(group=group, ctx=ctx, data=sendobj)
         return self.submit(op=op)
 
@@ -529,8 +529,8 @@ class Comm:
     # Reduce
     def ireduce[T](self, sendobj: T, op: proto.ReduceOperation = proto.ReduceOperation.SUM, root: proto.Rank = 0) -> Request[T]:
         """Reduce to All."""
-        ctx = proto.ReduceContext(op=op, root=root)
-        group = ctx.group(size=self.size)
+        ctx = proto.ReduceContext(op=op)
+        group = ctx.group(root=root, size=self.size)
         operation = proto.OperationRequest(group=group, ctx=ctx, data=sendobj)
         return self.submit(op=operation)
 
@@ -547,8 +547,8 @@ class Comm:
             with byteview(result) as src, byteview(recvbuf) as dst:
                 dst[:] = src
 
-        ctx = proto.ReduceContext(op=op, root=root)
-        group = ctx.group(size=self.size)
+        ctx = proto.ReduceContext(op=op)
+        group = ctx.group(root=root, size=self.size)
         operation = proto.OperationRequest(group=group, ctx=ctx, data=sendbuf)
         return self.submit(op=operation, callback=callback)
 
@@ -669,7 +669,7 @@ BXOR = proto.ReduceOperation.BXOR
 MINLOC = proto.ReduceOperation.MINLOC
 MAXLOC = proto.ReduceOperation.MAXLOC
 
-COMM_WORLD = Comm(rc.extra)
+COMM_WORLD = Comm(rc.comm)
 
 # Best effort finalizer
 try:
