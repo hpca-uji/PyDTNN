@@ -90,12 +90,11 @@ Unlike traditional MPI and `mpi4py`,
 with `pympi` you can define fully personalized operations,
 not just reduce functions.
 
-For example, here we define operation that combines a `alltoall` with `reduce` operation.
-This allows each rank to provide different values for the individual reduces and saves bandwith,
-as insted of the tipical `size` sized response each rank only recieves one value.
+For example, on this operation we group ranks with its neighbour in pairs,
+apply a custom reduce function, and return the result to the lower rank.
 
 ```python
-# alltoallreduce.py
+# pair_reduce.py
 from pympi import MPI, proto
 comm = MPI.COMM_WORLD
 size = comm.size
@@ -103,20 +102,21 @@ rank = comm.rank
 
 # Define operation
 @dataclass(slots=True, frozen=True)
-class AllToAllReduceContext(proto.OperationContext):
+class PairReduce(proto.OperationContext):
+    reducer: Callable
+
     def group(self, size: int) -> proto.CommmunicationGroup:
-        return proto.CommmunicationGroup(range(size), range(size))
+        return proto.CommmunicationGroup(range(size), range(0, size, 2))
 
     def apply(self, src: Mapping[Rank, list[int]], dst: Set[Rank]) -> Mapping[Rank, int]:
-        return {
-            dst_rank: sum(src[src_rank][dst_rank] for src_rank in src)
-            for dst_rank in dst
-        }
+        values = [src[rank] for rank in sorted(src)]  # sort values by rank
+        results = map(self.reducer, itertools.batched(values, 2))
+        return dict(zip(dst, results))
 
 # Execute operation
 data = list(range(comm.size))
-ctx = AllToAllReduceContext()
-group = ctx.group(comm.size)
+ctx = AllToAllReduceContext(reducer=sum)
+group = ctx.group(size=comm.size)
 op = proto.OperationRequest(group, ctx, data)
 result = comm.submit(op).wait()
 ```
