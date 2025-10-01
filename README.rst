@@ -66,7 +66,7 @@ Installing PyDTNN from source
 
 Download PyDTNN source code from its GitHub repository and enter the PyDTNN directory::
 
-    $ git clone https://github.com/hpca-uji/PyDTNN
+    $ git clone --recurse-submodules https://github.com/hpca-uji/PyDTNN
     $ cd PyDTNN
 
 The required Python packages are listed in the ``requirements.txt`` file, to install
