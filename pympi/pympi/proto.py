@@ -140,15 +140,15 @@ class OperationContext[T](abc.ABC):
 @dataclass(slots=True, frozen=True)
 class BroadcastContext[T](OperationContext[T]):
     """Broadcast operation"""
-    root: Rank = 0
 
-    def group(self, size: int) -> CommmunicationGroup:
+    def group(self, root: int, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        return CommmunicationGroup([self.root], range(size))
+        return CommmunicationGroup([root], range(size))
 
     def apply(self, src: coll_abc.Mapping[Rank, T], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
         """Apply operation over objects"""
-        return dict.fromkeys(dst, src[self.root])
+        root = next(iter(src))
+        return dict.fromkeys(dst, src[root])
 
 
 @dataclass(slots=True, frozen=True)
@@ -224,15 +224,15 @@ class AllPhasedReduceContext(AllReduceContext):
 @dataclass(slots=True, frozen=True)
 class ScatterContext[T](OperationContext[T]):
     """Scatter operation"""
-    root: Rank = 0
 
-    def group(self, size: int) -> CommmunicationGroup:
+    def group(self, root: int, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        return CommmunicationGroup([self.root], range(size))
+        return CommmunicationGroup([root], range(size))
 
     def apply(self, src: coll_abc.Mapping[Rank, coll_abc.Sequence[T]], dst: coll_abc.Set[Rank]) -> coll_abc.Mapping[Rank, T]:
         """Apply operation over objects"""
-        return dict(zip(sorted(dst), src[self.root]))
+        root = next(iter(src))
+        return dict(zip(sorted(dst), src[root]))
 
 
 @dataclass(slots=True, frozen=True)
@@ -252,21 +252,19 @@ class AllToAllContext[T](OperationContext[T]):
 @dataclass(slots=True, frozen=True)
 class GatherContext[T](AllGatherContext[T]):
     """Gather operation"""
-    root: Rank = 0
 
-    def group(self, size: int) -> CommmunicationGroup:
+    def group(self, root: int, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        return CommmunicationGroup(range(size), [self.root])
+        return CommmunicationGroup(range(size), [root])
 
 
 @dataclass(slots=True, frozen=True)
 class ReduceContext[T](AllReduceContext[T]):
     """Reduce operation"""
-    root: Rank = 0
 
-    def group(self, size: int) -> CommmunicationGroup:
+    def group(self, root: int, size: int) -> CommmunicationGroup:
         """Compute operation's communication group"""
-        return CommmunicationGroup(range(size), [self.root])
+        return CommmunicationGroup(range(size), [root])
 
 
 @dataclass(slots=True, frozen=True)
