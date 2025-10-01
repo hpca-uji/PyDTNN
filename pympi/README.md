@@ -110,17 +110,31 @@ class PairReduce(proto.OperationContext):
         dst = range(0, size, 2) # half of ranks
         return proto.CommmunicationGroup(src, dst)
 
-    def apply(self, src: Mapping[Rank, list[int]], dst: Set[Rank]) -> Mapping[Rank, int]:
+    def apply(self, src: Mapping[Rank, int], dst: Set[Rank]) -> Mapping[Rank, int]:
         values = [src[rank] for rank in sorted(src)]  # sort values by rank
         results = map(self.reducer, itertools.batched(values, 2))
         return dict(zip(dst, results))
 
+# Inputs
+value = rank
+print(f"R{rank}: {value}")
+# R0: 0
+# R1: 1
+# R2: 2
+# R3: 3
+
 # Execute operation
-data = list(range(comm.size))
 ctx = AllToAllReduceContext(reducer=sum)
 group = ctx.group(size=comm.size)
-op = proto.OperationRequest(group, ctx, data)
+op = proto.OperationRequest(group, ctx, value)
 result = comm.submit(op).wait()
+
+# Outputs
+print(f"R{rank}: {result}")
+# R0: 1
+# R1: None
+# R2: 5
+# R3: None
 ```
 
 ## Documentation
