@@ -102,6 +102,7 @@ size = comm.size
 rank = comm.rank
 
 # Define operation
+@dataclass(slots=True, frozen=True)
 class AllToAllReduceContext(proto.OperationContext):
     def group(self, size: int) -> proto.CommmunicationGroup:
         return proto.CommmunicationGroup(range(size), range(size))
@@ -113,9 +114,10 @@ class AllToAllReduceContext(proto.OperationContext):
         }
 
 # Execute operation
+data = list(range(comm.size))
 ctx = AllToAllReduceContext()
 group = ctx.group(comm.size)
-op = proto.OperationRequest(group, ctx, regions)
+op = proto.OperationRequest(group, ctx, data)
 result = comm.submit(op).wait()
 ```
 
