@@ -1,0 +1,3 @@
+[submodule "pympi"]
+	path = pympi
+	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/pympi.git
