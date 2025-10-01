@@ -31,6 +31,7 @@ class Params:
 
 def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
     params = Params()
+    params.parallel = "sequential" # TODO: Check this value.
     params.batch_size = d.b
     params.enable_conv_gemm = False
     params.enable_best_of = False

@@ -92,6 +92,7 @@ class CheckGPUModels(CheckConvGemmModels):
                 continue
             if "Conv2D" in type(gpu_layer).__name__:
                 if model2.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+                    # TODO: check this.
                     gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
                 else:
                     gpu_layer.weights_cpu = cpu_layer.weights.copy()
