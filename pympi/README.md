@@ -43,7 +43,6 @@ python -m pympi -np 2 python example.py
 Note: `mpirun`, `srun` and other job managers can also be used*
 
 ## Limitations
-
 Note: all the features mentioned here are planned for implementation,
 however they are not currently available.
 
@@ -56,7 +55,6 @@ For point-to-point comuncations, only `send`, and its asynchronous and buffer-ba
 `ssend`, `bsend` and `rsend` can not be used. Additionally, self-messaging and message tagging are also not supported.
 
 ## Implementation
-
 For most cases `pympi` is a drop-in replacement for `mpi4py`,
 therefore only mayor diferences will be documented.
 
@@ -85,7 +83,6 @@ python -m pympi.server
 ```
 
 ## Personalized operations
-
 Unlike traditional MPI and `mpi4py`,
 with `pympi` you can define fully personalized operations,
 not just reduce functions.
