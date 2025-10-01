@@ -121,7 +121,7 @@ print(f"R{rank}: {value}")
 # R3: 3
 
 # Execute operation
-ctx = AllToAllReduceContext(reducer=sum)
+ctx = PairReduce(reducer=sum)
 group = ctx.group(size=comm.size)
 op = proto.OperationRequest(group, ctx, value)
 result = comm.submit(op).wait()
