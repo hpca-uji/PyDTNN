@@ -334,7 +334,7 @@ class Model:
     PyDTNN Model
     """
 
-    def __init__(self, parallel:str=Literal["sequential", "data"], use_blocking_mpi:bool=False, enable_gpu:bool=False, 
+    def __init__(self, parallel:Literal["sequential", "data"], use_blocking_mpi:bool=False, enable_gpu:bool=False, 
                  enable_gpudirect:bool=False, enable_nccl:bool=False, dtype:np.dtype=np.float32, tracing: bool=False, 
                  tracer_output:str="", tracer_pmlib_server:str="127.0.0.1", tracer_pmlib_port:int=6526, 
                  tracer_pmlib_device:str="", **kwargs):
