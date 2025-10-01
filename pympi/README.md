@@ -106,7 +106,9 @@ class PairReduce(proto.OperationContext):
     reducer: Callable
 
     def group(self, size: int) -> proto.CommmunicationGroup:
-        return proto.CommmunicationGroup(range(size), range(0, size, 2))
+        src = range(size)
+        dst = range(0, size, 2) # half of ranks
+        return proto.CommmunicationGroup(src, dst)
 
     def apply(self, src: Mapping[Rank, list[int]], dst: Set[Rank]) -> Mapping[Rank, int]:
         values = [src[rank] for rank in sorted(src)]  # sort values by rank
