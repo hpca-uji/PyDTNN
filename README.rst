@@ -103,14 +103,12 @@ Optionally, if you are going to use TCP, you should enable the protocol with::
 Optionally, if you are going to use gRPC, you should install the required Python
 packages, and enable the protocol with::
 
-    $ pip install grpcio
     $ export PYMPI_PROTO=grpc
 
 Optionally, if you are going to use MQTT, you should have
 installed a MQTT broker server, install the required Python
 packages, and enable the protocol with::
 
-    $ pip install paho-mqtt
     $ export PYMPI_PROTO=mqtt
 
 Optionally, if you are going to use SSL/TLS, you should enable the transport with::
