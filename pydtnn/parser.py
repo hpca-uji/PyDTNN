@@ -130,7 +130,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Datatype to use: \'float32\', \'float64\'. Default: float32.")
         self.add_argument('--num_epochs', type=int, default=1, 
                           help="Number of epochs to perform. Default: 1.")
-        self.add_argument('--steps_per_epoch', type=int, default=0, 
+        self.add_argument('--steps_per_epoch', type=float, default=0, 
                           help="Trims the training data depending on the given number of steps per epoch. Default: 0, i.e., do not trim.")
         self.add_argument('--evaluate', dest="evaluate_on_train", default=False, type=bool_lambda, 
                           help = "Evaluate the model before and after training the model. Default: False.")
@@ -144,7 +144,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="If \'True\' ranks assume they share the file system. Default: True.")
         self.add_argument('--model_sync_freq', type=int, default=0, 
                           help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Default: 0.")
-        self.add_argument('--model_sync_alg', type=str, default="avg", 
+        self.add_argument('--model_sync_alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
                           help="Aggregation method used to syncronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
         self.add_argument('--model_sync_participation', type=str, default="all", 
                           help="Rank participation to syncronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
@@ -159,7 +159,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
-        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, 
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "raw", "folder"],
                                help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'raw\' or \'folder\'. Default: \'None\'.")
         _ds_group.add_argument('--dataset_percentage', type=float, default=0.0, 
                                help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
@@ -224,7 +224,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Optimizer options
         _op_group = self.add_argument_group("Optimizer options")
-        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd", 
+        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd", choices=["sgd", "rmsprop", "adam", "nadam"],
                                help="Optimizers: \'sgd\', \'rmsprop\', \'adam\', \'nadam\'. Default: \'sgd\'. ")
         _op_group.add_argument('--learning_rate', type=float, default=1e-2, 
                                help="Learning rate. Default: 0.01.")
@@ -245,6 +245,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _op_group.add_argument('--rho', type=float, default=0.9, 
                                help="Variable for \'rmsprop\' optimizers. Default: 0.99.")
         _op_group.add_argument('--loss_func', dest="loss_func_name", type=str, default="categorical_cross_entropy", 
+                               choices=["categorical_cross_entropy", "binary_cross_entropy"],
                                help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\'. Default \'categorical_cross_entropy\'.")
         _op_group.add_argument('--metrics', type=str, default="categorical_accuracy", 
                                help="List of comma-separated metrics that are evaluated on each trained batch: \'categorical_accuracy\', \'categorical_hinge\', \'categorical_mse\', \'categorical_mae\', \'regression_mse\', \'regression_mae\'. Default: \'categorical_accuracy\'.")
@@ -287,7 +288,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Parallel execution options
         _pe_group = self.add_argument_group("Parallel execution options")
-        _pe_group.add_argument('--parallel', type=str, default="sequential", 
+        _pe_group.add_argument('--parallel', type=str, default="sequential", choices=["sequential", "data"],
                                help="Data parallelization modes: \'sequential\', \'data\' (MPI). Default: \'sequential\'.")
         _pe_group.add_argument('--use_blocking_mpi', type=bool_lambda, default=True, 
                                help="Enable non-blocking MPI primitives. Default: True.")
