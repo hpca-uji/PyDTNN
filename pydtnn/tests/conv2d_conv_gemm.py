@@ -23,6 +23,7 @@ from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
 from pydtnn.tests.tools import print_with_header
 from pydtnn.model import Model, ModelModeEnum
+from ..initializers import glorot_uniform, zeros
 
 
 class Params:
@@ -53,13 +54,13 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
                            padding=(d.vpadding, d.hpadding),
                            stride=(d.vstride, d.hstride),
                            dilation=(d.vdilation, d.hdilation),
-                           use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+                           use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
     conv2d_i2c.set_model(model_i2c)
     conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                           padding=(d.vpadding, d.hpadding),
                           stride=(d.vstride, d.hstride),
                           dilation=(d.vdilation, d.hdilation),
-                          use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
+                          use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
     conv2d_cg.set_model(model_cg)
     for layer in (conv2d_i2c, conv2d_cg):
         layer.initialize(prev_shape=(d.c, d.h, d.w))
@@ -192,6 +193,7 @@ class Conv2DConvGemmTestCase(PyDTNNTestCase):
         Test that the default parameters lead to the same solution on the forward step
         """
         d = D()
+        print(f"d:\n{d}")
         conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d)
         x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         y_i2c = conv2d_i2c.forward(x)

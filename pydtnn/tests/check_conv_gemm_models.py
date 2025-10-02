@@ -63,6 +63,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
+        params.parallel = "sequential" # TODO: Check this value.
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = "NHWC"
@@ -86,6 +87,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
+        params.parallel = "sequential" # TODO: Check this value.
         params.enable_conv_gemm = True
         params.conv_gemm_cache = True
         params.conv_gemm_trans = True
