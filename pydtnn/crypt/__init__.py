@@ -56,8 +56,17 @@ class Ciphertext[C, P: np.number]:
 
 class Context[C]:
     """Abstract context"""
-    _size = 4096
     _cls: type[Ciphertext]
+
+    def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
+        """Inizialize context"""
+        self._poly_degree = poly_degree
+        self._global_scale = global_scale
+        self._security_level = security_level
+
+    @property
+    def _slots(self) -> int:
+        return 2 ** (self._poly_degree // 2)
 
     def _new[P: np.number](self, /, dtype: np.dtype[P], *args, **kwds) -> Ciphertext[C, P]:
         """Create new operable ciphertext"""
@@ -70,7 +79,7 @@ class Context[C]:
         """Transform numpy array into batched lists"""
         if obj.size == 0:
             return
-        for part in np.array_split(obj.reshape(-1), range(self._size, obj.size, self._size)):
+        for part in np.array_split(obj.reshape(-1), range(self._slots, obj.size, self._slots)):
             yield part.tolist()
 
     def _encrypt_chunk(self, chunk: list) -> C:
@@ -84,7 +93,6 @@ class Context[C]:
     def _encrypt[P: np.number](self, obj: np.ndarray[tuple, np.dtype[P]], /, *args, **kwds) -> Ciphertext[C, P]:
         """Encode numpy array to ciphertext"""
         data = tuple(map(self._encrypt_chunk, self._partition(obj)))
-
         return self._new(
             dtype=obj.dtype,
             shape=obj.shape,

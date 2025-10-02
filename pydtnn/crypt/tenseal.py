@@ -3,6 +3,7 @@
 # NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
 
 import sys
+import enum
 import pickle
 import copyreg
 import dataclasses
@@ -26,6 +27,14 @@ from pydtnn import crypt
 __all__ = (
     "Context",
 )
+
+
+SECURITY_LEVEL = {
+    0: sealapi.SEC_LEVEL_TYPE.NONE,
+    128: sealapi.SEC_LEVEL_TYPE.TC128,
+    192: sealapi.SEC_LEVEL_TYPE.TC192,
+    256: sealapi.SEC_LEVEL_TYPE.TC256
+}
 
 
 @dataclass(eq=False, order=False, slots=True, frozen=True)
@@ -73,10 +82,12 @@ class Context(crypt.Context[CKKSVector]):
     """TenSEAL context"""
     _cls = Ciphertext
 
-    def __init__(self):
+    def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
         """Inizialize context"""
-        poly_degree = self._size * 2
-        level = sealapi.SEC_LEVEL_TYPE.TC128
+        super().__init__(poly_degree, global_scale, security_level)
+
+        poly_degree = 2 ** self._poly_degree
+        level = SECURITY_LEVEL[self._security_level]
 
         # Context
         modulus = [
@@ -90,7 +101,7 @@ class Context(crypt.Context[CKKSVector]):
         )
 
         # Keys
-        self._private_context.global_scale = 2 ** 40
+        self._private_context.global_scale = 2 ** self._global_scale
         self._private_context.generate_galois_keys()
         self._private_context.generate_relin_keys()
 

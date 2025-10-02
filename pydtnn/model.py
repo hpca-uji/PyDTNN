@@ -549,7 +549,7 @@ class Model:
             raise AttributeError(f"Model object has no attribute '{item}'!") from None
     # --- End __getattr__ --- #
 
-    def _init_crypt(self, encryption_name:str) -> crypt.Context:
+    def _init_crypt(self, encryption_name: str) -> crypt.Context:
         """Inizialize encryption context"""
         try:
             module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
@@ -559,15 +559,19 @@ class Model:
             sys.exit(-1)
 
         if self.comm_rank == 0:
-            crypt = module.Context()
+            crypt = module.Context(
+                poly_degree=self.encryption_poly_degree,
+                global_scale=self.encryption_global_scale,
+                security_level=self.encryption_security_level
+            )
 
         if self.comm:
             crypt = self.comm.bcast(crypt if self.comm_rank == 0 else None)
 
         assert crypt is not None
         if self.enable_nccl:
-            warn("If NCCL is active, is like there are no encryption", RuntimeWarning) # TODO: Put a more explicative warning text here.
-            
+            warn("If NCCL is active, encryption is disabled", RuntimeWarning)
+
         return crypt
 
     def _read_model(self, model_name:str) -> None:
