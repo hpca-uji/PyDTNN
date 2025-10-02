@@ -294,6 +294,13 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
       performing convolution algorithm. Default: True.
 
+-  Encryption parameters:
+   - ``--encryption``: Encryption library: ``tenseal``, ``openfhe``, ```` (None). Default ```` (None).
+   - ``--encryption_poly_degree``: Encryption's ring dimension. 2 ** ``value``. Default: 13.
+   - ``--encryption_global_scale``: Encryption's global scale. 2 ** ``value``. Default: 40.
+   - ``--encryption_security_level``: Encryption's security level: 0, 128, 192, 256. Default: 128.
+
+
 -  Tracing and profiling parameters:
 
    -  ``--tracing``: Obtain Simple/Extrae-based traces. Default: False.
