@@ -54,7 +54,7 @@ class EarlyStopping(LRSchedulerWithLossOrMetric):
             if not self.best_weights_filename:
                 self.best_weights_filename = "./model-{}-weights-rank_{}-{}.npz" \
                     .format(self.model.model_name, self.model.comm_rank, self.time)
-            self.model.store_weights_and_bias(self.best_weights_filename)
+            self.model.store_weights_and_bias(self.best_weights_filename, compress=False)
         elif (self.epoch_count - self.best_epoch) >= self.patience:
             self.stop_training = True
             # Restore weights + bias

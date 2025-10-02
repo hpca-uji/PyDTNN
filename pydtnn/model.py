@@ -781,14 +781,18 @@ class Model:
         d = np.load(filename)
         self.load_store_path(self.layers, d, LoadStoreMode.LOAD)
 
-    def store_weights_and_bias(self, filename: str) -> None:
+    def store_weights_and_bias(self, filename: str, compress=True) -> None:
         """
         ARGS:
             filename: Path to the file were the weights and biases will be stored.
         """
         d = {}
         self.load_store_path(self.layers, d, LoadStoreMode.STORE)
-        np.savez_compressed(filename, **d)
+        if compress:
+            np.savez_compressed(filename, **d)
+        else:
+            np.savez(filename, **d)
+
 
     def calculate_time(self) -> np.ndarray:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
@@ -965,6 +969,7 @@ class Model:
             for lr_sched in self.lr_schedulers:
                 lr_sched.on_epoch_begin(self, self.rank)
 
+            # --- TRAIN --- #
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
                 if terminate:
                     x_batch = x_batch[:0]
@@ -1017,7 +1022,10 @@ class Model:
                 train_string = string
                 for c in range(len(self.loss_and_metrics)):
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
-
+            
+            # ----------- #
+            # --- VAL --- #
+            # ----------- #
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(val_batch_generator):
                 if terminate:
                     x_batch = x_batch[:0]
