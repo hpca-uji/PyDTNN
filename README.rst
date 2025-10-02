@@ -66,7 +66,7 @@ Installing PyDTNN from source
 
 Download PyDTNN source code from its GitHub repository and enter the PyDTNN directory::
 
-    $ git clone --recurse-submodules https://github.com/hpca-uji/PyDTNN
+    $ git clone https://github.com/hpca-uji/PyDTNN
     $ cd PyDTNN
 
 The required Python packages are listed in the ``requirements.txt`` file, to install
@@ -87,6 +87,7 @@ Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
+    $ git submodule update --init --recursive pympi
     $ pip install -r requirements_mpi.txt
 
 Optionally, if you are going to use CUDA, you should have
