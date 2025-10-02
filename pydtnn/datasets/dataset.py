@@ -25,6 +25,7 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from PIL import Image
+from math import ceil
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT, string_substitute
 from typing import TYPE_CHECKING, Generator
@@ -131,6 +132,9 @@ class Dataset(ABC):
             self._data_generator = self._actual_data_generator
             self._init_actual_data()
 
+        self.x_empty_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
+        self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
+
         if self.debug:
             self._print_report()
 
@@ -161,8 +165,8 @@ class Dataset(ABC):
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 pass
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                x_train = x_train.transpose(0, 3, 1, 2)
-                x_test = x_test.transpose(0, 3, 1, 2)
+                x_train = self._nhwc2nchw(x_train)
+                x_test = self._nhwc2nchw(x_test)
             case _:
                 raise NotImplementedError(f"Unsupported tensor format {self.model.tensor_format}")
 
@@ -284,18 +288,23 @@ class Dataset(ABC):
     def _init_actual_data(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
         pass
-
+    
+    # TODO / FIXME / NOTE / LO QUE SEA: Check if it's necessary to copy after transpose !!!!!!!!!!!!!!!!!!!
     @staticmethod
     def _nchw2nhwc(x: Array) -> Array:
-        return x.transpose(0, 2, 3, 1).copy()
+        return x.transpose(0, 2, 3, 1)
+    
+    @staticmethod
+    def _nhwc2nchw(x: Array) -> Array:
+        return x.transpose(0, 3, 1, 2)
     
     @staticmethod
     def _chw2hwc(x: Array) -> Array:
-        return x.transpose(1, 2, 0).copy()
+        return x.transpose(1, 2, 0)
     
     @staticmethod
     def _hwc2chw(x: Array) -> Array:
-        return x.transpose(2, 0, 1).copy()
+        return x.transpose(2, 0, 1)
 
     @staticmethod
     def _decode_class(y: Array, classes_list: np.ndarray) -> None:
@@ -358,17 +367,17 @@ class Dataset(ABC):
         nsamples = self._nsamples[part]
         for x_data, y_data in _BackgroundGenerator(generator):
             local_nsamples = x_data.shape[0]
-            s = memoryview(np.arange(local_nsamples))
+            s = np.arange(local_nsamples)
             if self.model.resize and not self.model.use_synthetic_data:
                 x_data = self._do_resize(x_data)
             if part is DatasetEnum.TRAIN:
                 np.random.shuffle(s)
                 if not self.model.use_synthetic_data:
                     x_data = self._do_data_augmentation(x_data)
-            # Initialize end to 0 (in case there are no batches of local_batch_size)
-            end = 0
+            """            # Initialize end to 0 (in case there are no batches of local_batch_size)
+            end = 0"""
             # Generate batches of size local_batch_size
-            for batch_num in range(local_nsamples // local_batch_size):
+            for batch_num in range(ceil(local_nsamples / local_batch_size)):
                 start = batch_num * local_batch_size
                 end = start + local_batch_size
                 indices = s[start:end]
@@ -377,6 +386,7 @@ class Dataset(ABC):
                 global_batch_size = min(nsamples, global_batch_size)
                 yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
+                """
             # Generate the last batch (with size < local_batch_size)
             last_batch_size = local_nsamples % local_batch_size
             if last_batch_size > 0:
@@ -387,17 +397,14 @@ class Dataset(ABC):
                 y_local_batch = y_data[indices, ...]
                 global_batch_size = min(nsamples, global_batch_size)
                 yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
-                nsamples -= global_batch_size
+                nsamples -= global_batch_size"""
 
     def _batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
-        x_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
-        y_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
-        for x_batch, y_batch, batch_size in self._actual_batch_generator(part):
-            yield x_batch, y_batch, batch_size
+        yield from self._actual_batch_generator(part)
         # NOTE: The following infinite loop provides of empty batches 
         #        if there are asked more batches than actually are.
         while True:
-            yield x_batch[:0], y_batch[:0], 0
+            yield self.x_empty_batch, self.y_empty_batch, 0
 
     def _do_flip_images(self, data: Array) -> Array:
         match self.model.tensor_format:

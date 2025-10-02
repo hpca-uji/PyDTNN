@@ -108,8 +108,8 @@ class CustomDataset(Dataset):
                 case PYDTNN_TENSOR_FORMAT.NCHW:
                     pass
                 case PYDTNN_TENSOR_FORMAT.NHWC:
-                    x_train = x_train.transpose(0, 2, 3, 1)
-                    x_test = x_test.transpose(0, 2, 3, 1)
+                    x_train = cls._nchw2nhwc(x_train)
+                    x_test = cls._nchw2nhwc(x_test)
                 case _:
                     raise NotImplementedError(f"Unsupported tensor format {model.tensor_format}")
 
