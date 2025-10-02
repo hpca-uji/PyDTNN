@@ -289,9 +289,9 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _pe_group = self.add_argument_group("Parallel execution options")
         _pe_group.add_argument('--parallel', type=str, default="sequential", 
                                help="Data parallelization modes: \'sequential\', \'data\' (MPI). Default: \'sequential\'.")
-        _pe_group.add_argument('--use_blocking_mpi', type=bool, default=True, 
+        _pe_group.add_argument('--use_blocking_mpi', type=bool_lambda, default=True, 
                                help="Enable non-blocking MPI primitives. Default: True.")
-        _pe_group.add_argument('--use_mpi_buffers', type=bool, default=None, 
+        _pe_group.add_argument('--use_mpi_buffers', type=bool_lambda, default=None, 
                                help="Enable the use of MPI buffers. Possible values: \'True\' (MPI operations by buffer), \'False\' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
         _pe_group.add_argument('--enable_gpu', type=bool_lambda, default=False, 
                                help="Enable GPU, use cuDNN library. Default: False.")
@@ -305,6 +305,9 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Encryption options
         _cy_group = self.add_argument_group("Encryption options")
         _cy_group.add_argument('--encryption', dest="encryption_name", type=str, default="")
+        _cy_group.add_argument('--encryption_poly_degree', type=int, default=13)
+        _cy_group.add_argument('--encryption_global_scale', type=int, default=40)
+        _cy_group.add_argument('--encryption_security_level', type=int, default=128)
 
         # Tracing and profiling
         _tr_group = self.add_argument_group("Tracing options")
