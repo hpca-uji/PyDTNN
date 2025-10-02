@@ -164,8 +164,16 @@ class DatasetFolderLoader(Dataset):
         image = Image.open(path_image)
         image = image.convert("RGB")
         np_array = np.asarray(image, dtype=self.model.dtype, order="C")
-        # Convert to NCHW format (.copy() to apply the transpose and not return a view).
-        return np_array.transpose((2, 0, 1)).copy() 
+        # NOTE: base image format is HWC.
+
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                np_array = self._hwc2chw(np_array)
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                pass # The format is correct.
+            case _:
+                raise TypeError(f"{self.model.tensor_format} format is not supported")
+        return np_array
     # --- END _get_image_as_np_ndarray --- #
 
     def _prepare_label(self, label:np.number, output_shape:shape_t) -> np.ndarray:
@@ -194,10 +202,6 @@ class DatasetFolderLoader(Dataset):
         for label, path_image in self.labels_and_images[part]:
             image = self._get_image_as_np_ndarray(path_image)
             label = self._prepare_label(label, self.output_shape)
-                
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-                image = self._chw2hwc(image)
-            # else: Tensor format is OK.
 
             if len(images) < self.max_nsamples_online:
                 images.append(image)
