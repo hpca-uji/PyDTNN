@@ -1,3 +1,5 @@
+# Note
+
 In order to run all the test, it is necessary to install both *Bliss* and *convGemm* libraries. In the following section the installation steps of both libraries is detailed.
 
 -----------------------------
