@@ -26,7 +26,7 @@ from Cython.Build import cythonize
 
 
 setup(
-    packages=find_packages(exclude=["build", "dist", "distfiles"]),
+    packages=find_packages(include=["pydtnn", "pydtnn.*"]),
     ext_modules=cythonize([
         Extension(
             ".".join(pyx.with_suffix("").parts),
