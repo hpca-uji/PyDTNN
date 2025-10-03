@@ -38,7 +38,7 @@ type shape_t  = tuple[int, ...]
 
 class _BackgroundGenerator(threading.Thread):
 
-    def __init__(self, generator, max_prefetch=1):
+    def __init__(self, generator: Generator[tuple[Array, Array]], max_prefetch=1):
         super().__init__()
         self.queue = queue.Queue(max_prefetch)
         self.generator = generator

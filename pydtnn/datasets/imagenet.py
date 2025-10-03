@@ -23,6 +23,10 @@ import numpy as np
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from .dataset import Dataset, DatasetEnum
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+
 # The most highly-used subset of ImageNet is the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
 # image classification and localization dataset. This dataset spans 1000 object classes and contains 1,281,
 # 167 training images, 50,000 validation images and 100,000 test images. This subset is available on Kaggle.
@@ -37,7 +41,7 @@ IMAGES_PER_TEST_FILE = 390
 
 class ImageNet(Dataset):
 
-    def __init__(self, model):
+    def __init__(self, model: "Model"):
         # for VGG, ResNet and other models input shape must be (3,224,224)
         input_shape = INPUT_SHAPE if "alexnet" in model.model_name else (3, 224, 224)
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, input_shape, OUTPUT_SHAPE)
@@ -61,7 +65,7 @@ class ImageNet(Dataset):
         # There is no initialization, as the data is huge, it will be read from the corresponding files as required
         pass
 
-    def _normalize_image(self, x):
+    def _normalize_image(self, x: np.ndarray) -> np.ndarray:
         if "alexnet" not in self.model.model_name:  # for VGG, ResNet and other models input shape must be (3,224,224)
             x = x[..., 1:225, 1:225]
         # A) Caffe-like normalization used for pre-trained Keras models
@@ -83,7 +87,7 @@ class ImageNet(Dataset):
     def _actual_data_generator(self, part):
         files = self._xy_filenames[part]
         images_per_file = self._images_per_file[part]
-        if part == DatasetEnum.TRAIN:
+        if part is DatasetEnum.TRAIN:
             # Note that the actual array is shuffled. This is done to ensure that the validation part,
             # when is extracted from the train samples, uses the same files order.
             np.random.shuffle(files)
@@ -94,13 +98,14 @@ class ImageNet(Dataset):
                                                              self._local_nsamples[part]):
             # Extract x[offset:offset+nsamples] and y[offset:offset+nsamples] from file
             values: np.ndarray = np.load(filename)
-            x = self._normalize_image(values['x'][offset:offset + nsamples].astype(self.model.dtype))
+            x = self._normalize_image(values['x'][offset:offset + nsamples].astype(self.model.dtype, copy=False))
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
                 x = self._nchw2nhwc(x)
-            y = np.zeros(list(x.shape[0]) + self.output_shape, dtype=self.model.dtype, order="C")
-            self._decode_class(y, values['y'][offset:offset + nsamples].astype(np.int16).flatten() - 1)
 
-            # Concatenate x and y with current _x[part] and _y[part]
+            y = np.zeros(shape=(x.shape[0], *self.output_shape), dtype=self.model.dtype, order="C")
+            # NOTE: with the values as np.int16 an overflow is produced in some elements, getting in this way "false" negative numbers.
+            self._decode_class(y, values['y'][offset:offset + nsamples].astype(np.int32, copy=False).flatten() - 1)
+
             self._x[part] = np.concatenate((self._x[part], x), axis=0)
             self._y[part] = np.concatenate((self._y[part], y), axis=0)
 

@@ -24,6 +24,10 @@ import numpy as np
 from .dataset import Dataset, DatasetEnum
 from ..utils import PYDTNN_TENSOR_FORMAT
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+
 TRAIN_NSAMPLES = 60000
 TEST_NSAMPLES = 10000
 INPUT_SHAPE = (1, 28, 28)
@@ -32,10 +36,10 @@ OUTPUT_SHAPE = (10,)
 
 class MNIST(Dataset):
 
-    def __init__(self, model):
+    def __init__(self, model: "Model"):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE)
 
-    def _init_actual_data(self):
+    def _init_actual_data(self) -> None:
         x_filename = [
             os.path.join(self.model.dataset_train_path, "train-images-idx3-ubyte"),
             None,
@@ -66,7 +70,7 @@ class MNIST(Dataset):
             self._decode_class(self._y[part], y_classes)
 
     @staticmethod
-    def _read_file(filename, offset, nbytes):
+    def _read_file(filename, offset: int, nbytes: int) -> np.ndarray:
         with open(filename, 'rb') as f:
             # How to read the header:
             #  zero, data_type, dims = struct.unpack('>HBB', f.read(4))
