@@ -130,7 +130,6 @@ The PyDTNN framework comes with a utility launcher called
 ``pydtnn_benchmark.py`` that supports the following options:
 
 -  Model parameters:
-
    -  ``--model``: Neural network model: ``simplemlp``, ``simplecnn``,
       ``alexnet``, ``vgg11``, ``vgg16``, etc. Default: ``None``.
    -  ``--batch_size``: Batch size per MPI rank. Default: ``None``.
@@ -163,7 +162,6 @@ The PyDTNN framework comes with a utility launcher called
       ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``NHWC``.
 
 -  Dataset parameters:
-
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
       ``imagenet``, ``raw`` or ``folder``. Default: ``None``.
    -  ``dataset_percentage``: Percentage of dataset that will be used. 
@@ -192,8 +190,7 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--resize``: Resize the images. True if specified.
    -  ``--resize_dimension``: New size of the images. Default: 300.
 
-
-- Optimization -  Optimizer parameters:
+- Optimization parameters:
    - ``--enable_best_of``: Enable the BestOf auto-tuner.
    - ``--enable_memory_cache``: Enable the memory cache module to use
       persistent memory.
@@ -207,7 +204,6 @@ The PyDTNN framework comes with a utility launcher called
       BatchNormalization and Relu layers. Default: False.
 
 -  Convolution operation parameters:
-
    -  ``--enable_conv_i2c``: Use ConvI2C module to
       realize convolutions in Conv2D layers. True if specified.
    -  ``--enable_conv_gemm``: Use ConvGemm (implicit gemm) module to
@@ -222,7 +218,6 @@ The PyDTNN framework comes with a utility launcher called
       compare in ``best_of`` option if specified.
 
 -  Optimizer parameters:
-
    -  ``--optimizer``: Optimizers: ``sgd``, ``rmsprop``, ``adam``,
       ``nadam``. Default: ``sgd``. 
    -  ``--learning_rate``: Learning rate. Default: 0.01.
@@ -246,7 +241,6 @@ The PyDTNN framework comes with a utility launcher called
       ``categorical_mae``, ``regression_mse``, ``regression_mae``. Default: ``categorical_accuracy``.
 
 -  Learning rate schedulers parameters:
-
    -  ``--lr_schedulers``: List of comma-separated LR schedulers:
       ``warm_up``, ``early_stopping``, ``reduce_lr_on_plateau``,
       ``reduce_lr_every_nepochs``, ``model_checkpoint``. 
@@ -284,7 +278,6 @@ The PyDTNN framework comes with a utility launcher called
       LR scheduler. Default: 2.
 
 -  Parallelization and other performance-related parameters:
-
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data`` (MPI). Default: ``sequential``.
    -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives. Default: True.
@@ -307,7 +300,6 @@ The PyDTNN framework comes with a utility launcher called
 
 
 -  Tracing and profiling parameters:
-
    -  ``--tracing``: Obtain Simple/Extrae-based traces. Default: False.
    -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
       traces.
