@@ -69,33 +69,40 @@ Download PyDTNN source code from its GitHub repository and enter the PyDTNN dire
     $ git clone https://github.com/hpca-uji/PyDTNN
     $ cd PyDTNN
 
-The required Python packages are listed in the ``requirements.txt`` file, to install
-them, type::
-
-    $ pip install -r requirements.txt
-
-Then, the PyDTNN package itself must be installed::
+Then package itself must be installed::
 
     $ pip install .
 
 If you plan to modify the PyDTNN code, instead of using the previous line, you
 can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
 
-    $ pip install -e .
+    $ pip install -e . --config-settings editable_mode=compat
 
 Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ git submodule update --init --recursive pympi
-    $ pip install -r requirements_mpi.txt
+    $ git submodule update --init net-queue
+    $ pip install ./net-queue
+
+    $ git submodule update --init pympi
+    $ pip install ./pympi
+
+    $ pip install .[mpi]
 
 Optionally, if you are going to use CUDA, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install -r requirements_nvidia.txt
-    $ pip install -r requirements_cuda.txt
+    $ pip install nvidia-pyindex
+    $ pip install .[cuda]
+
+
+Optionally, if you are going to use FHE, you should have
+installed the corresponding system libraries, and install the required Python
+packages with::
+
+    $ pip install .[fhe]
 
 Optionally, if you are going to use TCP, you should enable the protocol with::
 
@@ -665,6 +672,24 @@ using 4 OpenMP threads::
     **** Evaluating on test dataset...
     Testing: 100%|██████████████████████| 10000/10000 [00:13<00:00, 715.46 samples/s, test_cce: 0.4376189, test_acc: 89.24%]
 
+Credits
+-------
+
+The main contributors, in alphabetically order, to PyDTNN are:
+
+- Adrián Castelló Gimeno <adcastel@disca.upv.es>
+- Enrique S. Quintana-Ortí <quintana@disca.upv.es>
+- Jose Ignacio Mestre Miravet <jmiravet@uji.es>
+- Manuel F. Dolz Zaragozá <dolzm@uji.es>
+- Mar Catalán Carbó <catalama@uji.es>
+- Miguel Ángel Prosper Quirós <mprosper@uji.es>
+- Paul Ximo Pluijter Izquierdo <pluijter@uji.es>
+- Sergio Barrachina Mir <barrachi@uji.es>
+
+If you have questions or comments about PyDTNN, please contact:
+
+- Manuel F. Dolz Zaragozá <dolzm@uji.es>
+
 Citing PyDTNN
 -------------
 
@@ -706,3 +731,21 @@ The PyDTNN library has been partially supported by:
 
 -  Project UJI-A2019-11 **"Energy-Aware High Performance Computing for
    Deep Neural Networks"** funded by the Universitat Jaume I.
+
+License
+-------
+
+Copyright 2019-21 Universitat Jaume I
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 3 of the License, or (at
+your option) any later version.
+
+This program is distributed in the hope that it will be useful, but
+WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
