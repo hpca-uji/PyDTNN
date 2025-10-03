@@ -17,13 +17,6 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-# Dataset:
-# ***REMOVED***
-# ***REMOVED***
-#
-# ***REMOVED***
-# ***REMOVED***
-
 import sys
 import enum
 import typing

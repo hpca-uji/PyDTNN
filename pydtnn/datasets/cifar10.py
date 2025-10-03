@@ -16,6 +16,8 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
+# https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
+
 import os
 
 import numpy as np
