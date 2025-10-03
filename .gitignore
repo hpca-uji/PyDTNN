@@ -1,11 +1,9 @@
-pydtnn.egg-info/
 /build/
-/notebook/
-.idea/
 .venv/
+.idea/
 .vscode/
 __pycache__/
-*.pem
+*.egg-info
 *.c
 *.so
 *.npz
