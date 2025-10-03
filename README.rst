@@ -192,7 +192,7 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--resize``: Resize the images. True if specified.
    -  ``--resize_dimension``: New size of the images. Default: 300.
 
-- Optimization parameters:
+-  Optimization parameters:
 
    - ``--enable_best_of``: Enable the BestOf auto-tuner.
    - ``--enable_memory_cache``: Enable the memory cache module to use
