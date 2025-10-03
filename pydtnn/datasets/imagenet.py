@@ -26,6 +26,12 @@ from .dataset import Dataset, DatasetEnum
 # The most highly-used subset of ImageNet is the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
 # image classification and localization dataset. This dataset spans 1000 object classes and contains 1,281,
 # 167 training images, 50,000 validation images and 100,000 test images. This subset is available on Kaggle.
+#
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_test_v10102019.tar
+#
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train_t3.tar
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar
 
 TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 100000

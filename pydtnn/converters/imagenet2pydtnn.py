@@ -17,13 +17,6 @@
 #  with this program. If not, see <https://www.gnu.org/licenses/>.
 #
 
-# Dataset:
-# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar
-# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_test_v10102019.tar
-#
-# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train_t3.tar
-# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar
-
 import sys
 import enum
 import typing
