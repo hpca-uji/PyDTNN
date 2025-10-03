@@ -194,9 +194,9 @@ The PyDTNN framework comes with a utility launcher called
 
 -  Optimization parameters:
 
-   - ``--enable_best_of``: Enable the BestOf auto-tuner.
-   - ``--enable_memory_cache``: Enable the memory cache module to use
-      persistent memory.
+   -  ``--enable_best_of``: Enable the BestOf auto-tuner.
+   -  ``--enable_memory_cache``: Enable the memory cache module to
+      use persistent memory.
    -  ``--enable_fused_bn_relu``: Fuse BatchNormalization and Relu
       layers. True if specified.
    -  ``--enable_fused_conv_relu``: Fuse Conv2D and Relu layers.
