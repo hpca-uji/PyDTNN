@@ -1,13 +1,13 @@
+import numpy as np
+cimport numpy as np
+cimport cython
+from cython.parallel import prange
+
 __all__ = (
     "relu_cython",
     "capped_relu_cython",
     "leaky_relu_cython"
 )
-
-import numpy as np
-cimport numpy as np
-cimport cython
-from cython.parallel import prange
 
 # Declare fused type npDT (to be used with template functions)
 ctypedef fused npDT:

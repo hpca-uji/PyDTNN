@@ -5,7 +5,7 @@ from cython.parallel import prange
 
 __all__ = (
     "max_pool_2d_fwd_nchw_cython",
-    "max_pool_2d_bwd_nchw_cython",
+    "max_pool_2d_bwd_nchw_cython"
 )
 
 # =================== #

@@ -5,7 +5,7 @@ from cython.parallel import prange
 
 __all__ = (
     "im2col_1ch_nchw_cython",
-    "col2im_1ch_nchw_cython",
+    "col2im_1ch_nchw_cython"
 )
 
 # =================== #

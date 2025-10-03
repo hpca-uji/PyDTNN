@@ -4,7 +4,7 @@ cimport cython
 from cython.parallel import prange
 
 __all__ = (
-    "argmax_cython"
+    "argmax_cython",
 )
 
 # --- COMMON --- #
