@@ -93,7 +93,12 @@ def _get_gpus_per_node():
 
 
 def _get_mpi_protocol():
-    from pydtnn.comm import proto as PROTOCOL, ssl as SSL
+    try:
+        from pydtnn.comm import proto as PROTOCOL
+        from pydtnn.comm import ssl as SSL
+    except (ModuleNotFoundError, ImportError):
+        PROTOCOL = None
+        SSL = None
     protocol = str(PROTOCOL)
     if PROTOCOL and SSL:
         protocol = f"{protocol}+tls"
@@ -101,12 +106,18 @@ def _get_mpi_protocol():
 
 
 def _get_mpi_server():
-    from pympi.rc import addr
+    try:
+        from pydtnn.comm import addr
+    except (ModuleNotFoundError, ImportError):
+        addr = None
     return addr
 
 
 def _get_mpi_port():
-    from pympi.rc import port
+    try:
+        from pydtnn.comm import port
+    except (ModuleNotFoundError, ImportError):
+        port = None
     return port
 
 # NOTE: with @cache it's not possible to extend the class.
