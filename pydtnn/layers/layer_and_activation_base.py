@@ -10,17 +10,18 @@ if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
     from ..optimizers.optimizer import Optimizer
 
-drv_Stream = TypeVar("pycuda_driver_Stream") # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+
 
 class LayerAndActivationBase(ABC):
 
-    def __init__(self, shape:tuple[int, ...]=()) -> None:
+    def __init__(self, shape: tuple[int, ...] = ()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
         self.weights: Array = None
         self.biases: Array = None
         self.act: Activation | None = None
-        self.grad_vars:dict[str, str] = {}
+        self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.paths: list[list[Self]] = []
@@ -69,18 +70,18 @@ class LayerAndActivationBase(ABC):
         pass
 
     @abstractmethod
-    def reduce_weights_async(self, gradient:bool=True):
+    def reduce_weights_async(self, gradient: bool = True):
         pass
 
     @abstractmethod
-    def wait_allreduce_async(self, gradient:bool=True):
+    def wait_allreduce_async(self, gradient: bool = True):
         pass
 
     @abstractmethod
-    def reduce_weights_sync(self, gradient:bool=True):
+    def reduce_weights_sync(self, gradient: bool = True):
         pass
 
-    def show(self, attrs:str | None = "") -> str:
+    def show(self, attrs: str | None = "") -> str:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
@@ -90,7 +91,7 @@ class LayerAndActivationBase(ABC):
 
     @property
     def children(self) -> list[Self]:
-        children:list = []
+        children: list = []
         for path in self.paths:
             children += [layer for layer in path]
         return children

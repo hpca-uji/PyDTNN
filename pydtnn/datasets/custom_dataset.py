@@ -11,18 +11,19 @@ else:
     Model = object
 from pydtnn.backends.gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
-type shape_t  = tuple[int, ...]
+type shape_t = tuple[int, ...]
 
 TENSOR_ASSERT = {
     PYDTNN_TENSOR_FORMAT.NCHW: operator.lt,
     PYDTNN_TENSOR_FORMAT.NHWC: operator.gt
 }
 
+
 class CustomDataset(Dataset):
 
-    def __init__(self, model:Model, x_train:Array, y_train:Array, x_test:Array|None = None, y_test:Array|None = None, 
-                 input_shape:shape_t|None = None, output_shape:shape_t|None = None, 
-                 force_test_as_validation = False):
+    def __init__(self, model: Model, x_train: Array, y_train: Array, x_test: Array | None = None, y_test: Array | None = None,
+                 input_shape: shape_t | None = None, output_shape: shape_t | None = None,
+                 force_test_as_validation=False):
         if x_test is None or y_test is None:
             if x_test is None and y_test is None:
                 x_test = x_train
@@ -31,10 +32,10 @@ class CustomDataset(Dataset):
                 raise SystemExit("Both x_test and y_test must be provided or, alternatively, none of them!")
 
         if input_shape is None:
-            input_shape:shape_t = x_train.shape[1:]
+            input_shape: shape_t = x_train.shape[1:]
 
         if output_shape is None:
-            output_shape:shape_t = y_train.shape[1:]
+            output_shape: shape_t = y_train.shape[1:]
 
         if len(x_train.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_train.shape[0], x_train.shape[2]):
             warnings.warn(f"Dataset x_train.shape {x_train.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
@@ -42,8 +43,8 @@ class CustomDataset(Dataset):
         if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
             warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
 
-        self.__x_source:list[Array] = []
-        self.__y_source:list[Array] = []
+        self.__x_source: list[Array] = []
+        self.__y_source: list[Array] = []
         # Sources for the training part
         self.__x_source.append(x_train)
         self.__y_source.append(y_train)
@@ -82,7 +83,7 @@ class CustomDataset(Dataset):
             y_train = data["y_train"]
             x_test = data["x_test"]
             y_test = data["y_test"]
-            input_shape:shape_t = x_train.shape[1:]
+            input_shape: shape_t = x_train.shape[1:]
 
             # Ensure dataset is in model.tensor_format
             match model.tensor_format:

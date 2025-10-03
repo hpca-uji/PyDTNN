@@ -39,7 +39,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
     def backward(self, dy: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha,
-                                    self.y.desc, self.y.ptr,
-                                    dy.desc, dy.ptr, beta,
-                                    self.dx.desc, self.dx.ptr)
+                                   self.y.desc, self.y.ptr,
+                                   dy.desc, dy.ptr, beta,
+                                   self.dx.desc, self.dx.ptr)
         return self.dx

@@ -4,11 +4,12 @@ from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from ..activations import relu, softmax
 
+
 def create_alexnet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
 
-    _(Input(shape = input_shape))
+    _(Input(shape=input_shape))
     _(Conv2D(nfilters=96, filter_shape=(11, 11), padding=0, stride=4, activation=relu))
     _(MaxPool2D(pool_shape=(3, 3), stride=2))
     _(Conv2D(nfilters=256, filter_shape=(5, 5), padding=2, stride=1, activation=relu))
@@ -22,6 +23,6 @@ def create_alexnet(input_shape: Sequence[int], output_shape: Sequence[int]) -> S
     _(Dropout(rate=0.5))
     _(FC(shape=(4096,), activation=relu))
     _(Dropout(rate=0.5))
-    _(FC(shape = output_shape, activation=softmax))
+    _(FC(shape=output_shape, activation=softmax))
 
     return model

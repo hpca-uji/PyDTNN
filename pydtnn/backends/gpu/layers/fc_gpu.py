@@ -53,14 +53,14 @@ class FCGPU(LayerGPU, FC):
                                                                        cudnn_dtype=self.model.cudnn_dtype,
                                                                        gpudirect=self.model.gpudirect)
         else:
-            self.dw_cpu, self.dw = TensorGPU.initialize_not_gpu_direct(self.weights.ary.shape, self.model.dtype, 
-                                                                       tensor_format=self.model.tensor_format, 
-                                                                       cudnn_dtype=self.model.cudnn_dtype, 
+            self.dw_cpu, self.dw = TensorGPU.initialize_not_gpu_direct(self.weights.ary.shape, self.model.dtype,
+                                                                       tensor_format=self.model.tensor_format,
+                                                                       cudnn_dtype=self.model.cudnn_dtype,
                                                                        gpudirect=self.model.gpudirect)
             if self.use_bias:
-                self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype, 
-                                                                           tensor_format=self.model.tensor_format, 
-                                                                           cudnn_dtype=self.model.cudnn_dtype, 
+                self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype,
+                                                                           tensor_format=self.model.tensor_format,
+                                                                           cudnn_dtype=self.model.cudnn_dtype,
                                                                            gpudirect=self.model.gpudirect)
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
@@ -148,7 +148,7 @@ class FCGPU(LayerGPU, FC):
         trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     self.weights.ary.gpudata, ldb,
                     dy.ary.gpudata, lda, beta,

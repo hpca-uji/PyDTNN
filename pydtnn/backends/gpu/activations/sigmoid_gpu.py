@@ -42,8 +42,8 @@ class SigmoidGPU(ActivationGPU, Sigmoid):
     def backward(self, dy: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationBackward(self.model.cudnn_handle, self.act_desc, alpha,
-                                        self.y.desc, self.y.ptr,
-                                        dy.desc, dy.ptr,
-                                        self.x.desc, self.x.ptr, beta,
-                                        self.dx.desc, self.dx.ptr)
+                                      self.y.desc, self.y.ptr,
+                                      dy.desc, dy.ptr,
+                                      self.x.desc, self.x.ptr, beta,
+                                      self.dx.desc, self.dx.ptr)
         return self.dx

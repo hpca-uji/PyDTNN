@@ -7,12 +7,13 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class ReduceLREveryNEpochs(LRScheduler):
     """
     ReduceLREveryNEpochs LRScheduler
     """
 
-    def __init__(self, model:Model, factor=0.1, nepochs=5, min_lr=0, verbose=True):
+    def __init__(self, model: Model, factor=0.1, nepochs=5, min_lr=0, verbose=True):
         super().__init__(model, verbose)
         self.factor = factor
         self.nepochs = nepochs

@@ -13,12 +13,13 @@ else:
     from types import ModuleType
     MPI_COMM = ModuleType
 
+
 class SimpleTracerGPU(SimpleTracer):
     """
     SimpleTracerGPU
     """
 
-    def __init__(self, tracing:bool, output_filename:str, comm: MPI_COMM | None):
+    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None):
         super().__init__(tracing, output_filename, comm)
         self.event_vars = []
         # Attributes that will be initialized later

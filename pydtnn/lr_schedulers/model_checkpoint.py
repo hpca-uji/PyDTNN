@@ -11,21 +11,22 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class ModelCheckpoint(LRSchedulerWithLossOrMetric):
     """
     ModelCheckpoint LRScheduler
     """
 
-    def __init__(self, model:Model, loss_or_metric:str="", epoch_save_frequency=1, verbose=True):
+    def __init__(self, model: Model, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
         super().__init__(model, loss_or_metric, verbose)
         self.epoch_save_frequency = epoch_save_frequency
         self.epoch_count = self.best_epoch = 0
         self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
         # Attributes that will be properly defined elsewhere
-        self.filename : str | None = None
-        self.last_filename : str | None = None
+        self.filename: str | None = None
+        self.last_filename: str | None = None
 
-    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

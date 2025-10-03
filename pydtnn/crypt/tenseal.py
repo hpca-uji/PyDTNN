@@ -2,6 +2,11 @@
 
 # NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
 
+from pydtnn import crypt
+from tenseal.enc_context import Context as SealContext
+from tenseal.tensors import CKKSVector
+from tenseal import sealapi
+import numpy as np
 import sys
 import enum
 import pickle
@@ -15,13 +20,6 @@ try:
     import tenseal
 finally:
     sys.path.insert(0, _pkg)
-
-import numpy as np
-from tenseal import sealapi
-from tenseal.tensors import CKKSVector
-from tenseal.enc_context import Context as SealContext
-
-from pydtnn import crypt
 
 
 __all__ = (

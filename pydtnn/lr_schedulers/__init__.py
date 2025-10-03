@@ -9,7 +9,7 @@ If you want to add a new LR Scheduler:
 """
 from .lr_scheduler import LRScheduler
 # NOTE: The following import is necessary for other imports:
-from .lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric 
+from .lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
 from .early_stopping import EarlyStopping
 from .model_checkpoint import ModelCheckpoint
 from .reduce_lr_every_n_epochs import ReduceLREveryNEpochs

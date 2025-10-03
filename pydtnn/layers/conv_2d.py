@@ -9,24 +9,26 @@ from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
 import numpy as np
 from enum import StrEnum, auto
 
+
 class GroupingEnum(StrEnum):
     DEPTHWISE = auto()
     POINTWISE = auto()
-    STANDARD  = auto()
+    STANDARD = auto()
+
 
 class Conv2D(Layer, ABC):
 
-    def __init__(self, nfilters:int=1, 
-                 filter_shape:tuple[int, int] | int = (3, 3), 
-                 grouping:GroupingEnum = GroupingEnum.STANDARD, 
-                 padding:tuple[int, int] | int = 0, 
+    def __init__(self, nfilters: int = 1,
+                 filter_shape: tuple[int, int] | int = (3, 3),
+                 grouping: GroupingEnum = GroupingEnum.STANDARD,
+                 padding: tuple[int, int] | int = 0,
                  stride: tuple[int, int] | int = 1,
-                 dilation:tuple[int, int] | int = 1, 
-                 activation: Optional["Activation"] = None, 
-                 use_bias=True, 
-                 weights_initializer:InitializerFunc = glorot_uniform,
-                 biases_initializer:InitializerFunc = zeros):
-        
+                 dilation: tuple[int, int] | int = 1,
+                 activation: Optional["Activation"] = None,
+                 use_bias=True,
+                 weights_initializer: InitializerFunc = glorot_uniform,
+                 biases_initializer: InitializerFunc = zeros):
+
         super().__init__()
         self.co = nfilters
         self.filter_shape = (filter_shape, filter_shape) if isinstance(filter_shape, int) else filter_shape
@@ -39,18 +41,18 @@ class Conv2D(Layer, ABC):
         self.vdilation, self.hdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.act = activation
         self.use_bias = use_bias
-        self.weights_initializer:InitializerFunc = weights_initializer
-        self.biases_initializer:InitializerFunc = biases_initializer
+        self.weights_initializer: InitializerFunc = weights_initializer
+        self.biases_initializer: InitializerFunc = biases_initializer
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
         self.debug = False
         # The next attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
-        self.weights_shape:tuple[int, ...] = None
+        self.weights_shape: tuple[int, ...] = None
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape:tuple[int, ...]):
+    def initialize(self, prev_shape: tuple[int, ...]):
         super().initialize(prev_shape)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape
@@ -82,7 +84,7 @@ class Conv2D(Layer, ABC):
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
         self.nparams = np.prod(self.weights_shape) + (self.co if self.use_bias else 0)
 
-    def show(self, attrs:str="") -> None:
+    def show(self, attrs: str = "") -> None:
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "

@@ -19,6 +19,7 @@ INPUT_SHAPE = (3, 32, 32)
 OUTPUT_SHAPE = (10,)
 IMAGES_PER_FILE = 10000
 
+
 class CIFAR10(Dataset):
     """CIFAR10 Dataset"""
 

@@ -4,6 +4,7 @@ from ..layers import *
 from ..activations import relu, softmax
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
+
 def create_vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append

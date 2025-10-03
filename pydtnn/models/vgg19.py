@@ -7,8 +7,9 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from ..activations import relu, softmax
 from pydtnn.initializers import he_uniform
 
+
 def create_vgg19(input_shape: Sequence[int], output_shape: Sequence[int]) -> Iterable[LayerAndActivationBase]:
-    yield(Input(shape=input_shape))
+    yield (Input(shape=input_shape))
     conv_pattern = [[2, 64], [2, 128], [4, 256], [4, 512], [4, 512]]
     for nlayers, nfilters in conv_pattern:
         for layer in range(nlayers):

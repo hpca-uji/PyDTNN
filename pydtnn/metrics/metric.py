@@ -13,6 +13,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 type Array = ndarray | TensorGPU
 
+
 class Metric(PromoteToBackendMixin, ABC):
 
     def __init__(self, shape: tuple[int, ...], model: Model, eps=1e-8):
@@ -21,5 +22,5 @@ class Metric(PromoteToBackendMixin, ABC):
         self.eps = eps
 
     @abstractmethod
-    def __call__(self, y_pred:Array, y_targ:Array) -> float:
+    def __call__(self, y_pred: Array, y_targ: Array) -> float:
         pass

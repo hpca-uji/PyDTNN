@@ -19,6 +19,7 @@ binary_cross_entropy = BinaryCrossEntropy
 # Search this module for Loss derived classes and expose them
 get_derived_classes(Loss, locals())
 
+
 def switch_losses(loss_func_name: str) -> Loss:
     # From snake to camel, if it's necessary
     _loss_func_name = loss_func_name.split("_")

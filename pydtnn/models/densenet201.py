@@ -5,6 +5,7 @@ from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
+
 def create_densenet201(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
@@ -25,11 +26,11 @@ def create_densenet201(input_shape: Sequence[int], output_shape: Sequence[int]) 
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False,
-                        weights_initializer=he_uniform),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False,
-                        weights_initializer=he_uniform)
+                           weights_initializer=he_uniform)
                 ], []))
 
         num_planes += nblocks * growth_rate

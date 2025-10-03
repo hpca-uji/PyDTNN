@@ -225,18 +225,19 @@ class ConvDirect:
 
 def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                  b: int, kn: int,
-                 ho: int, wo: int, kh: int, kw: int, 
-                 vpadding: int, hpadding: int, vstride: int, hstride: int, 
-                 vdilation: int, hdilation: int, 
+                 ho: int, wo: int, kh: int, kw: int,
+                 vpadding: int, hpadding: int, vstride: int, hstride: int,
+                 vdilation: int, hdilation: int,
                  ) -> int | float:
-    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
-    im2row_nhwc_cython(x, res, 
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
+    im2row_nhwc_cython(x, res,
                        kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, 
+                       vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(b * ho * wo, kn)
     return res
+
 
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
@@ -286,15 +287,15 @@ def __usage_example__():
                                                            vdilation=vdilation, hdilation=hdilation),
                            number=10) / 10
     print("Using im2col and mm NHWC ...")
-    
-    x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype= x.dtype)
+
+    x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(x, x_c,
-                       kh, kw, 
+                       kh, kw,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(-1, kn)
     im2col_mm_result_nhwc = (x_c @ w_c + biases.reshape(b * ho * wo, kn)).reshape(-1, ho, wo, kn)
-    mm_t = timeit( 
-        lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+    mm_t = timeit(
+        lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
         number=10) / 10
 
     print("conv_direct time: {:.4f}".format(conv_direct_t))

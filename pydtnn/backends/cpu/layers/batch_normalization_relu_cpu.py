@@ -8,6 +8,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 from numpy import ndarray, empty
 
+
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
     def initialize(self, prev_shape):
@@ -24,7 +25,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci), copy=False)
-        
+
         y = self.y[: x.shape[0], :]
         bn_relu_inference_cython(x, y.reshape((-1, self.ci), copy=False), self.running_mean, self.inv_std, self.gamma, self.beta)
 
@@ -35,5 +36,5 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             y = y.copy()
         return y
 
-    def backward(self, x:ndarray) -> ndarray:
+    def backward(self, x: ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

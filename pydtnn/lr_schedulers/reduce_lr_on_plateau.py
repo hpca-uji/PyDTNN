@@ -7,12 +7,13 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
     """
     ReduceLROnPlateau LRScheduler
     """
 
-    def __init__(self, model:Model, loss_or_metric:str="", factor=0.1, patience=5, min_lr=0, verbose=True):
+    def __init__(self, model: Model, loss_or_metric: str = "", factor=0.1, patience=5, min_lr=0, verbose=True):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, loss_or_metric, verbose)
         self.factor = factor
@@ -21,7 +22,7 @@ class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
         self.best_epoch: int = 0
         self.best_loss: float = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
 
-    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

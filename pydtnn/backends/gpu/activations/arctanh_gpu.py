@@ -19,7 +19,7 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.atanh = None
         self.datanh = None
 
-    def initialize(self, prev_shape:tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.atanh = ElementwiseKernel(

@@ -6,6 +6,7 @@ from pydtnn.model import ModelModeEnum
 from pydtnn.performance_models import matmul_time
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
+
 class FCCPU(LayerCPU, FC):
 
     def __init__(self, *args, **kwargs):
@@ -42,10 +43,10 @@ class FCCPU(LayerCPU, FC):
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self.model.mode is ModelModeEnum.TRAIN:
             self.x = x
-        dy = self.dy[ : x.shape[0], :]
+        dy = self.dy[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x, self.weights, out = dy)
+        np.matmul(x, self.weights, out=dy)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -58,17 +59,17 @@ class FCCPU(LayerCPU, FC):
 
         # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        #self.dw = np.matmul(self.x.T, dy)
+        # self.dw = np.matmul(self.x.T, dy)
         np.matmul(self.x.T, dy, self.dw)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            #self.db = np.sum(dy, axis=0)
+            # self.db = np.sum(dy, axis=0)
             np.sum(dy, axis=0, out=self.db)
 
         dx = self.dx[:self.x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        #dx = np.matmul(dy, self.weights.T)
+        # dx = np.matmul(dy, self.weights.T)
         np.matmul(dy, self.weights.T, out=dx)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)            
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx

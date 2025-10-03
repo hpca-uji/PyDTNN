@@ -10,6 +10,7 @@ from .folder_loader import DatasetFolderLoader
 
 CustomImport = CustomDataset.import_
 
+
 def get_dataset(model) -> Dataset:
     try:
         dataset_name = {"mnist": "MNIST", "cifar10": "CIFAR10", "imagenet": "ImageNet", "raw": "CustomImport", "folder": "DatasetFolderLoader"}

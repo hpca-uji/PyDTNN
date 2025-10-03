@@ -7,15 +7,16 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class LRSchedulerWithLossOrMetric(LRScheduler, ABC):
     """
     LRScheduler with metric base class
     """
 
-    def __init__(self, model: Model, loss_or_metric:str, verbose:bool):
+    def __init__(self, model: Model, loss_or_metric: str, verbose: bool):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, verbose)
-        self.is_val_metric:bool = "val_" == loss_or_metric[:4]
+        self.is_val_metric: bool = "val_" == loss_or_metric[:4]
         self.loss_or_metric = loss_or_metric[4:] if self.is_val_metric else loss_or_metric
 
     def _get_idx(self):
