@@ -23,7 +23,7 @@ from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
 from pydtnn.tests.tools import print_with_header
 from pydtnn.model import Model, ModelModeEnum
-from ..initializers import glorot_uniform, zeros
+from pydtnn.initializers import glorot_uniform, zeros
 
 
 class Params:

@@ -2,7 +2,7 @@ from abc import ABC
 
 import numpy as np
 
-from .optimizer import Optimizer
+from pydtnn.optimizers.optimizer import Optimizer
 
 
 class SGD(Optimizer, ABC):

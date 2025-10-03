@@ -1,4 +1,4 @@
-from . import LRScheduler
+from pydtnn.lr_schedulers import LRScheduler
 from numpy import ndarray
 
 from typing import TYPE_CHECKING

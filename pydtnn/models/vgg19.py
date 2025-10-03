@@ -2,9 +2,9 @@ from collections.abc import Sequence, Iterable
 
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
-from ..layers import *
+from pydtnn.layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from ..activations import relu, softmax
+from pydtnn.activations import relu, softmax
 from pydtnn.initializers import he_uniform
 
 

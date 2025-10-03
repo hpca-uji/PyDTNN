@@ -1,1 +1,1 @@
-from .googlenet import create_googlenet as create_googlenet_imagenet
+from pydtnn.models.googlenet import create_googlenet as create_googlenet_imagenet

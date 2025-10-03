@@ -2,9 +2,9 @@
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.layers import AveragePool2D
-from .abstract_pool_2d_layer_gpu import AbstractPool2DLayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers.abstract_pool_2d_layer_gpu import AbstractPool2DLayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
 class AveragePool2DGPU(AbstractPool2DLayerGPU, AveragePool2D):

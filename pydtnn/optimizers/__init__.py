@@ -8,12 +8,12 @@ If you want to add a new optimizer:
 """
 
 
-from .adam import Adam
-from .nadam import Nadam
-from .optimizer import Optimizer
-from .rmsprop import RMSProp
-from .sgd import SGD
-from ..utils import get_derived_classes
+from pydtnn.optimizers.adam import Adam
+from pydtnn.optimizers.nadam import Nadam
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.optimizers.rmsprop import RMSProp
+from pydtnn.optimizers.sgd import SGD
+from pydtnn.utils import get_derived_classes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 
-from . import LRSchedulerWithLossOrMetric
+from pydtnn.lr_schedulers import LRSchedulerWithLossOrMetric
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

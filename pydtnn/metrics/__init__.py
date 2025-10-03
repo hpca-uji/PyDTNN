@@ -7,14 +7,14 @@ If you want to add a new metric:
     3) and, optionally, import your layer on this file.
 """
 
-from .categorical_accuracy import CategoricalAccuracy
-from .categorical_hinge import CategoricalHinge
-from .categorical_mae import CategoricalMAE
-from .categorical_mse import CategoricalMSE
-from .metric import Metric
-from .regression_mae import RegressionMAE
-from .regression_mse import RegressionMSE
-from ..utils import get_derived_classes
+from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
+from pydtnn.metrics.categorical_hinge import CategoricalHinge
+from pydtnn.metrics.categorical_mae import CategoricalMAE
+from pydtnn.metrics.categorical_mse import CategoricalMSE
+from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.regression_mae import RegressionMAE
+from pydtnn.metrics.regression_mse import RegressionMSE
+from pydtnn.utils import get_derived_classes
 
 # Aliases
 categorical_accuracy = CategoricalAccuracy

@@ -1,1 +1,1 @@
-from .inceptionv3 import create_inceptionv3 as create_inceptionv3_cifar10
+from pydtnn.models.inceptionv3 import create_inceptionv3 as create_inceptionv3_cifar10

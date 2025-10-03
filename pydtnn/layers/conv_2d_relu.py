@@ -1,6 +1,6 @@
 from abc import ABC
 
-from .conv_2d import Conv2D
+from pydtnn.layers.conv_2d import Conv2D
 
 
 class Conv2DRelu(Conv2D, ABC):

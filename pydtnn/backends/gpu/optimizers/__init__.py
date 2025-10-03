@@ -7,10 +7,10 @@ If you want to add a new GPU optimizer:
     3) and, optionally, import your optimizer on this file.
 """
 
-from .adam_gpu import AdamGPU
-from .nadam_gpu import NadamGPU
-from .rmsprop_gpu import RMSPropGPU
-from .sgd_gpu import SGDGPU
+from pydtnn.backends.gpu.optimizers.adam_gpu import AdamGPU
+from pydtnn.backends.gpu.optimizers.nadam_gpu import NadamGPU
+from pydtnn.backends.gpu.optimizers.rmsprop_gpu import RMSPropGPU
+from pydtnn.backends.gpu.optimizers.sgd_gpu import SGDGPU
 
 from pydtnn.optimizers import Optimizer
 from pydtnn.utils import get_derived_classes

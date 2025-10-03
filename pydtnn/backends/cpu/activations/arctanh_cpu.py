@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
-from .activation_cpu import ActivationCPU
+from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from numpy import ndarray
 
 

@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 
-from ..layers import *
-from ..activations import relu, softmax
+from pydtnn.layers import *
+from pydtnn.activations import relu, softmax
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 

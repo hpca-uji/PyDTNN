@@ -1,4 +1,4 @@
-from .relu import Relu
+from pydtnn.activations.relu import Relu
 
 
 class LeakyRelu(Relu):

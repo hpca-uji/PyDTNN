@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-from ..layers import *
-from ..activations import *
+from pydtnn.layers import *
+from pydtnn.activations import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from ..layers.conv_2d import GroupingEnum
+from pydtnn.layers.conv_2d import GroupingEnum
 
 
 def create_mobilenetv1(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:

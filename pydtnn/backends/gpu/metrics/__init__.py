@@ -7,8 +7,8 @@ If you want to add a new GPU metric:
     3) and, optionally, import your metric on this file.
 """
 
-from .metric_gpu import MetricGPU
-from .categorical_accuracy_gpu import CategoricalAccuracyGPU
+from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
+from pydtnn.backends.gpu.metrics.categorical_accuracy_gpu import CategoricalAccuracyGPU
 from pydtnn.utils import get_derived_classes
 
 # Search this module for MetricGPU derived classes and expose them

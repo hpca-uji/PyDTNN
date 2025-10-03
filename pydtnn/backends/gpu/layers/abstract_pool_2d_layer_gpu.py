@@ -1,13 +1,13 @@
 from abc import ABC
 
 from pydtnn.layers import AbstractPool2DLayer
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from . import LayerGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
 

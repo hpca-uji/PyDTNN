@@ -1,4 +1,4 @@
-from . import SimpleTracer
+from pydtnn.tracers import SimpleTracer
 
 try:
     import pycuda.driver as drv

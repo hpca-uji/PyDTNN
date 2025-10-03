@@ -6,10 +6,10 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.layers import FC
 from pydtnn.performance_models import *
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from .layer_gpu import LayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
-from ..utils_gpu import matmul_gpu, matvec_gpu
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils_gpu import matmul_gpu, matvec_gpu
 
 
 class FCGPU(LayerGPU, FC):

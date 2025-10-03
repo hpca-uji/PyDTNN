@@ -1,12 +1,12 @@
 import importlib
 import sys
 
-from .dataset import Dataset
-from .cifar10 import CIFAR10
-from .custom_dataset import CustomDataset
-from .imagenet import ImageNet
-from .mnist import MNIST
-from .folder_loader import DatasetFolderLoader
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.cifar10 import CIFAR10
+from pydtnn.datasets.custom_dataset import CustomDataset
+from pydtnn.datasets.imagenet import ImageNet
+from pydtnn.datasets.mnist import MNIST
+from pydtnn.datasets.folder_loader import DatasetFolderLoader
 
 CustomImport = CustomDataset.import_
 

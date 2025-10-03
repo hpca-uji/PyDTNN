@@ -7,16 +7,16 @@ If you want to add a new LR Scheduler:
     3) and, optionally, import your LR Scheduler on this file.
 
 """
-from .lr_scheduler import LRScheduler
+from pydtnn.lr_schedulers.lr_scheduler import LRScheduler
 # NOTE: The following import is necessary for other imports:
-from .lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
-from .early_stopping import EarlyStopping
-from .model_checkpoint import ModelCheckpoint
-from .reduce_lr_every_n_epochs import ReduceLREveryNEpochs
-from .reduce_lr_on_plateau import ReduceLROnPlateau
-from .stop_at_loss import StopAtLoss
-from .warm_up_lr_scheduler import WarmUpLRScheduler
-from ..utils import get_derived_classes
+from pydtnn.lr_schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
+from pydtnn.lr_schedulers.early_stopping import EarlyStopping
+from pydtnn.lr_schedulers.model_checkpoint import ModelCheckpoint
+from pydtnn.lr_schedulers.reduce_lr_every_n_epochs import ReduceLREveryNEpochs
+from pydtnn.lr_schedulers.reduce_lr_on_plateau import ReduceLROnPlateau
+from pydtnn.lr_schedulers.stop_at_loss import StopAtLoss
+from pydtnn.lr_schedulers.warm_up_lr_scheduler import WarmUpLRScheduler
+from pydtnn.utils import get_derived_classes
 
 # Aliases
 early_stopping = EarlyStopping

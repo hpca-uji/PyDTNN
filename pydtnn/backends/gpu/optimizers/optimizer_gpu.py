@@ -1,5 +1,5 @@
 from numpy import int32, prod
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from abc import ABC
 from typing import TypeVar
 

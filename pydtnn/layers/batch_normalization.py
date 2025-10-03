@@ -2,7 +2,7 @@ import numpy as np
 
 from abc import ABC
 
-from .layer import Layer
+from pydtnn.layers.layer import Layer
 from pydtnn.utils import decode_tensor
 from typing import Callable
 

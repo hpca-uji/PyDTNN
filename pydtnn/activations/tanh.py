@@ -1,6 +1,6 @@
 import numpy as np
 
-from .activation import Activation
+from pydtnn.activations.activation import Activation
 
 
 class Tanh(Activation):

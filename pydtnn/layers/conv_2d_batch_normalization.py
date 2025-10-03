@@ -1,7 +1,7 @@
 from abc import ABC
 
-from .conv_2d import Conv2D
-from .batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.batch_normalization import BatchNormalization
 
 
 class Conv2DBatchNormalization(Conv2D, BatchNormalization, ABC):

@@ -7,20 +7,20 @@ If you want to add a new GPU layer:
     3) and, optionally, import your GPU layer on this file.
 """
 
-from . import memory_allocation
+from pydtnn.backends.gpu.layers import memory_allocation
 
-from .layer_gpu import LayerGPU
-from .addition_block_gpu import AdditionBlockGPU
-from .average_pool_2d_gpu import AveragePool2DGPU
-from .batch_normalization_gpu import BatchNormalizationGPU
-from .concatenation_block_gpu import ConcatenationBlockGPU
-from .conv_2d_gpu import Conv2DGPU
-from .dropout_gpu import DropoutGPU
-from .fc_gpu import FCGPU
-from .flatten_gpu import FlattenGPU
-from .input_gpu import InputGPU
-from .max_pool_2d_gpu import MaxPool2DGPU
-from .adaptive_average_pool_2d_gpu import AdaptiveAveragePool2DGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.layers.addition_block_gpu import AdditionBlockGPU
+from pydtnn.backends.gpu.layers.average_pool_2d_gpu import AveragePool2DGPU
+from pydtnn.backends.gpu.layers.batch_normalization_gpu import BatchNormalizationGPU
+from pydtnn.backends.gpu.layers.concatenation_block_gpu import ConcatenationBlockGPU
+from pydtnn.backends.gpu.layers.conv_2d_gpu import Conv2DGPU
+from pydtnn.backends.gpu.layers.dropout_gpu import DropoutGPU
+from pydtnn.backends.gpu.layers.fc_gpu import FCGPU
+from pydtnn.backends.gpu.layers.flatten_gpu import FlattenGPU
+from pydtnn.backends.gpu.layers.input_gpu import InputGPU
+from pydtnn.backends.gpu.layers.max_pool_2d_gpu import MaxPool2DGPU
+from pydtnn.backends.gpu.layers.adaptive_average_pool_2d_gpu import AdaptiveAveragePool2DGPU
 from pydtnn.utils import get_derived_classes
 
 # Search this module for LayerGPU derived classes and expose them

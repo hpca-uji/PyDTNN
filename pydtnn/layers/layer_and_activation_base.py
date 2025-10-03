@@ -8,7 +8,7 @@ from typing import Self, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from pydtnn.model import Model, Array
     from pydtnn.activations.activation import Activation
-    from ..optimizers.optimizer import Optimizer
+    from pydtnn.optimizers.optimizer import Optimizer
 
 drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
 
