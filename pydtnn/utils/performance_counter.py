@@ -92,7 +92,7 @@ class PerformanceCounter:
             print(" ------------------------------------")
             print("| Performance counter testing report |")
             print(" ------------------------------------")
-            print(f'Testing time (from model): {self.testing_time/self.num_evaluations:5.4f} s')
+            print(f'Testing time (from model): {self.testing_time / self.num_evaluations:5.4f} s')
             print(f'Testing throughput (from model): {self.testing_throughput:5.4f} samples/s')
             print(f'Testing maximum memory allocated: ',
                   f'{self.testing_maximum_memory / 1024:.2f} MiB')

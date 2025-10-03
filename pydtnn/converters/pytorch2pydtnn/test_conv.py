@@ -11,16 +11,16 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 try:
     import pycuda.gpuarray as gpuarray
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except:
+except BaseException:
     pass
 
 # Constants #
-TENSOR_FORMAT = "NCHW" #"NCHW" # "NHWC" # "NCHW"
+TENSOR_FORMAT = "NCHW"  # "NCHW" # "NHWC" # "NCHW"
 N, C, H, W = 2, 2, 3, 3
 SHAPE = (C, H, W) if TENSOR_FORMAT == "NCHW" else (H, W, C)
 CONV_IN_CHANNELS = C
-CONV_OUT_CHANNELS = 2 # = PyTorch's Number filters
-CONV_KERNEL_SIZE = (1,1)
+CONV_OUT_CHANNELS = 2  # = PyTorch's Number filters
+CONV_KERNEL_SIZE = (1, 1)
 SEED = 1234
 DTYPE = np.float32
 
@@ -29,7 +29,7 @@ KWARGS = {
     "evaluate_only": True,
     "parallel": "data",
     "tensor_format": TENSOR_FORMAT,
-    "enable_gpu" : False, #True,
+    "enable_gpu": False,  # True,
     "omm": None,
     "dtype": DTYPE,
     "tracing": False,
@@ -41,6 +41,7 @@ KWARGS = {
 # End Constants #
 
 np.random.seed(SEED)
+
 
 def main():
     model_I2C = Model(**KWARGS)
@@ -63,9 +64,9 @@ def main():
         ("=============\n= DEPTHWISE =\n=============", model_DEPTH),
         ("=============\n= LEAKY RELU =\n=============", model_RELU)
     ]
-    
+
     for _, model in models:
-        model:Model
+        model: Model
         model.dataset = dataset
 
     model_RELU.add(Input(SHAPE, is_shape_in_format=True))
@@ -80,7 +81,7 @@ def main():
     model_POINT.add(Input(SHAPE, is_shape_in_format=True))
     model_POINT.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=GroupingEnum.POINTWISE, use_bias=use_bias))
     model_POINT._initialize()
-    
+
     model_I2C.add(Input(SHAPE, is_shape_in_format=True))
     model_I2C.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
     model_I2C._initialize()
@@ -89,20 +90,20 @@ def main():
         print(f"{name}")
 
         model.mode = ModelModeEnum.TRAIN
-        #model.show()
+        # model.show()
 
         x = deepcopy(dataset)
         if KWARGS["enable_gpu"]:
             _dataset = TensorGPU(
-            gpu_arr=gpuarray.empty(shape=dataset.shape, dtype=KWARGS["dtype"]),
-            tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
+                gpu_arr=gpuarray.empty(shape=dataset.shape, dtype=KWARGS["dtype"]),
+                tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
             _dataset.ary.set(dataset)
             x = _dataset
 
         num_layers = len(model.layers)
         print("Forward")
-        for i in range(num_layers):            
-            layer:Layer = model.layers[i]
+        for i in range(num_layers):
+            layer: Layer = model.layers[i]
             print(f"{layer=}")
             x: np.ndarray | TensorGPU = layer.forward(x)
             print(f"{x.shape=}")
@@ -110,15 +111,16 @@ def main():
 
         dy = x
         print("Backward")
-        for i in range(num_layers-1, 0, -1):
-            layer:Layer = model.layers[i]
+        for i in range(num_layers - 1, 0, -1):
+            layer: Layer = model.layers[i]
             dy: np.ndarray | TensorGPU = layer.backward(dy)
             print(f"{dy.shape=}")
         print("\n=========\n")
 
-        for i in range(num_layers-1, 0, -1):
-            layer:Layer = model.layers[i]
+        for i in range(num_layers - 1, 0, -1):
+            layer: Layer = model.layers[i]
             layer.update_weights(model.optimizer)
+
 
 if __name__ == "__main__":
     main()

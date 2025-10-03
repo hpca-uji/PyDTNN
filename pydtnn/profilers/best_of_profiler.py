@@ -25,7 +25,7 @@ class BestOfProfiler:
             outputs.append(self.best_method(*args, **kwargs))
             print(".", sep="", end="")
             if i > 0:
-                if type(outputs[0]) == np.ndarray:
+                if isinstance(outputs[0], np.ndarray):
                     name_0 = self.best_method.alternatives[0][0]
                     name_i = self.best_method.alternatives[i][0]
                     assert np.allclose(outputs[0], outputs[-1]), f"{name_0} and {name_i} outputs differ"

@@ -10,6 +10,7 @@ from pydtnn.metrics import CategoricalAccuracy
 from .metric_gpu import MetricGPU
 from ..tensor_gpu import TensorGPU
 
+
 class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy):
 
     def __init_gpu_kernel__(self) -> Function:

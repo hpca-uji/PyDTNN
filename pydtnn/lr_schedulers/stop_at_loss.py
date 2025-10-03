@@ -7,12 +7,13 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class StopAtLoss(LRSchedulerWithLossOrMetric):
     """
     StopAtLoss LRScheduler
     """
 
-    def __init__(self, model: Model, loss_or_metric:str ="", threshold_value=0, verbose=True):
+    def __init__(self, model: Model, loss_or_metric: str = "", threshold_value=0, verbose=True):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, loss_or_metric, verbose)
         self.threshold_value = threshold_value

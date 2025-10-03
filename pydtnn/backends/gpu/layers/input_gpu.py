@@ -13,7 +13,7 @@ class InputGPU(LayerGPU, Input):
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-    def forward(self, x:TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorGPU) -> TensorGPU:
         return x
 
     def backward(self, dy: TensorGPU) -> TensorGPU:

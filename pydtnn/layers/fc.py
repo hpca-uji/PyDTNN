@@ -9,8 +9,8 @@ from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 
 class FC(Layer, ABC):
 
-    def __init__(self, shape: tuple[int,...] = (1,), 
-                 activation: Optional["Activation"] = None, 
+    def __init__(self, shape: tuple[int, ...] = (1,),
+                 activation: Optional["Activation"] = None,
                  use_bias=True,
                  weights_initializer: InitializerFunc = glorot_uniform,
                  biases_initializer: InitializerFunc = zeros):

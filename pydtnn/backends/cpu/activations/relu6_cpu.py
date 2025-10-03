@@ -23,7 +23,6 @@ from pydtnn.cython_modules import capped_relu_cython
 import numpy as np
 
 
-
 class Relu6CPU(Relu6, ActivationCPU):
 
     def __init__(self, *args, **kwargs):
@@ -36,11 +35,11 @@ class Relu6CPU(Relu6, ActivationCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
-        self.mask = self._mask[:x.shape[0], :]        
+        self.mask = self._mask[:x.shape[0], :]
         capped_relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False), self.cap)
         return self.y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:        
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy)
         return dy

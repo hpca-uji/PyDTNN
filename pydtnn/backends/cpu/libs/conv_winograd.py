@@ -29,7 +29,7 @@ class ConvWinograd:
 
     Methods
     -------
-    winograd(weights, x, biases, vpadding, hpadding, 
+    winograd(weights, x, biases, vpadding, hpadding,
              vstride, hstride, vdilation, hdilation)
         calls the appropriate winograd function from libconvWinograd.so to perform
         the Toom-Cook based convolution.
@@ -49,8 +49,8 @@ class ConvWinograd:
 
     lib_cw = None  # will link to the libconvwinograd.so library
 
-    def __init__(self, kh:int, kw:int, vstride:int, hstride:int, vdilation:int, hdilation:int,
-                 dtype:np.dtype= np.float32, tensor_format=PYDTNN_TENSOR_FORMAT.NCHW,
+    def __init__(self, kh: int, kw: int, vstride: int, hstride: int, vdilation: int, hdilation: int,
+                 dtype: np.dtype = np.float32, tensor_format=PYDTNN_TENSOR_FORMAT.NCHW,
                  debug=False, parent_layer=None):
         """
         Loads the libconvWinograd.so library.
@@ -77,7 +77,7 @@ class ConvWinograd:
             The layer that is using it (for tracing purposes).
         """
 
-        def register_winograd_function(m:int, r:int , g:np.ndarray, bt:np.ndarray, at:np.ndarray) -> None:
+        def register_winograd_function(m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray) -> None:
             # choose the appropriate convWinograd function depending on the architecture and the data type being used
             if platform.machine() == 'aarch64':
                 if self.dtype == np.float32:
@@ -87,8 +87,8 @@ class ConvWinograd:
                         f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
-                    routine_names = [(intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format}") \
-                                       for intr in ["sse", "avx", "avx512"]]
+                    routine_names = [(intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format}")
+                                     for intr in ["sse", "avx", "avx512"]]
                 else:
                     raise NotImplementedError(
                         f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
@@ -96,8 +96,8 @@ class ConvWinograd:
                 raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
 
             try:
-                funcs = [(rn[0], (self._conv_winograd_c, \
-                          getattr(self.__class__.lib_cw, f"{rn[1]}_pre"), \
+                funcs = [(rn[0], (self._conv_winograd_c,
+                          getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
                           getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
             except AttributeError:
                 print(f"Winograd {routine_names} routine not found. Fallback to numpy version!")
@@ -230,16 +230,16 @@ class ConvWinograd:
         def winograd_workspace_alloc_pre(m, r, k, c):
             _u = ctypes.POINTER(ctypes.c_float)()
             self.conv_winograd_workspace_alloc_pre(ctypes.c_uint(m), ctypes.c_uint(r),
-                ctypes.c_uint(k), ctypes.c_uint(c), ctypes.byref(_u))
+                                                   ctypes.c_uint(k), ctypes.c_uint(c), ctypes.byref(_u))
             return np.array([False]), _u
 
         def winograd_workspace_alloc_kernel(m, r, n, k, c, hi, wi, kh, kw, vpadding, hpadding):
             _v = ctypes.POINTER(ctypes.c_float)()
             _m = ctypes.POINTER(ctypes.c_float)()
             self.conv_winograd_workspace_alloc_kernel(ctypes.c_uint(m), ctypes.c_uint(r),
-                ctypes.c_uint(n), ctypes.c_uint(k), ctypes.c_uint(c),
-                ctypes.c_uint(hi), ctypes.c_uint(wi), ctypes.c_uint(kh), ctypes.c_uint(kw),
-                ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), ctypes.byref(_v), ctypes.byref(_m))
+                                                      ctypes.c_uint(n), ctypes.c_uint(k), ctypes.c_uint(c),
+                                                      ctypes.c_uint(hi), ctypes.c_uint(wi), ctypes.c_uint(kh), ctypes.c_uint(kw),
+                                                      ctypes.c_uint(vpadding), ctypes.c_uint(hpadding), ctypes.byref(_v), ctypes.byref(_m))
             return _v, _m
 
         self.cw_cache_pre = MemoryCache(lambda args: winograd_workspace_alloc_pre(*args))
@@ -265,12 +265,12 @@ class ConvWinograd:
             setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
     # --- END __init__ --- #
 
-    def _conv_winograd_numpy(self, m:int, r:int, g:np.ndarray, bt:np.ndarray, at:np.ndarray, x_winograd_nchw,
-                             weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None = None, vpadding=0, hpadding=0,
+    def _conv_winograd_numpy(self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray, x_winograd_nchw,
+                             weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0,
                              vstride=1, hstride=1, vdilation=1, hdilation=1,
-                             relu=False, bn=False, 
-                             running_mean:np.ndarray|None = None, inv_std:np.ndarray|None = None,
-                             gamma:np.ndarray|None = None, beta:np.ndarray|None = None) -> np.ndarray:
+                             relu=False, bn=False,
+                             running_mean: np.ndarray | None = None, inv_std: np.ndarray | None = None,
+                             gamma: np.ndarray | None = None, beta: np.ndarray | None = None) -> np.ndarray:
         if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
@@ -408,13 +408,13 @@ class ConvWinograd:
         return y
     # --- END _conv_winograd_numpy --- #
 
-    def _conv_winograd_c(self, m:int, r:int, g:np.ndarray, bt:np.ndarray, at:np.ndarray, 
+    def _conv_winograd_c(self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray,
                          x_winograd_pre, x_winograd_kernel,
-                         weights:np.ndarray, x:np.ndarray, biases:np.ndarray|None = None, 
+                         weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
                          vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1,
-                         relu=False, bn=False, 
-                         running_mean:np.ndarray|None = None, inv_std:np.ndarray|None = None,
-                         gamma:np.ndarray|None = None, beta:np.ndarray|None = None) -> np.ndarray:
+                         relu=False, bn=False,
+                         running_mean: np.ndarray | None = None, inv_std: np.ndarray | None = None,
+                         gamma: np.ndarray | None = None, beta: np.ndarray | None = None) -> np.ndarray:
 
         if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
             n, ci, hi, wi = x.shape
@@ -457,77 +457,81 @@ class ConvWinograd:
 
         if not self._reuse_processed_weights or not _weights_already_processed[0]:
             x_winograd_pre(ctypes.c_uint(m), ctypes.c_uint(r),
-                   ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
-                   ctypes.c_uint(kh), ctypes.c_uint(kw),
-                   ctypes.c_void_p(weights.ctypes.data),
-                   ctypes.c_uint(ld_f1), ctypes.c_uint(ld_f2), ctypes.c_uint(ld_f3), _u)
+                           ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
+                           ctypes.c_uint(kh), ctypes.c_uint(kw),
+                           ctypes.c_void_p(weights.ctypes.data),
+                           ctypes.c_uint(ld_f1), ctypes.c_uint(ld_f2), ctypes.c_uint(ld_f3), _u)
             _weights_already_processed[0] = True
 
         x_winograd_kernel(ctypes.c_uint(m), ctypes.c_uint(r),
-                   ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
-                   ctypes.c_uint(hi), ctypes.c_uint(wi),
-                   ctypes.c_uint(kh), ctypes.c_uint(kw),
-                   ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
-                   ctypes.c_void_p(x.ctypes.data), ctypes.c_uint(ld_d1), ctypes.c_uint(ld_d2), ctypes.c_uint(ld_d3),
-                   ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ld_y1), ctypes.c_uint(ld_y2), ctypes.c_uint(ld_y3),
-                   ctypes.c_void_p(None if biases is None else biases.ctypes.data), _u, _v, _m,
-                   ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
-                   ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
-                   ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
-                   ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
-                   ctypes.c_void_p(None if beta is None else beta.ctypes.data))
+                          ctypes.c_uint(n), ctypes.c_uint(co), ctypes.c_uint(ci),
+                          ctypes.c_uint(hi), ctypes.c_uint(wi),
+                          ctypes.c_uint(kh), ctypes.c_uint(kw),
+                          ctypes.c_uint(vpadding), ctypes.c_uint(hpadding),
+                          ctypes.c_void_p(x.ctypes.data), ctypes.c_uint(ld_d1), ctypes.c_uint(ld_d2), ctypes.c_uint(ld_d3),
+                          ctypes.c_void_p(y.ctypes.data), ctypes.c_uint(ld_y1), ctypes.c_uint(ld_y2), ctypes.c_uint(ld_y3),
+                          ctypes.c_void_p(None if biases is None else biases.ctypes.data), _u, _v, _m,
+                          ctypes.c_char((b'F', b'T')[relu]), ctypes.c_char((b'F', b'T')[bn]),
+                          ctypes.c_void_p(None if running_mean is None else running_mean.ctypes.data),
+                          ctypes.c_void_p(None if inv_std is None else inv_std.ctypes.data),
+                          ctypes.c_void_p(None if gamma is None else gamma.ctypes.data),
+                          ctypes.c_void_p(None if beta is None else beta.ctypes.data))
         return y
     # --- END _conv_winograd_c --- #
 
+
 def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                  b: int, kn: int,
-                 ho: int, wo: int, kh: int, kw: int, 
-                 vpadding: int, hpadding: int, vstride: int, hstride: int, 
-                 vdilation: int, hdilation: int, 
+                 ho: int, wo: int, kh: int, kw: int,
+                 vpadding: int, hpadding: int, vstride: int, hstride: int,
+                 vdilation: int, hdilation: int,
                  ) -> int | float:
     from pydtnn.cython_modules import im2row_nhwc_cython
 
-    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
-    im2row_nhwc_cython(x, res, 
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
+    im2row_nhwc_cython(x, res,
                        kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, 
+                       vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(b * ho * wo, kn)
     return res
+
 
 def time_it_im2col(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                    b: int, kn: int,
-                   ho: int, wo: int, kh: int, kw: int, 
-                   vpadding: int, hpadding: int, vstride: int, hstride: int, 
-                   vdilation: int, hdilation: int, 
+                   ho: int, wo: int, kh: int, kw: int,
+                   vpadding: int, hpadding: int, vstride: int, hstride: int,
+                   vdilation: int, hdilation: int,
                    ) -> int | float:
     from pydtnn.cython_modules import im2col_nchw_cython
 
-    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
-    im2col_nchw_cython(x, res, 
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
+    im2col_nchw_cython(x, res,
                        kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, 
+                       vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(b * ho * wo, kn)
     return res
 
+
 def time_it_im2col_4_dims(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
-                          kk:int, ho: int, wo: int, kh: int, kw: int, 
-                          vpadding: int, hpadding: int, vstride: int, hstride: int, 
-                          vdilation: int, hdilation: int, 
+                          kk: int, ho: int, wo: int, kh: int, kw: int,
+                          vpadding: int, hpadding: int, vstride: int, hstride: int,
+                          vdilation: int, hdilation: int,
                           ) -> int | float:
     from pydtnn.cython_modules import im2col_nchw_cython
 
-    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
-    im2col_nchw_cython(x, res, 
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
+    im2col_nchw_cython(x, res,
                        kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, 
+                       vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
     return res
+
 
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
@@ -583,7 +587,7 @@ def __usage_example__():
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)
     im2col_mm_result_nchw = (w_c @ x_c + biases).reshape(kn, -1, ho, wo).transpose(1, 0, 2, 3)
-    mm_t = timeit(lambda: time_it_im2col(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+    mm_t = timeit(lambda: time_it_im2col(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
                   number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
 
@@ -606,14 +610,14 @@ def __usage_example__():
                              number=10) / 10
     print("conv_winograd time: {:.4f}".format(conv_winograd_t))
     print("Using im2col and mm NHWC ...")
-    x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype= x.dtype)
+    x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(x, x_c,
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape((-1, kn), copy=False)
     im2col_mm_result_nhwc = (x_c @ w_c + biases).reshape(-1, ho, wo, kn)
     mm_t = timeit(
-        lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+        lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
         number=10) / 10
     print("mm time: {:.4f}".format(mm_t))
 
@@ -661,15 +665,15 @@ def __usage_example__():
                                         x = np.random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
                                         biases = (np.ones((kk, nn * ho * wo)) * 10).astype(np.float32, order='C')
                                         w_c = weights.reshape(kk, -1)
-                                        res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
-                                        im2col_nchw_cython(x, res, 
+                                        res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
+                                        im2col_nchw_cython(x, res,
                                                            kh, kw, ho, wo,
-                                                           vpadding, hpadding, vstride, hstride, 
+                                                           vpadding, hpadding, vstride, hstride,
                                                            vdilation, hdilation)
                                         im2col_mm_result = (w_c @ res) + biases
                                         im2col_mm_result = \
                                             im2col_mm_result.reshape(kk, -1, ho, wo).transpose(1, 0, 2, 3)
-                                        im2col_t = timeit(lambda: time_it_im2col_4_dims(x, w_c, biases, kk, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+                                        im2col_t = timeit(lambda: time_it_im2col_4_dims(x, w_c, biases, kk, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
                                                           number=10) / 10
 
                                         conv_winograd_result = conv_winograd.conv_winograd_nchw(weights, x, biases_wg,
@@ -693,16 +697,16 @@ def __usage_example__():
                                         biases = (np.ones((nn * ho * wo, kk)) * 10).astype(np.float32, order='C')
 
                                         w_c = weights.reshape(-1, kk)
-                                        im2col_mm_result = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype= x.dtype)
+                                        im2col_mm_result = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
                                         im2row_nhwc_cython(x, x_c,
                                                            kh, kw, ho, wo,
-                                                           vpadding, hpadding, vstride, hstride, 
+                                                           vpadding, hpadding, vstride, hstride,
                                                            vdilation, hdilation) @ w_c \
-                                                           + biases
+                                            + biases
                                         im2col_mm_result = im2col_mm_result.reshape(-1, ho, wo, kk)
                                         im2col_t = timeit(
-                                                    lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
-                                                    number=10) / 10
+                                            lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
+                                            number=10) / 10
 
                                         conv_winograd_result = conv_winograd.conv_winograd_nhwc(weights, x, biases_wg,
                                                                                                 vpadding=vpadding,

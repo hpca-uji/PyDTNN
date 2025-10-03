@@ -5,11 +5,12 @@ from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
+
 def create_densenet_cifar10(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
 
-    _(Input(shape= input_shape))
+    _(Input(shape=input_shape))
 
     blocks, growth_rate = [6, 12, 24, 16], 12
 
@@ -45,6 +46,6 @@ def create_densenet_cifar10(input_shape: Sequence[int], output_shape: Sequence[i
     _(Relu())
     _(AveragePool2D(pool_shape=(4, 4)))
     _(Flatten())
-    _(FC(shape= output_shape, activation=softmax))
+    _(FC(shape=output_shape, activation=softmax))
 
     return model

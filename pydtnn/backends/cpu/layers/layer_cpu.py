@@ -3,7 +3,7 @@ from collections import abc
 
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum  
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
     # noinspection PyUnresolvedReferences
@@ -12,6 +12,7 @@ except (ImportError, ModuleNotFoundError):
     pass
 
 from numpy import ndarray
+
 
 class LayerCPU(Layer, ABC):
     """
@@ -25,7 +26,7 @@ class LayerCPU(Layer, ABC):
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            dw:ndarray = getattr(self, dw_)
+            dw: ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
@@ -57,7 +58,7 @@ class LayerCPU(Layer, ABC):
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
-            dw:ndarray = getattr(self, dw_)
+            dw: ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)

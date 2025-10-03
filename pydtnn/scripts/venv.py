@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 # setup venv and pip remotely
 
+from urllib.request import urlopen
+from pathlib import Path
+import subprocess
+import argparse
+import shlex
+import venv
 import sys
 sys.path.pop(0)
 
 # flake8: noqa
-import venv
-import shlex
-import argparse
-import subprocess
-from pathlib import Path
-from urllib.request import urlopen
 
 
 def main():

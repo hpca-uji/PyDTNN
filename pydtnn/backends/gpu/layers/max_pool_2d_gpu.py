@@ -6,6 +6,7 @@ from .abstract_pool_2d_layer_gpu import AbstractPool2DLayerGPU
 from ..libs import libcudnn as cudnn
 from ..tensor_gpu import TensorGPU
 
+
 class MaxPool2DGPU(AbstractPool2DLayerGPU, MaxPool2D):
 
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:

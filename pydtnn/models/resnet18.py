@@ -5,6 +5,7 @@ from ..layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 
+
 def create_resnet18(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
@@ -16,7 +17,8 @@ def create_resnet18(input_shape: Sequence[int], output_shape: Sequence[int]) -> 
     layout = [[64, 2, 1], [128, 2, 2], [256, 2, 2], [512, 2, 2]]  # Resnet-18
     for n_filt, res_blocks, stride in layout:
         for r in range(res_blocks):
-            if r > 0: stride = 1
+            if r > 0:
+                stride = 1
             _(AdditionBlock(
                 [
                     Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1,

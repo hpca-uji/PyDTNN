@@ -12,12 +12,13 @@ from pydtnn.optimizers import Adam
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
 
+
 class AdamGPU(OptimizerGPU, Adam):
     """
     AdamGPU optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype:np.dtype=np.float32):
+    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype: np.dtype = np.float32):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
 
         self.update_gpu = ElementwiseKernel("T *w, T *dw, T *m, T *v, \
@@ -40,12 +41,12 @@ class AdamGPU(OptimizerGPU, Adam):
                 if (i < N) {
                     m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
                     v[i] = beta2 * v[i] + (1 - beta2) * pow(dw[i], 2);
-                    w[i] -= lr * (decay * w[i] + ((m[i] / (1 - pow(beta1, it))) / 
+                    w[i] -= lr * (decay * w[i] + ((m[i] / (1 - pow(beta1, it))) /
                                               sqrt(v[i] / (1 - pow(beta2, it)) + epsilon)));
                 }
             }""".replace("T", {np.float32: "float", np.float64: "double"}[dtype]).
-                                             replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
-                                             ).get_function("Adam_kernel")
+            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
+        ).get_function("Adam_kernel")
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
@@ -57,7 +58,7 @@ class AdamGPU(OptimizerGPU, Adam):
                 self.context[layer]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
                 self.context[layer]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
-    def update(self, layer:LayerGPU):
+    def update(self, layer: LayerGPU):
         self.context[layer]["it"] += 1
         it = self.context[layer]["it"]
 
@@ -65,10 +66,10 @@ class AdamGPU(OptimizerGPU, Adam):
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = self.context[layer]["m_%s" % w_]
             v = self.context[layer]["v_%s" % w_]
-            w:TensorGPU
-            dw:TensorGPU
-            m:gpuarray
-            v:gpuarray
+            w: TensorGPU
+            dw: TensorGPU
+            m: gpuarray
+            v: gpuarray
 
             if self.gpudirect:
                 n = self.get_batch_size(w)

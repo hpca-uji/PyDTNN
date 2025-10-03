@@ -16,6 +16,7 @@ from pycuda.driver import Function
 
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 
+
 class Relu6GPU(Relu6, ActivationGPU):
 
     def __init__(self, *args, **kwargs):
@@ -23,16 +24,16 @@ class Relu6GPU(Relu6, ActivationGPU):
         self.mask: TensorGPU | None = None
         self.y: TensorGPU | None = None
     # --- END __init__ --- #
-    
+
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
         ActivationGPU.initialize(self, prev_shape, x)
-        Relu6.initialize(self, prev_shape)        
+        Relu6.initialize(self, prev_shape)
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
         self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
-        
+
         self.grid = (self.blocks, 1, 1)
         self.block = (self.threads, 1, 1)
 
@@ -43,11 +44,11 @@ class Relu6GPU(Relu6, ActivationGPU):
 
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_fwd"
-        _t = DICT_SUPPORTED_TYPES[dtype] # variable Type
+        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
 
         code = \
-"""
-__global__ void {func_name}({T}* x, {T}* max, {T}* mask, 
+            """
+__global__ void {func_name}({T}* x, {T}* max, {T}* mask,
                             float cap, int num_workers, int N)
 {{
     int i;
@@ -75,18 +76,18 @@ __global__ void {func_name}({T}* x, {T}* max, {T}* mask,
     }}
 }}
 """
-        code = code.format(func_name = _func_name, T = _t)
+        code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
     # --- END cuda_adaptive_average_pooling_fwd --- #
 
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_bwd"
-        _t = DICT_SUPPORTED_TYPES[dtype] # variable Type
+        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
 
         code = \
-"""
-__global__ void {func_name}({T}* dx, {T}* dy, {T}* mask, 
+            """
+__global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
                             int num_workers, int N)
 {{
     int i;
@@ -95,21 +96,20 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         dx[i] = dy[i] * mask[i];
 }}
 """
-        code = code.format(func_name = _func_name, T = _t)
+        code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
     # --- END cuda_adaptive_average_pooling_bwd --- #
 
-
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-        
+
         n = np.prod(x.shape, dtype=np.int32)
 
         self.cuda_fwd_func(x.ary, self.mask.ary, self.max.ary,
                            np.float32(self.cap), self.total_num_threads, n,
                            grid=self.grid, block=self.block, stream=self.model.stream)
-        
+
         self.y: TensorGPU = self.mask
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
@@ -123,9 +123,9 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         n = np.prod(dy.shape, dtype=np.int32)
 
         self.cuda_bwd_func(self.dx.ary, dy.ary, self.mask.ary,
-                            self.total_num_threads, n,
-                            grid=self.grid, block=self.block,
-                            stream=self.model.stream)
+                           self.total_num_threads, n,
+                           grid=self.grid, block=self.block,
+                           stream=self.model.stream)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.dx
@@ -134,9 +134,9 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
     def initialize_relu_2d_gpu(self, prev_shape: tuple[int, ...]) -> None:
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = prev_shape
-        
+
         n: int = self.model.batch_size * self.hi * self.wi * self.ci
-        
+
         _max = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.max = TensorGPU(_max, self.model.tensor_format, self.model.cudnn_dtype)
 
@@ -145,12 +145,12 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
 
         # Derivative dx
         dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)        
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.fwd_time = \
-            im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, 
+            im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
         self.bwd_time = \
-            col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed, 
+            col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
     # --- END initialize_pool_2d_gpu --- #

@@ -2,6 +2,7 @@ import numpy as np
 
 from .activation import Activation
 
+
 class Tanh(Activation):
 
     def initialize(self, prev_shape):

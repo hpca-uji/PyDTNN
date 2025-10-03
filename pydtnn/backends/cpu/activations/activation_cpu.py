@@ -3,7 +3,7 @@ from collections import abc
 
 from pydtnn.activations.activation import Activation
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
     # noinspection PyUnresolvedReferences
@@ -11,6 +11,7 @@ try:
 except (ImportError, ModuleNotFoundError):
     pass
 from numpy import ndarray
+
 
 class ActivationCPU(Activation, ABC):
     """
@@ -22,14 +23,14 @@ class ActivationCPU(Activation, ABC):
       * reduce_weights_sync()
     """
 
-    def reduce_weights_async(self, gradient:bool=True) -> None:
+    def reduce_weights_async(self, gradient: bool = True) -> None:
         if not self.model.comm:
             return
         self.reqs_allred = {}
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            dw:ndarray = getattr(self, dw_)
+            dw: ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
@@ -61,7 +62,7 @@ class ActivationCPU(Activation, ABC):
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
-            dw:ndarray = getattr(self, dw_)
+            dw: ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)

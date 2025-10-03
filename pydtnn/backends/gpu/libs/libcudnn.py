@@ -98,7 +98,7 @@ cudnnDataType = {
 }
 
 # Math type
-# cudnnMathType_t is an enumerated type used to indicate if the use of Tensor Core 
+# cudnnMathType_t is an enumerated type used to indicate if the use of Tensor Core
 # operations is permitted in a given library routine.
 type CudnnMathType = dict[str, int]
 cudnnMathType = {
@@ -280,8 +280,8 @@ cudnnPoolingMode = {
     # window is used. The algorithm used is
     # deterministic.
 }
-# cudnnNanPropagation_t is an enumerated type used to indicate if a given routine 
-# should propagate Nan numbers. This enumerated type is used as a field for the 
+# cudnnNanPropagation_t is an enumerated type used to indicate if a given routine
+# should propagate Nan numbers. This enumerated type is used as a field for the
 # cudnnActivationDescriptor_t descriptor and cudnnPoolingDescriptor_t descriptor
 type CudnnNanPropagation = dict[str, int]
 cudnnNanPropagation = {
@@ -437,7 +437,7 @@ def cudnnSetActivationDescriptor(activation_desc, mode, nan, coef):
     """
     Set a Activation descriptor object.
     Allocates a cudnnActivationDescriptor_t structure and returns a pointer to it.
-    
+
     Parameters
     -----------
     activation_desc:  cudnnActivationDescriptor
@@ -1231,7 +1231,7 @@ _libcudnn.cudnnSetConvolutionMathType.argtypes = [ctypes.c_void_p,
 
 def cudnnSetConvolutionMathType(conv_desc, math_type):
     """"
-    This function allows the user to specify whether or not the use of tensor op is permitted in the library 
+    This function allows the user to specify whether or not the use of tensor op is permitted in the library
     routines associated with a given convolution descriptor.
 
     Returns
@@ -1476,7 +1476,7 @@ def cudnnFindConvolutionBackwardDataAlgorithm(handle, w_desc, dy_desc,
 #                                                                 ctypes.byref(algo))
 #     cudnnCheckStatus(status)
 #     return algo
-# 
+#
 _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.restype = int
 _libcudnn.cudnnGetConvolutionBackwardDataWorkspaceSize.argtypes = [ctypes.c_void_p,
                                                                    ctypes.c_void_p,
@@ -1823,7 +1823,7 @@ _libcudnn.cudnnDropoutGetReserveSpaceSize.argtypes = [ctypes.c_void_p]
 
 def cudnnDropoutGetReserveSpaceSize(x_desc):
     """"
-    This function is used to query the amount of reserve needed to run dropout 
+    This function is used to query the amount of reserve needed to run dropout
     with the input dimensions given by x_desc
     Returns
     -------
@@ -1844,7 +1844,7 @@ _libcudnn.cudnnDropoutGetStatesSize.argtypes = [ctypes.c_void_p]
 
 def cudnnDropoutGetStatesSize(handle):
     """"
-    This function is used to query the amount of space required to store 
+    This function is used to query the amount of space required to store
     the states of the random number generators used by cudnnDropoutForward() function
     Returns
     -------
@@ -2019,19 +2019,19 @@ _libcudnn.cudnnGetPooling2dForwardOutputDim.argtypes = [ctypes.c_void_p, ctypes.
 def cudnnGetPooling2dForwardOutputDim(pooling_desc, input_desc):
     """"
     This function provides the output dimensions of a tensor after 2d pooling has been applied.
-    
+
     Each dimension h and w of the output images is computed as follows:
         outputDim = 1 + (inputDim + 2*padding - windowDim)/poolingStride;
-        
+
     Parameters
     ----------
     pooling_desc : Input
         Handle to a previously initialized pooling descriptor.
-    
+
     input_desc : Input
         Handle to the previously initialized input tensor descriptor.
-    
-    
+
+
     Returns
     -------
     n : int
@@ -2041,7 +2041,7 @@ def cudnnGetPooling2dForwardOutputDim(pooling_desc, input_desc):
     h : int
         Height of images in the output.
     w : int
-        Width of images in the output. 
+        Width of images in the output.
     """
     n = ctypes.c_int()
     c = ctypes.c_int()
@@ -2173,16 +2173,16 @@ _libcudnn.cudnnDeriveBNTensorDescriptor.argtypes = [ctypes.c_void_p, ctypes.c_vo
 
 def cudnnDeriveBNTensorDescriptor(derive_bn_desc, x_desc, mode):
     """
-    This function derives a secondary tensor descriptor for the batch normalization 
+    This function derives a secondary tensor descriptor for the batch normalization
     scale, invVariance, bn_bias, and bn_scale subtensors from the layer's x data descriptor.
-    
+
     derivedBnDesc
     Output. Handle to a previously created tensor descriptor.
     x_desc
     Input. Handle to a previously created and initialized layer's x data descriptor.
     mode
     Input. Batch normalization layer mode of operation.
-    
+
     """
     status = _libcudnn.cudnnDeriveBNTensorDescriptor(derive_bn_desc, x_desc, mode)
 
@@ -2203,22 +2203,22 @@ def cudnnBatchNormalizationBackward(handle, mode, alpha_data_diff, beta_data_dif
                                     x_desc, x, dy_desc, dy, dx_desc, dx, bn_scale_bias_diff_desc, bn_scale,
                                     result_bn_scale_diff, result_bn_bias_diff, epsilon, saved_mean, saved_inv_variance):
     """
-    This function performs the backward batch normalization layer computation. 
-    This layer is based on the paper Batch Normalization: Accelerating 
+    This function performs the backward batch normalization layer computation.
+    This layer is based on the paper Batch Normalization: Accelerating
     Deep Network Training by Reducing Internal Covariate Shift, S. Ioffe, C. Szegedy, 2015. .
-        
+
     The epsilon value has to be the same during training, backpropagation, and inference.
     -----------------
     handle
-    Input. Handle to a previously created cuDNN library descriptor. 
+    Input. Handle to a previously created cuDNN library descriptor.
     mode
-    Input. Mode of operation (spatial or per-activation). 
+    Input. Mode of operation (spatial or per-activation).
     alpha_data_diff, beta_data_diff
-    Inputs. Pointers to scaling factors (in host memory) used to blend the gradient 
+    Inputs. Pointers to scaling factors (in host memory) used to blend the gradient
     output dx with a prior value in the destination tensor as follows:
             dstValue = alpha_data_diff[0]*resultValue + beta_data_diff[0]*priorDstValue
     alpha_param_diff, *beta_param_diff
-    Inputs. Pointers to scaling factors (in host memory) used to blend the gradient outputs 
+    Inputs. Pointers to scaling factors (in host memory) used to blend the gradient outputs
     result_bn_scale_diff and result_bn_bias_diff with prior values in the destination tensor as follows:
             dstValue = alpha_param_diff[0]*resultValue + beta_param_diff[0]*priorDstValue
     x_desc, dx_desc, dy_desc
@@ -2226,34 +2226,34 @@ def cudnnBatchNormalizationBackward(handle, mode, alpha_data_diff, beta_data_dif
     x
     Input. Data pointer to GPU memory associated with the tensor descriptor x_desc, for the layer’s x data.
     dy
-    Inputs. Data pointer to GPU memory associated with the tensor descriptor dy_desc, 
+    Inputs. Data pointer to GPU memory associated with the tensor descriptor dy_desc,
     for the backpropagated differential dy input.
     dx
-    Outputs. Data pointer to GPU memory associated with the tensor descriptor dx_desc, 
+    Outputs. Data pointer to GPU memory associated with the tensor descriptor dx_desc,
     for the resulting differential output with respect to x.
     bn_scale_bias_diff_desc
-    Input. Shared tensor descriptor for the following five tensors: bn_scale, result_bn_scale_diff, 
-    result_bn_bias_diff, saved_mean, saved_inv_variance. The dimensions for this tensor descriptor 
-    are dependent on normalization mode. 
-    
+    Input. Shared tensor descriptor for the following five tensors: bn_scale, result_bn_scale_diff,
+    result_bn_bias_diff, saved_mean, saved_inv_variance. The dimensions for this tensor descriptor
+    are dependent on normalization mode.
+
     *bn_scale
-    Input. Pointer in the device memory for the batch normalization scale parameter 
+    Input. Pointer in the device memory for the batch normalization scale parameter
     (in the original paper the quantity scale is referred to as gamma).
     Note: The bn_bias parameter is not needed for this layer's computation.
-    
+
     result_bn_scale_diff, result_bn_bias_diff
-    Outputs. Pointers in device memory for the resulting scale and bias differentials 
-    computed by this routine. Note that these scale and bias gradients are weight gradients 
+    Outputs. Pointers in device memory for the resulting scale and bias differentials
+    computed by this routine. Note that these scale and bias gradients are weight gradients
     specific to this batch normalization operation, and by definition are not backpropagated.
-    
+
     epsilon
-    Input. Epsilon value used in batch normalization formula. 
-    Its value should be equal to or greater than the value defined for 
-    CUDNN_BN_MIN_EPSILON in cudnn.h. The same epsilon value should be 
+    Input. Epsilon value used in batch normalization formula.
+    Its value should be equal to or greater than the value defined for
+    CUDNN_BN_MIN_EPSILON in cudnn.h. The same epsilon value should be
     used in forward and backward functions.
     *saved_mean, *saved_inv_variance
-    Inputs. Optional cache parameters containing saved intermediate results that were 
-    computed during the forward pass. For this to work correctly, the layer's x and 
+    Inputs. Optional cache parameters containing saved intermediate results that were
+    computed during the forward pass. For this to work correctly, the layer's x and
     bn_scale data have to remain unchanged until this backward function is called.
     """
 
@@ -2293,42 +2293,42 @@ def cudnnBatchNormalizationForwardInference(handle, mode, alpha, beta, x_desc, x
                                             bn_scale_bias_mean_var_desc, bn_scale, bn_bias, estimated_mean,
                                             estimated_variance, epsilon):
     """
-    This function performs the forward batch normalization layer 
-    computation for the inference phase. This layer is based on the 
-    paper Batch Normalization: Accelerating Deep Network Training by 
+    This function performs the forward batch normalization layer
+    computation for the inference phase. This layer is based on the
+    paper Batch Normalization: Accelerating Deep Network Training by
     Reducing Internal Covariate Shift, S. Ioffe, C. Szegedy, 2015.
     -----------------------------------
     handle
-    Input. Handle to a previously created cuDNN library descriptor. 
+    Input. Handle to a previously created cuDNN library descriptor.
     For more information, see cudnnHandle_t.
     mode
-    Input. Mode of operation (spatial or per-activation). 
+    Input. Mode of operation (spatial or per-activation).
     For more information, see cudnnBatchNormMode_t.
     alpha, beta
-    Inputs. Pointers to scaling factors (in host memory) used to blend the layer 
+    Inputs. Pointers to scaling factors (in host memory) used to blend the layer
     output value with prior value in the destination tensor as follows:
         dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
     x_desc, y_desc
     Input. Handles to the previously initialized tensor descriptors.
     x
-    Input. Data pointer to GPU memory associated with the tensor 
+    Input. Data pointer to GPU memory associated with the tensor
     descriptor x_desc, for the layer’s x input data.
     y
-    Output. Data pointer to GPU memory associated with the tensor 
+    Output. Data pointer to GPU memory associated with the tensor
     descriptor y_desc, for the youtput of the batch normalization layer.
     bn_scale_bias_mean_var_desc, bn_scale, bn_bias
-    Inputs. Tensor descriptors and pointers in device memory for the 
-    batch normalization scale and bias parameters (in the original paper 
+    Inputs. Tensor descriptors and pointers in device memory for the
+    batch normalization scale and bias parameters (in the original paper
     bias is referred to as beta and scale as gamma).
     estimated_mean, estimated_variance
-    Inputs. Mean and variance tensors (these have the same descriptor as 
-    the bias and scale). The result_running_mean and result_running_variance, 
-    accumulated during the training phase from the cudnnBatchNormalizationForwardTraining() 
+    Inputs. Mean and variance tensors (these have the same descriptor as
+    the bias and scale). The result_running_mean and result_running_variance,
+    accumulated during the training phase from the cudnnBatchNormalizationForwardTraining()
     call, should be passed as inputs here.
     epsilon
-    Input. Epsilon value used in the batch normalization formula. Its value 
+    Input. Epsilon value used in the batch normalization formula. Its value
     should be equal to or greater than the value defined for CUDNN_BN_MIN_EPSILON in cudnn.h.
-    
+
     """
 
     data_type = cudnnGetTensor4dDescriptor(x_desc)[0]
@@ -2363,54 +2363,54 @@ def cudnnBatchNormalizationForwardTraining(handle, mode, alpha, beta, x_desc, x,
                                            result_running_variance, epsilon, result_save_mean,
                                            result_save_inv_variance):
     """
-    This function performs the forward batch normalization layer computation 
-    for the training phase. This layer is based on the paper 
-    Batch Normalization: Accelerating Deep Network Training by Reducing 
+    This function performs the forward batch normalization layer computation
+    for the training phase. This layer is based on the paper
+    Batch Normalization: Accelerating Deep Network Training by Reducing
     Internal Covariate Shift, S. Ioffe, C. Szegedy, 2015.
-    handle: Handle to a previously created cuDNN library descriptor. 
+    handle: Handle to a previously created cuDNN library descriptor.
         For more information, see cudnnHandle_t.
-    mode: Mode of operation (spatial or per-activation). 
+    mode: Mode of operation (spatial or per-activation).
         For more information, see cudnnBatchNormMode_t.
-    alpha, beta: Inputs. Pointers to scaling factors (in host memory) used to 
+    alpha, beta: Inputs. Pointers to scaling factors (in host memory) used to
         blend the layer output value with prior value in the destination tensor as follows:
         dstValue = alpha[0]*resultValue + beta[0]*priorDstValue
-    x_desc, y_desc: Tensor descriptors and pointers in device memory for the 
+    x_desc, y_desc: Tensor descriptors and pointers in device memory for the
         layer's x and y data. For more information, see cudnnTensorDescriptor_t.
-    *x: Input. Data pointer to GPU memory associated with the tensor descriptor x_desc, 
+    *x: Input. Data pointer to GPU memory associated with the tensor descriptor x_desc,
         for the layer’s x input data.
-    *y: Output. Data pointer to GPU memory associated with the tensor descriptor y_desc, 
+    *y: Output. Data pointer to GPU memory associated with the tensor descriptor y_desc,
         for the y output of the batch normalization layer.
-    bn_scale_bias_mean_var_desc: Shared tensor descriptor desc for the secondary tensor 
-        that was derived by cudnnDeriveBNTensorDescriptor(). 
-    bn_scale, bn_bias: Inputs. Pointers in device memory for the batch normalization 
-        scale and bias parameters (in the original paper bias is referred to 
-        as beta and scale as gamma). 
-    
+    bn_scale_bias_mean_var_desc: Shared tensor descriptor desc for the secondary tensor
+        that was derived by cudnnDeriveBNTensorDescriptor().
+    bn_scale, bn_bias: Inputs. Pointers in device memory for the batch normalization
+        scale and bias parameters (in the original paper bias is referred to
+        as beta and scale as gamma).
+
     exponential_average_factor: Input. Factor used in the moving average computation as follows:
         runningMean = runningMean*(1-factor) + newMean*factor
-        
-    result_running_mean, result_running_variance: Inputs/Outputs. Running mean and variance tensors 
-         (these have the same descriptor as the bias and scale). Both of these pointers 
-         can be NULL but only at the same time. The value stored in result_running_variance 
-         (or passed as an input in inference mode) is the sample variance and is the 
-         moving average of variance[x] where the variance is computed either over batch 
-         or spatial+batch dimensions depending on the mode. 
+
+    result_running_mean, result_running_variance: Inputs/Outputs. Running mean and variance tensors
+         (these have the same descriptor as the bias and scale). Both of these pointers
+         can be NULL but only at the same time. The value stored in result_running_variance
+         (or passed as an input in inference mode) is the sample variance and is the
+         moving average of variance[x] where the variance is computed either over batch
+         or spatial+batch dimensions depending on the mode.
          If these pointers are not NULL, the tensors should be initialized to some reasonable values or to 0.
-    epsilon: Input. Epsilon value used in the batch normalization formula. 
-         Its value should be equal to or greater than the value defined for 
-         CUDNN_BN_MIN_EPSILON in cudnn.h (1e-5). 
+    epsilon: Input. Epsilon value used in the batch normalization formula.
+         Its value should be equal to or greater than the value defined for
+         CUDNN_BN_MIN_EPSILON in cudnn.h (1e-5).
          The same epsilon value should be used in forward and backward functions.
-    result_save_mean, result_save_inv_variance: Outputs. Optional cache to save intermediate 
-         results computed during the forward pass. These buffers can be used to speed up 
-         the backward pass when supplied to the cudnnBatchNormalizationBackward() function. 
- The intermediate results stored in result_save_mean and result_save_inv_variance buffers 
-         should not be used directly by the user. Depending on the batch normalization mode, 
-         the results stored in result_save_inv_variance may vary. For the cache to work 
-         correctly, the input layer data must remain unchanged until the backward function 
-         is called. Note that both parameters can be NULL but only at the same time. 
-         In such a case, intermediate statistics will not be saved, and 
-         cudnnBatchNormalizationBackward() will have to re-compute them. It is recommended 
-         to use this cache as the memory overhead is relatively small because these tensors 
+    result_save_mean, result_save_inv_variance: Outputs. Optional cache to save intermediate
+         results computed during the forward pass. These buffers can be used to speed up
+         the backward pass when supplied to the cudnnBatchNormalizationBackward() function.
+ The intermediate results stored in result_save_mean and result_save_inv_variance buffers
+         should not be used directly by the user. Depending on the batch normalization mode,
+         the results stored in result_save_inv_variance may vary. For the cache to work
+         correctly, the input layer data must remain unchanged until the backward function
+         is called. Note that both parameters can be NULL but only at the same time.
+         In such a case, intermediate statistics will not be saved, and
+         cudnnBatchNormalizationBackward() will have to re-compute them. It is recommended
+         to use this cache as the memory overhead is relatively small because these tensors
          have a much lower product of dimensions than the data tensors.
     """
 

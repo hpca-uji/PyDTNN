@@ -10,6 +10,7 @@ except (OSError, ImportError, ModuleNotFoundError):
 
 import numpy as np
 
+
 def matmul_gpu(handle, trans_a, trans_b, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, dtype):
     try:
         gemm = {np.float32: cublas.cublasSgemm,

@@ -6,17 +6,18 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 from ..activations import softmax
 
+
 def create_resnet50v15_imagenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
-    
+
     """
     This is the v1.5 because in the blocks where downsampling is required, the 3x3 convolution uses stride=2
     """
-    
+
     _(Input(shape=input_shape))
-    _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform) )
-    _(BatchNormalization() )
+    _(Conv2D(nfilters=64, filter_shape=(3, 3), stride=1, padding=1, weights_initializer=he_uniform))
+    _(BatchNormalization())
     _(Conv2D(nfilters=64, filter_shape=(7, 7), stride=2, padding=3, weights_initializer=he_uniform))
     _(MaxPool2D(pool_shape=(3, 3), stride=2, padding=1))
 

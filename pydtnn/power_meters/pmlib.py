@@ -177,7 +177,7 @@ class PMLib:
         self.times = np.array([self.counter_start_time + x * self.period for x in range(self.len_samples)])
         self.watts = np.ctypeslib \
             .as_array((ctypes.c_double * self.len_samples * self.len_lines).from_address(
-            ctypes.addressof(self.counter.measures.contents.energy.watts.contents))) \
+                ctypes.addressof(self.counter.measures.contents.energy.watts.contents))) \
             .reshape((self.len_lines, self.len_samples))
         if self.counter.aggregate == 0:
             _sum = np.sum(self.watts, axis=0).reshape(1, -1)
@@ -240,5 +240,5 @@ class PMLib:
             elapsed_time = self.times[previous_sample_from_end] - self.times[next_sample_from_start]
             if elapsed_time > 0:
                 joules += np.mean(self.watts[:, next_sample_from_start:previous_sample_from_end + 1], axis=1) \
-                          * elapsed_time
+                    * elapsed_time
         return joules

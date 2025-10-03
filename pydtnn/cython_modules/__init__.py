@@ -21,7 +21,7 @@ __all__ = (
     "transpose_0312_ikj_cython", "transpose_1023_jik_cython", "transpose_1023_ijk_cython",
     "adaptive_avg_pooling_fwd_nchw_cython", "adaptive_avg_pooling_bwd_nchw_cython",
     "adaptive_avg_pooling_fwd_nhwc_cython", "adaptive_avg_pooling_bwd_nhwc_cython",
-    "sigmoid_fwd_cython", "sigmoid_bwd_cython", 
+    "sigmoid_fwd_cython", "sigmoid_bwd_cython",
     "log_fwd_cython", "log_bwd_cython"
 )
 

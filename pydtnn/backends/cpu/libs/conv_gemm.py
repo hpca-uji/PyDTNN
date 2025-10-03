@@ -43,7 +43,7 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, dtype:np.dtype=np.float32, debug:bool=False, parent_layer=None):
+    def __init__(self, dtype: np.dtype = np.float32, debug: bool = False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 
@@ -314,6 +314,7 @@ class ConvGemm:
 
         return dx
 
+
 def __free__(pack):
     def find_msvcr():
         import re
@@ -336,20 +337,21 @@ def __free__(pack):
 
 def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                  b: int, kn: int,
-                 ho: int, wo: int, kh: int, kw: int, 
-                 vpadding: int, hpadding: int, vstride: int, hstride: int, 
-                 vdilation: int, hdilation: int, 
+                 ho: int, wo: int, kh: int, kw: int,
+                 vpadding: int, hpadding: int, vstride: int, hstride: int,
+                 vdilation: int, hdilation: int,
                  ) -> int | float:
     from pydtnn.cython_modules import im2col_nchw_cython
 
-    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype = x.dtype)
-    im2col_nchw_cython(x, res, 
+    res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
+    im2col_nchw_cython(x, res,
                        kh, kw, ho, wo,
-                       vpadding, hpadding, vstride, hstride, 
+                       vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
     res += biases.reshape(b * ho * wo, kn)
     return res
+
 
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
@@ -410,7 +412,7 @@ def __usage_example__():
     print("Times")
     print("-----")
     print("conv_gemm time: {:.4f}".format(conv_gemm_t))
-    im2col_t = timeit(lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation), 
+    im2col_t = timeit(lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
                       number=10) / 10
     mm_t = timeit(lambda: w_c @ x_c + biases, number=10) / 10
     print("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))

@@ -97,7 +97,7 @@ def ncclGetUniqueId():
     """
     Generates an Id to be used in ncclCommInitRank. ncclGetUniqueId should be
     called once and the Id should be distributed to all ranks in the
-    communicator before calling ncclCommInitRank. 
+    communicator before calling ncclCommInitRank.
 
     Returns
     -------
@@ -133,7 +133,7 @@ def ncclCommInitRank(nranks, comm_id, rank):
 
     Returns
     -------
-    comm : 
+    comm :
     """
 
     comm = ncclComm_t()
@@ -178,7 +178,7 @@ _libnccl.ncclCommDestroy.argtypes = [ncclComm_t]
 def ncclCommDestroy(comm):
     """
     Frees resources associated with communicator object, but waits for any operations
-    that might still be running on the device. 
+    that might still be running on the device.
 
     Parameters
     ----------
@@ -196,7 +196,7 @@ _libnccl.ncclCommAbort.argtypes = [ctypes.c_void_p]
 def ncclCommAbort(comm):
     """
     Frees resources associated with communicator object, but waits for any operations
-    that might still be running on the device. 
+    that might still be running on the device.
 
     Parameters
     ----------
@@ -297,7 +297,7 @@ def ncclCommUserRank(comm):
     return rank.value
 
 
-# Reduction operation selector 
+# Reduction operation selector
 class RedOp(Enum):
     Sum = 0
     Prod = 1
@@ -321,12 +321,12 @@ class DataType(Enum):
 
 
 # Collective communication operations
-# 
+#
 # Collective communication operations must be called separately for each
 # communicator in a communicator clique.
-# 
+#
 # They return when operations have been enqueued on the CUDA stream.
-# 
+#
 # Since they may perform inter-CPU synchronization, each call has to be done
 # from a different thread or process, or need to use Group Semantics (see
 # below).
@@ -348,13 +348,13 @@ def ncclReduce(sendbuff, recvbuff, count, datatype, op, root, comm, stream):
     operation is complete.
 
      In-place operation will happen if sendbuff == recvbuff.
-    
+
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclReduce(sendbuff, recvbuff, count,
@@ -380,10 +380,10 @@ def ncclBroadcast(sendbuff, recvbuff, count, datatype, root, comm, stream):
 
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclBroadcast(sendbuff, recvbuff, count, datatype.value, root, comm, stream)
@@ -402,15 +402,15 @@ def ncclAllReduce(sendbuff, recvbuff, count, datatype, op, comm, stream):
     """
     Reduces data arrays of length count in sendbuff using op operation, and
     leaves identical copies of result on each recvbuff.
-    
+
     In-place operation will happen if sendbuff == recvbuff.
 
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclAllReduce(sendbuff, recvbuff, count,
@@ -434,15 +434,15 @@ def ncclReduceScatter(sendbuff, recvbuff, recvcount, datatype, comm, stream):
     block of the result.
     Assumes sendcount is equal to nranks*recvcount, which means that sendbuff
     should have a size of at least nranks*recvcount elements.
-      
+
     In-place operations will happen if recvbuff == sendbuff + rank * recvcount.
 
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclReduceScatter(sendbuff, recvbuff, recvcount,
@@ -464,15 +464,15 @@ def ncclAllGather(sendbuff, recvbuff, sendcount, datatype, comm, stream):
     receiving data from rank i at offset i*sendcount.
     Assumes recvcount is equal to nranks*sendcount, which means that recvbuff
     should have a size of at least nranks*sendcount elements.
-    
+
     In-place operations will happen if sendbuff == recvbuff + rank * sendcount.
 
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclAllGather(sendbuff, recvbuff, sendcount,
@@ -491,20 +491,20 @@ _libnccl.ncclSend.argtypes = [ctypes.c_void_p,
 def ncclSend(sendbuff, count, datatype, peer, comm, stream):
     """
     Send data from sendbuff to rank peer.
-    
+
     Rank peer needs to call ncclRecv with the same datatype and the same count from this
     rank.
-    
+
     This operation is blocking for the GPU. If multiple ncclSend and ncclRecv operations
     need to progress concurrently to complete, they must be fused within a ncclGroupStart/
     ncclGroupEnd section.
-    
+
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclSend(sendbuff, count, datatype.value, peer, comm, stream)
@@ -522,20 +522,20 @@ _libnccl.ncclRecv.argtypes = [ctypes.c_void_p,
 def ncclRecv(recvbuff, count, datatype, peer, comm, stream):
     """
     Receive data from rank peer into recvbuff.
-    
+
     Rank peer needs to call ncclSend with the same datatype and the same count to this
     rank.
-    
+
     This operation is blocking for the GPU. If multiple ncclSend and ncclRecv operations
     need to progress concurrently to complete, they must be fused within a ncclGroupStart/
     ncclGroupEnd section.
 
     Parameters
     -----------
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclRecv(recvbuff, count, datatype.value, peer, comm, stream)
@@ -551,11 +551,11 @@ def ncclGroupStart():
     """
     Start a group call. All calls to NCCL until ncclGroupEnd will be fused into
     a single NCCL operation. Nothing will be started on the CUDA stream until
-    ncclGroupEnd.    
-    
+    ncclGroupEnd.
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclGroupStart()
@@ -572,10 +572,10 @@ def ncclGroupEnd():
     End a group call. Start a fused NCCL operation consisting of all calls since
     ncclGroupStart. Operations on the CUDA stream depending on the NCCL operations
     need to be called after ncclGroupEnd.
-    
+
     Returns
     -------
-    
+
     """
 
     status = _libnccl.ncclGroupEnd()

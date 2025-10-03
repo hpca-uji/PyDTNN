@@ -4,6 +4,7 @@ from pydtnn.activations.arctanh import Arctanh
 from .activation_cpu import ActivationCPU
 from numpy import ndarray
 
+
 class ArctanhCPU(ActivationCPU, Arctanh):
 
     def __init__(self, *args, **kwargs):

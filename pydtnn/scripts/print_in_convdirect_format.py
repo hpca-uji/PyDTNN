@@ -28,4 +28,3 @@ model.print_in_convdirect_format()
 # Print the memory required for the Im2Row transformation of each layer with batch size of 1 and float32
 # pydtnn/scripts/print_in_convdirect_format.py --model=resnet50v15_imagenet \
 #   | awk '!/#/ {print $1 " "  $6 * $7 * $8 * $9 * $10 * 4 / 1024 / 1024}' | sort -k 2  -g
-

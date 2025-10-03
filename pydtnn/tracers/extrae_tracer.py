@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class ExtraeTracer(Tracer):
     """
     ExtraTracer
@@ -52,4 +53,4 @@ class ExtraeTracer(Tracer):
 
     def set_default_stream(self, stream):
         pass
-        #self.stream = stream
+        # self.stream = stream

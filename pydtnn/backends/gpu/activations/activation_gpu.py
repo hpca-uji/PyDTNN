@@ -2,8 +2,8 @@ from abc import ABC
 from collections import abc
 
 from pydtnn.activations import Activation
-from pydtnn.tracers import  PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-                            PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum 
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
     # noinspection PyUnresolvedReferences
@@ -104,7 +104,7 @@ class ActivationGPU(Activation, ABC):
     def wait_allreduce_async(self, gradient=True):
         if not self.model.comm:
             return
-        
+
         if self.model.enable_nccl:
             self.model.stream.synchronize()
             dw = getattr(self, dw_)
@@ -162,8 +162,8 @@ class ActivationGPU(Activation, ABC):
                 self.stream_2.synchronize()
                 # TODO: crypt
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
-                                    nccl.RedOp.Sum, comm=self.model.nccl_comm,
-                                    stream=self.stream_2.handle)
+                                   nccl.RedOp.Sum, comm=self.model.nccl_comm,
+                                   stream=self.stream_2.handle)
                 self.stream_2.synchronize()
                 # TODO: decrypt
 

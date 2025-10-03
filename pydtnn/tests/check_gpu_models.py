@@ -25,6 +25,7 @@ from pydtnn.tests.common import verbose_test
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn import losses
 
+
 class Params:
     pass
 
@@ -56,7 +57,7 @@ class CheckGPUModels(CheckConvGemmModels):
         # CPU model with no convGemm
         params = Params()
         params.model_name = model_name
-        params.parallel = "sequential" # TODO: Check this value.
+        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
@@ -76,7 +77,7 @@ class CheckGPUModels(CheckConvGemmModels):
         params = Params()
         params.model_name = model_name
         params.enable_gpu = True
-        params.parallel = "sequential" # TODO: Check this value.
+        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_cudnn_auto_conv_alg = True
         params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
         params.dataset_name = "cifar10"

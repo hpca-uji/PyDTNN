@@ -10,6 +10,8 @@ from . import LayerGPU
 from ..tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
+
+
 class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
     """
     Provides common methods to Pool2DGPU classes.
@@ -58,7 +60,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
 
-    def forward(self, x:TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
@@ -72,9 +74,9 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
         cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                    self.y.desc, self.y.ptr,
-                                    dy.desc, dy.ptr,
-                                    self.x.desc, self.x.ptr,
-                                    beta, self.dx.desc, self.dx.ptr)
+                                   self.y.desc, self.y.ptr,
+                                   dy.desc, dy.ptr,
+                                   self.x.desc, self.x.ptr,
+                                   beta, self.dx.desc, self.dx.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

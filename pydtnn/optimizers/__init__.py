@@ -35,7 +35,7 @@ sgd = SGD
 def get_optimizer(model: Model) -> Optimizer:
     """Get optimizer object from model attributes"""
     match model.optimizer_name:
-        
+
         case "rmsprop":
             opt: RMSProp = RMSProp(learning_rate=model.learning_rate,
                                    rho=model.rho,
@@ -64,7 +64,7 @@ def get_optimizer(model: Model) -> Optimizer:
                            dtype=model.dtype)
         case _:
             raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
-        
+
     if model.enable_cudnn:
         opt.set_gpudirect(model.gpudirect)
     return opt

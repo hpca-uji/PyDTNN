@@ -12,12 +12,13 @@ from pydtnn.optimizers import Nadam
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
 
+
 class NadamGPU(OptimizerGPU, Nadam):
     """
     NadamGPU optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype:np.dtype=np.float32):
+    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype: np.dtype = np.float32):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
 
         self.update_gpu = ElementwiseKernel("T *w, T *dw, T *m, T *v, \
@@ -35,7 +36,7 @@ class NadamGPU(OptimizerGPU, Nadam):
 
         self.update_gpudirect = SourceModule("""
             __global__ void Nadam_kernel(T *w, T *dw, T *m, T *v,
-                               float it, float lr, float decay, 
+                               float it, float lr, float decay,
                                float beta1, float beta2, float epsilon, int N) {
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
                 if (i < N) {
@@ -45,9 +46,9 @@ class NadamGPU(OptimizerGPU, Nadam):
                                                sqrt(v[i] / (1 - pow(beta2, it)) + epsilon)));
                 }
             }""".replace("T", {np.float32: "float", np.float64: "double"}[dtype]).
-                                             replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
-                                             ).get_function("Nadam_kernel")
-        
+            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
+        ).get_function("Nadam_kernel")
+
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
             self.context[layer] = dict[str, int | gpuarray_t]()
@@ -66,15 +67,15 @@ class NadamGPU(OptimizerGPU, Nadam):
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = self.context[layer]["m_%s" % w_]
             v = self.context[layer]["v_%s" % w_]
-            w:TensorGPU
-            dw:TensorGPU
-            m:gpuarray
-            v:gpuarray
+            w: TensorGPU
+            dw: TensorGPU
+            m: gpuarray
+            v: gpuarray
 
             if self.gpudirect:
                 n = self.get_batch_size(w)
                 threads, blocks = self.get_threads_and_blocks()
-                
+
                 self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, m.gpudata, v.gpudata,
                                       np.float32(it), np.float32(self.learning_rate),
                                       np.float32(self.decay), np.float32(self.beta1),

@@ -12,6 +12,7 @@ else:
     from types import ModuleType
     MPI_COMM = ModuleType
 
+
 class SimpleTracer(Tracer):
     """
     SimpleTracer
@@ -56,7 +57,7 @@ class SimpleTracer(Tracer):
     def _output_header(self) -> str:
         return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
-    def _output_row(self, event_type_value:int, event_value:int) -> str:
+    def _output_row(self, event_type_value: int, event_value: int) -> str:
         event_type = self.event_types[event_type_value]
         event_type_name = event_type.name
         _calls, _times = self.events[event_type_value][event_value]

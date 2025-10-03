@@ -13,6 +13,7 @@ else:
     Model = object
     Layer = object
 
+
 class EventType:
     """
     EventType container
@@ -53,7 +54,7 @@ class Tracer(metaclass=PostInitCaller):
     Tracer base class
     """
 
-    def __init__(self, tracing:bool):
+    def __init__(self, tracing: bool):
         self.event_types = {
             PYDTNN_MDL_EVENT: EventType("Model"),
             PYDTNN_OPS_EVENT: EventType("Operations"),

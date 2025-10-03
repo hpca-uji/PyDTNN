@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class MetricGPU(Metric, ABC):
     """
     Extends a Metric class with the attributes and methods required by GPU Metrics.

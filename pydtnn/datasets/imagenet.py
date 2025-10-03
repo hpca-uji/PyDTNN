@@ -29,7 +29,7 @@ class ImageNet(Dataset):
         # for VGG, ResNet and other models input shape must be (3,224,224)
         input_shape = INPUT_SHAPE if "alexnet" in model.model_name else (3, 224, 224)
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, input_shape, OUTPUT_SHAPE)
-        self._xy_filenames = [[] for _ in range(3)] # warning: [[]] * 3 replicates the same array
+        self._xy_filenames = [[] for _ in range(3)]  # warning: [[]] * 3 replicates the same array
         self._images_per_file = [[] for _ in range(3)]  # warning: [[]] * 3 replicates the same array
         if not self.model.use_synthetic_data:
             # Train part

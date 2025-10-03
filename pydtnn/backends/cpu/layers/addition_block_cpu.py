@@ -1,7 +1,7 @@
 from pydtnn.backends.cpu.layers.abstract_block_layer_cpu import AbstractBlockLayerCPU
 from pydtnn.layers import AdditionBlock
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 import numpy as np
 
 
@@ -13,7 +13,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
         self.shape = self.out_shapes[0]
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        
+
         num_paths = len(self.paths)
         p = self.paths[0]
         x_forward = x
@@ -37,7 +37,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
         return sum_forwards
     # --- END forward --- #
 
-    def backward(self, dy:np.ndarray) -> np.ndarray:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         num_paths = len(self.paths)
         p = self.paths[0]
         dx_backward = dy
@@ -54,7 +54,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
                 dx_backward = layer.backward(dx_backward)
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            
+
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
             dx += dx_backward
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

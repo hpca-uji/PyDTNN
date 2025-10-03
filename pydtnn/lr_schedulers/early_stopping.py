@@ -9,21 +9,22 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class EarlyStopping(LRSchedulerWithLossOrMetric):
     """
     EarlyStopping LRScheduler
     """
 
-    def __init__(self, model:Model, loss_or_metric="", patience=10, minimize=True, verbose=True):
+    def __init__(self, model: Model, loss_or_metric="", patience=10, minimize=True, verbose=True):
         super().__init__(model, loss_or_metric, verbose)
         self.patience = patience
         self.minimize = minimize
-        self.best_epoch:int = 0
-        self.best_loss:float = np.inf * {True: -1, False: 1}[not self.minimize]
-        self.best_weights_filename:str | None = None
-        self.time:str = time.strftime("%Y%m%d")
-    
-    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
+        self.best_epoch: int = 0
+        self.best_loss: float = np.inf * {True: -1, False: 1}[not self.minimize]
+        self.best_weights_filename: str | None = None
+        self.time: str = time.strftime("%Y%m%d")
+
+    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss
