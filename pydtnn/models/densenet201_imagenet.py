@@ -1,1 +1,1 @@
-from .densenet201 import create_densenet201 as create_densenet201_imagenet
+from pydtnn.models.densenet201 import create_densenet201 as create_densenet201_imagenet

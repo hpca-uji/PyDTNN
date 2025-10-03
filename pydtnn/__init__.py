@@ -1,6 +1,6 @@
 from . model import Model
 
-from . import activations
-from . import backends
+from pydtnn import activations
+from pydtnn import backends
 
-from . import power_meters
+from pydtnn import power_meters

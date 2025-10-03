@@ -8,9 +8,9 @@ If you want to add a new GPU loss:
 """
 
 from pydtnn.utils import get_derived_classes
-from .binary_cross_entropy_gpu import BinaryCrossEntropyGPU
-from .categorical_cross_entropy_gpu import CategoricalCrossEntropyGPU
-from .loss_gpu import LossGPU
+from pydtnn.backends.gpu.losses.binary_cross_entropy_gpu import BinaryCrossEntropyGPU
+from pydtnn.backends.gpu.losses.categorical_cross_entropy_gpu import CategoricalCrossEntropyGPU
+from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
 
 # Search this module for LossGPU derived classes and expose them
 get_derived_classes(LossGPU, locals())

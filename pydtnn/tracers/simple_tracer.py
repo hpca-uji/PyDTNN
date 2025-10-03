@@ -2,7 +2,7 @@ import atexit
 from collections import defaultdict
 from timeit import default_timer as timer
 
-from .tracer import Tracer
+from pydtnn.tracers.tracer import Tracer
 
 from typing import TYPE_CHECKING
 

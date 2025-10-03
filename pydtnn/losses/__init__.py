@@ -7,10 +7,10 @@ If you want to add a new loss:
     3) and, optionally, import your layer on this file.
 """
 
-from .binary_cross_entropy import BinaryCrossEntropy
-from .categorical_cross_entropy import CategoricalCrossEntropy
-from .loss import Loss
-from ..utils import get_derived_classes
+from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
+from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
+from pydtnn.losses.loss import Loss
+from pydtnn.utils import get_derived_classes
 
 # Aliases
 categorical_cross_entropy = CategoricalCrossEntropy

@@ -2,9 +2,9 @@
 PyDTNN Tracers
 """
 
-from .events import *
-from .extrae_tracer import ExtraeTracer
-from .simple_tracer import SimpleTracer
-from .simple_tracer_gpu import SimpleTracerGPU
-from .simple_tracer_pmlib import SimpleTracerPMLib
-from .tracer import Tracer
+from pydtnn.tracers.events import *
+from pydtnn.tracers.extrae_tracer import ExtraeTracer
+from pydtnn.tracers.simple_tracer import SimpleTracer
+from pydtnn.tracers.simple_tracer_gpu import SimpleTracerGPU
+from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
+from pydtnn.tracers.tracer import Tracer

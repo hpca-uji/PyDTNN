@@ -2,7 +2,7 @@ from abc import ABC
 
 import numpy as np
 
-from .layer import Layer
+from pydtnn.layers.layer import Layer
 from pydtnn.utils import decode_tensor, encode_tensor
 
 

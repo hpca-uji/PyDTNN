@@ -1,6 +1,6 @@
 from abc import ABC
 
-from .optimizer import Optimizer
+from pydtnn.optimizers.optimizer import Optimizer
 import numpy as np
 
 

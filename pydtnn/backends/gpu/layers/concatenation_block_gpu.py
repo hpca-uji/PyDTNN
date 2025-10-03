@@ -7,9 +7,9 @@ from pydtnn.layers import ConcatenationBlock
 from pydtnn.performance_models import *
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from . import LayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
 
 

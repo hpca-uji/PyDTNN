@@ -1,6 +1,6 @@
 from abc import ABC
 
-from .abstract_block_layer import AbstractBlockLayer
+from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
 
 class ConcatenationBlock(AbstractBlockLayer, ABC):

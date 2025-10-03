@@ -16,34 +16,34 @@ from warnings import warn
 # Typing-related import
 from typing import Any, TypeVar, Callable, TYPE_CHECKING, Literal
 from collections.abc import Iterable
-from .tracers import SimpleTracerGPU
+from pydtnn.tracers import SimpleTracerGPU
 
 from types import ModuleType
-from .activations import Activation
+from pydtnn.activations import Activation
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from .tracers.tracer import Tracer
-from .datasets import Dataset
-from .losses import Loss
+from pydtnn.tracers.tracer import Tracer
+from pydtnn.datasets import Dataset
+from pydtnn.losses import Loss
 
 from tqdm import tqdm
 import numpy as np
 
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from . import losses, metrics
-from . import utils
-from .datasets import CustomDataset, get_dataset
-from .datasets.dataset import DatasetEnum
-from .lr_schedulers import get_lr_schedulers
-from .optimizers import get_optimizer
-from .parser import PydtnnArgumentParser
-from .performance_models import *
-from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+from pydtnn import losses, metrics
+from pydtnn import utils
+from pydtnn.datasets import CustomDataset, get_dataset
+from pydtnn.datasets.dataset import DatasetEnum
+from pydtnn.lr_schedulers import get_lr_schedulers
+from pydtnn.optimizers import get_optimizer
+from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.performance_models import *
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, ExtraeTracer, SimpleTracer, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from .utils.best_of import BestOf
-from .utils.memory_cache import MemoryCache
-from .utils.performance_counter import PerformanceCounter
-from .layers import Layer
+from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.memory_cache import MemoryCache
+from pydtnn.utils.performance_counter import PerformanceCounter
+from pydtnn.layers import Layer
 import enum
 
 
@@ -195,7 +195,7 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
             tracer = SimpleTracerGPU(tracing, tracer_output, comm)
         else:
             if tracer_pmlib_device != "":
-                from .tracers import SimpleTracerPMLib
+                from pydtnn.tracers import SimpleTracerPMLib
                 tracer = SimpleTracerPMLib(tracing, tracer_output, comm,
                                            tracer_pmlib_server, tracer_pmlib_port, tracer_pmlib_device)
             else:

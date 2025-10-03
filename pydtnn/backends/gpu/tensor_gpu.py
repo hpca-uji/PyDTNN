@@ -9,7 +9,7 @@ from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
 try:
     # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
-    from .libs import libcudnn as cudnn
+    from pydtnn.backends.gpu.libs import libcudnn as cudnn
 except (OSError, ModuleNotFoundError, ImportError):
     pass
 

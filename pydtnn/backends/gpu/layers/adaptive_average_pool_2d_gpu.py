@@ -18,14 +18,14 @@
 #
 
 from pydtnn.layers import AdaptiveAveragePool2D
-from .layer_gpu import LayerGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 
 # Import from AveragePool2DGPU
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 
 # Import from AbstractPool2DLayerGPU
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
 # noinspection PyUnresolvedReferences

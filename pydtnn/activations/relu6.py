@@ -1,4 +1,4 @@
-from .relu import Relu
+from pydtnn.activations.relu import Relu
 
 # NOTE -> "CappedRelu": https://www.cs.utoronto.ca/~kriz/conv-cifar10-aug2010.pdf
 

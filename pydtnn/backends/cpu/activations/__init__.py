@@ -9,13 +9,13 @@ If you want to add a new GPU activation layer:
 """
 
 from pydtnn.utils import get_derived_classes
-from .activation_cpu import ActivationCPU
-from .arctanh_cpu import ArctanhCPU
-from .log_cpu import LogCPU
-from .relu_cpu import ReluCPU
-from .sigmoid_cpu import SigmoidCPU
-from .softmax_cpu import SoftmaxCPU
-from .tanh_cpu import TanhCPU
+from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
+from pydtnn.backends.cpu.activations.arctanh_cpu import ArctanhCPU
+from pydtnn.backends.cpu.activations.log_cpu import LogCPU
+from pydtnn.backends.cpu.activations.relu_cpu import ReluCPU
+from pydtnn.backends.cpu.activations.sigmoid_cpu import SigmoidCPU
+from pydtnn.backends.cpu.activations.softmax_cpu import SoftmaxCPU
+from pydtnn.backends.cpu.activations.tanh_cpu import TanhCPU
 
 # Search this module for ActivationCPU derived classes and expose them
 get_derived_classes(ActivationCPU, locals())

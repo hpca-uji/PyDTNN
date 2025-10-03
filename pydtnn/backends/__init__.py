@@ -1,9 +1,9 @@
 import importlib
 from contextlib import suppress
 
-from . import cpu
-from . import gpu
-from .. import model as model_module
+from pydtnn.backends import cpu
+from pydtnn.backends import gpu
+from pydtnn import model as model_module
 
 
 class PromoteToBackendMixin:

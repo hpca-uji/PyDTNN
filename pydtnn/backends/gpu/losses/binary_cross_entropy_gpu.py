@@ -7,7 +7,7 @@ from pycuda.compiler import SourceModule
 from pycuda.driver import Function
 
 from pydtnn.losses import BinaryCrossEntropy
-from .loss_gpu import LossGPU
+from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
 from pydtnn.backends.gpu import TensorGPU
 
 

@@ -20,7 +20,7 @@
 from abc import ABC
 from typing import override
 
-from .layer import Layer
+from pydtnn.layers.layer import Layer
 
 from pydtnn.utils import decode_tensor, encode_tensor
 import numpy as np

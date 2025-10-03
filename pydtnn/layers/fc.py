@@ -3,7 +3,7 @@ from abc import ABC
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from pydtnn.activations import Activation
-from .layer import Layer
+from pydtnn.layers.layer import Layer
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 
 

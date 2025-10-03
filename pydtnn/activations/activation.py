@@ -1,10 +1,10 @@
 from abc import ABC
 
-from ..backends import PromoteToBackendMixin
-from ..layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.backends import PromoteToBackendMixin
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 from numpy import ndarray
-from ..backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
 class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):

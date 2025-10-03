@@ -4,8 +4,8 @@ PyDTNN Layer base class
 
 from abc import ABC
 
-from .layer_and_activation_base import LayerAndActivationBase
-from ..backends import PromoteToBackendMixin
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.backends import PromoteToBackendMixin
 
 
 class Layer(PromoteToBackendMixin, LayerAndActivationBase, ABC):

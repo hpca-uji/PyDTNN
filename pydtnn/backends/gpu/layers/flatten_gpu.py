@@ -5,8 +5,8 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import Flatten
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from .layer_gpu import LayerGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
 class FlattenGPU(LayerGPU, Flatten):

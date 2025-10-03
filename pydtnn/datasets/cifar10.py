@@ -5,7 +5,7 @@ import os
 import numpy as np
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from .dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset, DatasetEnum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

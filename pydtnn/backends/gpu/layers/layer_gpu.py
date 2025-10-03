@@ -18,7 +18,7 @@ except (ImportError, ModuleNotFoundError, OSError):
     pass
 
 from numpy import ndarray
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
 class LayerGPU(Layer, ABC):

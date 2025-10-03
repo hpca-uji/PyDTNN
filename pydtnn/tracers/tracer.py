@@ -2,7 +2,7 @@ import resource
 import sys
 from abc import abstractmethod
 
-from .events import *
+from pydtnn.tracers.events import *
 
 from typing import TYPE_CHECKING
 

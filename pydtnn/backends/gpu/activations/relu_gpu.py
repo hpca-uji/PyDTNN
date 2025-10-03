@@ -2,10 +2,10 @@
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.activations import Relu
-from .activation_gpu import ActivationGPU
+from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 # noinspection PyUnresolvedReferences
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
 class ReluGPU(ActivationGPU, Relu):

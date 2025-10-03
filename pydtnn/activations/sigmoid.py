@@ -1,6 +1,6 @@
 from abc import ABC
 
-from .activation import Activation
+from pydtnn.activations.activation import Activation
 
 
 class Sigmoid(Activation, ABC):

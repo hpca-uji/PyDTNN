@@ -1,6 +1,6 @@
 from abc import ABC
 
-from .batch_normalization import BatchNormalization
+from pydtnn.layers.batch_normalization import BatchNormalization
 
 
 class BatchNormalizationRelu(BatchNormalization, ABC):

@@ -1,7 +1,7 @@
 import operator
 import warnings
 import numpy as np
-from .dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset, DatasetEnum
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 from typing import TYPE_CHECKING, Self

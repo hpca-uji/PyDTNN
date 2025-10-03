@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from .abstract_block_layer import AbstractBlockLayer
+from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
 
 class AdditionBlock(AbstractBlockLayer, ABC):

@@ -1,7 +1,7 @@
 import warnings
 from abc import ABC
 
-from .layer import Layer
+from pydtnn.layers.layer import Layer
 from pydtnn.utils import encode_tensor
 
 

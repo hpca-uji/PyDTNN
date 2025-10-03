@@ -19,8 +19,8 @@
 
 from collections.abc import Sequence
 
-from ..activations import *
-from ..layers import *
+from pydtnn.activations import *
+from pydtnn.layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
 

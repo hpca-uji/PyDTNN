@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ..backends import PromoteToBackendMixin
+from pydtnn.backends import PromoteToBackendMixin
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model

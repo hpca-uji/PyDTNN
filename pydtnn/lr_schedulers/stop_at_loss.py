@@ -1,4 +1,4 @@
-from . import LRSchedulerWithLossOrMetric
+from pydtnn.lr_schedulers import LRSchedulerWithLossOrMetric
 from numpy import ndarray
 
 from typing import TYPE_CHECKING

@@ -2,7 +2,7 @@ import ctypes
 import os
 from importlib import import_module
 
-from .tracer import Tracer
+from pydtnn.tracers.tracer import Tracer
 
 
 from typing import TYPE_CHECKING

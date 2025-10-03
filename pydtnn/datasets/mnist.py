@@ -7,8 +7,8 @@ import os
 
 import numpy as np
 
-from .dataset import Dataset, DatasetEnum
-from ..utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 TRAIN_NSAMPLES = 60000
 TEST_NSAMPLES = 10000

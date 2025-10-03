@@ -10,9 +10,9 @@ from pycuda.elementwise import ElementwiseKernel
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from .layer_gpu import LayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils import decode_tensor
 
 

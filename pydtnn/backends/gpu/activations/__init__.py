@@ -8,13 +8,13 @@ If you want to add a new GPU activation layer:
     3) and, optionally, import your GPU activation layer on this file.
 """
 
-from .activation_gpu import ActivationGPU
-from .arctanh_gpu import ArctanhGPU
-from .log_gpu import LogGPU
-from .relu_gpu import ReluGPU
-from .sigmoid_gpu import SigmoidGPU
-from .softmax_gpu import SoftmaxGPU
-from .tanh_gpu import TanhGPU
+from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
+from pydtnn.backends.gpu.activations.arctanh_gpu import ArctanhGPU
+from pydtnn.backends.gpu.activations.log_gpu import LogGPU
+from pydtnn.backends.gpu.activations.relu_gpu import ReluGPU
+from pydtnn.backends.gpu.activations.sigmoid_gpu import SigmoidGPU
+from pydtnn.backends.gpu.activations.softmax_gpu import SoftmaxGPU
+from pydtnn.backends.gpu.activations.tanh_gpu import TanhGPU
 from pydtnn.utils import get_derived_classes
 
 # Search this module for ActivationGPU derived classes and expose them

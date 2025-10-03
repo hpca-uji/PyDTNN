@@ -2,8 +2,8 @@
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.layers import Input
-from .layer_gpu import LayerGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
 class InputGPU(LayerGPU, Input):

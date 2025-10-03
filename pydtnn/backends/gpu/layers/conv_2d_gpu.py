@@ -1,6 +1,6 @@
 # noinspection PyUnresolvedReferences
 from pydtnn.layers import Conv2D
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.driver as drv
 # noinspection PyUnresolvedReferences
@@ -12,9 +12,9 @@ from pycuda.driver import Function
 
 from pydtnn.performance_models import *
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from .layer_gpu import LayerGPU
-from .memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.layers.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.layers.conv_2d import GroupingEnum
 

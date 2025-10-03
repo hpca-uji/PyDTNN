@@ -1,11 +1,11 @@
 from pydtnn.activations import Softmax
-from .activation_gpu import ActivationGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 
 
 class SoftmaxGPU(ActivationGPU, Softmax):
