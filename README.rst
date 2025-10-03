@@ -76,7 +76,7 @@ Then package itself must be installed::
 If you plan to modify the PyDTNN code, instead of using the previous line, you
 can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
 
-    $ pip install -e . --config-settings editable_mode=compat
+    $ pip install --config-settings editable_mode=compat -e .
 
 Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
