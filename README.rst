@@ -302,8 +302,8 @@ The PyDTNN framework comes with a utility launcher called
 -  Encryption parameters:
 
    - ``--encryption``: Encryption library: ``tenseal``, ``openfhe``, ```` (None). Default ```` (None).
-   - ``--encryption_poly_degree``: Encryption polynomial degree.. 2 ^ ``value``. Default: 13.
-   - ``--encryption_global_scale``: Encryption global scale. 2 ^ ``value``. Default: 40.
+   - ``--encryption_poly_degree``: Encryption polynomial degree.. 2 ^ value. Default: 13.
+   - ``--encryption_global_scale``: Encryption global scale. 2 ^ value. Default: 40.
    - ``--encryption_security_level``: Encryption security level: 0 (Not set), 128, 192, 256. Default: 128.
 
 
