@@ -5,7 +5,7 @@ from cython.parallel import prange
 
 __all__ = (
     "im2row_nhwc_cython",
-    "row2im_nhwc_cython",
+    "row2im_nhwc_cython"
 )
 
 # Declare fused type npDT (to be used with template functions)

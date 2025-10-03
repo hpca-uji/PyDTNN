@@ -4,7 +4,7 @@ cimport cython
 from cython.parallel import prange
 
 __all__ = (
-    "eltw_sum_cython"
+    "eltw_sum_cython",
 )
 
 # =================== #
