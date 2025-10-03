@@ -308,11 +308,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _cy_group.add_argument('--encryption', dest="encryption_name", type=str, default="",
                                help="Encryption library: \'tenseal\', \'openfhe\', \'\' (None). Default \'\' (None).")
         _cy_group.add_argument('--encryption_poly_degree', type=int, default=13,
-                               help="Encryption's ring dimension. 2 ** \'value\'. Default: 13.")
+                               help="Encryption polynomial degree. 2 ^ \'value\'. Default: 13.")
         _cy_group.add_argument('--encryption_global_scale', type=int, default=40,
-                               help="Encryption's global scale. 2 ** \'value'\'. Default: 40.")
+                               help="Encryption global scale. 2 ^ \'value'\'. Default: 40.")
         _cy_group.add_argument('--encryption_security_level', type=int, default=128,
-                               help="Encryption's security level: 0, 128, 192, 256. Default: 128.")
+                               help="Encryption security level: 0 (Not set), 128, 192, 256. Default: 128.")
 
         # Tracing and profiling
         _tr_group = self.add_argument_group("Tracing options")
