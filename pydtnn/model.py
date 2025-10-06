@@ -884,25 +884,21 @@ class Model:
         local_batch_size = x_batch.shape[0]
 
         self.optimizer.num_real_batches = self.num_real_batches = local_batch_size
-        if local_batch_size != 0:
-            if local_batch_size != self.batch_size:
-                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
-                num_repetitions = ceil(self.batch_size / local_batch_size)
-                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
-                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
-            # else: The batch has the right shape ==> Nothing to do.
+        if local_batch_size != self.batch_size:
+            # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
+            num_repetitions = ceil(self.batch_size / local_batch_size) if local_batch_size != 0 else 0
+            x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
+            y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
+        # else: The batch has the right shape ==> Nothing to do.
 
-            self.layers[0].y.ary.set(x_batch)
-            self.y_batch.ary.set(y_batch)
-            x, y_targ = self.layers[0].y, self.y_batch
-        else:
-            x, y_targ = self.layers[0].y[:0], self.y_batch[:0]
+        self.layers[0].y.ary.set(x_batch)
+        self.y_batch.ary.set(y_batch)
+        x, y_targ = self.layers[0].y, self.y_batch
 
         return x, y_targ
     # --- _sync_x_y --- #
 
-    # TODO: Modify the method's name.
-
+    # TODO: Modify the following method's name.
     def _weight_update(self, gradient=True, blocking=True):
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
