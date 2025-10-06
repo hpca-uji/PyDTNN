@@ -12,6 +12,7 @@ import time
 from timeit import default_timer as timer
 from warnings import warn
 # warnings.filterwarnings("error")
+from functools import cached_property
 
 # Typing-related import
 from typing import Any, TypeVar, Callable, TYPE_CHECKING, Literal
@@ -529,6 +530,20 @@ class Model:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
     # --- END __init__ --- #
 
+    #@property
+    #@cache
+    @cached_property
+    def empty_x(self) -> TensorGPU:
+        empty_x = gpuarray.empty((0, *self.dataset.input_shape), self.dtype)
+        return TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
+
+    #@property
+    #@cache
+    @cached_property
+    def empty_y_tag(self) -> TensorGPU:
+        empty_y_tag = gpuarray.empty((0, *self.dataset.output_shape), self.dtype)
+        return TensorGPU(empty_y_tag, self.tensor_format, self.cudnn_dtype)
+
     @property
     def dataset_raw_path(self) -> str:
         """Raw dataset path with rank substituted"""
@@ -884,21 +899,25 @@ class Model:
         local_batch_size = x_batch.shape[0]
 
         self.optimizer.num_real_batches = self.num_real_batches = local_batch_size
-        if local_batch_size != self.batch_size:
-            # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
-            num_repetitions = ceil(self.batch_size / local_batch_size) if local_batch_size != 0 else 0
-            x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
-            y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
-        # else: The batch has the right shape ==> Nothing to do.
+        if local_batch_size != 0:
+            if local_batch_size != self.batch_size:
+                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
+                num_repetitions = ceil(self.batch_size / local_batch_size)
+                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
+                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
+            # else: The batch has the right shape ==> Nothing to do.
 
-        self.layers[0].y.ary.set(x_batch)
-        self.y_batch.ary.set(y_batch)
-        x, y_targ = self.layers[0].y, self.y_batch
+            self.layers[0].y.ary.set(x_batch)
+            self.y_batch.ary.set(y_batch)
+            x, y_targ = self.layers[0].y, self.y_batch
+        else:
+            x, y_targ = self.empty_x, self.empty_y_tag
 
         return x, y_targ
     # --- _sync_x_y --- #
 
-    # TODO: Modify the following method's name.
+    # TODO: Modify the method's name.
+
     def _weight_update(self, gradient=True, blocking=True):
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
