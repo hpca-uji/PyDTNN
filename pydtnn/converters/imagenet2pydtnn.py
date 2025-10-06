@@ -19,6 +19,7 @@ class Mode(enum.StrEnum):
 
 parser = argparse.ArgumentParser(description="Convert dataset to NPZs")
 parser.add_argument("--mode", type=Mode, choices=list(Mode), default=Mode.TRAIN, help="dateset type")
+parser.add_argument("--labels", type=Path, default=Path("datasets/imagenet/ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"), help="labels file path. Necessary if \"mode\" is TEST, ignored otherwise.")
 parser.add_argument("--src", type=Path, default=Path("datasets/imagenet/raw/ILSVRC2012_img_train.tar"), help="source path")
 parser.add_argument("--dst", type=Path, default=Path("datasets/imagenet/train/%05d.npz"), help="destination path")
 parser.add_argument("--crop", type=float, default=0.875, help="image crop")
@@ -54,12 +55,12 @@ def load_train_label(fp: typing.IO[bytes]) -> int:
     return int(label)
 
 
-def load_test_label(fp: typing.IO[bytes]) -> int:
+def load_test_label(fp: typing.IO[bytes], labels:dict[str, str]) -> int:
     """Transform a file-like (image) to int (label)"""
     label = fp.name
     label = label.replace("_", ".")
     label = label.split(".")[2]
-    return int(label)
+    return labels[int(label)]
 
 
 def load_image(fp: typing.IO[bytes], crop: float = 0.875, size: int = 64) -> np.ndarray:
@@ -74,6 +75,16 @@ def load_image(fp: typing.IO[bytes], crop: float = 0.875, size: int = 64) -> np.
     return array
 
 
+def get_labels(config: argparse.Namespace) -> dict[str, str]:
+    labels_dict = dict[str, str]()
+    with open(config.labels, mode="r") as file:
+        i = 1
+        for line in file:
+            labels_dict[i] = int(line)
+            i += 1
+    return labels_dict
+
+
 def load_train(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
     """Load labeled images from training archive"""
     with open(path, mode="rb") as fp:
@@ -86,9 +97,10 @@ def load_train(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[in
 
 def load_test(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
     """Load labeled images from testing archive"""
+    labels = get_labels(config)
     with open(path, mode="rb") as fp:
         for fp in load_tar(fp=fp):
-            label = load_test_label(fp=fp)
+            label = load_test_label(fp=fp, labels=labels)
             image = load_image(fp=fp, crop=config.crop, size=config.size)
             yield label, image
 
