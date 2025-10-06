@@ -25,6 +25,7 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """
 
+    @unittest.skip("Exhaustive test must be run manually as it is very slow")
     def test_forward_backward_multiple_params(self):
         """Tests that different input matrices, paddings and strides, lead to the same solution"""
         d = D()
