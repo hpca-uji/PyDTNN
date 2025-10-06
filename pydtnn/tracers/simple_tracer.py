@@ -1,27 +1,8 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import atexit
 from collections import defaultdict
 from timeit import default_timer as timer
 
-from .tracer import Tracer
+from pydtnn.tracers.tracer import Tracer
 
 from typing import TYPE_CHECKING
 
@@ -30,6 +11,7 @@ if TYPE_CHECKING:
 else:
     from types import ModuleType
     MPI_COMM = ModuleType
+
 
 class SimpleTracer(Tracer):
     """
@@ -75,7 +57,7 @@ class SimpleTracer(Tracer):
     def _output_header(self) -> str:
         return "Event type;Event value;Event name;Calls;Total time;Median of times"
 
-    def _output_row(self, event_type_value:int, event_value:int) -> str:
+    def _output_row(self, event_type_value: int, event_value: int) -> str:
         event_type = self.event_types[event_type_value]
         event_type_name = event_type.name
         _calls, _times = self.events[event_type_value][event_value]

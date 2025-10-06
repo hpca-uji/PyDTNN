@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from abc import ABC, abstractmethod
 
 from pydtnn.backends.cpu.layers import LayerCPU
@@ -24,11 +5,13 @@ from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from numpy import ndarray, empty
+
+
 class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape:tuple[int, ...]):
+    def initialize(self, prev_shape: tuple[int, ...]):
         super().initialize(prev_shape)
 
         match self.model.tensor_format:
@@ -38,7 +21,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
 
                 # The following variable is only for NCHW implementation (not for i2c implementation)
                 self.y = empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
-                
+
                 # I2C-based implementations have been temporarily discarded
                 # setattr(self, "forward", self._forward_nchw_i2c)
                 # setattr(self, "backward", self._backward_nchw_i2c)
@@ -64,28 +47,27 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
 
-    def forward(self, x:ndarray) -> ndarray:
+    def forward(self, x: ndarray) -> ndarray:
         msg = """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
 
-    def backward(self, dy:ndarray) -> ndarray:
+    def backward(self, dy: ndarray) -> ndarray:
         msg = """This is a fake backward function. It will be masked on initialization by _backward_i2c or _backward_cg"""
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
     # ---
-    
+
     @abstractmethod
-    def _forward_nchw_cython(self, x:ndarray) -> ndarray:
+    def _forward_nchw_cython(self, x: ndarray) -> ndarray:
         ...
 
     @abstractmethod
-    def _backward_nchw_cython(self, dy:ndarray) -> ndarray:
+    def _backward_nchw_cython(self, dy: ndarray) -> ndarray:
         ...
-    
+
     @abstractmethod
-    def _forward_nhwc_cython(self, x:ndarray) -> ndarray:
+    def _forward_nhwc_cython(self, x: ndarray) -> ndarray:
         ...
-    
+
     @abstractmethod
-    def _backward_nhwc_cython(self, dy:ndarray) -> ndarray:
+    def _backward_nhwc_cython(self, dy: ndarray) -> ndarray:
         ...
-    

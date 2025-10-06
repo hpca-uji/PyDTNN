@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.cython_modules import bn_relu_inference_cython
@@ -26,6 +7,7 @@ from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 from numpy import ndarray, empty
+
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
@@ -43,7 +25,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci), copy=False)
-        
+
         y = self.y[: x.shape[0], :]
         bn_relu_inference_cython(x, y.reshape((-1, self.ci), copy=False), self.running_mean, self.inv_std, self.gamma, self.beta)
 
@@ -54,5 +36,5 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             y = y.copy()
         return y
 
-    def backward(self, x:ndarray) -> ndarray:
+    def backward(self, x: ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

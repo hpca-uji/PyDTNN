@@ -1,34 +1,17 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from abc import ABC
 
 from pydtnn.layers import AbstractPool2DLayer
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from . import LayerGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
+
+
 class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
     """
     Provides common methods to Pool2DGPU classes.
@@ -77,7 +60,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
 
-    def forward(self, x:TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
@@ -91,9 +74,9 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx
         cudnn.cudnnPoolingBackward(self.model.cudnn_handle, self.pool_desc, alpha,
-                                    self.y.desc, self.y.ptr,
-                                    dy.desc, dy.ptr,
-                                    self.x.desc, self.x.ptr,
-                                    beta, self.dx.desc, self.dx.ptr)
+                                   self.y.desc, self.y.ptr,
+                                   dy.desc, dy.ptr,
+                                   self.x.desc, self.x.ptr,
+                                   beta, self.dx.desc, self.dx.ptr)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx

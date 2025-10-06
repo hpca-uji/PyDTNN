@@ -7,6 +7,7 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow does not includes Dropout layers after final ReLUs
 
+
 def vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
@@ -60,5 +61,6 @@ def vgg6(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[La
     _(FC(shape=output_shape, activation=softmax))
 
     return model
+
 
 create_vgg = vgg16

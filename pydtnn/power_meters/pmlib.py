@@ -1,25 +1,6 @@
 """
 Python interface to the PMLib library
 """
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import ctypes
 import ctypes.util
 import functools
@@ -196,7 +177,7 @@ class PMLib:
         self.times = np.array([self.counter_start_time + x * self.period for x in range(self.len_samples)])
         self.watts = np.ctypeslib \
             .as_array((ctypes.c_double * self.len_samples * self.len_lines).from_address(
-            ctypes.addressof(self.counter.measures.contents.energy.watts.contents))) \
+                ctypes.addressof(self.counter.measures.contents.energy.watts.contents))) \
             .reshape((self.len_lines, self.len_samples))
         if self.counter.aggregate == 0:
             _sum = np.sum(self.watts, axis=0).reshape(1, -1)
@@ -259,5 +240,5 @@ class PMLib:
             elapsed_time = self.times[previous_sample_from_end] - self.times[next_sample_from_start]
             if elapsed_time > 0:
                 joules += np.mean(self.watts[:, next_sample_from_start:previous_sample_from_end + 1], axis=1) \
-                          * elapsed_time
+                    * elapsed_time
         return joules

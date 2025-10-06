@@ -1,37 +1,19 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
-from . import LRSchedulerWithLossOrMetric
+from pydtnn.lr_schedulers import LRSchedulerWithLossOrMetric
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 else:
     Model = object
 
+
 class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
     """
     ReduceLROnPlateau LRScheduler
     """
 
-    def __init__(self, model:Model, loss_or_metric:str="", factor=0.1, patience=5, min_lr=0, verbose=True):
+    def __init__(self, model: Model, loss_or_metric: str = "", factor=0.1, patience=5, min_lr=0, verbose=True):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
         super().__init__(model, loss_or_metric, verbose)
         self.factor = factor
@@ -40,7 +22,7 @@ class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
         self.best_epoch: int = 0
         self.best_loss: float = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
 
-    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

@@ -23,11 +23,12 @@ from pydtnn.cython_modules import leaky_relu_cython
 
 import numpy as np
 
+
 class LeakyReluCPU(ActivationCPU, LeakyRelu):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-    
+
     def initialize(self, prev_shape):
         super().initialize(prev_shape)
         self._y = np.empty((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
@@ -36,11 +37,11 @@ class LeakyReluCPU(ActivationCPU, LeakyRelu):
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
         self.mask = self._mask[:x.shape[0], :]
-        
+
         leaky_relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False), self.negative_slope)
         return self.y
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:        
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy)
         return dy

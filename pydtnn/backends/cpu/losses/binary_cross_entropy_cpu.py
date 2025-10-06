@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
 from pydtnn.backends.cpu.losses.loss_cpu import LossCPU
@@ -24,10 +5,10 @@ from pydtnn.losses import BinaryCrossEntropy
 
 
 class BinaryCrossEntropyCPU(LossCPU, BinaryCrossEntropy):
-    def __call__(self, y_pred:np.ndarray, y_targ:np.ndarray, batch_size:int) -> tuple[np.ndarray, np.ndarray]:
+    def __call__(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[np.ndarray, np.ndarray]:
         assert len(y_targ.shape) == 2
         b = y_targ.shape[0]
-        loss:np.ndarray = -np.sum(np.log(np.maximum((1 - y_targ) - y_pred, self.eps))) / b
-        y_pred:np.ndarray = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
-        dx:np.ndarray = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / batch_size
+        loss: np.ndarray = -np.sum(np.log(np.maximum((1 - y_targ) - y_pred, self.eps))) / b
+        y_pred: np.ndarray = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
+        dx: np.ndarray = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / batch_size
         return loss, dx

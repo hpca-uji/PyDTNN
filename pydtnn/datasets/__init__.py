@@ -1,33 +1,15 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import importlib
 import sys
 
-from .dataset import Dataset
-from .cifar10 import CIFAR10
-from .custom_dataset import CustomDataset
-from .imagenet import ImageNet
-from .mnist import MNIST
-from .folder_loader import DatasetFolderLoader
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.cifar10 import CIFAR10
+from pydtnn.datasets.custom_dataset import CustomDataset
+from pydtnn.datasets.imagenet import ImageNet
+from pydtnn.datasets.mnist import MNIST
+from pydtnn.datasets.folder_loader import DatasetFolderLoader
 
 CustomImport = CustomDataset.import_
+
 
 def get_dataset(model) -> Dataset:
     try:

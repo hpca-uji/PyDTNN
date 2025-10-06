@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
@@ -26,8 +7,9 @@ from pycuda.compiler import SourceModule
 from pycuda.driver import Function
 
 from pydtnn.metrics import CategoricalAccuracy
-from .metric_gpu import MetricGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+
 
 class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy):
 

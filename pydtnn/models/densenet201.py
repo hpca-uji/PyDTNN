@@ -1,28 +1,10 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 from collections.abc import Sequence
 
-from ..activations import *
-from ..layers import *
+from pydtnn.activations import *
+from pydtnn.layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
+
 
 def create_densenet201(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
@@ -44,11 +26,11 @@ def create_densenet201(input_shape: Sequence[int], output_shape: Sequence[int]) 
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=4 * growth_rate, filter_shape=(1, 1), use_bias=False,
-                        weights_initializer=he_uniform),
+                           weights_initializer=he_uniform),
                     BatchNormalization(),
                     Relu(),
                     Conv2D(nfilters=growth_rate, filter_shape=(3, 3), padding=1, use_bias=False,
-                        weights_initializer=he_uniform)
+                           weights_initializer=he_uniform)
                 ], []))
 
         num_planes += nblocks * growth_rate

@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from abc import ABC
 from typing import Optional, Callable, List
 
@@ -27,6 +8,7 @@ from pydtnn.utils.best_of import BestOf
 
 from enum import StrEnum, auto
 
+
 class ConvVariantEnum(StrEnum):
     BEST_OF = auto()
     I2C = auto()
@@ -36,6 +18,8 @@ class ConvVariantEnum(StrEnum):
     GEMM = "cg"
     WINOGRAD = "cw"
     DIRECT = "cd0"
+
+
 class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
 
     def __init__(self, *args, **kwargs):
@@ -46,7 +30,7 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
         # Other parameters
         self.variant = None
 
-    def initialize(self, prev_shape: tuple[int,...]):
+    def initialize(self, prev_shape: tuple[int, ...]):
         super().initialize(prev_shape)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
@@ -77,18 +61,18 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
                 name="Conv2DCPU only forward",
                 alternatives=alternatives_fw,
                 get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
-                                               + (args[0].vstride,
-                                                  args[0].hstride,
-                                                  args[0].vdilation,
-                                                  args[0].hdilation),
+                + (args[0].vstride,
+                   args[0].hstride,
+                   args[0].vdilation,
+                   args[0].hdilation),
             )
             self._best_fw_bw_pipeline = BestOf(
                 name="Conv2DCPU forward backward",
                 alternatives=alternatives_fw_bw_pipeline,
                 get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
-                                               + (args[0].vpadding, args[0].hpadding,
-                                                  args[0].vstride, args[0].hstride,
-                                                  args[0].vdilation, args[0].hdilation),
+                + (args[0].vpadding, args[0].hpadding,
+                   args[0].vstride, args[0].hstride,
+                   args[0].vdilation, args[0].hdilation),
             )
 
     def _get_class_forward_and_backward(self, variant) -> List[Callable]:
@@ -96,14 +80,14 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
                 getattr(self.__class__, f'_backward_{variant}_{self.model.tensor_format}')]
 
     def _fw_bw_best_of(self, stage, x_or_y):
-        match self.model.mode:    
+        match self.model.mode:
             case ModelModeEnum.TRAIN:
                 # noinspection PyTypeChecker
                 return self._best_fw_bw_pipeline(stage, self, x_or_y)
             case ModelModeEnum.EVALUATE:
                 # noinspection PyTypeChecker
                 return self._best_fw(self, x_or_y)
-            case _ :
+            case _:
                 raise RuntimeError("Conv2D BestOf variant requires Model.mode to be set to ModelModeEnum.EVALUATE or ModelModeEnum.TRAIN")
 
     def _forward_best_of_nhwc(self, x):

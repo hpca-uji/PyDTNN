@@ -1,5 +1,7 @@
 """OpenFHE encryption"""
 
+from pydtnn import crypt
+import numpy as np
 import sys
 import copyreg
 from dataclasses import dataclass
@@ -10,10 +12,6 @@ try:
     import openfhe
 finally:
     sys.path.insert(0, _pkg)
-
-import numpy as np
-
-from pydtnn import crypt
 
 
 __all__ = (

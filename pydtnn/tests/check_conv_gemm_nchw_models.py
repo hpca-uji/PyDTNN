@@ -18,6 +18,7 @@ from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.losses import Loss
 
+
 class Params:
     pass
 

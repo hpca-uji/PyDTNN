@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import sys
 
 from pydtnn.backends.cpu.layers import LayerCPU
@@ -35,6 +16,8 @@ from pydtnn.utils.memory_cache import MemoryCache
 from numpy import ndarray, empty, zeros
 from pydtnn.layers.conv_2d import GroupingEnum
 from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import ConvVariantEnum
+
+
 class Conv2DCPU(LayerCPU,
                 DepthwiseVariant,
                 PointwiseVariant,
@@ -53,7 +36,7 @@ class Conv2DCPU(LayerCPU,
         self.fwd_time = None
         self.bwd_time = None
 
-    def initialize_i2c(self) ->  None:
+    def initialize_i2c(self) -> None:
         # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
         dim_n = self.model.batch_size * self.ho * self.wo
@@ -61,7 +44,7 @@ class Conv2DCPU(LayerCPU,
         self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self._x_cols= zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
+                self._x_cols = zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
                 self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype)
                 self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype)
                 self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
@@ -69,20 +52,20 @@ class Conv2DCPU(LayerCPU,
                 self._x_rows = zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
                 self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype)
                 self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype)
-                self.res_bw = empty( shape=(dim_n, self.dim_c), dtype=self.model.dtype)
+                self.res_bw = empty(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
             case _:
                 raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
-            
+
     def initialize_depthwise(self):
         self.dw = zeros(self.weights_shape, dtype=self.model.dtype)
     # ---
 
-    def initialize_pointwise(self):        
+    def initialize_pointwise(self):
 
         self.dw = empty(shape=self.weights_shape, dtype=self.model.dtype)
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:                               
+            case PYDTNN_TENSOR_FORMAT.NCHW:
                 self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
                 self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
             case PYDTNN_TENSOR_FORMAT.NHWC:
@@ -92,8 +75,7 @@ class Conv2DCPU(LayerCPU,
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
 
-
-    def initialize(self, prev_shape:tuple[int, ...]) -> None:
+    def initialize(self, prev_shape: tuple[int, ...]) -> None:
         super().initialize(prev_shape)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
@@ -104,7 +86,7 @@ class Conv2DCPU(LayerCPU,
         # Select variants if it has not been already selected (e.g., by BestOfVariant)
         if self.variant is None:
             # Select variant when best_of is not enabled
-            variant = ConvVariantEnum.I2C # Default Convolution variant.
+            variant = ConvVariantEnum.I2C  # Default Convolution variant.
             match self.grouping:
                 case GroupingEnum.POINTWISE:
                     variant = ConvVariantEnum.POINTWISE
@@ -119,9 +101,9 @@ class Conv2DCPU(LayerCPU,
                             sys.exit(1)
                         elif self.cw_constraints_fulfilled:
                             variant = ConvVariantEnum.WINOGRAD
-                        #else: variant = None # Value set before the match-case statement
+                        # else: variant = None # Value set before the match-case statement
                     if variant == ConvVariantEnum.I2C:
-                        #assert not self.model.enable_conv_winograd or (self.model.enable_conv_winograd and not self.cw_constraints_fulfilled)
+                        # assert not self.model.enable_conv_winograd or (self.model.enable_conv_winograd and not self.cw_constraints_fulfilled)
                         # -> GEMM or ConvDirect:
                         if self.model.enable_conv_gemm:
                             # -> GEMM:
@@ -133,9 +115,9 @@ class Conv2DCPU(LayerCPU,
                         elif self.model.enable_conv_direct:
                             # -> ConvDirect:
                             variant = ConvVariantEnum.DIRECT
-                        # else: variant = ConvVariantEnum.I2C # Already set.                            
+                        # else: variant = ConvVariantEnum.I2C # Already set.
             self.variant = variant
-        
+
         match self.variant:
             case ConvVariantEnum.I2C:
                 self.initialize_i2c()
@@ -161,14 +143,14 @@ class Conv2DCPU(LayerCPU,
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
         self.bwd_time += matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                                        k=self.co, cpu_speed=self.model.cpu_speed,
-                                        memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                                     k=self.co, cpu_speed=self.model.cpu_speed,
+                                     memory_bw=self.model.memory_bw, dtype=self.model.dtype)
 
-    def forward(self, x:ndarray)->ndarray:
+    def forward(self, x: ndarray) -> ndarray:
         msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""
         NotImplementedError(f"Conv2DCPU forward: {msg}")
 
-    def backward(self, dy:ndarray) -> ndarray:
+    def backward(self, dy: ndarray) -> ndarray:
         msg = """This is a fake backward function. It must be masked on initialization by a _backward implementation"""
         NotImplementedError(f"Conv2DCPU backward: {msg}")
 
@@ -182,7 +164,7 @@ class Conv2DCPU(LayerCPU,
             hi, wi, ci = self.prev_shape
         print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
 
-    def _get_forward_and_backward(self, variant:str):
+    def _get_forward_and_backward(self, variant: str):
         tensor_format = self.model.tensor_format
         return (getattr(self, f'_forward_{variant}_{tensor_format}'),
                 getattr(self, f'_backward_{variant}_{tensor_format}'))

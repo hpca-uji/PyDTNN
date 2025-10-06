@@ -1,28 +1,10 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
 import time
 from collections import defaultdict
 
 import numpy as np
 
-from . import SimpleTracer
-from ..power_meters import PMLib
+from pydtnn.tracers import SimpleTracer
+from pydtnn.power_meters import PMLib
 
 from typing import TYPE_CHECKING
 
@@ -32,12 +14,13 @@ else:
     from types import ModuleType
     MPI_COMM = ModuleType
 
+
 class SimpleTracerPMLib(SimpleTracer):
     """
     SimpleTracerPMLib
     """
 
-    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None, pmlib_server_ip:str, pmlib_port:int, pmlib_device:str):
+    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None, pmlib_server_ip: str, pmlib_port: int, pmlib_device: str):
         super().__init__(tracing, output_filename, comm)
         if self.rank == 0:
             self.pmlib = PMLib(pmlib_server_ip, pmlib_port, verbose=True)
@@ -52,7 +35,7 @@ class SimpleTracerPMLib(SimpleTracer):
             self.pmlib.create_counter(self.pmlib_device)
             self.pmlib.start_counter()
 
-    def _emit_event(self, evt_type_val:int, evt_val:int, stream=None):
+    def _emit_event(self, evt_type_val: int, evt_val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         super()._emit_event(evt_type_val, evt_val, stream)
         if evt_val != 0:
@@ -69,7 +52,7 @@ class SimpleTracerPMLib(SimpleTracer):
             output += f";Line{i - 1}"
         return output + ";Mean of intermediate power samples"
 
-    def _output_row(self, event_type_value:int, event_value:int) -> str:
+    def _output_row(self, event_type_value: int, event_value: int) -> str:
         output = super()._output_row(event_type_value, event_value) + ";"
         joules = np.zeros(self.pmlib.len_lines)
         intermediate_samples = 0

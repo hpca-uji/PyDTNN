@@ -10,6 +10,7 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 # NOTE: TensorFlow uses FC with 1024 shape
 
+
 def resNet50(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
@@ -26,20 +27,20 @@ def resNet50(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequenc
             if r > 0:
                 stride = 1
             _(AdditionBlock(
-                    [
-                        Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer=he_uniform),
-                        BatchNormalization(),
-                        Relu(),
-                        Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
-                        BatchNormalization(),
-                    ],
-                    [
-                        Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform),
-                        BatchNormalization(),
-                    ] if r == 0 or stride != 1 else []))
+                [
+                    Conv2D(nfilters=n_filt, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
+                    BatchNormalization(),
+                    Relu(),
+                    Conv2D(nfilters=n_filt, filter_shape=(3, 3), stride=stride, padding=1, weights_initializer=he_uniform),
+                    BatchNormalization(),
+                    Relu(),
+                    Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=1, weights_initializer=he_uniform),
+                    BatchNormalization(),
+                ],
+                [
+                    Conv2D(nfilters=n_filt * expansion, filter_shape=(1, 1), stride=stride, weights_initializer=he_uniform),
+                    BatchNormalization(),
+                ] if r == 0 or stride != 1 else []))
             _(Relu())
 
     _(AveragePool2D(pool_shape=(1, 1)))
@@ -48,5 +49,6 @@ def resNet50(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequenc
     _(FC(shape=output_shape, activation=softmax))
 
     return model
+
 
 create_resnet = resNet50

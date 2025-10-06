@@ -1,16 +1,22 @@
 """Message Passing Interface"""
 
 import os as _os
-import pympi.rc as _rc
-import net_queue as _nq
 
-__all__ = _rc.__all__  # type: ignore
+try:
+    import pympi.rc as _rc
+    import net_queue as _nq
+except ModuleNotFoundError:
+    _rc = None
+    _nq = None
+
+if _rc:
+    __all__ = _rc.__all__  # type: ignore
 
 
 # Redefine protocol
 proto = (
     _nq.Protocol(proto)
-    if (proto := _os.environ.get("PYMPI_PROTO"))
+    if _nq and (proto := _os.environ.get("PYMPI_PROTO"))
     else None
 )
 

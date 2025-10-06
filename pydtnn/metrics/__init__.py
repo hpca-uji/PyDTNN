@@ -7,33 +7,14 @@ If you want to add a new metric:
     3) and, optionally, import your layer on this file.
 """
 
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
-from .categorical_accuracy import CategoricalAccuracy
-from .categorical_hinge import CategoricalHinge
-from .categorical_mae import CategoricalMAE
-from .categorical_mse import CategoricalMSE
-from .metric import Metric
-from .regression_mae import RegressionMAE
-from .regression_mse import RegressionMSE
-from ..utils import get_derived_classes
+from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
+from pydtnn.metrics.categorical_hinge import CategoricalHinge
+from pydtnn.metrics.categorical_mae import CategoricalMAE
+from pydtnn.metrics.categorical_mse import CategoricalMSE
+from pydtnn.metrics.metric import Metric
+from pydtnn.metrics.regression_mae import RegressionMAE
+from pydtnn.metrics.regression_mse import RegressionMSE
+from pydtnn.utils import get_derived_classes
 
 # Aliases
 categorical_accuracy = CategoricalAccuracy

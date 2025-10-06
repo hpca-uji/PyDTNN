@@ -1,4 +1,0 @@
-# -e ./path --config-settings editable_mode=compat
-./pympi/net-queue
-./pympi
-mpi4py

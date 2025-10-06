@@ -8,32 +8,13 @@ If you want to add a new GPU activation layer:
     3) and, optionally, import your GPU activation layer on this file.
 """
 
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
-from .activation_gpu import ActivationGPU
-from .arctanh_gpu import ArctanhGPU
-from .log_gpu import LogGPU
-from .relu_gpu import ReluGPU
-from .sigmoid_gpu import SigmoidGPU
-from .softmax_gpu import SoftmaxGPU
-from .tanh_gpu import TanhGPU
+from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
+from pydtnn.backends.gpu.activations.arctanh_gpu import ArctanhGPU
+from pydtnn.backends.gpu.activations.log_gpu import LogGPU
+from pydtnn.backends.gpu.activations.relu_gpu import ReluGPU
+from pydtnn.backends.gpu.activations.sigmoid_gpu import SigmoidGPU
+from pydtnn.backends.gpu.activations.softmax_gpu import SoftmaxGPU
+from pydtnn.backends.gpu.activations.tanh_gpu import TanhGPU
 from pydtnn.utils import get_derived_classes
 
 # Search this module for ActivationGPU derived classes and expose them

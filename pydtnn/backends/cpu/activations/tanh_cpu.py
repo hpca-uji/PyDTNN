@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
 from pydtnn.activations.tanh import Tanh
@@ -29,15 +10,15 @@ class TanhCPU(ActivationCPU, Tanh):
         super().initialize(prev_shape)
         self._y = np.empty((self.model.batch_size, *prev_shape), dtype=self.model.dtype)
 
-    def forward(self, x:np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
         np.tanh(x, out=self.y, casting="unsafe", dtype=self.model.dtype)
         return self.y
 
-    def backward(self, dy:np.ndarray) -> np.ndarray:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         # return 1 - np.tanh(dy) ** 2
         np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
         np.power(dy, 2, out=dy)
         np.subtract(1, dy, out=dy)
-        
+
         return dy

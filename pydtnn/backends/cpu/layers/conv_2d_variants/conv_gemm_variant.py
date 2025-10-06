@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from abc import ABC
 
 import numpy as np
@@ -25,6 +6,7 @@ from pydtnn.backends.cpu.libs import ConvGemm
 from pydtnn.layers import Conv2D
 from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+
 
 class ConvGemmVariant(Conv2D, ABC):
 
@@ -48,11 +30,11 @@ class ConvGemmVariant(Conv2D, ABC):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        y:np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x,
-                                              vpadding=self.vpadding, hpadding=self.hpadding,
-                                              vstride=self.vstride, hstride=self.hstride,
-                                              vdilation=self.vdilation, hdilation=self.hdilation,
-                                              biases_vector=biases_vector)
+        y: np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x,
+                                               vpadding=self.vpadding, hpadding=self.hpadding,
+                                               vstride=self.vstride, hstride=self.hstride,
+                                               vdilation=self.vdilation, hdilation=self.hdilation,
+                                               biases_vector=biases_vector)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y
@@ -92,12 +74,12 @@ class ConvGemmVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
         dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=dy.dtype)
         self.cg.deconv_gemm_nhwc(self.weights, dy, dx,
-                                    vpadding=self.vpadding, hpadding=self.hpadding,
-                                    vstride=self.vstride, hstride=self.hstride,
-                                    vdilation=self.vdilation, hdilation=self.hdilation)
+                                 vpadding=self.vpadding, hpadding=self.hpadding,
+                                 vstride=self.vstride, hstride=self.hstride,
+                                 vdilation=self.vdilation, hdilation=self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return dx
@@ -120,12 +102,12 @@ class ConvGemmVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
         dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
         self.cg.deconv_gemm_nchw(self.weights, dy, dx,
-                                    vpadding=self.vpadding, hpadding=self.hpadding,
-                                    vstride=self.vstride, hstride=self.hstride,
-                                    vdilation=self.vdilation, hdilation=self.hdilation)
+                                 vpadding=self.vpadding, hpadding=self.hpadding,
+                                 vstride=self.vstride, hstride=self.hstride,
+                                 vdilation=self.vdilation, hdilation=self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return dx

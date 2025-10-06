@@ -1,23 +1,4 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
-from . import SimpleTracer
+from pydtnn.tracers import SimpleTracer
 
 try:
     import pycuda.driver as drv
@@ -32,12 +13,13 @@ else:
     from types import ModuleType
     MPI_COMM = ModuleType
 
+
 class SimpleTracerGPU(SimpleTracer):
     """
     SimpleTracerGPU
     """
 
-    def __init__(self, tracing:bool, output_filename:str, comm: MPI_COMM | None):
+    def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None):
         super().__init__(tracing, output_filename, comm)
         self.event_vars = []
         # Attributes that will be initialized later

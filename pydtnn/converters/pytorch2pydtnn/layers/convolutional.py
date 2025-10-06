@@ -10,19 +10,21 @@ from pydtnn import layers
 import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------ #
-def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:    
+
+
+def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
 
     # PyTorch attributes:
     # Not used: in channels, device, dtype
-    PYTORCH_KERNEL_SIZE = "kernel_size" # INT or Tuple[INT, INT]
-    PYTORCH_STRIDE = "stride" # INT or Tuple[INT, INT]
-    PYTORCH_PADDING = "padding" # INT or Tuple[INT, INT]
-    PYTORCH_DILATION = "dilation" # INT
-    PYTORCH_GROUPS = "groups" # INT
-    PYTORCH_BIAS = "bias" # BOOL
+    PYTORCH_KERNEL_SIZE = "kernel_size"  # INT or Tuple[INT, INT]
+    PYTORCH_STRIDE = "stride"  # INT or Tuple[INT, INT]
+    PYTORCH_PADDING = "padding"  # INT or Tuple[INT, INT]
+    PYTORCH_DILATION = "dilation"  # INT
+    PYTORCH_GROUPS = "groups"  # INT
+    PYTORCH_BIAS = "bias"  # BOOL
     PYTORCH_OUPUT_CHANNELS = "out_channels"
-    # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros", "reflect", "replicate", "circular"} | In PyDTNN "zeros" is the only implemented 
+    # PYTORCH_PADDING_MODE = "padding_mode" # STRING. Values: {"zeros", "reflect", "replicate", "circular"} | In PyDTNN "zeros" is the only implemented
     torch_dict_keys = [PYTORCH_KERNEL_SIZE, PYTORCH_STRIDE, PYTORCH_PADDING, PYTORCH_DILATION, PYTORCH_GROUPS, PYTORCH_BIAS, PYTORCH_OUPUT_CHANNELS]
     # ---- #
 
@@ -39,7 +41,7 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     # Used, but in other place: "weights_initializer", "biases_initializer"
     # ---- #
 
-    layer_args = cm.prepare_pydtnn_arguments(arguments = args[cm.ARGUMENTS], torch_dict_keys = torch_dict_keys, pydtnn_dict_keys = pydtnn_dict_keys)
+    layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 
     if PYDTNN_FILTER_SHAPE in layer_args:
         pool_shape = layer_args[PYDTNN_FILTER_SHAPE]

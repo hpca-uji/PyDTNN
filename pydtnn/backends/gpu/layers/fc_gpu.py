@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 # noinspection PyUnresolvedReferences
 import pycuda.driver as drv
 # noinspection PyUnresolvedReferences
@@ -25,10 +6,10 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.layers import FC
 from pydtnn.performance_models import *
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from .layer_gpu import LayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
-from ..utils_gpu import matmul_gpu, matvec_gpu
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils_gpu import matmul_gpu, matvec_gpu
 
 
 class FCGPU(LayerGPU, FC):
@@ -72,14 +53,14 @@ class FCGPU(LayerGPU, FC):
                                                                        cudnn_dtype=self.model.cudnn_dtype,
                                                                        gpudirect=self.model.gpudirect)
         else:
-            self.dw_cpu, self.dw = TensorGPU.initialize_not_gpu_direct(self.weights.ary.shape, self.model.dtype, 
-                                                                       tensor_format=self.model.tensor_format, 
-                                                                       cudnn_dtype=self.model.cudnn_dtype, 
+            self.dw_cpu, self.dw = TensorGPU.initialize_not_gpu_direct(self.weights.ary.shape, self.model.dtype,
+                                                                       tensor_format=self.model.tensor_format,
+                                                                       cudnn_dtype=self.model.cudnn_dtype,
                                                                        gpudirect=self.model.gpudirect)
             if self.use_bias:
-                self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype, 
-                                                                           tensor_format=self.model.tensor_format, 
-                                                                           cudnn_dtype=self.model.cudnn_dtype, 
+                self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype,
+                                                                           tensor_format=self.model.tensor_format,
+                                                                           cudnn_dtype=self.model.cudnn_dtype,
                                                                            gpudirect=self.model.gpudirect)
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
@@ -167,7 +148,7 @@ class FCGPU(LayerGPU, FC):
         trans_a, trans_b, alpha, beta = 'N', 'T', 1.0, 0.0
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
-                                        self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
+                                     self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUBLAS_MATMUL_DX)
         self.matmul(self.model.cublas_handle, trans_b, trans_a, n, m, k, alpha,
                     self.weights.ary.gpudata, ldb,
                     dy.ary.gpudata, lda, beta,

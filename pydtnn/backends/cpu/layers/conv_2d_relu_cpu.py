@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DRelu
 from pydtnn.model import ModelModeEnum
@@ -62,7 +43,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 
-    def _forward_nhwc_cg(self, x:ndarray) -> ndarray:
+    def _forward_nhwc_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
 
         if self.model.mode is ModelModeEnum.TRAIN:
@@ -71,15 +52,15 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        res:ndarray = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
-                                             vpadding=self.vpadding, hpadding=self.hpadding,
-                                             vstride=self.vstride, hstride=self.hstride,
-                                             vdilation=self.vdilation, hdilation=self.hdilation,
-                                             biases_vector=biases_vector, relu=True)
+        res: ndarray = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
+                                              vpadding=self.vpadding, hpadding=self.hpadding,
+                                              vstride=self.vstride, hstride=self.hstride,
+                                              vdilation=self.vdilation, hdilation=self.hdilation,
+                                              biases_vector=biases_vector, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 
-    def _forward_nchw_cw(self, x:ndarray)->ndarray:
+    def _forward_nchw_cw(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convWinograd + Relu"""
 
         if self.model.mode is ModelModeEnum.TRAIN:
@@ -88,14 +69,14 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        y:ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
-                                       vpadding=self.vpadding, hpadding=self.hpadding,
-                                       vstride=self.vstride, hstride=self.hstride,
-                                       vdilation=self.vdilation, hdilation=self.hdilation,
-                                       relu=True)
+        y: ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
+                                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                                vstride=self.vstride, hstride=self.hstride,
+                                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                                relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y
 
-    def backward(self, x:ndarray)->ndarray:
+    def backward(self, x: ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

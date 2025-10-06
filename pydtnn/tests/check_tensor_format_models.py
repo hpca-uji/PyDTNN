@@ -124,7 +124,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
             if layer.canonical_name in ["Conv2D", "FC"]:
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
-                    #layer.dw:np.ndarray
+                    # layer.dw:np.ndarray
                     if layer.dw.transpose(1, 2, 3, 0).shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol,
                                                atol=atol)
@@ -143,7 +143,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         for i, layer in reversed(list(enumerate(model2.layers[1:], 1))):
             if layer.canonical_name in ["Conv2D", "FC"] and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
-                #layer.db:np.ndarray
+                # layer.db:np.ndarray
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
                                 f"Backward db from layer {layer.canonical_name_with_id} differ"

@@ -23,7 +23,7 @@ from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
 from pydtnn.tests.tools import print_with_header
 from pydtnn.model import Model, ModelModeEnum
-from ..initializers import glorot_uniform, zeros
+from pydtnn.initializers import glorot_uniform, zeros
 
 
 class Params:
@@ -32,7 +32,7 @@ class Params:
 
 def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
     params = Params()
-    params.parallel = "sequential" # TODO: Check this value.
+    params.parallel = "sequential"  # TODO: Check this value.
     params.batch_size = d.b
     params.enable_conv_gemm = False
     params.enable_best_of = False

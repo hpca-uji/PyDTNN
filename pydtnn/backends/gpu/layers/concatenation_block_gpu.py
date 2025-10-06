@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
@@ -24,12 +5,14 @@ from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import ConcatenationBlock
 from pydtnn.performance_models import *
-from pydtnn.tracers import  PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-                            PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from . import LayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
+
+
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
 
     def __init__(self, *args, **kwargs):
@@ -40,7 +23,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         self.out_co = None
         self.idx_co = None
 
-    def initialize(self, prev_shape:tuple[int, ...], x:TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
@@ -48,7 +31,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                                                                                           {np.float32: "float",
                                                                                            np.float64: "double"}[
                                                                                               self.model.dtype]),
-            {PYDTNN_TENSOR_FORMAT.NHWC :
+            {PYDTNN_TENSOR_FORMAT.NHWC:
                 """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i / C % W;
@@ -58,7 +41,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                        dst[i] = src[i_];
                    }
                 """,
-             PYDTNN_TENSOR_FORMAT.NCHW :
+             PYDTNN_TENSOR_FORMAT.NCHW:
                 """int c_ = i / (H*W) % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i % W;
@@ -68,14 +51,14 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                        dst[i] = src[i_];
                    }
                 """}[self.model.tensor_format],
-             "concat")
+            "concat")
 
         self.split = ElementwiseKernel(
             "T *src, T *dst, int N, int H, int W, int C, int first_c, int last_c".replace("T",
                                                                                           {np.float32: "float",
                                                                                            np.float64: "double"}[
                                                                                               self.model.dtype]),
-            {PYDTNN_TENSOR_FORMAT.NHWC :
+            {PYDTNN_TENSOR_FORMAT.NHWC:
                 """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i / C % W;
@@ -85,7 +68,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                        dst[i_] = src[i];
                    }
                 """,
-             PYDTNN_TENSOR_FORMAT.NCHW :
+             PYDTNN_TENSOR_FORMAT.NCHW:
                 """int c_ = i / (H*W) % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i % W;
@@ -95,7 +78,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                        dst[i_] = src[i];
                    }
                 """}[self.model.tensor_format],
-             "split")
+            "split")
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
