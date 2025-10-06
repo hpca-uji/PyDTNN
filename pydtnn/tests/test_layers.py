@@ -22,13 +22,13 @@ SEED = 1234
 np.random.seed(SEED)
 # ---
 
-N = 2
+N = 100
 C = 3
-H = 10
-W = 12
+H = 524
+W = 524
 FORMAT = "NHWC"
 SHAPE = (C, H, W) if FORMAT == "NCHW" else (H, W, C)
-NUM_REPETITIONS = 2
+NUM_REPETITIONS = 10
 
 KWARGS = {
     "model_name": None,
@@ -87,7 +87,7 @@ dict_test: dict[str, Activation | tuple[str, Layer]] = {
 def test_keras(_x: np.ndarray):
 
     model = Model(**KWARGS)
-    model.add(Input(SHAPE, True))
+    model.add(Input(SHAPE))
     model.add(Conv2D(grouping=GroupingEnum.STANDARD, nfilters=3))
     model.mode = ModelModeEnum.TRAIN
     model._initialize()
@@ -160,7 +160,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
         for name, test_elem in dict_test[test]:
             print(f"- Testing: {name}")
             model = Model(**KWARGS)
-            model.add(Input(SHAPE, True))
+            model.add(Input(SHAPE))
             if name == "FC":
                 model.add(Flatten())
             model.add(test_elem)
@@ -216,7 +216,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
     for test, layer in [addition_test_layers, concatenation_test_layers]:
         print(f"=====\nTesting the: {test}\n=====")
         model = Model(**KWARGS)
-        model.add(Input(SHAPE, True))
+        model.add(Input(SHAPE))
         model.add(layer)
         model.mode = ModelModeEnum.TRAIN
         model._initialize()
