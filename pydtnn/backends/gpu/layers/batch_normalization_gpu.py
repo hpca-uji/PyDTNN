@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
 # noinspection PyUnresolvedReferences
@@ -29,27 +10,28 @@ from pycuda.elementwise import ElementwiseKernel
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from .layer_gpu import LayerGPU
-from ..libs import libcudnn as cudnn
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils import decode_tensor
+
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
-        self.mode:int  = None
-        self.gamma_beta_mean_var_desc:int | None  = None
-        self.gamma_cpu:np.ndarray = None
-        self.beta_cpu:np.ndarray = None
-        self.dgamma_cpu:np.ndarray = None
-        self.dbeta_cpu:np.ndarray = None
-        self.save_mean:TensorGPU = None
-        self.save_inv_var:TensorGPU = None
-        self.factor:float = None
+        self.mode: int = None
+        self.gamma_beta_mean_var_desc: int | None = None
+        self.gamma_cpu: np.ndarray = None
+        self.beta_cpu: np.ndarray = None
+        self.dgamma_cpu: np.ndarray = None
+        self.dbeta_cpu: np.ndarray = None
+        self.save_mean: TensorGPU = None
+        self.save_inv_var: TensorGPU = None
+        self.factor: float = None
 
-    def initialize(self, prev_shape:tuple[int, ...], x:TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 
@@ -86,7 +68,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-        if self.model.gpudirect:            
+        if self.model.gpudirect:
             self.dgamma_cpu, self.dgamma = TensorGPU.initialize_gpu_direct(drv, self.gamma.ary.shape, self.model.dtype,
                                                                            tensor_format=self.model.tensor_format,
                                                                            cudnn_dtype=self.model.cudnn_dtype,
@@ -97,15 +79,15 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
                                                                          cudnn_dtype=self.model.cudnn_dtype,
                                                                          gpudirect=self.model.gpudirect)
         else:
-            self.dgamma_cpu, self.dgamma = TensorGPU.initialize_not_gpu_direct(self.gamma.ary.shape, self.model.dtype, 
-                                                                               tensor_format=self.model.tensor_format, 
-                                                                               cudnn_dtype=self.model.cudnn_dtype, 
+            self.dgamma_cpu, self.dgamma = TensorGPU.initialize_not_gpu_direct(self.gamma.ary.shape, self.model.dtype,
+                                                                               tensor_format=self.model.tensor_format,
+                                                                               cudnn_dtype=self.model.cudnn_dtype,
                                                                                gpudirect=self.model.gpudirect)
-                                                                               
-            self.dbeta_cpu, self.dbeta= TensorGPU.initialize_not_gpu_direct(self.beta.ary.shape, self.model.dtype, 
-                                                                            tensor_format=self.model.tensor_format, 
-                                                                            cudnn_dtype=self.model.cudnn_dtype, 
-                                                                            gpudirect=self.model.gpudirect)
+
+            self.dbeta_cpu, self.dbeta = TensorGPU.initialize_not_gpu_direct(self.beta.ary.shape, self.model.dtype,
+                                                                             tensor_format=self.model.tensor_format,
+                                                                             cudnn_dtype=self.model.cudnn_dtype,
+                                                                             gpudirect=self.model.gpudirect)
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
         self.running_mean = TensorGPU(running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)
@@ -128,21 +110,21 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
             case ModelModeEnum.TRAIN:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
                 cudnn.cudnnBatchNormalizationForwardTraining(self.model.cudnn_handle, self.mode,
-                                                            alpha, beta, x.desc, x.ptr,
-                                                            self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
-                                                            self.gamma.ptr,
-                                                            self.beta.ptr, self.factor, self.running_mean.ptr,
-                                                            self.running_var.ptr,
-                                                            self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
+                                                             alpha, beta, x.desc, x.ptr,
+                                                             self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
+                                                             self.gamma.ptr,
+                                                             self.beta.ptr, self.factor, self.running_mean.ptr,
+                                                             self.running_var.ptr,
+                                                             self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             case ModelModeEnum.EVALUATE:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
                 cudnn.cudnnBatchNormalizationForwardInference(self.model.cudnn_handle, self.mode,
-                                                            alpha, beta, x.desc, x.ptr,
-                                                            self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
-                                                            self.gamma.ptr,
-                                                            self.beta.ptr, self.running_mean.ptr, self.running_var.ptr,
-                                                            self.epsilon)
+                                                              alpha, beta, x.desc, x.ptr,
+                                                              self.y.desc, self.y.ptr, self.gamma_beta_mean_var_desc,
+                                                              self.gamma.ptr,
+                                                              self.beta.ptr, self.running_mean.ptr, self.running_var.ptr,
+                                                              self.epsilon)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             case _:
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")

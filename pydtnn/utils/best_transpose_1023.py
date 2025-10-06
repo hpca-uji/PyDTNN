@@ -1,29 +1,11 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
 from pydtnn.cython_modules import transpose_1023_jik_cython, transpose_1023_ijk_cython
 from pydtnn.utils.best_of import BestOf
 from typing import Callable
 
-def transpose_1023_numpy(original:np.ndarray, transposed:np.ndarray | None=None) -> np.ndarray:
+
+def transpose_1023_numpy(original: np.ndarray, transposed: np.ndarray | None = None) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
@@ -31,7 +13,7 @@ def transpose_1023_numpy(original:np.ndarray, transposed:np.ndarray | None=None)
     return transposed
 
 
-def transpose_1023_ijk_cython_wrapper(original:np.ndarray, transposed:np.ndarray | None=None) -> np.ndarray:
+def transpose_1023_ijk_cython_wrapper(original: np.ndarray, transposed: np.ndarray | None = None) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
@@ -39,7 +21,7 @@ def transpose_1023_ijk_cython_wrapper(original:np.ndarray, transposed:np.ndarray
     return transposed
 
 
-def transpose_1023_jik_cython_wrapper(original:np.ndarray, transposed:np.ndarray | None=None) -> np.ndarray:
+def transpose_1023_jik_cython_wrapper(original: np.ndarray, transposed: np.ndarray | None = None) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
         transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
@@ -47,7 +29,7 @@ def transpose_1023_jik_cython_wrapper(original:np.ndarray, transposed:np.ndarray
     return transposed
 
 
-best_transpose_1023:Callable[[np.ndarray, np.ndarray | None], np.ndarray] = BestOf(
+best_transpose_1023: Callable[[np.ndarray, np.ndarray | None], np.ndarray] = BestOf(
     name="Transpose 1023 methods",
     alternatives=[
         ("ijk_cyt", transpose_1023_ijk_cython_wrapper),

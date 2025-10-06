@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
@@ -29,6 +10,7 @@ from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_
 from pydtnn.optimizers import RMSProp
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
+
 
 class RMSPropGPU(OptimizerGPU, RMSProp):
     """
@@ -56,29 +38,26 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
                     w[i] -= lr * (decay * w[i] + (dw[i] / sqrt(cache[i] + epsilon)));
                 }
             }""".replace("T", {np.float32: "float", np.float64: "double"}[dtype]).
-                                             replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype])
-                                             ).get_function("RMSProp_kernel")
-
+            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype])
+        ).get_function("RMSProp_kernel")
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
-                    
+
             if len(list_grad_vars) != 0:
                 self.context[layer] = dict[str, gpuarray_t]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
                     self.context[layer]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
-
-
     def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = self.context[layer]["cache_%s" % w_]
-            w:TensorGPU
-            dw:TensorGPU
-            cache:gpuarray
+            w: TensorGPU
+            dw: TensorGPU
+            cache: gpuarray
 
             if self.gpudirect:
                 n = self.get_batch_size(w)

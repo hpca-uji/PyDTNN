@@ -1,23 +1,4 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
-from . import LRScheduler
+from pydtnn.lr_schedulers import LRScheduler
 from numpy import ndarray
 
 from typing import TYPE_CHECKING
@@ -26,12 +7,13 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class ReduceLREveryNEpochs(LRScheduler):
     """
     ReduceLREveryNEpochs LRScheduler
     """
 
-    def __init__(self, model:Model, factor=0.1, nepochs=5, min_lr=0, verbose=True):
+    def __init__(self, model: Model, factor=0.1, nepochs=5, min_lr=0, verbose=True):
         super().__init__(model, verbose)
         self.factor = factor
         self.nepochs = nepochs

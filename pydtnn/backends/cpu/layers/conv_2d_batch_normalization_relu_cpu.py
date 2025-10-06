@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DBatchNormalizationRelu
 from pydtnn.model import ModelModeEnum
@@ -24,12 +5,13 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 
 from numpy import ndarray
 
+
 class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, from_parent_dict:dict=None, *args, **kwargs):
+    def initialize(self, from_parent_dict: dict = None, *args, **kwargs):
         super().initialize(*args, **kwargs)
         self.forward = {"_forward_nchw_cw": self._forward_nchw_cw,
                         "_forward_nchw_cg": self._forward_nchw_cg,
@@ -51,13 +33,13 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        y:ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
-                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                vstride=self.vstride, hstride=self.hstride,
-                                vdilation=self.vdilation, hdilation=self.hdilation, 
-                                relu=True, bn=True,
-                                running_mean=self.running_mean,
-                                inv_std=self.inv_std, gamma=self.gamma, beta=self.beta)
+        y: ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
+                                                vpadding=self.vpadding, hpadding=self.hpadding,
+                                                vstride=self.vstride, hstride=self.hstride,
+                                                vdilation=self.vdilation, hdilation=self.hdilation,
+                                                relu=True, bn=True,
+                                                running_mean=self.running_mean,
+                                                inv_std=self.inv_std, gamma=self.gamma, beta=self.beta)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y
@@ -70,12 +52,12 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        res:ndarray = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation,
-                                     biases_vector=biases_vector, bn_running_mean=self.running_mean,
-                                     bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
+        res: ndarray = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
+                                              vpadding=self.vpadding, hpadding=self.hpadding,
+                                              vstride=self.vstride, hstride=self.hstride,
+                                              vdilation=self.vdilation, hdilation=self.hdilation,
+                                              biases_vector=biases_vector, bn_running_mean=self.running_mean,
+                                              bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 
@@ -87,12 +69,12 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu):
 
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        res:ndarray = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation,
-                                     biases_vector=biases_vector, bn_running_mean=self.running_mean,
-                                     bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
+        res: ndarray = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,
+                                              vpadding=self.vpadding, hpadding=self.hpadding,
+                                              vstride=self.vstride, hstride=self.hstride,
+                                              vdilation=self.vdilation, hdilation=self.hdilation,
+                                              biases_vector=biases_vector, bn_running_mean=self.running_mean,
+                                              bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 

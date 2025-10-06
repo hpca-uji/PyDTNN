@@ -1,28 +1,9 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import os
 import time
 
 import numpy as np
 
-from . import LRSchedulerWithLossOrMetric
+from pydtnn.lr_schedulers import LRSchedulerWithLossOrMetric
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -30,21 +11,22 @@ if TYPE_CHECKING:
 else:
     Model = object
 
+
 class ModelCheckpoint(LRSchedulerWithLossOrMetric):
     """
     ModelCheckpoint LRScheduler
     """
 
-    def __init__(self, model:Model, loss_or_metric:str="", epoch_save_frequency=1, verbose=True):
+    def __init__(self, model: Model, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
         super().__init__(model, loss_or_metric, verbose)
         self.epoch_save_frequency = epoch_save_frequency
         self.epoch_count = self.best_epoch = 0
         self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]
         # Attributes that will be properly defined elsewhere
-        self.filename : str | None = None
-        self.last_filename : str | None = None
+        self.filename: str | None = None
+        self.last_filename: str | None = None
 
-    def on_epoch_end(self, train_loss:np.ndarray[float], val_loss:np.ndarray[float]) -> None:
+    def on_epoch_end(self, train_loss: np.ndarray[float], val_loss: np.ndarray[float]) -> None:
         idx = self._get_idx()
         self.epoch_count += 1
         loss = val_loss if self.is_val_metric else train_loss

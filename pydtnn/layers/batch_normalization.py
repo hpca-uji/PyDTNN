@@ -1,27 +1,8 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
 from abc import ABC
 
-from .layer import Layer
+from pydtnn.layers.layer import Layer
 from pydtnn.utils import decode_tensor
 from typing import Callable
 
@@ -32,33 +13,34 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Array
 
+
 class BatchNormalization(Layer, ABC):
 
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5,
-                 moving_mean_initializer:Callable = zeros, 
-                 moving_variance_initializer:Callable = zeros,
+                 moving_mean_initializer: Callable = zeros,
+                 moving_variance_initializer: Callable = zeros,
                  sync_stats=False):
         super().__init__()
         self.gamma_init_val = gamma
         self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
-        self.moving_mean_initializer:Callable[[tuple[int, ...], np.dtype], np.ndarray] = moving_mean_initializer
-        self.moving_variance_initializer:Callable[[tuple[int, ...], np.dtype], np.ndarray] = moving_variance_initializer
+        self.moving_mean_initializer: Callable[[tuple[int, ...], np.dtype], np.ndarray] = moving_mean_initializer
+        self.moving_variance_initializer: Callable[[tuple[int, ...], np.dtype], np.ndarray] = moving_variance_initializer
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
         # The next attributes will be initialized later
-        self.spatial:bool = None
+        self.spatial: bool = None
         self.co = self.ci = self.hi = self.wi = 0
-        self.gamma:"Array" = None
-        self.beta:"Array" = None
-        self.running_mean:"Array" = None
-        self.running_var:"Array" = None
-        self.std:np.ndarray = None
-        self.xn:np.ndarray = None
-        self.dgamma:"Array" = None
-        self.dbeta:"Array" = None
-        self.inv_std:np.ndarray = None
+        self.gamma: "Array" = None
+        self.beta: "Array" = None
+        self.running_mean: "Array" = None
+        self.running_var: "Array" = None
+        self.std: np.ndarray = None
+        self.xn: np.ndarray = None
+        self.dgamma: "Array" = None
+        self.dbeta: "Array" = None
+        self.inv_std: np.ndarray = None
 
     def initialize(self, prev_shape):
         super().initialize(prev_shape)

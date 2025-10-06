@@ -1,30 +1,11 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 from pydtnn.activations import Softmax
-from .activation_gpu import ActivationGPU
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 
 
 class SoftmaxGPU(ActivationGPU, Softmax):
@@ -58,7 +39,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
     def backward(self, dy: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnSoftmaxBackward(self.model.cudnn_handle, self.algo, self.mode, alpha,
-                                    self.y.desc, self.y.ptr,
-                                    dy.desc, dy.ptr, beta,
-                                    self.dx.desc, self.dx.ptr)
+                                   self.y.desc, self.y.ptr,
+                                   dy.desc, dy.ptr, beta,
+                                   self.dx.desc, self.dx.ptr)
         return self.dx

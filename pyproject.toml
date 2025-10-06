@@ -1,0 +1,76 @@
+[project]
+name = "pydtnn"
+version = "1.1.1"
+authors = [
+    { name = "Adrián Castelló Gimeno", email = "adcastel@disca.upv.es" },
+    { name = "Enrique S. Quintana-Ortí", email = "quintana@disca.upv.es" },
+    { name = "Jose Ignacio Mestre Miravet", email = "jmiravet@uji.es" },
+    { name = "Manuel F. Dolz Zaragozá", email = "dolzm@uji.es" },
+    { name = "Mar Catalán Carbó", email = "catalama@uji.es" },
+    { name = "Miguel Ángel Prosper Quirós", email = "mprosper@uji.es" },
+    { name = "Paul Ximo Pluijter Izquierdo", email = "pluijter@uji.es" },
+    { name = "Sergio Barrachina Mir", email = "barrachi@uji.es" },
+]
+maintainers = [{ name = "Manuel F. Dolz Zaragozá", email = "dolzm@uji.es" }]
+description = "Python Distributed Training of Neural Networks"
+readme = "README.rst"
+requires-python = ">=3.13"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+]
+keywords = ["Deep neural networks", "Distributed parallel training", "Python"]
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+
+dependencies = [
+    "cython>=0.29.21",
+    "numpy>=1.19.4",
+    "matplotlib>=3.3.3",
+    "prettytable>=2.1.0",
+    "rich>=9.9.0",
+    "scikit-image>=0.17.2",
+    "scipy>=1.5.4",
+    "tqdm>=4.55.0",
+]
+
+[project.optional-dependencies]
+cuda = [
+    "pycuda>=2021.1",
+    "scikit-cuda>=0.5.3",
+    "nvidia-cudnn>=8.1.1.33"
+]
+mpi = [
+    "net-queue>=0.1.0",
+    "pympi>=0.1.0",
+    "mpi4py>=4.1.0",
+]
+fhe = [
+    "openfhe>=1.4.0",
+    "tenseal>=0.3.16"
+]
+
+[project.urls]
+Homepage = "https://github.com/hpca-uji/PyDTNN"
+Repository = "https://github.com/hpca-uji/PyDTNN.git"
+
+[project.scripts]
+pydtnn_benchmark = "pydtnn.pydtnn_benchmark:main"
+
+[build-system]
+requires = [
+    "setuptools>=68.2.0",
+    "cython>=0.29.21",
+    "numpy>=1.19.4",
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+pydtnn = [
+    "scripts/*",
+    "datasets/mnist/*"
+]

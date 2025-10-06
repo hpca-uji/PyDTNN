@@ -1,3 +1,6 @@
 [submodule "pympi"]
 	path = pympi
 	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/pympi.git
+[submodule "net-queue"]
+	path = net-queue
+	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/net-queue.git

@@ -18,14 +18,14 @@
 #
 
 from pydtnn.layers import AdaptiveAveragePool2D
-from .layer_gpu import LayerGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 
 # Import from AveragePool2DGPU
-from ..libs import libcudnn as cudnn
+from pydtnn.backends.gpu.libs import libcudnn as cudnn
 
 # Import from AbstractPool2DLayerGPU
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils import decode_tensor, encode_tensor
 # noinspection PyUnresolvedReferences
@@ -38,7 +38,7 @@ from pycuda.driver import Function
 import numpy as np
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
-# --- CONSTANTS --- # 
+# --- CONSTANTS --- #
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 _MACRO_INDEX_FIRST_ELEMENT = "INDEX_FIRST_ELEMENT"
 _MACRO_INDEX_LAST_ELEMENT = "INDEX_LAST_ELEMENT"
@@ -55,7 +55,7 @@ _FULL_MACRO_INDEX_C_NCHW = f"#define {_MACRO_INDEX_C}(idx, c, h, w) (idx / (h * 
 _FULL_MACRO_INDEX_H_NCHW = f"#define {_MACRO_INDEX_H}(idx, h, w) (idx / w) % h"
 _FULL_MACRO_INDEX_W_NCHW = f"#define {_MACRO_INDEX_W}(idx, w) idx % w"
 _DIMENSION_INDEX_CODE_NCHW = \
-"""
+    """
 ci = {macro_index_c}(idx, c, new_h, new_w);
 hi = {macro_index_h}(idx, new_h, new_w);
 wi = {macro_index_w}(idx, new_w);
@@ -64,18 +64,19 @@ _FULL_MACRO_INDEX_H_NHWC = f"#define {_MACRO_INDEX_H}(idx, h, w, c) (idx / (w * 
 _FULL_MACRO_INDEX_W_NHWC = f"#define {_MACRO_INDEX_W}(idx, w, c) (idx / c) % w"
 _FULL_MACRO_INDEX_C_NHWC = f"#define {_MACRO_INDEX_C}(idx, c) idx % c"
 _DIMENSION_INDEX_CODE_NHWC = \
-"""            
+    """
 hi = {macro_index_h}(idx, new_h, new_w, c);
 wi = {macro_index_w}(idx, new_w, c);
 ci = {macro_index_c}(idx, c);
 """
-# --- END CONSTANTS --- # 
+# --- END CONSTANTS --- #
+
 
 class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
-    
-    def initialize(self, prev_shape, need_dx:bool, x: TensorGPU) -> None:
+
+    def initialize(self, prev_shape, need_dx: bool, x: TensorGPU) -> None:
         LayerGPU.initialize(self, prev_shape, need_dx, x)
-        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)        
+        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
@@ -83,30 +84,30 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
 
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
-        self.grid = (self.blocks, 1, 1) 
-        self.block = (self.threads, 1, 1) 
+        self.grid = (self.blocks, 1, 1)
+        self.block = (self.threads, 1, 1)
 
-        self.initialize_pool_2d_gpu(prev_shape, need_dx, x)        
+        self.initialize_pool_2d_gpu(prev_shape, need_dx, x)
     # --- END initialize --- #
-    
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.y = None
     # --- END __init__ --- #
 
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
-        
+
         _func_name = ["cuda_adaptive_average_pooling_fwd"]
-        _t = DICT_SUPPORTED_TYPES[dtype] # variable Type
+        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
         _dimension_index_code = ""
-        _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]  
-        
+        _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
+
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                _func_name.append("_nchw")            
+                _func_name.append("_nchw")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
@@ -114,7 +115,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
                 _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
                 # -- END cuda_adaptive_average_pooling_fwd_nchw --
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                # NOTE: It has been tested and it return values that seems to make sense, 
+                # NOTE: It has been tested and it return values that seems to make sense,
                 #   but they hadn't been compared with other model's output due the format (Torch is NCHW).
                 _func_name.append("_nhwc")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
@@ -128,9 +129,9 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
-        _dimension_index_code = _dimension_index_code.format(macro_index_c = _MACRO_INDEX_C, 
-                                                             macro_index_h = _MACRO_INDEX_H, 
-                                                             macro_index_w = _MACRO_INDEX_W)
+        _dimension_index_code = _dimension_index_code.format(macro_index_c=_MACRO_INDEX_C,
+                                                             macro_index_h=_MACRO_INDEX_H,
+                                                             macro_index_w=_MACRO_INDEX_W)
 
         code = """
 #define {macro_index_n}(idx, N, n) idx * n / N
@@ -143,13 +144,13 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
 {full_macro_shift_pointer}
 
 #define TRUE  1
-#define FALSE 0 
-            
+#define FALSE 0
+
 __global__ void {func_name}({T}* x, {T}* y,
                             int n, int c, int h, int w,
                             int new_h, int new_w, int N,
-                            int num_active_workers, 
-                            int num_ops_per_worker, 
+                            int num_active_workers,
+                            int num_ops_per_worker,
                             int num_ops_last_worker)
 {{
     int idx, ops_remaining;
@@ -160,42 +161,42 @@ __global__ void {func_name}({T}* x, {T}* y,
 
     idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (idx >= N) return;                
+    if (idx >= N) return;
     ops_remaining = ((idx + 1) == num_active_workers) ? num_ops_last_worker : num_ops_per_worker;
     idx *= num_ops_per_worker;
-    
+
     ni = {macro_index_n}(idx, N, n);
     {dimension_index_code}
     first_iteration = TRUE;
 
-    for(ni = ni; 
+    for(ni = ni;
         (ni < n) && (ops_remaining > 0);
         ni++)
     {{
-        for(ci = (first_iteration ? ci : 0); 
-            (ci < c) && (ops_remaining > 0); 
+        for(ci = (first_iteration ? ci : 0);
+            (ci < c) && (ops_remaining > 0);
             ci++)
         {{
-            for(hi = (first_iteration ? hi : 0); 
-                (hi < new_h) && (ops_remaining > 0); 
+            for(hi = (first_iteration ? hi : 0);
+                (hi < new_h) && (ops_remaining > 0);
                 hi++)
             {{
                 h_start = {macro_index_first_element}(hi, h, new_h);
                 h_end = {macro_index_last_element}(hi, h, new_h);
                 elements_h = h_end - h_start;
 
-                for(wi = (first_iteration ? wi : 0), first_iteration = FALSE; 
-                    (wi < new_w) && (ops_remaining > 0); 
+                for(wi = (first_iteration ? wi : 0), first_iteration = FALSE;
+                    (wi < new_w) && (ops_remaining > 0);
                     wi++, ops_remaining--)
-                {{   
+                {{
                     w_start = {macro_index_first_element}(wi, w, new_w);
                     w_end = {macro_index_last_element}(wi, w, new_w);
                     elements = elements_h * (w_end - w_start);
-                                                    
+
                     for(i = h_start, add = ({T}) 0.0; i < h_end; i++)
                         for(j = w_start; j < w_end; j++)
                             add += ({T}) (*({macro_desp_pointer}(x, c, h, w, ni, ci, i, j)) );
-                    
+
                     (*({macro_desp_pointer}(y, c, new_h, new_w, ni, ci, hi, wi))) = ({T}) (add / elements);
                 }}
             }}
@@ -204,30 +205,30 @@ __global__ void {func_name}({T}* x, {T}* y,
 }}
 """
 
-        code = code.format(full_macro_index_c = _full_macro_index_c,
-                           full_macro_index_h = _full_macro_index_h,
-                           full_macro_index_w = _full_macro_index_w,
-                           full_macro_shift_pointer = _full_macro_shift_pointer,
-                           macro_index_n = _MACRO_INDEX_N,
-                           macro_index_c = _MACRO_INDEX_C,
-                           macro_index_h = _MACRO_INDEX_H,
-                           macro_index_w = _MACRO_INDEX_W,
-                           macro_index_first_element = _MACRO_INDEX_FIRST_ELEMENT,
-                           macro_index_last_element = _MACRO_INDEX_LAST_ELEMENT,
-                           macro_desp_pointer = _MACRO_SHIFT_POINTER,
-                           dimension_index_code = _dimension_index_code,
-                           func_name = _func_name,
-                           T = _t
+        code = code.format(full_macro_index_c=_full_macro_index_c,
+                           full_macro_index_h=_full_macro_index_h,
+                           full_macro_index_w=_full_macro_index_w,
+                           full_macro_shift_pointer=_full_macro_shift_pointer,
+                           macro_index_n=_MACRO_INDEX_N,
+                           macro_index_c=_MACRO_INDEX_C,
+                           macro_index_h=_MACRO_INDEX_H,
+                           macro_index_w=_MACRO_INDEX_W,
+                           macro_index_first_element=_MACRO_INDEX_FIRST_ELEMENT,
+                           macro_index_last_element=_MACRO_INDEX_LAST_ELEMENT,
+                           macro_desp_pointer=_MACRO_SHIFT_POINTER,
+                           dimension_index_code=_dimension_index_code,
+                           func_name=_func_name,
+                           T=_t
                            )
         module = SourceModule(code).get_function(_func_name)
-        
+
         return module
     # --- END cuda_adaptive_average_pooling_fwd --- #
 
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
-        
+
         _func_name = ["cuda_adaptive_average_pooling_bwd"]
-        _t = DICT_SUPPORTED_TYPES[dtype] # variable Type
+        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
@@ -236,7 +237,7 @@ __global__ void {func_name}({T}* x, {T}* y,
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                _func_name.append("_nchw")            
+                _func_name.append("_nchw")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
@@ -254,10 +255,10 @@ __global__ void {func_name}({T}* x, {T}* y,
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
-        _dimension_index_code = _dimension_index_code.format(macro_index_c = _MACRO_INDEX_C, 
-                                                             macro_index_h = _MACRO_INDEX_H, 
-                                                             macro_index_w = _MACRO_INDEX_W)
-        
+        _dimension_index_code = _dimension_index_code.format(macro_index_c=_MACRO_INDEX_C,
+                                                             macro_index_h=_MACRO_INDEX_H,
+                                                             macro_index_w=_MACRO_INDEX_W)
+
         code = """
 #define {macro_index_n}(idx, N, n) idx * n / N
 {full_macro_index_c}
@@ -269,13 +270,13 @@ __global__ void {func_name}({T}* x, {T}* y,
 {full_macro_shift_pointer}
 
 #define TRUE  1
-#define FALSE 0 
-            
+#define FALSE 0
+
 __global__ void {func_name}({T}* dx, {T}* dy,
                             int n, int c, int h, int w,
                             int new_h, int new_w, int N,
-                            int num_active_workers, 
-                            int num_ops_per_worker, 
+                            int num_active_workers,
+                            int num_ops_per_worker,
                             int num_ops_last_worker)
 {{
     int idx, ops_remaining;
@@ -286,38 +287,38 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
     idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (idx >= N) return;                
+    if (idx >= N) return;
     ops_remaining = ((idx + 1) == num_active_workers) ? num_ops_last_worker : num_ops_per_worker;
     idx *= num_ops_per_worker;
-    
+
     ni = {macro_index_n}(idx, N, n);
     {dimension_index_code}
     first_iteration = TRUE;
 
-    for(ni = ni; 
+    for(ni = ni;
         (ni < n) && (ops_remaining > 0);
         ni++)
     {{
-        for(ci = (first_iteration ? ci : 0); 
-            (ci < c) && (ops_remaining > 0); 
+        for(ci = (first_iteration ? ci : 0);
+            (ci < c) && (ops_remaining > 0);
             ci++)
         {{
-            for(hi = (first_iteration ? hi : 0); 
-                (hi < h) && (ops_remaining > 0); 
+            for(hi = (first_iteration ? hi : 0);
+                (hi < h) && (ops_remaining > 0);
                 hi++)
             {{
                 h_start = {macro_index_first_element}(hi, new_h, h);
                 h_end = {macro_index_last_element}(hi, new_h, h);
                 elements_h = h_end - h_start;
 
-                for(wi = (first_iteration ? wi : 0), first_iteration = FALSE; 
-                    (wi < w) && (ops_remaining > 0); 
+                for(wi = (first_iteration ? wi : 0), first_iteration = FALSE;
+                    (wi < w) && (ops_remaining > 0);
                     wi++, ops_remaining--)
-                {{   
+                {{
                     w_start = {macro_index_first_element}(wi, new_w, w);
                     w_end = {macro_index_last_element}(wi, new_w, w);
                     elements = elements_h * (w_end - w_start);
-                                                    
+
                     delta = ({T}) (*({macro_desp_pointer}(dy, c, new_h, new_w, ni, ci, hi, wi)) / elements);
                     for(i = h_start; i < h_end; i++)
                         for(j = w_start; j < w_end; j++)
@@ -329,30 +330,30 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 }}
 """
 
-        code = code.format(full_macro_index_c = _full_macro_index_c,
-                            full_macro_index_h = _full_macro_index_h,
-                            full_macro_index_w = _full_macro_index_w,
-                            full_macro_shift_pointer = _full_macro_shift_pointer,
-                            macro_index_n = _MACRO_INDEX_N,
-                            macro_index_c = _MACRO_INDEX_C,
-                            macro_index_h = _MACRO_INDEX_H,
-                            macro_index_w = _MACRO_INDEX_W,
-                            macro_index_first_element = _MACRO_INDEX_FIRST_ELEMENT,
-                            macro_index_last_element = _MACRO_INDEX_LAST_ELEMENT,
-                            macro_desp_pointer = _MACRO_SHIFT_POINTER,
-                            dimension_index_code = _dimension_index_code,
-                            func_name = _func_name,
-                            T = _t
+        code = code.format(full_macro_index_c=_full_macro_index_c,
+                           full_macro_index_h=_full_macro_index_h,
+                           full_macro_index_w=_full_macro_index_w,
+                           full_macro_shift_pointer=_full_macro_shift_pointer,
+                           macro_index_n=_MACRO_INDEX_N,
+                           macro_index_c=_MACRO_INDEX_C,
+                           macro_index_h=_MACRO_INDEX_H,
+                           macro_index_w=_MACRO_INDEX_W,
+                           macro_index_first_element=_MACRO_INDEX_FIRST_ELEMENT,
+                           macro_index_last_element=_MACRO_INDEX_LAST_ELEMENT,
+                           macro_desp_pointer=_MACRO_SHIFT_POINTER,
+                           dimension_index_code=_dimension_index_code,
+                           func_name=_func_name,
+                           T=_t
                            )
         module = SourceModule(code).get_function(_func_name)
-        
+
         return module
     # --- END cuda_adaptive_average_pooling_bwd --- #
 
     def initialize_pool_2d_gpu(self, prev_shape, need_dx, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
-        
+
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 pooling_shape = (self.co, self.ho, self.wo)
@@ -360,7 +361,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
                 (self.ho, self.wo, self.co)
             case _:
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
-        
+
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
@@ -395,22 +396,22 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
             # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be np.prod(x.shape),
             #   but in this case we are putting elements in the output instead of processing the input's elements.
-            num_elements = np.prod( (n, c, self.ho, self.wo), dtype=np.int32)
-            
+            num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
+
             total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
-            
+
             # If num_elements < total_num_threads, only will work "num_elements" threads. In the other cases will work "total_num_threads" threads.
             num_active_workers = np.int32(min(total_num_threads, num_elements))
             num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
             num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
 
             # NOTE: Instead of a number, PyCuda's driver expects "numpy.number"
-            self.cuda_fwd_func(x.ary, self.y.ary, 
-                           np.int32(n), np.int32(c), np.int32(h), np.int32(w), 
-                           np.int32(self.ho), np.int32(self.wo), num_elements,
-                           num_active_workers, num_ops_per_worker, num_ops_last_worker,
-                           grid=self.grid, block=self.block,
-                           stream=self.model.stream)
+            self.cuda_fwd_func(x.ary, self.y.ary,
+                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                               np.int32(self.ho), np.int32(self.wo), num_elements,
+                               num_active_workers, num_ops_per_worker, num_ops_last_worker,
+                               grid=self.grid, block=self.block,
+                               stream=self.model.stream)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
@@ -427,20 +428,20 @@ __global__ void {func_name}({T}* dx, {T}* dy,
                 case _:
                     raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-            num_elements = np.prod( (n, c, self.ho, self.wo), dtype=np.int32)
-            
+            num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
+
             total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
-            
+
             num_active_workers = np.int32(min(total_num_threads, num_elements))
             num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
             num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
 
-            self.cuda_bwd_func(self.dx.ary, self.y.ary, 
-                                np.int32(n), np.int32(c), np.int32(h), np.int32(w), 
-                                np.int32(self.ho), np.int32(self.wo), num_elements,
-                                num_active_workers, num_ops_per_worker, num_ops_last_worker,
-                                grid=self.grid, block=self.block,
-                                stream=self.model.stream)
+            self.cuda_bwd_func(self.dx.ary, self.y.ary,
+                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                               np.int32(self.ho), np.int32(self.wo), num_elements,
+                               num_active_workers, num_ops_per_worker, num_ops_last_worker,
+                               grid=self.grid, block=self.block,
+                               stream=self.model.stream)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
             return self.dx

@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 
 from pydtnn.backends.cpu.optimizers import OptimizerCPU
@@ -25,7 +6,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 
 
 class AdamCPU(OptimizerCPU, Adam):
-    
+
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 
         for layer in list_layers:
@@ -33,23 +14,23 @@ class AdamCPU(OptimizerCPU, Adam):
             self.context[layer]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
-                w:np.ndarray = getattr(layer, w_)
+                w: np.ndarray = getattr(layer, w_)
                 self.context[layer]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
                 self.context[layer]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer]["it"] += 1
-        it:int = self.context[layer]["it"]
+        it: int = self.context[layer]["it"]
 
-        for w_, dw_ in layer.grad_vars.items():            
+        for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             w: np.ndarray
             dw: np.ndarray
             # Momentum of the weight or bias of the given layer
-            m:np.ndarray = self.context[layer]["m_%s" % w_]
+            m: np.ndarray = self.context[layer]["m_%s" % w_]
             # Velocity of the weight or bias of the given layer
-            v:np.ndarray = self.context[layer]["v_%s" % w_]
-            
+            v: np.ndarray = self.context[layer]["v_%s" % w_]
+
             if not (self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(m) and self.are_all_zeros(v)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
                 # m = self.beta1 * m + (1 - self.beta1) * dw
@@ -57,13 +38,13 @@ class AdamCPU(OptimizerCPU, Adam):
                 m += (1 - self.beta1) * dw
 
                 # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-                v *= self.beta2 
+                v *= self.beta2
                 _dw = dw ** 2
                 _dw *= (1 - self.beta2)
                 v += _dw
 
-                mt:np.ndarray = m / (1 - self.beta1 ** it)
-                vt:np.ndarray = v / (1 - self.beta2 ** it)
+                mt: np.ndarray = m / (1 - self.beta1 ** it)
+                vt: np.ndarray = v / (1 - self.beta2 ** it)
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
                 _w = self.decay * w
@@ -76,4 +57,4 @@ class AdamCPU(OptimizerCPU, Adam):
                 _w *= self.learning_rate
 
                 w -= _w
-            #else: continue
+            # else: continue

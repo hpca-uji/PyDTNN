@@ -25,6 +25,7 @@ from pydtnn.tests.tools import print_with_header
 
 from pydtnn.layers import Layer
 
+
 class Params:
     pass
 
@@ -58,18 +59,18 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return rtol, atol
 
     @staticmethod
-    def get_model1_and_loss_func(model_name: str, overwrite_params: dict|None = None) -> tuple[Model, losses.Loss]:
+    def get_model1_and_loss_func(model_name: str, overwrite_params: dict | None = None) -> tuple[Model, losses.Loss]:
         # CPU model with no convGemm
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
-        params.parallel = "sequential" # TODO: Check this value.
+        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = "NHWC"
-        params.dataset_name = "cifar10" #TODO: change to mnist
-        params.dataset_train_path = "datasets/cifar10" #TODO: change to mnist
-        params.dataset_test_path = "datasets/cifar10" #TODO: change to mnist
+        params.dataset_name = "cifar10"  # TODO: change to mnist
+        params.dataset_train_path = "datasets/cifar10"  # TODO: change to mnist
+        params.dataset_test_path = "datasets/cifar10"  # TODO: change to mnist
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -82,12 +83,12 @@ class CheckConvGemmModels(PyDTNNTestCase):
         return model1, loss_func
 
     @staticmethod
-    def get_model2(model_name:str, overwrite_params:dict|None = None) -> Model:
+    def get_model2(model_name: str, overwrite_params: dict | None = None) -> Model:
         # CPU model with convGemm
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
-        params.parallel = "sequential" # TODO: Check this value.
+        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_conv_gemm = True
         params.conv_gemm_cache = True
         params.conv_gemm_trans = True

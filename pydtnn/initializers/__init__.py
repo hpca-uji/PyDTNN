@@ -2,41 +2,26 @@
 PyDTNN initializers
 """
 
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 import scipy.stats as stats
 from enum import StrEnum, auto
 from typing import Callable
+
 
 class DistributionModeEnum(StrEnum):
     FAN_IN = auto()
     FAN_OUT = auto()
     FAN_AVG = auto()
 
+
 class ProbabilisticDistributionEnum(StrEnum):
     UNIFORM = auto()
     NORMAL = auto()
 
+
 # 0.879... = scipy.stats.truncnorm.std(a=-2, b=2, loc=0., scale=1.)
 STD_DEV_CONST = 0.87962566103423978
+
 
 def _compute_fans(shape: tuple[int, ...]) -> tuple[int, int]:
     if len(shape) == 2:
@@ -49,8 +34,9 @@ def _compute_fans(shape: tuple[int, ...]) -> tuple[int, int]:
         raise ValueError(f"The length of 'shape' must be greater or equal to 2, it is {len(shape)}.")
     return fan_in, fan_out
 
-def _generate_distribution(shape: tuple[int, ...], scale:float, mode:DistributionModeEnum, 
-                           distribution:ProbabilisticDistributionEnum, dtype: np.dtype) -> np.ndarray:
+
+def _generate_distribution(shape: tuple[int, ...], scale: float, mode: DistributionModeEnum,
+                           distribution: ProbabilisticDistributionEnum, dtype: np.dtype) -> np.ndarray:
     fan_in, fan_out = _compute_fans(shape)
 
     match mode:
@@ -62,10 +48,10 @@ def _generate_distribution(shape: tuple[int, ...], scale:float, mode:Distributio
             scale /= max(1., float(fan_in + fan_out) / 2)
         case _:
             raise NotImplementedError(f"mode: \'{mode}\' not implemented")
-    
+
     match distribution:
-        case ProbabilisticDistributionEnum.NORMAL:            
-            stddev:float = np.sqrt(scale) / STD_DEV_CONST
+        case ProbabilisticDistributionEnum.NORMAL:
+            stddev: float = np.sqrt(scale) / STD_DEV_CONST
             # Truncated normal distribution [-2*stddev, 2*stddev]
             x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False)
         case ProbabilisticDistributionEnum.UNIFORM:
@@ -77,7 +63,7 @@ def _generate_distribution(shape: tuple[int, ...], scale:float, mode:Distributio
 
 
 def glorot_uniform(shape: tuple[int, ...], dtype: np.dtype) -> np.ndarray:
-    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, 
+    return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG,
                                   ProbabilisticDistributionEnum.UNIFORM, dtype)
 
 
@@ -107,5 +93,6 @@ def ones(shape: tuple[int, ...], dtype: np.dtype) -> np.ndarray:
 
 def zeros(shape: tuple[int, ...], dtype: np.dtype) -> np.ndarray:
     return np.zeros(shape, dtype=dtype)
+
 
 type InitializerFunc = Callable[[tuple[int, ...], np.dtype], np.ndarray]

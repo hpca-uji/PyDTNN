@@ -2,24 +2,8 @@
 PyDTNN model
 """
 
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
+from pydtnn import crypt
+from pydtnn.comm import proto as PROTOCOL
 import functools
 import importlib
 import os
@@ -27,39 +11,39 @@ import sys
 import time
 from timeit import default_timer as timer
 from warnings import warn
-#warnings.filterwarnings("error")
+# warnings.filterwarnings("error")
 
 # Typing-related import
 from typing import Any, TypeVar, Callable, TYPE_CHECKING, Literal
 from collections.abc import Iterable
-from .tracers import SimpleTracerGPU
+from pydtnn.tracers import SimpleTracerGPU
 
 from types import ModuleType
-from .activations import Activation
+from pydtnn.activations import Activation
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from .tracers.tracer import Tracer
-from .datasets import Dataset
-from .losses import Loss
+from pydtnn.tracers.tracer import Tracer
+from pydtnn.datasets import Dataset
+from pydtnn.losses import Loss
 
 from tqdm import tqdm
 import numpy as np
 
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from . import losses, metrics
-from . import utils
-from .datasets import CustomDataset, get_dataset
-from .datasets.dataset import DatasetEnum
-from .lr_schedulers import get_lr_schedulers
-from .optimizers import get_optimizer
-from .parser import PydtnnArgumentParser
-from .performance_models import *
-from .tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-    PYDTNN_EVENT_FINISHED, ExtraeTracer, SimpleTracer, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum    
-from .utils.best_of import BestOf
-from .utils.memory_cache import MemoryCache
-from .utils.performance_counter import PerformanceCounter
-from .layers import Layer
+from pydtnn import losses, metrics
+from pydtnn import utils
+from pydtnn.datasets import CustomDataset, get_dataset
+from pydtnn.datasets.dataset import DatasetEnum
+from pydtnn.lr_schedulers import get_lr_schedulers
+from pydtnn.optimizers import get_optimizer
+from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.performance_models import *
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, ExtraeTracer, SimpleTracer, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.best_of import BestOf
+from pydtnn.utils.memory_cache import MemoryCache
+from pydtnn.utils.performance_counter import PerformanceCounter
+from pydtnn.layers import Layer
 import enum
 
 
@@ -70,25 +54,28 @@ try:
     import pydtnn.backends.gpu.tensor_gpu
     # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
-except (ImportError, ModuleNotFoundError, OSError) as e: 
+except (ImportError, ModuleNotFoundError, OSError) as e:
     gpuarray = None
     cuda_error_msg.append(f"Import: \"import pycuda.gpuarray as gpuarray\". Error: {e}")
-except Exception as e: raise(e)
+except Exception as e:
+    raise (e)
 try:
     # noinspection PyUnresolvedReferences
     import pycuda.driver as drv
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except (ImportError, ModuleNotFoundError, OSError) as e: 
+except (ImportError, ModuleNotFoundError, OSError) as e:
     drv = None
     cuda_error_msg.append(f"Import: \"import pycuda.driver as drv\". Error: {e}")
-except Exception as e: raise(e)
-try: 
+except Exception as e:
+    raise (e)
+try:
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
-except (ImportError, ModuleNotFoundError, OSError) as e: 
+except (ImportError, ModuleNotFoundError, OSError) as e:
     cublas: ModuleType | None = None
     cuda_error_msg.append(f"Import: \"from skcuda import cublas\". Error: {e}")
-except Exception as e: raise(e)
+except Exception as e:
+    raise (e)
 # --- END CUDA related imports --- #
 
 # --- GLOBAL VARIABLES --- #
@@ -97,11 +84,8 @@ supported_cudnn: bool = True
 supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
-
-from pydtnn.comm import proto as PROTOCOL
-from pydtnn.comm import MPI
 try:
-    pass
+    from pydtnn.comm import MPI
     # noinspection PyUnresolvedReferences,PyPackageRequirements
 except (ImportError, ModuleNotFoundError):
     MPI = None
@@ -109,28 +93,33 @@ except (ImportError, ModuleNotFoundError):
 # --- CONSTANS --- #
 BAR_WIDTH = 140
 
+
 class ModelModeEnum(enum.Enum):
     EVALUATE = enum.auto()
     TRAIN = enum.auto()
     UNSPECIFIED = enum.auto()
 
+
 DEFAULT_BACH_SIZE = 64
+
 
 class LoadStoreMode(enum.Enum):
     LOAD = enum.auto()
     STORE = enum.auto()
 # --- END CONSTANS --- #
 
+
 # NOTE: Check "_initialize_cuda" to get the actual types.
 NCCL_DataType = TypeVar("NCCL_DataType")
 NCCL_Comm_Type = TypeVar("NCCL_Comm_Type")
 Cudnn_Handle_Type = TypeVar("Cudnn_Handle_Type")
 Cublas_Handle_Type = TypeVar("Cublas_Handle_Type")
-PyCuda_Stream_Type  = TypeVar("PyCuda_Stream_Type")
+PyCuda_Stream_Type = TypeVar("PyCuda_Stream_Type")
 Cudnn_dtype = TypeVar("Cudnn_dtype")
 Cudnn_Contex_Type = TypeVar("Cuda_Context")
 
 type Array = np.ndarray | TensorGPU
+
 
 def _layer_id_generator() -> Iterable[int]:
     """To obtain consecutive layer ids. See Layer.set_model()."""
@@ -140,10 +129,11 @@ def _layer_id_generator() -> Iterable[int]:
         current_layer_id += 1
 # --- END _layer_id_generator --- #
 
-def ensure_model_is_runnable(method:Callable):
+
+def ensure_model_is_runnable(method: Callable):
     @functools.wraps(method)
     def wrapper_ensure_model_is_runnable(*args, **kwargs) -> Callable:
-        self:Model = args[0]
+        self: Model = args[0]
         if not self._initialized:
             self._initialize()
         are_layers = bool(self.layers)
@@ -165,8 +155,6 @@ if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM
 else:
     MPI_COMM = ModuleType
-
-from pydtnn import crypt
 
 
 def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MODULE, MPI_COMM]:
@@ -197,9 +185,9 @@ def _set_execution_attributes(self: "Model", comm: MPI_COMM | None, shared_stora
 # --- END _set_execution_attributes --- #
 
 
-def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleType, enable_gpu: bool, 
-                              tracer_pmlib_server:str, tracer_pmlib_port:int, tracer_pmlib_device:str) -> Tracer:
-    
+def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleType, enable_gpu: bool,
+                              tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:
+
     if tracer_output == "":
         tracer = ExtraeTracer(tracing)
     else:
@@ -207,32 +195,33 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
             tracer = SimpleTracerGPU(tracing, tracer_output, comm)
         else:
             if tracer_pmlib_device != "":
-                from .tracers import SimpleTracerPMLib
+                from pydtnn.tracers import SimpleTracerPMLib
                 tracer = SimpleTracerPMLib(tracing, tracer_output, comm,
-                                                tracer_pmlib_server, tracer_pmlib_port, tracer_pmlib_device)
+                                           tracer_pmlib_server, tracer_pmlib_port, tracer_pmlib_device)
             else:
                 tracer = SimpleTracer(tracing, tracer_output, comm)
     return tracer
 # --- END _initilize_and_get_tracer --- #
 
-def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank:int, nprocs:int, 
-                     gpus_per_node:int, parallel:str, dtype: np.dtype, 
-                     enable_nccl: bool, tracer: SimpleTracer, gpudirect:bool) -> None:
+
+def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank: int, nprocs: int,
+                     gpus_per_node: int, parallel: str, dtype: np.dtype,
+                     enable_nccl: bool, tracer: SimpleTracer, gpudirect: bool) -> None:
 
     global supported_cudnn, supported_nccl
     supported_cudnn = True
     supported_nccl = True
 
-    device_id:int = comm_rank % drv.Device.count()
+    device_id: int = comm_rank % drv.Device.count()
     drv.init()
-    context:Cudnn_Contex_Type = drv.Device(device_id).make_context()
-    #context:int = drv.Device(device_id).retain_primary_context()    
-    
+    context: Cudnn_Contex_Type = drv.Device(device_id).make_context()
+    # context:int = drv.Device(device_id).retain_primary_context()
+
     atexit.register(context.pop)
-    
+
     nccl_type = None
     nccl_comm = None
-    
+
     if not gpudirect and enable_nccl:
         raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
@@ -244,9 +233,9 @@ def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank:int, 
             msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
             raise SystemExit(msg) from None
 
-        nccl_types = {np.float64: nccl.DataType.Float64, 
-                      np.float32: nccl.DataType.Float32, 
-                      np.int8: nccl.DataType.Int8, 
+        nccl_types = {np.float64: nccl.DataType.Float64,
+                      np.float32: nccl.DataType.Float32,
+                      np.int8: nccl.DataType.Int8,
                       np.int32: nccl.DataType.Int32}
 
         nccl_type: NCCL_DataType = nccl_types.get(dtype, nccl.DataType.Float32)
@@ -276,16 +265,16 @@ def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank:int, 
     cublas.cublasSetStream(cublas_handle, stream.handle)
     cudnn.cudnnSetStream(cudnn_handle, stream.handle)
 
-    cudnn_types = {np.float64:  "CUDNN_DATA_DOUBLE", 
-                   np.float32:  "CUDNN_DATA_FLOAT", 
-                   np.int8:     "CUDNN_DATA_INT8", 
-                   np.int32:    "CUDNN_DATA_INT32"}
+    cudnn_types = {np.float64: "CUDNN_DATA_DOUBLE",
+                   np.float32: "CUDNN_DATA_FLOAT",
+                   np.int8: "CUDNN_DATA_INT8",
+                   np.int32: "CUDNN_DATA_INT32"}
 
-    cudnn_type:str = cudnn_types.get(dtype, "CUDNN_DATA_FLOAT")
+    cudnn_type: str = cudnn_types.get(dtype, "CUDNN_DATA_FLOAT")
 
     cudnn_dtype: Cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
     tracer.set_default_stream(stream)
-        
+
     self.nccl_type = nccl_type
     self.nccl_comm = nccl_comm
     self.cudnn_handle = cudnn_handle
@@ -294,7 +283,8 @@ def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank:int, 
     self.cudnn_dtype = cudnn_dtype
 # --- END _initialize_cuda --- #
 
-def _set_data_format(tensor_format:str=Literal["AUTO", "NCHW", "NHWC"], enable_cudnn:bool=False) -> PYDTNN_TENSOR_FORMAT:
+
+def _set_data_format(tensor_format: Literal["AUTO", "NCHW", "NHWC"] = "AUTO", enable_cudnn: bool = False) -> PYDTNN_TENSOR_FORMAT:
     match tensor_format:
         case "AUTO":
             tensor_format = PYDTNN_TENSOR_FORMAT.NCHW if enable_cudnn else PYDTNN_TENSOR_FORMAT.NHWC
@@ -307,13 +297,14 @@ def _set_data_format(tensor_format:str=Literal["AUTO", "NCHW", "NHWC"], enable_c
     return tensor_format
 # --- END _set_data_format --- #
 
+
 def _calculate_batch_size(batch_size: int | None, global_batch_size: int | None, comm_size: int) -> int:
 
     if batch_size and global_batch_size:
         raise SystemExit("Can not define 'batch_size' and 'global_batch_size' simultaneously")
-    
+
     if global_batch_size:
-        # NOTE: Using comm_size instead of nprocs might not be appropriate, 
+        # NOTE: Using comm_size instead of nprocs might not be appropriate,
         #       as it differs to how global_batch_size is defined elsewhere,
         #       but for now it just a parser option difference that helps testing
         _batch_size = global_batch_size // comm_size
@@ -322,43 +313,44 @@ def _calculate_batch_size(batch_size: int | None, global_batch_size: int | None,
         _batch_size = batch_size
     else:
         _batch_size = DEFAULT_BACH_SIZE
-    
+
     if _batch_size < 1:
         raise SystemExit(f"'batch_size' ({_batch_size}) too small or too many processes (num processes: {comm_size})")
 
     return _batch_size
 # --- END _calculate_batch_size --- #
 
+
 class Model:
     """
     PyDTNN Model
     """
 
-    def __init__(self, parallel:Literal["sequential", "data"], use_blocking_mpi:bool=False, enable_gpu:bool=False, 
-                 enable_gpudirect:bool=False, enable_nccl:bool=False, dtype:np.dtype=np.float32, tracing: bool=False, 
-                 tracer_output:str="", tracer_pmlib_server:str="127.0.0.1", tracer_pmlib_port:int=6526, 
-                 tracer_pmlib_device:str="", **kwargs):
+    def __init__(self, parallel: Literal["sequential", "data"] = "sequential", use_blocking_mpi: bool = False, enable_gpu: bool = False,
+                 enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.float32, tracing: bool = False,
+                 tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
+                 tracer_pmlib_device: str = "", **kwargs):
         # Attributes related to the given arguments
         self.parallel: bool = parallel
         self.blocking_mpi: bool = use_blocking_mpi
         global enable_cudnn
-        self.enable_gpu = enable_cudnn = self.enable_cudnn = enable_gpu        
-        self.gpudirect:bool = enable_gpudirect
-        self.enable_nccl:bool = enable_nccl
-        self.dtype:np.dtype = dtype
-        
-        self.rank_weight:int = -1
-        self.comm_rank:int = -1
-        self.comm_size:int = -1
-        self.rank:int = -1
-        self.nprocs:int = -1
-        self.comm_groups:int = -1
+        self.enable_gpu = enable_cudnn = self.enable_cudnn = enable_gpu
+        self.gpudirect: bool = enable_gpudirect
+        self.enable_nccl: bool = enable_nccl
+        self.dtype: np.dtype = dtype
 
-        self.num_real_batches:int = -1
+        self.rank_weight: int = -1
+        self.comm_rank: int = -1
+        self.comm_size: int = -1
+        self.rank: int = -1
+        self.nprocs: int = -1
+        self.comm_groups: int = -1
+
+        self.num_real_batches: int = -1
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu
-        
-        self.nparams:int = 0 # NOTE: Model's total number of params
-        
+
+        self.nparams: int = 0  # NOTE: Model's total number of params
+
         # The following attributes will be initilized later only if "enable_cudnn" is True.
         self.nccl_type: NCCL_DataType | None = None
         self.nccl_comm: NCCL_Comm_Type | None = None
@@ -368,7 +360,7 @@ class Model:
         self.cudnn_dtype: Cudnn_dtype | None = None
         self.input_shape: tuple[int, ...] = None
         self.output_shape: tuple[int, ...] = None
-       
+
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
@@ -404,17 +396,17 @@ class Model:
         self.shared_storage: bool = self.kwargs["shared_storage"]
         self.encryption_name: str = self.kwargs["encryption_name"]
         self.flip_images: bool = self.kwargs["flip_images"]
-        self.crop_images:bool = self.kwargs["crop_images"]
-        self.resize:bool = self.kwargs["resize"]
-        self.resize_dimension:tuple[int, int] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
-        self.flip_images_prob:float = self.kwargs["flip_images_prob"]
-        self.crop_images_size:int = self.kwargs["crop_images_size"]
-        self.crop_images_prob:float = self.kwargs["crop_images_prob"]
-        self.initial_model_sync:bool = self.kwargs["initial_model_sync"]
-        self.dataset_percentage:float = self.kwargs["dataset_percentage"]
+        self.crop_images: bool = self.kwargs["crop_images"]
+        self.resize: bool = self.kwargs["resize"]
+        self.resize_dimension: tuple[int, int] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
+        self.flip_images_prob: float = self.kwargs["flip_images_prob"]
+        self.crop_images_size: int = self.kwargs["crop_images_size"]
+        self.crop_images_prob: float = self.kwargs["crop_images_prob"]
+        self.initial_model_sync: bool = self.kwargs["initial_model_sync"]
+        self.dataset_percentage: float = self.kwargs["dataset_percentage"]
         # ---
-        use_mpi_buffers:bool = self.kwargs["use_mpi_buffers"]
-        
+        use_mpi_buffers: bool = self.kwargs["use_mpi_buffers"]
+
         match use_mpi_buffers:
             case None:
                 self.use_mpi_buffers: bool = PROTOCOL is None
@@ -422,30 +414,30 @@ class Model:
                 self.use_mpi_buffers: bool = use_mpi_buffers
             case _:
                 raise SystemExit(f"MPI buffers option '{use_mpi_buffers}' not recognized.")
-        
-        # Set MPI and comm          
-        self.MPI, self.comm = _initilize_communications(parallel = parallel)
-        
+
+        # Set MPI and comm
+        self.MPI, self.comm = _initilize_communications(parallel=parallel)
+
         # Execution attributes
-        _set_execution_attributes(self, comm = self.comm, shared_storage = self.shared_storage)
-        
+        _set_execution_attributes(self, comm=self.comm, shared_storage=self.shared_storage)
+
         # Set tracer
-        self.tracer = _initilize_and_get_tracer(tracer_output = tracer_output, tracing = tracing, comm = self.comm, enable_gpu = enable_gpu,
-                                                tracer_pmlib_server = tracer_pmlib_server, tracer_pmlib_port = tracer_pmlib_port, 
-                                                tracer_pmlib_device = tracer_pmlib_device)
+        self.tracer = _initilize_and_get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_gpu=enable_gpu,
+                                                tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
+                                                tracer_pmlib_device=tracer_pmlib_device)
 
         # Set performance counter
         self.perf_counter = PerformanceCounter()
-        
+
         # Layers' attributes
         self.layers: list[Layer | Activation] = []
-        self.layer_id:int = _layer_id_generator()
-        
+        self.layer_id: int = _layer_id_generator()
+
         # Matmul
         self.matmul = utils.matmul
-        
+
         # Set current mode to unspecified
-        self.mode:ModelModeEnum = ModelModeEnum.UNSPECIFIED
+        self.mode: ModelModeEnum = ModelModeEnum.UNSPECIFIED
 
         # Memory cache optimization
         self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser"
@@ -453,42 +445,43 @@ class Model:
             MemoryCache.enable()
         else:
             MemoryCache.disable()
-        
+
         global cuda_error_msg
 
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
-                self.gpus_per_node: int # NOTE: This parameter comes from "Parser"
-                _initialize_cuda(self, comm = self.comm, comm_rank = self.comm_rank, 
-                                 rank = self.rank, nprocs = self.nprocs, 
-                                 gpus_per_node = self.gpus_per_node, 
-                                 parallel = self.parallel, dtype = self.dtype, 
-                                 enable_nccl = self.enable_nccl, tracer = self.tracer, 
+                self.gpus_per_node: int  # NOTE: This parameter comes from "Parser"
+                _initialize_cuda(self, comm=self.comm, comm_rank=self.comm_rank,
+                                 rank=self.rank, nprocs=self.nprocs,
+                                 gpus_per_node=self.gpus_per_node,
+                                 parallel=self.parallel, dtype=self.dtype,
+                                 enable_nccl=self.enable_nccl, tracer=self.tracer,
                                  gpudirect=self.gpudirect)
             else:
                 raise ImportError("\n".join(cuda_error_msg))
-        else: cuda_error_msg = None # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
-        
+        else:
+            cuda_error_msg = None  # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
+
         # Data format
         # NOTE: self.kwargs["tensor_format"] value comes from Parser.
-        self.tensor_format:PYDTNN_TENSOR_FORMAT = _set_data_format(tensor_format = self.kwargs["tensor_format"], enable_cudnn = self.enable_cudnn)
+        self.tensor_format: PYDTNN_TENSOR_FORMAT = _set_data_format(tensor_format=self.kwargs["tensor_format"], enable_cudnn=self.enable_cudnn)
 
         # Disable BestOf globally if not enabled
-        if self.kwargs['enable_best_of'] is False: 
+        if self.kwargs['enable_best_of'] is False:
             # NOTE: comes from "Parser"
             BestOf.use_always_the_first_alternative()
-        
-        self.batch_size = _calculate_batch_size(batch_size = self.kwargs['batch_size'], # NOTE: This parameters comes from "Parser"
-                                                global_batch_size = self.kwargs['global_batch_size'], # NOTE: This parameters comes from "Parser"
-                                                comm_size= self.comm_size)
+
+        self.batch_size = _calculate_batch_size(batch_size=self.kwargs['batch_size'],  # NOTE: This parameters comes from "Parser"
+                                                global_batch_size=self.kwargs['global_batch_size'],  # NOTE: This parameters comes from "Parser"
+                                                comm_size=self.comm_size)
 
         # Attributes that will be properly initialized elsewhere
         self.y_batch: Array = None
         self.history: dict[str, list[np.ndarray]] = None
         self.loss_func: Loss = None
         self.metrics_funcs: list[metrics.Metric] = None
-        self.loss_and_metrics: list[str] # Is a list with the name of the loss function and the metrics's names.
+        self.loss_and_metrics: list[str]  # Is a list with the name of the loss function and the metrics's names.
         self.total_metrics: Array
         # ---
 
@@ -499,26 +492,26 @@ class Model:
         else:
             self.crypt = None
 
-        self.weights_and_bias_filename:str # NOTE: This parameter comes from "Parser"
+        self.weights_and_bias_filename: str  # NOTE: This parameter comes from "Parser"
         # Load weights and bias
         if self.weights_and_bias_filename:
             self.load_weights_and_bias(self.weights_and_bias_filename)
         # Dataset
         if self.dataset_name:
             self.dataset: Dataset = get_dataset(self)
-        
+
         # Optimizers and LRSchedulers
         # NOTE: 'self.kwargs["learning_rate_scaling"]' comes from "Parser"
         if self.kwargs["learning_rate_scaling"]:
             # using comm_size instead of nprocs might not be appropriate,
             # as it differs to how learning_rate is defined elsewhere,
             # but for now it just a parser option difference that helps testing
-            self.learning_rate:float = self.kwargs["learning_rate"] / self.comm_size
+            self.learning_rate: float = self.kwargs["learning_rate"] / self.comm_size
 
         self.optimizer = get_optimizer(self)
         self.lr_schedulers = get_lr_schedulers(self)
         # Metrics list
-        self.metrics: str # NOTE: This variable comes from the Parser.
+        self.metrics: str  # NOTE: This variable comes from the Parser.
         self.metrics_list: list[metrics.Metric] = [m for m in self.metrics.replace(" ", "").split(",")]
         # Private attributes
         self._evaluate_round: int = 0
@@ -528,8 +521,8 @@ class Model:
         if self.model_name:
             self._read_model(self.model_name)
         # Syncronization parameters
-        self.model_sync_alg: str # NOTE: This parameter come from Parser.
-        self.model_sync_participation: str # NOTE: This parameter come from Parser.
+        self.model_sync_alg: str  # NOTE: This parameter come from Parser.
+        self.model_sync_participation: str  # NOTE: This parameter come from Parser.
         if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
         if self.model_sync_participation not in {"all", "avail2all"}:
@@ -574,7 +567,7 @@ class Model:
 
         return crypt
 
-    def _read_model(self, model_name:str) -> None:
+    def _read_model(self, model_name: str) -> None:
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
             # NOTE: Dataset is always in NCHW
@@ -583,9 +576,9 @@ class Model:
             if len(input_shape) != 3:
                 warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
             launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC \
-                                   else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
+                else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
             if launch_shape_warning:
-                warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! " 
+                warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
                 warn(warning_text, RuntimeWarning)
                 warning_text = None
             output_shape = tuple(self.dataset.output_shape)
@@ -661,7 +654,7 @@ class Model:
     def _apply_layer_fusion(self, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
         """ Apply layer fusion in a recursive manner """
 
-        def __layer_fusion(layers: list[Layer], bn_relu=False, conv_relu=False, 
+        def __layer_fusion(layers: list[Layer], bn_relu=False, conv_relu=False,
                            conv_bn=False, conv_bn_relu=False):
             fused_layers: list[Layer] = []
             for i, curr_layer in enumerate(layers):
@@ -731,18 +724,18 @@ class Model:
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
         self._initialized = True
-                
+
         self.optimizer.initialize(self.get_all_layers(self.layers))
     # --- End _initialize --- #
 
-    def load_store_path(self, layers: list[Layer], d: dict[str, np.ndarray], mode:LoadStoreMode) -> None:
+    def load_store_path(self, layers: list[Layer], d: dict[str, np.ndarray], mode: LoadStoreMode) -> None:
         """
         Method to load and store the weigths and biases.
 
         Args:
             layers: the list of the layers.
             d: The dictionary of layers (keys) with their respective Weights and Biases (values), that are numpy's ndarray.
-            mode: Values from the enum "LoadStoreMode". 
+            mode: Values from the enum "LoadStoreMode".
                 - "LoadStoreMode.LOAD" (that is "load") mode loads the data from "d" into the Model.
                 - "LoadStoreMode.STORE" (that is "store") mode stores the data from the Model into "d".
         """
@@ -753,7 +746,7 @@ class Model:
                     self.load_store_path(path, d, mode)
             else:
                 grad_vars = [g for g in layer.grad_vars] + \
-                            (["running_var", "running_mean"] if name == "BatchNormalization" else [])
+                    (["running_var", "running_mean"] if name == "BatchNormalization" else [])
                 for key in grad_vars:
                     base = f"{layer.id}_{name}_{key}"
                     if mode is LoadStoreMode.LOAD and base not in d:
@@ -797,10 +790,9 @@ class Model:
         else:
             np.savez(filename, **d)
 
-
     def calculate_time(self) -> np.ndarray:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
-        total_time:np.ndarray = np.zeros((4,), dtype=np.float32)
+        total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
 
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
@@ -811,17 +803,17 @@ class Model:
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(last_layer, first_layer-1, -1):
+            for layer in range(last_layer, first_layer - 1, -1):
                 total_time += self.layers[layer].bwd_time
 
             # Weight update (WU)
-            for layer in range(last_layer, first_layer-1, -1):
+            for layer in range(last_layer, first_layer - 1, -1):
                 if self.comm and self.layers[layer].weights.size > 0:
                     total_time += allreduce_time(self.layers[layer].weights.size + self.layers[layer].biases.size,
                                                  self.cpu_speed, self.network_bw, self.network_lat,
                                                  self.network_alg, self.nprocs, self.dtype)
         else:
-            total_time_iar:int = 0
+            total_time_iar: int = 0
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
             for layer in range(last_layer, -1, -1):
@@ -836,7 +828,7 @@ class Model:
             total_time[0] = max(total_time[0], total_time_iar)
 
         return total_time
-    # --- END calculate_time --- # 
+    # --- END calculate_time --- #
 
     def _compute_metrics_funcs(self, y_pred: Array, y_targ: Array, loss: float, blocking=True, comm=True) -> tuple[Array, Array]:
         loss_req: Array = None
@@ -864,9 +856,9 @@ class Model:
                 raise NotImplementedError("can not compute metrics non-blocking locally")
 
         return _losses, loss_req
-    # --- END _compute_metrics_funcs --- # 
+    # --- END _compute_metrics_funcs --- #
 
-    def _update_running_average(self, curr:np.ndarray, total:np.ndarray, count:np.ndarray, 
+    def _update_running_average(self, curr: np.ndarray, total: np.ndarray, count: np.ndarray,
                                 batch_size: int, prefix="") -> tuple[np.ndarray, np.ndarray, str]:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
@@ -875,31 +867,31 @@ class Model:
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
-    # --- END _update_running_average --- # 
+    # --- END _update_running_average --- #
 
-    def _sync_x_y(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[Array, Array]:
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[Array, Array]:
         raise TypeError("Please, use the cpu or gpu version.")
     # --- _sync_x_y --- #
 
-    def _sync_x_y_cpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
         return x_batch, y_batch
     # --- _sync_x_y --- #
 
-    def _sync_x_y_gpu(self, x_batch:np.ndarray, y_batch:np.ndarray) -> tuple[TensorGPU, TensorGPU]:
-        
+    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
+
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
 
         self.optimizer.num_real_batches = self.num_real_batches = local_batch_size
-        if local_batch_size != 0: 
+        if local_batch_size != 0:
             if local_batch_size != self.batch_size:
                 # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
                 num_repetitions = ceil(self.batch_size / local_batch_size)
                 x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
                 y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
-            
+
             self.layers[0].y.ary.set(x_batch)
             self.y_batch.ary.set(y_batch)
             x, y_targ = self.layers[0].y, self.y_batch
@@ -909,26 +901,26 @@ class Model:
         return x, y_targ
     # --- _sync_x_y --- #
 
-
     # TODO: Modify the method's name.
+
     def _weight_update(self, gradient=True, blocking=True):
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
         if blocking:
-            for i in range(last_layer, first_layer-1, -1):
+            for i in range(last_layer, first_layer - 1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
                 self.layers[i].reduce_weights_sync(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         else:
-            for i in range(last_layer, first_layer-1, -1):
+            for i in range(last_layer, first_layer - 1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
                                        self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
                 self.layers[i].reduce_weights_async(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-            for i in range(last_layer, first_layer-1, -1):
+            for i in range(last_layer, first_layer - 1, -1):
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                         [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW,
                                         self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
@@ -948,7 +940,7 @@ class Model:
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
-        terminate = False # True: ends the following loop.
+        terminate = False  # True: ends the following loop.
         global_terminate = False
 
         model_sync_count = 0
@@ -978,7 +970,7 @@ class Model:
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
-                
+
                 local_batch_size = x_batch.shape[0]
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
 
@@ -1026,7 +1018,7 @@ class Model:
                 train_string = string
                 for c in range(len(self.loss_and_metrics)):
                     self.history[self.loss_and_metrics[c]].append(train_total_loss[c])
-            
+
             # ----------- #
             # --- VAL --- #
             # ----------- #
@@ -1034,7 +1026,7 @@ class Model:
                 if terminate:
                     x_batch = x_batch[:0]
                     y_batch = y_batch[:0]
-                
+
                 local_batch_size = x_batch.shape[0]
 
                 sync_model = (self.model_sync_freq <= 0) or (model_sync_count % self.model_sync_freq == 0)
@@ -1128,7 +1120,7 @@ class Model:
         last_layer = num_layers - 1
         if has_batch:
             # Backward pass (BP)
-            for i in range(last_layer, first_layer-1, -1):
+            for i in range(last_layer, first_layer - 1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
                 dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1143,7 +1135,7 @@ class Model:
         if has_batch or sync_model:
 
             # Optimizer
-            for i in range(last_layer, first_layer-1, -1):
+            for i in range(last_layer, first_layer - 1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1153,7 +1145,7 @@ class Model:
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         if self.enable_cudnn:
-            for i in range(last_layer, first_layer-1, -1):
+            for i in range(last_layer, first_layer - 1, -1):
                 if self.layers[i].grad_vars:
                     self.layers[i].stream_2.synchronize()
 
@@ -1164,7 +1156,7 @@ class Model:
         return self.total_metrics
     # --- END _train_batch --- #
 
-    def _compute_rank_weight(self, mask:list[int], part: DatasetEnum) -> float:
+    def _compute_rank_weight(self, mask: list[int], part: DatasetEnum) -> float:
         # TODO Move "all" and "avail2all" to an Enum?
         match self.model_sync_participation:
             case "all":
@@ -1193,7 +1185,7 @@ class Model:
                 raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
     # --- END _compute_rank_weight --- #
 
-    def _evaluate_batch(self, x_batch:np.ndarray, y_batch:np.ndarray, sync_model=True) -> np.ndarray:
+    def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = ModelModeEnum.EVALUATE
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)

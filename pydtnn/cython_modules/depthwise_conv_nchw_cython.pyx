@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of neural networks (PyDTnn)
-#
-#  copyright (c) 2021-2025 Universitat Jaume I
-#
-#  PyDTnn is free software: you can redistribute it and/or modify it under the
-#  terms of the GnU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but wIThOUT
-#  AnY wARRAnTY; without even the implied warranty of MERchAnTABILITY
-#  or FITnESS FOR A PARTIcULAR PURPOSE.  See the GnU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GnU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 import numpy as np
 cimport numpy as np
 cimport cython
@@ -24,7 +5,7 @@ from cython.parallel import prange
 
 __all__ = (
     "depthwise_conv_nchw_cython",
-    "depthwise_conv_backward_nchw_cython",
+    "depthwise_conv_backward_nchw_cython"
 )
 
 # =================== #

@@ -1,27 +1,11 @@
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
+# https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
 
 import os
 
 import numpy as np
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from .dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset, DatasetEnum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -34,6 +18,7 @@ TEST_NSAMPLES = 10000
 INPUT_SHAPE = (3, 32, 32)
 OUTPUT_SHAPE = (10,)
 IMAGES_PER_FILE = 10000
+
 
 class CIFAR10(Dataset):
     """CIFAR10 Dataset"""

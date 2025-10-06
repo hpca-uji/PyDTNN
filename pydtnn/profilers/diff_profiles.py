@@ -154,13 +154,13 @@ def do_diff():
             except TypeError:
                 values = []
                 for x, y in zip(values1, values2):
-                    if type(x) == str or type(y) == str:
+                    if isinstance(x, type(y)) == str:
                         x0, x1 = x.split('/')
                         y0, y1 = y.split('/')
                         # values.append(f"{int(x0)-int(y0)}/{int(x1)-int(y1)}")
                         values.append(int(x0) - int(y0))  # PrettyTable sort does not work with the previous version
                     else:
-                        values.append(round(x-y, 3))
+                        values.append(round(x - y, 3))
             if values == [0, 0.0, 0.0, 0.0, 0.0]:
                 continue
             t.add_row([values[0], values[1], values[2], values[3], values[4], key])
@@ -185,6 +185,7 @@ def do_diff():
     t.add_row([round(x, 3) for x in total_times])
     print(t)
     print()
+
 
 def main():
     """Do the work (main function, called when not imported)."""

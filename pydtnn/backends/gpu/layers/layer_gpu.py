@@ -1,28 +1,9 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program.  If not, see <https://www.gnu.org/licenses/>.
-#
-
 from abc import ABC
 from collections import abc
 
 from pydtnn.layers.layer import Layer
-from pydtnn.tracers import  PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
-                            PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+    PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
     # noinspection PyUnresolvedReferences
@@ -37,7 +18,8 @@ except (ImportError, ModuleNotFoundError, OSError):
     pass
 
 from numpy import ndarray
-from ..tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+
 
 class LayerGPU(Layer, ABC):
     """
@@ -89,14 +71,14 @@ class LayerGPU(Layer, ABC):
 
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
-                #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                #                        nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                #                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
                 #                        stream=self.stream_2.handle)
                 #
                 # else:
                 #     # Hierarchical allreduce - Phase 1: ncclReduce + Iallreduce
-                #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm, 
+                #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
                 #                     stream=self.stream_2.handle)
                 #
                 #     if self.model.rank in self.model.inter_ranks:
@@ -104,7 +86,7 @@ class LayerGPU(Layer, ABC):
                 #             dw.ary.get_async(self.stream_2, dw_cpu)
                 #
                 #         self.stream_2.synchronize()
-                #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
+                #         req = self.model.inter_comm.Iallreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
 
             else:  # Without NCCL
 
@@ -151,19 +133,19 @@ class LayerGPU(Layer, ABC):
                 setattr(self, dw_, dw)
 
                 # # Hierarchical mode NCCL + MPI
-                # if self.model.enable_nccl:  
-                #     if len(self.model.inter_ranks) == 1: 
+                # if self.model.enable_nccl:
+                #     if len(self.model.inter_ranks) == 1:
                 #         # Do nothing, Allreduce was already completed in phase 1
                 #         pass
                 #     else:
                 #         # Hierarchical allreduce - Phase 2: wait + ncclBroadcast
                 #         if self.model.rank in self.model.inter_ranks:
                 #             self.reqs_allred[dw_].wait()
-                #             if not self.model.gpudirect: 
+                #             if not self.model.gpudirect:
                 #                 dw.ary.set_async(dw_cpu, self.stream_2)
-                #     
-                #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                #                            root=0, comm=self.model.nccl_comm, 
+                #
+                #         nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                #                            root=0, comm=self.model.nccl_comm,
                 #                            stream=self.stream_2.handle)
 
                 if not self.model.gpudirect:
@@ -198,26 +180,26 @@ class LayerGPU(Layer, ABC):
                 # # Hierarchical mode NCCL + MPI
                 # if len(self.model.inter_ranks) == 1:
                 #     # Only one node involved, perform ncclAllreduce across intra-node GPUs
-                #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                #                        nccl.RedOp.Sum, comm=self.model.nccl_comm, 
+                #     nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                #                        nccl.RedOp.Sum, comm=self.model.nccl_comm,
                 #                        stream=self.stream_2.handle)
                 # else:
                 #     # Hierarchical allreduce: ncclReduce + Allreduce + ncclBroadcast
-                #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
+                #     nccl.ncclReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
                 #                     nccl.RedOp.Sum, root=0, comm=self.model.nccl_comm,
                 #                     stream=self.stream_2.handle)
-                # 
+                #
                 #     self.stream_2.synchronize()
                 #     if self.model.rank in self.model.inter_ranks:
-                #         if self.model.gpudirect: 
-                #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM) 
+                #         if self.model.gpudirect:
+                #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 #         else:
                 #             dw_cpu = dw.ary.get()
                 #             self.model.inter_comm.Allreduce(MPI.IN_PLACE, dw_cpu, op=MPI.SUM)
                 #             dw.ary.set_async(dw_cpu, self.stream_2)
-                # 
-                #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type, 
-                #                        root=0, comm=self.model.nccl_comm, 
+                #
+                #     nccl.ncclBroadcast(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,
+                #                        root=0, comm=self.model.nccl_comm,
                 #                        stream=self.stream_2.handle)
 
             else:  # Without NCCL

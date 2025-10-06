@@ -1,22 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import queue
 import warnings
 import itertools
@@ -34,7 +15,8 @@ if TYPE_CHECKING:
 from enum import IntEnum
 from pydtnn.backends.gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
-type shape_t  = tuple[int, ...]
+type shape_t = tuple[int, ...]
+
 
 class _BackgroundGenerator(threading.Thread):
 
@@ -59,6 +41,7 @@ class _BackgroundGenerator(threading.Thread):
     def __iter__(self):
         return self
 
+
 class DatasetEnum(IntEnum):
     TRAIN = 0
     VAL = 1
@@ -71,8 +54,8 @@ class Dataset(ABC):
     # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
     # NOTE: Dataset.data_generator(y) is expected to be in NC format
 
-    def __init__(self, model: "Model", train_nsamples:int, test_nsamples:int, input_shape:shape_t, output_shape:shape_t, 
-                 max_batches_online = 40, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: shape_t, output_shape: shape_t,
+                 max_batches_online=40, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -84,21 +67,21 @@ class Dataset(ABC):
         if len(output_shape) != 1:
             warnings.warn(f"Output shape does not have 1 dimension ({output_shape}), it may cause issues!", RuntimeWarning)
 
-        self.model:Model = model
-        self.max_batches_online:int = max_batches_online
-        self.debug:bool = debug
-        self.test_as_validation:bool = self.model.test_as_validation or force_test_as_validation
-        self._nsamples:list[int, int, int] = [train_nsamples, 0, test_nsamples]
+        self.model: Model = model
+        self.max_batches_online: int = max_batches_online
+        self.debug: bool = debug
+        self.test_as_validation: bool = self.model.test_as_validation or force_test_as_validation
+        self._nsamples: list[int, int, int] = [train_nsamples, 0, test_nsamples]
 
         # Compute self._nsamples[DatasetEnum.VAL]
         if self.test_as_validation:
             self._nsamples[DatasetEnum.VAL] = self._nsamples[DatasetEnum.TEST]
         else:
             self._nsamples[DatasetEnum.VAL] = min(self._nsamples[DatasetEnum.TRAIN] - self.model.nprocs,
-                                                   max(self.model.nprocs, 
-                                                       int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
+                                                  max(self.model.nprocs,
+                                                      int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
-        
+
         if self.model.resize:
             self.input_shape = list((input_shape[0], *self.model.resize_dimension))
             self.resize_shape = self.input_shape if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (self.input_shape[1], self.input_shape[2], self.input_shape[0])
@@ -119,7 +102,7 @@ class Dataset(ABC):
              self._local_nsamples[part],
              self._nsamples[part]
              ) = self._compute_local_workload(self._nsamples[part])
-            
+
         # Declare _x and _y for train, val and test dataset parts
         # FIXME: This input shape must be the real one.
         self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
@@ -251,7 +234,7 @@ class Dataset(ABC):
         # Reduce nsamples according to steps per epoch
         global_batch_size = self.model.batch_size * self.model.nprocs
         batches_per_worker = nsamples / global_batch_size
-        
+
         if self.model.dataset_percentage != 0:
             nsamples *= self.model.dataset_percentage
 
@@ -288,20 +271,20 @@ class Dataset(ABC):
     def _init_actual_data(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
         pass
-    
+
     # TODO / FIXME / NOTE / LO QUE SEA: Check if it's necessary to copy after transpose !!!!!!!!!!!!!!!!!!!
     @staticmethod
     def _nchw2nhwc(x: Array) -> Array:
         return x.transpose(0, 2, 3, 1)
-    
+
     @staticmethod
     def _nhwc2nchw(x: Array) -> Array:
         return x.transpose(0, 3, 1, 2)
-    
+
     @staticmethod
     def _chw2hwc(x: Array) -> Array:
         return x.transpose(1, 2, 0)
-    
+
     @staticmethod
     def _hwc2chw(x: Array) -> Array:
         return x.transpose(2, 0, 1)
@@ -344,7 +327,7 @@ class Dataset(ABC):
         self._local_remaining_nsamples[part] = -1
 
     @staticmethod
-    def _offset2files(filenames:list[str], images_per_file:int, local_offset:int, local_nsamples:int) -> list[tuple[str, int, int]]:
+    def _offset2files(filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int) -> list[tuple[str, int, int]]:
         i = local_offset // images_per_file
         offset_in_file = local_offset - i * images_per_file
         output = []
@@ -358,7 +341,7 @@ class Dataset(ABC):
     def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
         yield self._x[part], self._y[part]
 
-    def _actual_batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
+    def _actual_batch_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
         # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
         local_batch_size = self.model.batch_size
@@ -399,9 +382,9 @@ class Dataset(ABC):
                 yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size"""
 
-    def _batch_generator(self, part:DatasetEnum) -> Generator[tuple[Array, Array, int]]:
+    def _batch_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array, int]]:
         yield from self._actual_batch_generator(part)
-        # NOTE: The following infinite loop provides of empty batches 
+        # NOTE: The following infinite loop provides of empty batches
         #        if there are asked more batches than actually are.
         while True:
             yield self.x_empty_batch, self.y_empty_batch, 0
@@ -416,7 +399,7 @@ class Dataset(ABC):
                 width_dim = 2
             case _:
                 raise NotImplementedError(f"\"Dataset _do_flip_image\" is not implemented for \"{self.model.tensor_format}\" format.")
-            
+
         limit = min(n, int(n * self.model.flip_images_prob))
         s = np.arange(n)
         np.random.shuffle(s)
@@ -454,10 +437,10 @@ class Dataset(ABC):
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
         return data
-    
+
     def _do_resize(self, data: Array) -> Array:
         n = data.shape[0]
-        new_data = np.empty(shape = (n, *self.resize_shape), dtype=self.model.dtype, order="C")
+        new_data = np.empty(shape=(n, *self.resize_shape), dtype=self.model.dtype, order="C")
         for i in range(n):
             image = Image.fromarray(data[i], mode="RGB")
             # NOTE: resize: The requested size in pixels, as a tuple or array: (width, height), but we work with NC*HW* or N*HW*C ==> self.model.resize_dimension[::-1]

@@ -1,27 +1,9 @@
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-22 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
 import os
 
 import numpy as np
 
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from .dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset, DatasetEnum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -30,6 +12,12 @@ if TYPE_CHECKING:
 # The most highly-used subset of ImageNet is the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
 # image classification and localization dataset. This dataset spans 1000 object classes and contains 1,281,
 # 167 training images, 50,000 validation images and 100,000 test images. This subset is available on Kaggle.
+#
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train.tar
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_test_v10102019.tar
+#
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_train_t3.tar
+# https://image-net.org/data/ILSVRC/2012/ILSVRC2012_img_val.tar
 
 TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 100000
@@ -45,7 +33,7 @@ class ImageNet(Dataset):
         # for VGG, ResNet and other models input shape must be (3,224,224)
         input_shape = INPUT_SHAPE if "alexnet" in model.model_name else (3, 224, 224)
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, input_shape, OUTPUT_SHAPE)
-        self._xy_filenames = [[] for _ in range(3)] # warning: [[]] * 3 replicates the same array
+        self._xy_filenames = [[] for _ in range(3)]  # warning: [[]] * 3 replicates the same array
         self._images_per_file = [[] for _ in range(3)]  # warning: [[]] * 3 replicates the same array
         if not self.model.use_synthetic_data:
             # Train part

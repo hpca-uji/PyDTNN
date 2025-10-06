@@ -1,21 +1,3 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2021-25 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -26,19 +8,20 @@ from typing import Self, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from pydtnn.model import Model, Array
     from pydtnn.activations.activation import Activation
-    from ..optimizers.optimizer import Optimizer
+    from pydtnn.optimizers.optimizer import Optimizer
 
-drv_Stream = TypeVar("pycuda_driver_Stream") # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+
 
 class LayerAndActivationBase(ABC):
 
-    def __init__(self, shape:tuple[int, ...]=()) -> None:
+    def __init__(self, shape: tuple[int, ...] = ()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
         self.weights: Array = None
         self.biases: Array = None
         self.act: Activation | None = None
-        self.grad_vars:dict[str, str] = {}
+        self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.paths: list[list[Self]] = []
@@ -87,18 +70,18 @@ class LayerAndActivationBase(ABC):
         pass
 
     @abstractmethod
-    def reduce_weights_async(self, gradient:bool=True):
+    def reduce_weights_async(self, gradient: bool = True):
         pass
 
     @abstractmethod
-    def wait_allreduce_async(self, gradient:bool=True):
+    def wait_allreduce_async(self, gradient: bool = True):
         pass
 
     @abstractmethod
-    def reduce_weights_sync(self, gradient:bool=True):
+    def reduce_weights_sync(self, gradient: bool = True):
         pass
 
-    def show(self, attrs:str | None = "") -> str:
+    def show(self, attrs: str | None = "") -> str:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
@@ -108,7 +91,7 @@ class LayerAndActivationBase(ABC):
 
     @property
     def children(self) -> list[Self]:
-        children:list = []
+        children: list = []
         for path in self.paths:
             children += [layer for layer in path]
         return children
