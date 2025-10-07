@@ -1,6 +1,6 @@
 # Tests
 
-In order to run all the test, it is necessary to install both *Bliss* and *convGemm* libraries. In the following section the installation steps of both libraries is detailed.
+In order to run all the test, it is necessary to install both *BLIS* and *convGemm* libraries. In the following section the installation steps of both libraries is detailed.
 
 ---
 
@@ -82,8 +82,9 @@ export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```sh
 python -m unittest -v pydtnn.tests
 ```
-This command will execute all tests except the `conv2d_conv_gemm_slow` ones (it is very slow). To execute this test use the following command:
+_Note: exhaustive are skipped_
 
+## Exhaustive
 ```sh
 python -m unittest -v pydtnn.tests.conv2d_conv_gemm_slow.Conv2DConvGemmSlowTestCase.test_forward_backward_multiple_params
 ```
