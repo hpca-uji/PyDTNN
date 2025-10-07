@@ -82,6 +82,11 @@ export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```sh
 python -m unittest -v pydtnn.tests
 ```
+This command will execute all tests except the `conv2d_conv_gemm_slow` ones (it is very slow). To execute this test use the following command:
+
+```sh
+python -m unittest -v pydtnn.tests.conv2d_conv_gemm_slow.Conv2DConvGemmSlowTestCase.test_forward_backward_multiple_params
+```
 
 ## Specific
 ```sh
