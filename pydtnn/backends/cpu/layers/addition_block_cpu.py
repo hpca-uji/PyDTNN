@@ -7,11 +7,6 @@ import numpy as np
 
 class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
 
-    def initialize_block_layer(self):
-        super().initialize_block_layer()
-        assert all([o == self.out_shapes[0] for o in self.out_shapes])
-        self.shape = self.out_shapes[0]
-
     def forward(self, x: np.ndarray) -> np.ndarray:
 
         num_paths = len(self.paths)

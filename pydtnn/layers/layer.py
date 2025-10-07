@@ -7,6 +7,11 @@ from abc import ABC
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.backends import PromoteToBackendMixin
 
+class LayerError(ValueError):
+    pass
+
+class ParameterException(LayerError):
+    pass
 
 class Layer(PromoteToBackendMixin, LayerAndActivationBase, ABC):
 

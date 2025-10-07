@@ -5,6 +5,8 @@ from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
+from pydtnn.layers.layer import LayerError
+
 
 class AdditionBlockGPU(LayerGPU, AdditionBlock):
 
@@ -24,7 +26,8 @@ class AdditionBlockGPU(LayerGPU, AdditionBlock):
                 self.bwd_time += layer.bwd_time
                 self.nparams += layer.nparams
             self.out_shapes.append(prev_shape)
-        assert all([o == self.out_shapes[0] for o in self.out_shapes])
+        if not all([o == self.out_shapes[0] for o in self.out_shapes]):
+            raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
         self.shape = self.out_shapes[0]
 
     def forward(self, x: TensorGPU) -> TensorGPU:

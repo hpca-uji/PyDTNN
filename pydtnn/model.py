@@ -1129,7 +1129,8 @@ class Model:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             loss, dx = self.loss_func(x, y_targ, self.num_real_batches)
         else:
-            assert y_targ.shape[0] == 0
+            if y_targ.shape[0] != x_batch.shape[0]:
+                raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
             loss, dx = 0.0, y_targ
 
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)

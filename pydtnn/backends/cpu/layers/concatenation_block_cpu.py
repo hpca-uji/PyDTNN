@@ -6,9 +6,10 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
+from pydtnn.layers.layer import LayerError
+
 CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1
-
 
 class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
@@ -21,15 +22,18 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def initialize_block_layer(self):
         super().initialize_block_layer()
+        # TODO: MIRAR de juntar la implementación de CPU y GPU
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                assert all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes])
+                if not all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes]):
+                    raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
                 self.out_co = [s[0] for s in self.out_shapes]
                 self.idx_co = np.cumsum(self.out_co, axis=0)
                 self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
                 self.concat_dim = CONCAT_DIM_NCHW
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                assert all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes])
+                if not all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes]):
+                    raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
                 self.out_co = [s[-1] for s in self.out_shapes]
                 self.idx_co: np.ndarray = np.cumsum(self.out_co, axis=0)
                 self.shape: tuple[int] = (*self.out_shapes[0][:-1], sum(self.out_co))

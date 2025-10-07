@@ -20,7 +20,7 @@
 from abc import ABC
 from typing import override
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.layer import Layer, LayerError
 
 from pydtnn.utils import decode_tensor, encode_tensor
 import numpy as np
@@ -54,7 +54,9 @@ class AdaptiveAveragePool2D(Layer, ABC):
             self.ho, self.wo = self.hi, self.wi
         else:
             self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape
-        assert (self.ho > 0 and self.wo > 0), f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}"
+        
+        if not (self.ho > 0 and self.wo > 0):
+            raise LayerError(f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}")        
         self.co = self.ci
 
         # If the output and the input shapes are the same, there is no need of pooling.
