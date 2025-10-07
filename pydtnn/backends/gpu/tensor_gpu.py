@@ -105,8 +105,9 @@ class TensorGPU:
         self.ary = gpu_arr
         self._set_shape(gpu_arr)
         self.size = gpu_arr.size
-        self._set_prt(gpu_arr)
-        self._set_desc(desc)
+        if self.size != 0:
+            self._set_prt(gpu_arr)
+            self._set_desc(desc)
     # ---
 
     def reshape(self, shape: tuple[int, ...]):

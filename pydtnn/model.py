@@ -534,15 +534,17 @@ class Model:
     #@cache
     @cached_property
     def empty_x(self) -> TensorGPU:
-        empty_x = gpuarray.empty((0, *self.dataset.input_shape), self.dtype)
-        return TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
+        # NOTE: it's necessary to first set the size to 1 and then make a slice of 0 because otherwise it throws different exceptions related to trying to fill nothing or due not reserving the GPU's memory.
+        empty_x = gpuarray.empty((1, *self.dataset.input_shape), self.dtype)
+        return TensorGPU(empty_x[:0], self.tensor_format, self.cudnn_dtype)
 
     #@property
     #@cache
     @cached_property
     def empty_y_tag(self) -> TensorGPU:
-        empty_y_tag = gpuarray.empty((0, *self.dataset.output_shape), self.dtype)
-        return TensorGPU(empty_y_tag, self.tensor_format, self.cudnn_dtype)
+        # NOTE: it's necessary to first set the size to 1 and then make a slice of 0 because otherwise it throws different exceptions related to trying to fill nothing or due not reserving the GPU's memory.
+        empty_y_tag = gpuarray.empty((1, *self.dataset.output_shape), self.dtype)
+        return TensorGPU(empty_y_tag[:0], self.tensor_format, self.cudnn_dtype)
 
     @property
     def dataset_raw_path(self) -> str:
@@ -891,9 +893,9 @@ class Model:
     def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
         return x_batch, y_batch
-    # --- _sync_x_y --- #
+    # --- _sync_x_y_cpu --- #
 
-    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
+    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU] | tuple[None, None]:
 
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
@@ -914,7 +916,7 @@ class Model:
             x, y_targ = self.empty_x, self.empty_y_tag
 
         return x, y_targ
-    # --- _sync_x_y --- #
+    # --- _sync_x_y_gpu --- #
 
     # TODO: Modify the method's name.
 
@@ -1017,7 +1019,7 @@ class Model:
 
                 if local_batch_size <= 0:
                     if self.comm_rank == 0:
-                        pbar.set_postfix_str(s=f"{string}, waiting… | {rank_mask=}", refresh=True)
+                        pbar.set_postfix_str(s=f"{string}, waiting…", refresh=True)
                     continue
 
                 train_total_loss, train_batch_count, string = \
