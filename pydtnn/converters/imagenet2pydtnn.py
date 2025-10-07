@@ -55,7 +55,7 @@ def load_train_label(fp: typing.IO[bytes]) -> int:
     return int(label)
 
 
-def load_test_label(fp: typing.IO[bytes], labels:dict[str, str]) -> int:
+def load_test_label(fp: typing.IO[bytes], labels:dict[int, int]) -> int:
     """Transform a file-like (image) to int (label)"""
     label = fp.name
     label = label.replace("_", ".")
@@ -75,8 +75,8 @@ def load_image(fp: typing.IO[bytes], crop: float = 0.875, size: int = 64) -> np.
     return array
 
 
-def get_labels(config: argparse.Namespace) -> dict[str, str]:
-    labels_dict = dict[str, str]()
+def get_labels(config: argparse.Namespace) -> dict[int, int]:
+    labels_dict = dict[int, int]()
     with open(config.labels, mode="r") as file:
         i = 1
         for line in file:
