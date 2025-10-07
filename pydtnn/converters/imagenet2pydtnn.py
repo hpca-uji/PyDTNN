@@ -10,16 +10,18 @@ from collections import abc
 import numpy as np
 from PIL import Image
 
+from scipy.io import loadmat
 
 class Mode(enum.StrEnum):
     """Dataset type"""
     TRAIN = enum.auto()
-    TEST = enum.auto()
+    VAL = enum.auto() # validation.
 
 
 parser = argparse.ArgumentParser(description="Convert dataset to NPZs")
 parser.add_argument("--mode", type=Mode, choices=list(Mode), default=Mode.TRAIN, help="dateset type")
-parser.add_argument("--labels", type=Path, default=Path("datasets/imagenet/ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"), help="labels file path. Necessary if \"mode\" is TEST, ignored otherwise.")
+parser.add_argument("--labels", type=Path, default=Path("datasets/imagenet/ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"), 
+                    help="If \"mode\" is \"validation\" (val): it is the path to the validation ground truth' file. If the \"mode\" is \"train\": it is the path to the \"meta\" Matlab's binary.")
 parser.add_argument("--src", type=Path, default=Path("datasets/imagenet/raw/ILSVRC2012_img_train.tar"), help="source path")
 parser.add_argument("--dst", type=Path, default=Path("datasets/imagenet/train/%05d.npz"), help="destination path")
 parser.add_argument("--crop", type=float, default=0.875, help="image crop")
@@ -46,16 +48,15 @@ def load_tar(fp: typing.IO[bytes]) -> abc.Generator[typing.IO[bytes]]:
                 yield member_fp
 
 
-def load_train_label(fp: typing.IO[bytes]) -> int:
+def load_train_label(fp: typing.IO[bytes], labels: dict[str, int]) -> int:
     """Transform a file-like (image) to int (label)"""
     label = fp.name
     label = label.replace("_", ".")
     label = label.split(".")[0]
-    label = label.lstrip("n")
-    return int(label)
+    return labels[label]
 
 
-def load_test_label(fp: typing.IO[bytes], labels:dict[int, int]) -> int:
+def load_val_label(fp: typing.IO[bytes], labels:dict[int, int]) -> int:
     """Transform a file-like (image) to int (label)"""
     label = fp.name
     label = label.replace("_", ".")
@@ -74,8 +75,17 @@ def load_image(fp: typing.IO[bytes], crop: float = 0.875, size: int = 64) -> np.
         array = array.copy()
     return array
 
+def get_labels_train(config: argparse.Namespace) -> dict[str, int]:
+        # Matlab binary to someting readable:
+        meta = loadmat(config.labels, squeeze_me=True)["synsets"]
+        nums_children = list(zip(*meta))[4]
+        meta = [meta[idx] for idx, num_children in enumerate(nums_children) if num_children == 0]
+        labels, codes, _ = list(zip(*meta))[:3] # label, codes, class name (last one not necessary)
+        dict_code_label = {code: int(label) for code, label  in zip(codes, labels)}
+        return dict_code_label
 
-def get_labels(config: argparse.Namespace) -> dict[int, int]:
+
+def get_labels_val(config: argparse.Namespace) -> dict[int, int]:
     labels_dict = dict[int, int]()
     with open(config.labels, mode="r") as file:
         i = 1
@@ -87,20 +97,21 @@ def get_labels(config: argparse.Namespace) -> dict[int, int]:
 
 def load_train(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
     """Load labeled images from training archive"""
+    labels = get_labels_train(config)
     with open(path, mode="rb") as fp:
         for fp in load_tar(fp=fp):
             for fp in load_tar(fp=fp):
-                label = load_train_label(fp=fp)
+                label = load_train_label(fp=fp, labels=labels)
                 image = load_image(fp=fp, crop=config.crop, size=config.size)
                 yield label, image
 
 
-def load_test(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
-    """Load labeled images from testing archive"""
-    labels = get_labels(config)
+def load_val(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
+    """Load labeled images from valing archive"""
+    labels = get_labels_val(config)
     with open(path, mode="rb") as fp:
         for fp in load_tar(fp=fp):
-            label = load_test_label(fp=fp, labels=labels)
+            label = load_val_label(fp=fp, labels=labels)
             image = load_image(fp=fp, crop=config.crop, size=config.size)
             yield label, image
 
