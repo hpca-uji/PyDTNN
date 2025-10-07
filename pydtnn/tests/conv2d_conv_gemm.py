@@ -37,9 +37,9 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
     params.enable_conv_gemm = False
     params.enable_best_of = False
     params.tensor_format = 'NCHW'
-    params.dataset_name = "cifar10"
-    params.dataset_train_path = "datasets/cifar10"
-    params.dataset_test_path = "datasets/cifar10"
+    params.dataset_name = "mnist"
+    params.dataset_train_path = "datasets/mnist"
+    params.dataset_test_path = "datasets/mnist"
     model_i2c = Model(**vars(params))
     model_i2c.mode = ModelModeEnum.TRAIN
     params_gc = deepcopy(params)

@@ -1,71 +1,89 @@
-# Note
+# Tests
 
 In order to run all the test, it is necessary to install both *Bliss* and *convGemm* libraries. In the following section the installation steps of both libraries is detailed.
 
------------------------------
------------------------------
+---
+
 # BLIS
+Source: <https://github.com/flame/blis>
 
-**Source:**  
-https://github.com/flame/blis?tab=readme-ov-file#getting-started
+## Global
+```sh
+git clone https://github.com/flame/blis.git
+cd ./blis
+git checkout 0.7.0
+./configure auto
+make -j
+sudo make install
+export LD_LIBRARY_PATH="/usr/local/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
 
-## Build Global
+## Local
+```sh
+BLIS_PREFIX=~/opt/blis
+git clone https://github.com/flame/blis.git
+cd ./blis
+git checkout 0.7.0
+mkdir -p "$BLIS_PREFIX"
+./configure --prefix="$BLIS_PREFIX" auto
+make -j
+make install
+export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
 
-    git clone https://github.com/flame/blis.git
-    cd ./blis
-    git checkout 0.7.0
-    ./configure auto
-    make [-j]
-    make install
-
-## Build Local
-
-    mkdir ~/opt/blis
-    git clone https://github.com/flame/blis.git
-    cd ./blis
-    git checkout 0.7.0
-    ./configure --prefix=~/opt/blis auto
-    make [-j]
-    make install
-
------------------------------
------------------------------
+---
 
 # convGemm
 
-**Source:**  
-https://github.com/hpca-uji/convGemm.git
+Source: <https://github.com/hpca-uji/convGemm>
 
-## Build Global
-    git clone https://github.com/hpca-uji/convGemm.git
-    cd ./convGemm
-    git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
-    cd ./build
-    cmake ..
-    make [-j]
-    make install
-    export LD_LIBRARY_PATH=/usr/local/lib
+## Patches
+```c
+// src/gemm_blis.h
+#include <omp.h>
+```
 
-## Build Local
+```c
+// tests/test_base.h
+#include <stdbool.h>
+```
 
-    mkidr ~/opt/convGemm
-    git clone https://github.com/hpca-uji/convGemm.git
-    cd ./convGemm
-    git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
-    cd ./build
-    cmake -D CMAKE_PREFIX_PATH=~/opt/blis -D CMAKE_INSTALL_PREFIX=~/opt/convGemm ..
-    make [-j]
-    make install
-    export LD_LIBRARY_PATH=~/opt/convGemm/lib/:~/opt/blis/lib/
+## Global
+```sh
+git clone https://github.com/hpca-uji/convGemm.git
+cd ./convGemm
+git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
+cd ./build
+cmake ..
+make -j
+sudo make install
+export LD_LIBRARY_PATH="/usr/local/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
 
------------------------------
------------------------------
-# Execute tests
+## Local
+```sh
+BLIS_PREFIX=~/opt/blis
+GEMM_PREFIX=~/opt/convGemm
+git clone https://github.com/hpca-uji/convGemm.git
+cd ./convGemm
+git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
+cd ./build
+cmake -D CMAKE_PREFIX_PATH="$BLIS_PREFIX" -D CMAKE_INSTALL_PREFIX="$GEMM_PREFIX" ..
+make -j
+make install
+export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
 
-**Execute all tests:**
+---
 
-    python -m unittest -v pydtnn.tests
+# Execute
 
-**Execute test '[name_test]':**
+## All
+```sh
+python -m unittest -v pydtnn.tests
+```
 
-    python -m unittest -v pydtnn.tests.[name_test]
+## Specific
+```sh
+python -m unittest -v pydtnn.tests.${name_test}
+```

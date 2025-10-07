@@ -55,9 +55,9 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         params = Params()
         params.model_name = model_name
         params.tensor_format = "NCHW"
-        params.dataset_name = "cifar10"
-        params.dataset_train_path = "datasets/cifar10"
-        params.dataset_test_path = "datasets/cifar10"
+        params.dataset_name = "mnist"
+        params.dataset_train_path = "datasets/mnist"
+        params.dataset_test_path = "datasets/mnist"
         return Model(**vars(params))
 
     @staticmethod

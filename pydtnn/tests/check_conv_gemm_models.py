@@ -68,9 +68,9 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = "NHWC"
-        params.dataset_name = "cifar10"  # TODO: change to mnist
-        params.dataset_train_path = "datasets/cifar10"  # TODO: change to mnist
-        params.dataset_test_path = "datasets/cifar10"  # TODO: change to mnist
+        params.dataset_name = "mnist"  # TODO: change to mnist
+        params.dataset_train_path = "datasets/mnist"  # TODO: change to mnist
+        params.dataset_test_path = "datasets/mnist"  # TODO: change to mnist
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -94,9 +94,9 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params.conv_gemm_trans = True
         params.conv_gemm_deconv = True
         params.tensor_format = "NHWC"
-        params.dataset_name = "cifar10"
-        params.dataset_train_path = "datasets/cifar10"
-        params.dataset_test_path = "datasets/cifar10"
+        params.dataset_name = "mnist"
+        params.dataset_train_path = "datasets/mnist"
+        params.dataset_test_path = "datasets/mnist"
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -109,7 +109,7 @@ class CheckConvGemmModels(PyDTNNTestCase):
         Copy weights and biases from Model 1 to Model 2
         """
         for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
-            layer2.weights = layer1.weights.copy()
+            layer2.weights = layer1.weights.copy() if layer1.weights is not None else None
             layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
 
     @staticmethod

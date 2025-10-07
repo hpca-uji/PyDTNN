@@ -61,9 +61,9 @@ class CheckGPUModels(CheckConvGemmModels):
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
-        params.dataset_name = "cifar10"
-        params.dataset_train_path = "datasets/cifar10"
-        params.dataset_test_path = "datasets/cifar10"
+        params.dataset_name = "mnist"
+        params.dataset_train_path = "datasets/mnist"
+        params.dataset_test_path = "datasets/mnist"
         model1 = Model(**vars(params))
         # loss function
         loss = model1.loss_func
@@ -80,9 +80,9 @@ class CheckGPUModels(CheckConvGemmModels):
         params.parallel = "sequential"  # TODO: Check this value.
         params.enable_cudnn_auto_conv_alg = True
         params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
-        params.dataset_name = "cifar10"
-        params.dataset_train_path = "datasets/cifar10"
-        params.dataset_test_path = "datasets/cifar10"
+        params.dataset_name = "mnist"
+        params.dataset_train_path = "datasets/mnist"
+        params.dataset_test_path = "datasets/mnist"
         return Model(**vars(params))
 
     @staticmethod
