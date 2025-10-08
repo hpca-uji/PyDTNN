@@ -199,6 +199,7 @@ class ConvGemm:
             ck, kh, kw, kn = weights.shape
             ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
+            print(f"{b=} {h=} {w=} {c=} {ck=} {kh=} {kw=} {kn=}")
             if biases is None:
                 biases = np.zeros((b, ho, wo, kn), weights.dtype, order="C")
             else:
