@@ -20,9 +20,10 @@ class DropoutCPU(LayerCPU, Dropout):
             case ModelModeEnum.TRAIN:
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 # self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
-                self.mask = np.random.binomial(n=1, p=(1 - self.rate), size=self.shape).astype(dtype=self.model.dtype)
+                self.mask = np.random.binomial(n=1, p=(1 - self.rate), size=self.shape).astype(dtype=self.model.dtype, order="C", copy=None)
                 self.mask /= (1 - self.rate)
-                return x * self.mask
+                x *= self.mask
+                return np.asarray(x, dtype=self.model.dtype, order="C", copy=None)
             case ModelModeEnum.EVALUATE:
                 return x
             case _:
@@ -30,4 +31,4 @@ class DropoutCPU(LayerCPU, Dropout):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         dy *= self.mask
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order='C', copy=None)

@@ -32,7 +32,8 @@ class PointwiseVariant(Conv2D, ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             y += self.biases.reshape((1, 1, 1, self.co), copy=False)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return y
+        
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # --- END _forward_pointwise_nhwc --- #
 
     def _forward_pointwise_nchw(self, x: np.ndarray) -> np.ndarray:
@@ -58,7 +59,7 @@ class PointwiseVariant(Conv2D, ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             y += self.biases.reshape((1, self.co, 1, 1), copy=False)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return y
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # --- END _forward_pointwise_nchw --- #
 
     def _backward_pointwise_nhwc(self, dy: np.ndarray) -> np.ndarray:
@@ -92,7 +93,7 @@ class PointwiseVariant(Conv2D, ABC):
         np.matmul(w, reshaped_dy, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return dx.reshape(x_shape, order='C', copy=None)
+        return np.asarray(dx.reshape(x_shape, copy=False) , dtype=self.model.dtype, order='C', copy=None)
     # --- END _backward_pointwise_nhwc --- #
 
     def _backward_pointwise_nchw(self, dy: np.ndarray) -> np.ndarray:
@@ -126,5 +127,5 @@ class PointwiseVariant(Conv2D, ABC):
         np.matmul(w, reshaped_dy, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return dx.reshape(x_shape, order='C', copy=None)
+        return np.asarray(dx.reshape(x_shape, copy=False), dtype=self.model.dtype, order='C', copy=None)
     # --- END _backward_pointwise_nchw --- #

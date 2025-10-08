@@ -892,6 +892,8 @@ class Model:
 
     def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         self.optimizer.num_real_batches = self.num_real_batches = x_batch.shape[0]
+        x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
+        y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
         return x_batch, y_batch
     # --- _sync_x_y_cpu --- #
 

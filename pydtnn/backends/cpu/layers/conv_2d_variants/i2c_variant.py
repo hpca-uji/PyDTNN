@@ -30,8 +30,10 @@ class I2CVariant(Conv2D, ABC):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        x_rows = self._x_rows[:dim_n, :]
-        res = self.res[:dim_n, :]
+        x_rows = (self._x_rows[:dim_n, :]).astype(self.model.dtype, order="C", copy=None)
+        res = (self.res[:dim_n, :]).astype(self.model.dtype, order="C", copy=None)
+
+        print(f"{x.shape=} {x_rows.shape=} {res.shape=}")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_nhwc_cython(x, x_rows,
@@ -60,7 +62,7 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y = res.reshape((-1, self.ho, self.wo, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return y
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def _forward_i2c_nchw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
@@ -97,7 +99,7 @@ class I2CVariant(Conv2D, ABC):
         y: np.ndarray = best_transpose_1023(res.reshape((self.co, -1, self.ho, self.wo), copy=False))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return y.copy(order="C")
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
@@ -140,7 +142,8 @@ class I2CVariant(Conv2D, ABC):
                            self.vpadding, self.hpadding,
                            self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx
+
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
@@ -184,4 +187,4 @@ class I2CVariant(Conv2D, ABC):
                            self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)

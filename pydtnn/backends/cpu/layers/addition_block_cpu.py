@@ -37,7 +37,7 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
             sum_forwards += x_forward
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return sum_forwards
+        return np.asarray(sum_forwards, dtype=self.model.dtype, order='C', copy=None)
     # --- END forward --- #
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -61,5 +61,5 @@ class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
             dx += dx_backward
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
     # --- END backward --- #

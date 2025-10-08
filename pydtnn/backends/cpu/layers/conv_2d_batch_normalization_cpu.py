@@ -3,7 +3,7 @@ from pydtnn.layers import Conv2DBatchNormalization
 from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from numpy import ndarray
+from numpy import ndarray, asarray
 
 
 class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
@@ -42,7 +42,7 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
                                                 inv_std=self.inv_std, gamma=self.gamma, beta=self.beta)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return y
+        return asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def _forward_nchw_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm"""
@@ -59,7 +59,7 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
                                               biases_vector=biases_vector, bn_running_mean=self.running_mean,
                                               bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return res
+        return asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
     def _forward_nhwc_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm"""
@@ -76,7 +76,7 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
                                               biases_vector=biases_vector, bn_running_mean=self.running_mean,
                                               bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return res
+        return asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
     def backward(self, x: ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

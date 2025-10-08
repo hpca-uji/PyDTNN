@@ -38,7 +38,7 @@ class DepthwiseVariant(Conv2D, ABC):
         y: np.ndarray = y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=None)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return y
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # --- END _forward_depthwise_nhwc --- #
 
     def _forward_depthwise_nchw(self, x: np.ndarray) -> np.ndarray:
@@ -63,7 +63,7 @@ class DepthwiseVariant(Conv2D, ABC):
         y: np.ndarray = y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=None)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return y
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # --- END _forward_depthwise_nchw --- #
 
     def _backward_depthwise_nhwc(self, dy: np.ndarray) -> np.ndarray:
@@ -81,7 +81,7 @@ class DepthwiseVariant(Conv2D, ABC):
             np.sum(dy, axis=(0, 1, 2), out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
     # --- END _backward_depthwise_nhwc --- #
 
     def _backward_depthwise_nchw(self, dy: np.ndarray) -> np.ndarray:
@@ -99,5 +99,5 @@ class DepthwiseVariant(Conv2D, ABC):
             np.sum(dy, axis=(0, 2, 3), out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
     # --- END _backward_depthwise_nchw --- #

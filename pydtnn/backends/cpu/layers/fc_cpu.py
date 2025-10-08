@@ -53,7 +53,7 @@ class FCCPU(LayerCPU, FC):
         if self.use_bias:
             dy += self.biases
 
-        return dy
+        return np.asarray(dy, dtype=self.model.dtype, order='C', copy=None)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
@@ -72,4 +72,4 @@ class FCCPU(LayerCPU, FC):
         # dx = np.matmul(dy, self.weights.T)
         np.matmul(dy, self.weights.T, out=dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)

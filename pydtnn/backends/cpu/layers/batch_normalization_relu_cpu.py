@@ -6,7 +6,7 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
-from numpy import ndarray, empty
+from numpy import ndarray, empty, asarray
 
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
@@ -33,8 +33,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
-            y = y.copy()
-        return y
+        return asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def backward(self, x: ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

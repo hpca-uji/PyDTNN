@@ -3,7 +3,7 @@ from pydtnn.layers import Conv2DRelu
 from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from numpy import ndarray
+from numpy import ndarray, asarray
 
 # Next no inspection is because Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
 # noinspection PyAbstractClass
@@ -41,7 +41,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
                                               vdilation=self.vdilation, hdilation=self.hdilation,
                                               biases_vector=biases_vector, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return res
+        return asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
     def _forward_nhwc_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
@@ -58,7 +58,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
                                               vdilation=self.vdilation, hdilation=self.hdilation,
                                               biases_vector=biases_vector, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return res
+        return asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
     def _forward_nchw_cw(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convWinograd + Relu"""
@@ -76,7 +76,7 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu):
                                                 relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return y
+        return asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def backward(self, x: ndarray) -> ndarray:
         raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")

@@ -44,21 +44,21 @@ class Conv2DCPU(LayerCPU,
         self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self._x_cols = zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
-                self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype)
-                self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype)
-                self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
+                self._x_cols = zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
+                self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype, order="C")
+                self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self._x_rows = zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-                self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype)
-                self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype)
-                self.res_bw = empty(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
+                self._x_rows = zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype, order="C")
+                self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
+                self.res_bw = empty(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
             case _:
                 raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
 
     def initialize_depthwise(self):
-        self.dw = zeros(self.weights_shape, dtype=self.model.dtype)
+        self.dw = zeros(self.weights_shape, dtype=self.model.dtype, order="C")
     # ---
 
     def initialize_pointwise(self):
@@ -66,11 +66,11 @@ class Conv2DCPU(LayerCPU,
         self.dw = empty(shape=self.weights_shape, dtype=self.model.dtype)
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
-                self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
+                self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
+                self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.y = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
-                self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
+                self.y = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
+                self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
@@ -82,7 +82,7 @@ class Conv2DCPU(LayerCPU,
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
-            self.db = empty(shape=(self.co, ), dtype=self.model.dtype)
+            self.db = empty(shape=(self.co, ), dtype=self.model.dtype, order="C")
         # Select variants if it has not been already selected (e.g., by BestOfVariant)
         if self.variant is None:
             # Select variant when best_of is not enabled
