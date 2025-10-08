@@ -5,7 +5,7 @@ PyDTNN Utilities
 try:
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
-except (OSError, ImportError, ModuleNotFoundError):
+except Exception:
     pass
 
 import numpy as np
