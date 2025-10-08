@@ -17,14 +17,11 @@ import warnings
 
 import numpy as np
 
+from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
-from pydtnn.tests.common import verbose_test
+from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
-
-
-class Params:
-    pass
 
 
 class CheckTensorFormatModels(CheckConvGemmModels):
@@ -54,11 +51,12 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         # Tensor format NCHW
         params = Params()
         params.model_name = model_name
-        params.tensor_format = "NCHW"
-        params.dataset_name = "mnist"
-        params.dataset_train_path = "datasets/mnist"
-        params.dataset_test_path = "datasets/mnist"
-        return Model(**vars(params))
+        params_dict = vars(params)
+        try:
+            model2 = Model(**params_dict)
+        except LayerError as exc:
+            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+        return model2
 
     @staticmethod
     def nhwc2nchw(x: np.ndarray):

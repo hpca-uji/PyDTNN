@@ -33,6 +33,12 @@ PYDTNN_TENSOR_FORMAT = PYDTNN_TENSOR_FORMAT_enum
 PYDTNN_TENSOR_FORMATS = PYDTNN_TENSOR_FORMAT.get_num_formats()
 
 
+def print_with_header(header, to_be_printed=None):
+    print(f"# {header}")
+    if to_be_printed is not None:
+        print(to_be_printed)
+
+
 def parse_bool(x):
     """Returns True if value is a user truthy value"""
     return str(x).lower() in {'true', '1', 'yes', 'y', 't'}

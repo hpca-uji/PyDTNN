@@ -2,15 +2,29 @@
 Common methods and properties for various unitary tests
 """
 
+import os
+import sys
+
 import numpy as np
 
-import sys
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 
 
 # @warning: must be a function, don't use a @property decorator
 def verbose_test():
     """Returns True if unittest has been called with -v or --verbose options."""
     return '-v' in sys.argv or '--verbose' in sys.argv
+
+
+class Params:
+    def __init__(self) -> None:
+        self.parallel = "sequential"
+        self.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
+
+        dataset_name = os.environ.get("PYDTNN_TEST_DATASET", "mnist")
+        self.dataset_name = dataset_name
+        self.dataset_train_path = f"datasets/{dataset_name}"
+        self.dataset_test_path = f"datasets/{dataset_name}"
 
 
 class D:
