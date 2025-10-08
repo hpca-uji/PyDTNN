@@ -18,19 +18,16 @@ import warnings
 import numpy as np
 
 from pydtnn import losses
+from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model, ModelModeEnum
 from pydtnn.tests.common import verbose_test
-from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
-from pydtnn.tests.tools import print_with_header
 
 from pydtnn.layers import Layer
+from pydtnn.tests.common import Params
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT, print_with_header
 
 
-class Params:
-    pass
-
-
-class CheckConvGemmModels(PyDTNNTestCase):
+class CheckConvGemmModels(unittest.TestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
@@ -64,18 +61,17 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
-        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
-        params.tensor_format = "NHWC"
-        params.dataset_name = "mnist"  # TODO: change to mnist
-        params.dataset_train_path = "datasets/mnist"  # TODO: change to mnist
-        params.dataset_test_path = "datasets/mnist"  # TODO: change to mnist
+        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
             params_dict.update(overwrite_params)
-        model1 = Model(**params_dict)
+        try:
+            model1 = Model(**params_dict)
+        except LayerError as exc:
+            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
         # loss function
         loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
@@ -88,20 +84,20 @@ class CheckConvGemmModels(PyDTNNTestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
-        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_conv_gemm = True
         params.conv_gemm_cache = True
         params.conv_gemm_trans = True
         params.conv_gemm_deconv = True
-        params.tensor_format = "NHWC"
-        params.dataset_name = "mnist"
-        params.dataset_train_path = "datasets/mnist"
-        params.dataset_test_path = "datasets/mnist"
+        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
             params_dict.update(overwrite_params)
-        return Model(**params_dict)
+        try:
+            model2 = Model(**params_dict)
+        except LayerError as exc:
+            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+        return model2
 
     @staticmethod
     def copy_weights_and_biases(model1: Model, model2: Model):

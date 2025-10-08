@@ -2,10 +2,9 @@ import os
 import platform
 
 import numpy as np
-from rich.console import Console
-from rich.panel import Panel
 
 from pydtnn.utils.best_of import BestOf
+from pydtnn.utils import print_with_header
 
 
 class BestOfProfiler:
@@ -48,5 +47,5 @@ class BestOfProfiler:
         import multiprocessing
         num_threads = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
         msg = "{}  {}  OMP_NUM_THREADS: {}".format(self.header, platform.node(), num_threads)
-        c.print(Panel.fit(msg))
+        print_with_header(msg)
         self.best_method.print_as_table()

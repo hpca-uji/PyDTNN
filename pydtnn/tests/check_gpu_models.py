@@ -19,15 +19,12 @@ import warnings
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
-from pydtnn.tests.common import verbose_test
+from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn import losses
-
-
-class Params:
-    pass
 
 
 class CheckGPUModels(CheckConvGemmModels):
@@ -57,14 +54,14 @@ class CheckGPUModels(CheckConvGemmModels):
         # CPU model with no convGemm
         params = Params()
         params.model_name = model_name
-        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
         params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
-        params.dataset_name = "mnist"
-        params.dataset_train_path = "datasets/mnist"
-        params.dataset_test_path = "datasets/mnist"
-        model1 = Model(**vars(params))
+        params_dict = vars(params)
+        try:
+            model1 = Model(**params_dict)
+        except LayerError as exc:
+            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
         # loss function
         loss = model1.loss_func
         local_batch_size = model1.batch_size
@@ -77,13 +74,14 @@ class CheckGPUModels(CheckConvGemmModels):
         params = Params()
         params.model_name = model_name
         params.enable_gpu = True
-        params.parallel = "sequential"  # TODO: Check this value.
         params.enable_cudnn_auto_conv_alg = True
         params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
-        params.dataset_name = "mnist"
-        params.dataset_train_path = "datasets/mnist"
-        params.dataset_test_path = "datasets/mnist"
-        return Model(**vars(params))
+        params_dict = vars(params)
+        try:
+            model2 = Model(**params_dict)
+        except LayerError as exc:
+            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
+        return model2
 
     @staticmethod
     def copy_weights_and_biases(model1: Model, model2: Model):

@@ -19,8 +19,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.libs import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers
-from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
-from pydtnn.tests.tools import print_with_header
+from pydtnn.utils import print_with_header
 from pydtnn.cython_modules import im2row_nhwc_cython
 
 
@@ -77,7 +76,7 @@ def _conv_gemm_and_im2row_mm(weights: np.ndarray, x: np.ndarray, biases: np.ndar
     return conv_gemm_result, im2row_mm_result
 
 
-class ConvGemmTestCase(PyDTNNTestCase):
+class ConvGemmTestCase(unittest.TestCase):
     """
     Tests that conv_gemm leads to the same results as i2c and mm.
     """

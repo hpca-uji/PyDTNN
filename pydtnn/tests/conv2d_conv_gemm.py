@@ -20,26 +20,17 @@ import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.pydtnn_test_case import PyDTNNTestCase
-from pydtnn.tests.tools import print_with_header
+from pydtnn.tests.common import Params
+from pydtnn.utils import print_with_header
 from pydtnn.model import Model, ModelModeEnum
 from pydtnn.initializers import glorot_uniform, zeros
 
 
-class Params:
-    pass
-
-
 def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
     params = Params()
-    params.parallel = "sequential"  # TODO: Check this value.
     params.batch_size = d.b
     params.enable_conv_gemm = False
     params.enable_best_of = False
-    params.tensor_format = 'NCHW'
-    params.dataset_name = "mnist"
-    params.dataset_train_path = "datasets/mnist"
-    params.dataset_test_path = "datasets/mnist"
     model_i2c = Model(**vars(params))
     model_i2c.mode = ModelModeEnum.TRAIN
     params_gc = deepcopy(params)
@@ -70,7 +61,7 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
     return conv2d_i2c, conv2d_cg
 
 
-class Conv2DConvGemmTestCase(PyDTNNTestCase):
+class Conv2DConvGemmTestCase(unittest.TestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T
     """
