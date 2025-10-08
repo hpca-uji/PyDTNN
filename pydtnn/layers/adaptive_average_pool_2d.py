@@ -20,7 +20,7 @@
 from abc import ABC
 from typing import override
 
-from pydtnn.layers.layer import Layer, LayerError
+from pydtnn.layers.layer import Layer, LayerError, Array
 
 from pydtnn.utils import decode_tensor, encode_tensor
 import numpy as np
@@ -44,9 +44,9 @@ class AdaptiveAveragePool2D(Layer, ABC):
     # ---  END __init__ --- #
 
     @override
-    def initialize(self, prev_shape: tuple[int, int]) -> None:
+    def initialize(self, prev_shape: tuple[int, int], x: Array | None = None) -> None:
         # We want to override "AbstractPool2DLayer"
-        super().initialize(prev_shape)
+        super().initialize(prev_shape, x)
 
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
 

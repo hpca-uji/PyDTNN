@@ -17,18 +17,18 @@ except (ImportError, ModuleNotFoundError):
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
-        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
-        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
-        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
-        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
-        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype)
+    def initialize(self, prev_shape, x = None):
+        super().initialize(prev_shape, x)
+        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         if self.spatial:
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype)
+            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
         else:
             # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype)
+            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
 
         if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
             self.mean = self.mean_all_reduce
@@ -39,9 +39,9 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.y = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype)
+                self.y = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
             case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.y = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype)
+                self.y = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
             case _:
                 raise TypeError(f"Function: \'BatchNormalizationCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
     # --
@@ -61,7 +61,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.spatial:
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
-            x: np.ndarray = x.reshape((-1, self.ci), copy=False)
+            x: np.ndarray = x.reshape(shape = (-1, self.ci), copy=False, order="C")
 
         if self.model.mode is ModelModeEnum.EVALUATE:
             # y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
@@ -94,7 +94,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             self.running_var += self.var * (1.0 - self.momentum)
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+            y = y.reshape(shape=(-1, self.hi, self.wi, self.ci), order="C", copy=False)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
@@ -117,7 +117,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
-            dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+            dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False, order="C")
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 dx = best_transpose_0312(dx)
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)

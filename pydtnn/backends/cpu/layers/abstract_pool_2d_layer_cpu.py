@@ -11,8 +11,8 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape: tuple[int, ...]):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: ndarray | None = None):
+        super().initialize(prev_shape, x)
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:

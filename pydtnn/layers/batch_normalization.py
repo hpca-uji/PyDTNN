@@ -42,8 +42,8 @@ class BatchNormalization(Layer, ABC):
         self.dbeta: "Array" = None
         self.inv_std: np.ndarray = None
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
+        super().initialize(prev_shape, x)
         self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2
         if self.spatial:

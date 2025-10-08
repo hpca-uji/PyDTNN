@@ -13,8 +13,8 @@ class AbstractBlockLayer(Layer, ABC):
         self.is_block_layer = True
         self.out_shapes: list[tuple[int, ...]] = []
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x = None):
+        super().initialize(prev_shape, x)
         self.initialize_block_layer()
 
     @abstractmethod

@@ -19,6 +19,9 @@ class LayerCPU(Layer, ABC):
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
 
+    def initialize(self, prev_shape: tuple[int, ...], x:ndarray | None = None):
+        super().initialize(prev_shape, x)
+
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
             return

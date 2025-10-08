@@ -640,11 +640,9 @@ class Model:
     def add(self, layer: Layer | Activation) -> None:
         layer.set_model(self)
         prev_shape = self.layers[-1].shape if layer.id > 0 else ()
-        if self.enable_cudnn:
-            y = self.layers[-1].y if layer.id > 0 else None
-            layer.initialize(prev_shape, y)
-        else:
-            layer.initialize(prev_shape)
+        
+        y = self.layers[-1].y if layer.id > 0 else None
+        layer.initialize(prev_shape, y)
 
         self.nparams += layer.nparams
         self.layers.append(layer)

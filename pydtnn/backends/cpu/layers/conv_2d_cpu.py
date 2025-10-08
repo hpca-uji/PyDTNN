@@ -75,8 +75,8 @@ class Conv2DCPU(LayerCPU,
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
 
-    def initialize(self, prev_shape: tuple[int, ...]) -> None:
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: ndarray | None = None) -> None:
+        super().initialize(prev_shape, x)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
         # Biases

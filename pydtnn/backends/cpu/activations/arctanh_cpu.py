@@ -10,18 +10,19 @@ class ArctanhCPU(ActivationCPU, Arctanh):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
-        self._y = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
+    def initialize(self, prev_shape, x = None):
+        super().initialize(prev_shape, x)
+        self._y = np.empty(shape=(self.model.batch_size, *self.shape), 
+                           dtype=self.model.dtype, order="C")
 
     def forward(self, x: ndarray) -> ndarray:
         self.y = self._y[:x.shape[0], :]
-        np.arctan(x, out=self.y, casting="unsafe", dtype=x.dtype)
+        np.arctan(x, out=self.y, casting="unsafe", dtype=x.dtype, order="C")
         return self.y
 
     def backward(self, dy: ndarray) -> ndarray:
         # return 1 / (1 + dy ** 2)
         dy **= 2
         dy += 1
-        np.reciprocal(dy, out=dy, casting="unsafe", dtype=self.model.dtype)
+        np.reciprocal(dy, out=dy, casting="unsafe", dtype=self.model.dtype, order="C")
         return dy

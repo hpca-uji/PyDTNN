@@ -15,8 +15,8 @@ class ConvGemmVariant(Conv2D, ABC):
         # convGemm related attributes (will be initialized in initialize())
         self.cg = None
 
-    def initialize(self, prev_shape: tuple[int, ...]):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: np.ndarray | None = None):
+        super().initialize(prev_shape, x)
         # ConvGemm parameters
         if self.model.enable_conv_gemm:
             self.cg = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)

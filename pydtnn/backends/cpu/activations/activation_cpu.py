@@ -23,6 +23,10 @@ class ActivationCPU(Activation, ABC):
       * reduce_weights_sync()
     """
 
+    def initialize(self, prev_shape, x: ndarray | None = None):
+        super().initialize(prev_shape, x)
+
+
     def reduce_weights_async(self, gradient: bool = True) -> None:
         if not self.model.comm:
             return

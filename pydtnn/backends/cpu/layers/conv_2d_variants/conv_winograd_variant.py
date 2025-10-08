@@ -17,8 +17,8 @@ class ConvWinogradVariant(I2CVariant, ABC):
         self.cw = None
         self.cw_constraints_fulfilled = None
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x: ndarray | None = None):
+        super().initialize(prev_shape, x)
         # ConvWinograd parameters
         if self.model.enable_conv_winograd:
             try:

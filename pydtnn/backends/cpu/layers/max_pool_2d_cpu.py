@@ -17,8 +17,8 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         super().__init__(*args, **kwargs)
         self.idx_max: np.ndarray = None
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: np.ndarray | None = None):
+        super().initialize(prev_shape, x)
         self.minval = np.iinfo(self.model.dtype).min if np.issubdtype(self.model.dtype, np.integer) else np.finfo(self.model.dtype).min
 
         match self.model.tensor_format:

@@ -18,6 +18,8 @@ class LayerAndActivationBase(ABC):
     def __init__(self, shape: tuple[int, ...] = ()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
+        self.x: Array | None = None
+        self.y: Array | None = None
         self.weights: Array = None
         self.biases: Array = None
         self.act: Activation | None = None
@@ -58,8 +60,9 @@ class LayerAndActivationBase(ABC):
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape: tuple[int, ...]) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None) -> None:
         self.prev_shape = prev_shape
+        self.x = x
 
     @abstractmethod
     def forward(self, x: Array) -> Array:

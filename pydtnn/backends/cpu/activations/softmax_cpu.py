@@ -9,24 +9,24 @@ class SoftmaxCPU(ActivationCPU, Softmax):
     def __init__(self, shape: np.ndarray = (1,)):
         super().__init__(shape)
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x = None):
+        super().initialize(prev_shape, x)
         self.y: np.ndarray
         self._y = np.empty(shape=(self.model.batch_size, *self.shape),
-                           dtype=self.model.dtype)
+                           dtype=self.model.dtype, order="C")
         self.mul_dy = np.empty(shape=(self.model.batch_size, *self.shape),
-                               dtype=self.model.dtype)
+                               dtype=self.model.dtype, order="C")
 
         self.axis_dim = 1
         shape_intermediate_ops = list(self.shape)
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
         self.max_x = np.empty(shape=(self.model.batch_size, *shape_intermediate_ops),
-                              dtype=self.model.dtype)
+                              dtype=self.model.dtype, order="C")
         self.sum_y = np.empty(shape=(self.model.batch_size, *shape_intermediate_ops),
-                              dtype=self.model.dtype)
+                              dtype=self.model.dtype, order="C")
         self.sum_dy = np.empty(shape=(self.model.batch_size, *shape_intermediate_ops),
-                               dtype=self.model.dtype)
+                               dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
@@ -42,7 +42,7 @@ class SoftmaxCPU(ActivationCPU, Softmax):
         np.sum(self.y, axis=self.axis_dim, keepdims=True, out=sum_y)
         np.divide(self.y, sum_y, out=self.y)
 
-        self.y = self.y.astype(dtype=self.model.dtype)
+        self.y = self.y.astype(dtype=self.model.dtype, order="C", copy=None)
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -53,6 +53,6 @@ class SoftmaxCPU(ActivationCPU, Softmax):
         np.multiply(dy, self.y, out=mul_dy)
         mul_dy.sum(axis=self.axis_dim, keepdims=True, out=sum_dy)
         np.subtract(dy, sum_dy, out=dy)
-        np.multiply(self.y, dy, out=self.y)
+        np.multiply(self.y, dy, out=self.y, order="C")
 
         return self.y
