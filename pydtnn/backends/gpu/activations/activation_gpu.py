@@ -8,13 +8,13 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
 try:
     # noinspection PyUnresolvedReferences
     from pydtnn.comm import MPI
-except (ImportError, ModuleNotFoundError):
+except Exception as e:
     pass
 
 try:
     # noinspection PyUnresolvedReferences
     import pydtnn.backends.gpu.libs.libnccl as nccl
-except (ImportError, ModuleNotFoundError, OSError):
+except Exception as e:
     pass
 
 

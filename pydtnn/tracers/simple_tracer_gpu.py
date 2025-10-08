@@ -2,7 +2,7 @@ from pydtnn.tracers import SimpleTracer
 
 try:
     import pycuda.driver as drv
-except (ImportError, ModuleNotFoundError):
+except Exception as e:
     pass
 
 from typing import TYPE_CHECKING

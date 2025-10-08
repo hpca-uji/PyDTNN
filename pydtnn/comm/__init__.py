@@ -5,7 +5,7 @@ import os as _os
 try:
     import pympi.rc as _rc
     import net_queue as _nq
-except ModuleNotFoundError:
+except Exception:
     _rc = None
     _nq = None
 

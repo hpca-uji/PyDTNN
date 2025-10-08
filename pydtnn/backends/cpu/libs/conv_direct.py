@@ -34,7 +34,7 @@ from pydtnn.utils import load_library
 try:
     load_library("convDirect")
     is_conv_direct_available = True
-except (ImportError, ModuleNotFoundError, OSError):
+except Exception as e:
     is_conv_direct_available = False
 
 

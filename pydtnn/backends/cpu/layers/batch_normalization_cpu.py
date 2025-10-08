@@ -11,7 +11,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 try:
     # noinspection PyUnresolvedReferences
     from pydtnn.comm import MPI
-except (ImportError, ModuleNotFoundError):
+except Exception as e:
     pass
 
 

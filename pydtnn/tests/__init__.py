@@ -7,5 +7,5 @@ from pydtnn.tests.check_conv_gemm_nchw_models import CheckConvGemmNCHWModels
 from pydtnn.tests.check_tensor_format_models import CheckTensorFormatModels
 try:
     from pydtnn.tests.check_gpu_models import CheckGPUModels
-except (ModuleNotFoundError, ImportError):
+except Exception as e:
     pass

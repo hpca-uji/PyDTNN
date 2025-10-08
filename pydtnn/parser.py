@@ -51,7 +51,7 @@ def _get_mpi_processes():
     try:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
         from pympi import MPI
-    except (ImportError, ModuleNotFoundError):
+    except Exception as e:
         mpi_processes = 1
     else:
         mpi_processes = MPI.COMM_WORLD.Get_size()
@@ -78,7 +78,7 @@ def _get_mpi_protocol():
     try:
         from pydtnn.comm import proto as PROTOCOL
         from pydtnn.comm import ssl as SSL
-    except (ModuleNotFoundError, ImportError):
+    except Exception as e:
         PROTOCOL = None
         SSL = None
     protocol = str(PROTOCOL)
@@ -90,7 +90,7 @@ def _get_mpi_protocol():
 def _get_mpi_server():
     try:
         from pydtnn.comm import addr
-    except (ModuleNotFoundError, ImportError):
+    except Exception as e:
         addr = None
     return addr
 
@@ -98,7 +98,7 @@ def _get_mpi_server():
 def _get_mpi_port():
     try:
         from pydtnn.comm import port
-    except (ModuleNotFoundError, ImportError):
+    except Exception as e:
         port = None
     return port
 

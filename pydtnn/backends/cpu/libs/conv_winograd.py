@@ -19,7 +19,7 @@ from pydtnn.utils.memory_cache import MemoryCache
 try:
     load_library("convwinograd")
     is_conv_winograd_available = True
-except (ImportError, ModuleNotFoundError, OSError):
+except Exception as e:
     is_conv_winograd_available = False
 
 

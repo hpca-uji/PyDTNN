@@ -55,28 +55,25 @@ try:
     import pydtnn.backends.gpu.tensor_gpu
     # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
-except (ImportError, ModuleNotFoundError, OSError) as e:
+except Exception as e:
     gpuarray = None
     cuda_error_msg.append(f"Import: \"import pycuda.gpuarray as gpuarray\". Error: {e}")
-except Exception as e:
-    raise (e)
+
 try:
     # noinspection PyUnresolvedReferences
     import pycuda.driver as drv
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except (ImportError, ModuleNotFoundError, OSError) as e:
+except Exception as e:
     drv = None
     cuda_error_msg.append(f"Import: \"import pycuda.driver as drv\". Error: {e}")
-except Exception as e:
-    raise (e)
+
 try:
     # noinspection PyUnresolvedReferences
     from skcuda import cublas
-except (ImportError, ModuleNotFoundError, OSError) as e:
+except Exception as e:
     cublas: ModuleType | None = None
     cuda_error_msg.append(f"Import: \"from skcuda import cublas\". Error: {e}")
-except Exception as e:
-    raise (e)
+
 # --- END CUDA related imports --- #
 
 # --- GLOBAL VARIABLES --- #
@@ -88,7 +85,7 @@ enable_cudnn: bool = False
 try:
     from pydtnn.comm import MPI
     # noinspection PyUnresolvedReferences,PyPackageRequirements
-except (ImportError, ModuleNotFoundError):
+except Exception as e:
     MPI = None
 
 # --- CONSTANS --- #
@@ -229,7 +226,7 @@ def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank: int,
     if comm and enable_nccl:
         try:
             from pydtnn.backends.gpu.libs import libnccl as nccl
-        except (ImportError, ModuleNotFoundError, OSError):
+        except Exception as e:
             supported_nccl = False
             msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
             raise SystemExit(msg) from None
@@ -563,7 +560,7 @@ class Model:
         """Inizialize encryption context"""
         try:
             module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
-        except ModuleNotFoundError as exc:
+        except Exception as exc:
             import traceback
             print(traceback.print_exception(exc))
             sys.exit(-1)
@@ -605,7 +602,7 @@ class Model:
 
             layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
             self.add_layers(layers)
-        except (ModuleNotFoundError, AttributeError):
+        except Exception as e:
             import traceback
             print(traceback.format_exc())
             sys.exit(-1)
