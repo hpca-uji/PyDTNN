@@ -21,6 +21,7 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
+from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 
@@ -51,6 +52,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         # Tensor format NCHW
         params = Params()
         params.model_name = model_name
+        params.tensor_format = PYDTNN_TENSOR_FORMAT.NCHW.upper()
         params_dict = vars(params)
         try:
             model2 = Model(**params_dict)

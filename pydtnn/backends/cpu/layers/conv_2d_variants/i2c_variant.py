@@ -30,8 +30,8 @@ class I2CVariant(Conv2D, ABC):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        x_rows = (self._x_rows[:dim_n, :]).astype(self.model.dtype, order="C", copy=None)
-        res = (self.res[:dim_n, :]).astype(self.model.dtype, order="C", copy=None)
+        x_rows = self._x_rows[:dim_n, :]
+        res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_nhwc_cython(x, x_rows,
