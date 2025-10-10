@@ -106,6 +106,7 @@ class Dataset[T: Array](ABC):
 
         # Declare _x and _y for train, val and test dataset parts
         # FIXME: This input shape must be the real one.
+        # FIXME: Replace with None and change loaders to use np.stack on a local list, insted of concat
         self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
         self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(DatasetEnum)
 
