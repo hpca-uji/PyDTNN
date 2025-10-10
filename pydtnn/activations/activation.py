@@ -1,7 +1,8 @@
 from abc import ABC
 
 from pydtnn.backends import PromoteToBackendMixin
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase, Array
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.utils.types import Array
 
 class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
 

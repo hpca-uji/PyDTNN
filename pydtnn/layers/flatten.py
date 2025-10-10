@@ -1,8 +1,9 @@
 from abc import ABC
 
-from pydtnn.layers.layer import Layer, Array
+from pydtnn.layers.layer import Layer
 from pydtnn.performance_models import *
 
+from pydtnn.utils.types import Array
 
 class Flatten(Layer, ABC):
 

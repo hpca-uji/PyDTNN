@@ -1,7 +1,8 @@
 from abc import ABC
 
 
-from pydtnn.layers.layer import Layer, Array
+from pydtnn.layers.layer import Layer
+from pydtnn.utils.types import Array
 
 
 class Dropout(Layer, ABC):

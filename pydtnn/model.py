@@ -31,6 +31,7 @@ import numpy as np
 
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import Array
 from pydtnn import losses, metrics
 from pydtnn import utils
 from pydtnn.datasets import CustomDataset, get_dataset
@@ -119,7 +120,7 @@ PyCuda_Stream_Type = TypeVar("PyCuda_Stream_Type")
 Cudnn_dtype = TypeVar("Cudnn_dtype")
 Cudnn_Contex_Type = TypeVar("Cuda_Context")
 
-type Array = np.ndarray | TensorGPU
+
 
 
 def _layer_id_generator() -> Iterable[int]:

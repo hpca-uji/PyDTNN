@@ -20,9 +20,10 @@
 from abc import ABC
 from typing import override
 
-from pydtnn.layers.layer import Layer, LayerError, Array
+from pydtnn.layers.layer import Layer, LayerError
 
 from pydtnn.utils import decode_tensor, encode_tensor
+from pydtnn.utils.types import Array
 import numpy as np
 
 

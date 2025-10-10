@@ -13,8 +13,7 @@ from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
-from pydtnn.backends.gpu import TensorGPU
-type Array = np.ndarray | TensorGPU
+from pydtnn.utils.types import Array
 type shape_t = tuple[int, ...]
 
 

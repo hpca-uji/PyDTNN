@@ -16,7 +16,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-
 class PYDTNN_TENSOR_FORMAT_enum(StrEnum):
 
     @staticmethod

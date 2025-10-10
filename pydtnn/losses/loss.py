@@ -4,9 +4,8 @@ from pydtnn.backends import PromoteToBackendMixin
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
-from numpy import ndarray
-from pydtnn.backends.gpu import TensorGPU
-type Array = ndarray | TensorGPU
+from pydtnn.utils.types import Array
+
 
 
 class Loss(PromoteToBackendMixin, ABC):

@@ -3,9 +3,10 @@ from abc import ABC
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from pydtnn.activations import Activation
-from pydtnn.layers.layer import Layer, Array
+from pydtnn.layers.layer import Layer
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
 

@@ -10,7 +10,7 @@ try:
     # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except (OSError, ModuleNotFoundError, ImportError):
+except Exception as e:
     pass
 
 PyCudaDrvType = TypeVar("PyCuda Driver Type")

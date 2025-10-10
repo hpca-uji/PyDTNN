@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from pydtnn.layers.layer import Layer
 
@@ -17,9 +17,19 @@ class AbstractBlockLayer(Layer, ABC):
         super().initialize(prev_shape, x)
         self.initialize_block_layer()
 
-    @abstractmethod
     def initialize_block_layer(self):
-        pass
+        for p in self.paths:
+            prev_shape = self.prev_shape
+            x = self.x
+            for layer in p:
+                layer.set_model(self.model)
+                layer.initialize(prev_shape, x)
+                x = layer.y
+                prev_shape = layer.shape
+                self.fwd_time += layer.fwd_time
+                self.bwd_time += layer.bwd_time
+                self.nparams += layer.nparams
+            self.out_shapes.append(prev_shape)
 
     def update_weights(self, optimizer):
         for p in self.paths:

@@ -4,7 +4,7 @@ PyDTNN Layer base class
 
 from abc import ABC
 
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase, Array
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.backends import PromoteToBackendMixin
 
 class LayerError(ValueError):

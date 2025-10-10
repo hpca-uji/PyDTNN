@@ -8,10 +8,7 @@ from typing import Callable
 
 from pydtnn.initializers import zeros
 
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pydtnn.model import Array
+from pydtnn.utils.types import Array
 
 
 class BatchNormalization(Layer, ABC):
@@ -32,14 +29,14 @@ class BatchNormalization(Layer, ABC):
         # The next attributes will be initialized later
         self.spatial: bool = None
         self.co = self.ci = self.hi = self.wi = 0
-        self.gamma: "Array" = None
-        self.beta: "Array" = None
-        self.running_mean: "Array" = None
-        self.running_var: "Array" = None
+        self.gamma: Array = None
+        self.beta: Array = None
+        self.running_mean: Array = None
+        self.running_var: Array = None
         self.std: np.ndarray = None
         self.xn: np.ndarray = None
-        self.dgamma: "Array" = None
-        self.dbeta: "Array" = None
+        self.dgamma: Array = None
+        self.dbeta: Array = None
         self.inv_std: np.ndarray = None
 
     def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
