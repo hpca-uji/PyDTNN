@@ -63,9 +63,9 @@ class CheckGPUModels(CheckConvGemmModels):
         except LayerError as exc:
             raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
         # loss function
-        loss = model1.loss_func
+        loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
-        loss_func = getattr(losses, loss)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
+        loss_func = getattr(losses, loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
         return model1, loss_func
 
     @staticmethod
