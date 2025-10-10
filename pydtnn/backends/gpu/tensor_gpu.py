@@ -51,7 +51,7 @@ class TensorGPU:
                  gpudirect: bool = False, cublas: bool = False):
 
         self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
-        self.tensor_format = tensor_format
+        self.tensor_format = PYDTNN_TENSOR_FORMAT(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
         self.tensor_type = tensor_type
         self.gpudirect = gpudirect
