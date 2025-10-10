@@ -65,13 +65,19 @@ class TensorGPU:
     # ---
 
     def _set_shape(self, gpu_arr: "gpuarray") -> None:
-        if len(gpu_arr.shape) == 2:
-            if self.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                self.shape = (*gpu_arr.shape, 1, 1)
-            else:
-                self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
-        else:
-            self.shape = gpu_arr.shape
+        
+        match len(gpu_arr.shape):
+            case 1:
+                self.shape = (1, *gpu_arr.shape, 1, 1) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (1, 1, 1, *gpu_arr.shape)
+            case 2:
+                if self.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                    self.shape = (*gpu_arr.shape, 1, 1)
+                else:
+                    self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
+            case 4:
+                self.shape = gpu_arr.shape
+            case _:
+                raise ValueError(f"The expected len shape are 1, 2 or 4. Shape received: \"{len(gpu_arr.shape)}\".")
     # ---
 
     def _set_prt(self, gpu_arr: "gpuarray") -> None:
