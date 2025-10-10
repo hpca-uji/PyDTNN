@@ -1,3 +1,4 @@
+import io
 import sys
 import enum
 import typing
@@ -9,20 +10,19 @@ from collections import abc
 
 import numpy as np
 from PIL import Image
-
 from scipy.io import loadmat
+
 
 class Mode(enum.StrEnum):
     """Dataset type"""
     TRAIN = enum.auto()
-    VAL = enum.auto() # validation.
+    VAL = enum.auto()
 
 
 parser = argparse.ArgumentParser(description="Convert dataset to NPZs")
 parser.add_argument("--mode", type=Mode, choices=list(Mode), default=Mode.TRAIN, help="dateset type")
-parser.add_argument("--labels", type=Path, default=Path("datasets/imagenet/ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt"), 
-                    help="If \"mode\" is \"validation\" (val): it is the path to the validation ground truth' file. If the \"mode\" is \"train\": it is the path to the \"meta\" Matlab's binary.")
-parser.add_argument("--src", type=Path, default=Path("datasets/imagenet/raw/ILSVRC2012_img_train.tar"), help="source path")
+parser.add_argument("--meta", type=Path, default=Path("datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz"), help="metadata path")
+parser.add_argument("--src", type=Path, default=Path("datasets/imagenet/ILSVRC2012_img_train.tar"), help="source path")
 parser.add_argument("--dst", type=Path, default=Path("datasets/imagenet/train/%05d.npz"), help="destination path")
 parser.add_argument("--crop", type=float, default=0.875, help="image crop")
 parser.add_argument("--size", type=int, default=227, help="image size")
@@ -48,20 +48,23 @@ def load_tar(fp: typing.IO[bytes]) -> abc.Generator[typing.IO[bytes]]:
                 yield member_fp
 
 
-def load_train_label(fp: typing.IO[bytes], labels: dict[str, int]) -> int:
+def load_train_label(fp: typing.IO[bytes], labels: dict[int, int]) -> int:
     """Transform a file-like (image) to int (label)"""
     label = fp.name
     label = label.replace("_", ".")
     label = label.split(".")[0]
+    label = label.lstrip("n")
+    label = int(label)
     return labels[label]
 
 
-def load_val_label(fp: typing.IO[bytes], labels:dict[int, int]) -> int:
+def load_val_label(fp: typing.IO[bytes], labels: dict[int, int]) -> int:
     """Transform a file-like (image) to int (label)"""
     label = fp.name
     label = label.replace("_", ".")
     label = label.split(".")[2]
-    return labels[int(label)]
+    label = int(label)
+    return labels[label]
 
 
 def load_image(fp: typing.IO[bytes], crop: float = 0.875, size: int = 64) -> np.ndarray:
@@ -75,29 +78,35 @@ def load_image(fp: typing.IO[bytes], crop: float = 0.875, size: int = 64) -> np.
         array = array.copy()
     return array
 
-def get_labels_train(config: argparse.Namespace) -> dict[str, int]:
-        # Matlab binary to someting readable:
-        meta = loadmat(config.labels, squeeze_me=True)["synsets"]
-        nums_children = list(zip(*meta))[4]
-        meta = [meta[idx] for idx, num_children in enumerate(nums_children) if num_children == 0]
-        labels, codes, _ = list(zip(*meta))[:3] # label, codes, class name (last one not necessary)
-        dict_code_label = {code: int(label) for code, label  in zip(codes, labels)}
-        return dict_code_label
+
+def get_train_labels(config: argparse.Namespace) -> dict[int, int]:
+    """Get label mappings from archive"""
+    with tarfile.open(config.meta) as fp:
+        with fp.extractfile("ILSVRC2012_devkit_t12/data/meta.mat") as fp:
+            meta = loadmat(file_name=fp, squeeze_me=True)["synsets"]
+    nums_children = list(zip(*meta))[4]
+    meta = [meta[idx] for idx, num_children in enumerate(nums_children) if num_children == 0]
+    labels, codes, class_name = list(zip(*meta))[:3]
+    return {
+        int(code.lstrip("n")): int(label)
+        for code, label in zip(codes, labels)
+    }
 
 
-def get_labels_val(config: argparse.Namespace) -> dict[int, int]:
-    labels_dict = dict[int, int]()
-    with open(config.labels, mode="r") as file:
-        i = 1
-        for line in file:
-            labels_dict[i] = int(line)
-            i += 1
-    return labels_dict
+def get_val_labels(config: argparse.Namespace) -> dict[int, int]:
+    """Get label mappings from archive"""
+    with tarfile.open(config.meta) as fp:
+        with fp.extractfile("ILSVRC2012_devkit_t12/data/ILSVRC2012_validation_ground_truth.txt") as fp:
+            with io.TextIOWrapper(buffer=fp) as fp:
+                return {
+                    i: int(line)
+                    for i, line in enumerate(fp, 1)
+                }
 
 
 def load_train(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
     """Load labeled images from training archive"""
-    labels = get_labels_train(config)
+    labels = get_train_labels(config)
     with open(path, mode="rb") as fp:
         for fp in load_tar(fp=fp):
             for fp in load_tar(fp=fp):
@@ -108,7 +117,7 @@ def load_train(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[in
 
 def load_val(path: Path, config: argparse.Namespace) -> abc.Generator[tuple[int, np.ndarray]]:
     """Load labeled images from valing archive"""
-    labels = get_labels_val(config)
+    labels = get_val_labels(config)
     with open(path, mode="rb") as fp:
         for fp in load_tar(fp=fp):
             label = load_val_label(fp=fp, labels=labels)
