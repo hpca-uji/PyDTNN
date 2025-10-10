@@ -440,15 +440,18 @@ class Dataset(ABC):
 
     def _do_resize(self, data: Array) -> Array:
         n = data.shape[0]
+        size = (self.model.resize_dimension, self.model.resize_dimension)
         new_data = np.empty(shape=(n, *self.resize_shape), dtype=self.model.dtype, order="C")
         for i in range(n):
-            image = Image.fromarray(data[i], mode="RGB")
-            # NOTE: resize: The requested size in pixels, as a tuple or array: (width, height), but we work with NC*HW* or N*HW*C ==> self.model.resize_dimension[::-1]
-            resized_data = np.asarray(image.resize(self.model.resize_dimension[::-1]), dtype=self.model.dtype, order="C")
+            sample = data[i]
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                resized_data = self._hwc2chw(resized_data)
-            # else: Do nothing, the resized_data.shape is correct.
-            new_data[i] = resized_data
+                sample = self._chw2hwc(sample)
+            image = Image.fromarray(sample, mode="RGB")
+            image = image.resize(size)
+            sample = np.asarray(image, dtype=self.model.dtype)
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                sample = self._hwc2chw(sample)
+            new_data[i] = sample
         return new_data
     # ---
 

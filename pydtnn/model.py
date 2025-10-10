@@ -396,7 +396,7 @@ class Model:
         self.flip_images: bool = self.kwargs["flip_images"]
         self.crop_images: bool = self.kwargs["crop_images"]
         self.resize: bool = self.kwargs["resize"]
-        self.resize_dimension: tuple[int, int] = (self.kwargs["resize_dimension"], self.kwargs["resize_dimension"])
+        self.resize_dimension: int = self.kwargs["resize_dimension"]
         self.flip_images_prob: float = self.kwargs["flip_images_prob"]
         self.crop_images_size: int = self.kwargs["crop_images_size"]
         self.crop_images_prob: float = self.kwargs["crop_images_prob"]
