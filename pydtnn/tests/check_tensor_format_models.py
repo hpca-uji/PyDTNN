@@ -71,6 +71,7 @@ class CheckTensorFormatModels(CheckConvGemmModels):
         """
         for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             if layer1.canonical_name == "Conv2D":
+                # TODO: Check this (the transpose)
                 layer2.weights = layer1.weights.transpose(3, 0, 1, 2).copy()
             elif layer2.weights is not None:
                 layer2.weights = layer1.weights.copy()

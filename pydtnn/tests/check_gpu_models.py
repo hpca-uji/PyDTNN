@@ -89,7 +89,7 @@ class CheckGPUModels(CheckConvGemmModels):
         Copy weights and biases from Model 1 to Model 2
         """
         for cpu_layer, gpu_layer in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
-            if len(cpu_layer.weights.shape) == 1:
+            if cpu_layer.weights is None:
                 continue
             if "Conv2D" in type(gpu_layer).__name__:
                 if model2.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
@@ -99,15 +99,16 @@ class CheckGPUModels(CheckConvGemmModels):
                     gpu_layer.weights_cpu = cpu_layer.weights.copy()
             else:
                 gpu_layer.weights_cpu = cpu_layer.weights.copy()
-            if len(gpu_layer.weights_cpu):
+            if gpu_layer.weights_cpu is not None:
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
                 gpu_layer.weights = TensorGPU(weights_gpu, gpu_layer.model.tensor_format,
-                                              gpu_layer.model.cudnn_dtype, "filter")
+                                              gpu_layer.model.cudnn_dtype, TensorGPU.TensorTypeEnum.FILTER)
             if gpu_layer.use_bias:
-                if len(cpu_layer.biases.shape) == 1:
+                if cpu_layer.biases is None:
                     continue
+
                 gpu_layer.biases_cpu = cpu_layer.biases.copy()
-                if len(gpu_layer.biases_cpu):
+                if gpu_layer.biases_cpu is not None:
                     biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
                     gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
                                                  gpu_layer.model.cudnn_dtype)
