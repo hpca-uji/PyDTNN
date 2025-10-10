@@ -455,7 +455,7 @@ class Dataset(ABC):
                 raise ValueError("Unsupported tensor format")
 
         new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
-        new_sample = np.empty(shape=shape[1:], dtype=self.model.dtype, order="C")
+        new_sample = np.empty(shape=(C, size), dtype=self.model.dtype, order="C")
 
         for n in range(N):
             sample = data[n]
