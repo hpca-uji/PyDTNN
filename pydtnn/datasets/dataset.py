@@ -455,6 +455,7 @@ class Dataset(ABC):
                 raise ValueError("Unsupported tensor format")
 
         new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
+        new_sample = np.empty(shape=shape[1:], dtype=self.model.dtype, order="C")
 
         for n in range(N):
             sample = data[n]
@@ -476,7 +477,7 @@ class Dataset(ABC):
                 channel = np.asarray(image, dtype=np.uint8)
                 channel = channel.astype(self.model.dtype)
                 channel /= 255.0
-                sample[c] = channel
+                new_sample[c] = channel
 
             match self.model.tensor_format:
                 case PYDTNN_TENSOR_FORMAT.NHWC:
@@ -486,7 +487,7 @@ class Dataset(ABC):
                 case _:
                     raise ValueError("Unsupported tensor format")
 
-            new_data[n] = sample
+            new_data[n] = new_sample
         return new_data
     # ---
 
