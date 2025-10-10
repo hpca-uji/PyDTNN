@@ -21,6 +21,9 @@ class Params:
         self.parallel = "sequential"
         self.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
 
+        model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
+        self.model_name = model_name
+
         dataset_name = os.environ.get("PYDTNN_TEST_DATASET", "mnist")
         self.dataset_name = dataset_name
         self.dataset_train_path = f"datasets/{dataset_name}"
