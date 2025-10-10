@@ -82,12 +82,13 @@ class Dataset(ABC):
                                                       int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
 
+        self.real_input_shape = tuple(input_shape)
+
         if self.model.resize:
             self.input_shape = (input_shape[0], self.model.resize_dimension, self.model.resize_dimension)
             self.resize_shape = self.input_shape if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (self.input_shape[1], self.input_shape[2], self.input_shape[0])
-            self.real_input_shape = list(input_shape)
         else:
-            self.input_shape = list(input_shape)
+            self.input_shape = input_shape
             self.real_input_shape = self.input_shape
         self.output_shape = list(output_shape)
 
@@ -439,19 +440,53 @@ class Dataset(ABC):
         return data
 
     def _do_resize(self, data: Array) -> Array:
-        n = data.shape[0]
+        N = data.shape[0]
+
         size = (self.model.resize_dimension, self.model.resize_dimension)
-        new_data = np.empty(shape=(n, *self.resize_shape), dtype=self.model.dtype, order="C")
-        for i in range(n):
-            sample = data[i]
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                sample = self._chw2hwc(sample)
-            image = Image.fromarray(sample, mode="RGB")
-            image = image.resize(size)
-            sample = np.asarray(image, dtype=self.model.dtype)
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                sample = self._hwc2chw(sample)
-            new_data[i] = sample
+
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                C = data.shape[3]
+                shape = (N, *size, C)
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                C = data.shape[1]
+                shape = (N, C, *size)
+            case _:
+                raise ValueError("Unsupported tensor format")
+
+        new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
+
+        for n in range(N):
+            sample = data[n]
+
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    sample = self._hwc2chw(sample)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    pass
+                case _:
+                    raise ValueError("Unsupported tensor format")
+
+            for c in range(C):
+                channel = sample[c]
+                channel *= 255.0
+                channel = channel.astype(np.uint8)
+                image = Image.fromarray(channel, mode="L")
+                image = image.resize(size)
+                channel = np.asarray(image, dtype=np.uint8)
+                channel = channel.astype(self.model.dtype)
+                channel /= 255.0
+                sample[c] = channel
+
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    sample = self._chw2hwc(sample)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    pass
+                case _:
+                    raise ValueError("Unsupported tensor format")
+
+            new_data[n] = sample
         return new_data
     # ---
 
