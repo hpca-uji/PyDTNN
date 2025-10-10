@@ -78,18 +78,23 @@ export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 # Execute
 
-## All
+## Main
 ```sh
 python -m unittest -v pydtnn.tests
 ```
-_Note: exhaustive are skipped_
+_Note: exhaustive tests are skipped_
 
 ## Exhaustive
 ```sh
 python -m unittest -v pydtnn.tests.conv2d_conv_gemm_slow.Conv2DConvGemmSlowTestCase.test_forward_backward_multiple_params
 ```
 
+## CUDA
+```sh
+python -m unittest -v pydtnn.tests.check_gpu_models
+```
+
 ## Specific
 ```sh
-python -m unittest -v pydtnn.tests.${name_test}
+python -m unittest -v pydtnn.tests.${TEST_NAME}
 ```
