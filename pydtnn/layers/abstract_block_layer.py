@@ -1,7 +1,6 @@
 from abc import ABC
 
-from pydtnn.layers.layer import Layer
-
+from pydtnn.layers.layer import Layer, LayerError
 
 class AbstractBlockLayer(Layer, ABC):
 
@@ -18,18 +17,23 @@ class AbstractBlockLayer(Layer, ABC):
         self.initialize_block_layer()
 
     def initialize_block_layer(self):
-        for p in self.paths:
+        for p_i, p in enumerate(self.paths):
             prev_shape = self.prev_shape
             x = self.x
-            for layer in p:
+            for i, layer in enumerate(p):
                 layer.set_model(self.model)
                 layer.initialize(prev_shape, x)
                 x = layer.y
+                if p_i == 0 and (len(p) - 1) == i:
+                    self.y = x
                 prev_shape = layer.shape
                 self.fwd_time += layer.fwd_time
                 self.bwd_time += layer.bwd_time
                 self.nparams += layer.nparams
             self.out_shapes.append(prev_shape)
+        if not all([o == self.out_shapes[0] for o in self.out_shapes]):
+            raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
+        self.shape = self.out_shapes[0]
 
     def update_weights(self, optimizer):
         for p in self.paths:
