@@ -83,7 +83,7 @@ class Dataset(ABC):
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
 
         if self.model.resize:
-            self.input_shape = list((input_shape[0], *self.model.resize_dimension))
+            self.input_shape = (input_shape[0], self.model.resize_dimension, self.model.resize_dimension)
             self.resize_shape = self.input_shape if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (self.input_shape[1], self.input_shape[2], self.input_shape[0])
             self.real_input_shape = list(input_shape)
         else:
@@ -176,7 +176,7 @@ class Dataset(ABC):
 
         # Save arrays
         for split, (x_train, y_train, x_test, y_test) in enumerate(zip(x_train, y_train, x_test, y_test)):
-            path = string_substitute(self.model.dataset_raw_path, split=split)
+            path = string_substitute(self.model.dataset_path, split=split)
 
             # Export dataset
             np.savez_compressed(path,
