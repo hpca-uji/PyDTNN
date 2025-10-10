@@ -481,7 +481,7 @@ class Dataset(ABC):
 
             match self.model.tensor_format:
                 case PYDTNN_TENSOR_FORMAT.NHWC:
-                    sample = self._chw2hwc(sample)
+                    new_sample = self._chw2hwc(new_sample)
                 case PYDTNN_TENSOR_FORMAT.NCHW:
                     pass
                 case _:
