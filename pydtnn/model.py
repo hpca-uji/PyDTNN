@@ -584,30 +584,31 @@ class Model:
     def _read_model(self, model_name: str) -> None:
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
-            # NOTE: Dataset is always in NCHW
-            c, h, w = self.dataset.input_shape
-            input_shape = (h, w, c) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC else (c, h, w)
-            if len(input_shape) != 3:
-                warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
-            launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC \
-                else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
-            if launch_shape_warning:
-                warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
-                warn(warning_text, RuntimeWarning)
-                warning_text = None
-            output_shape = tuple(self.dataset.output_shape)
-
-            self.input_shape = input_shape
-            self.output_shape = output_shape
-
-            layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
-            self.add_layers(layers)
         except Exception as e:
             import traceback
             print(traceback.format_exc())
             sys.exit(-1)
-        else:  # There was no error, call _initialize()
-            self._initialize()
+
+        # NOTE: Dataset is always in NCHW
+        c, h, w = self.dataset.input_shape
+        input_shape = (h, w, c) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC else (c, h, w)
+        if len(input_shape) != 3:
+            warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
+        launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC \
+            else len(input_shape) == 3 and not (input_shape[0] < input_shape[1])
+        if launch_shape_warning:
+            warning_text = f"Input layer shape {input_shape} may not be in {self.tensor_format} format, regardless of model format! "
+            warn(warning_text, RuntimeWarning)
+            warning_text = None
+        output_shape = tuple(self.dataset.output_shape)
+
+        self.input_shape = input_shape
+        self.output_shape = output_shape
+
+        layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
+        self.add_layers(layers)
+
+        self._initialize()
     # --- END _read_model --- #
 
     def show(self) -> None:
