@@ -31,7 +31,7 @@ import numpy as np
 
 import pydtnn.metrics
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import Array
+from pydtnn.utils.types import Array, NetworkAlgEnum
 from pydtnn import losses, metrics
 from pydtnn import utils
 from pydtnn.datasets import CustomDataset, get_dataset
@@ -371,7 +371,7 @@ class Model[T: Array]:
         self.memory_bw: float = self.kwargs['memory_bw']
         self.network_bw: float = self.kwargs['network_bw']
         self.network_lat: float = self.kwargs['network_lat']
-        self.network_alg: str = self.kwargs['network_alg']
+        self.network_alg: NetworkAlgEnum = NetworkAlgEnum(self.kwargs['network_alg'].lower())
         self.loss_func_name: str = self.kwargs['loss_func_name']
         self.num_epochs: int = self.kwargs['num_epochs']
         self.model_sync_freq: int = self.kwargs['model_sync_freq']

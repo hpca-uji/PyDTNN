@@ -318,7 +318,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Tracing and profiling
         _tr_group = self.add_argument_group("Tracing options")
         _tr_group.add_argument('--tracing', type=bool_lambda, default=False,
-                               help="Obtain Simple/Extrae-based traces. Default: False.")
+                               help="Obtain Simple/Extrae-based traces. Deffault: False.")
         _tr_group.add_argument('--tracer_output', type=str, default="",
                                help="Output file to store the Simple/Extrae-based traces.")
         _tr_group.add_argument('--tracer_pmlib_server', type=str, default="127.0.0.1",
@@ -336,7 +336,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _pm_group.add_argument('--memory_bw', type=float, default=50e9, help=argparse.SUPPRESS)
         _pm_group.add_argument('--network_bw', type=float, default=1e9, help=argparse.SUPPRESS)
         _pm_group.add_argument('--network_lat', type=float, default=0.5e-6, help=argparse.SUPPRESS)
-        _pm_group.add_argument('--network_alg', type=str, default="vdg", help=argparse.SUPPRESS)
+        _pm_group.add_argument('--network_alg', type=str, default="vdg", choices=["bta", "vdg"], help=argparse.SUPPRESS)
 
         # Add Runtime parallel execution options
         _re_group = self.add_argument_group("Runtime parallel execution options")
