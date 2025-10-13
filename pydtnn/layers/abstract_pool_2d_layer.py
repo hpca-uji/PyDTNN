@@ -8,7 +8,7 @@ from pydtnn.utils import decode_tensor, encode_tensor
 from pydtnn.utils.types import Array
 
 
-class AbstractPool2DLayer(Layer, ABC):
+class AbstractPool2DLayer[T: Array](Layer, ABC):
 
     def __init__(self, pool_shape: tuple[int, int] | int = (2, 2), padding: tuple[int, int] | int = 0,
                  stride: tuple[int, int] | int = 1, dilation: tuple[int, int] | int = 1):
@@ -22,7 +22,7 @@ class AbstractPool2DLayer(Layer, ABC):
         self.vdilation, self.hdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
-    def initialize(self, prev_shape, x: Array | None = None):
+    def initialize(self, prev_shape, x: T | None = None):
         super().initialize(prev_shape, x)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         if self.pool_shape[0] == 0:

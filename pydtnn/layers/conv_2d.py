@@ -17,7 +17,7 @@ class GroupingEnum(StrEnum):
     STANDARD = auto()
 
 
-class Conv2D(Layer, ABC):
+class Conv2D[T: Array](Layer, ABC):
 
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),
@@ -53,7 +53,7 @@ class Conv2D(Layer, ABC):
         self.weights_shape: tuple[int, ...] = None
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
+    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None):
         super().initialize(prev_shape, x)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape

@@ -37,7 +37,7 @@ INPUT_SHAPE = (3, 600, 600)
 OUTPUT_SHAPE = (5,)
 
 
-class DatasetFolderLoader(Dataset):
+class DatasetFolderLoader[T: Array](Dataset):
     """
     This class will receive the path to a dataset divided in different sub-folders where every sub-folder is a different data class, and will
     generate the samples.
@@ -188,7 +188,7 @@ class DatasetFolderLoader(Dataset):
     # ---
 
     @override
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[T, T]]:
 
         if part is DatasetEnum.TRAIN:
             shuffle(self.labels_and_images[part])

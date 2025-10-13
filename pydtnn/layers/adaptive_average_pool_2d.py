@@ -26,7 +26,7 @@ from pydtnn.utils.types import Array
 import numpy as np
 
 
-class AdaptiveAveragePool2D(Layer, ABC):
+class AdaptiveAveragePool2D[T: Array](Layer, ABC):
 
     # This layer will calculate the pool shape and the stride from the output shape (passed as parameter) and the previous layer shape.
 
@@ -43,7 +43,7 @@ class AdaptiveAveragePool2D(Layer, ABC):
         self._forward_pooling_not_needed: bool = None
     # ---  END __init__ --- #
 
-    def initialize(self, prev_shape: tuple[int, int], x: Array | None = None) -> None:
+    def initialize(self, prev_shape: tuple[int, int], x: T | None = None) -> None:
         super().initialize(prev_shape, x)
 
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)

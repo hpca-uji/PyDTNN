@@ -21,7 +21,7 @@ from numpy import ndarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
-class LayerGPU(Layer, ABC):
+class LayerGPU(Layer[TensorGPU], ABC):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """

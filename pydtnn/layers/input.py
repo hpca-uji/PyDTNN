@@ -6,10 +6,10 @@ from pydtnn.layers.layer import Layer
 from pydtnn.utils.types import Array
 
 
-class Input(Layer, ABC):
+class Input[T: Array](Layer, ABC):
 
     def __init__(self, shape: tuple = (1,)):
         super().__init__(shape)
 
-    def initialize(self, prev_shape: tuple, x: Array | None = None):
+    def initialize(self, prev_shape: tuple, x: T | None = None):
         super().initialize(prev_shape, x)

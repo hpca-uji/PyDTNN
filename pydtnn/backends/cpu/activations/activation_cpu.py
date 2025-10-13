@@ -13,7 +13,7 @@ except Exception as e:
 from numpy import ndarray
 
 
-class ActivationCPU(Activation, ABC):
+class ActivationCPU(Activation[ndarray], ABC):
     """
     Extends an Activation class with the attributes and methods required by CPU Activations.
 

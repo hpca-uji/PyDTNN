@@ -4,13 +4,13 @@ from pydtnn.backends import PromoteToBackendMixin
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils.types import Array
 
-class Activation(PromoteToBackendMixin, LayerAndActivationBase, ABC):
+class Activation[T: Array](PromoteToBackendMixin, LayerAndActivationBase, ABC):
 
     def __init__(self, shape: tuple[int, ...] = (1,)):
         super().__init__(shape)
-        self.y: Array = None
+        self.y: T = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
+    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None):
         super().initialize(prev_shape, x)
         self.shape = prev_shape
 

@@ -19,7 +19,7 @@ except Exception as e:
 
 from pydtnn.backends.gpu import TensorGPU
 
-class ActivationGPU(Activation, ABC):
+class ActivationGPU(Activation[TensorGPU], ABC):
     """
     Extends an Activation class with the attributes and methods required by GPU Activations.
 

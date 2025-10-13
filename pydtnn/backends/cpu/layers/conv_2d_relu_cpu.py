@@ -11,9 +11,6 @@ from numpy import ndarray, asarray
 
 class Conv2DReluCPU(LayerCPU, Conv2DRelu):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
     def initialize(self, from_parent_dict=None, *args, **kwargs) -> None:
         super().initialize(args, kwargs)
         self.forward = {"_forward_nchw_cg": self._forward_nchw_cg,

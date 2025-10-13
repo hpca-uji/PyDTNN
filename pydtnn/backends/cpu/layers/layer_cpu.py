@@ -1,6 +1,8 @@
 from abc import ABC
-from collections import abc
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from pydtnn import Model
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -14,10 +16,13 @@ except Exception as e:
 from numpy import ndarray
 
 
-class LayerCPU(Layer, ABC):
+class LayerCPU(Layer[ndarray], ABC):
     """
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.model: Model[ndarray]
 
     def initialize(self, prev_shape: tuple[int, ...], x:ndarray | None = None):
         super().initialize(prev_shape, x)

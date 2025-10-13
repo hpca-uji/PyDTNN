@@ -10,7 +10,7 @@ from pydtnn.utils.types import Array
 
 
 
-class Metric(PromoteToBackendMixin, ABC):
+class Metric[T: Array](PromoteToBackendMixin, ABC):
 
     def __init__(self, shape: tuple[int, ...], model: "Model", eps=1e-8):
         self.shape = shape
@@ -18,5 +18,5 @@ class Metric(PromoteToBackendMixin, ABC):
         self.eps = eps
 
     @abstractmethod
-    def __call__(self, y_pred: Array, y_targ: Array) -> float:
+    def __call__(self, y_pred: T, y_targ: T) -> float:
         pass

@@ -17,9 +17,9 @@ from pydtnn.utils.types import Array
 type shape_t = tuple[int, ...]
 
 
-class _BackgroundGenerator(threading.Thread):
+class _BackgroundGenerator[T: Array](threading.Thread):
 
-    def __init__(self, generator: Generator[tuple[Array, Array]], max_prefetch=1):
+    def __init__(self, generator: Generator[tuple[T, T]], max_prefetch=1):
         super().__init__()
         self.queue = queue.Queue(max_prefetch)
         self.generator = generator
@@ -31,7 +31,7 @@ class _BackgroundGenerator(threading.Thread):
             self.queue.put(item)
         self.queue.put(None)
 
-    def __next__(self) -> tuple[Array, Array]:
+    def __next__(self) -> tuple[T, T]:
         next_item = self.queue.get()
         if next_item is None:
             raise StopIteration
@@ -48,7 +48,7 @@ class DatasetEnum(IntEnum):
 # --- END DatasetEnum --- #
 
 
-class Dataset(ABC):
+class Dataset[T: Array](ABC):
     # NOTE: Dataset(input_shape) is expected to be in NCHW format
     # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
     # NOTE: Dataset.data_generator(y) is expected to be in NC format
@@ -139,7 +139,7 @@ class Dataset(ABC):
         else:
             gen_train = itertools.chain(gen_train, gen_val)
 
-        # Array from generators
+        # T from generators
         x_train, y_train = map(np.concat, zip(*gen_train))
         x_test, y_test = map(np.concat, zip(*gen_test))
 
@@ -205,11 +205,11 @@ class Dataset(ABC):
     def test_nsamples(self):
         return self._nsamples[DatasetEnum.TEST]
 
-    def get_train_val_generator(self) -> tuple[Generator[tuple[Array, Array, int]], Generator[tuple[Array, Array, int]]]:
+    def get_train_val_generator(self) -> tuple[Generator[tuple[T, T, int]], Generator[tuple[T, T, int]]]:
         return (self._batch_generator(DatasetEnum.TRAIN),
                 self._batch_generator(DatasetEnum.VAL))
 
-    def get_test_generator(self) -> Generator[tuple[Array, Array, int]]:
+    def get_test_generator(self) -> Generator[tuple[T, T, int]]:
         return self._batch_generator(DatasetEnum.TEST)
 
     def _print_report(self):
@@ -274,23 +274,23 @@ class Dataset(ABC):
 
     # TODO / FIXME / NOTE / LO QUE SEA: Check if it's necessary to copy after transpose !!!!!!!!!!!!!!!!!!!
     @staticmethod
-    def _nchw2nhwc(x: Array) -> Array:
+    def _nchw2nhwc(x: T) -> T:
         return x.transpose(0, 2, 3, 1)
 
     @staticmethod
-    def _nhwc2nchw(x: Array) -> Array:
+    def _nhwc2nchw(x: T) -> T:
         return x.transpose(0, 3, 1, 2)
 
     @staticmethod
-    def _chw2hwc(x: Array) -> Array:
+    def _chw2hwc(x: T) -> T:
         return x.transpose(1, 2, 0)
 
     @staticmethod
-    def _hwc2chw(x: Array) -> Array:
+    def _hwc2chw(x: T) -> T:
         return x.transpose(2, 0, 1)
 
     @staticmethod
-    def _decode_class(y: Array, classes_list: np.ndarray) -> None:
+    def _decode_class(y: T, classes_list: np.ndarray) -> None:
         """Sets to 1 the corresponding entry in the 2D y array as indicated by the 1D array of classes"""
         y[np.arange(y.shape[0]), classes_list] = 1
 
@@ -338,10 +338,10 @@ class Dataset(ABC):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array]]:
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[T, T]]:
         yield self._x[part], self._y[part]
 
-    def _actual_batch_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array, int]]:
+    def _actual_batch_generator(self, part: DatasetEnum) -> Generator[tuple[T, T, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
         # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
         local_batch_size = self.model.batch_size
@@ -382,14 +382,14 @@ class Dataset(ABC):
                 yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size"""
 
-    def _batch_generator(self, part: DatasetEnum) -> Generator[tuple[Array, Array, int]]:
+    def _batch_generator(self, part: DatasetEnum) -> Generator[tuple[T, T, int]]:
         yield from self._actual_batch_generator(part)
         # NOTE: The following infinite loop provides of empty batches
         #        if there are asked more batches than actually are.
         while True:
             yield self.x_empty_batch, self.y_empty_batch, 0
 
-    def _do_flip_images(self, data: Array) -> Array:
+    def _do_flip_images(self, data: T) -> T:
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = data.shape
@@ -407,7 +407,7 @@ class Dataset(ABC):
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
         return data
 
-    def _do_crop_images(self, data: Array) -> Array:
+    def _do_crop_images(self, data: T) -> T:
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = data.shape
@@ -438,7 +438,7 @@ class Dataset(ABC):
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
         return data
 
-    def _do_resize(self, data: Array) -> Array:
+    def _do_resize(self, data: T) -> T:
         N = data.shape[0]
 
         size = (self.model.resize_dimension, self.model.resize_dimension)
@@ -491,7 +491,7 @@ class Dataset(ABC):
         return new_data
     # ---
 
-    def _do_data_augmentation(self, x_data: Array) -> Array:
+    def _do_data_augmentation(self, x_data: T) -> T:
         # Preserve the original version when producing new data
         x_data = x_data.copy()
         if self.model.flip_images:

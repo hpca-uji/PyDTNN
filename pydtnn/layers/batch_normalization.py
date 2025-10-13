@@ -11,7 +11,7 @@ from pydtnn.initializers import zeros
 from pydtnn.utils.types import Array
 
 
-class BatchNormalization(Layer, ABC):
+class BatchNormalization[T: Array](Layer, ABC):
 
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5,
                  moving_mean_initializer: Callable = zeros,
@@ -29,17 +29,17 @@ class BatchNormalization(Layer, ABC):
         # The next attributes will be initialized later
         self.spatial: bool = None
         self.co = self.ci = self.hi = self.wi = 0
-        self.gamma: Array = None
-        self.beta: Array = None
-        self.running_mean: Array = None
-        self.running_var: Array = None
+        self.gamma: T = None
+        self.beta: T = None
+        self.running_mean: T = None
+        self.running_var: T = None
         self.std: np.ndarray = None
         self.xn: np.ndarray = None
-        self.dgamma: Array = None
-        self.dbeta: Array = None
+        self.dgamma: T = None
+        self.dbeta: T = None
         self.inv_std: np.ndarray = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
+    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None):
         super().initialize(prev_shape, x)
         self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2

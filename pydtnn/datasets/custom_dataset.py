@@ -17,9 +17,9 @@ TENSOR_ASSERT = {
 }
 
 
-class CustomDataset(Dataset):
+class CustomDataset[T: Array](Dataset):
 
-    def __init__(self, model: "Model", x_train: Array, y_train: Array, x_test: Array | None = None, y_test: Array | None = None,
+    def __init__(self, model: "Model", x_train: T, y_train: T, x_test: T | None = None, y_test: T | None = None,
                  input_shape: shape_t | None = None, output_shape: shape_t | None = None,
                  force_test_as_validation=False):
         if x_test is None or y_test is None:
@@ -41,8 +41,8 @@ class CustomDataset(Dataset):
         if len(x_test.shape) == 3 and not TENSOR_ASSERT[self.model.tensor_format](x_test.shape[0], x_test.shape[2]):
             warnings.warn(f"Dataset x_test.shape {x_test.shape} may not be in {self.model.tensor_format.upper()} format, following the model format!", RuntimeWarning)
 
-        self.__x_source: list[Array] = []
-        self.__y_source: list[Array] = []
+        self.__x_source: list[T] = []
+        self.__y_source: list[T] = []
         # Sources for the training part
         self.__x_source.append(x_train)
         self.__y_source.append(y_train)
@@ -76,7 +76,7 @@ class CustomDataset(Dataset):
     def import_(cls: Dataset, model: "Model") -> Self:
         """Import dataset (rank specific)"""
         with np.load(model.dataset_raw_path) as data:
-            data: dict[str, Array]
+            data: dict[str, T]
             x_train = data["x_train"]
             y_train = data["y_train"]
             x_test = data["x_test"]

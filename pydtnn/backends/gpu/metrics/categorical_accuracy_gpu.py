@@ -11,7 +11,7 @@ from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
-class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy):
+class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
         module = SourceModule("""

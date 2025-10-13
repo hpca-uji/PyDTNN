@@ -5,8 +5,8 @@ from pydtnn.performance_models import *
 
 from pydtnn.utils.types import Array
 
-class Flatten(Layer, ABC):
+class Flatten[T: Array](Layer, ABC):
 
-    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
+    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None):
         super().initialize(prev_shape, x)
         self.shape = (int(np.prod(prev_shape)),)

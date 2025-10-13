@@ -6,6 +6,7 @@ from abc import ABC
 
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.backends import PromoteToBackendMixin
+from pydtnn.utils.types import Array
 
 class LayerError(ValueError):
     pass
@@ -13,7 +14,7 @@ class LayerError(ValueError):
 class ParameterException(LayerError):
     pass
 
-class Layer(PromoteToBackendMixin, LayerAndActivationBase, ABC):
+class Layer[T: Array](PromoteToBackendMixin, LayerAndActivationBase, ABC):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

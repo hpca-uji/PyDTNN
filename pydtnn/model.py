@@ -320,7 +320,7 @@ def _calculate_batch_size(batch_size: int | None, global_batch_size: int | None,
 # --- END _calculate_batch_size --- #
 
 
-class Model:
+class Model[T: Array]:
     """
     PyDTNN Model
     """
@@ -476,12 +476,12 @@ class Model:
                                                 comm_size=self.comm_size)
 
         # Attributes that will be properly initialized elsewhere
-        self.y_batch: Array = None
+        self.y_batch: T = None
         self.history: dict[str, list[np.ndarray]] = None
         self.loss_func: Loss = None
         self.metrics_funcs: list[metrics.Metric] = None
         self.loss_and_metrics: list[str]  # Is a list with the name of the loss function and the metrics's names.
-        self.total_metrics: Array
+        self.total_metrics: T
         # ---
 
         # Encryption
@@ -849,9 +849,9 @@ class Model:
         return total_time
     # --- END calculate_time --- #
 
-    def _compute_metrics_funcs(self, y_pred: Array, y_targ: Array, loss: float, blocking=True, comm=True) -> tuple[Array, Array]:
-        loss_req: Array = None
-        _losses: Array
+    def _compute_metrics_funcs[T:Array](self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[T, T]:
+        loss_req: T = None
+        _losses: T
 
         if y_targ.shape[0] > 0:
             if self.enable_cudnn:
@@ -888,7 +888,7 @@ class Model:
         return total, count + batch_size, string
     # --- END _update_running_average --- #
 
-    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[Array, Array]:
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
         raise TypeError("Please, use the cpu or gpu version.")
     # --- _sync_x_y --- #
 
@@ -1111,7 +1111,7 @@ class Model:
         return self.history
     # --- END train_dataset --- #
 
-    def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> Array:
+    def _train_batch[T:Array](self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> T:
         self.mode = ModelModeEnum.TRAIN
 
         # LR schedulers begin

@@ -14,15 +14,15 @@ from pydtnn.utils.types import Array
 
 drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
 
-class LayerAndActivationBase(ABC):
+class LayerAndActivationBase[T: Array](ABC):
 
     def __init__(self, shape: tuple[int, ...] = ()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
-        self.x: Array | None = None
-        self.y: Array | None = None
-        self.weights: Array | None = None
-        self.biases: Array | None = None
+        self.x: T | None = None
+        self.y: T | None = None
+        self.weights: T | None = None
+        self.biases: T | None = None
         self.act: Activation | None = None
         self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
@@ -61,16 +61,16 @@ class LayerAndActivationBase(ABC):
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None) -> None:
         self.prev_shape = prev_shape
         self.x = x
 
     @abstractmethod
-    def forward(self, x: Array) -> Array:
+    def forward(self, x: T) -> T:
         pass
 
     @abstractmethod
-    def backward(self, dy: Array) -> Array:
+    def backward(self, dy: T) -> T:
         pass
 
     @abstractmethod

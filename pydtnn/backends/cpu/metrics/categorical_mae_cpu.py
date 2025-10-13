@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics import MetricCPU
 from pydtnn.metrics import CategoricalMAE
 
 
-class CategoricalMAECPU(MetricCPU, CategoricalMAE):
+class CategoricalMAECPU(MetricCPU, CategoricalMAE[np.ndarray]):
 
     def __call__(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         b = y_targ.shape[0]
