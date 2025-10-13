@@ -75,8 +75,7 @@ ci = {macro_index_c}(idx, c);
 class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
 
     def initialize(self, prev_shape, need_dx: bool, x: TensorGPU) -> None:
-        LayerGPU.initialize(self, prev_shape, need_dx, x)
-        AdaptiveAveragePool2D.initialize(self, prev_shape, need_dx)
+        super().initialize(prev_shape, x)
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1

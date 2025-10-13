@@ -640,9 +640,14 @@ class Model:
 
     def add(self, layer: Layer | Activation) -> None:
         layer.set_model(self)
-        prev_shape = self.layers[-1].shape if layer.id > 0 else ()
-        
-        y = self.layers[-1].y if layer.id > 0 else None
+
+        if layer.id > 0:
+            prev_shape = self.layers[-1].shape
+            y = self.layers[-1].y
+        else:
+            prev_shape = ()
+            y = None
+
         layer.initialize(prev_shape, y)
 
         self.nparams += layer.nparams

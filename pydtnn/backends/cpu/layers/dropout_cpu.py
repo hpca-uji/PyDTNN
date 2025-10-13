@@ -11,9 +11,6 @@ class DropoutCPU(LayerCPU, Dropout):
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None
 
-    def initialize(self, *args, **kwargs):
-        super().initialize(*args, **kwargs)
-
     def forward(self, x: np.ndarray) -> np.ndarray:
 
         match self.model.mode:

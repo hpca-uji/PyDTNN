@@ -18,7 +18,6 @@
 #
 
 from abc import ABC
-from typing import override
 
 from pydtnn.layers.layer import Layer, LayerError
 
@@ -44,9 +43,7 @@ class AdaptiveAveragePool2D(Layer, ABC):
         self._forward_pooling_not_needed: bool = None
     # ---  END __init__ --- #
 
-    @override
     def initialize(self, prev_shape: tuple[int, int], x: Array | None = None) -> None:
-        # We want to override "AbstractPool2DLayer"
         super().initialize(prev_shape, x)
 
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
