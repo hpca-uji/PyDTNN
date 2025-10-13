@@ -272,7 +272,6 @@ class Dataset[T: Array](ABC):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
         pass
 
-    # TODO / FIXME / NOTE / LO QUE SEA: Check if it's necessary to copy after transpose !!!!!!!!!!!!!!!!!!!
     @staticmethod
     def _nchw2nhwc(x: T) -> T:
         return x.transpose(0, 2, 3, 1)

@@ -1120,14 +1120,13 @@ class Model[T: Array]:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
-        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
-        num_layers = len(self.layers)
+        last_layer = len(self.layers) - 1
 
         has_batch = x_batch.shape[0] > 0
 
         if has_batch:
             # Forward pass (FP)
-            for i in range(first_layer, num_layers):
+            for i in range(len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1139,10 +1138,9 @@ class Model[T: Array]:
 
         self.total_metrics, _ = self._compute_metrics_funcs(x, y_targ, loss, comm=sync_model)
 
-        last_layer = num_layers - 1
         if has_batch:
             # Backward pass (BP)
-            for i in range(last_layer, first_layer - 1, -1):
+            for i in range(last_layer, -1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
                 dx = self.layers[i].backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1157,7 +1155,7 @@ class Model[T: Array]:
         if has_batch or sync_model:
 
             # Optimizer
-            for i in range(last_layer, first_layer - 1, -1):
+            for i in range(last_layer, -1, -1):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
                 self.layers[i].update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
@@ -1167,7 +1165,7 @@ class Model[T: Array]:
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         if self.enable_cudnn:
-            for i in range(last_layer, first_layer - 1, -1):
+            for i in range(last_layer, -1, -1):
                 if self.layers[i].grad_vars:
                     self.layers[i].stream_2.synchronize()
 
@@ -1212,13 +1210,11 @@ class Model[T: Array]:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
-        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
-
         has_batch = x_batch.shape[0] > 0
 
         # Forward pass (FP)
         if has_batch:
-            for i in range(first_layer, len(self.layers)):
+            for i in range(len(self.layers)):
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)

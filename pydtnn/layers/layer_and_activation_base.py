@@ -67,11 +67,11 @@ class LayerAndActivationBase[T: Array](ABC):
 
     @abstractmethod
     def forward(self, x: T) -> T:
-        pass
+        return x
 
     @abstractmethod
     def backward(self, dy: T) -> T:
-        pass
+        return dy
 
     @abstractmethod
     def reduce_weights_async(self, gradient: bool = True):
