@@ -61,7 +61,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
         if self.spatial:
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
-            x: np.ndarray = x.reshape(shape = (-1, self.ci), copy=False, order="C")
+            x: np.ndarray = x.reshape((-1, self.ci), copy=False, order="C")
 
         if self.model.mode is ModelModeEnum.EVALUATE:
             # y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
@@ -94,7 +94,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
             self.running_var += self.var * (1.0 - self.momentum)
 
         if self.spatial:
-            y = y.reshape(shape=(-1, self.hi, self.wi, self.ci), order="C", copy=False)
+            y = y.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=False)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 y = best_transpose_0312(y)
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
