@@ -15,8 +15,8 @@ class FCCPU(LayerCPU, FC):
         self.dw: np.ndarray = None
         self.db: np.ndarray = None
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x = None):
+        super().initialize(prev_shape, x)
         self.weights = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
         # Initialize outputs:
         self.db = np.empty(self.shape, dtype=self.model.dtype)

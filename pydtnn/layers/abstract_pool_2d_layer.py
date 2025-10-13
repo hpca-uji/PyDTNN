@@ -5,6 +5,8 @@ import numpy as np
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils import decode_tensor, encode_tensor
 
+from pydtnn.utils.types import Array
+
 
 class AbstractPool2DLayer(Layer, ABC):
 
@@ -20,8 +22,8 @@ class AbstractPool2DLayer(Layer, ABC):
         self.vdilation, self.hdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x: Array | None = None):
+        super().initialize(prev_shape, x)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])

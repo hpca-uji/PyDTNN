@@ -6,20 +6,23 @@ import numpy as np
 
 from typing import Self, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
-    from pydtnn.model import Model, Array
+    from pydtnn.model import Model
     from pydtnn.activations.activation import Activation
     from pydtnn.optimizers.optimizer import Optimizer
 
-drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+from pydtnn.utils.types import Array
 
+drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
 
 class LayerAndActivationBase(ABC):
 
     def __init__(self, shape: tuple[int, ...] = ()) -> None:
         self.nparams: int = 0
         self.shape: tuple[int, ...] = shape
-        self.weights: Array = None
-        self.biases: Array = None
+        self.x: Array | None = None
+        self.y: Array | None = None
+        self.weights: Array | None = None
+        self.biases: Array | None = None
         self.act: Activation | None = None
         self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
@@ -58,8 +61,9 @@ class LayerAndActivationBase(ABC):
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape: tuple[int, ...]) -> None:
+    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None) -> None:
         self.prev_shape = prev_shape
+        self.x = x
 
     @abstractmethod
     def forward(self, x: Array) -> Array:

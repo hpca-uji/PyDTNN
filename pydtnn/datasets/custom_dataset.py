@@ -7,10 +7,8 @@ from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from typing import TYPE_CHECKING, Self
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else:
-    Model = object
-from pydtnn.backends.gpu import TensorGPU
-type Array = np.ndarray | TensorGPU
+from pydtnn.utils.types import Array
+
 type shape_t = tuple[int, ...]
 
 TENSOR_ASSERT = {
@@ -21,7 +19,7 @@ TENSOR_ASSERT = {
 
 class CustomDataset(Dataset):
 
-    def __init__(self, model: Model, x_train: Array, y_train: Array, x_test: Array | None = None, y_test: Array | None = None,
+    def __init__(self, model: "Model", x_train: Array, y_train: Array, x_test: Array | None = None, y_test: Array | None = None,
                  input_shape: shape_t | None = None, output_shape: shape_t | None = None,
                  force_test_as_validation=False):
         if x_test is None or y_test is None:
@@ -75,7 +73,7 @@ class CustomDataset(Dataset):
             self._y[part] = self.__y_source[part][local_slice, ...]
 
     @classmethod
-    def import_(cls: Dataset, model: Model) -> Self:
+    def import_(cls: Dataset, model: "Model") -> Self:
         """Import dataset (rank specific)"""
         with np.load(model.dataset_raw_path) as data:
             data: dict[str, Array]

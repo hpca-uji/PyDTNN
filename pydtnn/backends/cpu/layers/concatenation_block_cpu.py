@@ -1,15 +1,9 @@
 import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract_block_layer_cpu import AbstractBlockLayerCPU
-from pydtnn.layers import ConcatenationBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock, CONCAT_DIM_NCHW, CONCAT_DIM_NHWC
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
-
-from pydtnn.layers.layer import LayerError
-
-CONCAT_DIM_NCHW = 1
-CONCAT_DIM_NHWC = -1
 
 class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
@@ -19,27 +13,6 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
         self.out_co: list[int] = None
         self.idx_co: np.ndarray = None
         self.concat_dim: int = None
-
-    def initialize_block_layer(self):
-        super().initialize_block_layer()
-        # TODO: MIRAR de juntar la implementación de CPU y GPU
-        match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
-                if not all([tuple(o[1:]) == tuple(self.out_shapes[0][1:]) for o in self.out_shapes]):
-                    raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
-                self.out_co = [s[0] for s in self.out_shapes]
-                self.idx_co = np.cumsum(self.out_co, axis=0)
-                self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
-                self.concat_dim = CONCAT_DIM_NCHW
-            case PYDTNN_TENSOR_FORMAT.NHWC:
-                if not all([tuple(o[:-1]) == tuple(self.out_shapes[0][:-1]) for o in self.out_shapes]):
-                    raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
-                self.out_co = [s[-1] for s in self.out_shapes]
-                self.idx_co: np.ndarray = np.cumsum(self.out_co, axis=0)
-                self.shape: tuple[int] = (*self.out_shapes[0][:-1], sum(self.out_co))
-                self.concat_dim = CONCAT_DIM_NHWC
-            case _:
-                raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)

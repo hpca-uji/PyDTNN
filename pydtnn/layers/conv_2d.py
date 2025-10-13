@@ -6,6 +6,7 @@ if TYPE_CHECKING:
 from pydtnn.layers.layer import Layer
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
 
@@ -52,8 +53,8 @@ class Conv2D(Layer, ABC):
         self.weights_shape: tuple[int, ...] = None
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape: tuple[int, ...]):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: Array | None = None):
+        super().initialize(prev_shape, x)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape
 

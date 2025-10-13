@@ -14,8 +14,8 @@ class ConvDirectVariant(Conv2D, ABC):
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
-    def initialize(self, prev_shape: tuple[int, ...]):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: ndarray | None = None):
+        super().initialize(prev_shape, x)
         # ConvWinograd parameters
         if self.model.enable_conv_direct:
             methods = [self.model.conv_direct_method, ]

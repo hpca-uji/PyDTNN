@@ -4,16 +4,7 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 import numpy as np
 
-from pydtnn.layers.layer import LayerError
-
 class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
-
-    def initialize_block_layer(self):
-        super().initialize_block_layer()
-        if not all([o == self.out_shapes[0] for o in self.out_shapes]):
-            raise LayerError(f"all output shape must have the same value in the 0th dimension: {self.out_shapes}")
-        self.shape = self.out_shapes[0]
-
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

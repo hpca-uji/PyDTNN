@@ -3,7 +3,7 @@ import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.layers import ConcatenationBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock, CONCAT_DIM_NCHW, CONCAT_DIM_NHWC
 from pydtnn.performance_models import *
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -11,6 +11,7 @@ from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.layers.layer import LayerError
 
 
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
@@ -88,37 +89,6 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         for i, p in enumerate(self.paths):
             dy_gpu = gpuarray.empty((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
             self.dy.append(TensorGPU(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
-
-    def initialize_block_layer(self):
-        super().initialize_block_layer()
-        for p in self.paths:
-            prev_shape = self.prev_shape
-            x = self.x
-            for layer in p:
-                layer.set_model(self.model)
-                layer.initialize(prev_shape, x)
-                x = layer.y
-                prev_shape = layer.shape
-                self.fwd_time += layer.fwd_time
-                self.bwd_time += layer.bwd_time
-                self.nparams += layer.nparams
-            self.out_shapes.append(prev_shape)
-
-        match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
-                assert all([o[1:] == self.out_shapes[0][1:] for o in self.out_shapes])
-                self.out_co = [s[0] for s in self.out_shapes]
-                self.idx_co = np.cumsum(self.out_co, axis=0)
-                self.shape = (sum(self.out_co), *self.out_shapes[0][1:])
-            case PYDTNN_TENSOR_FORMAT.NHWC:
-                assert all([o[:-1] == self.out_shapes[0][:-1] for o in self.out_shapes])
-                self.out_co = [s[-1] for s in self.out_shapes]
-                self.idx_co = np.cumsum(self.out_co, axis=0)
-                self.shape = (*self.out_shapes[0][:-1], sum(self.out_co))
-            case _:
-                raise NotImplementedError(f"\"ConcatenationBlockGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
-
-        self.ho, self.wo, self.co = decode_tensor(self.shape, self.model.tensor_format)
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):

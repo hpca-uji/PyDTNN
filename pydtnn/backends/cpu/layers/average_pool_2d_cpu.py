@@ -15,8 +15,8 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x: np.ndarray | None = None):
+        super().initialize(prev_shape, x)
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NHWC:
                 self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)

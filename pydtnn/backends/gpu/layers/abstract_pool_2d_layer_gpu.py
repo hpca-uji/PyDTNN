@@ -25,13 +25,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.ho = self.wo = None
 
     def initialize_pool_2d_gpu(self, prev_shape: tuple[int, ...], x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
-        if self.pool_shape[0] == 0:
-            self.pool_shape = (self.hi, self.pool_shape[1])
-        if self.pool_shape[1] == 0:
-            self.pool_shape = (self.pool_shape[0], self.wi)
-        self.kh, self.kw = self.pool_shape
-        self.co = self.ci
+        super().initialize(prev_shape, x)
         if not (self.vdilation == 1 and self.hdilation == 1):
             raise ParameterException(f"cuDNN does not support dilated pooling. vdilation: {self.vdilation}, hdilation: {self.hdilation}")
 

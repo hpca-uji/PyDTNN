@@ -17,7 +17,7 @@ from pycuda.driver import Function
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 
 
-class Relu6GPU(Relu6, ActivationGPU):
+class Relu6GPU(ActivationGPU, Relu6):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -26,8 +26,7 @@ class Relu6GPU(Relu6, ActivationGPU):
     # --- END __init__ --- #
 
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
-        ActivationGPU.initialize(self, prev_shape, x)
-        Relu6.initialize(self, prev_shape)
+        super().initialize(self, prev_shape, x)
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1

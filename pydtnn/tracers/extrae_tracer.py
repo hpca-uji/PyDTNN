@@ -8,8 +8,6 @@ from pydtnn.tracers.tracer import Tracer
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn import Model
-else:
-    Model = object
 
 
 class ExtraeTracer(Tracer):
@@ -25,7 +23,7 @@ class ExtraeTracer(Tracer):
         super().enable_tracing()
         self.pyextrae = import_module('pyextrae.common.extrae')
 
-    def _define_event_types(self, model: Model):
+    def _define_event_types(self, model: "Model"):
         """This method will be called only if tracing is enabled"""
         super()._define_event_types(model)
         for event_type_value, event_type in self.event_types.items():

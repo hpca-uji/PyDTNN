@@ -11,8 +11,8 @@ from numpy import ndarray, empty, asarray
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
-    def initialize(self, prev_shape):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape, x = None):
+        super().initialize(prev_shape, x)
         self.y = empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
 
     def forward(self, x: ndarray) -> ndarray:

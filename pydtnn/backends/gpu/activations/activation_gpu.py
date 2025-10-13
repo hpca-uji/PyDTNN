@@ -17,6 +17,7 @@ try:
 except Exception as e:
     pass
 
+from pydtnn.backends.gpu import TensorGPU
 
 class ActivationGPU(Activation, ABC):
     """
@@ -33,10 +34,8 @@ class ActivationGPU(Activation, ABC):
         self.x = None
         self.dx = None
 
-    # noinspection PyMethodOverriding
-    def initialize(self, prev_shape, x):
-        super().initialize(prev_shape)
-        self.x = x
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU):
+        super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:

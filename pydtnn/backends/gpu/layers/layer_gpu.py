@@ -29,10 +29,8 @@ class LayerGPU(Layer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
-        self.y: TensorGPU = None
         self.weights_cpu: ndarray = None
         self.biases_cpu: ndarray = None
-        self.x: TensorGPU = None
         self.dx: TensorGPU = None
         self.dw: TensorGPU = None
         self.db: TensorGPU = None
@@ -41,10 +39,8 @@ class LayerGPU(Layer, ABC):
         self.one_vec_cpu: ndarray = None
         self.one_vec_gpu: TensorGPU = None
 
-    # noinspection PyMethodOverriding
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
-        self.x = x  # Must be before super().initialize()
-        super().initialize(prev_shape)
+        super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:

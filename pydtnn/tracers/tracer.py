@@ -9,9 +9,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn import Model
     from pydtnn.layers import Layer
-else:
-    Model = object
-    Layer = object
 
 
 class EventType:
@@ -94,7 +91,7 @@ class Tracer(metaclass=PostInitCaller):
         """Actions that must be done if print memory usage is disabled"""
         setattr(self, "print_memory_usage", lambda *args, **kwargs: None)
 
-    def define_event_types(self, model: Model):
+    def define_event_types(self, model: "Model"):
         """Fake method, will be replaced by lambda: None or _define_event_types()"""
         pass
 
@@ -110,14 +107,14 @@ class Tracer(metaclass=PostInitCaller):
         """Fake method, will be replaced by lambda: None or _print_memory_usage()"""
         pass
 
-    def _get_layers_recursively(self, layers: list[Layer]) -> list[Layer]:
+    def _get_layers_recursively(self, layers: list["Layer"]) -> list["Layer"]:
         all_layers = []
         for layer in layers:
             all_layers.append(layer)
             all_layers += self._get_layers_recursively(layer.children)
         return all_layers
 
-    def _define_event_types(self, model: Model):
+    def _define_event_types(self, model: "Model"):
         """This method will be called only if tracing is enabled"""
         mdl_event = self.event_types[PYDTNN_MDL_EVENT]
         ops_event = self.event_types[PYDTNN_OPS_EVENT]

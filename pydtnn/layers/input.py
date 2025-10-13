@@ -2,14 +2,14 @@ import warnings
 from abc import ABC
 
 from pydtnn.layers.layer import Layer
-from pydtnn.utils import encode_tensor
+
+from pydtnn.utils.types import Array
 
 
 class Input(Layer, ABC):
-    # NOTE: Input(shape) is expected to be in NHWC
 
     def __init__(self, shape: tuple = (1,)):
         super().__init__(shape)
 
-    def initialize(self, prev_shape: tuple):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple, x: Array | None = None):
+        super().initialize(prev_shape, x)

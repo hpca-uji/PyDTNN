@@ -31,7 +31,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 import numpy as np
 
 
-class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
+class AdaptiveAveragePool2DCPU(LayerCPU, AdaptiveAveragePool2D, ABC):
     # The backend is almost the same as a AveragePool2D layer.
 
     def __init__(self, *args, **kwargs):
@@ -40,10 +40,9 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D, LayerCPU, ABC):
     # -- END __init__ -- #
 
     # Method from AbstractPool2DLayerCPU
-    def initialize(self, prev_shape: tuple[int, int]):
+    def initialize(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
         # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
-        AdaptiveAveragePool2D.initialize(self, prev_shape)
-        LayerCPU.initialize(self, prev_shape)
+        super().initialize(self, prev_shape, x)
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:

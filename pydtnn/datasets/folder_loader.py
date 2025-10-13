@@ -21,8 +21,9 @@ import numpy as np
 from random import shuffle
 from PIL import Image
 
-from pydtnn.datasets.dataset import Dataset, shape_t, DatasetEnum, Array
+from pydtnn.datasets.dataset import Dataset, shape_t, DatasetEnum
 from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import Array
 
 from typing import TYPE_CHECKING, override, Generator
 if TYPE_CHECKING:

@@ -15,8 +15,7 @@ class SigmoidGPU(ActivationGPU, Sigmoid):
         self.act_desc = None
 
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
-        self.shape = prev_shape
-        self.x = x
+        super().initialize(prev_shape, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
 

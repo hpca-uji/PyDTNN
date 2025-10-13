@@ -8,6 +8,8 @@ from pydtnn.utils.best_of import BestOf
 
 from enum import StrEnum, auto
 
+import numpy as np
+
 
 class ConvVariantEnum(StrEnum):
     BEST_OF = auto()
@@ -30,8 +32,8 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
         # Other parameters
         self.variant = None
 
-    def initialize(self, prev_shape: tuple[int, ...]):
-        super().initialize(prev_shape)
+    def initialize(self, prev_shape: tuple[int, ...], x: np.ndarray | None = None):
+        super().initialize(prev_shape, x)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
             self.variant = ConvVariantEnum.BEST_OF()

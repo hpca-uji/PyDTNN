@@ -16,7 +16,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         self.algo = None
 
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
-        self.shape = prev_shape
+        super().initialize(prev_shape, x)
 
         self.mode = cudnn.cudnnSoftmaxMode['CUDNN_SOFTMAX_MODE_INSTANCE']
         self.algo = cudnn.cudnnSoftmaxAlgorithm['CUDNN_SOFTMAX_ACCURATE']
