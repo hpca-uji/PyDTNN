@@ -4,7 +4,7 @@ from pydtnn.backends import PromoteToBackendMixin
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from model import Model
+    from pydtnn.model import Model
 
 from pydtnn.utils.types import Array
 
