@@ -107,6 +107,9 @@ def test_keras(_x: np.ndarray):
 def test_torch(_x: np.ndarray):
     import torch
     torch.manual_seed(SEED)
+    # Modulo unit test. Clase testcase. Exentenderla. Crear un método que empieze igual al que tengo (test_ lo que te apetezca)
+    # En ese test. Ejecutas lo que te de la gana
+    # Existen métodos de assert True y assert False.
 
     epsilon = 1e-5
     momentum = 0.9
@@ -145,11 +148,15 @@ def test_torch(_x: np.ndarray):
     print(f"diff all zeros {not diff.any()}")
     print(f"diff below threshold {threshold}: {(diff < threshold).all()}")
     print(f"{diff.max()=}")
+    print(f"{diff.std()=}")
     print(f"{diff.min()=}")
 
-    print(f"x_pydtnn:\n{x_pydtnn}")
-    print(f"x_torch:\n{x_torch}")
-    print(f"diff:\n{diff}")
+    if not (diff < threshold).all():
+        print(f"x_pydtnn:\n{x_pydtnn}")
+        print(f"x_torch:\n{x_torch}")
+        print(f"diff:\n{diff}")
+
+    assert ((diff < threshold).all()) f"Not all values are below the threshold. Max. difference: \"{diff.max()}\". Std. deviation: \"{diff.std()}\". Min. difference: {diff.min()}."
 # ---
 
 
