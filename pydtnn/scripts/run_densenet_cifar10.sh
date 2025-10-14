@@ -7,8 +7,7 @@ mpirun -np 1 \
   pydtnn_benchmark \
   --model=densenet121_cifar10 \
   --dataset=cifar10 \
-  --dataset_train_path=datasets/cifar10 \
-  --dataset_test_path=datasets/cifar10 \
+  --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
   --flip_images=True \
   --crop_images=True \
   --crop_images_size=16 \

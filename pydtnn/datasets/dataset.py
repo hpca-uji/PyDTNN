@@ -3,6 +3,7 @@ import warnings
 import itertools
 import threading
 from abc import ABC, abstractmethod
+from collections import abc
 
 import numpy as np
 from PIL import Image
@@ -18,24 +19,27 @@ from pydtnn.utils.types import Array
 type shape_t = tuple[int, ...]
 
 
-class _BackgroundGenerator[T: Array](threading.Thread):
-
-    def __init__(self, generator: Generator[tuple[T, T]], max_prefetch=1):
+class _BackgroundGenerator[T](threading.Thread):
+    def __init__(self, generator: Generator[T], max_prefetch=1):
         super().__init__()
         self.queue = queue.Queue(max_prefetch)
         self.generator = generator
         self.daemon = True
+        self.done = False
         self.start()
 
     def run(self):
         for item in self.generator:
             self.queue.put(item)
-        self.queue.put(None)
+        self.queue.put(self)
 
-    def __next__(self) -> tuple[T, T]:
+    def __next__(self) -> T:
+        if self.done:
+            raise StopIteration()
         next_item = self.queue.get()
-        if next_item is None:
-            raise StopIteration
+        self.done = next_item is self
+        if self.done:
+            raise StopIteration()
         return next_item
 
     def __iter__(self):
@@ -53,9 +57,9 @@ class Dataset[T: Array](ABC):
     # NOTE: Dataset(input_shape) is expected to be in NCHW format
     # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
     # NOTE: Dataset.data_generator(y) is expected to be in NC format
+    # NOTE: Floating tensor format is expected in range [0, 1]
 
-    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: shape_t, output_shape: shape_t,
-                 max_batches_online=40, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: shape_t, output_shape: shape_t, max_prefetch=1, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -68,10 +72,10 @@ class Dataset[T: Array](ABC):
             warnings.warn(f"Output shape does not have 1 dimension ({output_shape}), it may cause issues!", RuntimeWarning)
 
         self.model: Model = model
-        self.max_batches_online: int = max_batches_online
+        self.max_prefetch = max_prefetch
         self.debug: bool = debug
         self.test_as_validation: bool = self.model.test_as_validation or force_test_as_validation
-        self._nsamples: list[int, int, int] = [train_nsamples, 0, test_nsamples]
+        self._nsamples: list[int] = [train_nsamples, 0, test_nsamples]
 
         # Compute self._nsamples[DatasetEnum.VAL]
         if self.test_as_validation:
@@ -83,14 +87,15 @@ class Dataset[T: Array](ABC):
             self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
 
         self.real_input_shape = tuple(input_shape)
+        self.input_shape = tuple(input_shape)
+        self.output_shape = tuple(output_shape)
+
+        if self.model.crop:
+            crop, size = self._calculate_crop(self.input_shape[1:])
+            self.input_shape = (self.input_shape[0], *size)
 
         if self.model.resize:
-            self.input_shape = (input_shape[0], self.model.resize_dimension, self.model.resize_dimension)
-            self.resize_shape = self.input_shape if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (self.input_shape[1], self.input_shape[2], self.input_shape[0])
-        else:
-            self.input_shape = input_shape
-            self.real_input_shape = self.input_shape
-        self.output_shape = list(output_shape)
+            self.input_shape = (self.input_shape[0], self.model.resize_dimension, self.model.resize_dimension)
 
         self._initial_nsamples = [self._nsamples[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.VAL], self._nsamples[DatasetEnum.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
@@ -106,6 +111,7 @@ class Dataset[T: Array](ABC):
 
         # Declare _x and _y for train, val and test dataset parts
         # FIXME: This input shape must be the real one.
+        # FIXME: Replace with None and change loaders to use np.stack on a local list, insted of concat
         self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
         self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(DatasetEnum)
 
@@ -260,11 +266,11 @@ class Dataset[T: Array](ABC):
     def _init_synthetic_data(self):
         for part in DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST:
             local_batches = self._local_nsamples[part] // self.model.batch_size
-            nsamples = min(local_batches, self.max_batches_online) * self.model.batch_size
-            x_shape = [nsamples] + self.input_shape
+            nsamples = local_batches * self.model.batch_size
+            x_shape = (nsamples, *self.input_shape)
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-                x_shape = [x_shape[i] for i in (0, 2, 3, 1)]
-            y_shape = [nsamples] + self.output_shape
+                x_shape = tuple(x_shape[i] for i in (0, 2, 3, 1))
+            y_shape = (nsamples, *self.output_shape)
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
             self._y[part] = np.zeros(y_shape, dtype=self.model.dtype, order="C")
 
@@ -338,58 +344,87 @@ class Dataset[T: Array](ABC):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[T, T]]:
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray]]:
         yield self._x[part], self._y[part]
 
-    def _actual_batch_generator(self, part: DatasetEnum) -> Generator[tuple[T, T, int]]:
+    def _data_transform(self, part: DatasetEnum, data: np.ndarray) -> np.ndarray:
+        if self.model.use_synthetic_data:
+            return data
+
+        # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
+        data = data.copy()
+
+        if self.model.crop:
+            data = self._do_crop(data)
+
+        if self.model.resize:
+            data = self._do_resize(data)
+
+        if part is DatasetEnum.TRAIN:
+            if self.model.flip_images:
+                data = self._do_flip_images(data)
+
+            if self.model.crop_images:
+                data = self._do_crop_images(data)
+
+            np.random.shuffle(data)
+
+        return data
+
+    def _actual_batch_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
         # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
-        generator = self._data_generator(part)
-        nsamples = self._nsamples[part]
-        for x_data, y_data in _BackgroundGenerator(generator):
-            local_nsamples = x_data.shape[0]
-            s = np.arange(local_nsamples)
-            if self.model.resize and not self.model.use_synthetic_data:
-                x_data = self._do_resize(x_data)
-            if part is DatasetEnum.TRAIN:
-                np.random.shuffle(s)
-                if not self.model.use_synthetic_data:
-                    x_data = self._do_data_augmentation(x_data)
-            """            # Initialize end to 0 (in case there are no batches of local_batch_size)
-            end = 0"""
-            # Generate batches of size local_batch_size
-            for batch_num in range(ceil(local_nsamples / local_batch_size)):
-                start = batch_num * local_batch_size
-                end = start + local_batch_size
-                indices = s[start:end]
-                x_local_batch = x_data[indices, ...]
-                y_local_batch = y_data[indices, ...]
-                global_batch_size = min(nsamples, global_batch_size)
-                yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
-                nsamples -= global_batch_size
-                """
-            # Generate the last batch (with size < local_batch_size)
-            last_batch_size = local_nsamples % local_batch_size
-            if last_batch_size > 0:
-                start = end
-                end = start + last_batch_size  # = local_nsamples
-                indices = s[start:end]
-                x_local_batch = x_data[indices, ...]
-                y_local_batch = y_data[indices, ...]
-                global_batch_size = min(nsamples, global_batch_size)
-                yield x_local_batch[:nsamples], y_local_batch[:nsamples], global_batch_size
-                nsamples -= global_batch_size"""
 
-    def _batch_generator(self, part: DatasetEnum) -> Generator[tuple[T, T, int]]:
+        def transform_generator():
+            for x, y in self._data_generator(part):
+                yield self._data_transform(part, x), y
+
+        generator = _BackgroundGenerator(transform_generator(), max_prefetch=self.max_prefetch)
+        nsamples = self._nsamples[part]
+
+        batch_size = 0
+        batch_online = []
+
+        while True:
+            for x_data, y_data in generator:
+                batch_online.append((x_data, y_data))
+                batch_size += x_data.shape[0]
+                if batch_size >= local_batch_size:
+                    break
+
+            if batch_size <= 0:
+                break
+
+            x_data, y_data = zip(*batch_online)
+            x_data = np.concatenate(x_data)
+            y_data = np.concatenate(y_data)
+            batch_online.clear()
+            batch_size = 0
+
+            x_data, x_extra = x_data[:local_batch_size], x_data[local_batch_size:]
+            y_data, y_extra = y_data[:local_batch_size], y_data[local_batch_size:]
+            if extra_size := x_extra.shape[0]:
+                batch_online.append((x_extra, y_extra))
+                batch_size += extra_size
+
+            while x_data.shape[0] >= local_batch_size:
+                x_batch, x_data = x_data[:local_batch_size], x_data[local_batch_size:]
+                y_batch, y_data = y_data[:local_batch_size], y_data[local_batch_size:]
+
+                global_batch_size = min(nsamples, global_batch_size)
+                yield x_batch[:nsamples], y_batch[:nsamples], global_batch_size
+                nsamples -= global_batch_size
+
+    def _batch_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         yield from self._actual_batch_generator(part)
         # NOTE: The following infinite loop provides of empty batches
         #        if there are asked more batches than actually are.
         while True:
             yield self.x_empty_batch, self.y_empty_batch, 0
 
-    def _do_flip_images(self, data: T) -> T:
+    def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = data.shape
@@ -407,7 +442,7 @@ class Dataset[T: Array](ABC):
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
         return data
 
-    def _do_crop_images(self, data: T) -> T:
+    def _do_crop_images(self, data: np.ndarray) -> np.ndarray:
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 n, c, h, w = data.shape
@@ -438,7 +473,7 @@ class Dataset[T: Array](ABC):
             data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
         return data
 
-    def _do_resize(self, data: T) -> T:
+    def _do_resize(self, data: np.ndarray) -> np.ndarray:
         N = data.shape[0]
 
         size = (self.model.resize_dimension, self.model.resize_dimension)
@@ -470,13 +505,12 @@ class Dataset[T: Array](ABC):
 
             for c in range(C):
                 channel = sample[c]
-                channel *= 255.0
-                channel = channel.astype(np.uint8)
-                image = Image.fromarray(channel, mode="L")
+                # NOTE: PIL mode F is WH in float32
+                channel = channel.transpose().astype(np.float32)
+                image = Image.fromarray(channel, mode="F")
                 image = image.resize(size)
-                channel = np.asarray(image, dtype=np.uint8)
-                channel = channel.astype(self.model.dtype)
-                channel /= 255.0
+                channel = np.asarray(image, dtype=np.float32)
+                channel = channel.transpose().astype(self.model.dtype)
                 new_sample[c] = channel
 
             match self.model.tensor_format:
@@ -491,11 +525,70 @@ class Dataset[T: Array](ABC):
         return new_data
     # ---
 
-    def _do_data_augmentation(self, x_data: T) -> T:
-        # Preserve the original version when producing new data
-        x_data = x_data.copy()
-        if self.model.flip_images:
-            x_data = self._do_flip_images(x_data)
-        if self.model.crop_images:
-            x_data = self._do_crop_images(x_data)
-        return x_data
+    def _calculate_crop(self, size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
+        width, height = size
+        frame_fraction = (1 - self.model.crop_dimension) / 2
+        x_offset, y_offset = round(width * frame_fraction), round(height * frame_fraction)
+        crop = (x_offset, y_offset, width - x_offset, height - y_offset)
+        size = (crop[2] - crop[0], crop[3] - crop[1])
+        return (crop, size)
+
+    def _do_crop(self, data: np.ndarray) -> np.ndarray:
+        N = data.shape[0]
+
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                size = data.shape[1:3]
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                size = data.shape[2:4]
+            case _:
+                raise ValueError("Unsupported tensor format")
+
+        crop, size = self._calculate_crop(size)
+
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                C = data.shape[3]
+                shape = (N, *size, C)
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                C = data.shape[1]
+                shape = (N, C, *size)
+            case _:
+                raise ValueError("Unsupported tensor format")
+
+        new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
+
+        for n in range(N):
+            sample = data[n]
+
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    sample = self._hwc2chw(sample)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    pass
+                case _:
+                    raise ValueError("Unsupported tensor format")
+
+            new_sample = np.empty(shape=(C, *size), dtype=self.model.dtype, order="C")
+
+            for c in range(C):
+                channel = sample[c]
+                # NOTE: PIL mode F is WH in float32
+                channel = channel.transpose().astype(np.float32)
+                image = Image.fromarray(channel, mode="F")
+                image = image.crop(crop)
+                channel = np.asarray(image, dtype=np.float32)
+                channel = channel.transpose().astype(self.model.dtype)
+                new_sample[c] = channel
+
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    new_sample = self._chw2hwc(new_sample)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    pass
+                case _:
+                    raise ValueError("Unsupported tensor format")
+
+            new_data[n] = new_sample
+        return new_data
+    # ---

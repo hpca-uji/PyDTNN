@@ -319,7 +319,10 @@ def _calculate_batch_size(batch_size: int | None, global_batch_size: int | None,
     return _batch_size
 # --- END _calculate_batch_size --- #
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 class Model[T: Array]:
     """
     PyDTNN Model
@@ -396,6 +399,8 @@ class Model[T: Array]:
         self.encryption_name: str = self.kwargs["encryption_name"]
         self.flip_images: bool = self.kwargs["flip_images"]
         self.crop_images: bool = self.kwargs["crop_images"]
+        self.crop: bool = self.kwargs["crop"]
+        self.crop_dimension: int = self.kwargs["crop_dimension"]
         self.resize: bool = self.kwargs["resize"]
         self.resize_dimension: int = self.kwargs["resize_dimension"]
         self.flip_images_prob: float = self.kwargs["flip_images_prob"]
@@ -481,7 +486,7 @@ class Model[T: Array]:
         self.loss_func: Loss = None
         self.metrics_funcs: list[metrics.Metric] = None
         self.loss_and_metrics: list[str]  # Is a list with the name of the loss function and the metrics's names.
-        self.total_metrics: T
+        self.total_metrics: np.ndarray
         # ---
 
         # Encryption
@@ -545,9 +550,9 @@ class Model[T: Array]:
         return TensorGPU(empty_y_tag[:0], self.tensor_format, self.cudnn_dtype)
 
     @property
-    def dataset_raw_path(self) -> str:
+    def dataset_path(self) -> str:
         """Raw dataset path with rank substituted"""
-        return utils.string_substitute(self.kwargs["dataset_raw_path"], rank=self.comm_rank)
+        return utils.string_substitute(self.kwargs["dataset_path"], rank=self.comm_rank)
     # --- END dataset_raw_path --- #
 
     def __getattr__(self, item) -> Any:
@@ -849,9 +854,9 @@ class Model[T: Array]:
         return total_time
     # --- END calculate_time --- #
 
-    def _compute_metrics_funcs[T:Array](self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[T, T]:
-        loss_req: T = None
-        _losses: T
+    def _compute_metrics_funcs[S: Array](self, y_pred: S, y_targ: S, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+        loss_req: T | None = None
+        _losses: T | None
 
         if y_targ.shape[0] > 0:
             if self.enable_cudnn:
@@ -863,6 +868,8 @@ class Model[T: Array]:
             _losses[0] = loss
 
         if self.comm is not None and comm:
+            assert MPI
+
             _losses /= self.comm_size
             if blocking:
                 self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)

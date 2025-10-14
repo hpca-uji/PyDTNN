@@ -8,8 +8,9 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
-  --dataset_train_path=datasets/imagenet/train \
-  --dataset_test_path=datasets/imagenet/test \
+  --dataset_path=datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz \
+  --dataset_train_path=datasets/imagenet/ILSVRC2012_img_train.tar \
+  --dataset_test_path=datasets/imagenet/ILSVRC2012_img_val.tar \
   --use_synthetic_data=False \
   --tensor_format=NCHW \
   --batch_size=64 \

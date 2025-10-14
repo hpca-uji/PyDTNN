@@ -40,7 +40,6 @@ def np_dtype(x):
 _this_file_path = os.path.dirname(os.path.realpath(__file__))
 _scripts_path = os.path.join(_this_file_path, "scripts")
 _default_dataset_path = os.path.join(_this_file_path, "datasets/mnist")
-_default_raw_dataset_path = os.path.join(_default_dataset_path, "dataset.npz")
 _desc = "Trains or evaluates a neural network using PyDTNN."
 _epilogue = f"""Example scripts that call this program for training
 and evaluating different neural network models with different datasets are
@@ -154,8 +153,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
-        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "raw", "folder"],
-                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'raw\' or \'folder\'. Default: \'None\'.")
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder"],
+                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'archive\' or \'folder\'. Default: \'None\'.")
         _ds_group.add_argument(
             '--dataset_percentage',
             type=float,
@@ -167,12 +166,14 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Path to the training dataset.")
         _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path,
                                help="Path to the training dataset.")
-        _ds_group.add_argument('--dataset_raw_path', type=str, default=_default_raw_dataset_path,
-                               help="Path to the raw custom dataset.")
+        _ds_group.add_argument('--dataset_path', type=str, default=_default_dataset_path,
+                               help="Path to the unified dataset.")
         _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1",
                                help="When exporting, the weights of each split, used to determine the number samples. Defualt: 1.")
         _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda,
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
+        _ds_group.add_argument('--validation_split', type=factor, default=0.2,
+                               help="Split between training and validation data.")
         _ds_group.add_argument('--flip_images', default=False, type=bool_lambda,
                                help="Flip horizontally training images. Default: False.")
         _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5,
@@ -183,12 +184,14 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Size to crop training images. Default: 16.")
         _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5,
                                help="Probability to crop training images. Default: 0.5.")
-        _ds_group.add_argument('--validation_split', type=factor, default=0.2,
-                               help="Split between training and validation data.")
+        _ds_group.add_argument('--crop', default=False, type=bool_lambda,
+                               help="Resize the images. True if specified.")
+        _ds_group.add_argument('--crop_dimension', type=float, default=0.875,
+                               help="New size of the images. Default: 300.")
         _ds_group.add_argument('--resize', default=False, type=bool_lambda,
                                help="Resize the images. True if specified.")
-        _ds_group.add_argument('--resize_dimension', type=int, default=300,
-                               help="New size of the images. Default: 300.")
+        _ds_group.add_argument('--resize_dimension', type=int, default=227,
+                               help="New size of the images. Default: 227.")
 
         # Optimization options
         _oo_group = self.add_argument_group("Optimization options")

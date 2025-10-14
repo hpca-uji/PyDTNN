@@ -173,12 +173,14 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--use_synthetic_data``: Use synthetic data. Default: False.
    -  ``--dataset_train_path``: Path to the training dataset.
    -  ``--dataset_test_path``: Path to the training dataset.
-   -  ``--dataset_raw_path``: Path to the raw custom dataset.
+   -  ``--dataset_path``: Path to the unified custom dataset.
    -  ``--dataset_export_split_weights``: When exporting, the weights
       of each split, used to determine the number samples. Default: 1.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.
+   -  ``--validation_split``: Split between training and validation
+      data.
    -  ``--flip_images``: Flip horizontally training images. Default:
       False.
    -  ``--flip_images_prob``: Probability to flip training images.
@@ -189,8 +191,10 @@ The PyDTNN framework comes with a utility launcher called
       Default: 0.5.
    -  ``--validation_split``: Split between training and validation
       data.
+   -  ``--crop``: Crop the images. True if specified.
+   -  ``--crop_dimension``: New size of the images. Default: 0.875.
    -  ``--resize``: Resize the images. True if specified.
-   -  ``--resize_dimension``: New size of the images. Default: 300.
+   -  ``--resize_dimension``: New size of the images. Default: 227.
 
 -  Optimization parameters:
 
@@ -328,6 +332,7 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
         python3 -Ou pydtnn_benchmark.py \
           --model=simplecnn \
           --dataset=mnist \
+          --dataset_path=datasets/mnist \
           --dataset_train_path=datasets/mnist \
           --dataset_test_path=datasets/mnist \
           --test_as_validation=False \
@@ -496,6 +501,7 @@ using 4 OpenMP threads::
     $ python3 -Ou pydtnn_benchmark.py \
         --model=vgg16_cifar10 \
         --dataset=cifar10 \
+        --dataset_path=datasets/cifar10 \
         --dataset_train_path=datasets/cifar10 \
         --dataset_test_path=datasets/cifar10 \
         --evaluate_only=True \

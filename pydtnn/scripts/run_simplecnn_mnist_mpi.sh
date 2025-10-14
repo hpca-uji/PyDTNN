@@ -14,6 +14,7 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=simplecnn \
   --dataset=mnist \
+  --dataset_path=datasets/mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
   --test_as_validation=False \

@@ -5,8 +5,9 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=alexnet_imagenet \
   --dataset=imagenet \
-  --dataset_train_path=datasets/imagenet/train \
-  --dataset_test_path=datasets/imagenet/val \
+  --dataset_path=datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz \
+  --dataset_train_path=datasets/imagenet/ILSVRC2012_img_train.tar \
+  --dataset_test_path=datasets/imagenet/ILSVRC2012_img_val.tar \
   --use_synthetic_data=True \
   --test_as_validation=False \
   --batch_size=64 \

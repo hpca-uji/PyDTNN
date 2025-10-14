@@ -6,6 +6,7 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=simplemlp \
   --dataset=mnist \
+  --dataset_path=datasets/mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
   --test_as_validation=True \
