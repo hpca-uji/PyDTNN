@@ -54,8 +54,8 @@ class CIFAR10(Dataset):
                     yield x, y
 
     def _read_file(self, f, offset, nsamples):
-        chunk_size = np.prod(self.real_input_shape) + 1
+        chunk_size = np.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)
-        y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *self.real_input_shape).astype(self.model.dtype, order="C")
+        y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE).astype(self.model.dtype, order="C")
         return x, y_classes
