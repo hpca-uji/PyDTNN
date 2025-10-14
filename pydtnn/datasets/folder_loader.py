@@ -31,9 +31,7 @@ if TYPE_CHECKING:
 type DataPath = str
 type ClassName = int
 
-INPUT_SHAPE = (3, 600, 600)
-OUTPUT_SHAPE = (5,)
-
+ARBITRARY_INPUT_SHAPE = (3, 600, 600)
 
 class DatasetFolderLoader(Dataset):
     """
@@ -48,34 +46,36 @@ class DatasetFolderLoader(Dataset):
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: "Model", input_shape: shape_t = INPUT_SHAPE, output_shape: shape_t = OUTPUT_SHAPE, 
-                 force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         """
         Args:
             model (Model): Model's object.
-            train_nsamples (int): number of train samples. This value will be ignored, the real value will be obtained later.
-            test_nsamples (int): number of test samples. This value will be ignored, the real value will be obtained later.
-            input_shape (shape_t): input's shape.
-            output_shape (shape_t): output's shape.
             force_test_as_validation (bool): True to force the use of the test dataset as validation. default: False.
             debug (bool): True to show debug prints. default: False.
         """
 
         # NOTE: Validation dataset is extracted from the Test one.
         self.model = model
-        assert os.path.isdir(self.model.dataset_train_path), f"\'{self.model.dataset_train_path}\' should be a directory."
-        assert os.path.isdir(self.model.dataset_test_path), f"\'{self.model.dataset_test_path}\' should be a directory."
+        if not os.path.isdir(self.model.dataset_train_path):
+            raise NotADirectoryError(f"\'{self.model.dataset_train_path}\' should be a directory.")
+        if not os.path.isdir(self.model.dataset_test_path):
+            raise NotADirectoryError(f"\'{self.model.dataset_test_path}\' should be a directory.")
 
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples: list[int, int, int] = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[DatasetEnum, list[tuple[ClassName, DataPath]]]()
 
-        self.labels_and_images[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)
-        self.labels_and_images[DatasetEnum.TEST], self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path=self.model.dataset_test_path)
+        self.labels_and_images[DatasetEnum.TRAIN], num_classes_train, self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)
+        self.labels_and_images[DatasetEnum.TEST], num_classes_test, self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path=self.model.dataset_test_path)
+
+        if num_classes_train != num_classes_test:
+            raise ValueError(f"The number of train classes ({num_classes_train}) must be the same as the number of test classes {num_classes_test}.")
+
+        output_shape = (num_classes_train, )
 
         super().__init__(model=model, train_nsamples=self._nsamples[DatasetEnum.TRAIN],
                          test_nsamples=self._nsamples[DatasetEnum.TEST],
-                         input_shape=input_shape, output_shape=output_shape,
+                         input_shape=ARBITRARY_INPUT_SHAPE, output_shape=output_shape,
                          max_prefetch=model.batch_size,
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
@@ -83,64 +83,26 @@ class DatasetFolderLoader(Dataset):
         self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST] if self.test_as_validation else self.labels_and_images[DatasetEnum.TRAIN]
     # --- END __init__ --- #
 
-    def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int]:
+    def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
         dict_class_file = dict[ClassName, set[DataPath]]()
         num_images = 0
         list_dir = sorted(os.listdir(path))
-        for class_name in range(len(list_dir)):
+        num_classes = len(list_dir)
+        for class_name in range(num_classes):
             file = list_dir[class_name]
             path_folder = os.path.join(path, file)
             if os.path.isdir(path_folder):
                 data_set = set(file for file in [os.path.join(path_folder, file) for file in sorted(os.listdir(path_folder))] if os.path.isfile(file))
                 dict_class_file[class_name] = data_set
                 num_images += len(data_set)
-        assert len(dict_class_file.values()) != 0, f"There are no directories in \'{path}\'."
+        
+        if len(dict_class_file.values()) == 0:
+            raise ValueError(f"There are no directories in \'{path}\'.")
 
         labels_and_images = [(class_name, path_image) for class_name, set_path_image in dict_class_file.items() for path_image in set_path_image]
 
-        return (labels_and_images, num_images)
+        return (labels_and_images, num_classes, num_images)
     # ---
-
-    def get_number_element_per_class(self, dict_class_file: dict[ClassName, set[DataPath]]) -> dict[ClassName, int]:
-        return {key: len(dict_class_file[key]) for key in dict_class_file.keys()}
-    # ---
-
-    def set_class_names(self, dict_class_file: dict[ClassName, set[DataPath]],
-                        new_names: list[str] | dict[ClassName, str]) -> None:
-        """
-        This method set classes names with the values passed as parameters, that can be a dictionary or a list.
-        - new_names (list[str]): the new names will be set with the same order as you get from dict.keys().
-
-        OR
-
-        - new_names (dict[ClassName, str]): will change the name from the dictionary's key to it's value (ClassName -> new_names[ClassName]).
-
-        Notes:
-        - ClassName is a string that represents a name of a class.
-        - The number of elements of the list or the number of keys of the dictionary must be the same as classes; if not, the method will raise an AssertionError.
-        - If the parameter is a dictionary and there is a key that is not a class name, then it will raise an KeyError.
-
-        Args:
-            dict_class_file (dict[ClassName, set[DataPath]]): the dataset with the original names.
-            new_names (list[str] | dict[ClassName, str]): the new names.
-        Returns:
-            Nothing. The changes will be updated in \'dict_class_file\'.
-        """
-        num_classes = len(dict_class_file)
-
-        if num_classes != len(new_names):
-            raise ValueError(f"The number of classes ({num_classes}) is not the same as the number of elements passed as parameter ({len(new_names)}).")
-
-        if isinstance(new_names, list):
-            list_keys = dict_class_file.keys()
-            for i in range(num_classes):
-                dict_class_file[new_names[i]] = dict_class_file[list_keys[i]]
-                del dict_class_file[list_keys[i]]
-        else:  # isinstance(new_names, dict):
-            for old_key in new_names.keys():
-                dict_class_file[old_key] = new_names[old_key]  # new_key=new_names[old_key]
-                del dict_class_file[old_key]
-    # --- End set_class_names --- #
 
     def _get_image_as_np_ndarray(self, path_image: str) -> np.ndarray:
         """Load a image and returns a ndarray in CHW uint8"""
@@ -163,8 +125,8 @@ class DatasetFolderLoader(Dataset):
 
     @override
     def _init_actual_data(self):
-        # There is no initialization, as the data is huge, it will be read from the corresponding files as required
-        pass
+        if not self.model.resize:
+            raise ValueError("Model resize must be enabled for dataset!")
     # ---
 
     @override
