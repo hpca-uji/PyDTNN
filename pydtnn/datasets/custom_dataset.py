@@ -75,7 +75,7 @@ class CustomDataset[T: Array](Dataset):
     @classmethod
     def import_(cls: Dataset, model: "Model") -> Self:
         """Import dataset (rank specific)"""
-        with np.load(model.dataset_raw_path) as data:
+        with np.load(model.dataset_path) as data:
             data: dict[str, T]
             x_train = data["x_train"]
             y_train = data["y_train"]

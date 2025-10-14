@@ -1,10 +1,11 @@
-# Dataset source:
-# https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz
-# https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz
-# https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz
-# https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz
+# Dataset source (SHA1):
+# 6c95f4b05d2bf285e1bfb0e7960c31bd3b3f8a7d https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz
+# 2a80914081dc54586dbdf242f9805a6b8d2a15fc https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz
+# c3a25af1f52dad7f726cce8cacb138654b760d48 https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz
+# 763e7fa3757d93b0cdec073cef058b2004252c17 https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz
 
 import os
+import gzip
 
 import numpy as np
 
@@ -27,40 +28,46 @@ class MNIST(Dataset):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE)
 
     def _init_actual_data(self) -> None:
-        x_filename = [
-            os.path.join(self.model.dataset_train_path, "train-images-idx3-ubyte"),
+        self._x_filename = [
+            os.path.join(self.model.dataset_train_path, "train-images-idx3-ubyte.gz"),
             None,
-            os.path.join(self.model.dataset_test_path, "t10k-images-idx3-ubyte")
+            os.path.join(self.model.dataset_test_path, "t10k-images-idx3-ubyte.gz")
         ]
-        y_filename = [
-            os.path.join(self.model.dataset_train_path, "train-labels-idx1-ubyte"),
+        self._y_filename = [
+            os.path.join(self.model.dataset_train_path, "train-labels-idx1-ubyte.gz"),
             None,
-            os.path.join(self.model.dataset_test_path, "t10k-labels-idx1-ubyte")
+            os.path.join(self.model.dataset_test_path, "t10k-labels-idx1-ubyte.gz")
         ]
-        x_filename[DatasetEnum.VAL] = x_filename[DatasetEnum.TEST] if self.test_as_validation else x_filename[DatasetEnum.TRAIN]
-        y_filename[DatasetEnum.VAL] = y_filename[DatasetEnum.TEST] if self.test_as_validation else y_filename[DatasetEnum.TRAIN]
-        images_header_offset = 16  # 4 + 4 * 3
-        labels_header_offset = 8  # 4 + 4 * 1
-        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
-            offset = images_header_offset + self._local_offset[part] * np.prod(self.real_input_shape)
-            nbytes = self._local_nsamples[part] * np.prod(self.real_input_shape)
-            self._x[part] = self._read_file(x_filename[part], offset, nbytes) \
-                                .reshape(self._local_nsamples[part], *self.real_input_shape) / 255.0
-            self._x[part] = self._x[part].astype(self.model.dtype)
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-                self._x[part] = self._nchw2nhwc(self._x[part])
-            offset = labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
-            nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number
-            y_classes = self._read_file(y_filename[part], offset, nbytes)
-            self._y[part] = np.zeros([self._local_nsamples[part]] + self.output_shape,
-                                     dtype=self.model.dtype, order="C")
-            self._decode_class(self._y[part], y_classes)
+        self._x_filename[DatasetEnum.VAL] = self._x_filename[DatasetEnum.TEST] if self.test_as_validation else self._x_filename[DatasetEnum.TRAIN]
+        self._y_filename[DatasetEnum.VAL] = self._y_filename[DatasetEnum.TEST] if self.test_as_validation else self._y_filename[DatasetEnum.TRAIN]
+        self._images_header_offset = 16  # 4 + 4 * 3
+        self._labels_header_offset = 8  # 4 + 4 * 1
 
-    @staticmethod
-    def _read_file(filename, offset: int, nbytes: int) -> np.ndarray:
-        with open(filename, 'rb') as f:
-            # How to read the header:
-            #  zero, data_type, dims = struct.unpack('>HBB', f.read(4))
-            #  shape = (struct.unpack('>I', f.read(4))[0] for _ in range(dims))
-            f.seek(offset)
-            return np.frombuffer(f.read(nbytes), dtype=np.uint8)
+    def _actual_data_generator(self, part: DatasetEnum):
+        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
+            offset = self._images_header_offset + self._local_offset[part] * np.prod(self.real_input_shape)
+            nbytes = self._local_nsamples[part] * np.prod(self.real_input_shape)
+            with gzip.open(self._x_filename[part], "rb") as f:
+                x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *self.real_input_shape) / 255.0
+            x = x.astype(self.model.dtype)
+
+            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+                x = self._nchw2nhwc(x)
+
+            offset = self._labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
+            nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number
+
+            with gzip.open(self._y_filename[part], "rb") as f:
+                y_classes = self._read_file(f, offset, nbytes)
+
+            y = np.zeros([self._local_nsamples[part], *self.output_shape], dtype=self.model.dtype, order="C")
+            self._decode_class(y, y_classes)
+
+            yield x, y
+
+    def _read_file(self, f, offset: int, nbytes: int) -> np.ndarray:
+        # How to read the header:
+        #  zero, data_type, dims = struct.unpack('>HBB', f.read(4))
+        #  shape = (struct.unpack('>I', f.read(4))[0] for _ in range(dims))
+        f.seek(offset)
+        return np.frombuffer(f.read(nbytes), dtype=np.uint8)

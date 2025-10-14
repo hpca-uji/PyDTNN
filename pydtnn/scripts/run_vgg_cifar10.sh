@@ -11,8 +11,7 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=vgg3dobn \
   --dataset=cifar10 \
-  --dataset_train_path=datasets/cifar10 \
-  --dataset_test_path=datasets/cifar10 \
+  --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
   --test_as_validation=True \
   --flip_images=False \
   --crop_images=False \

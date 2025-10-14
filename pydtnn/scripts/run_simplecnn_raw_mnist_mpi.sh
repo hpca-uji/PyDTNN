@@ -13,8 +13,8 @@ fi
 mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=simplecnn \
-  --dataset=raw \
-  --dataset_raw_path="datasets/mnist/dataset.npz" \
+  --dataset=archive \
+  --dataset_path=datasets/mnist/dataset.npz \
   --test_as_validation=False \
   --flip_images=True \
   --batch_size=64 \

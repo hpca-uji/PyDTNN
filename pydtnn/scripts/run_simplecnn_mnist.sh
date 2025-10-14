@@ -3,18 +3,23 @@
 export OMP_NUM_THREADS=16
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
+
 pydtnn_benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_train_path=datasets/mnist \
   --dataset_test_path=datasets/mnist \
+  --crop=False \
+  --crop_dimension=0.8 \
+  --resize=True \
+  --resize_dimension=32 \
   --test_as_validation=False \
-  --flip_images=True \
+  --flip_images=False \
   --batch_size=64 \
   --validation_split=0.2 \
   --num_epochs=50 \
   --steps_per_epoch=0 \
-  --evaluate=True \
+  --evaluate=False \
   --optimizer=sgd \
   --learning_rate=0.01 \
   --loss_func=categorical_cross_entropy \

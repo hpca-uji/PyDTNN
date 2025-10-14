@@ -23,21 +23,19 @@ from PIL import Image
 
 from pydtnn.datasets.dataset import Dataset, shape_t, DatasetEnum
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import Array
 
 from typing import TYPE_CHECKING, override, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
 type DataPath = str
-type ClassName = np.number
+type ClassName = int
 
-# TODO: Why is the output_shape in dataset??
 INPUT_SHAPE = (3, 600, 600)
 OUTPUT_SHAPE = (5,)
 
 
-class DatasetFolderLoader[T: Array](Dataset):
+class DatasetFolderLoader(Dataset):
     """
     This class will receive the path to a dataset divided in different sub-folders where every sub-folder is a different data class, and will
     generate the samples.
@@ -50,8 +48,7 @@ class DatasetFolderLoader[T: Array](Dataset):
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: "Model", train_nsamples: int = -1, test_nsamples: int = -1, input_shape: shape_t = INPUT_SHAPE, output_shape: shape_t = OUTPUT_SHAPE,
-                 max_batches_online=2, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", input_shape: shape_t = INPUT_SHAPE, output_shape: shape_t = OUTPUT_SHAPE, force_test_as_validation=False, debug=False):
         """
         Args:
             model (Model): Model's object.
@@ -59,7 +56,6 @@ class DatasetFolderLoader[T: Array](Dataset):
             test_nsamples (int): number of test samples. This value will be ignored, the real value will be obtained later.
             input_shape (shape_t): input's shape.
             output_shape (shape_t): output's shape.
-            max_batches_online (int): The maximum number of batches in memory. default: 40.
             force_test_as_validation (bool): True to force the use of the test dataset as validation. default: False.
             debug (bool): True to show debug prints. default: False.
         """
@@ -73,7 +69,6 @@ class DatasetFolderLoader[T: Array](Dataset):
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples: list[int, int, int] = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[DatasetEnum, list[tuple[ClassName, DataPath]]]()
-        self.max_nsamples_online = max_batches_online * self.model.batch_size
 
         self.labels_and_images[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)
         self.labels_and_images[DatasetEnum.TEST], self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path=self.model.dataset_test_path)
@@ -81,7 +76,7 @@ class DatasetFolderLoader[T: Array](Dataset):
         super().__init__(model=model, train_nsamples=self._nsamples[DatasetEnum.TRAIN],
                          test_nsamples=self._nsamples[DatasetEnum.TEST],
                          input_shape=input_shape, output_shape=output_shape,
-                         max_batches_online=max_batches_online,
+                         max_prefetch=model.batch_size,
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
 
@@ -90,16 +85,10 @@ class DatasetFolderLoader[T: Array](Dataset):
         else:
             x_shape = input_shape
 
-        self.x = np.ndarray(shape=(self.max_nsamples_online, *x_shape), dtype=self.model.dtype)
-        self.y = np.ndarray(shape=(self.max_nsamples_online, *output_shape), dtype=self.model.dtype)
+        # self.x = np.ndarray(shape=(self.max_nsamples_online, *x_shape), dtype=self.model.dtype)
+        # self.y = np.ndarray(shape=(self.max_nsamples_online, *output_shape), dtype=self.model.dtype)
 
-        # Splitting the Train and the Validation dataset.
-        if self.test_as_validation:
-            self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST]
-        else:
-            shuffle(self.labels_and_images[DatasetEnum.TRAIN])
-            self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TRAIN][:self._nsamples[DatasetEnum.VAL]]
-            self.labels_and_images[DatasetEnum.TRAIN] = self.labels_and_images[DatasetEnum.TRAIN][self._nsamples[DatasetEnum.VAL]:]
+        self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST] if self.test_as_validation else self.labels_and_images[DatasetEnum.TRAIN]
     # --- END __init__ --- #
 
     def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int]:
@@ -146,7 +135,9 @@ class DatasetFolderLoader[T: Array](Dataset):
             Nothing. The changes will be updated in \'dict_class_file\'.
         """
         num_classes = len(dict_class_file)
-        assert num_classes == len(new_names), f"The number of classes ({num_classes}) is not the same as the number of elements passed as parameter ({len(new_names)})."
+
+        if num_classes != len(new_names):
+            raise ValueError(f"The number of classes ({num_classes}) is not the same as the number of elements passed as parameter ({len(new_names)}).")
 
         if isinstance(new_names, list):
             list_keys = dict_class_file.keys()
@@ -160,23 +151,20 @@ class DatasetFolderLoader[T: Array](Dataset):
     # --- End set_class_names --- #
 
     def _get_image_as_np_ndarray(self, path_image: str) -> np.ndarray:
+        """Load a image and returns a ndarray in CHW uint8"""
         image = Image.open(path_image)
         image = image.convert("RGB")
-        np_array = np.asarray(image, dtype=self.model.dtype, order="C")
-        # NOTE: base image format is HWC.
+        np_array = np.asanyarray(image)
 
-        match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
-                np_array = self._hwc2chw(np_array)
-            case PYDTNN_TENSOR_FORMAT.NHWC:
-                pass  # The format is correct.
-            case _:
-                raise TypeError(f"{self.model.tensor_format} format is not supported")
+        # NOTE: PIL mode RGB is WHC in unit8
+        np_array = np_array.transpose(2, 1, 0)
+
         return np_array
     # --- END _get_image_as_np_ndarray --- #
 
-    def _prepare_label(self, label: np.number, output_shape: shape_t) -> np.ndarray:
-        np_label = np.zeros(shape=output_shape, dtype=self.model.dtype, order="C")
+    def _prepare_label(self, label: int, num_classes: shape_t) -> np.ndarray:
+        """Transform class numer into class mask (ndarray 1D unit8)"""
+        np_label = np.zeros(shape=num_classes, dtype=np.uint8, order="C")
         np_label[label] = 1
         return np_label
     # --- END _prepare_label ---#
@@ -188,37 +176,41 @@ class DatasetFolderLoader[T: Array](Dataset):
     # ---
 
     @override
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[T, T]]:
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        offset = self._local_offset[part]
+        nsamples = self._local_nsamples[part]
+        labels_and_images = self.labels_and_images[part]
 
         if part is DatasetEnum.TRAIN:
-            shuffle(self.labels_and_images[part])
+            shuffle(labels_and_images)
 
-        images = list[np.ndarray]()
-        labels = list[ClassName]()
+        labels_and_images = labels_and_images[offset:offset + nsamples]
 
-        for label, path_image in self.labels_and_images[part][self._local_offset: self._local_offset+self._local_nsamples]:
-            image = self._get_image_as_np_ndarray(path_image)
-            label = self._prepare_label(label, self.output_shape)
+        for label, path_image in labels_and_images:
+            x = self._get_image_as_np_ndarray(path_image)
+            y = self._prepare_label(label, self.output_shape)
 
-            if len(images) < self.max_nsamples_online:
-                images.append(image)
-                labels.append(label)
-            else:
-                np.stack(images, out=self.x)
-                np.stack(labels, out=self.y)
-                images.clear()
-                labels.clear()
-                yield self.x, self.y
-        # } - for
+            # Add N dimension
+            x = x[None, ...]
+            y = y[None, ...]
 
-        num_not_processed_images = len(images)
-        if num_not_processed_images != 0:
-            np.stack(images, out=self.x[:num_not_processed_images])
-            np.stack(labels, out=self.y[:num_not_processed_images])
-            images.clear()
-            labels.clear()
-            yield self.x[:num_not_processed_images], self.y[:num_not_processed_images]
-        # else: Since all the data was already yielded inside the for, do nothing.
+            # Set tensor format
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    x = self._chw2hwc(x)
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    pass  # Format is correct
+                case _:
+                    raise TypeError(f"{self.model.tensor_format} format is not supported")
+
+            # Set dtype and order
+            x = x.astype(dtype=self.model.dtype, order="C")
+            y = y.astype(dtype=self.model.dtype, order="C")
+
+            # Inplace normalization
+            x /= 255.0
+
+            yield x, y
     # --- END _actual_data_generator --- #
 
 
