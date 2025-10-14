@@ -4,7 +4,8 @@ from typing import TypeVar, Self
 from enum import StrEnum, auto
 
 import numpy as np
-from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import decode_tensor
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 try:
     # noinspection PyUnresolvedReferences

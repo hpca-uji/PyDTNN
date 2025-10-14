@@ -10,7 +10,7 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
 from pydtnn.layers.layer import LayerError
 
 

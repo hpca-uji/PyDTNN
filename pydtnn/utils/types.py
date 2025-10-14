@@ -7,4 +7,5 @@ type Array = np.ndarray | TensorGPU
 class NetworkAlgEnum(StrEnum):
     BTA = auto()
     VDG = auto()
+# -------------------
 

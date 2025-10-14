@@ -2,7 +2,7 @@ from abc import ABC
 
 from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
-from pydtnn.utils import decode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
 from pydtnn.layers.layer import LayerError
 
 import numpy as np

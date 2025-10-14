@@ -8,7 +8,7 @@ from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
 from pydtnn.layers import MaxPool2D
 from pydtnn.model import ModelModeEnum
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 
 class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):

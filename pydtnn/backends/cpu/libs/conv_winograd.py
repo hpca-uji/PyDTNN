@@ -11,7 +11,7 @@ from functools import partial
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache

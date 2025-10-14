@@ -28,7 +28,7 @@ import weakref
 import numpy as np
 
 from pydtnn.cython_modules import im2row_nhwc_cython
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils import load_library
 
 try:

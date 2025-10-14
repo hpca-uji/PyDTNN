@@ -9,7 +9,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils import decode_tensor, encode_tensor
+from pydtnn.utils.tensor import decode_tensor, encode_tensor
 from pydtnn.layers.layer import ParameterException
 
 

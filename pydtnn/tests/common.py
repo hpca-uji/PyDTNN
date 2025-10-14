@@ -7,7 +7,7 @@ import sys
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 
 # @warning: must be a function, don't use a @property decorator

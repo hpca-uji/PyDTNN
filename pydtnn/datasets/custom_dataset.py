@@ -2,7 +2,7 @@ import operator
 import warnings
 import numpy as np
 from pydtnn.datasets.dataset import Dataset, DatasetEnum
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 from typing import TYPE_CHECKING, Self
 if TYPE_CHECKING:

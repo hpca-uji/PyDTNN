@@ -21,7 +21,7 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 

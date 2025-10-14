@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from numpy import ndarray, empty
 
 

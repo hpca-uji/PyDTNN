@@ -30,8 +30,8 @@ from tqdm import tqdm
 import numpy as np
 
 import pydtnn.metrics
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.types import Array, NetworkAlgEnum
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn import losses, metrics
 from pydtnn import utils
 from pydtnn.datasets import CustomDataset, get_dataset

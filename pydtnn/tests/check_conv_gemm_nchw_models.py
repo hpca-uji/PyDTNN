@@ -17,7 +17,7 @@ import unittest
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.losses import Loss
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 
 class CheckConvGemmNCHWModels(CheckConvGemmModels):

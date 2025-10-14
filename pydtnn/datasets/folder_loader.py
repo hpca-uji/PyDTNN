@@ -22,7 +22,7 @@ from random import shuffle
 from PIL import Image
 
 from pydtnn.datasets.dataset import Dataset, shape_t, DatasetEnum
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.types import Array
 
 from typing import TYPE_CHECKING, override, Generator
@@ -196,7 +196,7 @@ class DatasetFolderLoader[T: Array](Dataset):
         images = list[np.ndarray]()
         labels = list[ClassName]()
 
-        for label, path_image in self.labels_and_images[part]:
+        for label, path_image in self.labels_and_images[part][self._local_offset: self._local_offset+self._local_nsamples]:
             image = self._get_image_as_np_ndarray(path_image)
             label = self._prepare_label(label, self.output_shape)
 

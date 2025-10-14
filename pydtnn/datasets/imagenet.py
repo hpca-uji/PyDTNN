@@ -2,7 +2,7 @@ import os
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.datasets.dataset import Dataset, DatasetEnum
 
 from typing import TYPE_CHECKING

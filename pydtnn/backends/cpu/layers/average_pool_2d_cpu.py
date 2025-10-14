@@ -1,7 +1,7 @@
 import numpy as np
 from pydtnn.backends.cpu.layers.abstract_pool_2d_layer_cpu import AbstractPool2DLayerCPU
 from pydtnn.layers import AveragePool2D
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
     im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \

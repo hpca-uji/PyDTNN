@@ -3,7 +3,7 @@ from abc import ABC
 import numpy as np
 
 from pydtnn.layers.layer import Layer, LayerError
-from pydtnn.utils import decode_tensor, encode_tensor
+from pydtnn.utils.tensor import decode_tensor, encode_tensor
 
 from pydtnn.utils.types import Array
 

@@ -9,7 +9,7 @@ import os
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset, DatasetEnum
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

@@ -24,7 +24,8 @@ from pydtnn.tests.common import verbose_test
 
 from pydtnn.layers import Layer
 from pydtnn.tests.common import Params
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT, print_with_header
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils import print_with_header
 
 
 class CheckConvGemmModels(unittest.TestCase):

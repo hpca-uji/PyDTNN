@@ -16,22 +16,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 
-class PYDTNN_TENSOR_FORMAT_enum(StrEnum):
-
-    @staticmethod
-    def get_num_formats():
-        return len(PYDTNN_TENSOR_FORMAT_enum)
-
-    # Constants:
-    NHWC = auto()
-    NCHW = auto()
-# --- END PYDTNN_OPS_EVENT_enum --- #
-
-
-PYDTNN_TENSOR_FORMAT = PYDTNN_TENSOR_FORMAT_enum
-PYDTNN_TENSOR_FORMATS = PYDTNN_TENSOR_FORMAT.get_num_formats()
-
-
 def print_with_header(header, to_be_printed=None):
     print(f"# {header}")
     if to_be_printed is not None:
@@ -65,21 +49,6 @@ def set_attr_default_factory(o, name, factory):
         value = factory()
         setattr(o, name, value)
         return value
-
-
-def encode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC):
-    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-        return shape[2], shape[0], shape[1]
-    else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
-        return shape
-
-
-def decode_tensor(shape, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC):
-    if len(shape) == 3 and tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
-        return shape[1], shape[2], shape[0]
-    else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
-        return shape
-
 
 def load_library(name):
     """

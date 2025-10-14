@@ -22,7 +22,7 @@ from pydtnn.layers import AdaptiveAveragePool2D
 from pydtnn.backends.cpu.layers import LayerCPU
 
 # Imports for the method from AbstractPool2DLayerCPU
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 # Imports for the methods from AveragePool2DCPU
 from pydtnn.cython_modules import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython, \

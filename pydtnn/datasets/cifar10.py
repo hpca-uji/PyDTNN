@@ -5,14 +5,12 @@ import os
 
 import numpy as np
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.datasets.dataset import Dataset, DatasetEnum
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else:
-    Model = object
 
 TRAIN_NSAMPLES = 50000
 TEST_NSAMPLES = 10000
@@ -24,7 +22,7 @@ IMAGES_PER_FILE = 10000
 class CIFAR10(Dataset):
     """CIFAR10 Dataset"""
 
-    def __init__(self, model: Model):
+    def __init__(self, model: "Model"):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE)
 
     def _init_actual_data(self):

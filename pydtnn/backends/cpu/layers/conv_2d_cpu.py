@@ -6,7 +6,7 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGe
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312

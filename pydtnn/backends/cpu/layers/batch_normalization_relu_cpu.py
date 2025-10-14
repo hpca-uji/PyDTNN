@@ -2,7 +2,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.cython_modules import bn_relu_inference_cython
 from pydtnn.model import ModelModeEnum
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 

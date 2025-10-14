@@ -4,7 +4,7 @@ from pydtnn.cython_modules import bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import ModelModeEnum
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 

@@ -3,7 +3,7 @@ import numpy as np
 from abc import ABC
 
 from pydtnn.layers.layer import Layer
-from pydtnn.utils import decode_tensor
+from pydtnn.utils.tensor import decode_tensor
 from typing import Callable
 
 from pydtnn.initializers import zeros

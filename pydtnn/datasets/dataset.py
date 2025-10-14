@@ -8,7 +8,8 @@ import numpy as np
 from PIL import Image
 from math import ceil
 
-from pydtnn.utils import PYDTNN_TENSOR_FORMAT, string_substitute
+from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils import string_substitute
 from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
