@@ -486,7 +486,7 @@ class Model[T: Array]:
         self.loss_func: Loss = None
         self.metrics_funcs: list[metrics.Metric] = None
         self.loss_and_metrics: list[str]  # Is a list with the name of the loss function and the metrics's names.
-        self.total_metrics: T
+        self.total_metrics: np.ndarray
         # ---
 
         # Encryption
@@ -854,9 +854,9 @@ class Model[T: Array]:
         return total_time
     # --- END calculate_time --- #
 
-    def _compute_metrics_funcs[T:Array](self, y_pred: T, y_targ: T, loss: float, blocking=True, comm=True) -> tuple[T, T]:
-        loss_req: T = None
-        _losses: T
+    def _compute_metrics_funcs[S: Array](self, y_pred: S, y_targ: S, loss: float, blocking=True, comm=True) -> tuple[np.ndarray, None] | tuple[None, Any]:
+        loss_req: T | None = None
+        _losses: T | None
 
         if y_targ.shape[0] > 0:
             if self.enable_cudnn:
@@ -868,6 +868,8 @@ class Model[T: Array]:
             _losses[0] = loss
 
         if self.comm is not None and comm:
+            assert MPI
+
             _losses /= self.comm_size
             if blocking:
                 self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
