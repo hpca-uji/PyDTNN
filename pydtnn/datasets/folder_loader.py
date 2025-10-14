@@ -48,7 +48,8 @@ class DatasetFolderLoader(Dataset):
     The Dataset is composed by img1 and img2, which belongs to the class A; img3, img4 and img5, which belong to class the class B; and img6, which belongs to class C.
     """
 
-    def __init__(self, model: "Model", input_shape: shape_t = INPUT_SHAPE, output_shape: shape_t = OUTPUT_SHAPE, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", input_shape: shape_t = INPUT_SHAPE, output_shape: shape_t = OUTPUT_SHAPE, 
+                 force_test_as_validation=False, debug=False):
         """
         Args:
             model (Model): Model's object.
@@ -59,7 +60,6 @@ class DatasetFolderLoader(Dataset):
             force_test_as_validation (bool): True to force the use of the test dataset as validation. default: False.
             debug (bool): True to show debug prints. default: False.
         """
-        # TODO: add all the transformations.
 
         # NOTE: Validation dataset is extracted from the Test one.
         self.model = model
@@ -80,14 +80,6 @@ class DatasetFolderLoader(Dataset):
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
 
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
-            x_shape = (input_shape[1], input_shape[2], input_shape[0])
-        else:
-            x_shape = input_shape
-
-        # self.x = np.ndarray(shape=(self.max_nsamples_online, *x_shape), dtype=self.model.dtype)
-        # self.y = np.ndarray(shape=(self.max_nsamples_online, *output_shape), dtype=self.model.dtype)
-
         self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST] if self.test_as_validation else self.labels_and_images[DatasetEnum.TRAIN]
     # --- END __init__ --- #
 
@@ -102,7 +94,7 @@ class DatasetFolderLoader(Dataset):
                 data_set = set(file for file in [os.path.join(path_folder, file) for file in sorted(os.listdir(path_folder))] if os.path.isfile(file))
                 dict_class_file[class_name] = data_set
                 num_images += len(data_set)
-        assert len(dict_class_file) != 0, f"There are no directories in \'{path}\'."
+        assert len(dict_class_file.values()) != 0, f"There are no directories in \'{path}\'."
 
         labels_and_images = [(class_name, path_image) for class_name, set_path_image in dict_class_file.items() for path_image in set_path_image]
 
@@ -197,7 +189,7 @@ class DatasetFolderLoader(Dataset):
             # Set tensor format
             match self.model.tensor_format:
                 case PYDTNN_TENSOR_FORMAT.NHWC:
-                    x = self._chw2hwc(x)
+                    x = self._nchw2nhwc(x)
                 case PYDTNN_TENSOR_FORMAT.NCHW:
                     pass  # Format is correct
                 case _:

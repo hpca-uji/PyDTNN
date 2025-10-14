@@ -319,10 +319,6 @@ def _calculate_batch_size(batch_size: int | None, global_batch_size: int | None,
     return _batch_size
 # --- END _calculate_batch_size --- #
 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 class Model[T: Array]:
     """
     PyDTNN Model

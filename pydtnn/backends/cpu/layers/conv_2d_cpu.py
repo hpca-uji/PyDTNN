@@ -41,7 +41,6 @@ class Conv2DCPU(LayerCPU,
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
         dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
-        self.dw: ndarray = None
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self._x_cols = zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
@@ -55,6 +54,8 @@ class Conv2DCPU(LayerCPU,
                 self.res_bw = empty(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
             case _:
                 raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        #  NOTE: This is necessary for the initial "reduce_weights_async"
+        self.dw: ndarray = zeros(self.weights.shape, dtype=self.model.dtype, order="C")
     # ---
 
     def initialize_depthwise(self):

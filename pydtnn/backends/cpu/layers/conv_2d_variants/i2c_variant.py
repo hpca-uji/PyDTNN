@@ -115,7 +115,7 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
-        self.dw = self._dw.reshape(self.weights.shape, copy=False)
+        self.dw = self._dw.reshape(self.weights.shape, copy=False, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Biases gradient
@@ -159,7 +159,7 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
-        self.dw = self._dw.reshape(self.weights.shape, copy=False)
+        self.dw = self._dw.reshape(self.weights.shape, copy=False, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Biases gradient

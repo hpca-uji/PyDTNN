@@ -24,7 +24,7 @@ IMAGES_PER_FILE = 10000
 class CIFAR10(Dataset):
     """CIFAR10 Dataset"""
 
-    def __init__(self, model: Model):
+    def __init__(self, model: "Model"):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, max_prefetch=math.ceil(model.batch_size / IMAGES_PER_FILE))
 
     def _init_actual_data(self):
