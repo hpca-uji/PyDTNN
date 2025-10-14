@@ -40,25 +40,13 @@ Supported datasets:
    dataset is not included into the project. Its binary version can be
    downloaded from: https://www.cs.toronto.edu/~kriz/cifar.html
 
--  **ImageNet**: the PyDTNN module for this dataset requires a
-   preprocessed ImageNet dataset split into 1,024 files in the NPZ
-   Numpy compressed array format containing the images/labels, similar
-   to what TensorFlow uses. Each of these files should store the images
-   in the key 'x' with the shape NCHW = (1251, 3, 227, 227), and the
-   labels in the key 'y' with the shape NL = (1251, 1). Images shall be
-   stored in np.uint8 data type in the range [0..255] while the labels
-   can be stored in np.int16 in the range [1..1000]::
-
-    >>> import numpy as np
-    >>> data = np.load("/scratch/imagenet/train/train-00000-of-01024.npz")
-    >>> data['x'].shape
-    (1251, 3, 227, 227)
-    >>> data['y'].shape
-    (1251, 1)
-
-   PyDTNN comes with the utility ``datasets/ImageNet_converter.py`` that reads the
-   preprocessed ImageNet TensorFlow training/validation files in TFRecord format
-   and converts them into NPZ format.
+-  **ImageNet**: the most highly-used subset of ImageNet is the
+   ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
+   image classification and localization dataset. This dataset spans
+   1000 object classes and contains 1,281, 167 training images,
+   50,000 validation images and 100,000 test images. This dataset
+   is not included into the project. Its can be downloaded from:
+   https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
 
 
 Installing PyDTNN from source
