@@ -13,7 +13,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils import decode_tensor
+from pydtnn.utils.tensor import decode_tensor
 
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization):
