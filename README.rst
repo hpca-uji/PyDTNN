@@ -33,10 +33,10 @@ Supported layers:
 
 Supported datasets:
 
--  **MNIST** handwritten digit database. This dataset is included into
+-  **MNIST**: handwritten digit database. This dataset is included into
    the project.
 
--  **CIFAR10** database of the 80 million tiny images dataset. This
+-  **CIFAR10**: database of the 80 million tiny images dataset. This
    dataset is not included into the project. Its binary version can be
    downloaded from: https://www.cs.toronto.edu/~kriz/cifar.html
 
