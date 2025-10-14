@@ -103,63 +103,6 @@ def test_keras(_x: np.ndarray):
     print(f"x_pydtnn:\n{x_pydtnn}")
 # ---
 
-
-def test_torch(_x: np.ndarray):
-    import torch
-    torch.manual_seed(SEED)
-    # Modulo unit test. Clase testcase. Exentenderla. Crear un método que empieze igual al que tengo (test_ lo que te apetezca)
-    # En ese test. Ejecutas lo que te de la gana
-    # Existen métodos de assert True y assert False.
-
-    epsilon = 1e-5
-    momentum = 0.9
-
-    model = Model(**KWARGS)
-    model.add(Input(SHAPE, True))
-    # model.add(Conv2D(grouping=GroupingEnum.STANDARD, nfilters=3, filter_shape=(2,2)))
-    model.add(BatchNormalization(epsilon=epsilon, momentum=momentum))
-    model.mode = ModelModeEnum.TRAIN
-    model._initialize()
-
-    x = np.copy(_x)
-
-    for layer in model.layers:
-        x_pydtnn = layer.forward(x)
-
-    x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu"))
-    # bn = torch.nn.Conv2d(in_channels=C, out_channels=3,kernel_size=(2, 2), stride=1)
-    bn = torch.nn.BatchNorm2d(C, eps=epsilon, momentum=momentum)
-
-    x_torch: torch.Tensor = bn(x)
-
-    x_torch = x_torch.cpu().detach().numpy()  # .reshape((N, H, W, C))
-
-    print(f"{x_pydtnn.shape=}")
-    print(f"{x_pydtnn.shape=}")
-    print(f"{x_torch.shape=}")
-
-    print(f"x_pydtnn.max:\t{x_pydtnn.max()}")
-    print(f"x_torch.max: \t{x_torch.max()}")
-    print(f"x_pydtnn.min:\t{x_pydtnn.min()}")
-    print(f"x_torch.min: \t{x_torch.min()}")
-
-    threshold = 1e-6
-    diff = x_pydtnn - x_torch
-    print(f"diff all zeros {not diff.any()}")
-    print(f"diff below threshold {threshold}: {(diff < threshold).all()}")
-    print(f"{diff.max()=}")
-    print(f"{diff.std()=}")
-    print(f"{diff.min()=}")
-
-    if not (diff < threshold).all():
-        print(f"x_pydtnn:\n{x_pydtnn}")
-        print(f"x_torch:\n{x_torch}")
-        print(f"diff:\n{diff}")
-
-    assert ((diff < threshold).all()) f"Not all values are below the threshold. Max. difference: \"{diff.max()}\". Std. deviation: \"{diff.std()}\". Min. difference: {diff.min()}."
-# ---
-
-
 def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
     # Testing Layers and activations:
     for test in dict_test.keys():
