@@ -1,13 +1,12 @@
 from pathlib import Path
 
-from setuptools import setup, find_packages, Extension
+from setuptools import setup, Extension
 
 import numpy
 from Cython.Build import cythonize
 
 
 setup(
-    packages=find_packages(include=["pydtnn", "pydtnn.*"]),
     ext_modules=cythonize([
         Extension(
             ".".join(pyx.with_suffix("").parts),
