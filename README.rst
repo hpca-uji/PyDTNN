@@ -153,7 +153,7 @@ The PyDTNN framework comes with a utility launcher called
 -  Dataset parameters:
 
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
-      ``imagenet``, ``raw`` or ``folder``. Default: ``None``.
+      ``imagenet``, ``archive`` or ``folder``. Default: ``None``.
    -  ``dataset_percentage``: Percentage of dataset that will be used. 
       If it is ``0``: it is deactivated; if is is a value below ``1`` (and above 0): 
       it will perform undersampling; and if is is a value above ``1``: it will perform 
