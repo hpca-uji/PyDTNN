@@ -25,7 +25,7 @@ relu6 = Relu6
 leaky_relu = leakyrelu = LeakyRelu
 tanh = Tanh
 arctanh = Arctanh
-log = Log
+log_sigmoid = LogSigmoid = log = Log
 softmax = Softmax
 
 # Search this module for Activation derived classes and expose them
