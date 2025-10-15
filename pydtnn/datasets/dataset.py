@@ -339,7 +339,7 @@ class Dataset[T: Array](ABC):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _actual_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         # NOTE: Yield is necessary so this function is a generator,
         #       however want to produce a empty iterable,
         #       so we return immediately without yielding
