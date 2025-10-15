@@ -39,7 +39,6 @@ import numpy as np
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 # --- CONSTANTS --- #
-DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 _MACRO_INDEX_FIRST_ELEMENT = "INDEX_FIRST_ELEMENT"
 _MACRO_INDEX_LAST_ELEMENT = "INDEX_LAST_ELEMENT"
 _MACRO_INDEX_N = "INDEX_N"
@@ -97,7 +96,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
 
         _func_name = ["cuda_adaptive_average_pooling_fwd"]
-        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
@@ -227,7 +226,7 @@ __global__ void {func_name}({T}* x, {T}* y,
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
 
         _func_name = ["cuda_adaptive_average_pooling_bwd"]
-        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""

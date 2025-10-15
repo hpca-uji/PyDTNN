@@ -3,7 +3,7 @@ from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
 
 import numpy as np
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
@@ -13,10 +13,6 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 # noinspection PyUnresolvedReferences
 from pycuda.driver import Function
-
-
-DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
-
 
 class Relu6GPU(ActivationGPU, Relu6):
 
@@ -44,7 +40,7 @@ class Relu6GPU(ActivationGPU, Relu6):
 
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_fwd"
-        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
 
         code = \
             """
@@ -83,7 +79,7 @@ __global__ void {func_name}({T}* x, {T}* max, {T}* mask,
 
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_bwd"
-        _t = DICT_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
 
         code = \
             """

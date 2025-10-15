@@ -16,9 +16,8 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.layers.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
 
-DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 MACROS_NCHW = \
     """
 #define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
@@ -274,7 +273,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
     ####################
 
     def cuda_sum_bias_axis_023(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         # np.sum(dy, axis=(0, 2, 3), out=self.db)
         code = \
@@ -302,7 +301,7 @@ __global__ void {func_name}({T}* dy, {T}* db
     # ----
 
     def cuda_sum_bias_axis_012(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nhwc") -> Function:
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         # np.sum(dy, axis=(0, 1, 2), out=self.db)
         code = \
@@ -374,7 +373,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
     }}
 }}
 """
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -427,7 +426,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     }}
 }}
 """
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -439,7 +438,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     # ---
 
     def cuda_bias_sum_fwd_depthwise_conv(self, _func_name: str = "bias_sum_fwd_depthwise_conv") -> Function:
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         code = \
             """
@@ -694,7 +693,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* y,
     }}
 }}
 """
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -745,7 +744,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     }}
 }}
 """
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -782,7 +781,7 @@ __global__ void {func_name}({T}* y, {T}* b,
     }}
 }}
 """
-        _t = DICT_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,

@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.activations import Log
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
 
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
@@ -24,14 +24,14 @@ class LogGPU(ActivationGPU, Log):
         super().initialize(prev_shape, x)
 
         self.log = ElementwiseKernel(
-            "T *in, T *out".replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]),
+            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
             "out[i] = %s(1.0 / (1.0 + %s(-in[i])));" %
             ({np.float32: "logf", np.float64: "log"}[self.model.dtype],
              {np.float32: "expf", np.float64: "exp"}[self.model.dtype]),
             "log_GPU")
 
         self.dlog = ElementwiseKernel(
-            "T *in, T *out".replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]),
+            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + %s(in[i]));" % {np.float32: "expf", np.float64: "exp"}[self.model.dtype],
             "dlog_GPU")
 

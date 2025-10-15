@@ -9,7 +9,7 @@ from pycuda.driver import Function
 from pydtnn.losses import CategoricalCrossEntropy
 from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
 from pydtnn.backends.gpu import TensorGPU
-
+from pydtnn.utils.types import GPU_SUPPORTED_TYPES
 
 class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
 
@@ -38,7 +38,7 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
             }
             return;
         }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
+        """.replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]))
         return module.get_function("categorical_cross_entropy")
 
     def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:

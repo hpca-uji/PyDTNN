@@ -10,7 +10,7 @@ from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_
 from pydtnn.optimizers import RMSProp
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
-
+from pydtnn.utils.types import GPU_SUPPORTED_TYPES
 
 class RMSPropGPU(OptimizerGPU, RMSProp):
     """
@@ -37,7 +37,7 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
                     cache[i] = rho * cache[i] + (1 - rho) * pow(dw[i], 2);
                     w[i] -= lr * (decay * w[i] + (dw[i] / sqrt(cache[i] + epsilon)));
                 }
-            }""".replace("T", {np.float32: "float", np.float64: "double"}[dtype]).
+            }""".replace("T", GPU_SUPPORTED_TYPES[dtype]).
             replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype])
         ).get_function("RMSProp_kernel")
 

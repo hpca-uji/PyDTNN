@@ -9,7 +9,7 @@ from pycuda.driver import Function
 from pydtnn.metrics import CategoricalAccuracy
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-
+from pydtnn.utils.types import GPU_SUPPORTED_TYPES
 
 class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
 
@@ -31,7 +31,7 @@ class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
             }
             return;
         }
-        """.replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]))
+        """.replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]))
         return module.get_function("categorical_accuracy")
 
     def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:

@@ -2,6 +2,7 @@ import numpy as np
 from enum import auto, StrEnum
 
 type shape_t = tuple[int, ...]
+GPU_SUPPORTED_TYPES = dict[np.number, str]({np.float32: "float", np.float64: "double"})
 
 class NetworkAlgEnum(StrEnum):
     BTA = auto()

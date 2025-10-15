@@ -10,7 +10,7 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
 
 class ArctanhGPU(ActivationGPU, Arctanh):
 
@@ -23,12 +23,12 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         super().initialize(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
-            "T *in, T *out".replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]),
+            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
             "out[i] = %s(in[i]);" % {np.float32: "atanhf", np.float64: "atanh"}[self.model.dtype],
             "atanh")
 
         self.datanh = ElementwiseKernel(
-            "T *in, T *out".replace("T", {np.float32: "float", np.float64: "double"}[self.model.dtype]),
+            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + %s(in[i], 2));" % {np.float32: "powf", np.float64: "pow"}[self.model.dtype],
             "datanh")
 
