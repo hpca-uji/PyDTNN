@@ -14,7 +14,6 @@ from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.memory_cache import MemoryCache
 
 from numpy import ndarray, empty, zeros
-from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import ConvVariantEnum
 from pydtnn.utils.types import shape_t
 
 
@@ -87,12 +86,12 @@ class Conv2DCPU(LayerCPU,
         # Select variants if it has not been already selected (e.g., by BestOfVariant)
         if self.variant is None:
             # Select variant when best_of is not enabled
-            variant = ConvVariantEnum.I2C  # Default Convolution variant.
+            variant = Conv2DCPU.Variant.I2C  # Default Convolution variant.
             match self.grouping:
                 case Conv2DCPU.Grouping.POINTWISE:
-                    variant = ConvVariantEnum.POINTWISE
+                    variant = Conv2DCPU.Variant.POINTWISE
                 case Conv2DCPU.Grouping.DEPTHWISE:
-                    variant = ConvVariantEnum.DEPTHWISE
+                    variant = Conv2DCPU.Variant.DEPTHWISE
                 case convWinograd_or_Gemm_or_Direct:
                     # Check colliding options
                     # -> WINOGRAD:
@@ -101,9 +100,9 @@ class Conv2DCPU(LayerCPU,
                             sys.stderr.write("Error: please, select exactly one of conv_winograd or conv_direct")
                             sys.exit(1)
                         elif self.cw_constraints_fulfilled:
-                            variant = ConvVariantEnum.WINOGRAD
+                            variant = Conv2DCPU.Variant.WINOGRAD
                         # else: variant = None # Value set before the match-case statement
-                    if variant == ConvVariantEnum.I2C:
+                    if variant == Conv2DCPU.Variant.I2C:
                         # assert not self.model.enable_conv_winograd or (self.model.enable_conv_winograd and not self.cw_constraints_fulfilled)
                         # -> GEMM or ConvDirect:
                         if self.model.enable_conv_gemm:
@@ -112,19 +111,19 @@ class Conv2DCPU(LayerCPU,
                                 sys.stderr.write("Error: please, select exactly one of conv_gemm or conv_direct")
                                 sys.exit(1)
                             else:
-                                variant = ConvVariantEnum.GEMM
+                                variant = Conv2DCPU.Variant.GEMM
                         elif self.model.enable_conv_direct:
                             # -> ConvDirect:
-                            variant = ConvVariantEnum.DIRECT
-                        # else: variant = ConvVariantEnum.I2C # Already set.
+                            variant = Conv2DCPU.Variant.DIRECT
+                        # else: variant = Conv2DCPU.Variant.I2C # Already set.
             self.variant = variant
 
         match self.variant:
-            case ConvVariantEnum.I2C:
+            case Conv2DCPU.Variant.I2C:
                 self.initialize_i2c()
-            case ConvVariantEnum.DEPTHWISE:
+            case Conv2DCPU.Variant.DEPTHWISE:
                 self.initialize_depthwise()
-            case ConvVariantEnum.POINTWISE:
+            case Conv2DCPU.Variant.POINTWISE:
                 self.initialize_pointwise()
             case _:
                 pass

@@ -17,6 +17,18 @@ class Conv2D[T: Array](Layer, ABC):
         DEPTHWISE = auto()
         POINTWISE = auto()
         STANDARD = auto()
+    # -------
+
+    class Variant(StrEnum):
+        BEST_OF = auto()
+        I2C = auto()
+        POINTWISE = auto()
+        DEPTHWISE = auto()
+        # The following values are not set by auto due it's necessary that have that value.
+        GEMM = "cg"
+        WINOGRAD = "cw"
+        DIRECT = "cd0"
+    # -----
 
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),
