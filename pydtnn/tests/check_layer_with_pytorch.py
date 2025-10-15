@@ -1,7 +1,6 @@
 from pydtnn.activations import *
 from pydtnn.layers import *
 from pydtnn.optimizers import *
-from pydtnn.layers.conv_2d import GroupingEnum
 import torch
 import unittest
 
@@ -253,7 +252,7 @@ class CheckLayerWithPyTorch(unittest.TestCase):
 
 
     def test_Conv2D(self):
-        pydtnn_layers = [Conv2D(grouping=GroupingEnum.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
+        pydtnn_layers = [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
         torch_model = torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
@@ -299,11 +298,11 @@ class CheckLayerWithPyTorch(unittest.TestCase):
 
     def test_AdditionBlock(self):
         pydtnn_layers = [AdditionBlock(
-            [Conv2D(grouping=GroupingEnum.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
+            [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
                     padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION), 
              BatchNormalization(epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)],
 
-            [Conv2D(grouping=GroupingEnum.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
+            [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
                     padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)])]
         torch_model = TorchAdditionBlock()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
@@ -314,11 +313,11 @@ class CheckLayerWithPyTorch(unittest.TestCase):
 
     def test_ConcatenationBlock(self):
         pydtnn_layers = [ConcatenationBlock(
-            [Conv2D(grouping=GroupingEnum.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
+            [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
                     padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION), 
              BatchNormalization(epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)],
 
-            [Conv2D(grouping=GroupingEnum.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
+            [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, 
                     padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)])]
         torch_model = TorchConcatenationBlock()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)

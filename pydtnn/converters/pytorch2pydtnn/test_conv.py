@@ -4,7 +4,7 @@ from pydtnn.layers import Input, Conv2D, Layer
 from pydtnn.activations import LeakyRelu, Relu6
 from copy import deepcopy
 
-from pydtnn.layers.conv_2d import GroupingEnum
+from pydtnn.layers.conv_2d import Conv2D
 
 # noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
@@ -75,11 +75,11 @@ def main():
     model_RELU._initialize()
 
     model_DEPTH.add(Input(SHAPE, is_shape_in_format=True))
-    model_DEPTH.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=GroupingEnum.DEPTHWISE, use_bias=use_bias))
+    model_DEPTH.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=Conv2D.Grouping.DEPTHWISE, use_bias=use_bias))
     model_DEPTH._initialize()
 
     model_POINT.add(Input(SHAPE, is_shape_in_format=True))
-    model_POINT.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=GroupingEnum.POINTWISE, use_bias=use_bias))
+    model_POINT.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=Conv2D.Grouping.POINTWISE, use_bias=use_bias))
     model_POINT._initialize()
 
     model_I2C.add(Input(SHAPE, is_shape_in_format=True))

@@ -16,7 +16,6 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.layers.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.layers.conv_2d import GroupingEnum
 from pydtnn.utils.types import shape_t
 
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
@@ -59,9 +58,9 @@ class Conv2DGPU(LayerGPU, Conv2D):
 
         self.stream_2 = drv.Stream()
 
-        if self.grouping is GroupingEnum.DEPTHWISE:
+        if self.grouping is Conv2D.Grouping.DEPTHWISE:
             self.weights_shape = (1, *self.weights_shape)
-        elif self.grouping is GroupingEnum.STANDARD:
+        elif self.grouping is Conv2D.Grouping.STANDARD:
             # This weight shape is required for cuDNN when NHWC is seleted!
             self.weights_shape = (self.co, *self.filter_shape, self.ci)
 
@@ -109,11 +108,11 @@ class Conv2DGPU(LayerGPU, Conv2D):
                                                                            gpudirect=self.model.gpudirect)
 
         match self.grouping:
-            case GroupingEnum.STANDARD:
+            case Conv2D.Grouping.STANDARD:
                 self.initialize_standard_grouping(x)
-            case GroupingEnum.DEPTHWISE:
+            case Conv2D.Grouping.DEPTHWISE:
                 self.initialize_depthwise_grouping()
-            case GroupingEnum.POINTWISE:
+            case Conv2D.Grouping.POINTWISE:
                 self.initialize_pointwise_grouping()
     # -----
 
@@ -150,7 +149,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
                                               self.vstride, self.hstride, self.vdilation, self.hdilation,
                                               conv_mode, self.model.cudnn_dtype)
         # Set grouping options
-        if self.grouping is GroupingEnum.DEPTHWISE:
+        if self.grouping is Conv2D.Grouping.DEPTHWISE:
             cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
 
         # Allow NCHW -> NHWC conversion for the use of Tensor Cores

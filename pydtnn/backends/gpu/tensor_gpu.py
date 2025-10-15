@@ -16,8 +16,6 @@ except Exception as e:
 
 PyCudaDrvType = TypeVar("PyCuda Driver Type")
 GpuArrayType = TypeVar("gpuarray type")
-TODO_CHECK_TYPE = TypeVar("TODO: Chec type")
-
 
 class TensorGPU:
 
@@ -143,7 +141,7 @@ class TensorGPU:
     def initialize_gpu_direct(drv: PyCudaDrvType, shape: shape_t, dtype: np.dtype,
                               tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
                               tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                              desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[TODO_CHECK_TYPE, Self]:
+                              desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, Self]:
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 

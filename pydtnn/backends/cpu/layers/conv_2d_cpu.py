@@ -14,7 +14,6 @@ from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.memory_cache import MemoryCache
 
 from numpy import ndarray, empty, zeros
-from pydtnn.layers.conv_2d import GroupingEnum
 from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import ConvVariantEnum
 from pydtnn.utils.types import shape_t
 
@@ -90,9 +89,9 @@ class Conv2DCPU(LayerCPU,
             # Select variant when best_of is not enabled
             variant = ConvVariantEnum.I2C  # Default Convolution variant.
             match self.grouping:
-                case GroupingEnum.POINTWISE:
+                case Conv2DCPU.Grouping.POINTWISE:
                     variant = ConvVariantEnum.POINTWISE
-                case GroupingEnum.DEPTHWISE:
+                case Conv2DCPU.Grouping.DEPTHWISE:
                     variant = ConvVariantEnum.DEPTHWISE
                 case convWinograd_or_Gemm_or_Direct:
                     # Check colliding options

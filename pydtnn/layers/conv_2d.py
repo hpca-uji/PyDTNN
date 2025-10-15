@@ -11,17 +11,16 @@ import numpy as np
 from enum import StrEnum, auto
 from pydtnn.utils.types import shape_t
 
-class GroupingEnum(StrEnum):
-    DEPTHWISE = auto()
-    POINTWISE = auto()
-    STANDARD = auto()
-
-
 class Conv2D[T: Array](Layer, ABC):
+
+    class Grouping(StrEnum):
+        DEPTHWISE = auto()
+        POINTWISE = auto()
+        STANDARD = auto()
 
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),
-                 grouping: GroupingEnum = GroupingEnum.STANDARD,
+                 grouping: Grouping = Grouping.STANDARD,
                  padding: tuple[int, int] | int = 0,
                  stride: tuple[int, int] | int = 1,
                  dilation: tuple[int, int] | int = 1,
@@ -33,7 +32,7 @@ class Conv2D[T: Array](Layer, ABC):
         super().__init__()
         self.co = nfilters
         self.filter_shape = (filter_shape, filter_shape) if isinstance(filter_shape, int) else filter_shape
-        self.grouping = grouping
+        self.grouping = Conv2D.Grouping(grouping.lower())
         self.padding = padding
         self.stride = stride
         self.dilation = dilation
@@ -59,10 +58,10 @@ class Conv2D[T: Array](Layer, ABC):
         self.kh, self.kw = self.filter_shape
 
         match self.grouping:
-            case GroupingEnum.DEPTHWISE:
+            case Conv2D.Grouping.DEPTHWISE:
                 self.co = self.ci
                 self.weights_shape = (self.ci, *self.filter_shape)
-            case GroupingEnum.POINTWISE:
+            case Conv2D.Grouping.POINTWISE:
                 self.kh = self.kw = 1
                 match self.model.tensor_format:
                     case PYDTNN_TENSOR_FORMAT.NCHW:

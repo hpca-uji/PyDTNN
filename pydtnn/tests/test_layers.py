@@ -3,7 +3,6 @@
 from pydtnn.activations import *
 from pydtnn.layers import *
 from pydtnn.optimizers import *
-from pydtnn.layers.conv_2d import GroupingEnum
 
 from pydtnn.model import Model
 
@@ -51,9 +50,9 @@ list_layers = [
     # ("AdaptiveAveragePool2D",AdaptiveAveragePool2D(output_shape=(3, 3))), # Not in older versions
     # ("AveragePool2D",AveragePool2D()),
     # ("BatchNormalization",BatchNormalization()),
-    ("Conv2D_STANDARD", Conv2D(grouping=GroupingEnum.STANDARD)),
-    ("Conv2D_DEPTHWISE", Conv2D(grouping=GroupingEnum.DEPTHWISE)),
-    ("Conv2D_POINTWISE", Conv2D(grouping=GroupingEnum.POINTWISE)),
+    ("Conv2D_STANDARD", Conv2D(grouping=Conv2D.Grouping.STANDARD)),
+    ("Conv2D_DEPTHWISE", Conv2D(grouping=Conv2D.Grouping.DEPTHWISE)),
+    ("Conv2D_POINTWISE", Conv2D(grouping=Conv2D.Grouping.POINTWISE)),
     # ("Dropout",Dropout()),
     # ("FC",FC()),
     # ("Flatten",Flatten()),
@@ -74,8 +73,8 @@ list_activations = [
 ]
 
 # list_optimizers = [Adam(), Nadam(), RMSProp(), SGD()]
-addition_test_layers = ("AdditionBlock", AdditionBlock([Conv2D(grouping=GroupingEnum.STANDARD), BatchNormalization()], [Conv2D(grouping=GroupingEnum.STANDARD)]))
-concatenation_test_layers = ("ConcatenationBlock", ConcatenationBlock([Conv2D(grouping=GroupingEnum.STANDARD), BatchNormalization()], [Conv2D(grouping=GroupingEnum.STANDARD)]))
+addition_test_layers = ("AdditionBlock", AdditionBlock([Conv2D(grouping=Conv2D.Grouping.STANDARD), BatchNormalization()], [Conv2D(grouping=Conv2D.Grouping.STANDARD)]))
+concatenation_test_layers = ("ConcatenationBlock", ConcatenationBlock([Conv2D(grouping=Conv2D.Grouping.STANDARD), BatchNormalization()], [Conv2D(grouping=Conv2D.Grouping.STANDARD)]))
 
 dict_test: dict[str, Activation | tuple[str, Layer]] = {
     "Layers": list_layers,
@@ -87,7 +86,7 @@ def test_keras(_x: np.ndarray):
 
     model = Model(**KWARGS)
     model.add(Input(SHAPE))
-    model.add(Conv2D(grouping=GroupingEnum.STANDARD, nfilters=3))
+    model.add(Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=3))
     model.mode = Model.Mode.TRAIN
     model._initialize()
 
