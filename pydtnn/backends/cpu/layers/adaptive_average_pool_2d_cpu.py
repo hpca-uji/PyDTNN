@@ -42,7 +42,7 @@ class AdaptiveAveragePool2DCPU(LayerCPU, AdaptiveAveragePool2D, ABC):
     # Method from AbstractPool2DLayerCPU
     def initialize(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
         # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
-        super().initialize(self, prev_shape, x)
+        super().initialize(prev_shape, x)
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:

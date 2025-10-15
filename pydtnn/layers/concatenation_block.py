@@ -24,7 +24,7 @@ class ConcatenationBlock(AbstractBlockLayer, ABC):
                 layer.show()
 
     def initialize_block_layer(self):
-        super().initialize_block_layer(self)
+        super().initialize_block_layer()
 
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
