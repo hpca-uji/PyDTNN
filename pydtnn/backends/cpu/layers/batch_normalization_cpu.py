@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.cython_modules import bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
@@ -63,7 +63,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization):
                 x = best_transpose_0231(x)
             x: np.ndarray = x.reshape((-1, self.ci), copy=False, order="C")
 
-        if self.model.mode is ModelModeEnum.EVALUATE:
+        if self.model.mode is Model.Mode.EVALUATE:
             # y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
             x -= self.running_mean
             y = self.gamma * x

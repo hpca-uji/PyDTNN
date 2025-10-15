@@ -3,7 +3,7 @@ from abc import ABC
 
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.types import Array
-
+from pydtnn.utils.types import shape_t
 
 class Dropout[T: Array](Layer, ABC):
 
@@ -11,7 +11,7 @@ class Dropout[T: Array](Layer, ABC):
         super().__init__()
         self.rate = min(1., max(0., rate))
 
-    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None):
+    def initialize(self, prev_shape: shape_t, x: T | None = None):
         super().initialize(prev_shape, x)
         self.shape = prev_shape
 

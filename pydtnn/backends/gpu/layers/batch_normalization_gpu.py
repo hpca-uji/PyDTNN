@@ -8,13 +8,13 @@ import pycuda.gpuarray as gpuarray
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import BatchNormalization
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import decode_tensor
-
+from pydtnn.utils.types import shape_t
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
@@ -31,7 +31,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         self.save_inv_var: TensorGPU = None
         self.factor: float = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 
@@ -107,7 +107,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
     def forward(self, x):
         alpha, beta = 1.0, 0.0
         match self.model.mode:
-            case ModelModeEnum.TRAIN:
+            case Model.Mode.TRAIN:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
                 cudnn.cudnnBatchNormalizationForwardTraining(self.model.cudnn_handle, self.mode,
                                                              alpha, beta, x.desc, x.ptr,
@@ -117,7 +117,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
                                                              self.running_var.ptr,
                                                              self.epsilon, self.save_mean.ptr, self.save_inv_var.ptr)
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            case ModelModeEnum.EVALUATE:
+            case Model.Mode.EVALUATE:
                 self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
                 cudnn.cudnnBatchNormalizationForwardInference(self.model.cudnn_handle, self.mode,
                                                               alpha, beta, x.desc, x.ptr,

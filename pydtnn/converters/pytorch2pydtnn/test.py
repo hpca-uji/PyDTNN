@@ -7,7 +7,7 @@ from torchvision.models import densenet121, densenet201, resnet18, resnet34, res
 
 from torchmetrics import Accuracy, Metric
 
-from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset
 from pydtnn.activations import *
 from pydtnn.layers import *
 
@@ -295,7 +295,7 @@ def main():
 
     dataset: Dataset = get_dataset(old_model)
 
-    dataloader = list(dataset._actual_batch_generator(DatasetEnum.TRAIN))
+    dataloader = list(dataset._actual_batch_generator(Dataset.Part.TRAIN))
 
     print("dataset:")
     print(dataset)

@@ -5,8 +5,7 @@ from pydtnn.layers import *
 from pydtnn.optimizers import *
 from pydtnn.layers.conv_2d import GroupingEnum
 
-from pydtnn import Model
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 
 import numpy as np
 from time import time
@@ -89,7 +88,7 @@ def test_keras(_x: np.ndarray):
     model = Model(**KWARGS)
     model.add(Input(SHAPE))
     model.add(Conv2D(grouping=GroupingEnum.STANDARD, nfilters=3))
-    model.mode = ModelModeEnum.TRAIN
+    model.mode = Model.Mode.TRAIN
     model._initialize()
 
     x = np.copy(_x)
@@ -114,7 +113,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             if name == "FC":
                 model.add(Flatten())
             model.add(test_elem)
-            model.mode = ModelModeEnum.TRAIN
+            model.mode = Model.Mode.TRAIN
             model._initialize()
             opt.initialize(model.get_all_layers(model.layers))
 
@@ -168,7 +167,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         model = Model(**KWARGS)
         model.add(Input(SHAPE))
         model.add(layer)
-        model.mode = ModelModeEnum.TRAIN
+        model.mode = Model.Mode.TRAIN
         model._initialize()
         opt.initialize(model.get_all_layers(model.layers))
 

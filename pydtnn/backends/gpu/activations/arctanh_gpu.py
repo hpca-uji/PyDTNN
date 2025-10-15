@@ -10,7 +10,7 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 # noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
-
+from pydtnn.utils.types import shape_t
 
 class ArctanhGPU(ActivationGPU, Arctanh):
 
@@ -19,7 +19,7 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.atanh = None
         self.datanh = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.atanh = ElementwiseKernel(

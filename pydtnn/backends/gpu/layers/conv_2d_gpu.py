@@ -17,6 +17,7 @@ from pydtnn.backends.gpu.layers.memory_allocation import checkConvolutionMemory,
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.layers.conv_2d import GroupingEnum
+from pydtnn.utils.types import shape_t
 
 DICT_SUPPORTED_TYPES = {np.float32: "float", np.float64: "double"}
 MACROS_NCHW = \
@@ -53,7 +54,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.conv_desc = None
     # ---
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
 
         self.stream_2 = drv.Stream()

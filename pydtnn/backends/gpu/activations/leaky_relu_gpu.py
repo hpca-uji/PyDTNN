@@ -3,9 +3,10 @@ from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
-
+from pydtnn.utils.types import shape_t
 import numpy as np
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 # noinspection PyUnresolvedReferences
@@ -25,7 +26,7 @@ class LeakyReluGPU(ActivationGPU, LeakyRelu):
         self.y: TensorGPU | None = None
     # --- END __init__ --- #
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
         super().initialize(self, prev_shape, x)
 
         self.threads = min(self.model.batch_size, 1024)
@@ -130,7 +131,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         return self.dx
     # --- END backward --- #
 
-    def initialize_relu_2d_gpu(self, prev_shape: tuple[int, ...]) -> None:
+    def initialize_relu_2d_gpu(self, prev_shape: shape_t) -> None:
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = prev_shape
 

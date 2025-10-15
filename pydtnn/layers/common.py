@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn.model import ModelModeEnum, Model
-else:
-    ModelModeEnum = object
-    Model = object
+    from pydtnn.model import Model
 
 # @todo: will be used when layer.initialize includes model: initialize(model, id, ...)
 
@@ -20,11 +17,11 @@ class ForwardToBackward:
         self._model: Model = None
         self._storage = {}
 
-    def set_model(self, model: Model):
+    def set_model(self, model: "Model"):
         self._model: Model = model
 
     def __setattr__(self, key, value):
-        if self._model.mode == ModelModeEnum.TRAIN:
+        if self._model.mode == Model.Mode.TRAIN:
             self._storage[key] = value
         else:
             if self._storage:

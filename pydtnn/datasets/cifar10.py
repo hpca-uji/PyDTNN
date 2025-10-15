@@ -8,9 +8,9 @@ import tarfile
 import numpy as np
 
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset
 
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
@@ -34,12 +34,12 @@ class CIFAR10(Dataset):
             [],
             [os.path.join("cifar-10-batches-bin", "test_batch.bin")]
         ]
-        self._xy_filenames[DatasetEnum.VAL] = self._xy_filenames[DatasetEnum.TEST] if self.test_as_validation else self._xy_filenames[DatasetEnum.TRAIN]
+        self._xy_filenames[Dataset.Part.VAL] = self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN]
 
-    def _actual_data_generator(self, part: DatasetEnum):
+    def _actual_data_generator(self, part: Dataset.Part):
         y_classes = np.array([])
         with tarfile.open(self._src_filename, "r:gz") as t:
-            for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
+            for part in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
                 for filename, offset, nsamples in self._offset2files(self._xy_filenames[part], IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
                     with t.extractfile(filename) as f:
                         x, y_classes = self._read_file(f, offset, nsamples)

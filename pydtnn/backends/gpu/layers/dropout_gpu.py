@@ -7,7 +7,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-
+from pydtnn.utils.types import shape_t
 
 class DropoutGPU(LayerGPU, Dropout):
 
@@ -19,7 +19,7 @@ class DropoutGPU(LayerGPU, Dropout):
         self.states = None
         self.drop_desc = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
 
         # Activations y

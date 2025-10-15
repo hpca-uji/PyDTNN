@@ -1,6 +1,7 @@
 from pydtnn.activations import Softmax
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.utils.types import shape_t
 
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
@@ -15,7 +16,7 @@ class SoftmaxGPU(ActivationGPU, Softmax):
         self.mode = None
         self.algo = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.mode = cudnn.cudnnSoftmaxMode['CUDNN_SOFTMAX_MODE_INSTANCE']

@@ -11,7 +11,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
 from pydtnn.layers.layer import ParameterException
-
+from pydtnn.utils.types import shape_t
 
 class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
     """
@@ -24,7 +24,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer, ABC):
         self.ci = self.hi = self.wi = self.kh = self.kw = self.co = self.ci = None
         self.ho = self.wo = None
 
-    def initialize_pool_2d_gpu(self, prev_shape: tuple[int, ...], x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
+    def initialize_pool_2d_gpu(self, prev_shape: shape_t, x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
         super().initialize(prev_shape, x)
         if not (self.vdilation == 1 and self.hdilation == 1):
             raise ParameterException(f"cuDNN does not support dilated pooling. vdilation: {self.vdilation}, hdilation: {self.hdilation}")

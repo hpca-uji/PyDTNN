@@ -10,7 +10,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.utils_gpu import matmul_gpu, matvec_gpu
-
+from pydtnn.utils.types import shape_t
 
 class FCGPU(LayerGPU, FC):
 
@@ -19,7 +19,7 @@ class FCGPU(LayerGPU, FC):
         self.matmul = matmul_gpu
         self.matvec = matvec_gpu
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 

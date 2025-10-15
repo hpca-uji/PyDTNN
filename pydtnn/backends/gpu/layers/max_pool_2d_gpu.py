@@ -5,11 +5,11 @@ from pydtnn.layers import MaxPool2D
 from pydtnn.backends.gpu.layers.abstract_pool_2d_layer_gpu import AbstractPool2DLayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-
+from pydtnn.utils.types import shape_t
 
 class MaxPool2DGPU(AbstractPool2DLayerGPU, MaxPool2D):
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
         pool_mode = cudnn.cudnnPoolingMode['CUDNN_POOLING_MAX']
         self.initialize_pool_2d_gpu(prev_shape, x, pool_mode)

@@ -19,7 +19,7 @@ except Exception as e:
 
 from numpy import ndarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-
+from pydtnn.utils.types import shape_t
 
 class LayerGPU(Layer[TensorGPU], ABC):
     """
@@ -39,7 +39,7 @@ class LayerGPU(Layer[TensorGPU], ABC):
         self.one_vec_cpu: ndarray = None
         self.one_vec_gpu: TensorGPU = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):

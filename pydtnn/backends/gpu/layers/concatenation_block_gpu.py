@@ -11,8 +11,7 @@ from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
-from pydtnn.layers.layer import LayerError
-
+from pydtnn.utils.types import shape_t
 
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
 
@@ -24,7 +23,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         self.out_co = None
         self.idx_co = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(

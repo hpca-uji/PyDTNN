@@ -5,11 +5,11 @@ if TYPE_CHECKING:
     from pydtnn.activations import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
-
+from pydtnn.utils.types import shape_t
 
 class FC(Layer, ABC):
 
-    def __init__(self, shape: tuple[int, ...] = (1,),
+    def __init__(self, shape: shape_t = (1,),
                  activation: Optional["Activation"] = None,
                  use_bias=True,
                  weights_initializer: InitializerFunc = glorot_uniform,

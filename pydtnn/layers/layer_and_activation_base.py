@@ -11,14 +11,15 @@ if TYPE_CHECKING:
     from pydtnn.optimizers.optimizer import Optimizer
 
 from pydtnn.utils.types import Array
+from pydtnn.utils.types import shape_t
 
 drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
 
 class LayerAndActivationBase[T: Array](ABC):
 
-    def __init__(self, shape: tuple[int, ...] = ()) -> None:
+    def __init__(self, shape: shape_t = ()) -> None:
         self.nparams: int = 0
-        self.shape: tuple[int, ...] = shape
+        self.shape: shape_t = shape
         self.x: T | None = None
         self.y: T | None = None
         self.weights: T | None = None
@@ -32,7 +33,7 @@ class LayerAndActivationBase[T: Array](ABC):
         # The next attributes will be initialized later
         self.id: int = None
         self.model: Model = None
-        self.prev_shape: tuple[int, ...] = None
+        self.prev_shape: shape_t = None
         self.is_block_layer: bool = False
         self.stream_2: drv_Stream = None
     # --- END __init__ --- #
@@ -61,7 +62,7 @@ class LayerAndActivationBase[T: Array](ABC):
         self.model = parent_model
         self.id = next(self.model.layer_id)
 
-    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None) -> None:
+    def initialize(self, prev_shape: shape_t, x: T | None = None) -> None:
         self.prev_shape = prev_shape
         self.x = x
 

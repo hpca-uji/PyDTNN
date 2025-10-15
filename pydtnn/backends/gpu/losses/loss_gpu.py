@@ -8,12 +8,10 @@ from pycuda.driver import Function
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else:
-    Model = object
 # noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu import TensorGPU
 from pydtnn.losses import Loss
-
+from pydtnn.utils.types import shape_t
 
 class LossGPU(Loss, ABC):
     """
@@ -22,7 +20,7 @@ class LossGPU(Loss, ABC):
 
     LIMIT_THREADS_AND_BLOCKS = 1024
 
-    def __init__(self, shape: tuple[int, ...], model: Model, eps=1e-8):
+    def __init__(self, shape: shape_t, model: "Model", eps=1e-8):
         super().__init__(shape, model, eps)
         self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)

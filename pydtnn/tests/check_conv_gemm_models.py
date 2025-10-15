@@ -19,7 +19,7 @@ import numpy as np
 
 from pydtnn import losses
 from pydtnn.layers.layer import LayerError
-from pydtnn.model import Model, ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.tests.common import verbose_test
 
 from pydtnn.layers import Layer
@@ -213,7 +213,7 @@ class CheckConvGemmModels(unittest.TestCase):
 
         # Model 1 forward
         model1, loss_func1 = self.get_model1_and_loss_func(model_name)
-        model1.mode = ModelModeEnum.TRAIN
+        model1.mode = Model.Mode.TRAIN
         if verbose_test():
             print()
             print_with_header(f"Model {model1.model_name} 1 forward pass")
@@ -221,7 +221,7 @@ class CheckConvGemmModels(unittest.TestCase):
 
         # Model 2 forward
         model2 = self.get_model2(model_name)
-        model2.mode = ModelModeEnum.TRAIN
+        model2.mode = Model.Mode.TRAIN
         self.copy_weights_and_biases(model1, model2)
         if verbose_test():
             print_with_header(f"Model {model2.model_name} 2 forward pass")

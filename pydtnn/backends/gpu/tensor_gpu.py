@@ -4,8 +4,8 @@ from typing import TypeVar, Self
 from enum import StrEnum, auto
 
 import numpy as np
-from pydtnn.utils.tensor import decode_tensor
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import shape_t
 
 try:
     # noinspection PyUnresolvedReferences
@@ -28,7 +28,7 @@ class TensorGPU:
     # ---  END EnumTensorType --- #
 
     @staticmethod
-    def create_empty_tensor(shape: tuple[int, ...], dtype: np.dtype,
+    def create_empty_tensor(shape: shape_t, dtype: np.dtype,
                             tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
                             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int = None,
                             gpudirect: bool = False, cublas: bool = False):
@@ -38,7 +38,7 @@ class TensorGPU:
     # ---
 
     @staticmethod
-    def create_zeros_tensor(shape: tuple[int, ...], dtype: np.dtype,
+    def create_zeros_tensor(shape: shape_t, dtype: np.dtype,
                             tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
                             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int = None,
                             gpudirect: bool = False, cublas: bool = False):
@@ -117,7 +117,7 @@ class TensorGPU:
             self._set_desc(desc)
     # ---
 
-    def reshape(self, shape: tuple[int, ...]):
+    def reshape(self, shape: shape_t):
         self.ary = self.ary.reshape(shape, order="C")
         return self
     # ---
@@ -140,7 +140,7 @@ class TensorGPU:
 
     # TODO: check the output type.
     @staticmethod
-    def initialize_gpu_direct(drv: PyCudaDrvType, shape: tuple[int, ...], dtype: np.dtype,
+    def initialize_gpu_direct(drv: PyCudaDrvType, shape: shape_t, dtype: np.dtype,
                               tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
                               tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
                               desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[TODO_CHECK_TYPE, Self]:
@@ -154,7 +154,7 @@ class TensorGPU:
     # ---
 
     @staticmethod
-    def initialize_not_gpu_direct(shape: tuple[int, ...], dtype: np.dtype,
+    def initialize_not_gpu_direct(shape: shape_t, dtype: np.dtype,
                                   tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
                                   tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
                                   desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, Self]:

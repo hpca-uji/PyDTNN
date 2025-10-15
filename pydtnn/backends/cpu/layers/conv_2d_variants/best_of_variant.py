@@ -3,12 +3,13 @@ from typing import Optional, Callable, List
 
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_direct_variant import ConvDirectVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_winograd_variant import ConvWinogradVariant
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.utils.best_of import BestOf
 
 from enum import StrEnum, auto
 
 import numpy as np
+from pydtnn.utils.types import shape_t
 
 
 class ConvVariantEnum(StrEnum):
@@ -32,7 +33,7 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
         # Other parameters
         self.variant = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: np.ndarray | None = None):
+    def initialize(self, prev_shape: shape_t, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
@@ -83,10 +84,10 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
 
     def _fw_bw_best_of(self, stage, x_or_y):
         match self.model.mode:
-            case ModelModeEnum.TRAIN:
+            case Model.Mode.TRAIN:
                 # noinspection PyTypeChecker
                 return self._best_fw_bw_pipeline(stage, self, x_or_y)
-            case ModelModeEnum.EVALUATE:
+            case Model.Mode.EVALUATE:
                 # noinspection PyTypeChecker
                 return self._best_fw(self, x_or_y)
             case _:

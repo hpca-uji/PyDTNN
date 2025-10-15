@@ -9,7 +9,7 @@ from pydtnn.utils.tensor import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORM
 from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
-
+from pydtnn.utils.types import shape_t
 
 class GroupingEnum(StrEnum):
     DEPTHWISE = auto()
@@ -50,10 +50,10 @@ class Conv2D[T: Array](Layer, ABC):
         self.debug = False
         # The next attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
-        self.weights_shape: tuple[int, ...] = None
+        self.weights_shape: shape_t = None
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: T | None = None):
+    def initialize(self, prev_shape: shape_t, x: T | None = None):
         super().initialize(prev_shape, x)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape

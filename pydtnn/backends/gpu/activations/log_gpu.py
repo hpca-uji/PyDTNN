@@ -3,6 +3,7 @@ import numpy as np
 from pydtnn.activations import Log
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.utils.types import shape_t
 
 # noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
@@ -19,7 +20,7 @@ class LogGPU(ActivationGPU, Log):
         self.log = None
         self.dlog = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
 
         self.log = ElementwiseKernel(

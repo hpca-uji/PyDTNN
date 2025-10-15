@@ -9,7 +9,7 @@ import gzip
 
 import numpy as np
 
-from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 from typing import TYPE_CHECKING
@@ -38,13 +38,18 @@ class MNIST(Dataset):
             None,
             os.path.join(self.model.dataset_test_path, "t10k-labels-idx1-ubyte.gz")
         ]
-        self._x_filename[DatasetEnum.VAL] = self._x_filename[DatasetEnum.TEST] if self.test_as_validation else self._x_filename[DatasetEnum.TRAIN]
-        self._y_filename[DatasetEnum.VAL] = self._y_filename[DatasetEnum.TEST] if self.test_as_validation else self._y_filename[DatasetEnum.TRAIN]
+        if self.test_as_validation:
+            self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TEST]
+            self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TEST]
+        else:
+            self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TRAIN]
+            self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TRAIN]
+            
         self._images_header_offset = 16  # 4 + 4 * 3
         self._labels_header_offset = 8  # 4 + 4 * 1
 
-    def _actual_data_generator(self, part: DatasetEnum):
-        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
+    def _actual_data_generator(self, part: Dataset.Part):
+        for part in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
             offset = self._images_header_offset + self._local_offset[part] * np.prod(self.real_input_shape)
             nbytes = self._local_nsamples[part] * np.prod(self.real_input_shape)
             with gzip.open(self._x_filename[part], "rb") as f:

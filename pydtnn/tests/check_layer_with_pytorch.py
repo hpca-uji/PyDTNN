@@ -6,7 +6,6 @@ import torch
 import unittest
 
 from pydtnn import Model
-from pydtnn.model import ModelModeEnum
 
 import numpy as np
 
@@ -176,7 +175,7 @@ class CheckLayerWithPyTorch(unittest.TestCase):
         model = Model(**kwargs)
         model.add(Input(SHAPE))
         model.add_layers(list_layers)
-        model.mode = ModelModeEnum.TRAIN
+        model.mode = Model.Mode.TRAIN
         model._initialize()
         return model
     # ---------

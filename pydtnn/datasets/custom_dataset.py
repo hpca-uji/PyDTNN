@@ -1,15 +1,13 @@
 import operator
 import warnings
 import numpy as np
-from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import shape_t
 
 from typing import TYPE_CHECKING, Self
 if TYPE_CHECKING:
     from pydtnn.model import Model
-from pydtnn.utils.types import Array
-
-type shape_t = tuple[int, ...]
 
 TENSOR_ASSERT = {
     PYDTNN_TENSOR_FORMAT.NCHW: operator.lt,
@@ -66,7 +64,7 @@ class CustomDataset(Dataset):
                          force_test_as_validation=force_test_as_validation)
 
     def _init_actual_data(self):
-        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
+        for part in Dataset.Part:
             local_offset = self._local_offset[part]
             local_nsamples = self._local_nsamples[part]
             local_slice = slice(local_offset, local_offset + local_nsamples)

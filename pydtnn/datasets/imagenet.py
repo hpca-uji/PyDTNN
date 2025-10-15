@@ -11,7 +11,7 @@ from PIL import Image
 from scipy.io import loadmat
 
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.datasets.dataset import Dataset, DatasetEnum
+from pydtnn.datasets.dataset import Dataset
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -196,7 +196,7 @@ class ImageNet(Dataset):
         nsamples = self._local_nsamples[part]
         xy_filenames = self._xy_filenames[part]
 
-        if part is DatasetEnum.TRAIN:
+        if part is Dataset.Part.TRAIN:
             random.shuffle(xy_filenames)
 
         xy_filenames = xy_filenames[offset:offset + nsamples]

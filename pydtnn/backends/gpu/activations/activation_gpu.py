@@ -4,6 +4,8 @@ from collections import abc
 from pydtnn.activations import Activation
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.types import shape_t
+from pydtnn.backends.gpu import TensorGPU
 
 try:
     # noinspection PyUnresolvedReferences
@@ -16,8 +18,6 @@ try:
     import pydtnn.backends.gpu.libs.libnccl as nccl
 except Exception as e:
     pass
-
-from pydtnn.backends.gpu import TensorGPU
 
 class ActivationGPU(Activation[TensorGPU], ABC):
     """
@@ -34,7 +34,7 @@ class ActivationGPU(Activation[TensorGPU], ABC):
         self.x = None
         self.dx = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU):
+    def initialize(self, prev_shape: shape_t, x: TensorGPU):
         super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):

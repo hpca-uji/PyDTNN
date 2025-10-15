@@ -3,7 +3,7 @@ from abc import ABC
 from pydtnn.backends.cpu.layers.conv_2d_variants.i2c_variant import I2CVariant
 from pydtnn.backends.cpu.libs import ConvWinograd
 from pydtnn.cython_modules import im2row_nhwc_cython, im2col_nchw_cython
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 from numpy import ndarray, zeros
@@ -34,7 +34,7 @@ class ConvWinogradVariant(I2CVariant, ABC):
     def _forward_cw_nhwc(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convWinograd library"""
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             self.cw_x = x
 
         biases_vector = self.biases if self.use_bias else None
@@ -50,7 +50,7 @@ class ConvWinogradVariant(I2CVariant, ABC):
     def _forward_cw_nchw(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convWinograd library"""
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             self.cw_x = x
 
         biases_vector = self.biases if self.use_bias else None

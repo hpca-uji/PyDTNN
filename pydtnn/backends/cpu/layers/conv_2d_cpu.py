@@ -16,6 +16,7 @@ from pydtnn.utils.memory_cache import MemoryCache
 from numpy import ndarray, empty, zeros
 from pydtnn.layers.conv_2d import GroupingEnum
 from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import ConvVariantEnum
+from pydtnn.utils.types import shape_t
 
 
 class Conv2DCPU(LayerCPU,
@@ -76,7 +77,7 @@ class Conv2DCPU(LayerCPU,
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
 
-    def initialize(self, prev_shape: tuple[int, ...], x: ndarray | None = None) -> None:
+    def initialize(self, prev_shape: shape_t, x: ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)

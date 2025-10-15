@@ -14,6 +14,7 @@ except Exception as e:
     pass
 
 from numpy import ndarray
+from pydtnn.utils.types import shape_t
 
 
 class LayerCPU(Layer[ndarray], ABC):
@@ -24,7 +25,7 @@ class LayerCPU(Layer[ndarray], ABC):
         super().__init__(*args, **kwargs)
         self.model: Model[ndarray]
 
-    def initialize(self, prev_shape: tuple[int, ...], x:ndarray | None = None):
+    def initialize(self, prev_shape: shape_t, x:ndarray | None = None):
         super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):

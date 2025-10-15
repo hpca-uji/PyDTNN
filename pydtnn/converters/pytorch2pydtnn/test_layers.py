@@ -6,7 +6,6 @@ from torch.nn import Module as PyTorch_Model
 import torch.nn as nn
 import torch
 
-from pydtnn.model import ModelModeEnum
 from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.activations import *
 from pydtnn.layers import *
@@ -246,7 +245,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, 
                                             default_output_activation_layer=None,
                                             is_input_shape_in_format=True, **kwargs)
 
-    new_model.mode = ModelModeEnum.TRAIN
+    new_model.mode = PyDTNN_Model.Mode.TRAIN
     # new_model.show()
     # new_model.dataset = dataset
     print("-----")

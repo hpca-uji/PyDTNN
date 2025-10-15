@@ -1,6 +1,6 @@
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import Conv2DBatchNormalization
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 from numpy import ndarray, asarray
@@ -28,7 +28,7 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
     def _forward_nchw_cw(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convWinograd + BatchNorm + """
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
@@ -47,7 +47,7 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
     def _forward_nchw_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm"""
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None
@@ -64,7 +64,7 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization):
     def _forward_nhwc_cg(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm"""
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             raise RuntimeError("Fused layers cannot be used in training mode!")
 
         biases_vector = self.biases if self.use_bias else None

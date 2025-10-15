@@ -35,7 +35,6 @@ from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn import losses, metrics
 from pydtnn import utils
 from pydtnn.datasets import CustomDataset, get_dataset
-from pydtnn.datasets.dataset import DatasetEnum
 from pydtnn.lr_schedulers import get_lr_schedulers
 from pydtnn.optimizers import get_optimizer
 from pydtnn.parser import PydtnnArgumentParser
@@ -47,6 +46,7 @@ from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.layers import Layer
 import enum
+from pydtnn.utils.types import shape_t
 
 
 # --- CUDA related imports --- #
@@ -83,6 +83,8 @@ supported_cudnn: bool = True
 supported_nccl: bool = True
 enable_cudnn: bool = False
 # --- END GLOBAL VARIABLES --- #
+type MPI_MODULE = ModuleType
+
 try:
     from pydtnn.comm import MPI
     # noinspection PyUnresolvedReferences,PyPackageRequirements
@@ -91,22 +93,9 @@ except Exception as e:
 
 # --- CONSTANS --- #
 BAR_WIDTH = 140
-
-
-class ModelModeEnum(enum.Enum):
-    EVALUATE = enum.auto()
-    TRAIN = enum.auto()
-    UNSPECIFIED = enum.auto()
-
-
 DEFAULT_BACH_SIZE = 64
 
-
-class LoadStoreMode(enum.Enum):
-    LOAD = enum.auto()
-    STORE = enum.auto()
 # --- END CONSTANS --- #
-
 
 # NOTE: Check "_initialize_cuda" to get the actual types.
 NCCL_DataType = TypeVar("NCCL_DataType")
@@ -117,9 +106,6 @@ PyCuda_Stream_Type = TypeVar("PyCuda_Stream_Type")
 Cudnn_dtype = TypeVar("Cudnn_dtype")
 Cudnn_Contex_Type = TypeVar("Cuda_Context")
 
-
-
-
 def _layer_id_generator() -> Iterable[int]:
     """To obtain consecutive layer ids. See Layer.set_model()."""
     current_layer_id = 0
@@ -127,7 +113,6 @@ def _layer_id_generator() -> Iterable[int]:
         yield current_layer_id
         current_layer_id += 1
 # --- END _layer_id_generator --- #
-
 
 def ensure_model_is_runnable(method: Callable):
     @functools.wraps(method)
@@ -145,16 +130,11 @@ def ensure_model_is_runnable(method: Callable):
     return wrapper_ensure_model_is_runnable
 # --- END ensure_model_is_runnable --- #
 
-
-# NOTE: can not specify a particular module
-type MPI_MODULE = ModuleType
-
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM
 else:
     MPI_COMM = ModuleType
-
 
 def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MODULE, MPI_COMM]:
     match parallel:
@@ -167,22 +147,6 @@ def _initilize_communications(parallel: str) -> tuple[None, None] | tuple[MPI_MO
         case _:
             raise SystemExit(f"Parallel option '{parallel}' not recognized.")
 # --- END _initilize_communications --- #
-
-
-def _set_execution_attributes(self: "Model", comm: MPI_COMM | None, shared_storage: bool) -> None:
-    self.rank_weight = 1.0
-    self.comm_rank = self.rank = 0
-    self.comm_size = self.nprocs = 1
-    if comm:
-        self.comm_rank = comm.Get_rank()
-        self.comm_size = comm.Get_size()
-        if shared_storage:
-            self.rank = self.comm_rank
-            self.nprocs = self.comm_size
-        # else: Nothing each rank is independant
-    self.comm_groups = self.comm_size // self.nprocs
-# --- END _set_execution_attributes --- #
-
 
 def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleType, enable_gpu: bool,
                               tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:
@@ -201,87 +165,6 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
                 tracer = SimpleTracer(tracing, tracer_output, comm)
     return tracer
 # --- END _initilize_and_get_tracer --- #
-
-
-def _initialize_cuda(self: "Model", comm: ModuleType, comm_rank: int, rank: int, nprocs: int,
-                     gpus_per_node: int, parallel: str, dtype: np.dtype,
-                     enable_nccl: bool, tracer: SimpleTracer, gpudirect: bool) -> None:
-
-    global supported_cudnn, supported_nccl
-    supported_cudnn = True
-    supported_nccl = True
-
-    device_id: int = comm_rank % drv.Device.count()
-    drv.init()
-    context: Cudnn_Contex_Type = drv.Device(device_id).make_context()
-    # context:int = drv.Device(device_id).retain_primary_context()
-
-    atexit.register(context.pop)
-
-    nccl_type = None
-    nccl_comm = None
-
-    if not gpudirect and enable_nccl:
-        raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
-
-    if comm and enable_nccl:
-        try:
-            from pydtnn.backends.gpu.libs import libnccl as nccl
-        except Exception as e:
-            supported_nccl = False
-            msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
-            raise SystemExit(msg) from None
-
-        nccl_types = {np.float64: nccl.DataType.Float64,
-                      np.float32: nccl.DataType.Float32,
-                      np.int8: nccl.DataType.Int8,
-                      np.int32: nccl.DataType.Int32}
-
-        nccl_type: NCCL_DataType = nccl_types.get(dtype, nccl.DataType.Float32)
-
-        hostname = MPI.Get_processor_name()
-
-        hosts_data = comm.allgather([rank, hostname])
-        # Build a dictionary hostname : [ranks_in_host]
-        #   { "host1": [0, 1], "host2": [2, 3] }
-        hosts = {}
-        for r, h in hosts_data:
-            # noinspection PyTypeChecker
-            hosts.setdefault(h, []).append(r)
-        if parallel == "data":
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % gpus_per_node)
-        # Check that no more processes than GPUs per node are used
-        for host, ranks_in_host in hosts.items():
-            if len(ranks_in_host) > gpus_per_node:
-                raise SystemExit("Not able to run more processes than GPUs per node!")
-
-        nccl_id = comm.bcast(nccl.ncclGetUniqueId() if comm_rank == 0 else None)
-        nccl_comm: NCCL_Comm_Type = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
-
-    cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()
-    cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()
-    stream: PyCuda_Stream_Type = drv.Stream()
-    cublas.cublasSetStream(cublas_handle, stream.handle)
-    cudnn.cudnnSetStream(cudnn_handle, stream.handle)
-
-    cudnn_types = {np.float64: "CUDNN_DATA_DOUBLE",
-                   np.float32: "CUDNN_DATA_FLOAT",
-                   np.int8: "CUDNN_DATA_INT8",
-                   np.int32: "CUDNN_DATA_INT32"}
-
-    cudnn_type: str = cudnn_types.get(dtype, "CUDNN_DATA_FLOAT")
-
-    cudnn_dtype: Cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
-    tracer.set_default_stream(stream)
-
-    self.nccl_type = nccl_type
-    self.nccl_comm = nccl_comm
-    self.cudnn_handle = cudnn_handle
-    self.cublas_handle = cublas_handle
-    self.stream = stream
-    self.cudnn_dtype = cudnn_dtype
-# --- END _initialize_cuda --- #
-
 
 def _set_data_format(tensor_format: Literal["AUTO", "NCHW", "NHWC"] = "AUTO", enable_cudnn: bool = False) -> PYDTNN_TENSOR_FORMAT:
     match tensor_format:
@@ -324,6 +207,16 @@ class Model[T: Array]:
     PyDTNN Model
     """
 
+    class Mode(enum.Enum):
+        EVALUATE = enum.auto()
+        TRAIN = enum.auto()
+        UNSPECIFIED = enum.auto()
+
+    class LoadStoreMode(enum.Enum):
+        LOAD = enum.auto()
+        STORE = enum.auto()
+
+
     def __init__(self, parallel: Literal["sequential", "data"] = "sequential", use_blocking_mpi: bool = False, enable_gpu: bool = False,
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.float32, tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
@@ -356,8 +249,8 @@ class Model[T: Array]:
         self.cublas_handle: Cublas_Handle_Type | None = None
         self.stream: PyCuda_Stream_Type | None = None
         self.cudnn_dtype: Cudnn_dtype | None = None
-        self.input_shape: tuple[int, ...] = None
-        self.output_shape: tuple[int, ...] = None
+        self.input_shape: shape_t = None
+        self.output_shape: shape_t = None
 
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
@@ -419,7 +312,7 @@ class Model[T: Array]:
         self.MPI, self.comm = _initilize_communications(parallel=parallel)
 
         # Execution attributes
-        _set_execution_attributes(self, comm=self.comm, shared_storage=self.shared_storage)
+        self._set_execution_attributes(comm=self.comm, shared_storage=self.shared_storage)
 
         # Set tracer
         self.tracer = _initilize_and_get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_gpu=enable_gpu,
@@ -437,7 +330,7 @@ class Model[T: Array]:
         self.matmul = utils.matmul
 
         # Set current mode to unspecified
-        self.mode: ModelModeEnum = ModelModeEnum.UNSPECIFIED
+        self.mode: Model.Mode = Model.Mode.UNSPECIFIED
 
         # Memory cache optimization
         self.enable_memory_cache: bool  # NOTE: This parameter comes from "Parser"
@@ -452,12 +345,12 @@ class Model[T: Array]:
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
                 self.gpus_per_node: int  # NOTE: This parameter comes from "Parser"
-                _initialize_cuda(self, comm=self.comm, comm_rank=self.comm_rank,
-                                 rank=self.rank, nprocs=self.nprocs,
-                                 gpus_per_node=self.gpus_per_node,
-                                 parallel=self.parallel, dtype=self.dtype,
-                                 enable_nccl=self.enable_nccl, tracer=self.tracer,
-                                 gpudirect=self.gpudirect)
+                self._initialize_cuda(comm=self.comm, comm_rank=self.comm_rank,
+                                      rank=self.rank, nprocs=self.nprocs,
+                                      gpus_per_node=self.gpus_per_node,
+                                      parallel=self.parallel, dtype=self.dtype,
+                                      enable_nccl=self.enable_nccl, tracer=self.tracer,
+                                      gpudirect=self.gpudirect)
             else:
                 raise ImportError("\n".join(cuda_error_msg))
         else:
@@ -528,6 +421,99 @@ class Model[T: Array]:
         if self.model_sync_participation not in {"all", "avail2all"}:
             raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
     # --- END __init__ --- #
+
+    def _set_execution_attributes(self, comm: MPI_COMM | None, shared_storage: bool) -> None:
+        self.rank_weight = 1.0
+        self.comm_rank = self.rank = 0
+        self.comm_size = self.nprocs = 1
+        if comm:
+            self.comm_rank = comm.Get_rank()
+            self.comm_size = comm.Get_size()
+            if shared_storage:
+                self.rank = self.comm_rank
+                self.nprocs = self.comm_size
+            # else: Nothing each rank is independant
+        self.comm_groups = self.comm_size // self.nprocs
+    # --- END _set_execution_attributes --- #
+
+    def _initialize_cuda(self, comm: ModuleType, comm_rank: int, rank: int, nprocs: int,
+                        gpus_per_node: int, parallel: str, dtype: np.dtype,
+                        enable_nccl: bool, tracer: SimpleTracer, gpudirect: bool) -> None:
+
+        global supported_cudnn, supported_nccl
+        supported_cudnn = True
+        supported_nccl = True
+
+        device_id: int = comm_rank % drv.Device.count()
+        drv.init()
+        context: Cudnn_Contex_Type = drv.Device(device_id).make_context()
+        # context:int = drv.Device(device_id).retain_primary_context()
+
+        atexit.register(context.pop)
+
+        nccl_type = None
+        nccl_comm = None
+
+        if not gpudirect and enable_nccl:
+            raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
+
+        if comm and enable_nccl:
+            try:
+                from pydtnn.backends.gpu.libs import libnccl as nccl
+            except Exception as e:
+                supported_nccl = False
+                msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
+                raise SystemExit(msg) from None
+
+            nccl_types = {np.float64: nccl.DataType.Float64,
+                        np.float32: nccl.DataType.Float32,
+                        np.int8: nccl.DataType.Int8,
+                        np.int32: nccl.DataType.Int32}
+
+            nccl_type: NCCL_DataType = nccl_types.get(dtype, nccl.DataType.Float32)
+
+            hostname = MPI.Get_processor_name()
+
+            hosts_data = comm.allgather([rank, hostname])
+            # Build a dictionary hostname : [ranks_in_host]
+            #   { "host1": [0, 1], "host2": [2, 3] }
+            hosts = {}
+            for r, h in hosts_data:
+                # noinspection PyTypeChecker
+                hosts.setdefault(h, []).append(r)
+            if parallel == "data":
+                os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % gpus_per_node)
+            # Check that no more processes than GPUs per node are used
+            for host, ranks_in_host in hosts.items():
+                if len(ranks_in_host) > gpus_per_node:
+                    raise SystemExit("Not able to run more processes than GPUs per node!")
+
+            nccl_id = comm.bcast(nccl.ncclGetUniqueId() if comm_rank == 0 else None)
+            nccl_comm: NCCL_Comm_Type = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
+
+        cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()
+        cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()
+        stream: PyCuda_Stream_Type = drv.Stream()
+        cublas.cublasSetStream(cublas_handle, stream.handle)
+        cudnn.cudnnSetStream(cudnn_handle, stream.handle)
+
+        cudnn_types = {np.float64: "CUDNN_DATA_DOUBLE",
+                    np.float32: "CUDNN_DATA_FLOAT",
+                    np.int8: "CUDNN_DATA_INT8",
+                    np.int32: "CUDNN_DATA_INT32"}
+
+        cudnn_type: str = cudnn_types.get(dtype, "CUDNN_DATA_FLOAT")
+
+        cudnn_dtype: Cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
+        tracer.set_default_stream(stream)
+
+        self.nccl_type = nccl_type
+        self.nccl_comm = nccl_comm
+        self.cudnn_handle = cudnn_handle
+        self.cublas_handle = cublas_handle
+        self.stream = stream
+        self.cudnn_dtype = cudnn_dtype
+    # --- END _initialize_cuda --- #
 
     #@property
     #@cache
@@ -968,8 +954,8 @@ class Model[T: Array]:
         global_terminate = False
 
         model_sync_count = 0
-        train_batches_min = min(self.comm_nsamples[DatasetEnum.TRAIN]) / (self.batch_size * self.nprocs)
-        val_batches_min = min(self.comm_nsamples[DatasetEnum.VAL]) / (self.batch_size * self.nprocs)
+        train_batches_min = min(self.comm_nsamples[Dataset.Part.TRAIN]) / (self.batch_size * self.nprocs)
+        val_batches_min = min(self.comm_nsamples[Dataset.Part.VAL]) / (self.batch_size * self.nprocs)
 
         for epoch in range(self.num_epochs):
             train_batch_generator, val_batch_generator = self.dataset.get_train_val_generator()
@@ -1018,7 +1004,7 @@ class Model[T: Array]:
                 if rank_avail < self.model_sync_min_avail:
                     sync_model = False
 
-                self.rank_weight = self._compute_rank_weight(rank_mask, DatasetEnum.TRAIN)
+                self.rank_weight = self._compute_rank_weight(rank_mask, Dataset.Part.TRAIN)
 
                 tic = timer()
                 train_batch_loss = self._train_batch(x_batch, y_batch, sync_model=sync_model)
@@ -1115,7 +1101,7 @@ class Model[T: Array]:
     # --- END train_dataset --- #
 
     def _train_batch[T:Array](self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> T:
-        self.mode = ModelModeEnum.TRAIN
+        self.mode = Model.Mode.TRAIN
 
         # LR schedulers begin
         for lr_sched in self.lr_schedulers:
@@ -1179,7 +1165,7 @@ class Model[T: Array]:
         return self.total_metrics
     # --- END _train_batch --- #
 
-    def _compute_rank_weight(self, mask: list[int], part: DatasetEnum) -> float:
+    def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
         # TODO Move "all" and "avail2all" to an Enum?
         match self.model_sync_participation:
             case "all":
@@ -1209,7 +1195,7 @@ class Model[T: Array]:
     # --- END _compute_rank_weight --- #
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
-        self.mode = ModelModeEnum.EVALUATE
+        self.mode = Model.Mode.EVALUATE
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
@@ -1242,7 +1228,7 @@ class Model[T: Array]:
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 
-        test_batches_min = min(self.comm_nsamples[DatasetEnum.TEST]) / (self.batch_size * self.nprocs)
+        test_batches_min = min(self.comm_nsamples[Dataset.Part.TEST]) / (self.batch_size * self.nprocs)
 
         test_batch_generator = self.dataset.get_test_generator()
 

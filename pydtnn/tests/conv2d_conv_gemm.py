@@ -23,7 +23,7 @@ from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.common import Params
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils import print_with_header
-from pydtnn.model import Model, ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.initializers import glorot_uniform, zeros
 
 
@@ -34,7 +34,7 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
     params.enable_conv_gemm = False
     params.enable_best_of = False
     model_i2c = Model(**vars(params))
-    model_i2c.mode = ModelModeEnum.TRAIN
+    model_i2c.mode = Model.Mode.TRAIN
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True
     params_gc.conv_gemm_cache = True
@@ -42,7 +42,7 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
     params_gc.conv_gemm_deconv = deconv
     params_gc.conv_gemm_trans = trans
     model_cg = Model(**vars(params_gc))
-    model_cg.mode = ModelModeEnum.TRAIN
+    model_cg.mode = Model.Mode.TRAIN
     conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                            padding=(d.vpadding, d.hpadding),
                            stride=(d.vstride, d.hstride),

@@ -3,11 +3,9 @@ import warnings
 import itertools
 import threading
 from abc import ABC, abstractmethod
-from collections import abc
 
 import numpy as np
 from PIL import Image
-from math import ceil
 
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils import string_substitute
@@ -15,8 +13,8 @@ from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
-from pydtnn.utils.types import Array
-type shape_t = tuple[int, ...]
+from pydtnn.utils.types import Array, shape_t
+
 
 
 class _BackgroundGenerator[T](threading.Thread):
@@ -45,21 +43,20 @@ class _BackgroundGenerator[T](threading.Thread):
     def __iter__(self):
         return self
 
-
-class DatasetEnum(IntEnum):
-    TRAIN = 0
-    VAL = 1
-    TEST = 2
-# --- END DatasetEnum --- #
-
-
 class Dataset[T: Array](ABC):
     # NOTE: Dataset(input_shape) is expected to be in NCHW format
     # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
     # NOTE: Dataset.data_generator(y) is expected to be in NC format
     # NOTE: Floating tensor format is expected in range [0, 1]
 
-    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: shape_t, output_shape: shape_t, max_prefetch=1, force_test_as_validation=False, debug=False):
+    class Part(IntEnum):
+        TRAIN = 0
+        VAL = 1
+        TEST = 2
+    # --- END DatasetEnum --- #
+
+    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: shape_t, 
+                 output_shape: shape_t, max_prefetch=1, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -79,12 +76,12 @@ class Dataset[T: Array](ABC):
 
         # Compute self._nsamples[DatasetEnum.VAL]
         if self.test_as_validation:
-            self._nsamples[DatasetEnum.VAL] = self._nsamples[DatasetEnum.TEST]
+            self._nsamples[Dataset.Part.VAL] = self._nsamples[Dataset.Part.TEST]
         else:
-            self._nsamples[DatasetEnum.VAL] = min(self._nsamples[DatasetEnum.TRAIN] - self.model.nprocs,
+            self._nsamples[Dataset.Part.VAL] = min(self._nsamples[Dataset.Part.TRAIN] - self.model.nprocs,
                                                   max(self.model.nprocs,
-                                                      int(self._nsamples[DatasetEnum.TRAIN] * self.model.validation_split)))
-            self._nsamples[DatasetEnum.TRAIN] -= self._nsamples[DatasetEnum.VAL]
+                                                      int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split)))
+            self._nsamples[Dataset.Part.TRAIN] -= self._nsamples[Dataset.Part.VAL]
 
         self.real_input_shape = tuple(input_shape)
         self.input_shape = tuple(input_shape)
@@ -97,13 +94,13 @@ class Dataset[T: Array](ABC):
         if self.model.resize:
             self.input_shape = (self.input_shape[0], self.model.resize_dimension, self.model.resize_dimension)
 
-        self._initial_nsamples = [self._nsamples[DatasetEnum.TRAIN], self._nsamples[DatasetEnum.VAL], self._nsamples[DatasetEnum.TEST]]
+        self._initial_nsamples = [self._nsamples[Dataset.Part.TRAIN], self._nsamples[Dataset.Part.VAL], self._nsamples[Dataset.Part.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
         self._local_offset = [0] * 3
         self._local_nsamples = [0] * 3
         self._local_remaining_nsamples = [-1] * 3  # -1 is used to mark each part as not initialized
 
-        for part in DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST:
+        for part in Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST:
             (self._local_offset[part],
              self._local_nsamples[part],
              self._nsamples[part]
@@ -112,8 +109,8 @@ class Dataset[T: Array](ABC):
         # Declare _x and _y for train, val and test dataset parts
         # FIXME: This input shape must be the real one.
         # FIXME: Replace with None and change loaders to use np.stack on a local list, insted of concat
-        self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(DatasetEnum)
-        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(DatasetEnum)
+        self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(Dataset.Part)
+        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(Dataset.Part)
 
         if self.model.use_synthetic_data:
             self._data_generator = self._synthetic_data_generator
@@ -136,9 +133,9 @@ class Dataset[T: Array](ABC):
             split_weights = list(map(float, self.model.dataset_export_split_weights.split(",")))
 
         # Data generators
-        gen_train = self._data_generator(DatasetEnum.TRAIN)
-        gen_val = self._data_generator(DatasetEnum.VAL)
-        gen_test = self._data_generator(DatasetEnum.TEST)
+        gen_train = self._data_generator(Dataset.Part.TRAIN)
+        gen_val = self._data_generator(Dataset.Part.VAL)
+        gen_test = self._data_generator(Dataset.Part.TEST)
 
         # Reconstruct validation split
         if self.test_as_validation:
@@ -202,33 +199,33 @@ class Dataset[T: Array](ABC):
 
     @property
     def train_nsamples(self):
-        return self._nsamples[DatasetEnum.TRAIN]
+        return self._nsamples[Dataset.Part.TRAIN]
 
     @property
     def val_nsamples(self):
-        return self._nsamples[DatasetEnum.VAL]
+        return self._nsamples[Dataset.Part.VAL]
 
     @property
     def test_nsamples(self):
-        return self._nsamples[DatasetEnum.TEST]
+        return self._nsamples[Dataset.Part.TEST]
 
     def get_train_val_generator(self) -> tuple[Generator[tuple[T, T, int]], Generator[tuple[T, T, int]]]:
-        return (self._batch_generator(DatasetEnum.TRAIN),
-                self._batch_generator(DatasetEnum.VAL))
+        return (self._batch_generator(Dataset.Part.TRAIN),
+                self._batch_generator(Dataset.Part.VAL))
 
     def get_test_generator(self) -> Generator[tuple[T, T, int]]:
-        return self._batch_generator(DatasetEnum.TEST)
+        return self._batch_generator(Dataset.Part.TEST)
 
     def _print_report(self):
         if self.model.comm_rank == 0:
             print(f"Initial nsamples:"
-                  f" train: {self._initial_nsamples[DatasetEnum.TRAIN]} "
-                  f" val: {self._initial_nsamples[DatasetEnum.VAL]} "
-                  f" test: {self._initial_nsamples[DatasetEnum.TEST]} "
+                  f" train: {self._initial_nsamples[Dataset.Part.TRAIN]} "
+                  f" val: {self._initial_nsamples[Dataset.Part.VAL]} "
+                  f" test: {self._initial_nsamples[Dataset.Part.TEST]} "
                   )
         desc = ["train", "val", "test"]
-        for part in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
-            prefix = f"{self.model.rank}: " if part is DatasetEnum.TRAIN else "   "
+        for part in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
+            prefix = f"{self.model.rank}: " if part is Dataset.Part.TRAIN else "   "
             print(f"{prefix}"
                   f" {desc[part]} offset: {self._local_offset[part]}"
                   f" {desc[part]} local nsamples: {self._local_nsamples[part]}"
@@ -264,7 +261,7 @@ class Dataset[T: Array](ABC):
         return int(local_offset), int(local_nsamples), int(nsamples)
 
     def _init_synthetic_data(self):
-        for part in DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST:
+        for part in Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST:
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = local_batches * self.model.batch_size
             x_shape = (nsamples, *self.input_shape)
@@ -300,7 +297,7 @@ class Dataset[T: Array](ABC):
         """Sets to 1 the corresponding entry in the 2D y array as indicated by the 1D array of classes"""
         y[np.arange(y.shape[0]), classes_list] = 1
 
-    def _synthetic_data_generator(self, part: DatasetEnum):
+    def _synthetic_data_generator(self, part: Part):
         """
         Generates synthetic data for each dataset part returning (slices of) _x[part] and _y[part] initialized in
         _init_synthetic_data().
@@ -315,7 +312,7 @@ class Dataset[T: Array](ABC):
         method is implemented, at least it should raise and exception if a new round begins when a round for another
         part is still in progress.
         """
-        for p in (DatasetEnum.TRAIN, DatasetEnum.VAL, DatasetEnum.TEST):
+        for p in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
             if self._local_remaining_nsamples[p] == -1:  # If not initialized
                 self._local_remaining_nsamples[p] = self._local_nsamples[p]
         while self._local_remaining_nsamples[part] > 0:
@@ -344,10 +341,10 @@ class Dataset[T: Array](ABC):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _actual_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         yield self._x[part], self._y[part]
 
-    def _data_transform(self, part: DatasetEnum, data: np.ndarray) -> np.ndarray:
+    def _data_transform(self, part: Part, data: np.ndarray) -> np.ndarray:
         if self.model.use_synthetic_data:
             return data
 
@@ -360,7 +357,7 @@ class Dataset[T: Array](ABC):
         if self.model.resize:
             data = self._do_resize(data)
 
-        if part is DatasetEnum.TRAIN:
+        if part is Dataset.Part.TRAIN:
             if self.model.flip_images:
                 data = self._do_flip_images(data)
 
@@ -371,7 +368,7 @@ class Dataset[T: Array](ABC):
 
         return data
 
-    def _actual_batch_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
         # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
         local_batch_size = self.model.batch_size
@@ -417,7 +414,7 @@ class Dataset[T: Array](ABC):
                 yield x_batch[:nsamples], y_batch[:nsamples], global_batch_size
                 nsamples -= global_batch_size
 
-    def _batch_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
+    def _batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         yield from self._actual_batch_generator(part)
         # NOTE: The following infinite loop provides of empty batches
         #        if there are asked more batches than actually are.

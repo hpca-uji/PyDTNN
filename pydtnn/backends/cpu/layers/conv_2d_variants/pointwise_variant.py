@@ -6,7 +6,7 @@ from pydtnn.layers import Conv2D
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 
 
 class PointwiseVariant(Conv2D, ABC):
@@ -20,7 +20,7 @@ class PointwiseVariant(Conv2D, ABC):
     # ----
 
     def _forward_pointwise_nhwc(self, x: np.ndarray) -> np.ndarray:
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             self.x: np.ndarray = x
 
         y = self.y[:x.shape[0], :]
@@ -38,7 +38,7 @@ class PointwiseVariant(Conv2D, ABC):
 
     def _forward_pointwise_nchw(self, x: np.ndarray) -> np.ndarray:
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             self.x: np.ndarray = x
 
         y = self.y[:x.shape[0], :]

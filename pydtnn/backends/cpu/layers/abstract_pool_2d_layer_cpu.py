@@ -5,13 +5,14 @@ from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from numpy import ndarray, empty
+from pydtnn.utils.types import shape_t
 
 
 class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape: tuple[int, ...], x: ndarray | None = None):
+    def initialize(self, prev_shape: shape_t, x: ndarray | None = None):
         super().initialize(prev_shape, x)
 
         match self.model.tensor_format:

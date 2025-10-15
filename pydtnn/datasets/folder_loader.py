@@ -21,8 +21,9 @@ import numpy as np
 from random import shuffle
 from PIL import Image
 
-from pydtnn.datasets.dataset import Dataset, shape_t, DatasetEnum
+from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.types import shape_t
 
 from typing import TYPE_CHECKING, override, Generator
 if TYPE_CHECKING:
@@ -63,24 +64,24 @@ class DatasetFolderLoader(Dataset):
 
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples: list[int, int, int] = [0, 0, 0]  # train, val, test
-        self.labels_and_images = dict[DatasetEnum, list[tuple[ClassName, DataPath]]]()
+        self.labels_and_images = dict[Dataset.Part, list[tuple[ClassName, DataPath]]]()
 
-        self.labels_and_images[DatasetEnum.TRAIN], num_classes_train, self._nsamples[DatasetEnum.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)
-        self.labels_and_images[DatasetEnum.TEST], num_classes_test, self._nsamples[DatasetEnum.TEST] = self._get_dict_class_and_file(path=self.model.dataset_test_path)
+        self.labels_and_images[Dataset.Part.TRAIN], num_classes_train, self._nsamples[Dataset.Part.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)
+        self.labels_and_images[Dataset.Part.TEST], num_classes_test, self._nsamples[Dataset.Part.TEST] = self._get_dict_class_and_file(path=self.model.dataset_test_path)
 
         if num_classes_train != num_classes_test:
             raise ValueError(f"The number of train classes ({num_classes_train}) must be the same as the number of test classes {num_classes_test}.")
 
         output_shape = (num_classes_train, )
 
-        super().__init__(model=model, train_nsamples=self._nsamples[DatasetEnum.TRAIN],
-                         test_nsamples=self._nsamples[DatasetEnum.TEST],
+        super().__init__(model=model, train_nsamples=self._nsamples[Dataset.Part.TRAIN],
+                         test_nsamples=self._nsamples[Dataset.Part.TEST],
                          input_shape=ARBITRARY_INPUT_SHAPE, output_shape=output_shape,
                          max_prefetch=model.batch_size,
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
 
-        self.labels_and_images[DatasetEnum.VAL] = self.labels_and_images[DatasetEnum.TEST] if self.test_as_validation else self.labels_and_images[DatasetEnum.TRAIN]
+        self.labels_and_images[Dataset.Part.VAL] = self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN]
     # --- END __init__ --- #
 
     def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
@@ -130,12 +131,12 @@ class DatasetFolderLoader(Dataset):
     # ---
 
     @override
-    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray]]:
+    def _actual_data_generator(self, part: Dataset.Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
         offset = self._local_offset[part]
         nsamples = self._local_nsamples[part]
         labels_and_images = self.labels_and_images[part]
 
-        if part is DatasetEnum.TRAIN:
+        if part is Dataset.Part.TRAIN:
             shuffle(labels_and_images)
 
         labels_and_images = labels_and_images[offset:offset + nsamples]

@@ -6,6 +6,7 @@ from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 # noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.utils.types import shape_t
 
 
 class ReluGPU(ActivationGPU, Relu):
@@ -14,7 +15,7 @@ class ReluGPU(ActivationGPU, Relu):
         super().__init__(*args, **kwargs)
         self.act_desc = None
 
-    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU) -> None:
+    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()

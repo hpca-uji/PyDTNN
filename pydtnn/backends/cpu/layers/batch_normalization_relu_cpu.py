@@ -1,7 +1,7 @@
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.cython_modules import bn_relu_inference_cython
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
@@ -18,7 +18,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
     def forward(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the BN + Relu"""
 
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         if self.spatial:

@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import FC
-from pydtnn.model import ModelModeEnum
+from pydtnn.model import Model
 from pydtnn.performance_models import matmul_time
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
@@ -41,7 +41,7 @@ class FCCPU(LayerCPU, FC):
                         dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        if self.model.mode is ModelModeEnum.TRAIN:
+        if self.model.mode is Model.Mode.TRAIN:
             self.x = x
         dy = self.dy[: x.shape[0], :]
 
