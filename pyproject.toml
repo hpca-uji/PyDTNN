@@ -2,16 +2,17 @@
 name = "pydtnn"
 version = "1.1.1"
 authors = [
-    { name = "Adrián Castelló Gimeno", email = "adcastel@disca.upv.es" },
-    { name = "Enrique S. Quintana-Ortí", email = "quintana@disca.upv.es" },
+    { name = "Adrián Castelló Gimeno", email = "adcastel@uji.es" },
+    { name = "Andrés Enrique Tomás Domínguez", email = "antodo@upv.es" },
+    { name = "Enrique Salvador Quintana Ortí", email = "quintana@uji.es" },
     { name = "Jose Ignacio Mestre Miravet", email = "jmiravet@uji.es" },
-    { name = "Manuel F. Dolz Zaragozá", email = "dolzm@uji.es" },
+    { name = "Manuel Francisco Dolz Zaragozá", email = "dolzm@uji.es" },
     { name = "Mar Catalán Carbó", email = "catalama@uji.es" },
     { name = "Miguel Ángel Prosper Quirós", email = "mprosper@uji.es" },
     { name = "Paul Ximo Pluijter Izquierdo", email = "pluijter@uji.es" },
     { name = "Sergio Barrachina Mir", email = "barrachi@uji.es" },
 ]
-maintainers = [{ name = "Manuel F. Dolz Zaragozá", email = "dolzm@uji.es" }]
+maintainers = [{ name = "Manuel Francisco Dolz Zaragozá", email = "dolzm@uji.es" }]
 description = "Python Distributed Training of Neural Networks"
 readme = "README.rst"
 requires-python = ">=3.13"
