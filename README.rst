@@ -667,10 +667,11 @@ Credits
 
 The main contributors, in alphabetically order, to PyDTNN are:
 
-- Adrián Castelló Gimeno <adcastel@disca.upv.es>
-- Enrique S. Quintana-Ortí <quintana@disca.upv.es>
+- Adrián Castelló Gimeno <adcastel@uji.es>
+- Andrés Enrique Tomás Domínguez <antodo@upv.es>
+- Enrique Salvador Quintana Ortí <quintana@uji.es>
 - Jose Ignacio Mestre Miravet <jmiravet@uji.es>
-- Manuel F. Dolz Zaragozá <dolzm@uji.es>
+- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
 - Mar Catalán Carbó <catalama@uji.es>
 - Miguel Ángel Prosper Quirós <mprosper@uji.es>
 - Paul Ximo Pluijter Izquierdo <pluijter@uji.es>
@@ -678,7 +679,7 @@ The main contributors, in alphabetically order, to PyDTNN are:
 
 If you have questions or comments about PyDTNN, please contact:
 
-- Manuel F. Dolz Zaragozá <dolzm@uji.es>
+- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
 
 Citing PyDTNN
 -------------
