@@ -49,11 +49,11 @@ class MNIST(Dataset):
         self._labels_header_offset = 8  # 4 + 4 * 1
 
     def _actual_data_generator(self, part: Dataset.Part):
-        for part in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
-            offset = self._images_header_offset + self._local_offset[part] * np.prod(self.real_input_shape)
-            nbytes = self._local_nsamples[part] * np.prod(self.real_input_shape)
+        for part in Dataset.Part:
+            offset = self._images_header_offset + self._local_offset[part] * np.prod(INPUT_SHAPE)
+            nbytes = self._local_nsamples[part] * np.prod(INPUT_SHAPE)
             with gzip.open(self._x_filename[part], "rb") as f:
-                x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *self.real_input_shape) / 255.0
+                x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE) / 255.0
             x = x.astype(self.model.dtype)
 
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:

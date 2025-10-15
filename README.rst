@@ -33,32 +33,20 @@ Supported layers:
 
 Supported datasets:
 
--  **MNIST** handwritten digit database. This dataset is included into
+-  **MNIST**: handwritten digit database. This dataset is included into
    the project.
 
--  **CIFAR10** database of the 80 million tiny images dataset. This
+-  **CIFAR10**: database of the 80 million tiny images dataset. This
    dataset is not included into the project. Its binary version can be
    downloaded from: https://www.cs.toronto.edu/~kriz/cifar.html
 
--  **ImageNet**: the PyDTNN module for this dataset requires a
-   preprocessed ImageNet dataset split into 1,024 files in the NPZ
-   Numpy compressed array format containing the images/labels, similar
-   to what TensorFlow uses. Each of these files should store the images
-   in the key 'x' with the shape NCHW = (1251, 3, 227, 227), and the
-   labels in the key 'y' with the shape NL = (1251, 1). Images shall be
-   stored in np.uint8 data type in the range [0..255] while the labels
-   can be stored in np.int16 in the range [1..1000]::
-
-    >>> import numpy as np
-    >>> data = np.load("/scratch/imagenet/train/train-00000-of-01024.npz")
-    >>> data['x'].shape
-    (1251, 3, 227, 227)
-    >>> data['y'].shape
-    (1251, 1)
-
-   PyDTNN comes with the utility ``datasets/ImageNet_converter.py`` that reads the
-   preprocessed ImageNet TensorFlow training/validation files in TFRecord format
-   and converts them into NPZ format.
+-  **ImageNet**: the most highly-used subset of ImageNet is the
+   ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
+   image classification and localization dataset. This dataset spans
+   1000 object classes and contains 1,281, 167 training images,
+   50,000 validation images and 100,000 test images. This dataset
+   is not included into the project. Its can be downloaded from:
+   https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
 
 
 Installing PyDTNN from source
@@ -165,7 +153,7 @@ The PyDTNN framework comes with a utility launcher called
 -  Dataset parameters:
 
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
-      ``imagenet``, ``raw`` or ``folder``. Default: ``None``.
+      ``imagenet``, ``archive`` or ``folder``. Default: ``None``.
    -  ``dataset_percentage``: Percentage of dataset that will be used. 
       If it is ``0``: it is deactivated; if is is a value below ``1`` (and above 0): 
       it will perform undersampling; and if is is a value above ``1``: it will perform 
@@ -277,9 +265,9 @@ The PyDTNN framework comes with a utility launcher called
       which LR will be periodically reduced. Default: 5.
    -  ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning
       rate. Default: 0.
-   - ``stop_at_loss_metric``: Loss metric monitored by
+   -  ``stop_at_loss_metric``: Loss metric monitored by
       stop\_at\_loss LR scheduler. Default: ``val_accuracy``.
-   - ``stop_at_loss_threshold``: Metric threshold monitored by
+   -  ``stop_at_loss_threshold``: Metric threshold monitored by
       stop\_at\_loss LR scheduler. Default: 0.
    -  ``--model_checkpoint_metric``: Loss metric monitored by
       model\_checkpoint LR scheduler. Default: ``val_categorical_cross_entropy``
@@ -501,9 +489,7 @@ using 4 OpenMP threads::
     $ python3 -Ou pydtnn_benchmark.py \
         --model=vgg16_cifar10 \
         --dataset=cifar10 \
-        --dataset_path=datasets/cifar10 \
-        --dataset_train_path=datasets/cifar10 \
-        --dataset_test_path=datasets/cifar10 \
+        --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
         --evaluate_only=True \
         --batch_size=64 \
         --validation_split=0.2 \
@@ -623,8 +609,7 @@ using 4 OpenMP threads::
       enable_best_of                 : False
       dataset_name                   : cifar10
       use_synthetic_data             : False
-      dataset_train_path             : datasets/cifar10
-      dataset_test_path              : datasets/cifar10
+      dataset_path                   : datasets/cifar10/cifar-10-binary.tar.gz
       test_as_validation             : True
       flip_images                    : True
       flip_images_prob               : 0.5
@@ -682,10 +667,11 @@ Credits
 
 The main contributors, in alphabetically order, to PyDTNN are:
 
-- Adrián Castelló Gimeno <adcastel@disca.upv.es>
-- Enrique S. Quintana-Ortí <quintana@disca.upv.es>
+- Adrián Castelló Gimeno <adcastel@uji.es>
+- Andrés Enrique Tomás Domínguez <antodo@upv.es>
+- Enrique Salvador Quintana Ortí <quintana@uji.es>
 - Jose Ignacio Mestre Miravet <jmiravet@uji.es>
-- Manuel F. Dolz Zaragozá <dolzm@uji.es>
+- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
 - Mar Catalán Carbó <catalama@uji.es>
 - Miguel Ángel Prosper Quirós <mprosper@uji.es>
 - Paul Ximo Pluijter Izquierdo <pluijter@uji.es>
@@ -693,7 +679,7 @@ The main contributors, in alphabetically order, to PyDTNN are:
 
 If you have questions or comments about PyDTNN, please contact:
 
-- Manuel F. Dolz Zaragozá <dolzm@uji.es>
+- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
 
 Citing PyDTNN
 -------------

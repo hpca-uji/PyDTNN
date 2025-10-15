@@ -83,7 +83,7 @@ class Dataset[T: Array](ABC):
                                                       int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split)))
             self._nsamples[Dataset.Part.TRAIN] -= self._nsamples[Dataset.Part.VAL]
 
-        self.real_input_shape = tuple(input_shape)
+        # self.real_input_shape = tuple(input_shape)
         self.input_shape = tuple(input_shape)
         self.output_shape = tuple(output_shape)
 
@@ -107,10 +107,8 @@ class Dataset[T: Array](ABC):
              ) = self._compute_local_workload(self._nsamples[part])
 
         # Declare _x and _y for train, val and test dataset parts
-        # FIXME: This input shape must be the real one.
-        # FIXME: Replace with None and change loaders to use np.stack on a local list, insted of concat
-        self._x = [np.zeros((0, *self.real_input_shape), dtype=self.model.dtype)] * len(Dataset.Part)
-        self._y = [np.zeros((0, *self.output_shape), dtype=self.model.dtype)] * len(Dataset.Part)
+        self._x: list[np.ndarray]
+        self._y: list[np.ndarray]
 
         if self.model.use_synthetic_data:
             self._data_generator = self._synthetic_data_generator
@@ -341,8 +339,12 @@ class Dataset[T: Array](ABC):
             local_nsamples -= nsamples
         return output
 
-    def _actual_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
-        yield self._x[part], self._y[part]
+    def _actual_data_generator(self, part: DatasetEnum) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        # NOTE: Yield is necessary so this function is a generator,
+        #       however want to produce a empty iterable,
+        #       so we return immediately without yielding
+        return
+        yield
 
     def _data_transform(self, part: Part, data: np.ndarray) -> np.ndarray:
         if self.model.use_synthetic_data:
