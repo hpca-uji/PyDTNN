@@ -49,8 +49,8 @@ class BatchNormalization[T: Array](Layer, ABC):
             shape_ = (self.ci,)
         else:
             self.ci = self.shape[0]
-        self.gamma = np.full(shape_, self.gamma_init_val, self.model.dtype)
-        self.beta = np.full(shape_, self.beta_init_val, self.model.dtype)
+        self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype, order="C")
+        self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
         self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
         # self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)

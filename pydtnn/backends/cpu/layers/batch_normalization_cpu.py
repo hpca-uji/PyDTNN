@@ -15,110 +15,116 @@ except Exception as e:
     pass
 
 
-class BatchNormalizationCPU(LayerCPU, BatchNormalization):
+class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
     def initialize(self, prev_shape, x = None):
         super().initialize(prev_shape, x)
         self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var_eps: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         if self.spatial:
             self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")            
         else:
             # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
             self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-
-        if self.sync_stats and self.model.comm is not None and self.model.shared_storage:
-            self.mean = self.mean_all_reduce
-            self.n = self.model.nprocs * self.model.batch_size
-        else:
-            self.mean = self.mean_numpy
-            self.n = None
-
-        match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
-                self.y = np.empty((self.model.batch_size, self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
-            case PYDTNN_TENSOR_FORMAT.NHWC:
-                self.y = np.empty((self.model.batch_size, self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
-            case _:
-                raise TypeError(f"Function: \'BatchNormalizationCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
-    # --
-
-    def mean_all_reduce(self, data: np.ndarray, total: int, _mean: np.ndarray) -> None:
-        np.sum(data, axis=0, out=_mean)
-        _mean /= total
-        self.model.comm.Allreduce(MPI.IN_PLACE, _mean, op=MPI.SUM)
-    # --
-
-    def mean_numpy(self, data: np.ndarray, total: int, _mean: np.ndarray) -> None:
-        np.mean(data, axis=0, out=_mean)
+            self.y = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            
     # --
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 
         if self.spatial:
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                x = best_transpose_0231(x)
-            x: np.ndarray = x.reshape((-1, self.ci), copy=False, order="C")
+            x: np.ndarray = x.reshape((-1, self.ci), copy=False)
+
+        y: np.ndarray = self.y[:x.shape[0], :]
 
         if self.model.mode is Model.Mode.EVALUATE:
             # y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
-            x -= self.running_mean
-            y = self.gamma * x
 
+            np.subtract(x, self.running_mean, out=x)
+            np.multiply(self.gamma, x, out=y)
             np.sqrt(self.running_var + self.epsilon, out=self.std)
-            y /= self.std
-            y += self.beta
+            np.divide(y, self.std, out=y)
+            np.add(y, self.beta, out=y)
 
         else:  # ModelModeEnum.TRAIN:
-
+            
+            # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
             self.xn = x
-            self.mean(self.xn, self.n, self.mu)
-            self.xn -= self.mu
-            # var = self.mean(xc ** 2, n, self.model.comm)
-            self.mean(self.xn ** 2, self.n, self.var)
 
-            np.sqrt(self.var + self.epsilon, out=self.std)
-            self.xn /= self.std
-            y = self.gamma * self.xn
-            y += self.beta
+            np.mean(self.xn, axis=0, out=self.mu, 
+                    dtype=self.model.dtype)
+            np.subtract(self.xn, self.mu, out=self.xn)
+            np.mean(self.xn ** 2, axis=0, out=self.var, 
+                    dtype=self.model.dtype)
+
+            np.add(self.var, self.epsilon, out=self.var_eps, 
+                   dtype=self.model.dtype)
+            np.sqrt(self.var_eps + self.epsilon, out=self.std, 
+                      order="C", dtype=self.model.dtype)
+            np.divide(self.xn, self.std, out=self.xn, 
+                      order="C", dtype=self.model.dtype)
+
+            np.multiply(self.gamma, self.xn, out=y)
+
+            np.add(y, self.beta, out=y)
 
             # self.running_mean = self.momentum * self.running_mean + (1.0 - self.momentum) * self.mu
-            self.running_mean *= self.momentum
-            self.running_mean += self.mu * (1.0 - self.momentum)
+            inv_momentum = (1.0 - self.momentum)
+            np.multiply(self.running_mean, self.momentum, out=self.running_mean, 
+                        dtype=self.model.dtype)
+            np.multiply(self.mu, inv_momentum, out=self.mu_var_momentum, 
+                        dtype=self.model.dtype)
+            np.add(self.running_mean, self.mu_var_momentum, out=self.running_mean, 
+                   order="C", dtype=self.model.dtype, casting="unsafe")
 
             # self.running_var = self.momentum * self.running_var + (1.0 - self.momentum) * self.var
-            self.running_var *= self.momentum
-            self.running_var += self.var * (1.0 - self.momentum)
+            np.multiply(self.running_var, self.momentum, out=self.running_var)
+            np.multiply(self.var, inv_momentum, out=self.mu_var_momentum, 
+                        dtype=self.model.dtype)
+            np.add(self.running_var, self.mu_var_momentum, out=self.running_var, 
+                   order="C", dtype=self.model.dtype, casting="unsafe")
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=False)
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                y = best_transpose_0312(y)
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    y = y.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                case _ :
+                    raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
+
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # --- END forward --- #
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         n = dy.shape[0]
         if self.spatial:
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                dy = best_transpose_0231(dy)
             dy = dy.reshape((-1, self.ci), copy=True)
             dx: np.ndarray = self.dx[: (n * self.hi * self.wi), :]
         else:
             dx: np.ndarray = self.dx[:n, :]
 
-        np.sum(dy * self.xn, axis=0, out=self.dgamma)
-        np.sum(dy, axis=0, out=self.dbeta)
+        np.sum(dy * self.xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
+        np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
 
         # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
-            dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False, order="C")
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
-                dx = best_transpose_0312(dx)
+            match self.model.tensor_format:
+                case PYDTNN_TENSOR_FORMAT.NCHW:
+                    dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                case PYDTNN_TENSOR_FORMAT.NHWC:
+                    dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                case _ :
+                    raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
+
+            
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
     # --- END backward --- #

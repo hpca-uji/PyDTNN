@@ -18,6 +18,7 @@ def verbose_test():
 
 class Params:
     def __init__(self) -> None:
+        self.dtype = np.float64
         self.parallel = "sequential"
         self.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
 
@@ -47,7 +48,6 @@ class D:
         self.hstride = hstride  # Horizontal stride
         self.vdilation = vdilation  # Vertical dilation
         self.hdilation = hdilation  # Horizontal dilation
-        self.dtype = np.float32
 
     @property
     def ho(self):

@@ -90,11 +90,11 @@ def lecun_normal(shape: shape_t, dtype: np.dtype) -> np.ndarray:
 
 
 def ones(shape: shape_t, dtype: np.dtype) -> np.ndarray:
-    return np.ones(shape, dtype=dtype)
+    return np.ones(shape, dtype=dtype, order="C")
 
 
 def zeros(shape: shape_t, dtype: np.dtype) -> np.ndarray:
-    return np.zeros(shape, dtype=dtype)
+    return np.zeros(shape, dtype=dtype, order="C")
 
 
 type InitializerFunc = Callable[[shape_t, np.dtype], np.ndarray]
