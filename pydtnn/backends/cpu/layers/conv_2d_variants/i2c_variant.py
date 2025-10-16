@@ -10,7 +10,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
-class I2CVariant(Conv2D, ABC):
+class I2CVariant(Conv2D[np.ndarray], ABC):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray
@@ -47,14 +47,16 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x_rows, w_cols, out=res)
+        np.matmul(x_rows, w_cols, out=res, 
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             res: np.ndarray = res.reshape((self.co, -1), copy=False)
             for i in range(self.co):
-                res[i] += self.biases[i]
+                np.add(res[i], self.biases[i], out=res[i], 
+                       dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -84,13 +86,16 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(w_cols, x_cols, out=res)
+        np.matmul(w_cols, x_cols, out=res, 
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             for i in range(self.co):
-                res.reshape((self.co, -1), copy=False)[i] += self.biases[i]
+                _res = res.reshape((self.co, -1), copy=False)[i]
+                np.add(_res, self.biases[i], out=_res, 
+                       dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -111,7 +116,8 @@ class I2CVariant(Conv2D, ABC):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x_rows.T, dy_rows, out=self._dw)
+        np.matmul(self.x_rows.T, dy_rows, out=self._dw, 
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
@@ -130,7 +136,8 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(dy_rows, w_rows.T, out=res)
+        np.matmul(dy_rows, w_rows.T, out=res, 
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -147,7 +154,7 @@ class I2CVariant(Conv2D, ABC):
         """Version of the backward function that uses im2col and matmul"""
 
         y = np.asarray(self.res_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
-        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
+        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         dy_cols: np.ndarray = best_transpose_1023(dy).reshape((self.co, -1), copy=False)
@@ -155,7 +162,8 @@ class I2CVariant(Conv2D, ABC):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(dy_cols, self.x_cols.T, out=self._dw)
+        np.matmul(dy_cols, self.x_cols.T, out=self._dw, 
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
@@ -174,7 +182,8 @@ class I2CVariant(Conv2D, ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w_cols, dy_cols, out=y)
+        np.matmul(w_cols, dy_cols, out=y, 
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)

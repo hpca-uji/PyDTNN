@@ -12,13 +12,17 @@ class TanhCPU(ActivationCPU, Tanh):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
-        np.tanh(x, out=self.y, casting="unsafe", dtype=self.model.dtype, order="C")
+        np.tanh(x, out=self.y, 
+                casting="unsafe", dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         # return 1 - np.tanh(dy) ** 2
-        np.tanh(dy, out=dy, casting="unsafe", dtype=dy.dtype)
-        np.power(dy, 2, out=dy)
-        np.subtract(1, dy, out=dy, order="C")
+        np.tanh(dy, out=dy, 
+                casting="unsafe", dtype=dy.dtype)
+        np.power(dy, 2, out=dy, 
+                 dtype=self.model.dtype)
+        np.subtract(1, dy, out=dy, 
+                    dtype=self.model.dtype, order="C")
 
         return dy

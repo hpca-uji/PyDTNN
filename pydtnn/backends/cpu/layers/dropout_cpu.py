@@ -5,7 +5,7 @@ from pydtnn.layers import Dropout
 from pydtnn.model import Model
 
 
-class DropoutCPU(LayerCPU, Dropout):
+class DropoutCPU(LayerCPU, Dropout[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -18,14 +18,15 @@ class DropoutCPU(LayerCPU, Dropout):
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 # self.mask = np.random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
                 self.mask = np.random.binomial(n=1, p=(1 - self.rate), size=self.shape).astype(dtype=self.model.dtype, order="C", copy=None)
-                self.mask /= (1 - self.rate)
-                x *= self.mask
-                return np.asarray(x, dtype=self.model.dtype, order="C", copy=None)
+                np.divide(self.mask, (1 - self.rate), out=self.mask, dtype=self.model.dtype)
+                np.multiply(x, self.mask, out=x, order="C", dtype=self.model.dtype)
             case Model.Mode.EVALUATE:
-                return x
+                pass # Just returns x.
             case _:
                 raise RuntimeError(f"Unexpected model mode \'{self.model.mode}\'.")
+        return x
+    # ----
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dy *= self.mask
-        return np.asarray(dy, dtype=self.model.dtype, order='C', copy=None)
+        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
+        return dy

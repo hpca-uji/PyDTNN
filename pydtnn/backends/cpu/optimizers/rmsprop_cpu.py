@@ -17,7 +17,7 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
                 self.context[layer] = dict[str, np.ndarray]()
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
-                    self.context[layer]["cache_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
+                    self.context[layer]["cache_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
 
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():
@@ -30,15 +30,29 @@ class RMSPropCPU(OptimizerCPU, RMSProp):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
                 # cache = self.rho * cache + (1 - self.rho) * dw ** 2
-                cache *= self.rho
-                _dw = dw ** 2
-                _dw *= (1 - self.rho)
-                cache += _dw
+                np.multiply(cache, self.rho, out=cache, 
+                            dtype=self.dtype)
+                temp_dw = np.power(dw, 2, dtype=self.dtype, order="C")
+                np.multiply(temp_dw, (1 - self.rho), out=temp_dw, 
+                        dtype=self.dtype)
+                np.add(cache, temp_dw, out=cache,
+                       dtype=self.dtype)
+                
                 # w -= self.learning_rate * (self.decay * w + (dw / np.sqrt(cache + self.epsilon)))
-                w -= (self.learning_rate * self.decay) * w
-                _cache = cache + self.epsilon
-                np.sqrt(_cache, out=_cache)
-                _dw = dw / _cache
-                _dw *= self.learning_rate
-                w -= _dw
+                temp_w = np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, order="C")
+                np.subtract(w, temp_w, out=w, 
+                            dtype=self.dtype)
+                del temp_w
+
+                temp_cache = np.add(cache, self.epsilon, dtype=self.dtype, order="C")
+                np.sqrt(temp_cache, out=temp_cache,
+                        dtype=self.dtype)
+                temp_dw = np.divide(dw, temp_cache, dtype=self.dtype, order="C")
+                del temp_cache
+
+                np.multiply(temp_dw, self.learning_rate, out=temp_dw,
+                            dtype=self.dtype)
+                np.subtract(w, temp_dw, out=w,
+                            dtype=self.dtype)
+                del temp_dw
             # else: continue

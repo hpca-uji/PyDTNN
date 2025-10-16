@@ -46,7 +46,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         idx_max: np.ndarray
         if self.model.mode is Model.Mode.TRAIN:
             self.idx_max = idx_max
-        return y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=True)
+        return y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=None)
 
     def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
 
@@ -79,7 +79,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         idx_max: np.ndarray
         if self.model.mode is Model.Mode.TRAIN:
             self.idx_max = idx_max
-        return y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=True)
+        return y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=None)
 
     def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
         y = self.y[:x.shape[0], :]
@@ -106,7 +106,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
                                self.vpadding, self.hpadding,
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=True)
+        return dx.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=None)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
@@ -131,8 +131,8 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
                                self.vpadding, self.hpadding,
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        dx: np.ndarray = dx.reshape((-1, self.ci, self.hi, self.wi), order="C", copy=True)
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        dx: np.ndarray = dx.reshape((-1, self.ci, self.hi, self.wi), order="C", copy=None)
+        return dx
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
 

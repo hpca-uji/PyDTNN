@@ -13,7 +13,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
     def initialize(self, prev_shape, x = None):
         super().initialize(prev_shape, x)
-        self.y = empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
+        self.y = empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 
     def forward(self, x: ndarray) -> ndarray:
         """Version of the forward function that uses the BN + Relu"""
@@ -24,10 +24,15 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
         if self.spatial:
             if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
                 x = best_transpose_0231(x)
-            x = x.reshape((-1, self.ci), copy=False)
+            x = x.reshape((-1, self.ci), copy=False, order="C")
 
-        y = self.y[: x.shape[0], :]
-        bn_relu_inference_cython(x, y.reshape((-1, self.ci), copy=False), self.running_mean, self.inv_std, self.gamma, self.beta)
+        y:ndarray = self.y[: x.shape[0], :]
+        bn_relu_inference_cython(x, 
+                                 y.reshape((-1, self.ci), copy=False, order="C"), 
+                                 self.running_mean, 
+                                 self.inv_std, 
+                                 self.gamma, 
+                                 self.beta)
 
         if self.spatial:
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)

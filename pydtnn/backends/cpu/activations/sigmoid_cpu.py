@@ -23,6 +23,8 @@ class SigmoidCPU(ActivationCPU, Sigmoid):
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
         dx = self.dx[:dy.shape[0], :]
-        sigmoid_bwd_cython(dy.reshape(-1, copy=False, order="C"), self.y.reshape(-1, copy=False, order="C"), dx.reshape(-1, copy=False, order="C"))
+        sigmoid_bwd_cython(dy.reshape(-1, copy=False, order="C"), 
+                           self.y.reshape(-1, copy=False, order="C"), 
+                           dx.reshape(-1, copy=False, order="C"))
 
         return dx

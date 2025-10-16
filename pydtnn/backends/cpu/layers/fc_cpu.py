@@ -19,10 +19,10 @@ class FCCPU(LayerCPU, FC):
         super().initialize(prev_shape, x)
         self.weights = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
         # Initialize outputs:
-        self.db = np.empty(self.shape, dtype=self.model.dtype)
-        self.dy = np.empty((self.model.batch_size, *self.shape), dtype=self.model.dtype)
-        self.dw = np.empty(shape=(*self.prev_shape, *self.shape), dtype=self.model.dtype)
-        self.dx = np.empty(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
+        self.db = np.empty(self.shape, dtype=self.model.dtype, order="C")
+        self.dy = np.empty((self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.dw = np.empty(shape=(*self.prev_shape, *self.shape), dtype=self.model.dtype, order="C")
+        self.dx = np.empty(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
 
         if self.use_bias:
             self.biases = self.biases_initializer(self.shape, self.model.dtype)
@@ -46,12 +46,14 @@ class FCCPU(LayerCPU, FC):
         dy = self.dy[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x, self.weights, out=dy)
+        np.matmul(x, self.weights, out=dy, 
+                  dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            dy += self.biases
+            np.add(dy, self.biases, out=dy, 
+                   dtype=self.model.dtype, order="C")
 
         return np.asarray(dy, dtype=self.model.dtype, order='C', copy=None)
 
@@ -60,7 +62,8 @@ class FCCPU(LayerCPU, FC):
         # self.model.mode = ModelModeEnum.TRAIN is asumed from this point.
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         # self.dw = np.matmul(self.x.T, dy)
-        np.matmul(self.x.T, dy, self.dw)
+        np.matmul(self.x.T, dy, self.dw, 
+                  dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -70,6 +73,7 @@ class FCCPU(LayerCPU, FC):
         dx = self.dx[:self.x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         # dx = np.matmul(dy, self.weights.T)
-        np.matmul(dy, self.weights.T, out=dx)
+        np.matmul(dy, self.weights.T, out=dx, 
+                  dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)

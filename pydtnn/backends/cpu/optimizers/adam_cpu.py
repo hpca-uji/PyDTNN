@@ -15,8 +15,8 @@ class AdamCPU(OptimizerCPU, Adam):
 
             for w_ in layer.grad_vars.keys():
                 w: np.ndarray = getattr(layer, w_)
-                self.context[layer]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
-                self.context[layer]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype)
+                self.context[layer]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                self.context[layer]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer]["it"] += 1
@@ -34,27 +34,48 @@ class AdamCPU(OptimizerCPU, Adam):
             if not (self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(m) and self.are_all_zeros(v)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
                 # m = self.beta1 * m + (1 - self.beta1) * dw
-                m *= self.beta1
-                m += (1 - self.beta1) * dw
+                inv_beta1 = (1 - self.beta1)
+                inv_beta2 = (1 - self.beta2)
+
+                temp_dw = np.multiply(inv_beta1, dw, dtype=self.dtype, order="C")
+
+                np.multiply(m, self.beta1, out=m, 
+                            dtype=self.dtype)
+                np.add(m, temp_dw, out=m,
+                       dtype=self.dtype)
 
                 # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-                v *= self.beta2
-                _dw = dw ** 2
-                _dw *= (1 - self.beta2)
-                v += _dw
+                temp_dw = np.pow(dw, 2, dtype=self.dtype, order="C")
 
-                mt: np.ndarray = m / (1 - self.beta1 ** it)
-                vt: np.ndarray = v / (1 - self.beta2 ** it)
+                np.multiply(v, self.beta2, out=v,
+                            dtype=self.dtype)
+                np.multiply(temp_dw, inv_beta2, out=temp_dw, 
+                            dtype=self.dtype)
+                np.add(v, temp_dw, out=v, 
+                        dtype=self.dtype)
+                del temp_dw
+
+                mt: np.ndarray = np.divide(m, (inv_beta1 ** it), dtype=self.dtype, order="C")
+                vt: np.ndarray = np.divide(v, (inv_beta2 ** it), dtype=self.dtype, order="C")
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
-                _w = self.decay * w
+                temp_w = np.multiply(self.decay, w, dtype=self.dtype, order="C")
 
-                vt += self.epsilon
-                np.sqrt(vt, out=vt)
-                mt /= vt
+                np.add(vt, self.epsilon, out=vt,
+                       dtype=self.dtype)
+                np.sqrt(vt, out=vt, 
+                        dtype=self.dtype)
+                np.divide(mt, vt, out=mt,
+                          dtype=self.dtype)
+                del vt
 
-                _w += mt
-                _w *= self.learning_rate
+                np.add(temp_w, mt, out=temp_w, 
+                       dtype=self.dtype)
+                del mt
+                np.multiply(temp_w, self.learning_rate, out=temp_w, 
+                            dtype=self.dtype)
 
-                w -= _w
+                np.subtract(w, temp_w, out=w, 
+                            dtype=self.dtype, order="C")
+                del temp_w
             # else: continue

@@ -9,7 +9,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 import numpy as np
 
 
-class DepthwiseVariant(Conv2D, ABC):
+class DepthwiseVariant(Conv2D[np.ndarray], ABC):
     # NOTE: Attributes defined in conv_2d_cpu.
     dw: np.ndarray
     db: np.ndarray
@@ -19,7 +19,7 @@ class DepthwiseVariant(Conv2D, ABC):
         """ Version of the forward that perform a depthwise convolution"""
 
         self.x = x
-        y = np.zeros(shape=(x.shape[0], self.ho, self.wo, self.co), dtype=self.model.dtype)
+        y = np.zeros(shape=(x.shape[0], self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         depthwise_conv_nhwc_cython(x, self.weights, y, self.ho, self.wo,
@@ -31,7 +31,8 @@ class DepthwiseVariant(Conv2D, ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             y: np.ndarray = y.reshape((self.co, -1), copy=False)
             for i in range(self.co):
-                y[i] += self.biases[i]
+                np.add(y[i], self.biases[i], out=y[i], 
+                       dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -44,7 +45,7 @@ class DepthwiseVariant(Conv2D, ABC):
     def _forward_depthwise_nchw(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
         self.x = x
-        y = np.zeros(shape=(x.shape[0], self.co, self.ho, self.wo), dtype=self.model.dtype)
+        y = np.zeros(shape=(x.shape[0], self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         depthwise_conv_nchw_cython(x, self.weights, y, self.ho, self.wo,
@@ -56,7 +57,8 @@ class DepthwiseVariant(Conv2D, ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             y: np.ndarray = y.reshape((self.co, -1), copy=False)
             for i in range(self.co):
-                y[i] += self.biases[i]
+                np.add(y[i], self.biases[i], out=y[i], 
+                       dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -86,7 +88,7 @@ class DepthwiseVariant(Conv2D, ABC):
 
     def _backward_depthwise_nchw(self, dy: np.ndarray) -> np.ndarray:
 
-        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype)
+        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
 
         depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,
                                             dx, self.dw,

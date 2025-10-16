@@ -25,5 +25,5 @@ class ReluCPU(ActivationCPU, Relu):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         dx = self.dx[:dy.shape[0], :]
-        np.multiply(dy, self.mask, out=dx, order="C")
+        np.multiply(dy, self.mask, out=dx, dtype=self.model.dtype, order="C")
         return dx

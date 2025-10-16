@@ -21,7 +21,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
                 self.backward = self._backward_nchw_cython
 
                 # The following variable is only for NCHW implementation (not for i2c implementation)
-                self.y = empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype)
+                self.y = empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
 
                 # I2C-based implementations have been temporarily discarded
                 # setattr(self, "forward", self._forward_nchw_i2c)

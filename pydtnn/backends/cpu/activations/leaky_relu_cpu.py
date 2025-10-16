@@ -38,10 +38,13 @@ class LeakyReluCPU(ActivationCPU, LeakyRelu):
         self.y = self._y[:x.shape[0], :]
         self.mask = self._mask[:x.shape[0], :]
 
-        leaky_relu_cython(x.reshape(-1, order="C", copy=False), self.y.reshape(-1, order="C", copy=False), self.mask.reshape(-1, order="C", copy=False), self.negative_slope)
+        leaky_relu_cython(x.reshape(-1, order="C", copy=False), 
+                          self.y.reshape(-1, order="C", copy=False), 
+                          self.mask.reshape(-1, order="C", copy=False), 
+                          self.negative_slope)
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         # return dy * self.mask
-        np.multiply(dy, self.mask, out=dy, order="C")
+        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
         return dy

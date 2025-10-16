@@ -37,12 +37,13 @@ class SoftmaxCPU(ActivationCPU, Softmax):
         sum_y = self.sum_y[:x.shape[0], :]
 
         np.max(x, axis=self.axis_dim, keepdims=True, out=max_x)
-        np.subtract(x, max_x, out=x)
-        np.exp(x, out=self.y)
+        np.subtract(x, max_x, out=x, 
+                    dtype=self.model.dtype)
+        np.exp(x, out=self.y, 
+                    dtype=self.model.dtype)
         np.sum(self.y, axis=self.axis_dim, keepdims=True, out=sum_y)
-        np.divide(self.y, sum_y, out=self.y)
-
-        self.y = self.y.astype(dtype=self.model.dtype, order="C", copy=None)
+        np.divide(self.y, sum_y, out=self.y, 
+                    dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -50,9 +51,12 @@ class SoftmaxCPU(ActivationCPU, Softmax):
         sum_dy = self.sum_dy[:dy.shape[0], :]
         mul_dy = self.mul_dy[:dy.shape[0], :]
 
-        np.multiply(dy, self.y, out=mul_dy)
+        np.multiply(dy, self.y, out=mul_dy, 
+                    dtype=self.model.dtype)
         mul_dy.sum(axis=self.axis_dim, keepdims=True, out=sum_dy)
-        np.subtract(dy, sum_dy, out=dy)
-        np.multiply(self.y, dy, out=self.y, order="C")
+        np.subtract(dy, sum_dy, out=dy, 
+                    dtype=self.model.dtype)
+        np.multiply(self.y, dy, out=self.y, 
+                    dtype=self.model.dtype, order="C")
 
         return self.y

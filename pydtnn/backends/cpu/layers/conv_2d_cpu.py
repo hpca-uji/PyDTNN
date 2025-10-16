@@ -63,7 +63,7 @@ class Conv2DCPU(LayerCPU,
 
     def initialize_pointwise(self):
 
-        self.dw = empty(shape=self.weights_shape, dtype=self.model.dtype)
+        self.dw = empty(shape=self.weights_shape, dtype=self.model.dtype, order="C")
         match self.model.tensor_format:
             case PYDTNN_TENSOR_FORMAT.NCHW:
                 self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")

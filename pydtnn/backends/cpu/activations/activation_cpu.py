@@ -10,10 +10,9 @@ try:
     from pydtnn.comm import MPI
 except Exception as e:
     pass
-from numpy import ndarray
+import numpy as np
 
-
-class ActivationCPU(Activation[ndarray], ABC):
+class ActivationCPU(Activation[np.ndarray], ABC):
     """
     Extends an Activation class with the attributes and methods required by CPU Activations.
 
@@ -23,7 +22,7 @@ class ActivationCPU(Activation[ndarray], ABC):
       * reduce_weights_sync()
     """
 
-    def initialize(self, prev_shape, x: ndarray | None = None):
+    def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
 
 
@@ -34,8 +33,9 @@ class ActivationCPU(Activation[ndarray], ABC):
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            dw: ndarray = getattr(self, dw_)
-            dw *= self.model.rank_weight
+            dw: np.ndarray = getattr(self, dw_)
+            np.multiply(dw, self.model.rank_weight, out=dw,
+                        dtype= self.model.dtype)
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
             if self.model.use_mpi_buffers:
@@ -66,8 +66,9 @@ class ActivationCPU(Activation[ndarray], ABC):
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
-            dw: ndarray = getattr(self, dw_)
-            dw *= self.model.rank_weight
+            dw: np.ndarray = getattr(self, dw_)
+            np.multiply(dw, self.model.rank_weight, out=dw,
+                        dtype=self.model.dtype)
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
             if self.model.use_mpi_buffers:
