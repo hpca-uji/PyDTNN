@@ -742,8 +742,8 @@ class Model[T: Array]:
             layers: the list of the layers.
             d: The dictionary of layers (keys) with their respective Weights and Biases (values), that are numpy's ndarray.
             mode: Values from the enum "LoadStoreMode".
-                - "LoadStoreMode.LOAD" (that is "load") mode loads the data from "d" into the Model.
-                - "LoadStoreMode.STORE" (that is "store") mode stores the data from the Model into "d".
+                - "Model.LoadStoreMode.LOAD" (that is "load") mode loads the data from "d" into the Model.
+                - "Model.LoadStoreMode.STORE" (that is "store") mode stores the data from the Model into "d".
         """
         for layer in layers:
             name = layer.canonical_name
@@ -755,18 +755,18 @@ class Model[T: Array]:
                     (["running_var", "running_mean"] if name == "BatchNormalization" else [])
                 for key in grad_vars:
                     base = f"{layer.id}_{name}_{key}"
-                    if mode is LoadStoreMode.LOAD and base not in d:
+                    if mode is Model.LoadStoreMode.LOAD and base not in d:
                         print(f"Could not find '{base}' for layer '{name}' in file!")
                         continue
                     match mode:
-                        case LoadStoreMode.LOAD:
+                        case Model.LoadStoreMode.LOAD:
                             if self.enable_cudnn:
                                 # NOTE: getattr(layer, key): TensorGPU, ary: gpuarray
                                 ary = getattr(layer, key).ary
                                 ary.set(d[base].reshape(ary.shape))
                             else:
                                 setattr(layer, key, d[base])
-                        case LoadStoreMode.STORE:
+                        case Model.LoadStoreMode.STORE:
                             if self.enable_cudnn:
                                 # NOTE: getattr(layer, key): TensorGPU
                                 d[base] = getattr(layer, key).ary.get()
@@ -782,7 +782,7 @@ class Model[T: Array]:
             filename: Path to the file with the weights and biases to load.
         """
         d = np.load(filename)
-        self.load_store_path(self.layers, d, LoadStoreMode.LOAD)
+        self.load_store_path(self.layers, d, Model.LoadStoreMode.LOAD)
 
     def store_weights_and_bias(self, filename: str, compress=True) -> None:
         """
@@ -790,7 +790,7 @@ class Model[T: Array]:
             filename: Path to the file were the weights and biases will be stored.
         """
         d = {}
-        self.load_store_path(self.layers, d, LoadStoreMode.STORE)
+        self.load_store_path(self.layers, d, Model.LoadStoreMode.STORE)
         if compress:
             np.savez_compressed(filename, **d)
         else:
