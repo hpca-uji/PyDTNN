@@ -5,14 +5,6 @@ from pydtnn.layers import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.best_transpose_0231 import best_transpose_0231
-from pydtnn.utils.best_transpose_0312 import best_transpose_0312
-
-try:
-    # noinspection PyUnresolvedReferences
-    from pydtnn.comm import MPI
-except Exception as e:
-    pass
 
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
