@@ -1,6 +1,23 @@
-[submodule "pympi"]
-	path = pympi
+[submodule "vendor/blis"]
+	path = vendor/blis
+	url = https://github.com/flame/blis.git
+[submodule "vendor/tvm"]
+	path = vendor/tvm
+	url = https://github.com/apache/tvm.git
+
+[submodule "vendor/pympi"]
+	path = vendor/pympi
 	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/pympi.git
-[submodule "net-queue"]
-	path = net-queue
+[submodule "vendor/net-queue"]
+	path = vendor/net-queue
 	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/net-queue.git
+
+[submodule "vendor/convGemm"]
+	path = vendor/convGemm
+	url = https://github.com/hpca-uji/convGemm.git
+[submodule "vendor/convWinograd"]
+	path = vendor/convWinograd
+	url = https://github.com/hpca-uji/convWinograd.git
+[submodule "vendor/convDirect"]
+	path = vendor/convDirect
+	url = https://github.com/hpca-uji/convDirect.git

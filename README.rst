@@ -70,11 +70,11 @@ Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ git submodule update --init net-queue
-    $ pip install ./net-queue
+    $ git submodule update --init vendor/net-queue
+    $ pip install ./vendor/net-queue
 
-    $ git submodule update --init pympi
-    $ pip install ./pympi
+    $ git submodule update --init vendor/pympi
+    $ pip install ./vendor/pympi
 
     $ pip install .[mpi]
 
@@ -110,6 +110,9 @@ Optionally, if you are going to use SSL/TLS, you should enable the transport wit
     $ export PYMPI_SSL=yes
     $ export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
     $ export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
+
+Optionally, if you are going to use alternative convolutional algorithms,
+see ``vendor/README.md`` for more information.
 
 Launcher options
 ----------------

@@ -16,6 +16,31 @@ make install
 export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
+## TVM
+Source: <https://github.com/apache/tvm>
+Dependencies:
+- System: `gcc cmake llvm-dev python3`
+- Python: `numpy psutil`
+
+```sh
+TVM_PREFIX=~/opt/tvm
+git clone --recursive https://github.com/apache/tvm.git
+cd ./tvm
+git checkout 43e9c275b6e85d7631e54c8468b49b4706cd674a
+mkdir ./build
+cd ./build
+cp ../cmake/config.cmake .
+cmake -D CMAKE_INSTALL_PREFIX="$TVM_PREFIX" ..
+cmake --build . --parallel
+mkdir -p "$TVM_PREFIX"
+cmake --install .
+export LD_LIBRARY_PATH="$TVM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export TVM_LIBRARY_PATH="$TVM_PREFIX"
+cd ..
+pip install ./3rdparty/tvm-ffi
+pip install ./python
+```
+
 ## convGemm
 Source: <https://github.com/hpca-uji/convGemm>
 Dependencies: `gcc cmake`
@@ -54,31 +79,6 @@ cmake --build . --parallel
 mkdir -p "$WINOGRAD_PREFIX"
 cmake --install .
 export LD_LIBRARY_PATH="$WINOGRAD_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-```
-
-## TVM
-Source: <https://github.com/apache/tvm>
-Dependencies:
-- System: `gcc cmake llvm-dev python3`
-- Python: `numpy psutil`
-
-```sh
-TVM_PREFIX=~/opt/tvm
-git clone --recursive https://github.com/apache/tvm.git
-cd ./tvm
-git checkout 43e9c275b6e85d7631e54c8468b49b4706cd674a
-mkdir ./build
-cd ./build
-cp ../cmake/config.cmake .
-cmake -D CMAKE_INSTALL_PREFIX="$TVM_PREFIX" ..
-cmake --build . --parallel
-mkdir -p "$TVM_PREFIX"
-cmake --install .
-export LD_LIBRARY_PATH="$TVM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-export TVM_LIBRARY_PATH="$TVM_PREFIX"
-cd ..
-pip install ./3rdparty/tvm-ffi
-pip install ./python
 ```
 
 ## convDirect
