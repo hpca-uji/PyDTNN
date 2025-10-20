@@ -136,7 +136,6 @@ class TensorGPU:
         self._initalize(gpuarray.to_gpu(arr), desc)
     # ---
 
-    # TODO: check the output type.
     @staticmethod
     def initialize_gpu_direct(drv: PyCudaDrvType, shape: shape_t, dtype: np.dtype,
                               tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,

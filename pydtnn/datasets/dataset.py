@@ -68,9 +68,8 @@ class Dataset[T: Array](ABC):
         elif not (input_shape[0] < input_shape[2]):
             warnings.warn(f"Dataset input_shape {input_shape} may not be in NCHW format, regardless of model format!", RuntimeWarning)
 
-        # TODO: Check if this makes sense.
         if len(output_shape) != 1:
-            warnings.warn(f"Output shape does not have 1 dimension ({output_shape}), it may cause issues!", RuntimeWarning)
+            warnings.warn(f"Output shape should have 1 dimension, but it has {len(output_shape)} (Output shape: {output_shape}). This may cause issues!", RuntimeWarning)
 
         self.model: Model = model
         self.max_prefetch = max_prefetch

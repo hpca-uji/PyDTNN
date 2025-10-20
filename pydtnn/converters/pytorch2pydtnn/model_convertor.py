@@ -209,9 +209,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: D
 
             converted_layers[operation_variable] = cm.function_operation_to_pydtnn(operation)(args)
             # NOTE: Remember, originally these were functions, then they does not have weights nor biases.
-            # TODO: Check if it is necessary to set/unset in the layer's class something (like the weigths update) in order to make it work like a function.
-            # if hasattr(converted_layers[operation_variable]):
-            #    setattr(converted_layers[operation_variable], False) # TODO/possible FIXME: CHECK IF THIS IS NECESSARY !!!!
     # "for operation_variable in layer_var_names" end.
 
     list_layers = [layer for layer, _input in converted_layers.values()]

@@ -140,7 +140,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Default: 0.")
         self.add_argument('--model_sync_alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
                           help="Aggregation method used to syncronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
-        self.add_argument('--model_sync_participation', type=str, default="all",
+        self.add_argument('--model_sync_participation', type=str, default="all", choices=["all", "avail2all"],
                           help="Rank participation to syncronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
         self.add_argument('--model_sync_min_avail', type=int, default=0,
                           help="Minumun ranks with data required to syncronize models. Default: 0.")

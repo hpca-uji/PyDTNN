@@ -168,7 +168,7 @@ def _initilize_and_get_tracer(tracer_output: str, tracing: bool, comm: ModuleTyp
 # --- END _initilize_and_get_tracer --- #
 
 def _set_data_format(tensor_format: Literal["AUTO", "NCHW", "NHWC"] = "AUTO", enable_cudnn: bool = False) -> PYDTNN_TENSOR_FORMAT:
-    match tensor_format:
+    match tensor_format.upper():
         case "AUTO":
             tensor_format = PYDTNN_TENSOR_FORMAT.NCHW if enable_cudnn else PYDTNN_TENSOR_FORMAT.NHWC
         case "NCHW":
@@ -208,7 +208,7 @@ class Model[T: Array]:
     PyDTNN Model
     """
 
-    class Mode(enum.Enum):
+    class Mode(enum.StrEnum):
         EVALUATE = enum.auto()
         TRAIN = enum.auto()
         UNSPECIFIED = enum.auto()
@@ -217,6 +217,14 @@ class Model[T: Array]:
         LOAD = enum.auto()
         STORE = enum.auto()
 
+    class SyncAlg(enum.StrEnum):
+        AVG = enum.auto()
+        WAVG = enum.auto()
+        INVAVG = enum.auto()
+    
+    class SyncParticipation(enum.StrEnum):
+        ALL = enum.auto()
+        AVAIL2ALL = enum.auto()
 
     def __init__(self, parallel: Literal["sequential", "data"] = "sequential", use_blocking_mpi: bool = False, enable_gpu: bool = False,
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.float32, tracing: bool = False,
@@ -415,12 +423,10 @@ class Model[T: Array]:
         if self.model_name:
             self._read_model(self.model_name)
         # Syncronization parameters
-        self.model_sync_alg: str  # NOTE: This parameter come from Parser.
-        self.model_sync_participation: str  # NOTE: This parameter come from Parser.
-        if self.model_sync_alg not in {"avg", "wavg", "invwavg"}:
-            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
-        if self.model_sync_participation not in {"all", "avail2all"}:
-            raise SystemExit(f"Process weight option '{self.proc_weight}' not recognized.")
+        # NOTE: This parameter come from Parser.
+        self.model_sync_alg = Model.SyncAlg(self.kwargs["model_sync_alg"])
+        # NOTE: This parameter come from Parser.
+        self.model_sync_participation = Model.SyncParticipation(self.kwargs["model_sync_participation"])
     # --- END __init__ --- #
 
     def _set_execution_attributes(self, comm: MPI_COMM | None, shared_storage: bool) -> None:
@@ -723,7 +729,6 @@ class Model[T: Array]:
         # NOTE: all this "[keyword]" in self.kwargs.get([keyword]) come from Parser
         self._apply_layer_fusion(self.kwargs.get("enable_fused_bn_relu"), self.kwargs.get("enable_fused_conv_relu"),
                                  self.kwargs.get("enable_fused_conv_bn"), self.kwargs.get("enable_fused_conv_bn_relu"))
-        # TODO/FIXME: Pass the loss' class as a parameter insted of get it here.
         self.loss_func = losses.switch_losses(self.loss_func_name)(shape=(self.batch_size, *self.layers[-1].shape), model=self)
         self.metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
                               self.metrics_list]
@@ -913,7 +918,6 @@ class Model[T: Array]:
     # --- _sync_x_y_gpu --- #
 
     # TODO: Modify the method's name.
-
     def _weight_update(self, gradient=True, blocking=True):
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
@@ -1167,32 +1171,30 @@ class Model[T: Array]:
     # --- END _train_batch --- #
 
     def _compute_rank_weight(self, mask: list[int], part: Dataset.Part) -> float:
-        # TODO Move "all" and "avail2all" to an Enum?
         match self.model_sync_participation:
-            case "all":
+            case Model.SyncParticipation.ALL:
                 comm_nsamples = self.comm_nsamples[part]
-            case "avail2all":
+            case Model.SyncParticipation.AVAIL2ALL:
                 if mask[self.comm_rank]:
                     comm_nsamples = [nsamples for nsamples, mask in zip(self.comm_nsamples[part], mask) if mask]
                 else:
                     return 0.0
             case _:
-                raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized.")
+                raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: \"{list(Model.SyncParticipation)}\"")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
 
-        # TODO Move "avg", "wavg", "invwavg" to an Enum?
         match self.model_sync_alg:
-            case "avg":
+            case Model.SyncAlg.AVG:
                 return 1.0 / comm_size
-            case "wavg":
+            case Model.SyncAlg.WAVG:
                 return self.dataset._nsamples[part] / total_nsamples
-            case "invwavg":
+            case Model.SyncAlg.INVAVG:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized.")
+                raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: \"{list(Model.SyncAlg)}\"")
     # --- END _compute_rank_weight --- #
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:

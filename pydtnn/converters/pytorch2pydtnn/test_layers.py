@@ -135,7 +135,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
 
     def forward(self, x):
         dict_forwards = dict()
-        ro = self.op0(x)  # TODO: test removing this.
+        ro = self.op0(x)
         dict_forwards["AvgPool2d"] = ro
         r1 = self.op1(ro)
         dict_forwards["MaxPool2d"] = r1
@@ -164,7 +164,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
 
     def forward(self, x):
         dict_forwards = dict()
-        ro = self.op0(x)  # TODO: test removing this.
+        ro = self.op0(x)
         dict_forwards["AdaptiveAvgPool2d"] = ro
         r1 = self.op1(ro)
         dict_forwards["MaxPool2d"] = r1
