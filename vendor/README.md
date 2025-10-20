@@ -5,6 +5,7 @@ Execute from project root, modify paths as desired.
 # Configuration
 SRC="$PWD/vendor"
 PREFIX="$HOME/opt"
+NPROC=$(nproc)
 ```
 
 ## BLIS
@@ -25,7 +26,7 @@ git checkout 0.7.0
 
 # Compile
 ./configure --prefix="$BLIS_PREFIX" --enable-cblas auto
-make -j
+make -j "$NPROC"
 
 # Install
 mkdir -p "$BLIS_PREFIX"
@@ -54,7 +55,7 @@ mkdir ./build
 cd ./build
 cp ../cmake/config.cmake .
 cmake -D CMAKE_INSTALL_PREFIX="$TVM_PREFIX" ..
-cmake --build . --parallel
+cmake --build . --parallel "$NPROC"
 
 # Install
 mkdir -p "$TVM_PREFIX"
@@ -88,7 +89,7 @@ git apply "$GEMM_PATCH"
 # Compile
 cd ./build
 cmake -D CMAKE_PREFIX_PATH="$BLIS_PREFIX" -D CMAKE_INSTALL_PREFIX="$GEMM_PREFIX" ..
-cmake --build . --parallel
+cmake --build . --parallel "$NPROC"
 
 # Install
 mkdir -p "$GEMM_PREFIX"
@@ -118,7 +119,7 @@ git apply "$WINOGRAD_PATCH"
 # Compile
 cd ./build
 cmake -D BLA_VENDOR=FLAME -D CMAKE_PREFIX_PATH="$BLIS_PREFIX" -D CMAKE_INSTALL_PREFIX="$WINOGRAD_PREFIX" ..
-cmake --build . --parallel
+cmake --build . --parallel "$NPROC"
 
 # Install
 mkdir -p "$WINOGRAD_PREFIX"
@@ -153,7 +154,7 @@ git submodule update --init src/convGemm
 # Compile
 cd ./build
 cmake -D CMAKE_PREFIX_PATH="$BLIS_PREFIX;$TVM_PREFIX" -D CMAKE_INSTALL_PREFIX="$DIRECT_PREFIX" ..
-cmake --build . --parallel
+cmake --build . --parallel "$NPROC"
 
 # Install
 mkdir -p "$DIRECT_PREFIX"
