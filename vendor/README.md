@@ -44,8 +44,8 @@ TVM_SRC="$SRC/tvm"
 TVM_PREFIX="$PREFIX/tvm"
 
 # Source
-# git clone https://github.com/apache/tvm.git
-git submodule update --init vendor/tvm
+# git clone --recursive https://github.com/apache/tvm.git
+git submodule update --init --recursive vendor/tvm
 cd "$TVM_SRC"
 git checkout 43e9c275b6e85d7631e54c8468b49b4706cd674a
 
@@ -141,8 +141,8 @@ DIRECT_PATCH="$SRC/convDirect.patch"
 DIRECT_PREFIX="$PREFIX/convDirect"
 
 # Source
-# git clone https://github.com/hpca-uji/convDirect.git
-git submodule update --init vendor/convDirect
+# git clone --recursive https://github.com/hpca-uji/convDirect.git
+git submodule update --init --recursive vendor/convDirect
 cd ./convDirect
 git checkout 352dadb1990fd882b16f10b22fcb842d3856be57
 git apply "$DIRECT_PATCH"
