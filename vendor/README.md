@@ -18,9 +18,7 @@ export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 
 ## TVM
 Source: <https://github.com/apache/tvm>
-Dependencies:
-- System: `gcc cmake llvm-dev python3`
-- Python: `numpy psutil`
+Dependencies: `gcc cmake llvm-dev python3`
 
 ```sh
 TVM_PREFIX=~/opt/tvm
@@ -37,6 +35,7 @@ cmake --install .
 export LD_LIBRARY_PATH="$TVM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export TVM_LIBRARY_PATH="$TVM_PREFIX"
 cd ..
+pip install numpy psutil
 pip install ./3rdparty/tvm-ffi
 pip install ./python
 ```
