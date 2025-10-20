@@ -17,13 +17,17 @@ Dependencies: `gcc make`
 BLIS_SRC="$SRC/blis"
 BLIS_PREFIX="$PREFIX/blis"
 
+# Source
 # git clone https://github.com/flame/blis.git
 git submodule update --init vendor/blis
 cd "$BLIS_SRC"
 git checkout 0.7.0
 
+# Compile
 ./configure --prefix="$BLIS_PREFIX" --enable-cblas auto
 make -j
+
+# Install
 mkdir -p "$BLIS_PREFIX"
 make install
 export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
