@@ -144,7 +144,7 @@ DIRECT_PREFIX="$PREFIX/convDirect"
 # Source
 # git clone --recursive https://github.com/hpca-uji/convDirect.git
 git submodule update --init --recursive vendor/convDirect
-cd ./convDirect
+cd "$DIRECT_SRC"
 git checkout 352dadb1990fd882b16f10b22fcb842d3856be57
 git apply "$DIRECT_PATCH"
 rm -r ./src/convGemm
