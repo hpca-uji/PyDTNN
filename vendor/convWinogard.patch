@@ -1,0 +1,41 @@
+diff --git a/cmake/FindAVX.cmake b/cmake/FindAVX.cmake
+index 0ac7e90..c04427c 100644
+--- a/cmake/FindAVX.cmake
++++ b/cmake/FindAVX.cmake
+@@ -74,9 +74,9 @@ MACRO(CHECK_SSE lang type flags)
+ ENDMACRO()
+ 
+ CHECK_SSE(C "AVX" " ;-mavx;/arch:AVX")
+-# CHECK_SSE(C "AVX2" " ;-mavx2 -mfma;/arch:AVX2")
+-# CHECK_SSE(C "AVX512" " ;-mavx512f -mavx512dq -mavx512vl -mavx512bw -mfma;/arch:AVX512")
++CHECK_SSE(C "AVX2" " ;-mavx2 -mfma;/arch:AVX2")
++CHECK_SSE(C "AVX512" " ;-mavx512f -mavx512dq -mavx512vl -mavx512bw -mfma;/arch:AVX512")
+ 
+-# CHECK_SSE(CXX "AVX" " ;-mavx;/arch:AVX")
+-# CHECK_SSE(CXX "AVX2" " ;-mavx2 -mfma;/arch:AVX2")
+-# CHECK_SSE(CXX "AVX512" " ;-mavx512f -mavx512dq -mavx512vl -mavx512bw -mfma;/arch:AVX512")
++CHECK_SSE(CXX "AVX" " ;-mavx;/arch:AVX")
++CHECK_SSE(CXX "AVX2" " ;-mavx2 -mfma;/arch:AVX2")
++CHECK_SSE(CXX "AVX512" " ;-mavx512f -mavx512dq -mavx512vl -mavx512bw -mfma;/arch:AVX512")
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 13bd460..bea8642 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -33,8 +33,17 @@ target_sources(convwinograd PUBLIC ${LIBSOURCES})
+ if (${CMAKE_SYSTEM_PROCESSOR} STREQUAL "x86_64")
+     find_package(AVX QUIET)
+     if (C_AVX_FOUND)
++        separate_arguments(C_AVX_FLAGS)
+         add_compile_options(-DC_AVX_FOUND ${C_AVX_FLAGS})
+     endif ()
++    if (C_AVX2_FOUND)
++        separate_arguments(C_AVX2_FLAGS)
++        add_compile_options(-DC_AVX2_FOUND ${C_AVX2_FLAGS})
++    endif ()
++    if (C_AVX512_FOUND)
++        separate_arguments(C_AVX512_FLAGS)
++        add_compile_options(-DC_AVX512_FOUND ${C_AVX512_FLAGS})
++    endif ()
+     add_subdirectory(sse)
+     add_subdirectory(avx)
+     target_sources(convwinograd PUBLIC ${LIBSOURCES})
