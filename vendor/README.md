@@ -3,8 +3,8 @@ Execute from project root, modify paths as desired.
 
 ```sh
 # Configuration
-SRC=./vendor
-PREFIX=~/opt
+SRC="$PWD/vendor"
+PREFIX="$HOME/opt"
 ```
 
 ## BLIS
