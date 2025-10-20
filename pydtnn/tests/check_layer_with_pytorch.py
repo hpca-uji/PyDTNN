@@ -152,12 +152,16 @@ class CheckLayerWithPyTorch(unittest.TestCase):
     # ======================
 
     @staticmethod
-    def get_test_data() -> np.ndarray:
+    def get_test_data(no_zeros = False, normalize = False) -> np.ndarray:
         shape_with_elements = (N, *SHAPE)
         num_elems = np.prod(shape_with_elements) // 4
 
         x_1 = np.arange(num_elems)
         x_2 = np.arange(num_elems) * -1
+
+        if no_zeros:
+            x_1 += 1
+            x_2 -= 1
 
         x_1_1 = np.where(x_1 % 2 == 0, x_1, x_1 / 3)
         x_1_2 = np.where(x_1 % 2 != 0, x_1, x_1)
@@ -169,8 +173,12 @@ class CheckLayerWithPyTorch(unittest.TestCase):
         x = np.stack([x_1_1, x_1_2, x_2_1, x_2_2], axis=0, dtype=KWARGS["dtype"]).reshape(shape_with_elements)
         np.random.shuffle(x)
 
+        if normalize:
+            min_x = np.min(x)
+            x = (x - min_x) / (np.max(x) - min_x)
+
         #return np.asarray(x, dtype=KWARGS["dtype"], order="C", copy=True)
-        return x
+        return x.copy()
     # ---------
 
     @staticmethod
@@ -450,7 +458,9 @@ class CheckLayerWithPyTorch(unittest.TestCase):
         pydtnn_layers = [Log()]
         torch_model = torch.nn.LogSigmoid()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
-        _x = CheckLayerWithPyTorch.get_test_data()
+        _x = CheckLayerWithPyTorch.get_test_data(normalize=True)
+        print(f"{_x.min()=} || {_x.max()}")
+        #_x = np.where(_x < 0, 1, _x)
         self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Log")
     # ---------
 
