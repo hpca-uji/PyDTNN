@@ -1,5 +1,5 @@
 # External dependencies
-Execute from project root, modify paths as desired.
+Execute each from project root, modify paths as desired.
 
 ```sh
 # Configuration
