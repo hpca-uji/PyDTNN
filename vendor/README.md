@@ -70,7 +70,7 @@ pip install ./python
 ## convGemm
 Source: <https://github.com/hpca-uji/convGemm>
 
-Dependencies: `gcc cmake`
+Dependencies: `gcc cmake` and `blis`
 
 ```sh
 # Configuration
@@ -100,7 +100,7 @@ export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ## convWinograd
 Source: <https://github.com/hpca-uji/convWinograd>
 
-Dependencies: `gcc cmake`
+Dependencies: `gcc cmake` and `blis`
 
 ```sh
 # Configuration
@@ -130,7 +130,7 @@ export LD_LIBRARY_PATH="$WINOGRAD_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH
 ## convDirect
 Source: <https://github.com/hpca-uji/convDirect>
 
-Dependencies: `gcc cmake`
+Dependencies: `gcc cmake` and `blis tvm convGemm`
 
 ```sh
 # Configuration
@@ -148,8 +148,7 @@ cd "$DIRECT_SRC"
 git checkout 352dadb1990fd882b16f10b22fcb842d3856be57
 git apply "$DIRECT_PATCH"
 rm -r ./src/convGemm
-git submodule set-url src/convGemm "$GEMM_SRC"
-git submodule update --init src/convGemm
+ln -s "$GEMM_SRC" ./src/convGemm
 
 # Compile
 cd ./build
