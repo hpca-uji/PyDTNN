@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils import string_substitute
+from pydtnn.utils import string_substitute, random
 from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -43,11 +43,15 @@ class _BackgroundGenerator[T](threading.Thread):
     def __iter__(self):
         return self
 
+
 class Dataset[T: Array](ABC):
-    # NOTE: Dataset(input_shape) is expected to be in NCHW format
-    # NOTE: Dataset.data_generator(x) is expected to be in model.tensor_format format
-    # NOTE: Dataset.data_generator(y) is expected to be in NC format
-    # NOTE: Floating tensor format is expected in range [0, 1]
+    """
+    NOTE
+    - input_shape is expected to be in NCHW format
+    - data_generator() is expected to be in model.dtype, normalized to [0, 1]
+    - data_generator(x) is expected to be in model.tensor_format format
+    - data_generator(y) is expected to be in NC format
+    """
 
     class Part(IntEnum):
         TRAIN = 0
@@ -366,7 +370,7 @@ class Dataset[T: Array](ABC):
             if self.model.crop_images:
                 data = self._do_crop_images(data)
 
-            np.random.shuffle(data)
+            random.shuffle(data)
 
         return data
 
@@ -386,7 +390,7 @@ class Dataset[T: Array](ABC):
         batch_size = 0
         batch_online = []
 
-        while True:
+        while nsamples > 0:
             for x_data, y_data in generator:
                 batch_online.append((x_data, y_data))
                 batch_size += x_data.shape[0]
@@ -436,7 +440,7 @@ class Dataset[T: Array](ABC):
 
         limit = min(n, int(n * self.model.flip_images_prob))
         s = np.arange(n)
-        np.random.shuffle(s)
+        random.shuffle(s)
         s = s[:limit]
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
         return data
@@ -452,10 +456,10 @@ class Dataset[T: Array](ABC):
         crop_size = min(self.model.crop_images_size, h, w)
         limit = min(n, int(n * self.model.crop_images_prob))
         s = np.arange(n)
-        np.random.shuffle(s)
+        random.shuffle(s)
         s = s[:limit]
-        t = np.random.randint(0, h - crop_size, (limit,))
-        ll = np.random.randint(0, w - crop_size, (limit,))
+        t = random.randint(0, h - crop_size, (limit,))
+        ll = random.randint(0, w - crop_size, (limit,))
         for i, ri in enumerate(s):
             b, r = t[i] + crop_size, ll[i] + crop_size
             # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
@@ -468,8 +472,8 @@ class Dataset[T: Array](ABC):
                     data[ri, b:, r:, :] = 0.0
                 case _:
                     raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
-            data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-t[i], (h - b)), axis=1)
-            data[ri, ...] = np.roll(data[ri, ...], np.random.randint(-ll[i], (w - r)), axis=2)
+            data[ri, ...] = np.roll(data[ri, ...], random.randint(-t[i], (h - b)), axis=1)
+            data[ri, ...] = np.roll(data[ri, ...], random.randint(-ll[i], (w - r)), axis=2)
         return data
 
     def _do_resize(self, data: np.ndarray) -> np.ndarray:

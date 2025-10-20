@@ -7,7 +7,6 @@ PyDTNN Benchmark script
 import cProfile
 import os
 import pstats
-import random
 import sys
 import time
 from io import StringIO
@@ -15,6 +14,7 @@ from io import StringIO
 import numpy as np
 
 from pydtnn.model import Model
+from pydtnn.utils import random
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.best_of import BestOf
 
@@ -51,11 +51,11 @@ def print_model_reports(model):
 def main():
     # Parse options
     parser = PydtnnArgumentParser()
-    # Initialize random seeds to 0
-    random.seed(0)
-    np.random.seed(0)
+    config = parser.parse_args()
+    # Initialize random seed
+    random.seed(config.random_seed)
     # Create model
-    model = Model(**parser.to_dict())
+    model = Model(**vars(config))
     # Print model
     if model.comm_rank == 0:
         print(f'**** {model.model_name} model...')

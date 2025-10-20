@@ -18,8 +18,8 @@ import unittest
 import numpy as np
 
 from pydtnn.backends.cpu.libs import ConvGemm
-from pydtnn.tests.common import verbose_test, D, alexnet_layers
-from pydtnn.utils import print_with_header
+from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
+from pydtnn.utils import print_with_header, random
 from pydtnn.cython_modules import im2row_nhwc_cython
 
 
@@ -76,7 +76,7 @@ def _conv_gemm_and_im2row_mm(weights: np.ndarray, x: np.ndarray, biases: np.ndar
     return conv_gemm_result, im2row_mm_result
 
 
-class ConvGemmTestCase(unittest.TestCase):
+class ConvGemmTestCase(TestCase):
     """
     Tests that conv_gemm leads to the same results as i2c and mm.
     """
@@ -254,8 +254,8 @@ class ConvGemmTestCase(unittest.TestCase):
         Test that the default parameters on random matrices lead to the same solution
         """
         d = D()
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         conv_gemm_result, im2row_mm_result = _conv_gemm_and_im2row_mm(weights, x,
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,
                                                                       vstride=d.vstride, hstride=d.hstride,
@@ -278,11 +278,11 @@ class ConvGemmTestCase(unittest.TestCase):
         Test that the default parameters on random matrices, including b, lead to the same solution
         """
         d = D()
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         ho = (d.h + 2 * d.vpadding - d.vdilation * (d.kh - 1) - 1) // d.vstride + 1
         wo = (d.w + 2 * d.hpadding - d.hdilation * (d.kw - 1) - 1) // d.hstride + 1
-        biases = np.random.rand(d.b, ho, wo, d.kn).astype(np.float32, order='C')
+        biases = random.rand(d.b, ho, wo, d.kn).astype(np.float32, order='C')
         conv_gemm_result, im2row_mm_result = _conv_gemm_and_im2row_mm(weights, x, biases=biases,
                                                                       vpadding=d.vpadding, hpadding=d.hpadding,
                                                                       vstride=d.vstride, hstride=d.hstride,
@@ -297,10 +297,10 @@ class ConvGemmTestCase(unittest.TestCase):
             print(" kn   Maximum difference    sum(cg_result)")
             print("----+--------------------+-----------------")
         conv_gemm = ConvGemm(debug=False)
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for kn in range(1, 32):
-            weights = np.random.rand(d.c, d.kh, d.kw, kn).astype(np.float32, order='C')
+            weights = random.rand(d.c, d.kh, d.kw, kn).astype(np.float32, order='C')
             conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                                     vpadding=d.vpadding, hpadding=d.hpadding,
                                                                     vstride=d.vstride, hstride=d.hstride,
@@ -339,10 +339,10 @@ class ConvGemmTestCase(unittest.TestCase):
             print("  b   Maximum difference")
             print("----+--------------------")
         conv_gemm = ConvGemm(debug=False)
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for b in range(1, 32):
-            x = np.random.rand(b, d.h, d.w, d.c).astype(np.float32, order='C')
+            x = random.rand(b, d.h, d.w, d.c).astype(np.float32, order='C')
             conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                                     vpadding=d.vpadding, hpadding=d.hpadding,
                                                                     vstride=d.vstride, hstride=d.hstride,
@@ -381,8 +381,8 @@ class ConvGemmTestCase(unittest.TestCase):
             print("  p   Maximum difference")
             print("----+--------------------")
         conv_gemm = ConvGemm(debug=False)
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for padding in range(0, 5):
             conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
@@ -423,8 +423,8 @@ class ConvGemmTestCase(unittest.TestCase):
             print("  s   Maximum difference")
             print("----+--------------------")
         conv_gemm = ConvGemm(debug=False)
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for stride in range(1, 6):
             conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
@@ -465,8 +465,8 @@ class ConvGemmTestCase(unittest.TestCase):
             print(" vs  hs   Maximum difference")
             print("--------+--------------------")
         conv_gemm = ConvGemm(debug=False)
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         for vstride in range(1, 5):
             for hstride in range(1, 5):
                 if vstride == hstride:
@@ -509,8 +509,8 @@ class ConvGemmTestCase(unittest.TestCase):
             print("  s   Maximum difference")
             print("----+--------------------")
         conv_gemm = ConvGemm(debug=False)
-        weights = np.random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
-        x = np.random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
+        weights = random.rand(d.c, d.kh, d.kw, d.kn).astype(np.float32, order='C')
+        x = random.rand(d.b, d.h, d.w, d.c).astype(np.float32, order='C')
         np_all_close_for_all_cases = True
         for dilation in range(1, 3):
             conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
@@ -552,8 +552,8 @@ class ConvGemmTestCase(unittest.TestCase):
         layers = alexnet_layers
         conv_gemm = ConvGemm(debug=False)
         for n, layer in enumerate(layers):
-            weights = np.random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
-            x = np.random.rand(layer.b, layer.h, layer.w, layer.c).astype(np.float32, order='C')
+            weights = random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
+            x = random.rand(layer.b, layer.h, layer.w, layer.c).astype(np.float32, order='C')
             conv_gemm_result: np.ndarray = conv_gemm.conv_gemm_nhwc(weights, x,
                                                                     vpadding=layer.vpadding, hpadding=layer.hpadding,
                                                                     vstride=layer.vstride, hstride=layer.hstride,
@@ -593,8 +593,8 @@ class ConvGemmTestCase(unittest.TestCase):
     #     layers = alexnet_layers
     #     conv_gemm = ConvGemm(debug=False)
     #     for n, layer in enumerate(layers):
-    #         weights = np.random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
-    #         dy = np.random.rand(layer.b, layer.ho, layer.wo, layer.kn).astype(np.float32, order='C')
+    #         weights = random.rand(layer.c, layer.kh, layer.kw, layer.kn).astype(np.float32, order='C')
+    #         dy = random.rand(layer.b, layer.ho, layer.wo, layer.kn).astype(np.float32, order='C')
     #         dx = np.empty((layer.b, layer.h, layer.w, layer.c), dtype=np.float32, order='C')
     #         # deconv_gemm
     #         deconv_gemm_result: np.ndarray = conv_gemm.deconv_gemm_nhwc(weights, dy, dx,

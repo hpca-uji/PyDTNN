@@ -5,6 +5,7 @@ from pydtnn.activations import LeakyRelu, Relu6
 from copy import deepcopy
 
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.utils import random
 
 # noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
@@ -40,7 +41,7 @@ KWARGS = {
 
 # End Constants #
 
-np.random.seed(SEED)
+random.seed(SEED)
 
 
 def main():

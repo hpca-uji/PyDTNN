@@ -150,6 +150,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Sincronize models on training end. Default: True.")
         self.add_argument('--tensor_format', type=lambda s: str(s).upper(), default="NHWC",
                           help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable_gpu\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
+        self.add_argument('--random_seed', type=int, default=57005,
+                          help='Initial state of random number generator. Default: 57005.')
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")

@@ -20,9 +20,9 @@ import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.common import Params
+from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils import print_with_header
+from pydtnn.utils import print_with_header, random
 from pydtnn.model import Model
 from pydtnn.initializers import glorot_uniform, zeros
 
@@ -63,7 +63,7 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
     return conv2d_i2c, conv2d_cg
 
 
-class Conv2DConvGemmTestCase(unittest.TestCase):
+class Conv2DConvGemmTestCase(TestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T
     """
@@ -115,7 +115,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         # Forward pass
         y_i2c = conv2d_i2c.forward(x)
         y_cg = conv2d_cg.forward(x)
-        dy = np.random.rand(d.b, d.kn, d.ho, d.wo).astype(np.float32, order='C')
+        dy = random.rand(d.b, d.kn, d.ho, d.wo).astype(np.float32, order='C')
         # Backward pass
         dx_i2c = conv2d_i2c.backward(dy)
         dx_cg = conv2d_cg.backward(dy)
@@ -188,7 +188,7 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d = D()
         print(f"d:\n{d}")
         conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d)
-        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
         y_i2c = conv2d_i2c.forward(x)
         y_cg = conv2d_cg.forward(x)
         if verbose_test():
@@ -204,8 +204,8 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         Test that the default parameters lead to the same solution on the backward step
         """
         d = D()
-        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        weights = random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_handmade_array(self):
@@ -322,8 +322,8 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
         d.vdilation, d.hdilation = (1, 1)
-        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        weights = random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_imagenet_first_conv2d(self):
@@ -337,8 +337,8 @@ class Conv2DConvGemmTestCase(unittest.TestCase):
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (4, 4)
         d.vdilation, d.hdilation = (1, 1)
-        x = np.random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        weights = np.random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        weights = random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
 
 

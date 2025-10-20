@@ -1,7 +1,7 @@
 import io
+import copy
 import tarfile
 import typing
-import random
 from collections import abc
 from pathlib import Path, PurePath
 from contextlib import contextmanager, ExitStack
@@ -12,6 +12,7 @@ from scipy.io import loadmat
 
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.datasets.dataset import Dataset
+from pydtnn.utils import random
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -95,8 +96,11 @@ def load_archive(*paths: str) -> abc.Generator[typing.IO[bytes]]:
 
 
 class ImageNet(Dataset):
-    def __init__(self, model: "Model"):
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, max_prefetch=model.batch_size)
+    # mean: [0.48079005 0.4571948  0.40758193]
+    # std:  [0.2830013  0.2758762  0.28932407]
+
+    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, max_prefetch=model.batch_size, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _get_label(self, code: int, labels: dict[int, int]) -> np.ndarray:
         """Transform a code (int) into a label (ndarray 1D uint8)"""
@@ -156,7 +160,7 @@ class ImageNet(Dataset):
             }
 
     def _init_actual_data(self):
-        if not self.model.resize:
+        if not self.model.resize and False:
             raise ValueError("Model resize must be enabled for dataset!")
 
         meta = Path(self.model.dataset_path)
@@ -187,7 +191,7 @@ class ImageNet(Dataset):
 
         self._xy_filenames = [
             train_xy,
-            val_xy if self.test_as_validation else train_xy,
+            copy.copy(val_xy if self.test_as_validation else train_xy),
             val_xy
         ]
 
@@ -224,5 +228,23 @@ class ImageNet(Dataset):
 
             # Inplace normalization
             x /= 255.0
+            # x = self._normalize_image(x)
 
             yield x, y
+
+    def _normalize_image(self, x: np.ndarray) -> np.ndarray:
+        # A) Caffe-like normalization used for pre-trained Keras models
+        x = x[:, ::-1, ...]
+        mean = [103.939, 116.779, 123.68]
+        for c in range(3):
+            x[:, c, :, :] -= mean[c]
+        # std = [?, ?, ?]
+        # for c in range(3):
+        #     x[:, c, :, :] /= std[c]
+
+        # B) Alternative normalization
+        # mean = np.array([0.485, 0.456, 0.406])
+        # std = np.array([0.229, 0.224, 0.225])
+        # for c in range(3):
+        #     x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
+        return x

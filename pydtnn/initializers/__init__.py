@@ -7,6 +7,8 @@ import scipy.stats as stats
 from enum import StrEnum, auto
 from typing import Callable
 from pydtnn.utils.types import shape_t
+from pydtnn.utils import random
+
 
 class DistributionModeEnum(StrEnum):
     FAN_IN = auto()
@@ -58,7 +60,7 @@ def _generate_distribution(shape: shape_t, scale: float, mode: DistributionModeE
             x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False, order="C")
         case ProbabilisticDistribution.UNIFORM:
             limit = np.sqrt(3. * scale)
-            x = np.random.uniform(-limit, limit, shape).astype(dtype, copy=False, order="C")
+            x = random.uniform(-limit, limit, shape).astype(dtype, copy=False, order="C")
         case _:
             raise NotImplementedError(f"distribution: \'{distribution}\' not implemented")
     return x

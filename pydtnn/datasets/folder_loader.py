@@ -1,29 +1,12 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2025 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
 import os
+import copy
 import numpy as np
-from random import shuffle
 from PIL import Image
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.utils.types import shape_t
+from pydtnn.utils import random
 
 from typing import TYPE_CHECKING, override, Generator
 if TYPE_CHECKING:
@@ -32,7 +15,7 @@ if TYPE_CHECKING:
 type DataPath = str
 type ClassName = int
 
-ARBITRARY_INPUT_SHAPE = (3, 600, 600)
+SYNTHETIC_INPUT_SHAPE = (3, 600, 600)
 
 class DatasetFolderLoader(Dataset):
     """
@@ -58,9 +41,9 @@ class DatasetFolderLoader(Dataset):
         # NOTE: Validation dataset is extracted from the Test one.
         self.model = model
         if not os.path.isdir(self.model.dataset_train_path):
-            raise NotADirectoryError(f"\'{self.model.dataset_train_path}\' should be a directory.")
+            raise NotADirectoryError(f"{self.model.dataset_train_path!r} should be a directory.")
         if not os.path.isdir(self.model.dataset_test_path):
-            raise NotADirectoryError(f"\'{self.model.dataset_test_path}\' should be a directory.")
+            raise NotADirectoryError(f"{self.model.dataset_test_path!r} should be a directory.")
 
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples: list[int, int, int] = [0, 0, 0]  # train, val, test
@@ -76,12 +59,12 @@ class DatasetFolderLoader(Dataset):
 
         super().__init__(model=model, train_nsamples=self._nsamples[Dataset.Part.TRAIN],
                          test_nsamples=self._nsamples[Dataset.Part.TEST],
-                         input_shape=ARBITRARY_INPUT_SHAPE, output_shape=output_shape,
+                         input_shape=SYNTHETIC_INPUT_SHAPE, output_shape=output_shape,
                          max_prefetch=model.batch_size,
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
 
-        self.labels_and_images[Dataset.Part.VAL] = self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN]
+        self.labels_and_images[Dataset.Part.VAL] = copy.copy(self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN])
     # --- END __init__ --- #
 
     def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
@@ -137,7 +120,7 @@ class DatasetFolderLoader(Dataset):
         labels_and_images = self.labels_and_images[part]
 
         if part is Dataset.Part.TRAIN:
-            shuffle(labels_and_images)
+            random.shuffle(labels_and_images)
 
         labels_and_images = labels_and_images[offset:offset + nsamples]
 

@@ -23,12 +23,12 @@ from pydtnn.model import Model
 from pydtnn.tests.common import verbose_test
 
 from pydtnn.layers import Layer
-from pydtnn.tests.common import Params
+from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils import print_with_header
+from pydtnn.utils import print_with_header, random
 
 
-class CheckConvGemmModels(unittest.TestCase):
+class CheckConvGemmModels(TestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
@@ -112,7 +112,7 @@ class CheckConvGemmModels(unittest.TestCase):
     @staticmethod
     def get_first_dx(model: Model, loss_func: losses.Loss, x: np.ndarray) -> np.ndarray:
         # random y target
-        y_targ = np.random.rand(*x.shape).astype(np.float32, order='C')
+        y_targ = random.rand(*x.shape).astype(np.float32, order='C')
         # obtain first dx1
         global_batch_size = model.batch_size
         loss, dx = loss_func(x, y_targ, global_batch_size)
@@ -127,7 +127,7 @@ class CheckConvGemmModels(unittest.TestCase):
         """
         Model 1 forward pass
         """
-        x1 = [np.random.rand(model1.batch_size, *model1.layers[0].shape).astype(np.float32, order='C'), ]
+        x1 = [random.rand(model1.batch_size, *model1.layers[0].shape).astype(np.float32, order='C'), ]
         # Store results from layer 1 to last layer on Model 1
         for i, layer in enumerate(model1.layers[1:], 1):
             if verbose_test():

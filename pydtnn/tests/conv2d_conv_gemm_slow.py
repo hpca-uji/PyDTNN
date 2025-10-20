@@ -20,6 +20,7 @@ import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase, D
+from pydtnn.utils import random
 
 from pydtnn.comm import MPI
 
@@ -28,6 +29,10 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """
+
+    random.seed(0)  # type: ignore
+    dtype = np.float32
+
     R = list(itertools.product(
         range(1, 4),   # kn
         range(1, 4),   # b
@@ -42,19 +47,19 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
         range(1, 4)    # hs
     ))
 
-    X = np.random.rand(
+    X = random.rand(
         4,   # b
         11,  # c
         11,  # h
         11   # w
-    ).astype(np.float32, order="C")
+    ).astype(dtype, order="C")
 
-    W = np.random.rand(
+    W = random.rand(
         4,   # kn
         11,  # c
         11,  # kh
         11,  # kw
-    ).astype(np.float32, order="C")
+    ).astype(dtype, order="C")
 
     def test_forward_backward_multiple_params(self):
         """Tests that different input matrices, paddings and strides, lead to the same solution"""

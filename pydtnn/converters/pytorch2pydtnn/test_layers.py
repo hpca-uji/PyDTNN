@@ -24,6 +24,7 @@ from copy import deepcopy
 from math import prod
 import numpy as np
 from pydtnn.converters.pytorch2pydtnn.common import TRANSPOSE_WEIGHTS_LAYERS
+from pydtnn.utils import random
 
 import pydtnn
 
@@ -45,7 +46,7 @@ PYTORCH_LAYER_BIASES = "bias"
 # setting random seed
 SEED = 1234
 torch.manual_seed(SEED)
-np.random.seed(SEED)
+random.seed(SEED)
 # ---
 
 THRESHOLD = 1e-4

@@ -242,6 +242,7 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
+    from pydtnn.utils import random
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
     c = 16  # Channels per layer
@@ -259,7 +260,7 @@ def __usage_example__():
     # Create weights, x, and biases matrices from previous parameters. If no biases
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
-    np.random.seed(0)
+    random.seed(0)
     # weights[1][1][1][1] = -322.0
     # weights[2][2][2][2] = -334.0
 
@@ -267,8 +268,8 @@ def __usage_example__():
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     # NCHW --------------------------
-    weights = np.random.rand(c, kh, kw, kn).astype(np.float32, order='C')
-    x = np.random.rand(b, h, w, c).astype(np.float32, order='C')
+    weights = random.rand(c, kh, kw, kn).astype(np.float32, order='C')
+    x = random.rand(b, h, w, c).astype(np.float32, order='C')
     biases = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order='C')
 
     print("Using conv_direct to compute weights * x + biases...")

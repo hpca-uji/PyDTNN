@@ -23,9 +23,11 @@ OUTPUT_SHAPE = (10,)
 
 
 class MNIST(Dataset):
+    # mean: [0.1307281]
+    # std:  [0.30818242]
 
-    def __init__(self, model: "Model"):
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE)
+    def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
+        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self) -> None:
         self._x_filename = [
@@ -44,7 +46,7 @@ class MNIST(Dataset):
         else:
             self._x_filename[Dataset.Part.VAL] = self._x_filename[Dataset.Part.TRAIN]
             self._y_filename[Dataset.Part.VAL] = self._y_filename[Dataset.Part.TRAIN]
-            
+
         self._images_header_offset = 16  # 4 + 4 * 3
         self._labels_header_offset = 8  # 4 + 4 * 1
 
@@ -65,7 +67,7 @@ class MNIST(Dataset):
             with gzip.open(self._y_filename[part], "rb") as f:
                 y_classes = self._read_file(f, offset, nbytes)
 
-            y = np.zeros([self._local_nsamples[part], *self.output_shape], dtype=self.model.dtype, order="C")
+            y = np.zeros((self._local_nsamples[part], *self.output_shape), dtype=self.model.dtype, order="C")
             self._decode_class(y, y_classes)
 
             yield x, y

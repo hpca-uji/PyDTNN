@@ -4,9 +4,11 @@ Common methods and properties for various unitary tests
 
 import os
 import sys
+import unittest
 
 import numpy as np
 
+from pydtnn.utils import random
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 
 
@@ -30,6 +32,12 @@ class Params:
         self.dataset_path = f"datasets/{dataset_name}"
         self.dataset_train_path = f"datasets/{dataset_name}"
         self.dataset_test_path = f"datasets/{dataset_name}"
+
+
+class TestCase(unittest.TestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        random.seed(0)
 
 
 class D:

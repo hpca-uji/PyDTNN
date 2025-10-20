@@ -1,20 +1,43 @@
-import ctypes
-import inspect
-import functools
-import threading
-import math
 import os
 import sys
+import math
 import string
-import uuid
-from ctypes.util import find_library
+import ctypes
+import inspect
+import weakref
+import functools
+import threading
 from glob import glob
 from importlib import import_module
-from enum import StrEnum, auto
-from collections import abc
-from concurrent.futures import ThreadPoolExecutor
+from ctypes.util import find_library
 
 import numpy as np
+
+
+class Random:
+    def __init__(self, seed=0) -> None:
+        self._generators = weakref.WeakKeyDictionary[threading.Thread, np.random.Generator]()
+        self.seed(seed)
+
+    def seed(self, seed) -> None:
+        self._seed = seed
+        self._generators.clear()
+
+    @property
+    def _generator(self) -> np.random.Generator:
+        thread = threading.current_thread()
+
+        if thread not in self._generators:
+            self._generators[thread] = np.random.default_rng(self._seed)
+
+        return self._generators[thread]
+
+    def __getattr__(self, key: str):
+        return getattr(self._generator, key)
+
+
+random: np.random.Generator = Random()  # type: ignore
+
 
 def print_with_header(header, to_be_printed=None):
     print(f"# {header}")

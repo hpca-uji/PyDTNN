@@ -17,10 +17,10 @@ TENSOR_ASSERT = {
 
 class CustomDataset(Dataset):
 
-    def __init__(self, model: "Model", x_train: np.ndarray, y_train: np.ndarray, 
+    def __init__(self, model: "Model", x_train: np.ndarray, y_train: np.ndarray,
                  x_test: np.ndarray | None = None, y_test: np.ndarray | None = None,
                  input_shape: shape_t | None = None, output_shape: shape_t | None = None,
-                 force_test_as_validation=False):
+                 force_test_as_validation=False, debug=False):
         if x_test is None or y_test is None:
             if x_test is None and y_test is None:
                 x_test = x_train
@@ -61,7 +61,8 @@ class CustomDataset(Dataset):
                          x_test.shape[0],
                          input_shape,
                          output_shape,
-                         force_test_as_validation=force_test_as_validation)
+                         force_test_as_validation=force_test_as_validation,
+                         debug=debug)
 
     def _init_actual_data(self):
         for part in Dataset.Part:
@@ -72,7 +73,7 @@ class CustomDataset(Dataset):
             self._y[part] = self.__y_source[part][local_slice, ...]
 
     @classmethod
-    def import_(cls: Dataset, model: "Model") -> Self:
+    def import_(cls: "type[CustomDataset]", model: "Model", force_test_as_validation=False, debug=False) -> "CustomDataset":
         """Import dataset (rank specific)"""
         with np.load(model.dataset_path) as data:
             data: dict[str, np.ndarray]
@@ -114,7 +115,8 @@ class CustomDataset(Dataset):
                 x_test=x_test,
                 y_test=y_test,
                 input_shape=input_shape,
-                force_test_as_validation=False
+                force_test_as_validation=force_test_as_validation,
+                debug=debug
             )
 
             # Debug information

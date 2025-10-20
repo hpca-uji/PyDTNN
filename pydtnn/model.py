@@ -4,6 +4,7 @@ PyDTNN model
 
 from pydtnn import crypt
 from pydtnn.comm import proto as PROTOCOL
+from pydtnn.utils import random
 import functools
 import importlib
 import os

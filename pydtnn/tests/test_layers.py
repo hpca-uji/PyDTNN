@@ -5,6 +5,7 @@ from pydtnn.layers import *
 from pydtnn.optimizers import *
 
 from pydtnn.model import Model
+from pydtnn.utils import random
 
 import numpy as np
 from time import time
@@ -17,7 +18,7 @@ from pydtnn.backends.gpu import TensorGPU
 
 # setting random seed
 SEED = 1234
-np.random.seed(SEED)
+random.seed(SEED)
 # ---
 
 N = 100

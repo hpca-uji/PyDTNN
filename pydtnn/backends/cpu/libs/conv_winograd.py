@@ -536,6 +536,7 @@ def time_it_im2col_4_dims(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
+    from pydtnn.utils import random
     from pydtnn.cython_modules import im2col_nchw_cython, im2row_nhwc_cython
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
@@ -554,7 +555,7 @@ def __usage_example__():
     # Create weights, x, and biases matrices from previous parameters. If no biases
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
-    np.random.seed(0)
+    random.seed(0)
     # weights[1][1][1][1] = -322.0
     # weights[2][2][2][2] = -334.0
 
@@ -564,8 +565,8 @@ def __usage_example__():
     biases_wg = (np.ones(kn) * 10).astype(np.float32, order='C')
 
     # NCHW --------------------------
-    weights = np.random.rand(kn, c, kh, kw).astype(np.float32, order='C')
-    x = np.random.rand(b, c, h, w).astype(np.float32, order='C')
+    weights = random.rand(kn, c, kh, kw).astype(np.float32, order='C')
+    x = random.rand(b, c, h, w).astype(np.float32, order='C')
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_winograd NCHW to compute weights * x + biases...")
     r = False
@@ -592,8 +593,8 @@ def __usage_example__():
     print("mm time: {:.4f}".format(mm_t))
 
     # NHWC --------------------------
-    weights = np.random.rand(c, kh, kw, kn).astype(np.float32, order='C')
-    x = np.random.rand(b, h, w, c).astype(np.float32, order='C')
+    weights = random.rand(c, kh, kw, kn).astype(np.float32, order='C')
+    x = random.rand(b, h, w, c).astype(np.float32, order='C')
     biases = (np.ones((b * ho * wo, kn)) * 10).astype(np.float32, order='C')
     print("Using conv_winograd NHWC to compute weights * x + biases...")
     r = False
@@ -661,8 +662,8 @@ def __usage_example__():
 
                                     biases_wg = (np.ones(kk) * 10).astype(np.float32, order='C')
                                     if tensor_fmt == PYDTNN_TENSOR_FORMAT.NCHW:
-                                        weights = np.random.rand(kk, cc, kh, kw).astype(np.float32, order='C')
-                                        x = np.random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
+                                        weights = random.rand(kk, cc, kh, kw).astype(np.float32, order='C')
+                                        x = random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
                                         biases = (np.ones((kk, nn * ho * wo)) * 10).astype(np.float32, order='C')
                                         w_c = weights.reshape(kk, -1)
                                         res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
@@ -692,8 +693,8 @@ def __usage_example__():
                                                                                      hdilation=hdilation),
                                             number=10) / 10
                                     else:
-                                        weights = np.random.rand(cc, kh, kw, kk).astype(np.float32, order='C')
-                                        x = np.random.rand(nn, hh, ww, cc).astype(np.float32, order='C')
+                                        weights = random.rand(cc, kh, kw, kk).astype(np.float32, order='C')
+                                        x = random.rand(nn, hh, ww, cc).astype(np.float32, order='C')
                                         biases = (np.ones((nn * ho * wo, kk)) * 10).astype(np.float32, order='C')
 
                                         w_c = weights.reshape(-1, kk)

@@ -5,6 +5,8 @@ import torch
 import unittest
 
 from pydtnn import Model
+from pydtnn.utils import random
+from pydtnn.tests.common import TestCase
 
 import numpy as np
 
@@ -16,6 +18,7 @@ from pydtnn.backends.gpu import TensorGPU
 
 # setting random seed
 SEED = 1234
+random.seed(SEED)
 # ---------
 
 # TODO: Make threshold change proportonally to the number of elements (more elements, less precission)
@@ -145,7 +148,11 @@ class TorchConcatenationBlock(torch.nn.Module):
 # -------------
 # ====================
 
-class CheckLayerWithPyTorch(unittest.TestCase):
+class CheckLayerWithPyTorch(TestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        torch.manual_seed(0)
 
     # ======================
     # Initialization methods
@@ -171,7 +178,7 @@ class CheckLayerWithPyTorch(unittest.TestCase):
 
         # NOTE: seems that PyTorch doesn't like too much np.float64
         x = np.stack([x_1_1, x_1_2, x_2_1, x_2_2], axis=0, dtype=KWARGS["dtype"]).reshape(shape_with_elements)
-        np.random.shuffle(x)
+        random.shuffle(x)
 
         if normalize:
             min_x = np.min(x)
