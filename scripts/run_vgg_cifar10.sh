@@ -12,6 +12,9 @@ pydtnn_benchmark \
   --model=vgg3dobn \
   --dataset=cifar10 \
   --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+  --normalize=True \
+  --normalize_offset=-0.472 \
+  --normalize_scale=3.985 \
   --test_as_validation=True \
   --flip_images=False \
   --crop_images=False \

@@ -11,6 +11,9 @@ pydtnn_benchmark \
   --dataset_path=datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz \
   --dataset_train_path=datasets/imagenet/ILSVRC2012_img_train.tar \
   --dataset_test_path=datasets/imagenet/ILSVRC2012_img_val.tar \
+  --normalize=True \
+  --normalize_offset=-0.449 \
+  --normalize_scale=3.537 \
   --use_synthetic_data=False \
   --tensor_format=NCHW \
   --batch_size=64 \

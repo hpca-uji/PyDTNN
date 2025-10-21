@@ -23,6 +23,9 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
   --model=vgg11bn_cifar10 \
   --dataset=cifar10 \
   --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+  --normalize=True \
+  --normalize_offset=-0.472 \
+  --normalize_scale=3.985 \
   --test_as_validation=True \
   --batch_size=64 \
   --validation_split=0.2 \

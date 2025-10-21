@@ -8,6 +8,9 @@ mpirun -np 2 \
   --model=resnet18_cifar10 \
   --dataset=cifar10 \
   --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+  --normalize=True \
+  --normalize_offset=-0.472 \
+  --normalize_scale=3.985 \
   --flip_images=True \
   --crop_images=True \
   --crop_images_size=16 \
