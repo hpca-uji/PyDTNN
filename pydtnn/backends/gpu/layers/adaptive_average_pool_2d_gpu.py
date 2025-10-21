@@ -20,10 +20,8 @@
 from pydtnn.layers import AdaptiveAveragePool2D
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 
-# Import from AveragePool2DGPU
-from pydtnn.backends.gpu.libs import libcudnn as cudnn
-
 # Import from AbstractPool2DLayerGPU
+from pydtnn.utils.types import GPU_SUPPORTED_TYPES
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
@@ -73,7 +71,7 @@ ci = {macro_index_c}(idx, c);
 
 class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
 
-    def initialize(self, prev_shape, need_dx: bool, x: TensorGPU) -> None:
+    def initialize(self, prev_shape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.threads = min(self.model.batch_size, 1024)
@@ -85,7 +83,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         self.grid = (self.blocks, 1, 1)
         self.block = (self.threads, 1, 1)
 
-        self.initialize_pool_2d_gpu(prev_shape, need_dx, x)
+        self.initialize_pool_2d_gpu(prev_shape, x)
     # --- END initialize --- #
 
     def __init__(self, *args, **kwargs) -> None:
@@ -348,7 +346,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         return module
     # --- END cuda_adaptive_average_pooling_bwd --- #
 
-    def initialize_pool_2d_gpu(self, prev_shape, need_dx, x):
+    def initialize_pool_2d_gpu(self, prev_shape, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
 
@@ -363,10 +361,9 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
-        if self.need_dx:
-            # Derivative dx
-            dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
-            self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        # Derivative dx
+        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
@@ -375,7 +372,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.bwd_time = \
             col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) if need_dx else 0
+                        dtype=self.model.dtype)
         # --- END initialize_pool_2d_gpu --- #
 
     def forward(self, x: TensorGPU) -> TensorGPU:
@@ -416,33 +413,32 @@ __global__ void {func_name}({T}* dx, {T}* dy,
     # --- END forward --- #
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
-        if self.need_dx:
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-            match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NCHW:
-                    n, c, h, w = dy.shape
-                case PYDTNN_TENSOR_FORMAT.NHWC:
-                    n, h, w, c = dy.shape
-                case _:
-                    raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        match self.model.tensor_format:
+            case PYDTNN_TENSOR_FORMAT.NCHW:
+                n, c, h, w = dy.shape
+            case PYDTNN_TENSOR_FORMAT.NHWC:
+                n, h, w, c = dy.shape
+            case _:
+                raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-            num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
+        num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
 
-            total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
+        total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
-            num_active_workers = np.int32(min(total_num_threads, num_elements))
-            num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
-            num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
+        num_active_workers = np.int32(min(total_num_threads, num_elements))
+        num_ops_per_worker = np.int32((num_elements + num_active_workers - 1) / num_active_workers)
+        num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
 
-            self.cuda_bwd_func(self.dx.ary, self.y.ary,
-                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                               np.int32(self.ho), np.int32(self.wo), num_elements,
-                               num_active_workers, num_ops_per_worker, num_ops_last_worker,
-                               grid=self.grid, block=self.block,
-                               stream=self.model.stream)
+        self.cuda_bwd_func(self.dx.ary, self.y.ary,
+                            np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                            np.int32(self.ho), np.int32(self.wo), num_elements,
+                            num_active_workers, num_ops_per_worker, num_ops_last_worker,
+                            grid=self.grid, block=self.block,
+                            stream=self.model.stream)
 
-            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-            return self.dx
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.dx
     # --- END backward --- #
 
 # --- END AdaptiveAveragePool2DGPU --- #
