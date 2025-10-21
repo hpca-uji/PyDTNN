@@ -164,7 +164,8 @@ def print_model_reports(model):
 
 def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> None:
     metrics_list = [f for f in model.metrics.replace(" ", "").split(",")] if metrics_list is None else metrics_list
-    model.dataset = dataset
+    model.dataset = dataset if dataset is not None else model.dataset
+    model.show()
     model.evaluate_dataset()
     print_model_reports(model)
 # --- END pydtnn_inference --- #
@@ -228,14 +229,18 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
 def main():
     test = TEST
 
+
     pytorch_model, create_pydtnn_model, shape, dataset, args, weight = dict_test[test]
     pytorch_model: torch.Module = pytorch_model(**args)
-
+    
     KWARGS["dataset"] = dataset
     KWARGS["dataset_name"] = dataset
+    output_shape = args["num_classes"]
     kwargs = KWARGS
+    shape = shape if KWARGS["tensor_format"] == "NHWC" else (shape[2], *shape[:2])
+    print(f"{shape}")
 
-    device = torch.device("cpu") if kwargs["enable_gpu"] == False else torch.device("cuda")
+    device = torch.device("cpu")# if kwargs["enable_gpu"] == False else torch.device("cuda")
     if weight is not None:
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
         weight = torch.load(weight, weights_only=True, map_location=torch.device(device))
@@ -247,7 +252,7 @@ def main():
     print("====================")
 
     old_model = PyDTNN_Model(**kwargs)
-    create_pydtnn_model(old_model)
+    create_pydtnn_model(old_model, output_shape=output_shape)
     print("PyDTNN version:")
     old_model.show()
     print("-----\n")
