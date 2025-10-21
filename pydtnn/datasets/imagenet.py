@@ -2,9 +2,7 @@ import io
 import copy
 import tarfile
 import typing
-from collections import abc
-from pathlib import Path, PurePath
-from contextlib import contextmanager, ExitStack
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -13,6 +11,7 @@ from scipy.io import loadmat
 from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
+from pydtnn.utils.archive import load_archive, list_archive
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -33,67 +32,6 @@ TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 50000
 INPUT_SHAPE = (3, 300, 300)
 OUTPUT_SHAPE = (1000,)
-
-
-def is_tar(path: PurePath, suffixes={(".tar",), (".tar", ".gz"), (".tgz",)}) -> bool:
-    """Does the path look like a TAR"""
-    return tuple(path.suffixes) in suffixes
-
-
-def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
-    """Recursive TAR walk"""
-    path = str(root_path)
-
-    if not is_tar(root_path):
-        yield (path,)
-        return
-
-    with ExitStack() as fp_stack:
-        stack: list[tuple[tarfile.TarFile, tuple[str, ...]]] = []
-
-        tar = fp_stack.enter_context(tarfile.open(path, "r"))
-        stack.append((tar, (path,)))
-
-        while stack:
-            tar, base_path = stack.pop()
-
-            for member in tar.getmembers():
-                if not member.isfile():
-                    continue
-
-                path = Path(member.name)
-                full_path = (*base_path, str(path))
-
-                if is_tar(path):
-                    sub_file = fp_stack.enter_context(tar.extractfile(member))
-                    sub_tar = fp_stack.enter_context(tarfile.open(fileobj=sub_file, mode="r"))
-                    stack.append((sub_tar, full_path))
-                else:
-                    yield full_path
-
-
-@contextmanager
-def load_archive(*paths: str) -> abc.Generator[typing.IO[bytes]]:
-    """Recursive TAR loader"""
-    with ExitStack() as stack:
-        # First: on disk
-        file = stack.enter_context(open(paths[0], "rb"))
-
-        if len(paths) <= 1:
-            yield file
-            return
-
-        tar = stack.enter_context(tarfile.open(fileobj=file))
-
-        # Intermediate: nested tars
-        for fp in paths[1:-1]:
-            file = stack.enter_context(tar.extractfile(fp))
-            tar = stack.enter_context(tarfile.open(fileobj=file))
-
-        # Last: return
-        file = stack.enter_context(tar.extractfile(paths[-1]))
-        yield file
-
 
 class ImageNet(Dataset):
     # mean: [0.48079005 0.4571948  0.40758193]
