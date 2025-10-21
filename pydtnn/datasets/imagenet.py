@@ -160,7 +160,7 @@ class ImageNet(Dataset):
             }
 
     def _init_actual_data(self):
-        if not self.model.resize and False:
+        if not self.model.resize:
             raise ValueError("Model resize must be enabled for dataset!")
 
         meta = Path(self.model.dataset_path)
