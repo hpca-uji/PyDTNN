@@ -1,6 +1,10 @@
 [project]
 name = "pydtnn"
 version = "1.1.1"
+description = "Python Distributed Training of Neural Networks"
+readme = "README.rst"
+license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
 authors = [
     { name = "Adrián Castelló Gimeno", email = "adcastel@uji.es" },
     { name = "Andrés Enrique Tomás Domínguez", email = "antodo@upv.es" },
@@ -13,21 +17,18 @@ authors = [
     { name = "Sergio Barrachina Mir", email = "barrachi@uji.es" }
 ]
 maintainers = [{ name = "Manuel Francisco Dolz Zaragozá", email = "dolzm@uji.es" }]
-description = "Python Distributed Training of Neural Networks"
-readme = "README.rst"
-requires-python = ">=3.13"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
-    "Topic :: Scientific/Engineering",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 keywords = ["Deep neural networks", "Distributed parallel training", "Python"]
-license = "GPL-3.0-or-later"
-license-files = ["LICENSE"]
+urls = { Homepage = "https://github.com/hpca-uji/PyDTNN", Repository = "https://github.com/hpca-uji/PyDTNN.git"}
 
+requires-python = ">=3.13"
 dependencies = [
     "cython>=0.29.21",
     "numpy>=1.19.4",
@@ -54,10 +55,6 @@ fhe = [
     "openfhe>=1.4.0",
     "tenseal>=0.3.16"
 ]
-
-[project.urls]
-Homepage = "https://github.com/hpca-uji/PyDTNN"
-Repository = "https://github.com/hpca-uji/PyDTNN.git"
 
 [project.scripts]
 pydtnn_benchmark = "pydtnn.pydtnn_benchmark:main"
