@@ -228,3 +228,41 @@ EOF
 cmake --install .
 pip install .
 ```
+
+## net-queue
+Source: <https://github.com/hpca-uji/net-queue>
+
+Dependencies: `python3` and virutal Python environment
+
+```sh
+# Configuration
+NQ_SRC="$SRC/net-queue"
+
+# Source
+# git clone https://github.com/hpca-uji/net-queue.git "$NQ_SRC"
+git submodule update --init vendor/net-queue
+cd "$NQ_SRC"
+git checkout 283540374e5b0cff7758b7549dd0a67eee2d590b
+
+# Install
+pip install .
+```
+
+## pympi
+Source: <https://github.com/hpca-uji/pympi>
+
+Dependencies: `python3` and virutal Python environment
+
+```sh
+# Configuration
+PYMPI_SRC="$SRC/pympi"
+
+# Source
+# git clone https://github.com/hpca-uji/pympi.git "$PYMPI_SRC"
+git submodule update --init vendor/pympi
+cd "$PYMPI_SRC"
+git checkout f8da55d7d79e0e048ae2fcb8008b9e4e9ad6dc38
+
+# Install
+pip install .
+```
