@@ -34,10 +34,10 @@ Supported layers:
 Supported datasets:
 
 -  **MNIST**: handwritten digit database. This dataset is included into
-   the project.
+   the repository.
 
 -  **CIFAR10**: database of the 80 million tiny images dataset. This
-   dataset is not included into the project. Its binary version can be
+   dataset is not included into the repository. Its binary version can be
    downloaded from: https://www.cs.toronto.edu/~kriz/cifar.html
 
 -  **ImageNet**: the most highly-used subset of ImageNet is the
@@ -45,7 +45,7 @@ Supported datasets:
    image classification and localization dataset. This dataset spans
    1000 object classes and contains 1,281, 167 training images,
    50,000 validation images and 100,000 test images. This dataset
-   is not included into the project. Its can be downloaded from:
+   is not included into the repository. Its can be downloaded from:
    https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
 
 

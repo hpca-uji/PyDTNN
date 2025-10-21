@@ -76,11 +76,5 @@ include = [
     "pydtnn.*"
 ]
 
-[tool.setuptools.package-data]
-pydtnn = [
-    "scripts/*",
-    "datasets/mnist/*"
-]
-
 [[tool.uv.index]]
 url = "https://pypi.ngc.nvidia.com"
