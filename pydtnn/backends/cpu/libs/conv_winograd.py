@@ -486,7 +486,7 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                  vpadding: int, hpadding: int, vstride: int, hstride: int,
                  vdilation: int, hdilation: int,
                  ) -> int | float:
-    from pydtnn.cython_modules import im2row_nhwc_cython
+    from pydtnn.cython import im2row_nhwc_cython
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(x, res,
@@ -504,7 +504,7 @@ def time_it_im2col(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                    vpadding: int, hpadding: int, vstride: int, hstride: int,
                    vdilation: int, hdilation: int,
                    ) -> int | float:
-    from pydtnn.cython_modules import im2col_nchw_cython
+    from pydtnn.cython import im2col_nchw_cython
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(x, res,
@@ -521,7 +521,7 @@ def time_it_im2col_4_dims(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                           vpadding: int, hpadding: int, vstride: int, hstride: int,
                           vdilation: int, hdilation: int,
                           ) -> int | float:
-    from pydtnn.cython_modules import im2col_nchw_cython
+    from pydtnn.cython import im2col_nchw_cython
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(x, res,
@@ -537,7 +537,7 @@ def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
     from pydtnn.utils import random
-    from pydtnn.cython_modules import im2col_nchw_cython, im2row_nhwc_cython
+    from pydtnn.cython import im2col_nchw_cython, im2row_nhwc_cython
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 32  # Batch size
     c = 16  # Channels per layer

@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract_pool_2d_layer_cpu import AbstractPool2DLayerCPU
-from pydtnn.cython_modules import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
+from pydtnn.cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
     im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, argmax_cython, \
     max_pool_2d_fwd_nhwc_cython, max_pool_2d_bwd_nhwc_cython, \
     max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd_nchw_cython

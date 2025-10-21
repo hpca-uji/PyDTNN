@@ -6,8 +6,8 @@
 
 __pycache__/
 
-/pydtnn/cython_modules/*.c
-/pydtnn/cython_modules/*.so
+/pydtnn/cython/*.c
+/pydtnn/cython/*.so
 
 /pydtnn/datasets/*/
 !/pydtnn/datasets/mnist/

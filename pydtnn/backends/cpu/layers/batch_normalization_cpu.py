@@ -1,6 +1,6 @@
 import numpy as np
 
-from pydtnn.cython_modules import bn_training_bwd_cython
+from pydtnn.cython import bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU

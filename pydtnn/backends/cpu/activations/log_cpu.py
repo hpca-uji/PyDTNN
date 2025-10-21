@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.activations.log import Log
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from numpy import ndarray
-from pydtnn.cython_modules import log_fwd_cython, log_bwd_cython
+from pydtnn.cython import log_fwd_cython, log_bwd_cython
 
 
 class LogCPU(ActivationCPU, Log):

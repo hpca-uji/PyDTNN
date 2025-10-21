@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-from pydtnn.cython_modules import sigmoid_fwd_cython, sigmoid_bwd_cython
+from pydtnn.cython import sigmoid_fwd_cython, sigmoid_bwd_cython
 
 
 class SigmoidCPU(ActivationCPU, Sigmoid):
