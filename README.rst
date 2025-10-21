@@ -54,61 +54,61 @@ Installing PyDTNN from source
 
 Download PyDTNN source code from its GitHub repository and enter the PyDTNN directory::
 
-    $ git clone https://github.com/hpca-uji/PyDTNN.git
-    $ cd PyDTNN
+   git clone https://github.com/hpca-uji/PyDTNN.git
+   cd PyDTNN
 
 Then package itself must be installed::
 
-    $ pip install .
+   pip install .
 
 If you plan to modify the PyDTNN code, instead of using the previous line, you
 can install PyDTNN in editable mode::
 
-    $ pip install --config-settings editable_mode=compat -e .
+   pip install --config-settings editable_mode=compat -e .
 
 Optionally, if you are going to use MPI, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ git submodule update --init vendor/net-queue
-    $ pip install ./vendor/net-queue
+   git submodule update --init vendor/net-queue
+   pip install ./vendor/net-queue
 
-    $ git submodule update --init vendor/pympi
-    $ pip install ./vendor/pympi
+   git submodule update --init vendor/pympi
+   pip install ./vendor/pympi
 
-    $ pip install .[mpi]
+   pip install .[mpi]
 
 Optionally, if you are going to use CUDA, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install nvidia-pyindex
-    $ pip install .[cuda]
+   pip install nvidia-pyindex
+   pip install .[cuda]
 
 Optionally, if you are going to use FHE, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
 
-    $ pip install .[fhe]
+   pip install .[fhe]
 
 Optionally, if you are going to use TCP, you should enable the protocol with::
 
-    $ export PYMPI_PROTO=tcp
+   export PYMPI_PROTO=tcp
 
 Optionally, if you are going to use gRPC, you should enable the protocol with::
 
-    $ export PYMPI_PROTO=grpc
+   export PYMPI_PROTO=grpc
 
 Optionally, if you are going to use MQTT, you should have
 installed a MQTT broker server, you should enable the protocol with::
 
-    $ export PYMPI_PROTO=mqtt
+   export PYMPI_PROTO=mqtt
 
 Optionally, if you are going to use SSL/TLS, you should enable the transport with::
 
-    $ export PYMPI_SSL=yes
-    $ export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
-    $ export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
+   export PYMPI_SSL=yes
+   export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
+   export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
 
 For more information on how to manage external dependencies see ``vendor/README.md``.
 
