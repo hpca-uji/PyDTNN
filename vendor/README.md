@@ -19,7 +19,7 @@ BLIS_SRC="$SRC/blis"
 BLIS_PREFIX="$PREFIX/blis"
 
 # Source
-# git clone https://github.com/flame/blis.git
+# git clone https://github.com/flame/blis.git "$BLIS_SRC"
 git submodule update --init vendor/blis
 cd "$BLIS_SRC"
 git checkout 0.7.0
@@ -37,7 +37,7 @@ export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ## TVM
 Source: <https://github.com/apache/tvm>
 
-Dependencies: `gcc cmake llvm-dev python3`
+Dependencies: `gcc cmake llvm-dev python3` and virutal Python environment
 
 ```sh
 # Configuration
@@ -45,13 +45,13 @@ TVM_SRC="$SRC/tvm"
 TVM_PREFIX="$PREFIX/tvm"
 
 # Source
-# git clone --recursive https://github.com/apache/tvm.git
+# git clone --recursive https://github.com/apache/tvm.git "$TVM_SRC"
 git submodule update --init --recursive vendor/tvm
 cd "$TVM_SRC"
 git checkout 43e9c275b6e85d7631e54c8468b49b4706cd674a
 
 # Compile
-mkdir ./build
+mkdir -p ./build
 cd ./build
 cp ../cmake/config.cmake .
 cmake -D CMAKE_INSTALL_PREFIX="$TVM_PREFIX" ..
@@ -80,7 +80,7 @@ GEMM_PATCH="$SRC/convGemm.patch"
 GEMM_PREFIX="$PREFIX/convGemm"
 
 # Source
-# git clone https://github.com/hpca-uji/convGemm.git
+# git clone https://github.com/hpca-uji/convGemm.git "$GEMM_SRC"
 git submodule update --init vendor/convGemm
 cd "$GEMM_SRC"
 git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
@@ -110,7 +110,7 @@ WINOGRAD_PATCH="$SRC/convWinograd.patch"
 WINOGRAD_PREFIX="$PREFIX/convWinograd"
 
 # Source
-# git clone https://github.com/hpca-uji/convWinograd.git
+# git clone https://github.com/hpca-uji/convWinograd.git "$WINOGRAD_SRC"
 git submodule update --init vendor/convWinograd
 cd "$WINOGRAD_SRC"
 git checkout 0a1ca8b22f9ee12d4006f28c16c0e6f6e88ad939
@@ -142,7 +142,7 @@ DIRECT_PATCH="$SRC/convDirect.patch"
 DIRECT_PREFIX="$PREFIX/convDirect"
 
 # Source
-# git clone --recursive https://github.com/hpca-uji/convDirect.git
+# git clone --recursive https://github.com/hpca-uji/convDirect.git "$DIRECT_SRC"
 git submodule update --init --recursive vendor/convDirect
 cd "$DIRECT_SRC"
 git checkout 352dadb1990fd882b16f10b22fcb842d3856be57
@@ -159,4 +159,72 @@ cmake --build . --parallel "$NPROC"
 mkdir -p "$DIRECT_PREFIX"
 cmake --install .
 export LD_LIBRARY_PATH="$DIRECT_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
+
+## OpenFHE
+Source: <https://github.com/openfheorg/openfhe-development>
+
+Dependencies: `gcc cmake`
+
+```sh
+# Configuration
+FHE_PREFIX="$PREFIX/openfhe"
+FHE_SRC="$SRC/openfhe"
+
+# Source
+# git clone https://github.com/openfheorg/openfhe-development.git "$FHE_SRC"
+git submodule update --init vendor/openfhe
+cd "$FHE_SRC"
+git checkout v1.4.2
+
+# Compile
+mkdir -p ./build
+cd ./build
+cmake -D CMAKE_INSTALL_PREFIX="$FHE_PREFIX" ..
+cmake --build . --parallel "$NPROC"
+
+# Install
+mkdir -p "$FHE_PREFIX"
+cmake --install .
+export LD_LIBRARY_PATH="$FHE_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+```
+
+## OpenFHE-Python
+Source: <https://github.com/openfheorg/openfhe-python>
+
+Dependencies: `gcc cmake python3` and virutal Python environment
+
+```sh
+# Configuration
+FHE_PREFIX="$PREFIX/openfhe"
+PYFHE_SRC="$SRC/openfhe-python"
+
+# Source
+# git clone https://github.com/openfheorg/openfhe-python.git "$PYFHE_SRC"
+git submodule update --init vendor/openfhe-python
+cd "$PYFHE_SRC"
+git checkout v1.4.2.0
+pip install pybind11[global]
+
+# Compile
+mkdir -p ./build
+cd ./build
+cmake -D CMAKE_PREFIX_PATH="$FHE_PREFIX" -D CMAKE_INSTALL_PREFIX=openfhe ..
+cmake --build . --parallel "$NPROC"
+cat <<EOF > pyproject.toml
+[project]
+name = "openfhe"
+version = "1.4.2"
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+[tool.setuptools.packages.find]
+include = ["openfhe*"]
+[tool.setuptools.package-data]
+openfhe = ["*"]
+EOF
+
+# Install
+cmake --install .
+pip install .
 ```
