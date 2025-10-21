@@ -111,7 +111,7 @@ Optionally, if you are going to use SSL/TLS, you should enable the transport wit
     $ export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
     $ export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
 
-For mor information on how to manage external dependencies see ``vendor/README.md``.
+For more information on how to manage external dependencies see ``vendor/README.md``.
 
 Launcher options
 ----------------
@@ -723,3 +723,16 @@ The PyDTNN library has been partially supported by:
 
 -  Project UJI-A2019-11 **"Energy-Aware High Performance Computing for
    Deep Neural Networks"** funded by the Universitat Jaume I.
+
+-  Project CIDEXG/2022/13 **"AT4SUSDL: Advanced Techniques for
+   Sustainable Deep Learning"** funded by the Valencian Government.
+
+-  Project RYC2021-033973-I **"Dotación ayuda Ramón y Cajal"** funded by
+   the Spanish Ministry of Science, Innovation and Universities.
+
+-  Project PID2023-146569NB-C22 *"Inteligencia sostenible en el Borde-UJI"*
+   funded by the Spanish Ministry of Science, Innovation and Universities.
+
+-  Project C121/23 Convenio **"CIBERseguridad post-Cuántica para el
+   Aprendizaje Federado en procesadores de bajo consumo y aceleradores
+   (CIBER-CAFE)"** funded by the Spanish National Cybersecurity Institute.
