@@ -198,6 +198,7 @@ Dependencies: `gcc cmake python3` and virutal Python environment
 # Configuration
 FHE_PREFIX="$PREFIX/openfhe"
 PYFHE_SRC="$SRC/openfhe-python"
+PYFHE_PREFIX="$PREFIX/openfhe-python"
 
 # Source
 # git clone https://github.com/openfheorg/openfhe-python.git "$PYFHE_SRC"
@@ -218,15 +219,15 @@ version = "1.4.2"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-[tool.setuptools.packages.find]
-include = ["openfhe*"]
 [tool.setuptools.package-data]
 openfhe = ["*"]
 EOF
 
 # Install
+mkdir -p "$PYFHE_PREFIX"
 cmake --install .
-pip install .
+cp -at "$PYFHE_PREFIX" pyproject.toml openfhe
+pip install "$PYFHE_PREFIX"
 ```
 
 ## net-queue
