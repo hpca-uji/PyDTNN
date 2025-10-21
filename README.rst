@@ -111,7 +111,7 @@ Optionally, if you are going to use SSL/TLS, you should enable the transport wit
     $ export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
     $ export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
 
-For mor information on how to manage external dependencies see ``vendor/README.md``.
+For more information on how to manage external dependencies see ``vendor/README.md``.
 
 Launcher options
 ----------------
