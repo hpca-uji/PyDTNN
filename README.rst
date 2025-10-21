@@ -62,7 +62,7 @@ Then package itself must be installed::
     $ pip install .
 
 If you plan to modify the PyDTNN code, instead of using the previous line, you
-can install PyDTNN in editable mode (see ``DEVELOPMENT.rst`` for more details)::
+can install PyDTNN in editable mode::
 
     $ pip install --config-settings editable_mode=compat -e .
 
