@@ -4,13 +4,12 @@
 [submodule "vendor/tvm"]
 	path = vendor/tvm
 	url = https://github.com/apache/tvm.git
-
 [submodule "vendor/pympi"]
 	path = vendor/pympi
-	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/pympi.git
+	url = https://github.com/hpca-uji/pympi.git
 [submodule "vendor/net-queue"]
 	path = vendor/net-queue
-	url = ssh://git@lorca.act.uji.es:2222/ciber-cafe/net-queue.git
+	url = https://github.com/hpca-uji/net-queue.git
 
 [submodule "vendor/convGemm"]
 	path = vendor/convGemm
