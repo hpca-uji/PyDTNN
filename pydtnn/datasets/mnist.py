@@ -30,8 +30,8 @@ class MNIST(Dataset):
     offset: -0.131
     scale:   3.245
     """
-    # mean: [0.1307281]  0.1307281 0.131
-    # std:  [0.30818242] 0.3081824 0.308
+    # mean: [0.1307281]
+    # std:  [0.30818242]
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
