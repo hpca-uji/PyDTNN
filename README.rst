@@ -111,8 +111,7 @@ Optionally, if you are going to use SSL/TLS, you should enable the transport wit
     $ export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
     $ export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
 
-Optionally, if you are going to use alternative convolutional algorithms,
-see ``vendor/README.md`` for more information.
+For mor information on how to manage external dependencies see ``vendor/README.md``.
 
 Launcher options
 ----------------
@@ -300,7 +299,6 @@ The PyDTNN framework comes with a utility launcher called
    - ``--encryption_poly_degree``: Encryption polynomial degree.. 2 ^ value. Default: 13.
    - ``--encryption_global_scale``: Encryption global scale. 2 ^ value. Default: 40.
    - ``--encryption_security_level``: Encryption security level: 0 (Not set), 128, 192, 256. Default: 128.
-
 
 -  Tracing and profiling parameters:
 
