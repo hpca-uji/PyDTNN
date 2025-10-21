@@ -1,6 +1,3 @@
-# Dataset source (SHA1):
-# e8aa088b9774a44ad217101d2e2569f823d2d491 https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
-
 import os
 import copy
 import math
@@ -24,7 +21,16 @@ IMAGES_PER_FILE = 10000
 
 
 class CIFAR10(Dataset):
-    """CIFAR10 Dataset"""
+    """
+    CIFAR10 Dataset
+
+    Source (SHA1):
+    e8aa088b9774a44ad217101d2e2569f823d2d491 https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
+
+    Normalize:
+    offset: -0.472
+    scale:   3.985
+    """
     # mean: [0.48995113 0.4807823  0.4451906 ]
     # std:  [0.24761744 0.2437481  0.26142704]
 
@@ -51,7 +57,6 @@ class CIFAR10(Dataset):
                 with t.extractfile(filename) as f:
                     x, y_classes = self._read_file(f, offset, nsamples)
                 x /= 255.0
-                # x = self._normalize_image(x)
 
                 y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype, order="C")
                 self._decode_class(y, y_classes)
@@ -67,12 +72,3 @@ class CIFAR10(Dataset):
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)
         y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE).astype(self.model.dtype, order="C")
         return x, y_classes
-
-    def _normalize_image(self, x):
-        print(f"{x.shape=}")
-        mean = np.mean(x, axis=(0, 2, 3))
-        std = np.std(x, axis=(0, 2, 3))
-        print(f"{mean.shape=}")
-        for c in range(3):
-            x[:, c, ...] = (x[:, c, ...] - mean[c]) / std[c]
-        return x

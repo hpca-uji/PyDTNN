@@ -1,9 +1,3 @@
-# Dataset source (SHA1):
-# 6c95f4b05d2bf285e1bfb0e7960c31bd3b3f8a7d https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz
-# 2a80914081dc54586dbdf242f9805a6b8d2a15fc https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz
-# c3a25af1f52dad7f726cce8cacb138654b760d48 https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz
-# 763e7fa3757d93b0cdec073cef058b2004252c17 https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz
-
 import os
 import gzip
 
@@ -23,8 +17,21 @@ OUTPUT_SHAPE = (10,)
 
 
 class MNIST(Dataset):
-    # mean: [0.1307281]
-    # std:  [0.30818242]
+    """
+    MNIST Dataset
+
+    Source (SHA1):
+    6c95f4b05d2bf285e1bfb0e7960c31bd3b3f8a7d https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz
+    2a80914081dc54586dbdf242f9805a6b8d2a15fc https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz
+    c3a25af1f52dad7f726cce8cacb138654b760d48 https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz
+    763e7fa3757d93b0cdec073cef058b2004252c17 https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz
+
+    Normalize:
+    offset: -0.131
+    scale:   3.245
+    """
+    # mean: [0.1307281]  0.1307281 0.131
+    # std:  [0.30818242] 0.3081824 0.308
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)

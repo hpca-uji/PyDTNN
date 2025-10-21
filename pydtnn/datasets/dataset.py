@@ -371,6 +371,9 @@ class Dataset[T: Array](ABC):
 
             random.shuffle(data)
 
+        if self.model.normalize:
+            data = self._do_normalize(data)
+
         return data
 
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
@@ -425,6 +428,11 @@ class Dataset[T: Array](ABC):
         #        if there are asked more batches than actually are.
         while True:
             yield self.x_empty_batch, self.y_empty_batch, 0
+
+    def _do_normalize(self, data: np.ndarray) -> np.ndarray:
+        data += self.model.normalize_offset
+        data *= self.model.normalize_scale
+        return data
 
     def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
         match self.model.tensor_format:
