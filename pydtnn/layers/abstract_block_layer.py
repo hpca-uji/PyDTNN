@@ -31,8 +31,6 @@ class AbstractBlockLayer(Layer, ABC):
                 self.bwd_time += layer.bwd_time
                 self.nparams += layer.nparams
             self.out_shapes.append(prev_shape)
-        if not all([o == self.out_shapes[0] for o in self.out_shapes]):
-            raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
         self.shape = self.out_shapes[0]
 
     def update_weights(self, optimizer):
