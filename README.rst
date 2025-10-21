@@ -85,7 +85,6 @@ packages with::
     $ pip install nvidia-pyindex
     $ pip install .[cuda]
 
-
 Optionally, if you are going to use FHE, you should have
 installed the corresponding system libraries, and install the required Python
 packages with::
