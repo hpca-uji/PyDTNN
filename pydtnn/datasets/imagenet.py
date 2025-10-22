@@ -17,23 +17,33 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
-# The most highly-used subset of ImageNet is the ImageNet Large Scale Visual Recognition Challenge (ILSVRC) 2012-2017
-# image classification and localization dataset. This dataset spans 1000 object classes and contains 1,281,
-# 167 training images, 50,000 validation images and 100,000 test images.
-
-# Dataset source (SHA1):
-# https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
-#
-# 43eda4fe35c1705d6606a6a7a633bc965d194284 ILSVRC2012_img_train.tar
-# 5f3f73da3395154b60528b2b2a2caf2374f5f178 ILSVRC2012_img_val.tar
-# 092a94ed6a05454b8b72d1c4ecf336fa48d37fda ILSVRC2012_devkit_t12.tar.gz
 
 TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 50000
 INPUT_SHAPE = (3, 300, 300)
 OUTPUT_SHAPE = (1000,)
 
+
 class ImageNet(Dataset):
+    """
+    ImageNet Dataset
+
+    The most highly-used subset of ImageNet is the ImageNet Large
+    Scale Visual Recognition Challenge (ILSVRC) 2012-2017 image
+    classification and localization dataset. This dataset spans
+    1000 object classes and contains 1,281, 167 training images,
+    50,000 validation images and 100,000 test images.
+
+    Source (SHA1):
+    https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
+    43eda4fe35c1705d6606a6a7a633bc965d194284 ILSVRC2012_img_train.tar
+    5f3f73da3395154b60528b2b2a2caf2374f5f178 ILSVRC2012_img_val.tar
+    092a94ed6a05454b8b72d1c4ecf336fa48d37fda ILSVRC2012_devkit_t12.tar.gz
+
+    Normalize:
+    offset: -0.449
+    scale:   3.537
+    """
     # mean: [0.48079005 0.4571948  0.40758193]
     # std:  [0.2830013  0.2758762  0.28932407]
 
@@ -166,23 +176,5 @@ class ImageNet(Dataset):
 
             # Inplace normalization
             x /= 255.0
-            # x = self._normalize_image(x)
 
             yield x, y
-
-    def _normalize_image(self, x: np.ndarray) -> np.ndarray:
-        # A) Caffe-like normalization used for pre-trained Keras models
-        x = x[:, ::-1, ...]
-        mean = [103.939, 116.779, 123.68]
-        for c in range(3):
-            x[:, c, :, :] -= mean[c]
-        # std = [?, ?, ?]
-        # for c in range(3):
-        #     x[:, c, :, :] /= std[c]
-
-        # B) Alternative normalization
-        # mean = np.array([0.485, 0.456, 0.406])
-        # std = np.array([0.229, 0.224, 0.225])
-        # for c in range(3):
-        #     x[:, c, ...] = ((x[:, c, ...] / 255.0) - mean[c]) / std[c]
-        return x

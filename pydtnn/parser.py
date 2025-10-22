@@ -187,13 +187,19 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5,
                                help="Probability to crop training images. Default: 0.5.")
         _ds_group.add_argument('--crop', default=False, type=bool_lambda,
-                               help="Resize the images. True if specified.")
+                               help="Crop the images. True if specified.")
         _ds_group.add_argument('--crop_dimension', type=float, default=0.875,
-                               help="New size of the images. Default: 300.")
+                               help="Central crop of the images. Default: 0.875.")
         _ds_group.add_argument('--resize', default=False, type=bool_lambda,
                                help="Resize the images. True if specified.")
-        _ds_group.add_argument('--resize_dimension', type=int, default=227,
-                               help="New size of the images. Default: 227.")
+        _ds_group.add_argument('--resize_dimension', type=int, default=300,
+                               help="New size of the images. Default: 300.")
+        _ds_group.add_argument('--normalize', default=False, type=bool_lambda,
+                               help="Normalize dataset. Default: False.")
+        _ds_group.add_argument('--normalize_offset', type=float, default=-0.45,
+                               help="Offset samples by a value. Default: -0.45.")
+        _ds_group.add_argument('--normalize_scale', type=float, default=3.75,
+                               help="Scale samples by a value. Default: 3.75.")
 
         # Optimization options
         _oo_group = self.add_argument_group("Optimization options")

@@ -181,9 +181,12 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--validation_split``: Split between training and validation
       data.
    -  ``--crop``: Crop the images. True if specified.
-   -  ``--crop_dimension``: New size of the images. Default: 0.875.
+   -  ``--crop_dimension``: Central crop of the images. Default: 0.875.
    -  ``--resize``: Resize the images. True if specified.
-   -  ``--resize_dimension``: New size of the images. Default: 227.
+   -  ``--resize_dimension``: New size of the images. Default: 300.
+   -  ``--normalize``: Normalize dataset. Default: False.
+   -  ``--normalize_offset``: Offset samples by a value. Default: -0.45.
+   -  ``--normalize_scale``: Scale samples by a value. Default: 3.75.
 
 -  Optimization parameters:
 
