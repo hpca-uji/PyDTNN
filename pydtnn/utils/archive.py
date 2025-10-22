@@ -13,7 +13,7 @@ def list_directory(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
     iter_archives = list[typing.Iterator[tuple[str, ...]]]()
     for file in root_path.iterdir():
         iter_archives.append(list_archive(file))
-    yield itertools.chain(iter_archives)
+    return itertools.chain.from_iterable(iter_archives)
 # ---
 
 def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
