@@ -1,5 +1,5 @@
 import typing
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import numpy as np
 from PIL import Image
@@ -41,6 +41,22 @@ def get_dict_file_labels(path: Path) -> dict[str, list[str]]:
 # ----------- #
 
 class ChestXRay14(Dataset):
+
+    """
+    Dataset checksum:
+        fef95a7a789bcb0013fbf966cb92c4d92c90becd  images_01.tar.gz
+        23d2f2cd62d0271b16869abcdd8a00a1fd2492b5  images_02.tar.gz
+        69935ac7886c18246446899cb2b75443195847c4  images_03.tar.gz
+        fb86b3adaad0e9ff1405154cf6521e180063af10  images_04.tar.gz
+        baa8155f0285edb4a07e717f79682713416eb205  images_05.tar.gz
+        3a4252d82143757600885121bb57b0ef4e482532  images_06.tar.gz
+        cd3cd855acb4e12ca11608be6aae99414d4bc22b  images_07.tar.gz
+        d8891e0079e88fc04dab45253b86a2214ff499b6  images_08.tar.gz
+        84661300d777e07be9ae7d5f37fb82721202f0bc  images_09.tar.gz
+        30216f59778f259db91d77bcd3d0495c8fce88ef  images_10.tar.gz
+        97985118ba36f18c27d62371d28c1698478cecfa  images_11.tar.gz
+        cb2865369f434a9deea11e2d5222b8472890681b  images_12.tar.gz
+    """
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
 
