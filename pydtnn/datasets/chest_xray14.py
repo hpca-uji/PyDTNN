@@ -6,10 +6,10 @@ from PIL import Image
 import csv
 
 from itertools import islice
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
-from pydtnn.utils.archive import load_archive, list_archive, list_directory
+from pydtnn.utils.archive import load_archive, list_directory
 from math import ceil
 
 from typing import TYPE_CHECKING
@@ -124,9 +124,9 @@ class ChestXRay14(Dataset):
 
             # Set tensor format
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     x = self._nchw2nhwc(x)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass
                 case _:
                     raise ValueError("Unsupported tensor format")
