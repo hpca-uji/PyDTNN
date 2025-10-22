@@ -149,7 +149,7 @@ class ImageNet(Dataset):
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN:
-            random.shuffle(xy_filenames)
+            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
 
         xy_filenames = xy_filenames[offset:offset + nsamples]
 

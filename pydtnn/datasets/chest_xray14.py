@@ -1,5 +1,5 @@
 import typing
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import numpy as np
 from PIL import Image
@@ -31,7 +31,7 @@ SPLIT_PERCENTAGE_TEST = 0.2
 def get_dict_file_labels(path: Path) -> dict[str, list[str]]:
     with open(file=path, mode="r") as file:
         reader = csv.DictReader(file, delimiter=CSV_DELIMETER)
-        dict_file_labels = dict[str, str]()
+        dict_file_labels = dict[str, list[str]]()
         for row in reader:
             image = row[CSV_IMAGES_FIELD]
             labels = row[CSV_LABELS_FIELD].split(CSV_LABELS_DELIMETER)
@@ -44,7 +44,7 @@ class ChestXRay14(Dataset):
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
 
-        self._xy_filenames: list[tuple[Path, Class]]
+        self._xy_filenames: list[list[tuple[tuple[str, ...], Class]]]
         self._dict_images_labels: dict[str, list[str]]
         self.labels2classes: dict[str, int]
         self.files: Path
@@ -58,7 +58,7 @@ class ChestXRay14(Dataset):
         self.files = Path(self.model.dataset_path)
 
         self._dict_images_labels = get_dict_file_labels(csv)
-        self._xy_filenames = list(Dataset.Part)
+        self._xy_filenames = [[((), np.empty((0,)))] for _ in Dataset.Part]
 
         # Splitting the dataset.
         _total_samples = len(self._dict_images_labels)
@@ -74,7 +74,7 @@ class ChestXRay14(Dataset):
                          max_prefetch=model.batch_size, force_test_as_validation=force_test_as_validation, debug=debug)
     # ----
 
-    def _get_labels(self, image_file: str) -> np.ndarray:
+    def _get_labels(self, image_file: str) -> Class:
         labels = self._dict_images_labels[image_file]
         mask = np.zeros(self.output_shape, dtype=np.uint8)
         for label in labels:
@@ -110,7 +110,7 @@ class ChestXRay14(Dataset):
         xy_filenames = self._xy_filenames[part]
 
         if part is Dataset.Part.TRAIN:
-            random.shuffle(xy_filenames)
+            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
 
         xy_filenames = xy_filenames[offset:offset + nsamples]
 
