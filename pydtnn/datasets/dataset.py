@@ -7,13 +7,13 @@ from abc import ABC, abstractmethod
 import numpy as np
 from PIL import Image
 
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import string_substitute, random
 from typing import TYPE_CHECKING, Generator
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
-from pydtnn.utils.types import Array, shape_t
+from pydtnn.utils.types import Array, ArrayShape
 
 
 
@@ -57,10 +57,9 @@ class Dataset[T: Array](ABC):
         TRAIN = 0
         VAL = 1
         TEST = 2
-    # --- END DatasetEnum --- #
-
-    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: shape_t, 
-                 output_shape: shape_t, max_prefetch=1, force_test_as_validation=False, debug=False):
+    
+    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: ArrayShape, 
+                 output_shape: ArrayShape, max_prefetch=1, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -150,9 +149,9 @@ class Dataset[T: Array](ABC):
 
         # Ensure dataset is in NCHW
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 pass
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 x_train = self._nhwc2nchw(x_train)
                 x_test = self._nhwc2nchw(x_test)
             case _:
@@ -266,7 +265,7 @@ class Dataset[T: Array](ABC):
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = local_batches * self.model.batch_size
             x_shape = (nsamples, *self.input_shape)
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+            if self.model.tensor_format is TensorFormat.NHWC:
                 x_shape = tuple(x_shape[i] for i in (0, 2, 3, 1))
             y_shape = (nsamples, *self.output_shape)
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
@@ -436,10 +435,10 @@ class Dataset[T: Array](ABC):
 
     def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 n, c, h, w = data.shape
                 width_dim = -1
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 n, h, w, c = data.shape
                 width_dim = 2
             case _:
@@ -454,9 +453,9 @@ class Dataset[T: Array](ABC):
 
     def _do_crop_images(self, data: np.ndarray) -> np.ndarray:
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 n, c, h, w = data.shape
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 n, h, w, c = data.shape
             case _:
                 raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
@@ -471,10 +470,10 @@ class Dataset[T: Array](ABC):
             b, r = t[i] + crop_size, ll[i] + crop_size
             # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     data[ri, :, :t[i], :ll[i]] = 0.0
                     data[ri, :, b:, r:] = 0.0
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     data[ri, :t[i], :ll[i], :] = 0.0
                     data[ri, b:, r:, :] = 0.0
                 case _:
@@ -489,10 +488,10 @@ class Dataset[T: Array](ABC):
         size = (self.model.resize_dimension, self.model.resize_dimension)
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 C = data.shape[3]
                 shape = (N, *size, C)
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 C = data.shape[1]
                 shape = (N, C, *size)
             case _:
@@ -504,9 +503,9 @@ class Dataset[T: Array](ABC):
             sample = data[n]
 
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     sample = self._hwc2chw(sample)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass
                 case _:
                     raise ValueError("Unsupported tensor format")
@@ -524,9 +523,9 @@ class Dataset[T: Array](ABC):
                 new_sample[c] = channel
 
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     new_sample = self._chw2hwc(new_sample)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass
                 case _:
                     raise ValueError("Unsupported tensor format")
@@ -547,9 +546,9 @@ class Dataset[T: Array](ABC):
         N = data.shape[0]
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 size = data.shape[1:3]
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 size = data.shape[2:4]
             case _:
                 raise ValueError("Unsupported tensor format")
@@ -557,10 +556,10 @@ class Dataset[T: Array](ABC):
         crop, size = self._calculate_crop(size)
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 C = data.shape[3]
                 shape = (N, *size, C)
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 C = data.shape[1]
                 shape = (N, C, *size)
             case _:
@@ -572,9 +571,9 @@ class Dataset[T: Array](ABC):
             sample = data[n]
 
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     sample = self._hwc2chw(sample)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass
                 case _:
                     raise ValueError("Unsupported tensor format")
@@ -592,9 +591,9 @@ class Dataset[T: Array](ABC):
                 new_sample[c] = channel
 
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     new_sample = self._chw2hwc(new_sample)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass
                 case _:
                     raise ValueError("Unsupported tensor format")

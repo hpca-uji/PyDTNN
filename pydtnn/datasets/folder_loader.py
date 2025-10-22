@@ -4,8 +4,8 @@ import numpy as np
 from PIL import Image
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.types import ArrayShape
 from pydtnn.utils import random
 
 from typing import TYPE_CHECKING, override, Generator
@@ -65,8 +65,7 @@ class DatasetFolderLoader(Dataset):
                          debug=debug)
 
         self.labels_and_images[Dataset.Part.VAL] = copy.copy(self.labels_and_images[Dataset.Part.TEST] if self.test_as_validation else self.labels_and_images[Dataset.Part.TRAIN])
-    # --- END __init__ --- #
-
+    
     def _get_dict_class_and_file(self, path: str) -> tuple[list[tuple[ClassName, DataPath]], int, int]:
         dict_class_file = dict[ClassName, set[DataPath]]()
         num_images = 0
@@ -98,15 +97,13 @@ class DatasetFolderLoader(Dataset):
         np_array = np_array.transpose(2, 1, 0)
 
         return np_array
-    # --- END _get_image_as_np_ndarray --- #
-
-    def _prepare_label(self, label: int, num_classes: shape_t) -> np.ndarray:
+    
+    def _prepare_label(self, label: int, num_classes: ArrayShape) -> np.ndarray:
         """Transform class numer into class mask (ndarray 1D unit8)"""
         np_label = np.zeros(shape=num_classes, dtype=np.uint8, order="C")
         np_label[label] = 1
         return np_label
-    # --- END _prepare_label ---#
-
+    
     @override
     def _init_actual_data(self):
         if not self.model.resize:
@@ -134,9 +131,9 @@ class DatasetFolderLoader(Dataset):
 
             # Set tensor format
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     x = self._nchw2nhwc(x)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass  # Format is correct
                 case _:
                     raise TypeError(f"{self.model.tensor_format} format is not supported")
@@ -149,7 +146,5 @@ class DatasetFolderLoader(Dataset):
             x /= 255.0
 
             yield x, y
-    # --- END _actual_data_generator --- #
+    
 
-
-# --- END FolderLoader --- #

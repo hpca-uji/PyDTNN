@@ -70,7 +70,6 @@ KWARGS = {
     "dataset_train_path": DATASET_PATH,
     "dataset_test_path": DATASET_PATH,
 }
-# --- END EXECUTION PARAMETERS --- #
 
 
 def get_model_layers(model: torch.nn.Module, name: str = "self") -> Dict[str, torch.nn.Module]:
@@ -87,7 +86,6 @@ def get_model_layers(model: torch.nn.Module, name: str = "self") -> Dict[str, to
     dict_modules = {}
     _get_model_layers(model=model, name=name, dict_modules=dict_modules)
     return dict_modules
-# --- END get_model_layers --- #
 
 
 def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.modules.loss._Loss, device: torch.device, metrics_list: list) -> None:
@@ -150,7 +148,6 @@ def pytorch_inference(model: torch.nn.Module, dataloader, loss_func: torch.nn.mo
         print(f"type(metric): {type(metric)}")
         metric_result = metric.compute()
         print(f"{name}: {metric_result:.4f}")
-# --- END pytorch_inference --- #
 
 
 def print_model_reports(model):
@@ -168,7 +165,6 @@ def pydtnn_inference(model: PyDTNN_Model, metrics_list=None, dataset=None) -> No
     model.show()
     model.evaluate_dataset()
     print_model_reports(model)
-# --- END pydtnn_inference --- #
 
 
 def _pydtnn_inference(new_model, old_model, dataset, old_first=None):
@@ -223,7 +219,6 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
     #                      y_train=dataset._y[DatasetEnum.TRAIN][:num_samples], y_val=dataset._y[VAL][:num_samples])
     history = model.train_dataset()
     print(f"history: {history}")
-# --- END pydtnn_training --- #
 
 
 def main():

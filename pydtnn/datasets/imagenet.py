@@ -8,7 +8,7 @@ import numpy as np
 from PIL import Image
 from scipy.io import loadmat
 
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 from pydtnn.utils.archive import load_archive, list_archive
@@ -163,9 +163,9 @@ class ImageNet(Dataset):
 
             # Set tensor format
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     x = self._nchw2nhwc(x)
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     pass
                 case _:
                     raise ValueError("Unsupported tensor format")

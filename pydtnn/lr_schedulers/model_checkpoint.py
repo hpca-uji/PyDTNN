@@ -42,4 +42,4 @@ class ModelCheckpoint(LRSchedulerWithLossOrMetric):
                 if self.model.comm_rank == 0 and self.last_filename is not None:
                     os.remove(self.last_filename)
                 self.last_filename = self.filename
-    # --- END on_epoch_end --- #
+    

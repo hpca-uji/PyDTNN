@@ -6,12 +6,13 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
-from pydtnn.utils.types import Array
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayArray
+from pydtnn.utils.types import ArrayShape
 
-class Metric[T: Array](PromoteToBackendMixin, ABC):
 
-    def __init__(self, shape: shape_t, model: "Model", eps=1e-8):
+class Metric[T: ArrayArray](PromoteToBackendMixin, ABC):
+
+    def __init__(self, shape: ArrayShape, model: "Model", eps=1e-8):
         self.shape = shape
         self.model = model
         self.eps = eps

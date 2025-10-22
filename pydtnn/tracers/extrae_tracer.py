@@ -48,7 +48,3 @@ class ExtraeTracer(Tracer):
     def _emit_nevent(self, evt: int, val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         self.pyextrae.neventandcounters(evt, val)
-
-    def set_default_stream(self, stream):
-        pass
-        # self.stream = stream

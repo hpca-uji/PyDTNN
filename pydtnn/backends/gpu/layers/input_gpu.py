@@ -1,14 +1,13 @@
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.layers import Input
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class InputGPU(LayerGPU, Input):
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU):
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)

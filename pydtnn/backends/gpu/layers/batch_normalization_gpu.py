@@ -1,10 +1,7 @@
 import numpy as np
 
-# noinspection PyUnresolvedReferences
 import pycuda.driver as drv
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import BatchNormalization
@@ -14,7 +11,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import decode_tensor
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization):
 
@@ -31,7 +28,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         self.save_inv_var: TensorGPU = None
         self.factor: float = None
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 

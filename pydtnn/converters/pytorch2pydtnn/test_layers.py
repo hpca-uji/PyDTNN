@@ -12,7 +12,6 @@ from pydtnn.layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils.best_of import BestOf
 
-# noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 try:
     import pycuda.gpuarray as gpuarray
@@ -67,7 +66,6 @@ KWARGS = {
     "tracer_output": "",
     "batch_size": N
 }
-# --- END EXECUTION PARAMETERS --- #
 
 TYPES_DATA_CUDA = {np.float64: "CUDNN_DATA_DOUBLE",
                    np.float32: "CUDNN_DATA_FLOAT",
@@ -115,13 +113,10 @@ class TEST_PyTorch_Model(PyTorch_Model):
         super().__init__()
         self.layer = layer
         print(f"self.layer: {self.layer}")
-    # --- END __init__ --- #
-
+    
     def forward(self, x):
         return self.layer(x)
-    # --- END forward --- #
-# --- END TEST_PyTorch_Model --- #
-
+    
 
 class Addition_Test_PyTorch_Model(PyTorch_Model):
 
@@ -131,8 +126,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         self.op1: nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
         self.op2: nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"][0]
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
-    # --- END __init__ --- #
-
+    
     def forward(self, x):
         dict_forwards = dict()
         ro = self.op0(x)
@@ -146,9 +140,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         res = self.act(res)
         dict_forwards["Tanh"] = res
         return (res, dict_forwards)
-    # --- END forward --- #
-# --- END Addition_Test_PyTorch_Model --- #
-
+    
 
 class Concat_Test_PyTorch_Model(PyTorch_Model):
 
@@ -160,8 +152,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         self.activation1: nn.Module = DICT_SUPPORTED_LAYERS["Sigmoid"][0]
         self.activation2: nn.Module = DICT_SUPPORTED_LAYERS["Softmax"][0]
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
-    # --- END __init__ --- #
-
+    
     def forward(self, x):
         dict_forwards = dict()
         ro = self.op0(x)
@@ -179,18 +170,14 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         res = self.act(res)
         dict_forwards["Tanh"] = res
         return (res, dict_forwards)
-    # --- END forward --- #
-# --- END Addition_Test_PyTorch_Model --- #
-
+    
 
 def are_all_zeros(diff: np.ndarray) -> bool:
     return not diff.any()
-# --- END are_all_zeros --- #
 
 
 def are_all_below_threshold(diff: np.ndarray, threshold: float = THRESHOLD) -> bool:
     return np.all(diff < threshold)
-# --- END are_all_zeros --- #
 
 
 def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -> np.ndarray | TensorGPU:
@@ -207,7 +194,6 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -
     print(f"y | ({type(y)})")
 
     return y
-# --- END forward_pydtnn_model --- #
 
 
 def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
@@ -232,7 +218,6 @@ def test_layers_gpu(model: PyDTNN_Model, dataset: np.ndarray) -> TensorGPU:
     y: TensorGPU | None = forward_pydtnn_model(model, _dataset)
 
     return y
-# --- END test_layers_gpu --- #
 
 
 def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int],
@@ -317,7 +302,6 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, 
         print(f"pytorch_output - pydtnn_output:\n{diff}\n[pytorch_output - pydtnn_output]")
 
     print("=========================================\n")
-# --- END test_layers --- #
 
 
 def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, Any], input_shape: Tuple[int, int, int],
@@ -369,7 +353,6 @@ def test_add_and_concat(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Di
         print(f"pydtnn_output:\n{pydtnn_output}")
         print(f"pytorch_output - pydtnn_output:\n{diff}")
     print("=========================================\n")
-# --- END test_layers --- #
 
 
 def main():
@@ -406,7 +389,6 @@ def main():
                         ]:
         print(f"Testing: {name}")
         test_add_and_concat(name=name, pytorch_model=model, kwargs=kwargs, input_shape=SHAPE, device=device, dataset=deepcopy(dataset))
-# --- END main --- #
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGe
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
@@ -14,7 +14,7 @@ from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.memory_cache import MemoryCache
 
 from numpy import ndarray, empty, zeros
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 
 class Conv2DCPU(LayerCPU,
@@ -41,12 +41,12 @@ class Conv2DCPU(LayerCPU,
         dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 self._x_cols = zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
                 self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype, order="C")
                 self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
                 self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 self._x_rows = zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
                 self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype, order="C")
                 self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
@@ -65,17 +65,17 @@ class Conv2DCPU(LayerCPU,
 
         self.dw = empty(shape=self.weights_shape, dtype=self.model.dtype, order="C")
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
                 self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 self.y = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
                 self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
 
-    def initialize(self, prev_shape: shape_t, x: ndarray | None = None) -> None:
+    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
@@ -158,7 +158,7 @@ class Conv2DCPU(LayerCPU,
         if self.hstride != 1 or self.vstride != 1:
             return
         # #l kn wo ho t kh kw ci wi hi"
-        if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+        if self.model.tensor_format is TensorFormat.NCHW:
             ci, hi, wi = self.prev_shape
         else:
             hi, wi, ci = self.prev_shape

@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 
 from pydtnn.utils import random
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 
 
 # @warning: must be a function, don't use a @property decorator
@@ -22,7 +22,7 @@ class Params:
     def __init__(self) -> None:
         self.dtype = np.float64
         self.parallel = "sequential"
-        self.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
+        self.tensor_format = TensorFormat.NHWC.upper()
 
         model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
         self.model_name = model_name

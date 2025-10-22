@@ -1,6 +1,4 @@
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers import Flatten

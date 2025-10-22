@@ -1,6 +1,4 @@
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.layers.concatenation_block import ConcatenationBlock, CONCAT_DIM_NCHW, CONCAT_DIM_NHWC
@@ -10,8 +8,8 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.tensor import decode_tensor, TensorFormat
+from pydtnn.utils.types import ArrayShape
 
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
 
@@ -23,7 +21,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         self.out_co = None
         self.idx_co = None
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
@@ -31,7 +29,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                                                                                           {np.float32: "float",
                                                                                            np.float64: "double"}[
                                                                                               self.model.dtype]),
-            {PYDTNN_TENSOR_FORMAT.NHWC:
+            {TensorFormat.NHWC:
                 """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i / C % W;
@@ -41,7 +39,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                        dst[i] = src[i_];
                    }
                 """,
-             PYDTNN_TENSOR_FORMAT.NCHW:
+             TensorFormat.NCHW:
                 """int c_ = i / (H*W) % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i % W;
@@ -58,7 +56,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                                                                                           {np.float32: "float",
                                                                                            np.float64: "double"}[
                                                                                               self.model.dtype]),
-            {PYDTNN_TENSOR_FORMAT.NHWC:
+            {TensorFormat.NHWC:
                 """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i / C % W;
@@ -68,7 +66,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
                        dst[i_] = src[i];
                    }
                 """,
-             PYDTNN_TENSOR_FORMAT.NCHW:
+             TensorFormat.NCHW:
                 """int c_ = i / (H*W) % C;
                    if (first_c <= c_ && c_ < last_c) {
                        int w_ = i % W;

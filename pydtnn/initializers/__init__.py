@@ -6,7 +6,7 @@ import numpy as np
 import scipy.stats as stats
 from enum import StrEnum, auto
 from typing import Callable
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 from pydtnn.utils import random
 
 
@@ -27,7 +27,7 @@ class ProbabilisticDistribution(StrEnum):
 STD_DEV_CONST = 0.87962566103423978
 
 
-def _compute_fans(shape: shape_t) -> tuple[int, int]:
+def _compute_fans(shape: ArrayShape) -> tuple[int, int]:
     if len(shape) == 2:
         fan_in, fan_out = shape[0], shape[1]
     elif len(shape) > 2:
@@ -39,7 +39,7 @@ def _compute_fans(shape: shape_t) -> tuple[int, int]:
     return fan_in, fan_out
 
 
-def _generate_distribution(shape: shape_t, scale: float, mode: DistributionModeEnum,
+def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionModeEnum,
                            distribution: ProbabilisticDistribution, dtype: np.dtype) -> np.ndarray:
     fan_in, fan_out = _compute_fans(shape)
 
@@ -66,37 +66,37 @@ def _generate_distribution(shape: shape_t, scale: float, mode: DistributionModeE
     return x
 
 
-def glorot_uniform(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def glorot_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG,
                                   ProbabilisticDistribution.UNIFORM, dtype)
 
 
-def glorot_normal(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def glorot_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_AVG, ProbabilisticDistribution.NORMAL, dtype)
 
 
-def he_uniform(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def he_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return _generate_distribution(shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype)
 
 
-def he_normal(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def he_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return _generate_distribution(shape, 2.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype)
 
 
-def lecun_uniform(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def lecun_uniform(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.UNIFORM, dtype)
 
 
-def lecun_normal(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def lecun_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return _generate_distribution(shape, 1.0, DistributionModeEnum.FAN_IN, ProbabilisticDistribution.NORMAL, dtype)
 
 
-def ones(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def ones(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return np.ones(shape, dtype=dtype, order="C")
 
 
-def zeros(shape: shape_t, dtype: np.dtype) -> np.ndarray:
+def zeros(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
     return np.zeros(shape, dtype=dtype, order="C")
 
 
-type InitializerFunc = Callable[[shape_t, np.dtype], np.ndarray]
+type InitializerFunc = Callable[[ArrayShape, np.dtype], np.ndarray]

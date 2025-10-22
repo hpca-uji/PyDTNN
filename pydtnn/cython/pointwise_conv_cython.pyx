@@ -11,7 +11,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 # =================== #
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -35,4 +34,3 @@ def pointwise_conv_cython(npDT[:,:,:,::1] x, npDT[:,::1] k, npDT[:,:,:,::1] out)
                 for ii in range(h):
                     for jj in range(w):
                         out[nn, cco, ii, jj] += x[nn, cc, ii, jj] * k[cco, cc]
-# --- END pointwise_conv_cython --- #

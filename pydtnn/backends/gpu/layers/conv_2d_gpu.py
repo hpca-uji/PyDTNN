@@ -1,13 +1,8 @@
-# noinspection PyUnresolvedReferences
 from pydtnn.layers import Conv2D
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-# noinspection PyUnresolvedReferences
 import pycuda.driver as drv
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
-# noinspection PyUnresolvedReferences
 from pycuda.driver import Function
 
 from pydtnn.performance_models import *
@@ -15,8 +10,8 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.layers.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
 MACROS_NCHW = \
     """
@@ -52,7 +47,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
         self.conv_desc = None
     # ---
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
 
         self.stream_2 = drv.Stream()
@@ -69,7 +64,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
         # Biases
         if self.use_bias:
             self.biases_cpu = self.biases_initializer((1, self.co, 1, 1)
-                                                      if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (1, 1, 1, self.co), self.model.dtype)
+                                                      if self.model.tensor_format is TensorFormat.NCHW else (1, 1, 1, self.co), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
@@ -273,7 +268,7 @@ class Conv2DGPU(LayerGPU, Conv2D):
     ####################
 
     def cuda_sum_bias_axis_023(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         # np.sum(dy, axis=(0, 2, 3), out=self.db)
         code = \
@@ -301,7 +296,7 @@ __global__ void {func_name}({T}* dy, {T}* db
     # ----
 
     def cuda_sum_bias_axis_012(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nhwc") -> Function:
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         # np.sum(dy, axis=(0, 1, 2), out=self.db)
         code = \
@@ -373,7 +368,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
     }}
 }}
 """
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -426,7 +421,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     }}
 }}
 """
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -438,7 +433,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     # ---
 
     def cuda_bias_sum_fwd_depthwise_conv(self, _func_name: str = "bias_sum_fwd_depthwise_conv") -> Function:
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = \
             """
@@ -476,13 +471,13 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.bias_sum_bwd: Function = None
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nchw"
                 macros = MACROS_NCHW
                 self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
                 self.forward = self._forward_depthwise_nchw
                 self.backward = self._backward_depthwise_nchw
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nhwc"
                 macros = MACROS_NHWC
                 self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
@@ -637,11 +632,11 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.bias_sum_bwd: Function = None
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nchw"
                 macros = MACROS_NCHW
                 self.bias_sum_bwd = self.cuda_sum_bias_axis_023()
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 func_name = "cuda_depthwise_conv_2d_{fwd_bwd}_nhwc"
                 macros = MACROS_NHWC
                 self.bias_sum_bwd = self.cuda_sum_bias_axis_012()
@@ -693,7 +688,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* y,
     }}
 }}
 """
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -744,7 +739,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     }}
 }}
 """
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -781,7 +776,7 @@ __global__ void {func_name}({T}* y, {T}* b,
     }}
 }}
 """
-        _t = GPU_SUPPORTED_TYPES[self.model.dtype]  # variable Type
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(macros=_macros,
                            func_name=_func_name,
@@ -799,9 +794,9 @@ __global__ void {func_name}({T}* y, {T}* b,
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 n, c, h, w = x.shape
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 n, h, w, c = x.shape
             case _:
                 raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
@@ -828,9 +823,9 @@ __global__ void {func_name}({T}* y, {T}* b,
 
     def _backward_pointwise(self, dy: TensorGPU) -> TensorGPU:
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 n, c, h, w = dy.shape
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 n, h, w, c = dy.shape
             case _:
                 raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")

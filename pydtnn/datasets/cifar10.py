@@ -5,7 +5,7 @@ import tarfile
 
 import numpy as np
 
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
@@ -61,7 +61,7 @@ class CIFAR10(Dataset):
                 y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype, order="C")
                 self._decode_class(y, y_classes)
 
-                if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+                if self.model.tensor_format is TensorFormat.NHWC:
                     x = self._nchw2nhwc(x)
 
                 yield x, y

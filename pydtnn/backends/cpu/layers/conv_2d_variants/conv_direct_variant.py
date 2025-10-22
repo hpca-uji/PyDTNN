@@ -5,7 +5,7 @@ from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.layers import Conv2D
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from numpy import ndarray
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 
 class ConvDirectVariant(Conv2D, ABC):
@@ -15,7 +15,7 @@ class ConvDirectVariant(Conv2D, ABC):
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
-    def initialize(self, prev_shape: shape_t, x: ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None):
         super().initialize(prev_shape, x)
         # ConvWinograd parameters
         if self.model.enable_conv_direct:

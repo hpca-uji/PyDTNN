@@ -4,11 +4,10 @@ from typing import TypeVar, Self
 from enum import StrEnum, auto
 
 import numpy as np
-from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.tensor import decode_tensor, TensorFormat
+from pydtnn.utils.types import ArrayShape
 
 try:
-    # noinspection PyUnresolvedReferences
     import pycuda.gpuarray as gpuarray
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
 except Exception as e:
@@ -26,8 +25,8 @@ class TensorGPU:
     # ---  END EnumTensorType --- #
 
     @staticmethod
-    def create_empty_tensor(shape: shape_t, dtype: np.dtype,
-                            tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
+    def create_empty_tensor(shape: ArrayShape, dtype: np.dtype,
+                            tensor_format: TensorFormat, cudnn_dtype: int,
                             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int = None,
                             gpudirect: bool = False, cublas: bool = False):
         gpu_arr = gpuarray.empty(shape, dtype)
@@ -36,8 +35,8 @@ class TensorGPU:
     # ---
 
     @staticmethod
-    def create_zeros_tensor(shape: shape_t, dtype: np.dtype,
-                            tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
+    def create_zeros_tensor(shape: ArrayShape, dtype: np.dtype,
+                            tensor_format: TensorFormat, cudnn_dtype: int,
                             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int = None,
                             gpudirect: bool = False, cublas: bool = False):
         gpu_arr = gpuarray.zeros(shape, dtype)
@@ -45,31 +44,31 @@ class TensorGPU:
                          tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
     # ---
 
-    def __init__(self, gpu_arr: "gpuarray", tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
+    def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int = None,
                  gpudirect: bool = False, cublas: bool = False):
 
         self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
-        self.tensor_format = PYDTNN_TENSOR_FORMAT(tensor_format.lower())
+        self.tensor_format = TensorFormat(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
         self.tensor_type = tensor_type
         self.gpudirect = gpudirect
         self.cublas = cublas
         # The following atributes will be initalized in _initalize:
-        self.ary: gpuarray = None
+        self.ary: gpuarray.GPUArray = None
         self.size: int = -1
         self.desc: int = -1
         # ---
         self._initalize(gpu_arr, desc)
     # ---
 
-    def _set_shape(self, gpu_arr: "gpuarray") -> None:
+    def _set_shape(self, gpu_arr: "gpuarray.GPUArray") -> None:
         
         match len(gpu_arr.shape):
             case 1:
-                self.shape = (1, *gpu_arr.shape, 1, 1) if self.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW else (1, 1, 1, *gpu_arr.shape)
+                self.shape = (1, *gpu_arr.shape, 1, 1) if self.tensor_format is TensorFormat.NCHW else (1, 1, 1, *gpu_arr.shape)
             case 2:
-                if self.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+                if self.tensor_format is TensorFormat.NCHW:
                     self.shape = (*gpu_arr.shape, 1, 1)
                 else:
                     self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
@@ -79,7 +78,7 @@ class TensorGPU:
                 raise ValueError(f"The expected len shape are 1, 2 or 4. Shape received: \"{len(gpu_arr.shape)}\".")
     # ---
 
-    def _set_prt(self, gpu_arr: "gpuarray") -> None:
+    def _set_prt(self, gpu_arr: "gpuarray.GPUArray") -> None:
         if self.gpudirect:
             self.ptr_intp = np.intp(self.ary.base.get_device_pointer())
             self.ptr = ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
@@ -106,7 +105,7 @@ class TensorGPU:
                     pass  # do nothing.
     # ---
 
-    def _initalize(self, gpu_arr: "gpuarray", desc: int = None) -> None:
+    def _initalize(self, gpu_arr: "gpuarray.GPUArray", desc: int = None) -> None:
         self.ary = gpu_arr
         self._set_shape(gpu_arr)
         self.size = gpu_arr.size
@@ -115,7 +114,7 @@ class TensorGPU:
             self._set_desc(desc)
     # ---
 
-    def reshape(self, shape: shape_t):
+    def reshape(self, shape: ArrayShape):
         self.ary = self.ary.reshape(shape, order="C")
         return self
     # ---
@@ -126,7 +125,7 @@ class TensorGPU:
         self.desc = -1
     # ---
 
-    def set_ary(self, gpu_arr: "gpuarray", desc: int = None) -> None:
+    def set_ary(self, gpu_arr: "gpuarray.GPUArray", desc: int = None) -> None:
         self.free_gpu_arr()
         self._initalize(gpu_arr, desc)
     # ---
@@ -137,10 +136,10 @@ class TensorGPU:
     # ---
 
     @staticmethod
-    def initialize_gpu_direct(drv: PyCudaDrvType, shape: shape_t, dtype: np.dtype,
-                              tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
+    def initialize_gpu_direct(drv: PyCudaDrvType, shape: ArrayShape, dtype: np.dtype,
+                              tensor_format: TensorFormat, cudnn_dtype: int,
                               tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                              desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, Self]:
+                              desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 
@@ -151,10 +150,10 @@ class TensorGPU:
     # ---
 
     @staticmethod
-    def initialize_not_gpu_direct(shape: shape_t, dtype: np.dtype,
-                                  tensor_format: PYDTNN_TENSOR_FORMAT, cudnn_dtype: int,
+    def initialize_not_gpu_direct(shape: ArrayShape, dtype: np.dtype,
+                                  tensor_format: TensorFormat, cudnn_dtype: int,
                                   tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                                  desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, Self]:
+                                  desc: int = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.empty(shape, dtype)
 

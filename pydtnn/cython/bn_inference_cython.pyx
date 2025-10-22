@@ -32,7 +32,6 @@ def bn_inference_cython(npDT[:, ::1] x,
     for i in prange(x.shape[0], nogil=True, schedule='static'):
         for j in range(x.shape[1]):
             y[i, j] = <npDT> (gamma[j] * (x[i, j] - running_mean[j]) / std[j]) + beta[j]
-# --- END bn_inference_cython --- #
 
 # ==================================== #
 
@@ -56,7 +55,6 @@ def bn_inference_nchw_cython(npDT[:, ::1] x,
         for j in range(x.shape[1]):
                     y[i, j] = <npDT> (gamma[j] * (x[i, j] - running_mean[j]) / std[j]) + beta[j]
 
-# --- END bn_inference_nchw_cython --- #
 
 # ==================================== #
 
@@ -65,7 +63,6 @@ def bn_inference_nchw_cython(npDT[:, ::1] x,
 # ==================================== #
 
 
-# --- END ReLU Batch Normalization --- #
 @cython.boundscheck(False)
 @cython.wraparound(False)
 @cython.initializedcheck(False)
@@ -88,6 +85,4 @@ def bn_relu_inference_cython(npDT[:, ::1] x,
         for j in range(x.shape[1]):
             tmp = (x[i, j] - running_mean[j]) * inv_std[j]
             y[i, j] = max((tmp * gamma[j]) + beta[j], 0)
-# --- END bn_relu_inference_cython --- #
 
-# --- END ReLU Batch Normalization --- #

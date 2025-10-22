@@ -5,11 +5,11 @@ if TYPE_CHECKING:
     from pydtnn.activations import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.tensor import decode_tensor, encode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import decode_tensor, encode_tensor, TensorFormat
 from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class Conv2D[T: Array](Layer, ABC):
 
@@ -61,10 +61,10 @@ class Conv2D[T: Array](Layer, ABC):
         self.debug = False
         # The next attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
-        self.weights_shape: shape_t = None
+        self.weights_shape: ArrayShape = None
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape: shape_t, x: T | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.kh, self.kw = self.filter_shape
@@ -76,17 +76,17 @@ class Conv2D[T: Array](Layer, ABC):
             case Conv2D.Grouping.POINTWISE:
                 self.kh = self.kw = 1
                 match self.model.tensor_format:
-                    case PYDTNN_TENSOR_FORMAT.NCHW:
+                    case TensorFormat.NCHW:
                         self.weights_shape = (self.co, self.ci)
-                    case PYDTNN_TENSOR_FORMAT.NHWC:
+                    case TensorFormat.NHWC:
                         self.weights_shape = (self.ci, self.co)
                     case _:
                         raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
             case _:
                 match self.model.tensor_format:
-                    case PYDTNN_TENSOR_FORMAT.NCHW:
+                    case TensorFormat.NCHW:
                         self.weights_shape = (self.co, self.ci, *self.filter_shape)
-                    case PYDTNN_TENSOR_FORMAT.NHWC:
+                    case TensorFormat.NHWC:
                         self.weights_shape = (self.ci, *self.filter_shape, self.co)
                     case _:
                         raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")

@@ -12,8 +12,7 @@ import numpy as np
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
+        import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu import TensorGPU
 
 # setting random seed

@@ -29,7 +29,6 @@ def log_fwd_cython(npDT[::1] x, npDT[::1] y) -> None:
     # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
     for i in prange(x.shape[0], nogil=True):
         y[i] = <npDT> ((-1.0) * log( 1.0 + exp(-1.0*x[i])))
-# --- END sigmoid_fwd_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -40,5 +39,4 @@ def log_bwd_cython(npDT[::1] dy, npDT[::1] dx) -> None:
     
     for i in prange(dy.shape[0], nogil=True):
         dx[i] = <npDT> (1 / (exp(dy[i]) + 1.0))
-# --- END log_bwd_cython --- #
 

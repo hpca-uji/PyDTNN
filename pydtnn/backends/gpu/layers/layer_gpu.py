@@ -6,20 +6,18 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-    # noinspection PyUnresolvedReferences
-    from pydtnn.comm import MPI
+        from pydtnn.comm import MPI
 except Exception as e:
     pass
 
 try:
-    # noinspection PyUnresolvedReferences
-    import pydtnn.backends.gpu.libs.libnccl as nccl
+        import pydtnn.backends.gpu.libs.libnccl as nccl
 except Exception as e:
     pass
 
 from numpy import ndarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class LayerGPU(Layer[TensorGPU], ABC):
     """
@@ -39,7 +37,7 @@ class LayerGPU(Layer[TensorGPU], ABC):
         self.one_vec_cpu: ndarray = None
         self.one_vec_gpu: TensorGPU = None
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):

@@ -4,7 +4,7 @@ from pydtnn.cython import bn_training_bwd_cython
 from pydtnn.layers import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
@@ -96,16 +96,15 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         if self.spatial:
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     y = y.reshape((-1, self.ci, self.hi, self.wi), copy=False)
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
                 case _ :
                     raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
-    # --- END forward --- #
-
+    
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
         n = dy.shape[0]
@@ -126,13 +125,13 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         if self.spatial:
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
                 case _ :
                     raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
 
             
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
-    # --- END backward --- #
+    

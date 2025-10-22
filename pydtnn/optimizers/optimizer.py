@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from pydtnn.backends import PromoteToBackendMixin
 import numpy as np
 
-from pydtnn.layers import Layer
+from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 
 class Optimizer(PromoteToBackendMixin, ABC):
@@ -17,12 +17,12 @@ class Optimizer(PromoteToBackendMixin, ABC):
         self.dtype: np.dtype = dtype
         self.context: dict = dict()
         # Only for GPU implementations:
-        self.num_real_batches: int = None
+        self.real_batch_size: int = None
 
     @abstractmethod
-    def initialize(self, list_layers: list[Layer]) -> None:
+    def initialize(self, list_layers: list[LayerAndActivationBase]) -> None:
         raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
 
     @abstractmethod
-    def update(self, layer: Layer) -> None:
+    def update(self, layer: LayerAndActivationBase) -> None:
         pass

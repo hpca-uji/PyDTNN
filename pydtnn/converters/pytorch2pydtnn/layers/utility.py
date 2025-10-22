@@ -24,5 +24,4 @@ def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     not_used = args
 
     return layers.Flatten()
-# --- END Flatten --- #
 # ------------------ #

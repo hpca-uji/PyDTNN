@@ -56,12 +56,10 @@ def not_implemented(name: str) -> Callable:
     def _not_implemented(args: Dict[str, Any]) -> None:
         raise NotImplementedError(f"Layer \"{name}\" not implemented - Args received:\n{args} ")
     return _not_implemented
-# --- END not_implemented --- #
 
 
 def prepare_pydtnn_arguments(arguments: Dict[str, Any], torch_dict_keys: List[str], pydtnn_dict_keys: List[str]) -> Dict[str, Any]:
     return {pydtnn_key: arguments[torch_key] for torch_key, pydtnn_key in zip(torch_dict_keys, pydtnn_dict_keys) if torch_key in arguments}
-# --- END prepare_pydtnn_arguments --- #
 
 
 def switch_pytorch_pydtnn(name: str) -> Callable[[Dict[str, Any]], LayerAndActivationBase]:
@@ -89,7 +87,6 @@ def switch_pytorch_pydtnn(name: str) -> Callable[[Dict[str, Any]], LayerAndActiv
         case "Concat": return concat  # Possible FIXME: if the constants CONCAT values are changed, change the case in order to have the same value.
         # Base case:
         case _: return not_implemented(name)
-# --- END switch_pytorch_pydtnn --- #
 
 
 def switch_operation_symbols(op: str) -> str:
@@ -131,7 +128,6 @@ def function_operation_to_pydtnn(name: str) -> Callable[[Dict[str, Any]], Tuple[
     else:
         op = not_implemented(name)
     return op
-# --- END function_operation_to_pydtnn --- #
 
 
 def get_lists_operations_and_outputs(dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]], layer_inputs: List[str]) -> Tuple[List[List[LayerAndActivationBase]], List[str], str]:
@@ -185,7 +181,6 @@ def get_lists_operations_and_outputs(dict_layers: Dict[str, Tuple[LayerAndActiva
         # ----
     # for inpt in layer_inputs end
     return (lists_operations, lists_outputs, new_previous_layer)
-# --- END get_lists_operations_and_outputs --- #
 
 
 def separate_function_params(params: str) -> List[str]:
@@ -193,7 +188,6 @@ def separate_function_params(params: str) -> List[str]:
     params = params.replace('[', '').replace(']', '')  # Removing non-useful characters
     params = params.split(',')
     return [param.strip() for param in params]  # Removing spaces
-# --- END separate_function_params --- #
 
 # NOTE: This coversor does *not* work in the cases like the following:
 # A, B, C, D, E are layers, D and E are layers like concatenation or addition layers.
@@ -210,7 +204,6 @@ def get_equivalent_layer(params: List[str], dict_equivalent_layers: Dict[str, st
             layer = dict_equivalent_layers[layer]
         equivalent_layers[layer] = None
     return list(equivalent_layers.keys())
-# --- END get_equivalent_layer ---#
 
 # -- END FUNCTIONS -- #
 # ------------------- #

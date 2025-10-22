@@ -25,7 +25,6 @@ if ompi_stdout_rank and os.environ.get("OMPI_COMM_WORLD_RANK", "0") != ompi_stdo
 Extrae_tracing = False
 if os.environ.get("EXTRAE_ON", None) == "1":
     TracingLibrary = "libptmpitrace.so"
-    # noinspection PyUnresolvedReferences
     import pyextrae.common.extrae as pyextrae
 
     pyextrae.startTracing(TracingLibrary)

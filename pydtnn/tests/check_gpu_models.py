@@ -15,7 +15,6 @@ import sys
 import unittest
 import warnings
 
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
@@ -23,7 +22,7 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn import losses
 
 
@@ -56,7 +55,7 @@ class CheckGPUModels(CheckConvGemmModels):
         params.model_name = model_name
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
-        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
+        params.tensor_format = TensorFormat.NHWC.upper()
         params_dict = vars(params)
         try:
             model1 = Model(**params_dict)
@@ -75,7 +74,7 @@ class CheckGPUModels(CheckConvGemmModels):
         params.model_name = model_name
         params.enable_gpu = True
         params.enable_cudnn_auto_conv_alg = True
-        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
+        params.tensor_format = TensorFormat.NHWC.upper()
         params_dict = vars(params)
         try:
             model2 = Model(**params_dict)
@@ -92,7 +91,7 @@ class CheckGPUModels(CheckConvGemmModels):
             if cpu_layer.weights is None:
                 continue
             if "Conv2D" in type(gpu_layer).__name__:
-                if model2.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+                if model2.tensor_format is TensorFormat.NHWC:
                     # TODO: check this.
                     gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
                 else:

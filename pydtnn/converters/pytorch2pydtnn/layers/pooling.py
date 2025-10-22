@@ -51,7 +51,6 @@ def MaxPool2d(args: Dict[str, Any]) -> layers.MaxPool2D:
     # else: Nothing special
 
     return layers.MaxPool2D(**layer_args)
-# --- END MaxPool2d --- #
 
 
 def AvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
@@ -75,7 +74,6 @@ def AvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
         # else: It must be a Tuple[int, int], so it's okay
 
     return layers.AveragePool2D(**layer_args)
-# --- END AvgPool2d --- #
 
 
 def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
@@ -86,4 +84,3 @@ def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
     output_shape = arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None
 
     return layers.AdaptiveAveragePool2D(output_shape=output_shape)
-# --- END AdaptiveAvgPool2d --- #

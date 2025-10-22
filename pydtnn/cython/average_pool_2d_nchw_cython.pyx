@@ -15,7 +15,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 
 # =================== #
 # =================== #
@@ -53,7 +52,6 @@ def average_pool_2d_fwd_nchw_cython(npDT[:,:,:,::1] x,
                                     accum = accum + x[nn, cc, x_x, x_y]
                                     items = items + 1
                     y[nn, cc, xx, yy] = <npDT> (accum / items)
-# --- END average_pool_2d_fwd_nchw_cython --- #
 
 # =================== #
 # =================== #
@@ -94,5 +92,3 @@ def average_pool_2d_bwd_nchw_cython(npDT[:,:,:,::1] dy,
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     dx[nn, cc, x_x, x_y] += avgval
-# --- END average_pool_2d_bwd_nchw_cython --- #
-# --- END BACKWARD --- #

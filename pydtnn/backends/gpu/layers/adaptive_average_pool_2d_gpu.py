@@ -21,20 +21,17 @@ from pydtnn.layers import AdaptiveAveragePool2D
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 
 # Import from AbstractPool2DLayerGPU
-from pydtnn.utils.types import GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import DTYPE2CTYPE
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
-# noinspection PyUnresolvedReferences
 from pycuda.driver import Function
 
 import numpy as np
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 
 # --- CONSTANTS --- #
 _MACRO_INDEX_FIRST_ELEMENT = "INDEX_FIRST_ELEMENT"
@@ -66,7 +63,6 @@ hi = {macro_index_h}(idx, new_h, new_w, c);
 wi = {macro_index_w}(idx, new_w, c);
 ci = {macro_index_c}(idx, c);
 """
-# --- END CONSTANTS --- #
 
 
 class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
@@ -84,17 +80,15 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         self.block = (self.threads, 1, 1)
 
         self.initialize_pool_2d_gpu(prev_shape, x)
-    # --- END initialize --- #
-
+    
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.y = None
-    # --- END __init__ --- #
-
+    
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
 
         _func_name = ["cuda_adaptive_average_pooling_fwd"]
-        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = DTYPE2CTYPE[dtype]  # variable Type
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
@@ -102,7 +96,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 _func_name.append("_nchw")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
@@ -110,7 +104,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
                 _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
                 _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
                 # -- END cuda_adaptive_average_pooling_fwd_nchw --
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 # NOTE: It has been tested and it return values that seems to make sense,
                 #   but they hadn't been compared with other model's output due the format (Torch is NCHW).
                 _func_name.append("_nhwc")
@@ -219,12 +213,11 @@ __global__ void {func_name}({T}* x, {T}* y,
         module = SourceModule(code).get_function(_func_name)
 
         return module
-    # --- END cuda_adaptive_average_pooling_fwd --- #
-
+    
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
 
         _func_name = ["cuda_adaptive_average_pooling_bwd"]
-        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = DTYPE2CTYPE[dtype]  # variable Type
         _full_macro_index_c = ""
         _full_macro_index_h = ""
         _full_macro_index_w = ""
@@ -232,14 +225,14 @@ __global__ void {func_name}({T}* x, {T}* y,
         _full_macro_shift_pointer = [_FULL_MACRO_SHIFT_POINTER]
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 _func_name.append("_nchw")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NCHW)
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NCHW
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NCHW
                 _full_macro_index_w = _FULL_MACRO_INDEX_W_NCHW
                 _dimension_index_code = _DIMENSION_INDEX_CODE_NCHW
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 _func_name.append("_nhwc")
                 _full_macro_shift_pointer.append(_SHIFT_POINTER_NHWC)
                 _full_macro_index_h = _FULL_MACRO_INDEX_H_NHWC
@@ -344,16 +337,15 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         module = SourceModule(code).get_function(_func_name)
 
         return module
-    # --- END cuda_adaptive_average_pooling_bwd --- #
-
+    
     def initialize_pool_2d_gpu(self, prev_shape, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 pooling_shape = (self.co, self.ho, self.wo)
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 (self.ho, self.wo, self.co)
             case _:
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
@@ -373,8 +365,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
             col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
-        # --- END initialize_pool_2d_gpu --- #
-
+        
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
@@ -382,9 +373,9 @@ __global__ void {func_name}({T}* dx, {T}* dy,
             self.y = x
         else:
             match self.model.tensor_format:
-                case PYDTNN_TENSOR_FORMAT.NCHW:
+                case TensorFormat.NCHW:
                     n, c, h, w = x.shape
-                case PYDTNN_TENSOR_FORMAT.NHWC:
+                case TensorFormat.NHWC:
                     n, h, w, c = x.shape
                 case _:
                     raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
@@ -410,14 +401,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
-    # --- END forward --- #
-
+    
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 n, c, h, w = dy.shape
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 n, h, w, c = dy.shape
             case _:
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
@@ -439,6 +429,4 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
-    # --- END backward --- #
-
-# --- END AdaptiveAveragePool2DGPU --- #
+    

@@ -7,7 +7,7 @@ from pydtnn.model import Model
 from pydtnn.utils.best_of import BestOf
 
 import numpy as np
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
 
@@ -19,7 +19,7 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
         # Other parameters
         self.variant = None
 
-    def initialize(self, prev_shape: shape_t, x: np.ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs

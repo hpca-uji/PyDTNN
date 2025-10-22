@@ -6,8 +6,7 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-    # noinspection PyUnresolvedReferences
-    from pydtnn.comm import MPI
+        from pydtnn.comm import MPI
 except Exception as e:
     pass
 import numpy as np

@@ -1,9 +1,6 @@
 import numpy as np
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
-# noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
@@ -11,7 +8,7 @@ from pydtnn.optimizers import Nadam
 
 from pydtnn.backends.gpu.layers import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
-from pydtnn.utils.types import GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import DTYPE2CTYPE
 
 class NadamGPU(OptimizerGPU, Nadam):
     """
@@ -45,7 +42,7 @@ class NadamGPU(OptimizerGPU, Nadam):
                     w[i] -= lr * (decay * w[i] + (((m[i] + (1 - beta1) * dw[i]) / (1 - pow(beta1, it))) /
                                                sqrt(v[i] / (1 - pow(beta2, it)) + epsilon)));
                 }
-            }""".replace("T", GPU_SUPPORTED_TYPES[dtype]).
+            }""".replace("T", DTYPE2CTYPE[dtype]).
             replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
         ).get_function("Nadam_kernel")
 

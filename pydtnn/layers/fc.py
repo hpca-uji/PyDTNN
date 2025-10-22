@@ -1,16 +1,19 @@
 from abc import ABC
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.activations import Activation
 from pydtnn.layers.layer import Layer
+from pydtnn.utils.types import Array
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
-class FC(Layer, ABC):
 
-    def __init__(self, shape: shape_t = (1,),
-                 activation: Optional["Activation"] = None,
+class FC[T: Array](Layer[T], ABC):
+    weights: T
+
+    def __init__(self, shape: ArrayShape = (1,),
+                 activation: "type[Activation] | None" = None,
                  use_bias=True,
                  weights_initializer: InitializerFunc = glorot_uniform,
                  biases_initializer: InitializerFunc = zeros):

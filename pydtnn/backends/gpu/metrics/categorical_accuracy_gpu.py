@@ -1,15 +1,13 @@
 import numpy as np
-# noinspection PyUnresolvedReferences
-import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
-from pycuda.compiler import SourceModule
-# noinspection PyUnresolvedReferences
-from pycuda.driver import Function
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
 
 from pydtnn.metrics import CategoricalAccuracy
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.types import GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import DTYPE2CTYPE
+
 
 class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
 
@@ -31,10 +29,10 @@ class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
             }
             return;
         }
-        """.replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]))
+        """.replace("T", DTYPE2CTYPE[self.model.dtype]))
         return module.get_function("categorical_accuracy")
 
-    def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
+    def __call__(self, y_pred: gpuarray.gpuarray, y_targ: gpuarray.gpuarray) -> float:
         threads = min(self.model.batch_size, 1024)
         blocks = max(self.model.batch_size, 1024) // threads + 1
         self.kernel(y_targ, y_pred, self.cost,

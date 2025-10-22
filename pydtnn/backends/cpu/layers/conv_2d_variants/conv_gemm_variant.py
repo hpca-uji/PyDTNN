@@ -6,7 +6,7 @@ from pydtnn.backends.cpu.libs import ConvGemm
 from pydtnn.layers import Conv2D
 from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class ConvGemmVariant(Conv2D, ABC):
 
@@ -15,7 +15,7 @@ class ConvGemmVariant(Conv2D, ABC):
         # convGemm related attributes (will be initialized in initialize())
         self.cg = None
 
-    def initialize(self, prev_shape: shape_t, x: np.ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         # ConvGemm parameters
         if self.model.enable_conv_gemm:

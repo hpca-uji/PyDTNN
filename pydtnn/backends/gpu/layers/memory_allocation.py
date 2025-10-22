@@ -1,6 +1,5 @@
 import ctypes
 
-# noinspection PyUnresolvedReferences
 import pycuda.driver as drv
 
 

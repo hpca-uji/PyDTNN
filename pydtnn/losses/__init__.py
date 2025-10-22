@@ -20,7 +20,7 @@ binary_cross_entropy = BinaryCrossEntropy
 get_derived_classes(Loss, locals())
 
 
-def switch_losses(loss_func_name: str) -> Loss:
+def switch_losses(loss_func_name: str) -> type[Loss]:
     # From snake to camel, if it's necessary
     _loss_func_name = loss_func_name.split("_")
     if len(_loss_func_name) > 1:

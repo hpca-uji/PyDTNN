@@ -16,7 +16,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 # =================== #
 
 @cython.boundscheck(False)
@@ -55,8 +54,6 @@ def max_pool_2d_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                     y[nn, xx, yy, cc] = maxval
                     idx_max[nn, xx, yy, cc] = idx_maxval
                     
-# --- END max_pool_2d_fwd_nhwc_cython --- #
-# --- END Forward --- #
 
 
 # =================== #
@@ -89,5 +86,3 @@ def max_pool_2d_bwd_nhwc_cython(npDT[:,:,:,::1] dy,
                     x_y = hstride * yy + hdilation * jj - hpadding
                     if 0 <= x_x < h and 0 <= x_y < w:
                         dx[nn, x_x, x_y, cc] += dy[nn, xx, yy, cc]
-# --- END max_pool_2d_bwd_nhwc_cython --- #
-# --- END Backward --- #
