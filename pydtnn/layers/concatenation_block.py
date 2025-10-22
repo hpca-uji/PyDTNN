@@ -2,9 +2,9 @@ from abc import ABC
 
 from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
-from pydtnn.utils.tensor import decode_tensor, PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import decode_tensor, TensorFormat
 from pydtnn.layers.layer import LayerError
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 import numpy as np
 
@@ -27,20 +27,20 @@ class ConcatenationBlock(AbstractBlockLayer, ABC):
         super().initialize_block_layer()
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 self.concat_dim = CONCAT_DIM_NCHW
                 if not all([tuple(o[CONCAT_DIM_NCHW:]) == tuple(self.out_shapes[0][CONCAT_DIM_NCHW:]) for o in self.out_shapes]):
                     raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
                 self.out_co = [s[0] for s in self.out_shapes]
                 self.idx_co = np.cumsum(self.out_co, axis=0)
                 self.shape = (sum(self.out_co), *self.out_shapes[0][CONCAT_DIM_NCHW:])
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 self.concat_dim = CONCAT_DIM_NHWC
                 if not all([tuple(o[:CONCAT_DIM_NHWC]) == tuple(self.out_shapes[0][:CONCAT_DIM_NHWC]) for o in self.out_shapes]):
                     raise LayerError(f"All output shape must have the same number of elements.\n{self.out_shapes}")
                 self.out_co = [s[-1] for s in self.out_shapes]
                 self.idx_co: np.ndarray = np.cumsum(self.out_co, axis=0)
-                self.shape: shape_t = (*self.out_shapes[0][:CONCAT_DIM_NHWC], sum(self.out_co))
+                self.shape: ArrayShape = (*self.out_shapes[0][:CONCAT_DIM_NHWC], sum(self.out_co))
             case _:
                 raise NotImplementedError(f"\"ConcatenationBlock\" is not implemented for \"{self.model.tensor_format}\" format.")
         self.ho, self.wo, self.co = decode_tensor(self.shape, self.model.tensor_format)

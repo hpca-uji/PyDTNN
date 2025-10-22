@@ -8,8 +8,8 @@ from pydtnn.cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
 from pydtnn.layers import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.types import ArrayShape
 
 class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
 
@@ -17,14 +17,14 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
         super().__init__(*args, **kwargs)
         self.idx_max: np.ndarray = None
 
-    def initialize(self, prev_shape: shape_t, x: np.ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         self.minval = np.iinfo(self.model.dtype).min if np.issubdtype(self.model.dtype, np.integer) else np.finfo(self.model.dtype).min
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 self._idx_max = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=np.int32)
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 self._idx_max = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=np.int32)
             case _:
                 raise TypeError(f"Function: \'AveragePool2DCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")

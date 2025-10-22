@@ -3,8 +3,7 @@ PyDTNN Utilities
 """
 
 try:
-    # noinspection PyUnresolvedReferences
-    from skcuda import cublas
+        from skcuda import cublas
 except Exception:
     pass
 

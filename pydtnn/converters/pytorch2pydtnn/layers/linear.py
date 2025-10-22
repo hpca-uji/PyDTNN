@@ -36,4 +36,3 @@ def Linear(args: Dict[str, Any]) -> layers.FC:
         layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE], )
 
     return layers.FC(**layer_args)
-# --- END Linear --- #

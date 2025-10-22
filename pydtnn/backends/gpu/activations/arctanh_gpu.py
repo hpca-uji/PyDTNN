@@ -4,13 +4,10 @@ from pydtnn.activations import Arctanh
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-# noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
-from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
 class ArctanhGPU(ActivationGPU, Arctanh):
 
@@ -19,16 +16,16 @@ class ArctanhGPU(ActivationGPU, Arctanh):
         self.atanh = None
         self.datanh = None
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
-            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
+            "T *in, T *out".replace("T", DTYPE2CTYPE[self.model.dtype]),
             "out[i] = %s(in[i]);" % {np.float32: "atanhf", np.float64: "atanh"}[self.model.dtype],
             "atanh")
 
         self.datanh = ElementwiseKernel(
-            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
+            "T *in, T *out".replace("T", DTYPE2CTYPE[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + %s(in[i], 2));" % {np.float32: "powf", np.float64: "pow"}[self.model.dtype],
             "datanh")
 

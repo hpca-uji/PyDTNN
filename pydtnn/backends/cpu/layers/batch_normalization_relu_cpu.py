@@ -2,7 +2,7 @@ from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import BatchNormalizationRelu
 from pydtnn.cython import bn_relu_inference_cython
 from pydtnn.model import Model
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
@@ -22,7 +22,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
             raise SystemExit("Sorry, fused layers cannot be used in training mode!")
 
         if self.spatial:
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+            if self.model.tensor_format is TensorFormat.NCHW:
                 x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci), copy=False, order="C")
 
@@ -36,7 +36,7 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
         if self.spatial:
             y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NCHW:
+            if self.model.tensor_format is TensorFormat.NCHW:
                 y = best_transpose_0312(y)
         return asarray(y, dtype=self.model.dtype, order='C', copy=None)
 

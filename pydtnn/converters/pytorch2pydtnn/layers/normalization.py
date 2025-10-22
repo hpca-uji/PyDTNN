@@ -34,4 +34,3 @@ def BatchNorm2d(args: Dict[str, Any]) -> layers.BatchNormalization:
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 
     return layers.BatchNormalization(**layer_args)
-# --- END BatchNorm2d --- #

@@ -14,7 +14,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)

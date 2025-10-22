@@ -44,7 +44,6 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, st
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
     return (AdaptiveAvgPool2d(dict_params), dict_params["input"])
-# --- END adaptive_avg_pool_2d --- #
 
 
 def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
@@ -73,7 +72,6 @@ def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
 
     # AdditionBlock expects every "branch" (layer list) as a different argument.
     return (layers.AdditionBlock(*list_layers), input_layer_name)
-# --- END add --- #
 
 
 def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
@@ -106,7 +104,6 @@ def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
 
     # ConcatenationBlock expects every "branch" (layer list) as a different argument.
     return (layers.ConcatenationBlock(*list_layers), input_layer_name)
-# --- END concat --- #
 
 
 def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
@@ -137,7 +134,6 @@ def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
     return (Flatten(dict_params), dict_params["input"])
-# --- END flatten --- #
 # ------------------ #
 
 # ------------------ #
@@ -159,7 +155,6 @@ def log(args: Dict[str, Any]) -> activations.Log:
         dict_params["inplace"] = inplace
 
     return (LogSigmoid(**dict_params), dict_params["input"])
-# --- END Log --- #
 
 
 def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
@@ -180,7 +175,6 @@ def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
         dict_params["inplace"] = inplace
 
     return (ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
-# --- END relu --- #
 
 
 def sigmoid(args: Dict[str, Any]) -> activations.Sigmoid:
@@ -194,7 +188,6 @@ def sigmoid(args: Dict[str, Any]) -> activations.Sigmoid:
     dict_params["input"] = params.pop(0)
 
     return (Sigmoid(**dict_params), dict_params["input"])
-# --- END Sigmoid --- #
 
 
 def softmax(args: Dict[str, Any]) -> activations.Softmax:
@@ -225,7 +218,6 @@ def softmax(args: Dict[str, Any]) -> activations.Softmax:
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
     return (Softmax(**dict_params), dict_params["input"])
-# --- END Softmax --- #
 
 
 def tanh(args: Dict[str, Any]) -> activations.Tanh:
@@ -237,6 +229,5 @@ def tanh(args: Dict[str, Any]) -> activations.Tanh:
     dict_params["input"] = params.pop(0)
 
     return (Tanh(**dict_params), dict_params["input"])
-# --- END Tanh --- #
 
 # ------------------ #

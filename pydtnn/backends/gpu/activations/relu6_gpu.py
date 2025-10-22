@@ -3,15 +3,12 @@ from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
-from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
 import numpy as np
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
-# noinspection PyUnresolvedReferences
 from pycuda.driver import Function
 
 class Relu6GPU(ActivationGPU, Relu6):
@@ -20,9 +17,8 @@ class Relu6GPU(ActivationGPU, Relu6):
         super().__init__(*args, **kwargs)
         self.mask: TensorGPU | None = None
         self.y: TensorGPU | None = None
-    # --- END __init__ --- #
-
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> None:
+    
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(self, prev_shape, x)
 
         self.threads = min(self.model.batch_size, 1024)
@@ -36,11 +32,10 @@ class Relu6GPU(ActivationGPU, Relu6):
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
         self.initialize_relu_2d_gpu(prev_shape)
-    # --- END initialize --- #
-
+    
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_fwd"
-        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = DTYPE2CTYPE[dtype]  # variable Type
 
         code = \
             """
@@ -75,11 +70,10 @@ __global__ void {func_name}({T}* x, {T}* max, {T}* mask,
         code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
-    # --- END cuda_adaptive_average_pooling_fwd --- #
-
+    
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_bwd"
-        _t = GPU_SUPPORTED_TYPES[dtype]  # variable Type
+        _t = DTYPE2CTYPE[dtype]  # variable Type
 
         code = \
             """
@@ -95,8 +89,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
-    # --- END cuda_adaptive_average_pooling_bwd --- #
-
+    
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
@@ -111,8 +104,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return self.y
-    # --- END forward --- #
-
+    
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
@@ -125,9 +117,8 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.dx
-    # --- END backward --- #
-
-    def initialize_relu_2d_gpu(self, prev_shape: shape_t) -> None:
+    
+    def initialize_relu_2d_gpu(self, prev_shape: ArrayShape) -> None:
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = prev_shape
 
@@ -149,4 +140,4 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         self.bwd_time = \
             col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
-    # --- END initialize_pool_2d_gpu --- #
+    

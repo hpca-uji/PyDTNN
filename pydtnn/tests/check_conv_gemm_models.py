@@ -24,7 +24,7 @@ from pydtnn.tests.common import verbose_test
 
 from pydtnn.layers import Layer
 from pydtnn.tests.common import Params, TestCase
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
 
 
@@ -64,7 +64,7 @@ class CheckConvGemmModels(TestCase):
         params.model_name = model_name
         params.enable_conv_gemm = False
         params.conv_gemm_cache = False
-        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
+        params.tensor_format = TensorFormat.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:
@@ -89,7 +89,7 @@ class CheckConvGemmModels(TestCase):
         params.conv_gemm_cache = True
         params.conv_gemm_trans = True
         params.conv_gemm_deconv = True
-        params.tensor_format = PYDTNN_TENSOR_FORMAT.NHWC.upper()
+        params.tensor_format = TensorFormat.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)
         if overwrite_params is not None:

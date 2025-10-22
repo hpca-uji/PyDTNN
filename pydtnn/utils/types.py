@@ -1,15 +1,24 @@
 import numpy as np
+import typing
 from enum import auto, StrEnum
 
-type shape_t = tuple[int, ...]
-GPU_SUPPORTED_TYPES = dict[np.number, str]({np.float32: "float", np.float64: "double"})
+if typing.TYPE_CHECKING:
+    import pycuda.gpuarray as gpuarray  # type: ignore
+
+
+type ArrayShape = tuple[int, ...]
+DTYPE2CTYPE: dict[np.number, str] = {
+    np.float32: "float",
+    np.float64: "double"
+}
+
 
 class NetworkAlgEnum(StrEnum):
     BTA = auto()
     VDG = auto()
-# -------------------
 
 
-# NOTE: It is necessary to have "shape_t" initialized before TensorGPU
+# NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
+type ArrayArray = "np.ndarray | gpuarray.GPUArray"

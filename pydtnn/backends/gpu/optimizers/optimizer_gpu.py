@@ -22,9 +22,9 @@ class OptimizerGPU(Optimizer, ABC):
         self.gpudirect = gpudirect
 
     def get_batch_size(self, w: TensorGPU) -> int32:
-        return int32(prod((self.num_real_batches, *(w.shape[1:]))))
+        return int32(prod((self.real_batch_size, *(w.shape[1:]))))
 
     def get_threads_and_blocks(self):
-        threads = min(self.num_real_batches, self.LIMIT_THREADS_AND_BLOCKS)
-        blocks = max(self.num_real_batches, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
+        threads = min(self.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS)
+        blocks = max(self.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
         return threads, blocks

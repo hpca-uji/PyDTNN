@@ -16,7 +16,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 # =================== #
 
 # =============== #
@@ -52,8 +51,6 @@ def depthwise_conv_nchw_cython(npDT[:,:,:,::1] x,
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     res[nn, cc, xx, yy] += k[cc, ii, jj] * x[nn, cc, x_x, x_y]
-# --- END depthwise_conv_nchw_cython --- #
-# --- END FORWARD --- #
 # =================== #
 
 # =================== #
@@ -97,6 +94,4 @@ def depthwise_conv_backward_nchw_cython(npDT[:,:,:,::1] dy,
                                 if 0 <= x_y < w:
                                     dw[cc, ii, jj] = x[nn, cc, x_x, x_y] * val_dy
                                     dx[nn, cc, x_x, x_y] += val_k * val_dy
-# --- END depthwise_conv_cython --- #
-# --- END FORWARD --- #
 # =================== #

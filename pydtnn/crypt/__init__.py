@@ -10,7 +10,7 @@ from collections import abc
 from dataclasses import dataclass
 
 import numpy as np
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 
 __all__ = (
@@ -22,7 +22,7 @@ __all__ = (
 class Ciphertext[C, P: np.number]:
     """Abstract ciphertext"""
     dtype: np.dtype[P]
-    shape: shape_t
+    shape: ArrayShape
     _chunks: tuple[C, ...] = dataclasses.field(repr=False)
 
     def _new(self, /, *args, **kwds):

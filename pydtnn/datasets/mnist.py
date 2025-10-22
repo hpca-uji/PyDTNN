@@ -4,7 +4,7 @@ import gzip
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -65,7 +65,7 @@ class MNIST(Dataset):
                 x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE) / 255.0
             x = x.astype(self.model.dtype)
 
-            if self.model.tensor_format is PYDTNN_TENSOR_FORMAT.NHWC:
+            if self.model.tensor_format is TensorFormat.NHWC:
                 x = self._nchw2nhwc(x)
 
             offset = self._labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number

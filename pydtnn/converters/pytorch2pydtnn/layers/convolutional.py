@@ -51,4 +51,3 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
     # else: Nothing special
 
     return layers.Conv2D(**layer_args)
-# --- END Conv2d --- #

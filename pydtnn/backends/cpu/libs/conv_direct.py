@@ -28,7 +28,7 @@ import weakref
 import numpy as np
 
 from pydtnn.cython import im2row_nhwc_cython
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import load_library
 
 try:
@@ -67,7 +67,7 @@ class ConvDirect:
     def _set_methods(self, method_name):
         return
 
-    def __init__(self, method_name, dtype=np.float32, tensor_format=PYDTNN_TENSOR_FORMAT.NHWC,
+    def __init__(self, method_name, dtype=np.float32, tensor_format=TensorFormat.NHWC,
                  debug=False, parent_layer=None):
         """
         Loads the libconvDirect.so library.
@@ -129,7 +129,7 @@ class ConvDirect:
                     relu=False, bn=False, running_mean=None, inv_std=None,
                     gamma=None, beta=None):
 
-        if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+        if self.tensor_format == TensorFormat.NCHW:
             n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
@@ -139,12 +139,12 @@ class ConvDirect:
         if biases is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+            if self.tensor_format == TensorFormat.NCHW:
                 biases = np.zeros((n, co, ho, wo), weights.dtype, order="C")
             else:
                 biases = np.zeros((n, ho, wo, co), weights.dtype, order="C")
         else:
-            if self.tensor_format == PYDTNN_TENSOR_FORMAT.NCHW:
+            if self.tensor_format == TensorFormat.NCHW:
                 bb, knb, ho, wo = biases.shape
             else:
                 bb, ho, wo, knb = biases.shape

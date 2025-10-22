@@ -15,7 +15,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 # =================== #
 
 @cython.boundscheck(False)
@@ -26,4 +25,3 @@ def eltw_sum_cython(npDT[::1] x_acc, npDT[::1] x):
     cdef int i
     for i in prange(x.shape[0], nogil=True):
         x_acc[i] += x[i]
-# --- END eltw_sum_cython --- #

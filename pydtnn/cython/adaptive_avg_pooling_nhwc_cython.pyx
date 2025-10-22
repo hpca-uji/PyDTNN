@@ -19,14 +19,11 @@ ctypedef fused npDT:
 @cython.cdivision(True)
 cdef inline int index_first_element(int index, int dim_in, int dim_out) nogil:
     return ((index * dim_in) / dim_out)
-# --- END index_first_element --- #
 
 @cython.cdivision(True)
 cdef inline int index_last_element(int index, int dim_in, int dim_out) nogil:
     return ((((index + 1) * dim_in) + dim_out - 1) / dim_out)
-# --- END index_last_element --- #
 
-# --- END COMMON --- #
 
 # =================== #
 # =================== #
@@ -71,9 +68,7 @@ def adaptive_avg_pooling_fwd_nhwc_cython(npDT[:,:,:,::1] x,
                             add = add + x[nn, i, j, cc]
 
                     pooled_x[nn, hi, wi, cc] = add / elements
-# --- END adaptive_avg_pooling_fwd_nchw_cython --- #
 
-# --- END FORWARD --- #
 
 # =================== #
 # =================== #
@@ -114,6 +109,4 @@ def adaptive_avg_pooling_bwd_nhwc_cython(npDT[:,:,:,::1] dy,
                     for i in range(h_start, h_end):
                         for j in range(w_start, w_end):
                             dx[nn, i, j, cc] += delta  
-# --- END adaptive_avg_pooling_bwd_nhwc_cython --- #
 
-# --- END BACKWARD --- #

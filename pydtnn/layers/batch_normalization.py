@@ -9,7 +9,7 @@ from typing import Callable
 from pydtnn.initializers import zeros
 
 from pydtnn.utils.types import Array
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 
 class BatchNormalization[T: Array](Layer, ABC):
@@ -23,8 +23,8 @@ class BatchNormalization[T: Array](Layer, ABC):
         self.beta_init_val = beta
         self.momentum = momentum
         self.epsilon = epsilon
-        self.moving_mean_initializer: Callable[[shape_t, np.dtype], np.ndarray] = moving_mean_initializer
-        self.moving_variance_initializer: Callable[[shape_t, np.dtype], np.ndarray] = moving_variance_initializer
+        self.moving_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = moving_mean_initializer
+        self.moving_variance_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = moving_variance_initializer
         self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
         self.sync_stats = sync_stats
         # The next attributes will be initialized later
@@ -40,7 +40,7 @@ class BatchNormalization[T: Array](Layer, ABC):
         self.dbeta: T = None
         self.inv_std: np.ndarray = None
 
-    def initialize(self, prev_shape: shape_t, x: T | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
         self.shape = shape_ = prev_shape
         self.spatial = len(self.shape) > 2

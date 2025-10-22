@@ -36,8 +36,7 @@ class PointwiseVariant(Conv2D[np.ndarray], ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
-    # --- END _forward_pointwise_nhwc --- #
-
+    
     def _forward_pointwise_nchw(self, x: np.ndarray) -> np.ndarray:
 
         if self.model.mode is Model.Mode.TRAIN:
@@ -64,8 +63,7 @@ class PointwiseVariant(Conv2D[np.ndarray], ABC):
                    dtype=self.model.dtype, order="C")
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
-    # --- END _forward_pointwise_nchw --- #
-
+    
     def _backward_pointwise_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
         _n, _h, _w, _c = dy.shape
@@ -100,8 +98,7 @@ class PointwiseVariant(Conv2D[np.ndarray], ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape, copy=False) , dtype=self.model.dtype, order='C', copy=None)
-    # --- END _backward_pointwise_nhwc --- #
-
+    
     def _backward_pointwise_nchw(self, dy: np.ndarray) -> np.ndarray:
 
         _n, _c, _h, _w = dy.shape
@@ -136,4 +133,4 @@ class PointwiseVariant(Conv2D[np.ndarray], ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx.reshape(x_shape, copy=False), dtype=self.model.dtype, order='C', copy=None)
-    # --- END _backward_pointwise_nchw --- #
+    

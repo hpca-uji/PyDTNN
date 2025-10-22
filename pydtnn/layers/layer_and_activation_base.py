@@ -11,32 +11,37 @@ if TYPE_CHECKING:
     from pydtnn.optimizers.optimizer import Optimizer
 
 from pydtnn.utils.types import Array
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
-drv_Stream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+
+DrvStream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+
 
 class LayerAndActivationBase[T: Array](ABC):
-
-    def __init__(self, shape: shape_t = ()) -> None:
+    def __init__(self, shape: ArrayShape = ()) -> None:
         self.nparams: int = 0
-        self.shape: shape_t = shape
+        self.shape: ArrayShape = shape
         self.x: T | None = None
         self.y: T | None = None
         self.weights: T | None = None
         self.biases: T | None = None
-        self.act: Activation | None = None
+        self.act: type[Activation] | None = None
         self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
         self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
-        self.paths: list[list[Self]] = []
+        self.paths: list[list[LayerAndActivationBase[T]]] = []
         self.reqs_allred = {}
+
         # The next attributes will be initialized later
         self.id: int = None
         self.model: Model = None
-        self.prev_shape: shape_t = None
+        self.prev_shape: ArrayShape = None
         self.is_block_layer: bool = False
-        self.stream_2: drv_Stream = None
-    # --- END __init__ --- #
+        self.stream_2: DrvStream = None
+
+    @property
+    def canonical_name(self) -> str:
+        return self.__class__.__name__
 
     @property
     def _id_prefix(self) -> str:
@@ -53,16 +58,15 @@ class LayerAndActivationBase[T: Array](ABC):
                 max_digits = len(str(model__last_id))
             prefix = "{:0{width}d}_".format(self.id, width=max_digits)
         return prefix
-    # --- END _id_prefix --- #
 
     def __repr__(self) -> str:
         return f"{self._id_prefix}{type(self).__name__}"
 
     def set_model(self, parent_model: Model) -> None:
         self.model = parent_model
-        self.id = next(self.model.layer_id)
+        self.id = next(self.model.layer_id_generator)
 
-    def initialize(self, prev_shape: shape_t, x: T | None = None) -> None:
+    def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         self.prev_shape = prev_shape
         self.x = x
 
@@ -95,8 +99,8 @@ class LayerAndActivationBase[T: Array](ABC):
         pass
 
     @property
-    def children(self) -> list[Self]:
-        children: list = []
+    def children(self) -> list[LayerAndActivationBase[T]]:
+        children: list[LayerAndActivationBase[T]] = []
         for path in self.paths:
             children += [layer for layer in path]
         return children

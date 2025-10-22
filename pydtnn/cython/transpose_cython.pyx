@@ -25,7 +25,6 @@ def transpose_0231_ikj_cython(np.ndarray[npDT, ndim=4] original,
         for d2 in range(orig3d.shape[2]):
             for d1 in range(orig3d.shape[1]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
-# --- END transpose_0231_ikj_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -44,7 +43,6 @@ def transpose_0231_ijk_cython(np.ndarray[npDT, ndim=4] original,
         for d1 in range(orig3d.shape[1]):
             for d2 in range(orig3d.shape[2]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
-# --- END transpose_0231_ijk_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -63,7 +61,6 @@ def transpose_0312_ikj_cython(np.ndarray[npDT, ndim=4] original,
         for d2 in range(orig3d.shape[2]):
             for d1 in range(orig3d.shape[1]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
-# --- END transpose_0312_ikj_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -82,7 +79,6 @@ def transpose_0312_ijk_cython(np.ndarray[npDT, ndim=4] original,
         for d1 in range(orig3d.shape[1]):
             for d2 in range(orig3d.shape[2]):
                 trans3d[d0, d2, d1] = orig3d[d0, d1, d2]
-# --- END transpose_0312_ijk_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -101,7 +97,6 @@ def transpose_1023_jik_cython(np.ndarray[npDT, ndim=4] original,
         for d0 in range(orig3d.shape[0]):
             for d2 in range(orig3d.shape[2]):
                 trans3d[d1, d0, d2] = orig3d[d0, d1, d2]
-# --- END transpose_1023_jik_cython --- #
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
@@ -120,4 +115,3 @@ def transpose_1023_ijk_cython(np.ndarray[npDT, ndim=4] original,
         for d1 in range(orig3d.shape[1]):
             for d2 in range(orig3d.shape[2]):
                 trans3d[d1, d0, d2] = orig3d[d0, d1, d2]
-# --- END transpose_1023_ijk_cython --- #

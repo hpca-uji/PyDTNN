@@ -40,8 +40,7 @@ class DepthwiseVariant(Conv2D[np.ndarray], ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
-    # --- END _forward_depthwise_nhwc --- #
-
+    
     def _forward_depthwise_nchw(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
         self.x = x
@@ -66,8 +65,7 @@ class DepthwiseVariant(Conv2D[np.ndarray], ABC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
-    # --- END _forward_depthwise_nchw --- #
-
+    
     def _backward_depthwise_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
         dx = np.zeros(shape=(dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
@@ -84,8 +82,7 @@ class DepthwiseVariant(Conv2D[np.ndarray], ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
-    # --- END _backward_depthwise_nhwc --- #
-
+    
     def _backward_depthwise_nchw(self, dy: np.ndarray) -> np.ndarray:
 
         dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
@@ -102,4 +99,4 @@ class DepthwiseVariant(Conv2D[np.ndarray], ABC):
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
-    # --- END _backward_depthwise_nchw --- #
+    

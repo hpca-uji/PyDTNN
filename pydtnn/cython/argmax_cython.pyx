@@ -39,4 +39,3 @@ def argmax_cython(np.ndarray[npDT, ndim=2] x,
         amax[i], maxv[i], rng[i] = idx_maxval, maxval, i
 
     return (amax, rng) if axis == 0 else (rng, amax)
-# --- END argmax_cython --- #

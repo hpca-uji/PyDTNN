@@ -21,7 +21,7 @@ import numpy as np
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.common import Params, TestCase
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
 from pydtnn.model import Model
 from pydtnn.initializers import glorot_uniform, zeros
@@ -29,7 +29,7 @@ from pydtnn.initializers import glorot_uniform, zeros
 
 def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
     params = Params()
-    params.tensor_format = PYDTNN_TENSOR_FORMAT.NCHW.upper()
+    params.tensor_format = TensorFormat.NCHW.upper()
     params.batch_size = d.b
     params.enable_conv_gemm = False
     params.enable_best_of = False

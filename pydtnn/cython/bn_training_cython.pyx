@@ -11,7 +11,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 
 # =================== #
 # =================== #
@@ -66,9 +65,7 @@ def bn_training_fwd_cython(np.ndarray[npDT, ndim=2] x,
         running_var[j] = <npDT> (momentum * running_var[j] + (1.0 - momentum) * var)
 
     return y, std, xn
-# --- END bn_training_fwd_cython --- #
 
-# --- END FORWARD --- #
 
 # --- BACKWARD --- #
 @cython.boundscheck(False)
@@ -90,4 +87,3 @@ def bn_training_bwd_cython(npDT[:, ::1] dx,
             dx[i, j] = <npDT> ((gamma[j] / (std[j] * n)) * (n * dy[i, j] - xn[i, j] * dgamma[j] - dbeta[j]))
 # --- bn_training_bwd_cython --- #
 
-# --- END BACKWARD --- #

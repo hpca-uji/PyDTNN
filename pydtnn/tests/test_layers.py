@@ -12,8 +12,7 @@ from time import time
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    # noinspection PyUnresolvedReferences
-    import pycuda.gpuarray as gpuarray
+        import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu import TensorGPU
 
 # setting random seed
@@ -157,7 +156,6 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
             print(f"Optimizer time mean: {t_opt / NUM_REPETITIONS:2f} s")
 
             print(f"------------")
-# --- END test_layers_activations --- #
 
 
 def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
@@ -209,7 +207,6 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         print(f"Optimizer time: {t_opt / NUM_REPETITIONS:2f} s")
 
         print(f"------------")
-# --- END test_add_concat --- #
 
 
 def main():

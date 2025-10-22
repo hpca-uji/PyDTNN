@@ -30,7 +30,6 @@ def relu_cython(npDT[::1] x, npDT[::1] max, np.int8_t[::1] mask) -> None:
             max[i], mask[i] = x[i], 1
         else: 
             max[i], mask[i] = 0, 0
-# --- END relu_cython --- #
 
 ###############################################
 #             capped_relu_cython              #
@@ -49,7 +48,6 @@ def capped_relu_cython(npDT[::1] x, npDT[::1] max, np.int8_t[::1] mask, float ca
             max[i], mask[i] = x[i], 1
         else: #  x[i] <= 0
             max[i], mask[i] = <npDT> 0, 0
-# --- END capped_relu_cython --- #
 
 ###############################################
 #              leaky_relu_cython              #
@@ -67,4 +65,3 @@ def leaky_relu_cython(npDT[::1] x, npDT[::1] max, npDT[::1] mask, float negative
             max[i], mask[i] = <npDT> (x[i] * negative_slope), <npDT> negative_slope
         else: #x[i] == 0:
             max[i], mask[i] = 0, 0
-# --- END leaky_relu_cython --- #

@@ -2,11 +2,11 @@ from pydtnn.activations.relu import Relu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 from pydtnn.cython import relu_cython
 import numpy as np
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 class ReluCPU(ActivationCPU, Relu):
 
-    def __init__(self, shape: shape_t = (1,)):
+    def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
         self.mask: np.ndarray = None
 

@@ -18,7 +18,6 @@ def load_layers(model: PyDTNN_Model, layers: List[LayerAndActivationBase], activ
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
         model.add(activation_layer)
     model._initialize()
-# --- END load_layers --- #
 
 
 def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[Union[str | torch.nn.Module], str]]:
@@ -114,7 +113,6 @@ def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[Union[st
     # end "for line"
 
     return relations_dic
-# --- END extract_layers_relations --- #
 
 
 def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: Dict[str, Tuple[Union[str | torch.nn.Module], str]]) -> List[LayerAndActivationBase]:
@@ -213,7 +211,6 @@ def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: D
 
     list_layers = [layer for layer, _input in converted_layers.values()]
     return list_layers
-# --- END convert_layers --- #
 
 
 def check_kwargs_and_set_default(kwargs: dict) -> None:
@@ -236,7 +233,6 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
     for k in DICT_KWARGS_DEFAULT_VALUES.keys():
         if k not in kwargs:
             kwargs[k] = DICT_KWARGS_DEFAULT_VALUES[k]
-# --- END check_kwargs --- #
 
 
 def convert_model(model: torch.nn.Module, input_shape: Tuple[int],
@@ -257,4 +253,3 @@ def convert_model(model: torch.nn.Module, input_shape: Tuple[int],
     load_layers(model=converted_model, layers=layers, activation_layer=default_output_activation_layer)
 
     return converted_model
-# --- END convert_model --- #

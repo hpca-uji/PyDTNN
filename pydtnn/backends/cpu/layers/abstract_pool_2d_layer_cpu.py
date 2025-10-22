@@ -3,20 +3,20 @@ from abc import ABC, abstractmethod
 from pydtnn.backends.cpu.layers import LayerCPU
 from pydtnn.layers import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import PYDTNN_TENSOR_FORMAT
+from pydtnn.utils.tensor import TensorFormat
 from numpy import ndarray, empty
-from pydtnn.utils.types import shape_t
+from pydtnn.utils.types import ArrayShape
 
 
 class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape: shape_t, x: ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None):
         super().initialize(prev_shape, x)
 
         match self.model.tensor_format:
-            case PYDTNN_TENSOR_FORMAT.NCHW:
+            case TensorFormat.NCHW:
                 self.forward = self._forward_nchw_cython
                 self.backward = self._backward_nchw_cython
 
@@ -26,7 +26,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
                 # I2C-based implementations have been temporarily discarded
                 # setattr(self, "forward", self._forward_nchw_i2c)
                 # setattr(self, "backward", self._backward_nchw_i2c)
-            case PYDTNN_TENSOR_FORMAT.NHWC:
+            case TensorFormat.NHWC:
                 self.forward = self._forward_nhwc_cython
                 self.backward = self._backward_nhwc_cython
 

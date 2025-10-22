@@ -17,7 +17,6 @@ ctypedef fused npDT:
     np.float64_t
     # NOTE: in order to extend the supported data types, add the new types here.
 # -- END npDT -- #
-# --- END COMMON --- #
 # =================== #
 
 # --- im2row --- #
@@ -67,9 +66,7 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
                                     if 0 <= x_y < w:
                                         col = cc * kh * kw + ii * kw + jj
                                         rows[row, col] = x[nn, x_x, x_y, cc]
-# --- END im2row_nhwc_cython --- #
                                 
-# --- END im2row --- #
 
 
 # ========================================== #
@@ -119,7 +116,5 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
                                     if 0 <= x_y < w:
                                         col = cc * kh * kw + ii * kw + jj
                                         x[nn, x_x, x_y, cc] += rows[row, col]
-# --- END row2im_nhwc_cython --- #
 
-# --- END row2im --- #
 # ========================================== #

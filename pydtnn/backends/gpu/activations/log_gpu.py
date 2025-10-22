@@ -3,13 +3,10 @@ import numpy as np
 from pydtnn.activations import Log
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.types import shape_t, GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-# noinspection PyUnresolvedReferences
 from pycuda.elementwise import ElementwiseKernel
 
 
@@ -20,18 +17,18 @@ class LogGPU(ActivationGPU, Log):
         self.log = None
         self.dlog = None
 
-    def initialize(self, prev_shape: shape_t, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
         super().initialize(prev_shape, x)
 
         self.log = ElementwiseKernel(
-            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
+            "T *in, T *out".replace("T", DTYPE2CTYPE[self.model.dtype]),
             "out[i] = %s(1.0 / (1.0 + %s(-in[i])));" %
             ({np.float32: "logf", np.float64: "log"}[self.model.dtype],
              {np.float32: "expf", np.float64: "exp"}[self.model.dtype]),
             "log_GPU")
 
         self.dlog = ElementwiseKernel(
-            "T *in, T *out".replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]),
+            "T *in, T *out".replace("T", DTYPE2CTYPE[self.model.dtype]),
             "out[i] = 1.0 / (1.0 + %s(in[i]));" % {np.float32: "expf", np.float64: "exp"}[self.model.dtype],
             "dlog_GPU")
 

@@ -20,7 +20,6 @@ class PYDTNN_MDL_EVENT_enum(IntEnum):
     WAIT_DW = auto()  # Originally: 4
     UPDATE_DW = auto()  # Originally: 5
 
-# --- END PYDTNN_MDL_EVENT_enum --- #
 
 
 PYDTNN_MDL_EVENT = 60000001
@@ -73,7 +72,6 @@ class PYDTNN_OPS_EVENT_enum(IntEnum):
     FORWARD_TRANSPOSE_Y = auto()  # Orginally: 37 || Now: 38
     FORWARD_ADP_AVG_POOL = auto()  # Now: 39
 
-# --- END PYDTNN_OPS_EVENT_enum --- #
 
 
 PYDTNN_OPS_EVENT = 60000002

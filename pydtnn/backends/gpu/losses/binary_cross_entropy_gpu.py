@@ -1,15 +1,12 @@
 import numpy as np
-# noinspection PyUnresolvedReferences
 import pycuda.gpuarray as gpuarray
-# noinspection PyUnresolvedReferences
 from pycuda.compiler import SourceModule
-# noinspection PyUnresolvedReferences
 from pycuda.driver import Function
 
 from pydtnn.losses import BinaryCrossEntropy
 from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
 from pydtnn.backends.gpu import TensorGPU
-from pydtnn.utils.types import GPU_SUPPORTED_TYPES
+from pydtnn.utils.types import DTYPE2CTYPE
 
 class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy):
 
@@ -35,7 +32,7 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy):
             }
             return;
         }
-        """.replace("T", GPU_SUPPORTED_TYPES[self.model.dtype]))
+        """.replace("T", DTYPE2CTYPE[self.model.dtype]))
         return module.get_function("binary_cross_entropy")
 
     def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:

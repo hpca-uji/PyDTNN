@@ -29,4 +29,3 @@ def Dropout(args: Dict[str, Any]) -> layers.Dropout:
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 
     return layers.Dropout(**layer_args)
-# --- END Dropout --- #
