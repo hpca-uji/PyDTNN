@@ -21,7 +21,7 @@ CSV_DELIMETER = ','
 CSV_LABELS_DELIMETER = '|'
 CSV_IMAGES_FIELD = "Image Index"
 CSV_LABELS_FIELD = "Finding Labels"
-type Class = np.ndarray[int]
+type Class = np.ndarray
 
 # TODO: move to parser
 SPLIT_PERCENTAGE_TEST = 0.2
@@ -38,7 +38,6 @@ def get_dict_file_labels(path: Path) -> dict[str, list[str]]:
             dict_file_labels[image] = labels
     return dict_file_labels
 # ---
-
 # ----------- #
 
 class ChestXRay14(Dataset):
@@ -54,8 +53,6 @@ class ChestXRay14(Dataset):
 
         if not self.model.resize:
             raise ValueError("Model resize must be enabled for dataset!")
-        
-        # TODO: add variables to parser for dataset_path
 
         csv = Path(self.model.dataset_metadata_path)
         self.files = Path(self.model.dataset_path)
@@ -75,13 +72,15 @@ class ChestXRay14(Dataset):
 
         super().__init__(model, train_samples, test_samples, input_shape=SYNTHETIC_INPUT_SHAPE, output_shape=output_shape, 
                          max_prefetch=model.batch_size, force_test_as_validation=force_test_as_validation, debug=debug)
-        # ------
+    # ----
 
-    def _get_labels(self, labels: list[str]) -> np.ndarray:
-        mask = np.zeros(len(labels), dtype=np.uint8)
+    def _get_labels(self, image_file: str) -> np.ndarray:
+        labels = self._dict_images_labels[image_file]
+        mask = np.zeros(self.output_shape, dtype=np.uint8)
         for label in labels:
             mask[self.labels2classes[label]] = 1
         return mask
+    # ----
 
     def _load_image(self, fp: typing.IO[bytes]) -> np.ndarray:
         """Transform a file-like (image) to array (ndarray CHW uint8)"""
@@ -91,6 +90,7 @@ class ChestXRay14(Dataset):
             # NOTE: PIL mode RGB is WHC in unit8
             array = array.transpose(2, 1, 0)
         return array
+    # ----
 
     def _init_actual_data(self):
         files = list_directory(self.files)
@@ -99,9 +99,9 @@ class ChestXRay14(Dataset):
         test_files = islice(files, self._nsamples[Dataset.Part.TRAIN], self._nsamples[Dataset.Part.TEST])
         val_files = islice(files, self._nsamples[Dataset.Part.TEST], self._nsamples[Dataset.Part.VAL])
 
-        self._xy_filenames[Dataset.Part.TRAIN] = [(im, self._dict_images_labels[im[-1]]) for im in train_files]
-        self._xy_filenames[Dataset.Part.TEST] = [(im, self._dict_images_labels[im[-1]]) for im in test_files]
-        self._xy_filenames[Dataset.Part.VAL] = [(im, self._dict_images_labels[im[-1]]) for im in val_files]
+        self._xy_filenames[Dataset.Part.TRAIN] = [(data, self._get_labels(Path(data[-1]).name)) for data in train_files]
+        self._xy_filenames[Dataset.Part.TEST] = [(data, self._get_labels(Path(data[-1]).name)) for data in test_files]
+        self._xy_filenames[Dataset.Part.VAL] = [(data, self._get_labels(Path(data[-1]).name)) for data in val_files]
     # ----
 
     def _actual_data_generator(self, part):
@@ -139,3 +139,4 @@ class ChestXRay14(Dataset):
             x /= 255.0
 
             yield x, y
+    # ----
