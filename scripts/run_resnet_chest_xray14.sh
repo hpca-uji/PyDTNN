@@ -14,8 +14,8 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=resnet \
   --dataset=chestxray14 \
-  --dataset_metadata_path=/home/usuario/Documentos/CIBER_CAFE/Datasets/Chest_XRay14/Data_Entry_2017_v2020.csv \
-  --dataset_path=/home/usuario/Documentos/CIBER_CAFE/Datasets/Chest_XRay14/dataset/ \
+  --dataset_metadata_path=datasets/chest_xray14 \
+  --dataset_path=datasets/chest_xray14 \
   --test_as_validation=False \
   --batch_size=10 \
   --validation_split=0.2 \

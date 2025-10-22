@@ -23,9 +23,6 @@ CSV_IMAGES_FIELD = "Image Index"
 CSV_LABELS_FIELD = "Finding Labels"
 type Class = np.ndarray
 
-# TODO: move to parser
-SPLIT_PERCENTAGE_TEST = 0.2
-
 # ----------- #
 # -- UTILS -- #
 def get_dict_file_labels(path: Path) -> dict[str, list[str]]:
@@ -72,13 +69,14 @@ class ChestXRay14(Dataset):
 
         csv = Path(self.model.dataset_metadata_path)
         self.files = Path(self.model.dataset_path)
+        split_percentage_test = self.model.test_split
 
         self._dict_images_labels = get_dict_file_labels(csv)
         self._xy_filenames = [[((), np.empty((0,)))] for _ in Dataset.Part]
 
         # Splitting the dataset.
         _total_samples = len(self._dict_images_labels)
-        test_samples = ceil(_total_samples * SPLIT_PERCENTAGE_TEST)
+        test_samples = ceil(_total_samples * split_percentage_test)
         train_samples = _total_samples - test_samples
 
         # Getting the labels and equivalence class - label

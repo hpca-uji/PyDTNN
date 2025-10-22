@@ -178,6 +178,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
         _ds_group.add_argument('--validation_split', type=factor, default=0.2,
                                help="Split between training and validation data.")
+        _ds_group.add_argument('--test_split', type=factor, default=0.2,
+                               help="Split between the whole dataset and the test (only used in \"chestxray14\", ignored otherwise).")
         _ds_group.add_argument('--flip_images', default=False, type=bool_lambda,
                                help="Flip horizontally training images. Default: False.")
         _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5,
