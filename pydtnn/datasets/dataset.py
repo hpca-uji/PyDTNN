@@ -465,8 +465,8 @@ class Dataset[T: Array](ABC):
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
-        t = random.randint(0, h - crop_size, (limit,))
-        ll = random.randint(0, w - crop_size, (limit,))
+        t = random.integers(0, h - crop_size, (limit,))
+        ll = random.integers(0, w - crop_size, (limit,))
         for i, ri in enumerate(s):
             b, r = t[i] + crop_size, ll[i] + crop_size
             # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
@@ -479,8 +479,8 @@ class Dataset[T: Array](ABC):
                     data[ri, b:, r:, :] = 0.0
                 case _:
                     raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
-            data[ri, ...] = np.roll(data[ri, ...], random.randint(-t[i], (h - b)), axis=1)
-            data[ri, ...] = np.roll(data[ri, ...], random.randint(-ll[i], (w - r)), axis=2)
+            data[ri, ...] = np.roll(data[ri, ...], random.integers(-t[i], (h - b)), axis=1)
+            data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data
 
     def _do_resize(self, data: np.ndarray) -> np.ndarray:
