@@ -57,8 +57,8 @@ class ChestXRay14(Dataset):
         
         # TODO: add variables to parser for dataset_path
 
-        csv = Path(self.model.dataset_path)
-        self.files = Path(self.model.dataset_train_path)
+        csv = Path(self.model.dataset_metadata_path)
+        self.files = Path(self.model.dataset_path)
 
         self._dict_images_labels = get_dict_file_labels(csv)
         self._xy_filenames = list(Dataset.Part)

@@ -25,7 +25,7 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
   pydtnn_benchmark \
   --model=alexnet \
   --dataset=imagenet \
-  --dataset_path=datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz \
+  --dataset_metadata_path=datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz \
   --dataset_train_path=datasets/imagenet/ILSVRC2012_img_train.tar \
   --dataset_test_path=datasets/imagenet/ILSVRC2012_img_val.tar \
   --normalize=True \

@@ -111,7 +111,7 @@ class ImageNet(Dataset):
         if not self.model.resize:
             raise ValueError("Model resize must be enabled for dataset!")
 
-        meta = Path(self.model.dataset_path)
+        meta = Path(self.model.dataset_metadata_path)
         train = Path(self.model.dataset_train_path)
         test = Path(self.model.dataset_test_path)
 

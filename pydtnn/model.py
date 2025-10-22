@@ -280,6 +280,7 @@ class Model[T: Array]:
         self.test_as_validation: bool = self.kwargs['test_as_validation']
         self.validation_split: float = self.kwargs['validation_split']
         self.use_synthetic_data: bool = self.kwargs['use_synthetic_data']
+        self.dataset_metadata_path: str = self.kwargs['dataset_metadata_path']
         self.dataset_train_path: str = self.kwargs['dataset_train_path']
         self.dataset_test_path: str = self.kwargs['dataset_test_path']
         self.enable_best_of: bool = self.kwargs['enable_best_of']
