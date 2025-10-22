@@ -1,13 +1,11 @@
-import typing
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
 import csv
 
 from itertools import islice
-from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
+from pydtnn.datasets.fromTar import DatasetFromTar
 from pydtnn.utils import random
 from pydtnn.utils.archive import load_archive, list_directory
 from math import ceil
@@ -37,7 +35,7 @@ def get_dict_file_labels(path: Path) -> dict[str, list[str]]:
 # ---
 # ----------- #
 
-class ChestXRay14(Dataset):
+class ChestXRay14(DatasetFromTar):
 
     """
     Dataset checksum:
@@ -96,16 +94,6 @@ class ChestXRay14(Dataset):
         return mask
     # ----
 
-    def _load_image(self, fp: typing.IO[bytes]) -> np.ndarray:
-        """Transform a file-like (image) to array (ndarray CHW uint8)"""
-        with Image.open(fp=fp) as image:
-            image = image.convert("RGB")
-            array = np.asarray(image)
-            # NOTE: PIL mode RGB is WHC in unit8
-            array = array.transpose(2, 1, 0)
-        return array
-    # ----
-
     def _init_actual_data(self):
         files = list_directory(self.files)
 
@@ -116,41 +104,4 @@ class ChestXRay14(Dataset):
         self._xy_filenames[Dataset.Part.TRAIN] = [(data, self._get_labels(Path(data[-1]).name)) for data in train_files]
         self._xy_filenames[Dataset.Part.TEST] = [(data, self._get_labels(Path(data[-1]).name)) for data in test_files]
         self._xy_filenames[Dataset.Part.VAL] = [(data, self._get_labels(Path(data[-1]).name)) for data in val_files]
-    # ----
-
-    def _actual_data_generator(self, part):
-        offset = self._local_offset[part]
-        nsamples = self._local_nsamples[part]
-        xy_filenames = self._xy_filenames[part]
-
-        if part is Dataset.Part.TRAIN:
-            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
-
-        xy_filenames = xy_filenames[offset:offset + nsamples]
-
-        for path, y in xy_filenames:
-            with load_archive(*path) as fp:
-                x = self._load_image(fp)
-
-            # Add N dimension
-            x = x[None, ...]
-            y = y[None, ...]
-
-            # Set tensor format
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    x = self._nchw2nhwc(x)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
-
-            # Set dtype and order
-            x = x.astype(dtype=self.model.dtype, order="C")
-            y = y.astype(dtype=self.model.dtype, order="C")
-
-            # Inplace normalization
-            x /= 255.0
-
-            yield x, y
     # ----

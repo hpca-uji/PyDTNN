@@ -9,7 +9,7 @@ from PIL import Image
 
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import string_substitute, random
-from typing import TYPE_CHECKING, Generator
+from typing import TYPE_CHECKING, Generator, IO
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
@@ -601,3 +601,13 @@ class Dataset[T: Array](ABC):
             new_data[n] = new_sample
         return new_data
     # ---
+
+    def _load_image(self, fp: IO[bytes] | str) -> np.ndarray:
+        """Transform a file-like (image) to array (ndarray CHW uint8)"""
+        with Image.open(fp=fp) as image:
+            image = image.convert("RGB")
+            array = np.asarray(image)
+            # NOTE: PIL mode RGB is WHC in unit8
+            array = array.transpose(2, 1, 0)
+        return array
+    # ----

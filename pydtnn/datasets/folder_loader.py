@@ -86,17 +86,6 @@ class DatasetFolderLoader(Dataset):
 
         return (labels_and_images, num_classes, num_images)
     # ---
-
-    def _get_image_as_np_ndarray(self, path_image: str) -> np.ndarray:
-        """Load a image and returns a ndarray in CHW uint8"""
-        image = Image.open(path_image)
-        image = image.convert("RGB")
-        np_array = np.asanyarray(image)
-
-        # NOTE: PIL mode RGB is WHC in unit8
-        np_array = np_array.transpose(2, 1, 0)
-
-        return np_array
     
     def _prepare_label(self, label: int, num_classes: ArrayShape) -> np.ndarray:
         """Transform class numer into class mask (ndarray 1D unit8)"""
@@ -122,7 +111,7 @@ class DatasetFolderLoader(Dataset):
         labels_and_images = labels_and_images[offset:offset + nsamples]
 
         for label, path_image in labels_and_images:
-            x = self._get_image_as_np_ndarray(path_image)
+            x = self._load_image(path_image)
             y = self._prepare_label(label, self.output_shape)
 
             # Add N dimension

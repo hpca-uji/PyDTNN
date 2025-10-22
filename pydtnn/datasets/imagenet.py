@@ -8,10 +8,8 @@ import numpy as np
 from PIL import Image
 from scipy.io import loadmat
 
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils import random
-from pydtnn.utils.archive import load_archive, list_archive
+from pydtnn.datasets.fromTar import DatasetFromTar
+from pydtnn.utils.archive import list_archive
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -24,7 +22,7 @@ INPUT_SHAPE = (3, 300, 300)
 OUTPUT_SHAPE = (1000,)
 
 
-class ImageNet(Dataset):
+class ImageNet(DatasetFromTar):
     """
     ImageNet Dataset
 
@@ -73,17 +71,6 @@ class ImageNet(Dataset):
         label = label.split(".")[2]
         label = int(label)
         return label
-
-    def _load_image(self, fp: typing.IO[bytes]) -> np.ndarray:
-        """Transform a file-like (image) to array (ndarray CHW uint8)"""
-        with Image.open(fp=fp) as image:
-            image = image.convert("RGB")
-            array = np.asarray(image)
-
-            # NOTE: PIL mode RGB is WHC in unit8
-            array = array.transpose(2, 1, 0)
-
-        return array
 
     def _get_train_labels(self, path: Path) -> dict[int, int]:
         """Get label mappings from archive"""
@@ -143,38 +130,4 @@ class ImageNet(Dataset):
             val_xy
         ]
 
-    def _actual_data_generator(self, part):
-        offset = self._local_offset[part]
-        nsamples = self._local_nsamples[part]
-        xy_filenames = self._xy_filenames[part]
 
-        if part is Dataset.Part.TRAIN:
-            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
-
-        xy_filenames = xy_filenames[offset:offset + nsamples]
-
-        for path, y in xy_filenames:
-            with load_archive(*path) as fp:
-                x = self._load_image(fp)
-
-            # Add N dimension
-            x = x[None, ...]
-            y = y[None, ...]
-
-            # Set tensor format
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    x = self._nchw2nhwc(x)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
-
-            # Set dtype and order
-            x = x.astype(dtype=self.model.dtype, order="C")
-            y = y.astype(dtype=self.model.dtype, order="C")
-
-            # Inplace normalization
-            x /= 255.0
-
-            yield x, y
