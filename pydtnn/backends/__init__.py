@@ -17,17 +17,14 @@ class PromoteToBackend:
     model: "model_module.Model"
     backend: typing.Self
 
-    def set_model(self, model: "model_module.Model") -> None:
-        self.model = model
-
     def __new__(cls, *args, **kwds):
         # Save top-level constructor arguments
         self = super().__new__(cls)
-        self._init_args = args
-        self._init_kwds = kwds
+        self._new_ = (args, kwds)  # type: ignore
         return self
 
     def __getattribute__(self, name: str):
+        # Get backend
         try:
             backend = super().__getattribute__("backend")
         except AttributeError:
@@ -41,19 +38,26 @@ class PromoteToBackend:
             return getattr(backend, name)
 
     def set_backend(self, backend: BackendType) -> None:
-        cls = self.__class__
+        # Clear backend
+        try:
+            del self.backend
+        except AttributeError:
+            pass
 
-        # cls.__module__ should be something like 'pydtnn.activations.arctanh'
+        # Get backend class
+        cls = self.__class__
         module_name = cls.__module__.split(".", 1)[1]
         backend_module_name = f"pydtnn.backends.{backend}.{module_name}_{backend}"
         backend_module = importlib.import_module(backend_module_name)
         cls_name = f"{cls.__name__}{backend.upper()}"
         cls = getattr(backend_module, cls_name)
 
-        # Transfer attributes as defaults to backend
-        instance = cls(*self._init_args, **self._init_kwds)
-        instance.__dict__ = {**self.__dict__, **instance.__dict__}
-        self.backend = instance
+        # Create backend instance
+        args, kwds = self._new_
+        self.backend = cls(*args, **kwds)
+
+    def set_model(self, model: "model_module.Model") -> None:
+        self.model = model
 
     @property
     def canonical_name(self) -> str:
