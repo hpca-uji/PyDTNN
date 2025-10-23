@@ -1,10 +1,8 @@
-from abc import ABC
-
 from pydtnn.optimizers.optimizer import Optimizer
 import numpy as np
 
 
-class Adam(Optimizer, ABC):
+class Adam(Optimizer):
     """
     Adam optimizer
     """

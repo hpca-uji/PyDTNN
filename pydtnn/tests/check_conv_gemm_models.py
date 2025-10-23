@@ -112,10 +112,10 @@ class CheckConvGemmModels(TestCase):
     @staticmethod
     def get_first_dx(model: Model, loss_func: losses.Loss, x: np.ndarray) -> np.ndarray:
         # random y target
-        y_targ = random.rand(*x.shape).astype(np.float32, order='C')
+        y_targ = random.random(x.shape).astype(np.float32, order='C')
         # obtain first dx1
         global_batch_size = model.batch_size
-        loss, dx = loss_func(x, y_targ, global_batch_size)
+        loss, dx = loss_func.compute(x, y_targ, global_batch_size)
         return dx
 
     @staticmethod
@@ -127,7 +127,7 @@ class CheckConvGemmModels(TestCase):
         """
         Model 1 forward pass
         """
-        x1 = [random.rand(model1.batch_size, *model1.layers[0].shape).astype(np.float32, order='C'), ]
+        x1 = [random.random((model1.batch_size, *model1.layers[0].shape)).astype(np.float32, order='C'), ]
         # Store results from layer 1 to last layer on Model 1
         for i, layer in enumerate(model1.layers[1:], 1):
             if verbose_test():

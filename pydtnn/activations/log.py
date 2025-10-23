@@ -1,8 +1,6 @@
-from abc import ABC
-
 from pydtnn.activations.activation import Activation
 
 
-class Log(Activation, ABC):
+class Log(Activation):
     # NOTE: It is a LogSigmoid activation
     pass

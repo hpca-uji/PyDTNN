@@ -6,7 +6,7 @@ from pydtnn.losses import CategoricalCrossEntropy
 
 class CategoricalCrossEntropyCPU(LossCPU, CategoricalCrossEntropy):
 
-    def __call__(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         y_pred: np.ndarray = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
         b_range: np.ndarray = np.arange(y_pred.shape[0])
         loss: float = -np.sum(np.log(y_pred[b_range, np.argmax(y_targ, axis=1)])) / y_pred.shape[0]

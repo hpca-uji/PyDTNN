@@ -1,8 +1,6 @@
-from abc import ABC
-
 from pydtnn.layers.layer import Layer, LayerError
 
-class AbstractBlockLayer(Layer, ABC):
+class AbstractBlockLayer(Layer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)

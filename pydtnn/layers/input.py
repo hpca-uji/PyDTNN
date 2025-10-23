@@ -1,12 +1,9 @@
-import warnings
-from abc import ABC
-
 from pydtnn.layers.layer import Layer
 
 from pydtnn.utils.types import Array
 
 
-class Input[T: Array](Layer, ABC):
+class Input[T: Array](Layer):
 
     def __init__(self, shape: tuple = (1,)):
         super().__init__(shape)

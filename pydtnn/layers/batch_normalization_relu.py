@@ -1,9 +1,7 @@
-from abc import ABC
-
 from pydtnn.layers.batch_normalization import BatchNormalization
 
 
-class BatchNormalizationRelu(BatchNormalization, ABC):
+class BatchNormalizationRelu(BatchNormalization):
 
     def __init__(self, *args, **kwargs):
         from_parent = kwargs.pop("from_parent", None)

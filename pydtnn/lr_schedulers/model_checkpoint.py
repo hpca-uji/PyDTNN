@@ -17,8 +17,8 @@ class ModelCheckpoint(LRSchedulerWithLossOrMetric):
     ModelCheckpoint LRScheduler
     """
 
-    def __init__(self, model: Model, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
-        super().__init__(model, loss_or_metric, verbose)
+    def __init__(self, loss_or_metric: str = "", epoch_save_frequency=1, verbose=True):
+        super().__init__(loss_or_metric, verbose)
         self.epoch_save_frequency = epoch_save_frequency
         self.epoch_count = self.best_epoch = 0
         self.best_loss = np.inf * {True: -1, False: 1}["accuracy" in self.loss_or_metric]

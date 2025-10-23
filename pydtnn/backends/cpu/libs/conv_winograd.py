@@ -562,8 +562,8 @@ def __usage_example__():
     biases_wg = (np.ones(kn) * 10).astype(np.float32, order='C')
 
     # NCHW --------------------------
-    weights = random.rand(kn, c, kh, kw).astype(np.float32, order='C')
-    x = random.rand(b, c, h, w).astype(np.float32, order='C')
+    weights = random.random((kn, c, kh, kw)).astype(np.float32, order='C')
+    x = random.random((b, c, h, w)).astype(np.float32, order='C')
     biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
     print("Using conv_winograd NCHW to compute weights * x + biases...")
     r = False
@@ -590,8 +590,8 @@ def __usage_example__():
     print("mm time: {:.4f}".format(mm_t))
 
     # NHWC --------------------------
-    weights = random.rand(c, kh, kw, kn).astype(np.float32, order='C')
-    x = random.rand(b, h, w, c).astype(np.float32, order='C')
+    weights = random.random((c, kh, kw, kn)).astype(np.float32, order='C')
+    x = random.random((b, h, w, c)).astype(np.float32, order='C')
     biases = (np.ones((b * ho * wo, kn)) * 10).astype(np.float32, order='C')
     print("Using conv_winograd NHWC to compute weights * x + biases...")
     r = False
@@ -659,8 +659,8 @@ def __usage_example__():
 
                                     biases_wg = (np.ones(kk) * 10).astype(np.float32, order='C')
                                     if tensor_fmt == TensorFormat.NCHW:
-                                        weights = random.rand(kk, cc, kh, kw).astype(np.float32, order='C')
-                                        x = random.rand(nn, cc, hh, ww).astype(np.float32, order='C')
+                                        weights = random.random((kk, cc, kh, kw)).astype(np.float32, order='C')
+                                        x = random.random((nn, cc, hh, ww)).astype(np.float32, order='C')
                                         biases = (np.ones((kk, nn * ho * wo)) * 10).astype(np.float32, order='C')
                                         w_c = weights.reshape(kk, -1)
                                         res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
@@ -690,8 +690,8 @@ def __usage_example__():
                                                                                      hdilation=hdilation),
                                             number=10) / 10
                                     else:
-                                        weights = random.rand(cc, kh, kw, kk).astype(np.float32, order='C')
-                                        x = random.rand(nn, hh, ww, cc).astype(np.float32, order='C')
+                                        weights = random.random((cc, kh, kw, kk)).astype(np.float32, order='C')
+                                        x = random.random((nn, hh, ww, cc)).astype(np.float32, order='C')
                                         biases = (np.ones((nn * ho * wo, kk)) * 10).astype(np.float32, order='C')
 
                                         w_c = weights.reshape(-1, kk)

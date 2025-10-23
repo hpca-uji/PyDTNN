@@ -278,7 +278,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _lr_group.add_argument('--early_stopping_patience', type=int, default=10,
                                help="Number of epochs with no improvement after which training will be stopped. Default: 10.")
         _lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True,
-                               help="Whether to minize the metic. If False, it will maximize. Default: True.")
+                               help="Whether to minize the metric. If False, it will maximize. Default: True.")
         _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy",
                                help="Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default: \'val_categorical_cross_entropy\'.")
         _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1,

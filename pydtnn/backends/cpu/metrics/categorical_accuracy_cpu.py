@@ -6,7 +6,7 @@ from pydtnn.metrics import CategoricalAccuracy
 
 class CategoricalAccuracyCPU(MetricCPU, CategoricalAccuracy[np.ndarray]):
 
-    def __call__(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         b = y_targ.shape[0]
         # return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
         y = y_targ[np.arange(b), np.argmax(y_pred, axis=1)]

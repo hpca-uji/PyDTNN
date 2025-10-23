@@ -1,10 +1,7 @@
-from abc import ABC
-
 from pydtnn.layers.conv_2d import Conv2D
 
 
-class Conv2DRelu(Conv2D, ABC):
-
+class Conv2DRelu(Conv2D):
     def __init__(self, *args, **kwargs):
         from_parent = kwargs.pop("from_parent", None)
         if from_parent is None:

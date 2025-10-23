@@ -48,13 +48,13 @@ class NadamGPU(OptimizerGPU, Nadam):
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
-            self.context[layer] = dict[str, int | gpuarray_t]()
-            self.context[layer]["it"] = 0
+            self.context[layer.id] = dict[str, int | gpuarray_t]()
+            self.context[layer.id]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
                 w = getattr(layer, w_)
-                self.context[layer]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
-                self.context[layer]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
     def update(self, layer: LayerGPU) -> None:
         self.context[layer]["it"] += 1
@@ -62,8 +62,8 @@ class NadamGPU(OptimizerGPU, Nadam):
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            m = self.context[layer]["m_%s" % w_]
-            v = self.context[layer]["v_%s" % w_]
+            m = self.context[layer.id]["m_%s" % w_]
+            v = self.context[layer.id]["v_%s" % w_]
             w: TensorGPU
             dw: TensorGPU
             m: gpuarray

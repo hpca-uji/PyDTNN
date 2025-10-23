@@ -115,7 +115,7 @@ class Conv2DConvGemmTestCase(TestCase):
         # Forward pass
         y_i2c = conv2d_i2c.forward(x)
         y_cg = conv2d_cg.forward(x)
-        dy = random.rand(d.b, d.kn, d.ho, d.wo).astype(np.float32, order='C')
+        dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
         # Backward pass
         dx_i2c = conv2d_i2c.backward(dy)
         dx_cg = conv2d_cg.backward(dy)
@@ -188,7 +188,7 @@ class Conv2DConvGemmTestCase(TestCase):
         d = D()
         print(f"d:\n{d}")
         conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d)
-        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
         y_i2c = conv2d_i2c.forward(x)
         y_cg = conv2d_cg.forward(x)
         if verbose_test():
@@ -204,8 +204,8 @@ class Conv2DConvGemmTestCase(TestCase):
         Test that the default parameters lead to the same solution on the backward step
         """
         d = D()
-        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        weights = random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights)
 
     def test_forward_backward_handmade_array(self):
@@ -322,8 +322,8 @@ class Conv2DConvGemmTestCase(TestCase):
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (2, 2)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        weights = random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
 
     def test_forward_backward_alexnet_imagenet_first_conv2d(self):
@@ -337,8 +337,8 @@ class Conv2DConvGemmTestCase(TestCase):
         d.vpadding, d.hpadding = (1, 1)
         d.vstride, d.hstride = (4, 4)
         d.vdilation, d.hdilation = (1, 1)
-        x = random.rand(d.b, d.c, d.h, d.w).astype(np.float32, order='C')
-        weights = random.rand(d.kn, d.c, d.kh, d.kw).astype(np.float32, order='C')
+        x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
+        weights = random.random((d.kn, d.c, d.kh, d.kw)).astype(np.float32, order='C')
         self._test_forward_backward(d, x, weights, print_times=True)
 
 

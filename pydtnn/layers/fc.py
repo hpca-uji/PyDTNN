@@ -1,5 +1,3 @@
-from abc import ABC
-
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.activations import Activation
@@ -9,7 +7,7 @@ from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils.types import ArrayShape
 
 
-class FC[T: Array](Layer[T], ABC):
+class FC[T: Array](Layer[T]):
     weights: T
 
     def __init__(self, shape: ArrayShape = (1,),

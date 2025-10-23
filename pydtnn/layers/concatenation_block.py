@@ -1,5 +1,3 @@
-from abc import ABC
-
 from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
 from pydtnn.utils.tensor import decode_tensor, TensorFormat
@@ -11,8 +9,8 @@ import numpy as np
 CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1
 
-class ConcatenationBlock(AbstractBlockLayer, ABC):
 
+class ConcatenationBlock(AbstractBlockLayer):
     def show(self, attrs="") -> None:
         print(
             f"|{self.id:^7d}"
@@ -44,4 +42,3 @@ class ConcatenationBlock(AbstractBlockLayer, ABC):
             case _:
                 raise NotImplementedError(f"\"ConcatenationBlock\" is not implemented for \"{self.model.tensor_format}\" format.")
         self.ho, self.wo, self.co = decode_tensor(self.shape, self.model.tensor_format)
-

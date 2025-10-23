@@ -13,15 +13,15 @@ class SGDCPU(OptimizerCPU, SGD):
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
             if len(list_grad_vars) != 0:
-                self.context[layer] = dict[str, np.ndarray]()
+                self.context[layer.id] = dict[str, np.ndarray]()
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
-                    self.context[layer]["velocity_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    self.context[layer.id]["velocity_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
 
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity: np.ndarray = self.context[layer]["velocity_%s" % w_]
+            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]
             w: np.ndarray
             dw: np.ndarray
 

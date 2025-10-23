@@ -35,7 +35,7 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy):
         """.replace("T", DTYPE2CTYPE[self.model.dtype]))
         return module.get_function("binary_cross_entropy")
 
-    def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
         assert len(y_targ.shape) == 2
         threads, blocks = self.get_threads_and_blocks()
         self.kernel(y_targ, y_pred, self.loss, self.dx.ary,

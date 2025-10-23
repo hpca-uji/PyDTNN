@@ -46,15 +46,15 @@ class SGDGPU(OptimizerGPU, SGD):
             list_grad_vars = list(layer.grad_vars.keys())
 
             if len(list_grad_vars) != 0:
-                self.context[layer] = dict[str, gpuarray_t]()
+                self.context[layer.id] = dict[str, gpuarray_t]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer]["velocity_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=w.ary.dtype)
+                    self.context[layer.id]["velocity_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=w.ary.dtype)
 
     def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity = self.context[layer]["velocity_%s" % w_]
+            velocity = self.context[layer.id]["velocity_%s" % w_]
             w: TensorGPU
             dw: TensorGPU
             velocity: gpuarray

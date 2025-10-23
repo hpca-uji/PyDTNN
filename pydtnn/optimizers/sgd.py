@@ -1,11 +1,9 @@
-from abc import ABC
-
 import numpy as np
 
 from pydtnn.optimizers.optimizer import Optimizer
 
 
-class SGD(Optimizer, ABC):
+class SGD(Optimizer):
     """
     SGD Optimizer
     """

@@ -22,6 +22,7 @@ from tqdm import tqdm
 
 from pydtnn import crypt, losses, metrics, utils
 from pydtnn.activations import Activation
+from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets import Dataset, get_dataset
@@ -363,6 +364,8 @@ class Model[T: Array]:
 
         self.optimizer = get_optimizer(self)
         self.lr_schedulers = get_lr_schedulers(self)
+        for lr_scheduler in self.lr_schedulers:
+            lr_scheduler.set_model(self)
 
         # Metrics list
         self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
@@ -598,6 +601,7 @@ class Model[T: Array]:
             layer.print_in_convdirect_format()
 
     def add(self, layer: Layer | Activation) -> None:
+        layer.set_backend(self._backend)
         layer.set_model(self)
 
         if layer.id > 0:
@@ -688,21 +692,31 @@ class Model[T: Array]:
         if not self.enable_cudnn and (bn_relu or conv_relu or conv_bn, conv_bn_relu):
             self.layers = __layer_fusion(self.layers, bn_relu, conv_relu, conv_bn, conv_bn_relu)
 
+    @property
+    def _backend(self) -> BackendType:
+        return BackendType.GPU if self.enable_gpu else BackendType.CPU
+
     def _initialize(self):
         if self._initialized:
             return
-        # NOTE: all this "[keyword]" in self.kwargs.get([keyword]) come from Parser
         self._apply_layer_fusion(self.enable_fused_bn_relu, self.enable_fused_conv_relu,
                                  self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu)
         loss_cls = losses.switch_losses(self.loss_func_name)
-        self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape), model=self)
-        self.metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape), model=self) for m in
+        self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
+        self.loss_func.set_backend(self._backend)
+        self.loss_func.set_model(self)
+        self.metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
+        for metric in self.metrics_funcs:
+            metric.set_backend(self._backend)
+            metric.set_model(self)
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
         self._initialized = True
 
+        self.optimizer.set_backend(self._backend)
+        self.optimizer.set_model(self)
         self.optimizer.initialize(self.get_all_layers(self.layers))
 
     def load_store_path(self, layers: list[LayerAndActivationBase], d: dict[str, np.ndarray], mode: LoadStoreMode) -> None:
@@ -816,9 +830,9 @@ class Model[T: Array]:
         if y_targ.shape[0] > 0:
             if self.enable_cudnn:
                 assert isinstance(y_pred, TensorGPU) and isinstance(y_targ, TensorGPU)
-                metrics = [func(y_pred.ary, y_targ.ary) for func in self.metrics_funcs]
+                metrics = [func.compute(y_pred.ary, y_targ.ary) for func in self.metrics_funcs]
             else:
-                metrics = [func(y_pred, y_targ) for func in self.metrics_funcs]
+                metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
             _losses = np.array([loss, *metrics], dtype=self.dtype)
         else:
             _losses = self.total_metrics.copy()
@@ -855,7 +869,7 @@ class Model[T: Array]:
     # --- _sync_x_y --- #
 
     def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        self.optimizer.real_batch_size = self.real_batche_size = x_batch.shape[0]
+        self.real_batche_size = x_batch.shape[0]
         x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
         y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
         return x_batch, y_batch
@@ -866,7 +880,7 @@ class Model[T: Array]:
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
 
-        self.optimizer.real_batch_size = self.real_batche_size = local_batch_size
+        self.real_batche_size = local_batch_size
         if local_batch_size != 0:
             if local_batch_size != self.batch_size:
                 # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
@@ -1092,7 +1106,7 @@ class Model[T: Array]:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, dx = self.loss_func(x, y_targ, self.real_batche_size)
+            loss, dx = self.loss_func.compute(x, y_targ, self.real_batche_size)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
                 raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
@@ -1181,7 +1195,7 @@ class Model[T: Array]:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             y_pred = self.layers[-1].y
-            loss, _ = self.loss_func(y_pred, y_targ, self.real_batche_size)
+            loss, _ = self.loss_func.compute(y_pred, y_targ, self.real_batche_size)
         else:
             y_pred = self.layers[-1].y
             loss = 0.0

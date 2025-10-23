@@ -268,8 +268,8 @@ def __usage_example__():
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
 
     # NCHW --------------------------
-    weights = random.rand(c, kh, kw, kn).astype(np.float32, order='C')
-    x = random.rand(b, h, w, c).astype(np.float32, order='C')
+    weights = random.random((c, kh, kw, kn)).astype(np.float32, order='C')
+    x = random.random((b, h, w, c)).astype(np.float32, order='C')
     biases = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order='C')
 
     print("Using conv_direct to compute weights * x + biases...")

@@ -1,11 +1,9 @@
-from abc import ABC
-
 import numpy as np
 
 from pydtnn.optimizers.optimizer import Optimizer
 
 
-class Nadam(Optimizer, ABC):
+class Nadam(Optimizer):
     """
     Nadam optimizer
     """

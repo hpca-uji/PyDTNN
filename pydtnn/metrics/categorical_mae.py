@@ -1,7 +1,5 @@
-from abc import ABC
-
 from pydtnn.metrics.metric import Metric
 
 
-class CategoricalMAE[T](Metric[T], ABC):
+class CategoricalMAE[T](Metric[T]):
     pass

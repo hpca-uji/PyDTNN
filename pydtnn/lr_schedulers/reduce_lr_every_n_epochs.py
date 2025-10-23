@@ -13,8 +13,8 @@ class ReduceLREveryNEpochs(LRScheduler):
     ReduceLREveryNEpochs LRScheduler
     """
 
-    def __init__(self, model: Model, factor=0.1, nepochs=5, min_lr=0, verbose=True):
-        super().__init__(model, verbose)
+    def __init__(self, factor=0.1, nepochs=5, min_lr=0, verbose=True):
+        super().__init__(verbose)
         self.factor = factor
         self.nepochs = nepochs
         self.min_lr = min_lr

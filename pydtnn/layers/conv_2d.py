@@ -1,5 +1,3 @@
-from abc import ABC
-
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from pydtnn.activations import Activation
@@ -11,7 +9,7 @@ import numpy as np
 from enum import StrEnum, auto
 from pydtnn.utils.types import ArrayShape
 
-class Conv2D[T: Array](Layer, ABC):
+class Conv2D[T: Array](Layer):
 
     class Grouping(StrEnum):
         DEPTHWISE = auto()

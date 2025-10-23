@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-
 import numpy as np
 
 from typing import Self, TYPE_CHECKING, TypeVar
@@ -12,12 +10,13 @@ if TYPE_CHECKING:
 
 from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
+from pydtnn.backends import PromoteToBackend
 
 
 DrvStream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
 
 
-class LayerAndActivationBase[T: Array](ABC):
+class LayerAndActivationBase[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape = ()) -> None:
         self.nparams: int = 0
         self.shape: ArrayShape = shape
@@ -63,30 +62,25 @@ class LayerAndActivationBase[T: Array](ABC):
         return f"{self._id_prefix}{type(self).__name__}"
 
     def set_model(self, parent_model: Model) -> None:
-        self.model = parent_model
+        super().set_model(parent_model)
         self.id = next(self.model.layer_id_generator)
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         self.prev_shape = prev_shape
         self.x = x
 
-    @abstractmethod
     def forward(self, x: T) -> T:
         return x
 
-    @abstractmethod
     def backward(self, dy: T) -> T:
         return dy
 
-    @abstractmethod
     def reduce_weights_async(self, gradient: bool = True):
         pass
 
-    @abstractmethod
     def wait_allreduce_async(self, gradient: bool = True):
         pass
 
-    @abstractmethod
     def reduce_weights_sync(self, gradient: bool = True):
         pass
 

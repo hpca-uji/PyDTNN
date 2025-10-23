@@ -1,35 +1,56 @@
+import enum
 import importlib
 from contextlib import suppress
+import typing
 
 from pydtnn.backends import cpu
 from pydtnn.backends import gpu
 from pydtnn import model as model_module
 
 
-class PromoteToBackendMixin:
+class BackendType(enum.StrEnum):
+    CPU = enum.auto()
+    GPU = enum.auto()
 
-    def __new__(cls, *args, **kwargs):
-        if not model_module.enable_cudnn:
-            backend = "cpu"
+
+class PromoteToBackend:
+    model: "model_module.Model"
+    backend: typing.Self
+
+    def set_model(self, model: "model_module.Model") -> None:
+        self.model = model
+
+    def __new__(cls, *args, **kwds):
+        # Save top-level constructor arguments
+        self = super().__new__(cls)
+        self._init_args = args
+        self._init_kwds = kwds
+        return self
+
+    def __getattribute__(self, name: str):
+        try:
+            backend = super().__getattribute__("backend")
+        except AttributeError:
+            backend = None
+
+        if backend is self or backend is None:
+            # We are the backend
+            return super().__getattribute__(name)
         else:
-            backend = "gpu"
-        new_cls_name: str = f"{cls.__name__}{backend.upper()}"
+            # We are the abstract
+            return getattr(backend, name)
+
+    def set_backend(self, backend: BackendType) -> None:
+        cls = self.__class__
+
         # cls.__module__ should be something like 'pydtnn.activations.arctanh'
-        submodule_name: str = cls.__module__.split(".")[1]
-        if submodule_name == "backends":
-            new_cls = cls
-        else:
-            backend_module_name: str = f"pydtnn.backends.{backend}.{submodule_name}"
-            backend_module = importlib.import_module(backend_module_name)
-            try:
-                new_cls = getattr(backend_module, new_cls_name)
-            except AttributeError:
-                new_cls = cls
-        instance = super().__new__(new_cls)
-        if new_cls != cls:
-            # noinspection PyArgumentList
-            instance.__init__(*args, **kwargs)
-        return instance
+        module_name = cls.__module__.split(".", 1)[1]
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_{backend}"
+        backend_module = importlib.import_module(backend_module_name)
+        cls_name = f"{cls.__name__}{backend.upper()}"
+        cls = getattr(backend_module, cls_name)
+
+        self.backend = cls(*self._init_args, **self._init_kwds)
 
     @property
     def canonical_name(self) -> str:

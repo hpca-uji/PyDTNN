@@ -1,9 +1,7 @@
-from abc import ABC, abstractmethod
-
 from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
 
-class AdditionBlock(AbstractBlockLayer, ABC):
+class AdditionBlock(AbstractBlockLayer):
 
     def show(self, attrs=""):
         print(f"|{self.id:^7d}|{(type(self).__name__ + ' (%d-path)' % len(self.paths)):^26s}|{'':9s}"

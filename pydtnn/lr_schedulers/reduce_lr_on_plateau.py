@@ -13,9 +13,9 @@ class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):
     ReduceLROnPlateau LRScheduler
     """
 
-    def __init__(self, model: Model, loss_or_metric: str = "", factor=0.1, patience=5, min_lr=0, verbose=True):
+    def __init__(self, loss_or_metric: str = "", factor=0.1, patience=5, min_lr=0, verbose=True):
         # NOTE: loss_or_metric default value is "val_accuracy" in Parser.
-        super().__init__(model, loss_or_metric, verbose)
+        super().__init__(loss_or_metric, verbose)
         self.factor = factor
         self.patience = patience
         self.min_lr = min_lr

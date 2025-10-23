@@ -253,7 +253,7 @@ The PyDTNN framework comes with a utility launcher called
       early\_stopping LR scheduler. Default: ``val_categorical_cross_entropy``.
    -  ``--early_stopping_patience``: Number of epochs with no
       improvement after which training will be stopped. Default: 10.
-   -  ``--early_stopping_minimize``: Whether to minize the metic.
+   -  ``--early_stopping_minimize``: Whether to minize the metric.
       If False, it will maximize. Default: True.
    -  ``--reduce_lr_on_plateau_metric``: Loss metric monitored by
       reduce\_lr\_on\_plateau LR scheduler. Default: ``val_categorical_cross_entropy``.

@@ -13,8 +13,8 @@ class WarmUpLRScheduler(LRScheduler):
     WarmUpLRScheduler
     """
 
-    def __init__(self, model: Model, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=False):
-        super().__init__(model, verbose)
+    def __init__(self, warmup_epochs=5, base_lr=1e-4, init_lr=1e-3, verbose=False):
+        super().__init__(verbose)
         self.warmup_epochs = warmup_epochs
         self.base_lr = base_lr
         self.init_lr = init_lr

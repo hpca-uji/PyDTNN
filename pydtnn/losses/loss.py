@@ -1,6 +1,4 @@
-from abc import ABC, abstractmethod
-
-from pydtnn.backends import PromoteToBackendMixin
+from pydtnn.backends import PromoteToBackend
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -8,13 +6,11 @@ from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
 
 
-class Loss[T: Array](PromoteToBackendMixin, ABC):
+class Loss[T: Array](PromoteToBackend):
 
-    def __init__(self, shape: ArrayShape, model: "Model", eps=1e-8):
+    def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape
-        self.model = model
         self.eps = eps
 
-    @abstractmethod
-    def __call__(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
+    def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         pass

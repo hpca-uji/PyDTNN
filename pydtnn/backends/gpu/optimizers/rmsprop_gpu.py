@@ -43,15 +43,15 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
             list_grad_vars = list(layer.grad_vars.keys())
 
             if len(list_grad_vars) != 0:
-                self.context[layer] = dict[str, gpuarray_t]()
+                self.context[layer.id] = dict[str, gpuarray_t]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
-                    self.context[layer]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
+                    self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
     def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            cache = self.context[layer]["cache_%s" % w_]
+            cache = self.context[layer.id]["cache_%s" % w_]
             w: TensorGPU
             dw: TensorGPU
             cache: gpuarray

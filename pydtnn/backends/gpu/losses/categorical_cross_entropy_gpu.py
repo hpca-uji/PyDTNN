@@ -38,7 +38,7 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
         """.replace("T", DTYPE2CTYPE[self.model.dtype]))
         return module.get_function("categorical_cross_entropy")
 
-    def __call__(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
         threads, blocks = self.get_threads_and_blocks()
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
                     np.int32(batch_size), np.int32(self.shape[1]), np.float32(self.eps),

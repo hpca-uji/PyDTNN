@@ -1,10 +1,8 @@
-from abc import ABC
-
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.batch_normalization import BatchNormalization
 
 
-class Conv2DBatchNormalization(Conv2D, BatchNormalization, ABC):
+class Conv2DBatchNormalization(Conv2D, BatchNormalization):
 
     def __init__(self, *args, **kwargs):
         from_parent = kwargs.pop("from_parent", None)

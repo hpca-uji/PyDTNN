@@ -15,8 +15,8 @@ class EarlyStopping(LRSchedulerWithLossOrMetric):
     EarlyStopping LRScheduler
     """
 
-    def __init__(self, model: Model, loss_or_metric="", patience=10, minimize=True, verbose=True):
-        super().__init__(model, loss_or_metric, verbose)
+    def __init__(self, loss_or_metric="", patience=10, minimize=True, verbose=True):
+        super().__init__(loss_or_metric, verbose)
         self.patience = patience
         self.minimize = minimize
         self.best_epoch: int = 0

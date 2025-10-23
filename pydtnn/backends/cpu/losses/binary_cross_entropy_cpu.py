@@ -5,7 +5,7 @@ from pydtnn.losses import BinaryCrossEntropy
 
 
 class BinaryCrossEntropyCPU(LossCPU, BinaryCrossEntropy):
-    def __call__(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[np.ndarray, np.ndarray]:
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[np.ndarray, np.ndarray]:
         assert len(y_targ.shape) == 2
         b = y_targ.shape[0]
         loss: float = -np.sum(np.log(np.maximum((1 - y_targ) - y_pred, self.eps))) / b

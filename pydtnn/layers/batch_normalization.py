@@ -1,7 +1,5 @@
 import numpy as np
 
-from abc import ABC
-
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.tensor import decode_tensor
 from typing import Callable
@@ -12,7 +10,7 @@ from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
 
 
-class BatchNormalization[T: Array](Layer, ABC):
+class BatchNormalization[T: Array](Layer):
 
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5,
                  moving_mean_initializer: Callable = zeros,
