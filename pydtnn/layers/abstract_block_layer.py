@@ -19,6 +19,7 @@ class AbstractBlockLayer(Layer):
             prev_shape = self.prev_shape
             x = self.x
             for i, layer in enumerate(p):
+                layer.set_backend(self.model._backend)
                 layer.set_model(self.model)
                 layer.initialize(prev_shape, x)
                 x = layer.y

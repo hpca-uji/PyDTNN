@@ -600,7 +600,7 @@ class Model[T: Array]:
         for layer in self.layers:
             layer.print_in_convdirect_format()
 
-    def add(self, layer: Layer | Activation) -> None:
+    def add(self, layer: LayerAndActivationBase[T]) -> None:
         layer.set_backend(self._backend)
         layer.set_model(self)
 
@@ -619,7 +619,7 @@ class Model[T: Array]:
         if layer.act:
             self.add(layer.act())
 
-    def add_layers(self, list_layers: list[Layer | Activation]) -> None:
+    def add_layers(self, list_layers: list[LayerAndActivationBase[T]]) -> None:
         for layer in list_layers:
             self.add(layer)
     # --- END add_layers ---
