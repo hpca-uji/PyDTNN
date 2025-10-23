@@ -15,32 +15,33 @@ class BackendType(enum.StrEnum):
 
 class PromoteToBackend:
     model: "model_module.Model"
-    backend: typing.Self
+    _backend: typing.Self
 
     def __new__(cls, *args, **kwds):
         # Save top-level constructor arguments
         self = super().__new__(cls)
-        self._new_ = (args, kwds)  # type: ignore
+        self._backend_new = (args, kwds)  # type: ignore
         return self
 
     def __getattribute__(self, name: str):
+        ref = "_backend"
+
         # Get backend
         try:
-            backend = super().__getattribute__("backend")
+            backend = super().__getattribute__(ref)
         except AttributeError:
             backend = None
 
-        if backend is self or backend is None:
-            # We are the backend
+        # Skip backend if internal
+        if backend is None or ref in name:
             return super().__getattribute__(name)
         else:
-            # We are the abstract
             return getattr(backend, name)
 
     def set_backend(self, backend: BackendType) -> None:
         # Clear backend
         try:
-            del self.backend
+            del self._backend
         except AttributeError:
             pass
 
@@ -53,8 +54,8 @@ class PromoteToBackend:
         cls = getattr(backend_module, cls_name)
 
         # Create backend instance
-        args, kwds = self._new_
-        self.backend = cls(*args, **kwds)
+        args, kwds = self._backend_new
+        self._backend = cls(*args, **kwds)
 
     def set_model(self, model: "model_module.Model") -> None:
         self.model = model
