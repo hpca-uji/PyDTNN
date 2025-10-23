@@ -14,7 +14,6 @@ class BackendType(enum.StrEnum):
 
 
 class PromoteToBackend:
-    model: "model_module.Model"
     _backend: typing.Self
 
     def __new__(cls, *args, **kwds):
@@ -57,21 +56,8 @@ class PromoteToBackend:
         args, kwds = self._backend_new
         self._backend = cls(*args, **kwds)
 
+    # Base class
+    model: "model_module.Model"
+
     def set_model(self, model: "model_module.Model") -> None:
         self.model = model
-
-    @property
-    def canonical_name(self) -> str:
-        suffix = ""
-        module_submodules = self.__module__.split(".")
-        canonical_name = self.__class__.__name__
-        for i, submodule in enumerate(module_submodules):
-            if submodule == "backends":
-                with suppress(IndexError):
-                    suffix = module_submodules[i + 1].upper()
-                break
-        if suffix != "":
-            suffix_len = len(suffix)
-            if canonical_name[-suffix_len:] == suffix:
-                canonical_name = canonical_name[:-suffix_len]
-        return canonical_name
