@@ -1,5 +1,3 @@
-from abc import ABC
-
 from pydtnn.backends.cpu.layers.conv_2d_variants.i2c_variant import I2CVariant
 from pydtnn.backends.cpu.libs import ConvWinograd
 from pydtnn.cython import im2row_nhwc_cython, im2col_nchw_cython
@@ -9,7 +7,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from numpy import ndarray, zeros
 
 
-class ConvWinogradVariant(I2CVariant, ABC):
+class ConvWinogradVariant(I2CVariant):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

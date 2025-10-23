@@ -1,5 +1,3 @@
-from abc import ABC
-
 import numpy as np
 
 from pydtnn.cython import im2row_nhwc_cython, im2col_nchw_cython, row2im_nhwc_cython, col2im_nchw_cython
@@ -10,7 +8,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
-class I2CVariant(Conv2D[np.ndarray], ABC):
+class I2CVariant(Conv2D[np.ndarray]):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray

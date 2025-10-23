@@ -1,5 +1,3 @@
-from abc import ABC
-
 import numpy as np
 
 from pydtnn.layers import Conv2D
@@ -9,7 +7,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.model import Model
 
 
-class PointwiseVariant(Conv2D[np.ndarray], ABC):
+class PointwiseVariant(Conv2D[np.ndarray]):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     y: np.ndarray

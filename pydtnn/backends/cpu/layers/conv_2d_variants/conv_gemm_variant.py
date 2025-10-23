@@ -1,5 +1,3 @@
-from abc import ABC
-
 import numpy as np
 
 from pydtnn.backends.cpu.libs import ConvGemm
@@ -8,7 +6,7 @@ from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.types import ArrayShape
 
-class ConvGemmVariant(Conv2D, ABC):
+class ConvGemmVariant(Conv2D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

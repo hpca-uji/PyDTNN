@@ -1,4 +1,3 @@
-from abc import ABC
 from functools import partialmethod
 
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
@@ -8,7 +7,7 @@ from numpy import ndarray
 from pydtnn.utils.types import ArrayShape
 
 
-class ConvDirectVariant(Conv2D, ABC):
+class ConvDirectVariant(Conv2D):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

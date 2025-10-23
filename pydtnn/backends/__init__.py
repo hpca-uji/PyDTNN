@@ -50,7 +50,10 @@ class PromoteToBackend:
         cls_name = f"{cls.__name__}{backend.upper()}"
         cls = getattr(backend_module, cls_name)
 
-        self.backend = cls(*self._init_args, **self._init_kwds)
+        # Transfer attributes as defaults to backend
+        instance = cls(*self._init_args, **self._init_kwds)
+        instance.__dict__ = {**self.__dict__, **instance.__dict__}
+        self.backend = instance
 
     @property
     def canonical_name(self) -> str:

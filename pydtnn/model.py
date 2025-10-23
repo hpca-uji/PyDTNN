@@ -555,7 +555,7 @@ class Model[T: Array]:
         try:
             model_module = importlib.import_module(f"pydtnn.models.{model_name}")
         except Exception as e:
-            raise SystemExit(-1) from e
+            raise SystemExit(f"Model {model_name!r} not found!") from e
 
         # NOTE: Dataset is always in NCHW
         c, h, w = self.dataset.input_shape

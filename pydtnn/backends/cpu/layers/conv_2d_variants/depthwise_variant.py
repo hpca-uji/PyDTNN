@@ -1,5 +1,3 @@
-from abc import ABC
-
 from pydtnn.cython import depthwise_conv_nchw_cython, depthwise_conv_backward_nchw_cython, \
     depthwise_conv_nhwc_cython, depthwise_conv_backward_nhwc_cython
 from pydtnn.layers import Conv2D
@@ -9,7 +7,7 @@ from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FIN
 import numpy as np
 
 
-class DepthwiseVariant(Conv2D[np.ndarray], ABC):
+class DepthwiseVariant(Conv2D[np.ndarray]):
     # NOTE: Attributes defined in conv_2d_cpu.
     dw: np.ndarray
     db: np.ndarray

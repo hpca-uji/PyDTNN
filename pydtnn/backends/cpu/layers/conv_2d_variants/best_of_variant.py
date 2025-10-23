@@ -1,4 +1,3 @@
-from abc import ABC
 from typing import Optional, Callable, List
 
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_direct_variant import ConvDirectVariant
@@ -9,7 +8,7 @@ from pydtnn.utils.best_of import BestOf
 import numpy as np
 from pydtnn.utils.types import ArrayShape
 
-class BestOfVariant(ConvWinogradVariant, ConvDirectVariant, ABC):
+class BestOfVariant(ConvWinogradVariant, ConvDirectVariant):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
