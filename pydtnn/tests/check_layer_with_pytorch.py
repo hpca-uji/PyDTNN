@@ -95,10 +95,10 @@ ignore_model = Model(**KWARGS) # NOTE: Do not delete this (it's related to the i
 class TorchArcTanH(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.arc_tan = torch.atanh
+        self.arc_tanh = torch.atanh
 
     def forward(self, x):
-        x = self.arc_tan(x)
+        x = self.arc_tanh(x)
         return x
 # -------------
 
@@ -154,7 +154,7 @@ class CheckLayerWithPyTorch(TestCase):
     # ======================
 
     @staticmethod
-    def get_test_data(no_zeros = False, normalize = True) -> np.ndarray:
+    def get_test_data(no_zeros = False, normalize = True, positives_and_negatives = True) -> np.ndarray:
         shape_with_elements = (N, *SHAPE)
         num_elems = np.prod(shape_with_elements) // 4
 
@@ -178,6 +178,8 @@ class CheckLayerWithPyTorch(TestCase):
         if normalize:
             min_x = np.min(x)
             x = (x - min_x) / (np.max(x) - min_x)
+            if positives_and_negatives:
+                x -= 0.5
 
         #return np.asarray(x, dtype=KWARGS["dtype"], order="C", copy=True)
         return x.copy()
@@ -239,7 +241,8 @@ class CheckLayerWithPyTorch(TestCase):
 
         self.copy_grad_vars(pydtnn_model, torch_model)
 
-        print(f"====================\nTesting: {name_test}\n====================")
+        num_elems = (len("Testing: ") + len(name_test))
+        print(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
 
         x = np.copy(_x)
 
@@ -309,14 +312,15 @@ class CheckLayerWithPyTorch(TestCase):
         _x = CheckLayerWithPyTorch.get_test_data()
         self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Conv2D")
     # ---------
+    
+    def test_Dropout(self):
 
-    def Dropout(self):
-    #def test_Dropout(self):
-        # NOTE:  Dropout makes a random mask ==> can not be compared due both PyTorch and PyDTNN create different masks ==> "always correct".
+        self.skipTest(reason="Dropout makes a random mask, then it can not be compared due both PyTorch and PyDTNN create different masks.")
+        
         pydtnn_layers = [Dropout()]
         torch_model = torch.nn.Dropout()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
-        _x = CheckLayerWithPyTorch.get_test_data()        
+        _x = CheckLayerWithPyTorch.get_test_data()
         self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Dropout")
     # ---------
 
@@ -431,6 +435,7 @@ class CheckLayerWithPyTorch(TestCase):
 
 
     def test_Arctanh(self):
+        # NOTE: Domain ArcTanH: Real numbers between "]-1, 1["
         pydtnn_layers = [Arctanh()]
         torch_model =  TorchArcTanH()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
