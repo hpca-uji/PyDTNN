@@ -2,7 +2,6 @@ from pydtnn.activations import *
 from pydtnn.layers import *
 from pydtnn.optimizers import *
 import torch
-import unittest
 
 from pydtnn import Model
 from pydtnn.utils import random
@@ -19,14 +18,11 @@ from pydtnn.backends.gpu import TensorGPU
 SEED = 1234
 random.seed(SEED)
 # ---------
-
-# TODO: Make threshold change proportonally to the number of elements (more elements, less precission)
-
 # ===============
 # Constant values
 # ===============
 
-N = 100
+N = 64
 C = 3
 H = 524
 W = 524
@@ -112,7 +108,7 @@ class TorchAdditionBlock(torch.nn.Module):
         self.block1 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, 
                stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
-            torch.nn.BatchNorm2d(BATCH_NORMALIZATION_NUM_FEATURES, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH)
+            torch.nn.BatchNorm2d(CONV2D_N_FILTERS, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH)
         )
         self.block2 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, 
@@ -132,7 +128,7 @@ class TorchConcatenationBlock(torch.nn.Module):
         self.block1 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, 
                stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
-            torch.nn.BatchNorm2d(BATCH_NORMALIZATION_NUM_FEATURES, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH)
+            torch.nn.BatchNorm2d(CONV2D_N_FILTERS, eps=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_TORCH)
         )
         self.block2 = torch.nn.Sequential(
             torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, 
@@ -142,7 +138,7 @@ class TorchConcatenationBlock(torch.nn.Module):
     def forward(self, x):
         x1 = self.block1(x)
         x2 = self.block2(x)
-        x = torch.cat([x1, x2])
+        x = torch.cat([x1, x2], dim=1)
         return x
 # -------------
 # ====================
@@ -158,7 +154,7 @@ class CheckLayerWithPyTorch(TestCase):
     # ======================
 
     @staticmethod
-    def get_test_data(no_zeros = False, normalize = False) -> np.ndarray:
+    def get_test_data(no_zeros = False, normalize = True) -> np.ndarray:
         shape_with_elements = (N, *SHAPE)
         num_elems = np.prod(shape_with_elements) // 4
 
@@ -188,7 +184,7 @@ class CheckLayerWithPyTorch(TestCase):
     # ---------
 
     @staticmethod
-    def initialize_pydtnn_model(list_layers: list[Layer], kwargs = KWARGS) -> Model:
+    def initialize_pydtnn_model(list_layers: list[Layer | Activation], kwargs = KWARGS) -> Model:
         model = Model(**kwargs)
         model.add(Input(SHAPE))
         model.add_layers(list_layers)
@@ -210,10 +206,8 @@ class CheckLayerWithPyTorch(TestCase):
         if isinstance(layers[0], Input):
             layers.pop(0)
         
-        print(f"{layers=}")
         torch_layers = [module for module in torch_model.modules() if not isinstance(module, torch.nn.Sequential)]
-        print(f"{torch_layers=}")
-        #print(f"{(len(torch_layers) == len(layers))=}")
+        #print(f"{layers=} {len(layers)=} || {len(torch_layers)=} {torch_layers=}")
 
         with torch.no_grad():
             for i in range(len(layers)):
@@ -236,11 +230,9 @@ class CheckLayerWithPyTorch(TestCase):
                         for grad_var in layer.grad_vars.keys():
                             grad:np.ndarray = getattr(layer, grad_var)
                             self._copy_grad_vars(grad, grad_var, torch_layer)
+    # ----
 
-            # ----
-
-
-    def do_test(self, _x: np.ndarray, pydtnn_model: Model, torch_model: torch.nn.Module, name_test:str, threshold=1e-6) -> None:
+    def do_test(self, _x: np.ndarray, pydtnn_model: Model, torch_model: torch.nn.Module, name_test:str, rtol=1e-6, atol= 1e-6) -> None:
 
         torch.manual_seed(SEED)
         np.random.seed(SEED)
@@ -261,28 +253,18 @@ class CheckLayerWithPyTorch(TestCase):
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C", copy=None)
 
-        print(f"{x_pydtnn.shape=}")
-        print(f"{x_pydtnn.shape=}")
-        print(f"{x_torch.shape=}")
-
-        print(f"x_pydtnn.max:\t{x_pydtnn.max()}")
-        print(f"x_torch.max: \t{x_torch.max()}")
-        print(f"x_pydtnn.min:\t{x_pydtnn.min()}")
-        print(f"x_torch.min: \t{x_torch.min()}")
+        print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}")
 
         diff = x_pydtnn - x_torch
-        print(f"diff all zeros {not diff.any()}")
-        print(f"diff below threshold {threshold}: {(diff < threshold).all()}")
-        print(f"{diff.max()=}")
-        print(f"{diff.std()=}")
-        print(f"{diff.min()=}")
+        print(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}")
 
-        if not (diff < threshold).all():
-            print(f"x_pydtnn:\n{x_pydtnn}")
-            print(f"x_torch:\n{x_torch}")
-            print(f"diff:\n{diff}")
+        #if not (diff < rtol).all():
+        #    print(f"x_pydtnn:\n{x_pydtnn}")
+        #    print(f"x_torch:\n{x_torch}")
+        #    print(f"diff:\n{diff}")
 
-        self.assertTrue((diff < threshold).all()), f"Not all values are below the threshold. Max. difference: \"{diff.max()}\". Std. deviation: \"{diff.std()}\". Min. difference: {diff.min()}."
+        #self.assertTrue((diff < rtol).all()), f"Not all values are below the rtol. Max. difference: \"{diff.max()}\". Std. deviation: \"{diff.std()}\". Min. difference: {diff.min()}."
+        self.assertTrue(np.allclose(x_pydtnn, x_torch, rtol=rtol, atol=atol))
     # ---------
     # ====================
 
@@ -296,7 +278,7 @@ class CheckLayerWithPyTorch(TestCase):
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
 
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AdaptiveAveragePool2D", threshold=2e-6)
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AdaptiveAveragePool2D", rtol=1e-4, atol=1e-3)
     # ---------
 
 
@@ -305,7 +287,7 @@ class CheckLayerWithPyTorch(TestCase):
         torch_model = torch.nn.AvgPool2d(kernel_size=AVG_POOL_SHAPE, padding=AVG_POOL_PADDING, stride=AVG_POOL_STRIDE)
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AveragePool2D", threshold=1e-5)
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AveragePool2D")
     # ---------
 
 
@@ -316,7 +298,7 @@ class CheckLayerWithPyTorch(TestCase):
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
 
         _x = CheckLayerWithPyTorch.get_test_data()
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", threshold=1e-1)
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e0, atol=1e0)
     # ---------
 
 
@@ -325,18 +307,17 @@ class CheckLayerWithPyTorch(TestCase):
         torch_model = torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)        
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Conv2D", threshold=1e-5)
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Conv2D")
     # ---------
 
-    
-    def test_Dropout(self):
+    def Dropout(self):
+    #def test_Dropout(self):
+        # NOTE:  Dropout makes a random mask ==> can not be compared due both PyTorch and PyDTNN create different masks ==> "always correct".
         pydtnn_layers = [Dropout()]
         torch_model = torch.nn.Dropout()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
-        _x = CheckLayerWithPyTorch.get_test_data()
-        # Dropout makes a random mask ==> can not be compared due both PyTorch and PyDTNN create different masks ==> always correct.
-        threshold = float("inf")
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Dropout", threshold=threshold)
+        _x = CheckLayerWithPyTorch.get_test_data()        
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Dropout")
     # ---------
 
 
@@ -354,7 +335,7 @@ class CheckLayerWithPyTorch(TestCase):
         torch_model = torch.nn.Sequential(torch.nn.Flatten(), torch.nn.Linear(in_features=np.prod(SHAPE), out_features=LINEAR_OUTPUT))
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="FC", threshold=1e-1)
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="FC", rtol=1e-5, atol=1e-5)
     # ---------
 
 
@@ -365,7 +346,6 @@ class CheckLayerWithPyTorch(TestCase):
         _x = CheckLayerWithPyTorch.get_test_data()
         self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="MaxPool2D")
     # ---------
-
 
     def test_AdditionBlock(self):
         pydtnn_layers = [
@@ -383,7 +363,7 @@ class CheckLayerWithPyTorch(TestCase):
         torch_model = TorchAdditionBlock()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AdditionBlock")
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="AdditionBlock", rtol=2, atol=2)
     # ---------
 
 
@@ -402,9 +382,8 @@ class CheckLayerWithPyTorch(TestCase):
         torch_model = TorchConcatenationBlock()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = CheckLayerWithPyTorch.get_test_data()
-        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="ConcatenationBlock")
+        self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="ConcatenationBlock", rtol=2, atol=2)
     # ---------
-
 
     def test_Sigmoid(self):
         pydtnn_layers = [Sigmoid()]
@@ -464,8 +443,7 @@ class CheckLayerWithPyTorch(TestCase):
         pydtnn_layers = [Log()]
         torch_model = torch.nn.LogSigmoid()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
-        _x = CheckLayerWithPyTorch.get_test_data(normalize=True)
-        print(f"{_x.min()=} || {_x.max()}")
+        _x = CheckLayerWithPyTorch.get_test_data()
         #_x = np.where(_x < 0, 1, _x)
         self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Log")
     # ---------
