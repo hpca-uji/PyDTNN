@@ -2,13 +2,13 @@ import resource
 import sys
 from abc import abstractmethod
 
-from pydtnn.tracers.events import *
-
 from typing import TYPE_CHECKING
 
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+
 if TYPE_CHECKING:
-    from pydtnn import Model
-    from pydtnn.layers import Layer
+    from pydtnn.model import Model
+    from pydtnn.layers.layer import Layer
 
 
 class EventType:

@@ -1,8 +1,6 @@
 from collections.abc import Sequence
 
-from pydtnn.activations import *
 from pydtnn.activations.relu import Relu
-from pydtnn.layers import *
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.layers.batch_normalization import BatchNormalization
