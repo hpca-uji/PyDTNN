@@ -17,7 +17,7 @@ class ArctanhCPU(ActivationCPU, Arctanh):
 
     def forward(self, x: ndarray) -> ndarray:
         self.y = self._y[:x.shape[0], :]
-        np.arctan(x, out=self.y, casting="unsafe", dtype=self.model.dtype, order="C")
+        np.arctanh(x, out=self.y, casting="unsafe", dtype=self.model.dtype, order="C")
         return self.y
 
     def backward(self, dy: ndarray) -> ndarray:
