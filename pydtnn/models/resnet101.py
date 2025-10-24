@@ -1,10 +1,18 @@
 from collections.abc import Sequence
 
 from pydtnn.activations import *
+from pydtnn.activations.relu import Relu
 from pydtnn.layers import *
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.fc import FC
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.input import Input
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.initializers import he_uniform
-from pydtnn.activations import softmax
+from pydtnn.activations.softmax import Softmax
 
 
 def create_resnet101(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
@@ -46,6 +54,6 @@ def create_resnet101(input_shape: Sequence[int], output_shape: Sequence[int]) ->
     _(FC(shape=(512 * expansion,)))
     _(BatchNormalization())
     _(Relu())
-    _(FC(shape=output_shape, activation=softmax))
+    _(FC(shape=output_shape, activation=Softmax))
 
     return model

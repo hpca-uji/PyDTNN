@@ -1,10 +1,16 @@
 # import memray
 
-from pydtnn.activations import *
-from pydtnn.layers import *
-from pydtnn.optimizers import *
-
+from pydtnn.activations.activation import Activation
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.input import Input
+from pydtnn.layers.layer import Layer
 from pydtnn.model import Model
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.optimizers.sgd import SGD
 from pydtnn.utils import random
 
 import numpy as np

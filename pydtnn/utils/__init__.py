@@ -143,11 +143,13 @@ def convert_size_bytes(size_bytes):
 
 
 def get_module_path(path, base):
+    raise NotImplementedError()
     prev_dir, last_dir = os.path.split(path)
     return base if last_dir == base else f"{get_module_path(prev_dir, base)}.{last_dir}"
 
 
 def get_derived_classes(base_class, module_locals):
+    raise NotImplementedError()
     """
     Searches on the python files of a module for classes that are derived from
     the given base_class and automatically exposes them modifying the provided

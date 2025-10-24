@@ -1,23 +1,23 @@
-from abc import ABC
 from collections import abc
 
-from pydtnn.activations import Activation
+from pydtnn.activations.activation import Activation
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.types import ArrayShape
 from pydtnn.backends.gpu import TensorGPU
 
 try:
-        from pydtnn.comm import MPI
+    from pydtnn.comm import MPI
 except Exception as e:
     pass
 
 try:
-        import pydtnn.backends.gpu.libs.libnccl as nccl
+    import pydtnn.backends.gpu.libs.libnccl as nccl
 except Exception as e:
     pass
 
-class ActivationGPU(Activation[TensorGPU], ABC):
+
+class ActivationGPU(Activation[TensorGPU]):
     """
     Extends an Activation class with the attributes and methods required by GPU Activations.
 

@@ -9,9 +9,7 @@ import os
 import pstats
 import sys
 import time
-from io import StringIO
-
-import numpy as np
+from datetime import datetime
 
 from pydtnn.model import Model
 from pydtnn.utils import random
@@ -102,10 +100,10 @@ def main():
         if model.profile:
             # noinspection PyUnboundLocalVariable
             pr.disable()
-            s = StringIO()
-            ps = pstats.Stats(pr, stream=s).sort_stats('time')
-            ps.print_stats()
-            print(s.getvalue())
+            stamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
+            stats = f"profile-{stamp}.stat"
+            pr.dump_stats(stats)
+            print(f'Dumped profile stats to: {stats}')
         t2 = time.time()
         print('**** Done...')
         total_time = t2 - t1

@@ -2,14 +2,13 @@ from model_convertor import convert_model
 
 from typing import Dict
 
+from pydtnn.activations.softmax import Softmax
 from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
 from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16
 
 from torchmetrics import Accuracy, Metric
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.activations import *
-from pydtnn.layers import *
 
 from pydtnn.models.vgg11 import create_vgg11
 from pydtnn.models.vgg16 import create_vgg16
@@ -224,10 +223,9 @@ def pydtnn_training(model: PyDTNN_Model, dataset: Dataset, num_samples=64 * 2):
 def main():
     test = TEST
 
-
     pytorch_model, create_pydtnn_model, shape, dataset, args, weight = dict_test[test]
     pytorch_model: torch.Module = pytorch_model(**args)
-    
+
     KWARGS["dataset"] = dataset
     KWARGS["dataset_name"] = dataset
     output_shape = args["num_classes"]
@@ -235,7 +233,7 @@ def main():
     shape = shape if KWARGS["tensor_format"] == "NHWC" else (shape[2], *shape[:2])
     print(f"{shape}")
 
-    device = torch.device("cpu")# if kwargs["enable_gpu"] == False else torch.device("cuda")
+    device = torch.device("cpu")  # if kwargs["enable_gpu"] == False else torch.device("cuda")
     if weight is not None:
         weight = f"{WEIGHTS_PATH}model_{test}.pth"
         weight = torch.load(weight, weights_only=True, map_location=torch.device(device))

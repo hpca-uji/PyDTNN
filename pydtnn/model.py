@@ -21,14 +21,12 @@ import numpy as np
 from tqdm import tqdm
 
 from pydtnn import crypt, losses, metrics, utils
-from pydtnn.activations import Activation
 from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets import Dataset, get_dataset
-from pydtnn.layers import Layer
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from pydtnn.losses import Loss
+from pydtnn.losses.loss import Loss
 from pydtnn.lr_schedulers import get_lr_schedulers
 from pydtnn.optimizers import get_optimizer
 from pydtnn.parser import PydtnnArgumentParser
@@ -45,7 +43,8 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import Array, NetworkAlgEnum, ArrayShape
 
-import pydtnn.metrics
+from pydtnn.metrics.metric import Metric
+from pydtnn.metrics import metric_format
 
 
 cuda_errors = []
@@ -260,7 +259,7 @@ class Model[T: Array]:
     y_batch: T
     history: dict[str, list[np.ndarray]]
     loss_func: Loss
-    metrics_funcs: list[pydtnn.metrics.Metric]
+    metrics_funcs: list[Metric]
     loss_and_metrics: list[str]
     total_metrics: np.ndarray
 
@@ -701,11 +700,11 @@ class Model[T: Array]:
             return
         self._apply_layer_fusion(self.enable_fused_bn_relu, self.enable_fused_conv_relu,
                                  self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu)
-        loss_cls = losses.switch_losses(self.loss_func_name)
+        loss_cls = losses.select(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
         self.loss_func.set_backend(self._backend)
         self.loss_func.set_model(self)
-        self.metrics_funcs = [getattr(metrics, m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
+        self.metrics_funcs = [metrics.select(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         for metric in self.metrics_funcs:
             metric.set_backend(self._backend)
@@ -859,7 +858,7 @@ class Model[T: Array]:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(self.loss_and_metrics)):
-            loss_str = pydtnn.metrics.metric_format.get(self.loss_and_metrics[c], self.loss_and_metrics[c])
+            loss_str = metric_format.get(self.loss_and_metrics[c], self.loss_and_metrics[c])
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
@@ -1199,7 +1198,7 @@ class Model[T: Array]:
         else:
             y_pred = self.layers[-1].y
             loss = 0.0
-        assert y_pred
+        assert y_pred is not None
 
         total_metrics, _ = self._compute_metrics_funcs(y_pred, y_targ, loss, comm=sync_model)
         assert total_metrics is not None

@@ -2,7 +2,7 @@
 
 import time
 
-import pydtnn
+from pydtnn.power_meters.pmlib import PMLib
 
 # Configuration
 SERVER_IP = "127.0.0.1"
@@ -11,7 +11,7 @@ DEVICE_NAME = "Jetson-Xavier"
 SECONDS_TO_SLEEP = 2
 
 print("Set server and lines...")
-pmlib = pydtnn.power_meters.PMLib(SERVER_IP, SERVER_PORT)
+pmlib = PMLib(SERVER_IP, SERVER_PORT)
 #
 print(f"{pmlib.server.server_ip=}")
 print(f"{pmlib.server.port=}")

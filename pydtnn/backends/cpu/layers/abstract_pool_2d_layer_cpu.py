@@ -1,14 +1,12 @@
-from abc import ABC, abstractmethod
-
-from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.layers import AbstractPool2DLayer
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.layers.abstract_pool_2d_layer import AbstractPool2DLayer
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import TensorFormat
 from numpy import ndarray, empty
 from pydtnn.utils.types import ArrayShape
 
 
-class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
+class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -57,18 +55,14 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer, ABC):
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
     # ---
 
-    @abstractmethod
     def _forward_nchw_cython(self, x: ndarray) -> ndarray:
-        ...
+        raise NotImplementedError()
 
-    @abstractmethod
     def _backward_nchw_cython(self, dy: ndarray) -> ndarray:
-        ...
+        raise NotImplementedError()
 
-    @abstractmethod
     def _forward_nhwc_cython(self, x: ndarray) -> ndarray:
-        ...
+        raise NotImplementedError()
 
-    @abstractmethod
     def _backward_nhwc_cython(self, dy: ndarray) -> ndarray:
-        ...
+        raise NotImplementedError()

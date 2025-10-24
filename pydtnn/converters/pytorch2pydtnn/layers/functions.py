@@ -3,23 +3,32 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any, Tuple, List
 from pydtnn import activations
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.flatten import Flatten
+from pydtnn.activations.log import Log
+from pydtnn.activations.relu import Relu
+from pydtnn.activations.sigmoid import Sigmoid
+from pydtnn.activations.softmax import Softmax
+from pydtnn.activations.tanh import Tanh
 import pydtnn.converters.pytorch2pydtnn.common as cm
-from pydtnn.converters.pytorch2pydtnn.layers.activation import *
-from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
-from pydtnn.converters.pytorch2pydtnn.layers.utility import *
+from pydtnn.converters.pytorch2pydtnn.layers import activation
+from pydtnn.converters.pytorch2pydtnn.layers import pooling
+from pydtnn.converters.pytorch2pydtnn.layers import utility
 
 # ------------------ #
 # - Torch Functions  #
 # ------------------ #
 
 
-def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, str]:
+def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[AveragePool2D, str]:
     # It is not the layer, but the operation itself.
     # from torch.nn.functional import adaptive_avg_pool2d
     # adaptive_avg_pool2d(input: Tensor, output_size: BroadcastingList2[int])
@@ -35,18 +44,18 @@ def adaptive_avg_pool_2d(args: Dict[str, str]) -> Tuple[layers.AveragePool2D, st
         case 0:
             params = None
         case 1:
-            params = int(params[0])
-            params = (params, params)  # Only 1 argument implies the weight and height are the same.
+            param = int(params[0])
+            params = [param, param]  # Only 1 argument implies the weight and height are the same.
         case greater_than_1:  # len must be always >= 0
             params = [int(param.replace('(', '').replace(')', '')) for param in params]
 
     if params is not None:
         dict_params[cm.ARGUMENTS] = {cm.PYTORCH_OUTPUT_SIZE: params}
 
-    return (AdaptiveAvgPool2d(dict_params), dict_params["input"])
+    return (AdaptiveAveragePool2D(dict_params), dict_params["input"])
 
 
-def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
+def add(args: Dict[str, Any]) -> Tuple[AdditionBlock, str]:
     # https://pytorch.org/docs/stable/generated/torch.add.html
 
     # It should be prepared so the params have the following format: "[layer1,layer2]"
@@ -71,10 +80,10 @@ def add(args: Dict[str, Any]) -> Tuple[layers.AdditionBlock, str]:
         dict_equivalent_layers[elem] = layer_name
 
     # AdditionBlock expects every "branch" (layer list) as a different argument.
-    return (layers.AdditionBlock(*list_layers), input_layer_name)
+    return (AdditionBlock(*list_layers), input_layer_name)
 
 
-def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
+def concat(args: Dict[str, Any]) -> Tuple[ConcatenationBlock, str]:
     # https://pytorch.org/docs/main/generated/torch.cat.html
 
     # TODO: es necesario hacer un diccionario que sustituya los parámetros que ya han sido introducidos por la capa de concatenación/adición.
@@ -103,10 +112,10 @@ def concat(args: Dict[str, Any]) -> Tuple[layers.ConcatenationBlock, str]:
         dict_equivalent_layers[elem] = layer_name
 
     # ConcatenationBlock expects every "branch" (layer list) as a different argument.
-    return (layers.ConcatenationBlock(*list_layers), input_layer_name)
+    return (ConcatenationBlock(*list_layers), input_layer_name)
 
 
-def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
+def flatten(args: Dict[str, str]) -> Tuple[Flatten, str]:
     # https://pytorch.org/docs/stable/generated/torch.flatten.html
     # torch.flatten(input, start_dim=0, end_dim=-1)
 
@@ -141,7 +150,7 @@ def flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
 # ------------------ #
 
 
-def log(args: Dict[str, Any]) -> activations.Log:
+def log(args: Dict[str, Any]) -> Tuple[Log, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.logsigmoid.html#torch.nn.functional.logsigmoid
 
     dict_params = dict()
@@ -154,10 +163,10 @@ def log(args: Dict[str, Any]) -> activations.Log:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (LogSigmoid(**dict_params), dict_params["input"])
+    return (activation.LogSigmoid(**dict_params), dict_params["input"])
 
 
-def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
+def relu(args: Dict[str, str]) -> Tuple[Relu, str]:
 
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.relu.html#torch.nn.functional.relu
     # It is not the layer, but the operation itself.
@@ -174,10 +183,10 @@ def relu(args: Dict[str, str]) -> Tuple[activations.Relu, str]:
     if inplace is not None:
         dict_params["inplace"] = inplace
 
-    return (ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
+    return (activation.ReLU(dict_params), dict_params[cm.ARGUMENTS]["input"])
 
 
-def sigmoid(args: Dict[str, Any]) -> activations.Sigmoid:
+def sigmoid(args: Dict[str, Any]) -> Tuple[Sigmoid, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.sigmoid.html#torch.nn.functional.sigmoid
     # Not used Pytorch's parameters: inplace.
 
@@ -187,10 +196,10 @@ def sigmoid(args: Dict[str, Any]) -> activations.Sigmoid:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (Sigmoid(**dict_params), dict_params["input"])
+    return (activation.Sigmoid(**dict_params), dict_params["input"])
 
 
-def softmax(args: Dict[str, Any]) -> activations.Softmax:
+def softmax(args: Dict[str, Any]) -> Tuple[Softmax, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.softmax.html#torch.nn.functional.softmax
     # softmax(input, dim=None, _stacklevel=3, dtype=None)
 
@@ -217,10 +226,10 @@ def softmax(args: Dict[str, Any]) -> activations.Softmax:
     params = args[cm.PARAMETERS].strip()
     dict_params = switch(params.split(cm.ARGS_SEPARATOR))
 
-    return (Softmax(**dict_params), dict_params["input"])
+    return (activation.Softmax(**dict_params), dict_params["input"])
 
 
-def tanh(args: Dict[str, Any]) -> activations.Tanh:
+def tanh(args: Dict[str, Any]) -> Tuple[Tanh, str]:
     # https://pytorch.org/docs/stable/generated/torch.nn.functional.tanh.html#torch.nn.functional.tanh
     dict_params = dict()
 
@@ -228,6 +237,6 @@ def tanh(args: Dict[str, Any]) -> activations.Tanh:
     # removing the input layer:
     dict_params["input"] = params.pop(0)
 
-    return (Tanh(**dict_params), dict_params["input"])
+    return (activation.Tanh(**dict_params), dict_params["input"])
 
 # ------------------ #

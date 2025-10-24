@@ -1,22 +1,20 @@
-from abc import ABC
-
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn import Model
+    from pydtnn.model import Model
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-        from pydtnn.comm import MPI
-except Exception as e:
+    from pydtnn.comm import MPI
+except Exception:
     pass
 
 from numpy import ndarray
 from pydtnn.utils.types import ArrayShape
 
 
-class LayerCPU(Layer[ndarray], ABC):
+class LayerCPU(Layer[ndarray]):
     """
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
@@ -24,7 +22,7 @@ class LayerCPU(Layer[ndarray], ABC):
         super().__init__(*args, **kwargs)
         self.model: Model[ndarray]
 
-    def initialize(self, prev_shape: ArrayShape, x:ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None):
         super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):

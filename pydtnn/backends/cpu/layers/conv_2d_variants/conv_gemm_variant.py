@@ -1,10 +1,11 @@
 import numpy as np
 
-from pydtnn.backends.cpu.libs import ConvGemm
-from pydtnn.layers import Conv2D
+from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.types import ArrayShape
+
 
 class ConvGemmVariant(Conv2D):
 

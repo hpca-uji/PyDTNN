@@ -10,9 +10,9 @@ class ArctanhCPU(ActivationCPU, Arctanh):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def initialize(self, prev_shape, x = None):
+    def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self._y = np.empty(shape=(self.model.batch_size, *self.shape), 
+        self._y = np.empty(shape=(self.model.batch_size, *self.shape),
                            dtype=self.model.dtype, order="C")
 
     def forward(self, x: ndarray) -> ndarray:

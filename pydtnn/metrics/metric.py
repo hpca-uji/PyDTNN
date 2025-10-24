@@ -1,9 +1,4 @@
 from pydtnn.backends import PromoteToBackend
-
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.model import Model
-
 from pydtnn.utils.types import ArrayArray
 from pydtnn.utils.types import ArrayShape
 

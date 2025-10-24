@@ -8,12 +8,12 @@ If you want to add a new optimizer:
 """
 
 
-from pydtnn.optimizers.adam import Adam
-from pydtnn.optimizers.nadam import Nadam
-from pydtnn.optimizers.optimizer import Optimizer
-from pydtnn.optimizers.rmsprop import RMSProp
-from pydtnn.optimizers.sgd import SGD
-from pydtnn.utils import get_derived_classes
+from pydtnn.optimizers.adam import Adam as _Adam
+from pydtnn.optimizers.nadam import Nadam as _Nadam
+from pydtnn.optimizers.optimizer import Optimizer as _Optimizer
+from pydtnn.optimizers.rmsprop import RMSProp as _RMSProp
+from pydtnn.optimizers.sgd import SGD as _SGD
+# from pydtnn.utils import get_derived_classes
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -22,42 +22,42 @@ else:
     Model = object
 
 
-# Search this module for Optimizer derived classes and expose them
-get_derived_classes(Optimizer, locals())
+# # Search this module for Optimizer derived classes and expose them
+# get_derived_classes(Optimizer, locals())
 
-# Aliases
-adam = Adam
-nadam = Nadam
-rmsprop = RMSProp
-sgd = SGD
+# # Aliases
+# adam = Adam
+# nadam = Nadam
+# rmsprop = RMSProp
+# sgd = SGD
 
 
-def get_optimizer(model: Model) -> Optimizer:
+def get_optimizer(model: Model) -> _Optimizer:
     """Get optimizer object from model attributes"""
     match model.optimizer_name:
 
         case "rmsprop":
-            opt: RMSProp = RMSProp(learning_rate=model.learning_rate,
+            opt = _RMSProp(learning_rate=model.learning_rate,
                                    rho=model.rho,
                                    epsilon=model.epsilon,
                                    decay=model.decay,
                                    dtype=model.dtype)
         case "adam":
-            opt: Adam = Adam(learning_rate=model.learning_rate,
+            opt = _Adam(learning_rate=model.learning_rate,
                              beta1=model.beta1,
                              beta2=model.beta2,
                              epsilon=model.epsilon,
                              decay=model.decay,
                              dtype=model.dtype)
         case "nadam":
-            opt: Nadam = Nadam(learning_rate=model.learning_rate,
+            opt = _Nadam(learning_rate=model.learning_rate,
                                beta1=model.beta1,
                                beta2=model.beta2,
                                epsilon=model.epsilon,
                                decay=model.decay,
                                dtype=model.dtype)
         case "sgd":
-            opt: SGD = SGD(learning_rate=model.learning_rate,
+            opt = _SGD(learning_rate=model.learning_rate,
                            momentum=model.momentum,
                            nesterov=model.nesterov,
                            decay=model.decay,

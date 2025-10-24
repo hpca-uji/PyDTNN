@@ -1,4 +1,3 @@
-import abc
 from pydtnn.datasets.dataset import Dataset
 import typing
 from typing import TYPE_CHECKING
@@ -10,15 +9,11 @@ from pydtnn.utils import random
 from pydtnn.utils.archive import load_archive
 import numpy as np
 
-class DatasetFromTar(Dataset, abc.ABC):
+class DatasetFromTar(Dataset):
 
     def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: tuple[int, ...], output_shape: tuple[int, ...], max_prefetch=1, force_test_as_validation=False, debug=False):
         super().__init__(model, train_nsamples, test_nsamples, input_shape, output_shape, max_prefetch, force_test_as_validation, debug)
         self._xy_filenames: list[list[tuple[tuple[str, ...], np.ndarray]]]
-
-    @abc.abstractmethod
-    def _init_actual_data(self):
-        raise NotImplementedError("Not implemented")
 
     @typing.override
     def _actual_data_generator(self, part):

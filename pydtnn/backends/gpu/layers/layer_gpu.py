@@ -1,4 +1,3 @@
-from abc import ABC
 from collections import abc
 
 from pydtnn.layers.layer import Layer
@@ -6,12 +5,12 @@ from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-        from pydtnn.comm import MPI
+    from pydtnn.comm import MPI
 except Exception as e:
     pass
 
 try:
-        import pydtnn.backends.gpu.libs.libnccl as nccl
+    import pydtnn.backends.gpu.libs.libnccl as nccl
 except Exception as e:
     pass
 
@@ -19,7 +18,8 @@ from numpy import ndarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
-class LayerGPU(Layer[TensorGPU], ABC):
+
+class LayerGPU(Layer[TensorGPU]):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """

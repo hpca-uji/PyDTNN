@@ -1,7 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.cpu.metrics import MetricCPU
-from pydtnn.metrics import CategoricalAccuracy
+from pydtnn.backends.cpu.metrics.metric_cpu import MetricCPU
+from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 
 
 class CategoricalAccuracyCPU(MetricCPU, CategoricalAccuracy[np.ndarray]):

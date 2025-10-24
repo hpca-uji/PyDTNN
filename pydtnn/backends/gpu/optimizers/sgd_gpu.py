@@ -4,8 +4,8 @@ from pycuda.compiler import SourceModule
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
-from pydtnn.optimizers import SGD
-from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.optimizers.sgd import SGD
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
 
 

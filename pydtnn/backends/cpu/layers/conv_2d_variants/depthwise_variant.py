@@ -1,6 +1,6 @@
 from pydtnn.cython import depthwise_conv_nchw_cython, depthwise_conv_backward_nchw_cython, \
     depthwise_conv_nhwc_cython, depthwise_conv_backward_nhwc_cython
-from pydtnn.layers import Conv2D
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 

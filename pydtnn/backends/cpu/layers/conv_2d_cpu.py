@@ -1,17 +1,12 @@
 import sys
 
-from pydtnn.backends.cpu.layers import LayerCPU
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import BestOfVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGemmVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.best_of import BestOf
-from pydtnn.utils.best_transpose_0231 import best_transpose_0231
-from pydtnn.utils.best_transpose_0312 import best_transpose_0312
-from pydtnn.utils.best_transpose_1023 import best_transpose_1023
-from pydtnn.utils.memory_cache import MemoryCache
 
 from numpy import ndarray, empty, zeros
 from pydtnn.utils.types import ArrayShape

@@ -1,5 +1,5 @@
-from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.layers import BatchNormalizationRelu
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.layers.batch_normalization import BatchNormalizationRelu
 from pydtnn.cython import bn_relu_inference_cython
 from pydtnn.model import Model
 from pydtnn.utils.tensor import TensorFormat
@@ -11,7 +11,7 @@ from numpy import ndarray, empty, asarray
 
 class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
 
-    def initialize(self, prev_shape, x = None):
+    def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         self.y = empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 
@@ -26,12 +26,12 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu):
                 x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci), copy=False, order="C")
 
-        y:ndarray = self.y[: x.shape[0], :]
-        bn_relu_inference_cython(x, 
-                                 y.reshape((-1, self.ci), copy=False, order="C"), 
-                                 self.running_mean, 
-                                 self.inv_std, 
-                                 self.gamma, 
+        y: ndarray = self.y[: x.shape[0], :]
+        bn_relu_inference_cython(x,
+                                 y.reshape((-1, self.ci), copy=False, order="C"),
+                                 self.running_mean,
+                                 self.inv_std,
+                                 self.gamma,
                                  self.beta)
 
         if self.spatial:

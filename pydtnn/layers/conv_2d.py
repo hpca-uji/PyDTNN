@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
-    from pydtnn.activations import Activation
+    from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils.tensor import decode_tensor, encode_tensor, TensorFormat
@@ -8,6 +8,7 @@ from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
 from pydtnn.utils.types import ArrayShape
+
 
 class Conv2D[T: Array](Layer):
 
@@ -34,7 +35,7 @@ class Conv2D[T: Array](Layer):
                  padding: tuple[int, int] | int = 0,
                  stride: tuple[int, int] | int = 1,
                  dilation: tuple[int, int] | int = 1,
-                 activation: Optional["Activation"] = None,
+                 activation: Optional[type["Activation"]] = None,
                  use_bias=True,
                  weights_initializer: InitializerFunc = glorot_uniform,
                  biases_initializer: InitializerFunc = zeros):

@@ -1,8 +1,8 @@
 import numpy as np
 
-from pydtnn.backends.cpu.optimizers import OptimizerCPU
-from pydtnn.optimizers import Adam
-from pydtnn.backends.cpu.layers import LayerCPU
+from pydtnn.backends.cpu.optimizers.optimizer_cpu import OptimizerCPU
+from pydtnn.optimizers.adam import Adam
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 
 
 class AdamCPU(OptimizerCPU, Adam):

@@ -1,8 +1,9 @@
+import numpy as np
 from pydtnn.layers.layer import Layer
-from pydtnn.performance_models import *
 
 from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
+
 
 class Flatten[T: Array](Layer):
 

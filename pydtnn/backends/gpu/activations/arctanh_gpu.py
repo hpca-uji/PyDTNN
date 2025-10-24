@@ -1,6 +1,6 @@
 import numpy as np
 
-from pydtnn.activations import Arctanh
+from pydtnn.activations.activation import Arctanh
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
@@ -8,6 +8,7 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pycuda.elementwise import ElementwiseKernel
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
+
 
 class ArctanhGPU(ActivationGPU, Arctanh):
 

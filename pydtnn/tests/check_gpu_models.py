@@ -23,6 +23,7 @@ from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
+from pydtnn.losses.loss import Loss
 from pydtnn import losses
 
 
@@ -49,7 +50,7 @@ class CheckGPUModels(CheckConvGemmModels):
     }
 
     @staticmethod
-    def get_model1_and_loss_func(model_name: str) -> tuple[Model, losses.Loss]:
+    def get_model1_and_loss_func(model_name: str) -> tuple[Model, Loss]:
         # CPU model with no convGemm
         params = Params()
         params.model_name = model_name
@@ -64,7 +65,9 @@ class CheckGPUModels(CheckConvGemmModels):
         # loss function
         loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
-        loss_func = getattr(losses, loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape), model=model1)
+        loss_func = losses.select(loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape))
+        loss_func.set_backend(model1._backend)
+        loss_func.set_model(model1)
         return model1, loss_func
 
     @staticmethod

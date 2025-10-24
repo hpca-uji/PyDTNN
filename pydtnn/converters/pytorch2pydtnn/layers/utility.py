@@ -3,16 +3,16 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.flatten import Flatten as _Flatten
 # import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------ #
 
 
-def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
+def Flatten(args: Dict[str, str]) -> _Flatten:
     # https://pytorch.org/docs/stable/generated/torch.nn.Flatten.html#torch.nn.Flatten
     # torch.nn.Flatten(start_dim=1, end_dim=-1)
 
@@ -23,5 +23,5 @@ def Flatten(args: Dict[str, str]) -> Tuple[layers.Flatten, str]:
     # ---- #
     not_used = args
 
-    return layers.Flatten()
+    return _Flatten()
 # ------------------ #

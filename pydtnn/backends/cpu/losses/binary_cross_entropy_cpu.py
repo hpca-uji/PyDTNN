@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.backends.cpu.losses.loss_cpu import LossCPU
-from pydtnn.losses import BinaryCrossEntropy
+from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 
 
 class BinaryCrossEntropyCPU(LossCPU, BinaryCrossEntropy):

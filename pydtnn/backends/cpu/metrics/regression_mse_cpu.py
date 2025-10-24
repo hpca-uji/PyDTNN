@@ -1,7 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.cpu.metrics import MetricCPU
-from pydtnn.metrics import RegressionMSE
+from pydtnn.backends.cpu.metrics.metric_cpu import MetricCPU
+from pydtnn.metrics.regression_mse import RegressionMSE
 
 
 class RegressionMSECPU(MetricCPU, RegressionMSE[np.ndarray]):

@@ -1,9 +1,4 @@
-from pydtnn.lr_schedulers import LRScheduler
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.model import Model
-else:
-    Model = object
+from pydtnn.lr_schedulers.lr_scheduler import LRScheduler
 
 from numpy import ndarray
 

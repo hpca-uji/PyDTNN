@@ -1,4 +1,4 @@
-from pydtnn.activations import Sigmoid
+from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
@@ -13,7 +13,7 @@ class SigmoidGPU(ActivationGPU, Sigmoid):
         super().__init__(*args, **kwargs)
         self.act_desc = None
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()

@@ -1,4 +1,5 @@
-from pydtnn.layers.layer import Layer, LayerError
+from pydtnn.layers.layer import Layer
+
 
 class AbstractBlockLayer(Layer):
 
@@ -10,7 +11,7 @@ class AbstractBlockLayer(Layer):
         self.is_block_layer = True
         self.out_shapes: list[tuple[int, ...]] = []
 
-    def initialize(self, prev_shape, x = None):
+    def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         self.initialize_block_layer()
 

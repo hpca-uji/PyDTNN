@@ -18,11 +18,12 @@ import warnings
 import numpy as np
 
 from pydtnn import losses
+from pydtnn.losses.loss import Loss
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.common import verbose_test
 
-from pydtnn.layers import Layer
+from pydtnn.layers.layer import Layer
 from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
@@ -57,7 +58,7 @@ class CheckConvGemmModels(TestCase):
         return rtol, atol
 
     @staticmethod
-    def get_model1_and_loss_func(model_name: str, overwrite_params: dict | None = None) -> tuple[Model, losses.Loss]:
+    def get_model1_and_loss_func(model_name: str, overwrite_params: dict | None = None) -> tuple[Model, Loss]:
         # CPU model with no convGemm
         params = Params()
         # Begin of params configuration
@@ -76,7 +77,7 @@ class CheckConvGemmModels(TestCase):
         # loss function
         loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
-        loss_cls = getattr(losses, loss_func_name)
+        loss_cls = losses.select(loss_func_name)
         loss_func = loss_cls(shape=(local_batch_size, *model1.layers[-1].shape))
         loss_func.set_backend(model1._backend)
         loss_func.set_model(model1)
@@ -113,7 +114,7 @@ class CheckConvGemmModels(TestCase):
             layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
 
     @staticmethod
-    def get_first_dx(model: Model, loss_func: losses.Loss, x: np.ndarray) -> np.ndarray:
+    def get_first_dx(model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
         # random y target
         y_targ = random.random(x.shape).astype(np.float32, order='C')
         # obtain first dx1

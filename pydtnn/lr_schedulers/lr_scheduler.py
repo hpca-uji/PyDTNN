@@ -1,11 +1,4 @@
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.model import Model
-else:
-    Model = object
 from pydtnn.backends import PromoteToBackend
-
-from numpy import ndarray
 
 
 class LRScheduler(PromoteToBackend):

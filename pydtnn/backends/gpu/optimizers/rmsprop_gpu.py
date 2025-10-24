@@ -4,10 +4,11 @@ from pycuda.compiler import SourceModule
 from pycuda.elementwise import ElementwiseKernel
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
-from pydtnn.optimizers import RMSProp
-from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.optimizers.rmsprop import RMSProp
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
+
 
 class RMSPropGPU(OptimizerGPU, RMSProp):
     """

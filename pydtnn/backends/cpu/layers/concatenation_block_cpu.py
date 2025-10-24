@@ -5,6 +5,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
+
 class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def __init__(self, *args, **kwargs):
@@ -53,7 +54,7 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
-            np.add(dx[0], dx[i], out=dx[0], 
+            np.add(dx[0], dx[i], out=dx[0],
                    dtype=self.model.dtype, order="C")
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx[0], dtype=self.model.dtype, order='C', copy=None)

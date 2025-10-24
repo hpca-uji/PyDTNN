@@ -12,12 +12,13 @@ from pydtnn.datasets.chest_xray14 import ChestXRay14
 CustomImport = CustomDataset.import_
 
 
+# TODO: REMOVE imports and use proper import_module path
 def get_dataset(model) -> Dataset:
     try:
-        dataset_name = {"mnist": "MNIST", 
-                        "cifar10": "CIFAR10", 
-                        "imagenet": "ImageNet", 
-                        "archive": "CustomImport", 
+        dataset_name = {"mnist": "MNIST",
+                        "cifar10": "CIFAR10",
+                        "imagenet": "ImageNet",
+                        "archive": "CustomImport",
                         "folder": "DatasetFolderLoader",
                         "chestxray14": "ChestXRay14"
                         }

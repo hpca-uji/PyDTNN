@@ -5,9 +5,11 @@ from pathlib import Path, PurePath
 from contextlib import contextmanager, ExitStack
 import itertools
 
+
 def is_tar(path: PurePath, suffixes={(".tar",), (".tar", ".gz"), (".tgz",)}) -> bool:
     """Does the path look like a TAR"""
     return tuple(path.suffixes) in suffixes
+
 
 def list_directory(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
     iter_archives = list[typing.Iterator[tuple[str, ...]]]()
@@ -15,6 +17,7 @@ def list_directory(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
         iter_archives.append(list_archive(file))
     return itertools.chain.from_iterable(iter_archives)
 # ---
+
 
 def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
     """Recursive TAR walk"""
@@ -69,4 +72,3 @@ def load_archive(*paths: str) -> abc.Generator[typing.IO[bytes]]:
         # Last: return
         file = stack.enter_context(tar.extractfile(paths[-1]))
         yield file
-

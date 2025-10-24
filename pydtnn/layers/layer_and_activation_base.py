@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import Self, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
     from pydtnn.model import Model
     from pydtnn.activations.activation import Activation

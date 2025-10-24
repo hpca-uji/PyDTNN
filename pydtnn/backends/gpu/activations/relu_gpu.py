@@ -1,6 +1,6 @@
 import pycuda.gpuarray as gpuarray
 
-from pydtnn.activations import Relu
+from pydtnn.activations.relu import Relu
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU

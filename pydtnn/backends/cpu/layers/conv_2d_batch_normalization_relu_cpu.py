@@ -1,5 +1,5 @@
-from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.layers import Conv2DBatchNormalizationRelu
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.model import Model
 from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 

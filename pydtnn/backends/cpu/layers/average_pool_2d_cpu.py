@@ -1,13 +1,13 @@
 import numpy as np
 from pydtnn.backends.cpu.layers.abstract_pool_2d_layer_cpu import AbstractPool2DLayerCPU
-from pydtnn.layers import AveragePool2D
+from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.utils.tensor import TensorFormat
 
 from pydtnn.cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
     im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \
     average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython, \
     average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
 class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
@@ -18,9 +18,9 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
     def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         match self.model.tensor_format:
-            case TensorFormat.NHWC: 
+            case TensorFormat.NHWC:
                 self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
-            case TensorFormat.NCHW: 
+            case TensorFormat.NCHW:
                 self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"AveragePool2DCPU\" layer is not implemted for the format: {self.model.tensor_format}")

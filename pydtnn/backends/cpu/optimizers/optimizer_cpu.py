@@ -1,10 +1,8 @@
-from abc import ABC
-
-from pydtnn.optimizers import Optimizer
+from pydtnn.optimizers.optimizer import Optimizer
 from numpy import ndarray
 
 
-class OptimizerCPU(Optimizer, ABC):
+class OptimizerCPU(Optimizer):
     """
     Extends an Optimizer class with the attributes and methods required by CPU Optimizers.
     """

@@ -8,7 +8,7 @@ pydtnn_benchmark \
   --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
   --normalize=True \
   --normalize_offset=-0.472 \
-  --normalize_scale=3.985 \
+  --normalize_scale=1 \
   --test_as_validation=True \
   --batch_size=64 \
   --validation_split=0.2 \

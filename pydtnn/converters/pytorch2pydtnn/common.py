@@ -1,16 +1,17 @@
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any, Callable, Tuple, List
+from pydtnn.converters.pytorch2pydtnn.layers.activation import LeakyReLU, LogSigmoid, ReLU, ReLU6, Sigmoid, Softmax, Tanh
+from pydtnn.converters.pytorch2pydtnn.layers.convolutional import Conv2d
+from pydtnn.converters.pytorch2pydtnn.layers.dropout import Dropout
+from pydtnn.converters.pytorch2pydtnn.layers.functions import adaptive_avg_pool_2d, add, concat, flatten, relu, sigmoid, softmax, log, tanh
+from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
+from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
+from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
+from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
-from pydtnn.converters.pytorch2pydtnn.layers.activation import *
-from pydtnn.converters.pytorch2pydtnn.layers.convolutional import *
-from pydtnn.converters.pytorch2pydtnn.layers.dropout import *
-from pydtnn.converters.pytorch2pydtnn.layers.functions import *
-from pydtnn.converters.pytorch2pydtnn.layers.linear import *
-from pydtnn.converters.pytorch2pydtnn.layers.normalization import *
-from pydtnn.converters.pytorch2pydtnn.layers.pooling import *
-from pydtnn.converters.pytorch2pydtnn.layers.utility import *
+
 
 # ------------------- #
 # ---- CONSTANTS ---- #
