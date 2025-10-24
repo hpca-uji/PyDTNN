@@ -7,7 +7,7 @@ from pydtnn.cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
     max_pool_2d_fwd_nchw_cython, max_pool_2d_bwd_nchw_cython
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import ArrayShape
 

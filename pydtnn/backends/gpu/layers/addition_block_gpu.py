@@ -1,5 +1,5 @@
 from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn

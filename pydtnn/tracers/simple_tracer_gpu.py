@@ -1,11 +1,11 @@
-from pydtnn.tracers import SimpleTracer
-
 try:
     import pycuda.driver as drv
 except Exception as e:
     pass
 
 from typing import TYPE_CHECKING
+
+from pydtnn.tracers.simple_tracer import SimpleTracer
 
 if TYPE_CHECKING:
     from pympi.MPI import Comm as MPI_COMM

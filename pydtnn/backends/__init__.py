@@ -2,8 +2,6 @@ import enum
 import importlib
 import typing
 
-# from pydtnn.backends import cpu
-# from pydtnn.backends import gpu
 from pydtnn import model as model_module
 
 

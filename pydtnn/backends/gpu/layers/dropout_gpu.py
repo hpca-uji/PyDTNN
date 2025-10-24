@@ -2,7 +2,7 @@ import numpy as np
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.layers.dropout import Dropout
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU

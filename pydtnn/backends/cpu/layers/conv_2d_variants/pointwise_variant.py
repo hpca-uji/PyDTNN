@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.model import Model

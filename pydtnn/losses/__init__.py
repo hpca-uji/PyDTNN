@@ -10,14 +10,7 @@ If you want to add a new loss:
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy as _BinaryCrossEntropy
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy as _CategoricalCrossEntropy
 from pydtnn.losses.loss import Loss as _Loss
-# from pydtnn.utils import get_derived_classes
 
-# # Aliases
-# categorical_cross_entropy = CategoricalCrossEntropy
-# binary_cross_entropy = BinaryCrossEntropy
-
-# # Search this module for Loss derived classes and expose them
-# get_derived_classes(Loss, locals())
 
 # TODO: remove imports and to proper dynamic import
 def select(loss_func_name: str) -> type[_Loss]:

@@ -6,7 +6,7 @@ from pycuda.compiler import SourceModule
 from pycuda.driver import Function
 
 from pydtnn.performance_models import matmul_time
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.layers.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU

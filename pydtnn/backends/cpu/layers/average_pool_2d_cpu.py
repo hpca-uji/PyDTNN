@@ -7,7 +7,7 @@ from pydtnn.cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython, \
     im2col_1ch_nchw_cython, col2im_1ch_nchw_cython, \
     average_pool_2d_fwd_nhwc_cython, average_pool_2d_bwd_nhwc_cython, \
     average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
 class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):

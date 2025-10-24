@@ -1,7 +1,7 @@
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 from numpy import ndarray, asarray
 

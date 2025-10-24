@@ -7,7 +7,7 @@ from pydtnn.tracers.tracer import Tracer
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn import Model
+    from pydtnn.model import Model
 
 
 class ExtraeTracer(Tracer):

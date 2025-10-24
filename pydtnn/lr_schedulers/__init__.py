@@ -15,18 +15,6 @@ from pydtnn.lr_schedulers.reduce_lr_every_n_epochs import ReduceLREveryNEpochs a
 from pydtnn.lr_schedulers.reduce_lr_on_plateau import ReduceLROnPlateau as _ReduceLROnPlateau
 from pydtnn.lr_schedulers.stop_at_loss import StopAtLoss as _StopAtLoss
 from pydtnn.lr_schedulers.warm_up_lr_scheduler import WarmUpLRScheduler as _WarmUpLRScheduler
-# from pydtnn.utils import get_derived_classes
-
-# # Aliases
-# early_stopping = EarlyStopping
-# model_checkpoint = ModelCheckpoint
-# reduce_lr_every_nepochs = ReduceLREveryNEpochs
-# reduce_lr_on_plateau = ReduceLROnPlateau
-# stop_at_loss = StopAtLoss
-# warm_up = WarmUpLRScheduler
-
-# # Search this module for LRScheduler derived classes and expose them
-# get_derived_classes(LRScheduler, locals())
 
 
 def get_lr_schedulers(model) -> list[_LRScheduler]:
