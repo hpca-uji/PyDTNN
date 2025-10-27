@@ -6,7 +6,7 @@ type _npDT_2Dims[T] = _np.ndarray[tuple[int, int], T]
 type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 
-def average_pool_2d_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[T],
+def average_pool_2d_fwd_nhwc_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[T],
                                               kh: int, kw: int, ho: int, wo: int,
                                               vpadding: int, hpadding: int,
                                               vstride: int, hstride: int,
@@ -14,7 +14,7 @@ def average_pool_2d_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[
     """
     Args:
         x (npDT_4Dims): The 4 dimensional input's ndarray.
-        y (npDT_4Dims): The 4 dimensional output's ndarray. (the output's data is stored in this parameter).
+        y (npDT_4Dims): The 4 dimensional output's ndarray.(the output's data is stored in this parameter).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
@@ -27,11 +27,12 @@ def average_pool_2d_fwd_nchw_cython[T: _npDT](x: _npDT_4Dims[T], y: _npDT_4Dims[
         hdilation (int): The horizontal dilation value.
 
     Returns:
-        Nothing. Implictily the output is stored in "y".
+        Nothing. Implictily, the output is stored in "y".
     """
 
 
-def average_pool_2d_bwd_nchw_cython[T: _npDT](dy: _npDT_4Dims[T],
+def average_pool_2d_bwd_nhwc_cython[T: _npDT](dy: _npDT_4Dims[T],
+                                              dx: _npDT_4Dims[T],
                                               n: int, h: int, w: int, c: int,
                                               kh: int, kw: int, ho: int, wo: int,
                                               vpadding: int, hpadding: int,
@@ -44,7 +45,7 @@ def average_pool_2d_bwd_nchw_cython[T: _npDT](dy: _npDT_4Dims[T],
         n (int): The number of images (usually, the batch size).
         h (int): The images' height.
         w (int): The images' width.
-        c (int): The images' number of channel's(e.g.: RGB = 3 channels).
+        c (int): The images' number of channel's (e.g.: RGB = 3 channels).
         kh (int): The kernel's height.
         kw (int): The kernel's width.
         ho (int): The output's height.
