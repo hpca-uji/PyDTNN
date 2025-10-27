@@ -252,7 +252,7 @@ class Model[T: Array]:
 
     dtype: np.dtype
 
-    real_batche_size: int
+    real_batch_size: int
     nparams: int
 
     y_batch: T
@@ -862,7 +862,7 @@ class Model[T: Array]:
     # --- _sync_x_y --- #
 
     def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        self.real_batche_size = x_batch.shape[0]
+        self.real_batch_size = x_batch.shape[0]
         x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
         y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
         return x_batch, y_batch
@@ -873,7 +873,7 @@ class Model[T: Array]:
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
 
-        self.real_batche_size = local_batch_size
+        self.real_batch_size = local_batch_size
         if local_batch_size != 0:
             if local_batch_size != self.batch_size:
                 # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
@@ -1099,7 +1099,7 @@ class Model[T: Array]:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
                 x = self.layers[i].forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
-            loss, dx = self.loss_func.compute(x, y_targ, self.real_batche_size)
+            loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:
             if y_targ.shape[0] != x_batch.shape[0]:
                 raise ValueError(f"y_targ.shape[0] ({y_targ.shape[0]}) and x_batch.shape[0] ({x_batch.shape[0]}) must have the same value.")
@@ -1188,7 +1188,7 @@ class Model[T: Array]:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
             y_pred = self.layers[-1].y
-            loss, _ = self.loss_func.compute(y_pred, y_targ, self.real_batche_size)
+            loss, _ = self.loss_func.compute(y_pred, y_targ, self.real_batch_size)
         else:
             y_pred = self.layers[-1].y
             loss = 0.0
