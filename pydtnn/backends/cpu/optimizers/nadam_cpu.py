@@ -81,7 +81,7 @@ class NadamCPU(OptimizerCPU, Nadam):
                 np.divide(mt, vt, out=mt,
                           dtype=self.dtype)
                 np.multiply(mt, self.learning_rate, out=mt, 
-                            order=self.dtype)
+                            dtype=self.dtype, order="C")
                 np.subtract(w, mt, out=w,
                             dtype=self.dtype)
                 del mt, vt
