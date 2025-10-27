@@ -16,11 +16,11 @@ import sys
 import unittest
 
 import numpy as np
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
-from pydtnn.backends.cpu.libs import ConvGemm
+from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
 from pydtnn.utils import print_with_header, random
-from pydtnn.cython import im2row_nhwc_cython
 
 
 def _conv_gemm_and_im2row_mm(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,

@@ -17,11 +17,11 @@ import sys
 import unittest
 
 import numpy as np
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
-from pydtnn.backends.cpu.libs import ConvGemm
+from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
 from pydtnn.utils import print_with_header, random
-from pydtnn.cython import im2row_nhwc_cython, row2im_nhwc_cython
 
 
 def _conv_gemm_and_im2row_mm(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
@@ -319,15 +319,15 @@ class ConvGemmNHWCTestCase(TestCase):
                                                                     vdilation=d.vdilation, hdilation=d.hdilation)
             conv_gemm_result = conv_gemm_result.reshape((-1, kn), copy=False)
             im2row_nhwc_cython(x, x_c,
-                                d.kh, d.kw, ho, wo,
-                                d.vpadding, d.hpadding,
-                                d.vstride, d.hstride,
-                                d.vdilation, d.hdilation)
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding,
+                               d.vstride, d.hstride,
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape((-1, kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}             {:11.2f}"
-                        "".format(kn, max([abs(x - y) for x, y in zip(conv_gemm_result.flatten(),
+                      "".format(kn, max([abs(x - y) for x, y in zip(conv_gemm_result.flatten(),
                                                                     im2row_mm_result.flatten())]),
                                 np.sum(conv_gemm_result)))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result,
@@ -364,15 +364,15 @@ class ConvGemmNHWCTestCase(TestCase):
                                                                     vdilation=d.vdilation, hdilation=d.hdilation)
             conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
             im2row_nhwc_cython(x, x_c,
-                                d.kh, d.kw, ho, wo,
-                                d.vpadding, d.hpadding,
-                                d.vstride, d.hstride,
-                                d.vdilation, d.hdilation)
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding,
+                               d.vstride, d.hstride,
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape(-1, d.kn)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(b,
-                                                max([abs(x - y) for x, y
+                                               max([abs(x - y) for x, y
                                                     in
                                                     zip(conv_gemm_result.flatten(), im2row_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result,
@@ -409,17 +409,17 @@ class ConvGemmNHWCTestCase(TestCase):
             x_c = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
 
             im2row_nhwc_cython(x, x_c,
-                                ho, wo,
-                                d.kh, d.kw,
-                                padding, padding,
-                                d.vstride, d.hstride,
-                                d.vdilation, d.hdilation)
+                               ho, wo,
+                               d.kh, d.kw,
+                               padding, padding,
+                               d.vstride, d.hstride,
+                               d.vdilation, d.hdilation)
 
             w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(padding,
-                                                max([abs(x - y) for x, y
+                                               max([abs(x - y) for x, y
                                                     in
                                                     zip(conv_gemm_result.flatten(), im2row_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result,
@@ -456,15 +456,15 @@ class ConvGemmNHWCTestCase(TestCase):
                                                                     vdilation=d.vdilation, hdilation=d.hdilation)
             conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
             im2row_nhwc_cython(x, x_c,
-                                d.kh, d.kw, ho, wo,
-                                d.vpadding, d.hpadding,
-                                stride, stride,
-                                d.vdilation, d.hdilation)
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding,
+                               stride, stride,
+                               d.vdilation, d.hdilation)
             w_c = weights.reshape((-1, d.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(stride,
-                                                max([abs(x - y) for x, y
+                                               max([abs(x - y) for x, y
                                                     in
                                                     zip(conv_gemm_result.flatten(), im2row_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result,
@@ -503,18 +503,18 @@ class ConvGemmNHWCTestCase(TestCase):
                                                                         vdilation=d.vdilation, hdilation=d.hdilation)
                 conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
                 im2row_nhwc_cython(x, x_c,
-                                    d.kh, d.kw, ho, wo,
-                                    d.vpadding, d.hpadding,
-                                    vstride, hstride,
-                                    d.vdilation, d.hdilation)
+                                   d.kh, d.kw, ho, wo,
+                                   d.vpadding, d.hpadding,
+                                   vstride, hstride,
+                                   d.vdilation, d.hdilation)
                 w_c = weights.reshape((-1, d.kn), copy=False)
                 im2row_mm_result = x_c @ w_c
                 if verbose_test():
                     print("{:3} {:3}    {:9.7f}".format(vstride, hstride,
                                                         max([abs(x - y) for x, y
-                                                                in
-                                                                zip(conv_gemm_result.flatten(),
-                                                                    im2row_mm_result.flatten())])))
+                                                             in
+                                                             zip(conv_gemm_result.flatten(),
+                                                                 im2row_mm_result.flatten())])))
 
                 self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result),
                                 f"Results differ with vstride {vstride} and hstride {hstride}")
@@ -547,15 +547,15 @@ class ConvGemmNHWCTestCase(TestCase):
                                                                     vdilation=dilation, hdilation=dilation)
             conv_gemm_result = conv_gemm_result.reshape((-1, d.kn), copy=False)
             im2row_nhwc_cython(x, x_c,
-                                d.kh, d.kw, ho, wo,
-                                d.vpadding, d.hpadding,
-                                d.vstride, d.hstride,
-                                dilation, dilation)
+                               d.kh, d.kw, ho, wo,
+                               d.vpadding, d.hpadding,
+                               d.vstride, d.hstride,
+                               dilation, dilation)
             w_c = weights.reshape(-1, d.kn)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("{:3}    {:9.7f}".format(dilation,
-                                                max([abs(x - y) for x, y
+                                               max([abs(x - y) for x, y
                                                     in
                                                     zip(conv_gemm_result.flatten(), im2row_mm_result.flatten())])))
             np_all_close_for_all_cases = np_all_close_for_all_cases and np.allclose(conv_gemm_result,
@@ -586,18 +586,18 @@ class ConvGemmNHWCTestCase(TestCase):
                                                                     vdilation=layer.vdilation, hdilation=layer.hdilation)
             conv_gemm_result = conv_gemm_result.reshape((-1, layer.kn), copy=False)
             im2row_nhwc_cython(x, x_c,
-                                layer.kh, layer.kw, layer.ho, layer.wo,
-                                layer.vpadding, layer.hpadding,
-                                layer.vstride, layer.hstride,
-                                layer.vdilation, layer.hdilation)
+                               layer.kh, layer.kw, layer.ho, layer.wo,
+                               layer.vpadding, layer.hpadding,
+                               layer.vstride, layer.hstride,
+                               layer.vdilation, layer.hdilation)
             w_c = weights.reshape((-1, layer.kn), copy=False)
             im2row_mm_result = x_c @ w_c
             if verbose_test():
                 print("   {:2}      {:9.7f}".format(n,
                                                     max([abs(x - y) for x, y
-                                                            in
-                                                            zip(conv_gemm_result.flatten(),
-                                                                im2row_mm_result.flatten())])))
+                                                         in
+                                                         zip(conv_gemm_result.flatten(),
+                                                             im2row_mm_result.flatten())])))
                 if n == 9:
                     print("Flags for last conv_gemm_result output:")
                     print(conv_gemm_result.flags)

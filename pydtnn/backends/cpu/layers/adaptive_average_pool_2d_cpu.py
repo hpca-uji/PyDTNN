@@ -1,3 +1,5 @@
+from pydtnn.cython.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_bwd_nchw_cython, adaptive_avg_pooling_fwd_nchw_cython
+from pydtnn.cython.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_bwd_nhwc_cython, adaptive_avg_pooling_fwd_nhwc_cython
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 
@@ -5,8 +7,6 @@ from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.utils.tensor import TensorFormat
 
 # Imports for the methods from AveragePool2DCPU
-from pydtnn.cython import adaptive_avg_pooling_fwd_nchw_cython, adaptive_avg_pooling_bwd_nchw_cython, \
-    adaptive_avg_pooling_fwd_nhwc_cython, adaptive_avg_pooling_bwd_nhwc_cython
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 import numpy as np
 

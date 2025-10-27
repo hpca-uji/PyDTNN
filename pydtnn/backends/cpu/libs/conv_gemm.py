@@ -7,6 +7,7 @@ import platform
 import weakref
 
 import numpy as np
+from pydtnn.cython.im2col_nchw_cython import im2col_nchw_cython
 
 from pydtnn.utils import load_library
 
@@ -341,7 +342,6 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                  vpadding: int, hpadding: int, vstride: int, hstride: int,
                  vdilation: int, hdilation: int,
                  ) -> int | float:
-    from pydtnn.cython import im2col_nchw_cython
 
     res = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2col_nchw_cython(x, res,
@@ -356,7 +356,6 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
 def __usage_example__():
     # Imports for this usage example (not required otherwise)
     from timeit import timeit
-    from pydtnn.cython import im2col_nchw_cython
     # Default parameters (1st layer AlexNet for Cifar10)
     b = 64  # Batch size
     c = 3  # Channels per layer

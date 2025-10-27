@@ -8,7 +8,6 @@ import weakref
 
 import numpy as np
 
-from pydtnn.cython import im2row_nhwc_cython
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import load_library
 

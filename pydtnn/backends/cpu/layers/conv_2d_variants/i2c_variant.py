@@ -1,6 +1,7 @@
 import numpy as np
+from pydtnn.cython.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
 
-from pydtnn.cython import im2row_nhwc_cython, im2col_nchw_cython, row2im_nhwc_cython, col2im_nchw_cython
 from pydtnn.layers.conv_2d import Conv2D
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum

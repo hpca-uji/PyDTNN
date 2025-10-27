@@ -1,6 +1,6 @@
 import numpy as np
+from pydtnn.cython.transpose_cython import transpose_0231_ijk_cython, transpose_0231_ikj_cython
 
-from pydtnn.cython import transpose_0231_ijk_cython, transpose_0231_ikj_cython
 from pydtnn.utils.best_of import BestOf
 from typing import Callable
 

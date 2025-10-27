@@ -1,6 +1,6 @@
+from pydtnn.cython.relu_cython import relu_cython
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-from pydtnn.cython import relu_cython
 import numpy as np
 from pydtnn.utils.types import ArrayShape
 
