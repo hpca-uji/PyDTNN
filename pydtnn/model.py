@@ -825,11 +825,7 @@ class Model[T: Array]:
         _losses: np.ndarray | None
 
         if y_targ.shape[0] > 0:
-            if self.enable_cudnn:
-                assert isinstance(y_pred, TensorGPU) and isinstance(y_targ, TensorGPU)
-                metrics = [func.compute(y_pred.ary, y_targ.ary) for func in self.metrics_funcs]
-            else:
-                metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
+            metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
             _losses = np.array([loss, *metrics], dtype=self.dtype)
         else:
             _losses = self.total_metrics.copy()

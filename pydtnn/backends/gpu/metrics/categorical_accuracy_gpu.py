@@ -32,10 +32,10 @@ class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
         """.replace("T", DTYPE2CTYPE[self.model.dtype]))
         return module.get_function("categorical_accuracy")
 
-    def compute(self, y_pred: gpuarray.gpuarray, y_targ: gpuarray.gpuarray) -> float:
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
         threads = min(self.model.batch_size, 1024)
         blocks = max(self.model.batch_size, 1024) // threads + 1
-        self.kernel(y_targ, y_pred, self.cost,
+        self.kernel(y_targ.ary, y_pred.ary, self.cost,
                     np.int32(self.model.batch_size), np.int32(self.shape[1]),
                     grid=(blocks, 1, 1), block=(threads, 1, 1),
                     stream=self.model.stream)
