@@ -3,11 +3,11 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
+from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers.nadam import Nadam
 
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
-from pydtnn.backends.gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 
@@ -16,14 +16,12 @@ class NadamGPU(OptimizerGPU, Nadam):
     NadamGPU optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype: np.dtype = np.float32):
+    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype: np.dtype = np.dtype(np.float32)):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
 
         self.update_gpu = ElementwiseKernel("T *w, T *dw, T *m, T *v, \
                                float it, float lr, float decay, \
-                               float beta1, float beta2, float epsilon".replace("T",
-                                                                                {np.float32: "float",
-                                                                                 np.float64: "double"}[dtype]),
+                               float beta1, float beta2, float epsilon".replace("T",DTYPE2CTYPE[dtype]),
                                             "m[i] = beta1 * m[i] + (1 - beta1) * dw[i]; \
                                              v[i] = beta2 * v[i] + (1 - beta2) * pow(dw[i], 2); \
                                              w[i] -= lr * (decay * w[i] + (((m[i] + (1 - beta1) * dw[i]) / \
@@ -49,7 +47,7 @@ class NadamGPU(OptimizerGPU, Nadam):
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
-            self.context[layer.id] = dict[str, int | gpuarray_t]()
+            self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()
             self.context[layer.id]["it"] = 0
 
             for w_ in layer.grad_vars.keys():
@@ -67,8 +65,8 @@ class NadamGPU(OptimizerGPU, Nadam):
             v = self.context[layer.id]["v_%s" % w_]
             w: TensorGPU
             dw: TensorGPU
-            m: gpuarray
-            v: gpuarray
+            m: gpuarray.GPUArray
+            v: gpuarray.GPUArray
 
             if self.gpudirect:
                 n = self.get_batch_size(w)

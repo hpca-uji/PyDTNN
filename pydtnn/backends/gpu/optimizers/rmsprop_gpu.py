@@ -3,10 +3,10 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU, gpuarray_t
+from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
-from pydtnn.backends.gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 
@@ -15,13 +15,11 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
     RMSPropGPU Optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0, dtype=np.float32):
+    def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0, dtype=np.dtype(np.float32)):
         super().__init__(learning_rate, rho, epsilon, decay, dtype)
 
         self.update_gpu = ElementwiseKernel("T *w, T *dw, T *cache, \
-                               float lr, float decay, float rho, float epsilon".replace("T",
-                                                                                        {np.float32: "float",
-                                                                                         np.float64: "double"}[dtype]),
+                               float lr, float decay, float rho, float epsilon".replace("T",DTYPE2CTYPE[dtype]),
                                             "cache[i] = rho * cache[i] + (1 - rho) * pow(dw[i], 2); \
                                              w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".
                                             replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
@@ -44,7 +42,7 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
             list_grad_vars = list(layer.grad_vars.keys())
 
             if len(list_grad_vars) != 0:
-                self.context[layer.id] = dict[str, gpuarray_t]()
+                self.context[layer.id] = dict[str, gpuarray.GPUArray]()
                 for w_ in list_grad_vars:
                     w = getattr(layer, w_)
                     self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
@@ -55,7 +53,7 @@ class RMSPropGPU(OptimizerGPU, RMSProp):
             cache = self.context[layer.id]["cache_%s" % w_]
             w: TensorGPU
             dw: TensorGPU
-            cache: gpuarray
+            cache: gpuarray.GPUArray
 
             if self.gpudirect:
                 n = self.get_batch_size(w)

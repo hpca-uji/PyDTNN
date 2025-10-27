@@ -26,6 +26,6 @@ class LossGPU(Loss):
         raise NotImplementedError()
 
     def get_threads_and_blocks(self):
-        threads = min(self.model.real_batche_size, self.LIMIT_THREADS_AND_BLOCKS)
-        blocks = max(self.model.real_batche_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
+        threads = min(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS)
+        blocks = max(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
         return threads, blocks

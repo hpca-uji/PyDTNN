@@ -3,7 +3,6 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from typing import TypeVar
 
 from pydtnn.optimizers.optimizer import Optimizer
-gpuarray_t = TypeVar("gpuarray_t")
 
 
 class OptimizerGPU(Optimizer):
