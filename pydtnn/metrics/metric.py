@@ -1,3 +1,5 @@
+from abc import abstractmethod
+
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils.types import ArrayArray
 from pydtnn.utils.types import ArrayShape
@@ -9,5 +11,6 @@ class Metric[T: ArrayArray](PromoteToBackend):
         self.shape = shape
         self.eps = eps
 
+    @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float:
         pass
