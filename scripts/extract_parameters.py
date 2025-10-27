@@ -110,9 +110,9 @@ def extract_parameters():
     parameters_overwritten["learning_rate"]["vgg16_imagenet"] = "0.01"
     parameters_overwritten["test_as_validation"]["vgg16_imagenet"] = "False"
     parameters_overwritten["test_as_validation"]["resnet34_imagenet"] = "False"
-    # Removing lr_schedulers and associated parameters
+    # Removing schedulers and associated parameters
     for model in models_files.keys():
-        parameters_overwritten["lr_schedulers"][model] = ""
+        parameters_overwritten["schedulers"][model] = ""
         parameters_overwritten["early_stopping_metric"][model] = ""
         parameters_overwritten["reduce_lr_on_plateau_metric"][model] = ""
         parameters_overwritten["stop_at_loss_metric"][model] = ""

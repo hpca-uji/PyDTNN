@@ -1,4 +1,4 @@
-from pydtnn.lr_schedulers.lr_scheduler import LRScheduler
+from pydtnn.schedulers.lr_scheduler import LRScheduler
 
 from numpy import ndarray
 

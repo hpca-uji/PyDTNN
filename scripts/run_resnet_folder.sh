@@ -28,7 +28,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --momentum=0.9 \
   --loss_func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
-  --lr_schedulers=warm_up,reduce_lr_on_plateau,early_stopping \
+  --schedulers=warm_up,reduce_lr_on_plateau,early_stopping \
   --warm_up_epochs=5 \
   --early_stopping_metric=val_categorical_cross_entropy \
   --early_stopping_patience=40 \

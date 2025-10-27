@@ -1,6 +1,6 @@
 import numpy as np
 
-from pydtnn.lr_schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
+from pydtnn.schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
 
 
 class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):

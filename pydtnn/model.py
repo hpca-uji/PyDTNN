@@ -27,7 +27,7 @@ from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets import Dataset, get_dataset
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.losses.loss import Loss
-from pydtnn.lr_schedulers import get_lr_schedulers
+from pydtnn.schedulers import get_schedulers
 from pydtnn.optimizers import get_optimizer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.performance_models import allreduce_time
@@ -361,9 +361,9 @@ class Model[T: Array]:
             self.learning_rate = self.learning_rate / self.comm_size
 
         self.optimizer = get_optimizer(self)
-        self.lr_schedulers = get_lr_schedulers(self)
-        for lr_scheduler in self.lr_schedulers:
-            lr_scheduler.set_model(self)
+        self.schedulers = get_schedulers(self)
+        for scheduler in self.schedulers:
+            scheduler.set_model(self)
 
         # Metrics list
         self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
@@ -958,7 +958,7 @@ class Model[T: Array]:
                             ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                             desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
 
-            for lr_sched in self.lr_schedulers:
+            for lr_sched in self.schedulers:
                 lr_sched.on_epoch_begin(self, self.rank)
 
             # --- TRAIN --- #
@@ -1060,7 +1060,7 @@ class Model[T: Array]:
                 for c in range(len(self.loss_and_metrics)):
                     self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
-            for lr_sched in self.lr_schedulers:
+            for lr_sched in self.schedulers:
                 lr_sched.on_epoch_end(train_total_loss, val_total_loss)
                 if lr_sched.stop_training:
                     terminate = True
@@ -1088,7 +1088,7 @@ class Model[T: Array]:
         self.mode = Model.Mode.TRAIN
 
         # LR schedulers begin
-        for lr_sched in self.lr_schedulers:
+        for lr_sched in self.schedulers:
             lr_sched.on_batch_begin()
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
@@ -1146,7 +1146,7 @@ class Model[T: Array]:
                     self.layers[i].stream_2.synchronize()  # type: ignore
 
         # LR schedulers end
-        for lr_sched in self.lr_schedulers:
+        for lr_sched in self.schedulers:
             lr_sched.on_batch_end(self)
 
         return self.total_metrics

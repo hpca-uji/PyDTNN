@@ -27,7 +27,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --optimizer=adam \
   --learning_rate=0.01 \
   --loss_func=categorical_cross_entropy \
-  --lr_schedulers=warm_up,reduce_lr_every_nepochs \
+  --schedulers=warm_up,reduce_lr_every_nepochs \
   --reduce_lr_every_nepochs_factor=0.5 \
   --reduce_lr_every_nepochs_nepochs=30 \
   --reduce_lr_every_nepochs_min_lr=0.001 \
