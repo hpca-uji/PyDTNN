@@ -50,7 +50,7 @@ def _get_mpi_processes():
     try:
         # noinspection PyUnresolvedReferences,PyPackageRequirements
         from pympi import MPI
-    except Exception as e:
+    except Exception:
         mpi_processes = 1
     else:
         mpi_processes = MPI.COMM_WORLD.Get_size()

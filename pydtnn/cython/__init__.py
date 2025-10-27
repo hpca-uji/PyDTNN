@@ -25,6 +25,7 @@ __all__ = (
     "log_fwd_cython", "log_bwd_cython"
 )
 
+# TODO: REMOVE ALL and use full imports
 from pydtnn.cython.add_cython import add_cython
 from pydtnn.cython.argmax_cython import argmax_cython
 from pydtnn.cython.average_pool_2d_nchw_cython import average_pool_2d_fwd_nchw_cython, average_pool_2d_bwd_nchw_cython

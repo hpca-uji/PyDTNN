@@ -8,6 +8,7 @@ from pydtnn.utils.best_of import BestOf
 import numpy as np
 from pydtnn.utils.types import ArrayShape
 
+
 class BestOfVariant(ConvWinogradVariant, ConvDirectVariant):
 
     def __init__(self, *args, **kwargs):
@@ -22,7 +23,7 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant):
         super().initialize(prev_shape, x)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
-            self.variant = ConvDirectVariant.Variant.BEST_OF()
+            self.variant = ConvDirectVariant.Variant.BEST_OF
             # Bestof will honor the next configuration options:
             # - enable_conv_winograd
             # - enable_conv_gemm
@@ -70,10 +71,8 @@ class BestOfVariant(ConvWinogradVariant, ConvDirectVariant):
     def _fw_bw_best_of(self, stage, x_or_y):
         match self.model.mode:
             case Model.Mode.TRAIN:
-                # noinspection PyTypeChecker
                 return self._best_fw_bw_pipeline(stage, self, x_or_y)
             case Model.Mode.EVALUATE:
-                # noinspection PyTypeChecker
                 return self._best_fw(self, x_or_y)
             case _:
                 raise RuntimeError("Conv2D BestOf variant requires Model.mode to be set to ModelModeEnum.EVALUATE or ModelModeEnum.TRAIN")

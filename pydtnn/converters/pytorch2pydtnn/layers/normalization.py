@@ -3,16 +3,16 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.batch_normalization import BatchNormalization
 import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------ #
 
 
-def BatchNorm2d(args: Dict[str, Any]) -> layers.BatchNormalization:
+def BatchNorm2d(args: Dict[str, Any]) -> BatchNormalization:
     # https://pytorch.org/docs/stable/generated/torch.nn.BatchNorm2d.html#torch.nn.BatchNorm2d
 
     # PyTorch attributes:
@@ -33,4 +33,4 @@ def BatchNorm2d(args: Dict[str, Any]) -> layers.BatchNormalization:
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 
-    return layers.BatchNormalization(**layer_args)
+    return BatchNormalization(**layer_args)

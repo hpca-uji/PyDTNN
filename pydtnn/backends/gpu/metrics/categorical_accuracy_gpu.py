@@ -3,7 +3,7 @@ import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
-from pydtnn.metrics import CategoricalAccuracy
+from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE

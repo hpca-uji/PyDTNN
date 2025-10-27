@@ -1,5 +1,5 @@
 import ctypes
-from typing import TypeVar, Self
+from typing import TypeVar
 
 from enum import StrEnum, auto
 
@@ -10,11 +10,12 @@ from pydtnn.utils.types import ArrayShape
 try:
     import pycuda.gpuarray as gpuarray
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except Exception as e:
+except Exception:
     pass
 
 PyCudaDrvType = TypeVar("PyCuda Driver Type")
 GpuArrayType = TypeVar("gpuarray type")
+
 
 class TensorGPU:
 
@@ -63,7 +64,7 @@ class TensorGPU:
     # ---
 
     def _set_shape(self, gpu_arr: "gpuarray.GPUArray") -> None:
-        
+
         match len(gpu_arr.shape):
             case 1:
                 self.shape = (1, *gpu_arr.shape, 1, 1) if self.tensor_format is TensorFormat.NCHW else (1, 1, 1, *gpu_arr.shape)

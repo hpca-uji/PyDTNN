@@ -6,10 +6,11 @@ from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
 import numpy as np
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 from pycuda.driver import Function
+
 
 class Relu6GPU(ActivationGPU, Relu6):
 
@@ -17,7 +18,7 @@ class Relu6GPU(ActivationGPU, Relu6):
         super().__init__(*args, **kwargs)
         self.mask: TensorGPU | None = None
         self.y: TensorGPU | None = None
-    
+
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(self, prev_shape, x)
 
@@ -32,7 +33,7 @@ class Relu6GPU(ActivationGPU, Relu6):
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
         self.initialize_relu_2d_gpu(prev_shape)
-    
+
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_fwd"
         _t = DTYPE2CTYPE[dtype]  # variable Type
@@ -70,7 +71,7 @@ __global__ void {func_name}({T}* x, {T}* max, {T}* mask,
         code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
-    
+
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_relu6_bwd"
         _t = DTYPE2CTYPE[dtype]  # variable Type
@@ -89,7 +90,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
-    
+
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
@@ -104,7 +105,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return self.y
-    
+
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
@@ -117,7 +118,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
         return self.dx
-    
+
     def initialize_relu_2d_gpu(self, prev_shape: ArrayShape) -> None:
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = prev_shape
@@ -140,4 +141,3 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         self.bwd_time = \
             col2im_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,
                         memory_bw=self.model.memory_bw, dtype=self.model.dtype)
-    

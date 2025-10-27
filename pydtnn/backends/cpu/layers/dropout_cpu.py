@@ -1,7 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.layers import Dropout
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.layers.dropout import Dropout
 from pydtnn.model import Model
 from pydtnn.utils import random
 
@@ -22,7 +22,7 @@ class DropoutCPU(LayerCPU, Dropout[np.ndarray]):
                 np.divide(self.mask, (1 - self.rate), out=self.mask, dtype=self.model.dtype)
                 np.multiply(x, self.mask, out=x, order="C", dtype=self.model.dtype)
             case Model.Mode.EVALUATE:
-                pass # Just returns x.
+                pass  # Just returns x.
             case _:
                 raise RuntimeError(f"Unexpected model mode \'{self.model.mode}\'.")
         return x

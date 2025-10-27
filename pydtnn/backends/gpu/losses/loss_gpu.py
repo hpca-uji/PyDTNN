@@ -1,5 +1,3 @@
-from abc import ABC, abstractmethod
-
 import pycuda.gpuarray as gpuarray
 from pycuda.driver import Function
 
@@ -7,10 +5,10 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from pydtnn.backends.gpu import TensorGPU
-from pydtnn.losses import Loss
+from pydtnn.losses.loss import Loss
 from pydtnn.utils.types import ArrayShape
 
-class LossGPU(Loss, ABC):
+class LossGPU(Loss):
     """
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
@@ -24,9 +22,8 @@ class LossGPU(Loss, ABC):
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.kernel = self.__init_gpu_kernel__()
 
-    @abstractmethod
     def __init_gpu_kernel__(self) -> Function:
-        pass
+        raise NotImplementedError()
 
     def get_threads_and_blocks(self):
         threads = min(self.model.real_batche_size, self.LIMIT_THREADS_AND_BLOCKS)

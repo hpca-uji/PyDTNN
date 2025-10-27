@@ -8,25 +8,25 @@ from pydtnn.cython import log_fwd_cython, log_bwd_cython
 
 class LogCPU(ActivationCPU, Log):
 
-    def initialize(self, prev_shape, x = None):
+    def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         self.y = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
         self.dx = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 
     def _forward_numpy(self, x: ndarray) -> ndarray:
-    #def forward(self, x: ndarray) -> ndarray:
+        # def forward(self, x: ndarray) -> ndarray:
         y = self.y[:x.shape[0], :]
         # y = np.log(1 / (1 + np.exp(-x)))
-        np.multiply(x, -1, out=x, 
+        np.multiply(x, -1, out=x,
                     dtype=self.model.dtype)
-        np.exp(x, out=x, 
+        np.exp(x, out=x,
                dtype=self.model.dtype)
-        np.add(x, 1, out=x, 
+        np.add(x, 1, out=x,
                dtype=self.model.dtype)
-        np.log(x, out = y, 
+        np.log(x, out=y,
                dtype=self.model.dtype)
         # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
-        np.multiply(y, -1, out=y, 
+        np.multiply(y, -1, out=y,
                     dtype=self.model.dtype)
         return y
 

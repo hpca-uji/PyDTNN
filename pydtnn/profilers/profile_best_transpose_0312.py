@@ -5,8 +5,6 @@ For running the tests run:
     python best_conv2d_transpose_0312.py
 """
 
-import numpy as np
-
 from pydtnn.profilers.best_of_profiler import BestOfProfiler
 from pydtnn.tests.common import alexnet_layers
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312

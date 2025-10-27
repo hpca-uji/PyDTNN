@@ -1,17 +1,15 @@
-from abc import ABC
-from collections import abc
-
 from pydtnn.activations.activation import Activation
-from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-        from pydtnn.comm import MPI
-except Exception as e:
+    from pydtnn.comm import MPI
+except Exception:
     pass
 import numpy as np
 
-class ActivationCPU(Activation[np.ndarray], ABC):
+
+class ActivationCPU(Activation[np.ndarray]):
     """
     Extends an Activation class with the attributes and methods required by CPU Activations.
 
@@ -24,7 +22,6 @@ class ActivationCPU(Activation[np.ndarray], ABC):
     def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
 
-
     def reduce_weights_async(self, gradient: bool = True) -> None:
         if not self.model.comm:
             return
@@ -34,7 +31,7 @@ class ActivationCPU(Activation[np.ndarray], ABC):
             dw_ = dw_ if gradient else w_
             dw: np.ndarray = getattr(self, dw_)
             np.multiply(dw, self.model.rank_weight, out=dw,
-                        dtype= self.model.dtype)
+                        dtype=self.model.dtype)
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
             if self.model.use_mpi_buffers:

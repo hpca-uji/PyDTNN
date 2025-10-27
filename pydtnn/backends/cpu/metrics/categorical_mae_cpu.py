@@ -1,7 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.cpu.metrics import MetricCPU
-from pydtnn.metrics import CategoricalMAE
+from pydtnn.backends.cpu.metrics.metric_cpu import MetricCPU
+from pydtnn.metrics.categorical_mae import CategoricalMAE
 
 
 class CategoricalMAECPU(MetricCPU, CategoricalMAE[np.ndarray]):

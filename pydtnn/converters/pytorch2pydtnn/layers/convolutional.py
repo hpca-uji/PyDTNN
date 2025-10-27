@@ -3,16 +3,16 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.conv_2d import Conv2D as _Conv2D
 import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------ #
 
 
-def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
+def Conv2d(args: Dict[str, Any]) -> _Conv2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.Conv2d.html#torch.nn.Conv2d
 
     # PyTorch attributes:
@@ -50,4 +50,4 @@ def Conv2d(args: Dict[str, Any]) -> layers.Conv2D:
         # else: It must be a Tuple[int, int], so it's okay
     # else: Nothing special
 
-    return layers.Conv2D(**layer_args)
+    return _Conv2D(**layer_args)

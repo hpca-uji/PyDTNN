@@ -7,8 +7,6 @@ import torch.nn as nn
 import torch
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.activations import *
-from pydtnn.layers import *
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils.best_of import BestOf
 
@@ -113,10 +111,10 @@ class TEST_PyTorch_Model(PyTorch_Model):
         super().__init__()
         self.layer = layer
         print(f"self.layer: {self.layer}")
-    
+
     def forward(self, x):
         return self.layer(x)
-    
+
 
 class Addition_Test_PyTorch_Model(PyTorch_Model):
 
@@ -126,7 +124,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         self.op1: nn.Module = DICT_SUPPORTED_LAYERS["MaxPool2d"][0]
         self.op2: nn.Module = DICT_SUPPORTED_LAYERS["AvgPool2d"][0]
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
-    
+
     def forward(self, x):
         dict_forwards = dict()
         ro = self.op0(x)
@@ -140,7 +138,7 @@ class Addition_Test_PyTorch_Model(PyTorch_Model):
         res = self.act(res)
         dict_forwards["Tanh"] = res
         return (res, dict_forwards)
-    
+
 
 class Concat_Test_PyTorch_Model(PyTorch_Model):
 
@@ -152,7 +150,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         self.activation1: nn.Module = DICT_SUPPORTED_LAYERS["Sigmoid"][0]
         self.activation2: nn.Module = DICT_SUPPORTED_LAYERS["Softmax"][0]
         self.act: nn.Module = DICT_SUPPORTED_LAYERS["Tanh"][0]
-    
+
     def forward(self, x):
         dict_forwards = dict()
         ro = self.op0(x)
@@ -170,7 +168,7 @@ class Concat_Test_PyTorch_Model(PyTorch_Model):
         res = self.act(res)
         dict_forwards["Tanh"] = res
         return (res, dict_forwards)
-    
+
 
 def are_all_zeros(diff: np.ndarray) -> bool:
     return not diff.any()
@@ -188,7 +186,6 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -
         y = layer.forward(y)
 
     if y is None:
-        layer: pydtnn.backends.gpu.layers.LayerGPU
         y: TensorGPU = layer.y
     # else: Nothing special.
     print(f"y | ({type(y)})")

@@ -1,4 +1,4 @@
-from pydtnn.activations import Softmax
+from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape

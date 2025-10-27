@@ -1,10 +1,7 @@
 import enum
 import importlib
-from contextlib import suppress
 import typing
 
-from pydtnn.backends import cpu
-from pydtnn.backends import gpu
 from pydtnn import model as model_module
 
 

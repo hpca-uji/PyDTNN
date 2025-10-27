@@ -1,11 +1,5 @@
-from pydtnn.lr_schedulers import LRScheduler
+from pydtnn.lr_schedulers.lr_scheduler import LRScheduler
 from numpy import ndarray
-
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.model import Model
-else:
-    Model = object
 
 
 class ReduceLREveryNEpochs(LRScheduler):

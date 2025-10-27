@@ -1,4 +1,4 @@
-from pydtnn.activations import Tanh
+from pydtnn.activations.tanh import Tanh
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape

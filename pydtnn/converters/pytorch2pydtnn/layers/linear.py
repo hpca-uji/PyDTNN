@@ -3,15 +3,15 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.fc import FC
 import pydtnn.converters.pytorch2pydtnn.common as cm
 
 
 # ------------------ #
-def Linear(args: Dict[str, Any]) -> layers.FC:
+def Linear(args: Dict[str, Any]) -> FC:
     # https://pytorch.org/docs/stable/generated/torch.nn.Linear.html#torch.nn.Linear
 
     # PyTorch attributes:
@@ -35,4 +35,4 @@ def Linear(args: Dict[str, Any]) -> layers.FC:
     if PYDTNN_SHAPE in layer_args and isinstance(layer_args[PYDTNN_SHAPE], int):
         layer_args[PYDTNN_SHAPE] = (layer_args[PYDTNN_SHAPE], )
 
-    return layers.FC(**layer_args)
+    return FC(**layer_args)

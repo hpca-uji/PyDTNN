@@ -3,10 +3,12 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.max_pool_2d import MaxPool2D
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------- #
@@ -29,7 +31,7 @@ PYDTNN_DILATION = "dilation"
 # ------------------- #
 
 
-def MaxPool2d(args: Dict[str, Any]) -> layers.MaxPool2D:
+def MaxPool2d(args: Dict[str, Any]) -> MaxPool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.MaxPool2d.html#torch.nn.MaxPool2d
 
     # PyTorch attributes:
@@ -50,10 +52,10 @@ def MaxPool2d(args: Dict[str, Any]) -> layers.MaxPool2D:
         # else: It must be a Tuple[int, int], so it's okay
     # else: Nothing special
 
-    return layers.MaxPool2D(**layer_args)
+    return MaxPool2D(**layer_args)
 
 
-def AvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
+def AvgPool2d(args: Dict[str, Any]) -> AveragePool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.AvgPool2d.html#torch.nn.AvgPool2d
 
     # PyTorch attributes:
@@ -73,14 +75,14 @@ def AvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
             layer_args[PYDTNN_POOL_SHAPE] = (pool_shape, pool_shape)
         # else: It must be a Tuple[int, int], so it's okay
 
-    return layers.AveragePool2D(**layer_args)
+    return AveragePool2D(**layer_args)
 
 
-def AdaptiveAvgPool2d(args: Dict[str, Any]) -> layers.AveragePool2D:
+def AdaptiveAvgPool2d(args: Dict[str, Any]) -> AdaptiveAveragePool2D:
     # https://pytorch.org/docs/stable/generated/torch.nn.AdaptiveAvgPool2d.html#torch.nn.AdaptiveAvgPool2d
     # from torch.nn import AdaptiveAvgPool2d
 
     arguments = args[cm.ARGUMENTS]
     output_shape = arguments[cm.PYTORCH_OUTPUT_SIZE] if cm.PYTORCH_OUTPUT_SIZE in arguments else None
 
-    return layers.AdaptiveAveragePool2D(output_shape=output_shape)
+    return AdaptiveAveragePool2D(output_shape=output_shape)

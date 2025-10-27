@@ -1,13 +1,13 @@
 # Typing related
-from typing import *
+from typing import List, Dict, Tuple
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from pydtnn.activations import Activation
+from pydtnn.activations.activation import Activation
 import numpy as np
 
 # Operations/transformations related
 import torch
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.layers import Input
+from pydtnn.layers.input import Input
 import pydtnn.converters.pytorch2pydtnn.common as cm
 import copy
 
@@ -20,7 +20,7 @@ def load_layers(model: PyDTNN_Model, layers: List[LayerAndActivationBase], activ
     model._initialize()
 
 
-def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[Union[str | torch.nn.Module], str]]:
+def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[str | torch.nn.Module, str]]:
     # TODO: Search the way "torch.fx.symbolic_trace" generates ".code" and not extracting the data from a
     # graph: torch.fx.GraphModule
     graph = torch.fx.symbolic_trace(model)
@@ -115,7 +115,7 @@ def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[Union[st
     return relations_dic
 
 
-def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: Dict[str, Tuple[Union[str | torch.nn.Module], str]]) -> List[LayerAndActivationBase]:
+def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: Dict[str, Tuple[str | torch.nn.Module, str]]) -> List[LayerAndActivationBase]:
 
     converted_layers: Dict[str, LayerAndActivationBase] = dict()
 

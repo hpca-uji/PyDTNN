@@ -1,9 +1,9 @@
 import numpy as np
 
-from pydtnn.backends.cpu.optimizers import OptimizerCPU
-from pydtnn.optimizers import SGD
+from pydtnn.backends.cpu.optimizers.optimizer_cpu import OptimizerCPU
+from pydtnn.optimizers.sgd import SGD
 
-from pydtnn.backends.cpu.layers import LayerCPU
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 
 
 class SGDCPU(OptimizerCPU, SGD):

@@ -1,11 +1,6 @@
 import numpy as np
 
-from pydtnn.lr_schedulers import LRSchedulerWithLossOrMetric
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.model import Model
-else:
-    Model = object
+from pydtnn.lr_schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
 
 
 class ReduceLROnPlateau(LRSchedulerWithLossOrMetric):

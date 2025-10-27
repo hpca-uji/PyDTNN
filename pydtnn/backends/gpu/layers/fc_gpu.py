@@ -2,8 +2,8 @@ import pycuda.driver as drv
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.layers import FC
-from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.performance_models import matmul_time
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
@@ -17,7 +17,7 @@ class FCGPU(LayerGPU, FC):
         self.matmul = matmul_gpu
         self.matvec = matvec_gpu
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 

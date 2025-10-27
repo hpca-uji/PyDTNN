@@ -1,7 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.cpu.metrics import MetricCPU
-from pydtnn.metrics import CategoricalMSE
+from pydtnn.backends.cpu.metrics.metric_cpu import MetricCPU
+from pydtnn.metrics.categorical_mse import CategoricalMSE
 
 
 class CategoricalMSECPU(MetricCPU, CategoricalMSE[np.ndarray]):

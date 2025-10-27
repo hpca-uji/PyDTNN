@@ -1,13 +1,12 @@
 from numpy import int32, prod
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from abc import ABC
 from typing import TypeVar
 
-from pydtnn.optimizers import Optimizer
+from pydtnn.optimizers.optimizer import Optimizer
 gpuarray_t = TypeVar("gpuarray_t")
 
 
-class OptimizerGPU(Optimizer, ABC):
+class OptimizerGPU(Optimizer):
     """
     Extends an Optimizer class with the attributes and methods required by GPU Optimizers.
     """

@@ -1,15 +1,17 @@
+import numpy as np
+
 import pycuda.gpuarray as gpuarray
 from pycuda.elementwise import ElementwiseKernel
 
-from pydtnn.layers.concatenation_block import ConcatenationBlock, CONCAT_DIM_NCHW, CONCAT_DIM_NHWC
-from pydtnn.performance_models import *
-from pydtnn.tracers import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.gpu.layers import LayerGPU
+from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import decode_tensor, TensorFormat
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.types import DTYPE2CTYPE, ArrayShape
+
 
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
 
@@ -21,14 +23,11 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
         self.out_co = None
         self.idx_co = None
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
         # @warning: super().initialize() calls self.initialize_block_layer() (don't call it again)
         self.concat = ElementwiseKernel(
-            "T *dst, T *src, int N, int H, int W, int C, int first_c, int last_c".replace("T",
-                                                                                          {np.float32: "float",
-                                                                                           np.float64: "double"}[
-                                                                                              self.model.dtype]),
+            "T *dst, T *src, int N, int H, int W, int C, int first_c, int last_c".replace("T", DTYPE2CTYPE[self.model.dtype]),
             {TensorFormat.NHWC:
                 """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {
@@ -52,10 +51,7 @@ class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
             "concat")
 
         self.split = ElementwiseKernel(
-            "T *src, T *dst, int N, int H, int W, int C, int first_c, int last_c".replace("T",
-                                                                                          {np.float32: "float",
-                                                                                           np.float64: "double"}[
-                                                                                              self.model.dtype]),
+            "T *src, T *dst, int N, int H, int W, int C, int first_c, int last_c".replace("T", DTYPE2CTYPE[self.model.dtype]),
             {TensorFormat.NHWC:
                 """int c_ = i % C;
                    if (first_c <= c_ && c_ < last_c) {

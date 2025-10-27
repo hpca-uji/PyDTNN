@@ -1,5 +1,5 @@
-from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.layers import Input
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.layers.input import Input
 from numpy import ndarray, asarray
 
 

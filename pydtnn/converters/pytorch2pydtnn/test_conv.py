@@ -1,7 +1,9 @@
 import numpy as np
 from pydtnn.model import Model
-from pydtnn.layers import Input, Conv2D, Layer
-from pydtnn.activations import LeakyRelu, Relu6
+from pydtnn.layers.input import Input
+from pydtnn.layers.layer import Layer
+from pydtnn.activations.leaky_relu import LeakyRelu
+from pydtnn.activations.relu6 import Relu6
 from copy import deepcopy
 
 from pydtnn.layers.conv_2d import Conv2D

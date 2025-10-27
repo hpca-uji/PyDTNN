@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.backends.cpu.losses.loss_cpu import LossCPU
-from pydtnn.losses import CategoricalCrossEntropy
+from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 
 
 class CategoricalCrossEntropyCPU(LossCPU, CategoricalCrossEntropy):

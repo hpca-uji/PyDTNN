@@ -1,7 +1,12 @@
-from pydtnn.layers import *
-from pydtnn.activations import *
-
 from collections.abc import Sequence
+from pydtnn.activations.relu import Relu
+from pydtnn.activations.softmax import Softmax
+from pydtnn.layers.average_pool_2d import AveragePool2D
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.fc import FC
+from pydtnn.layers.flatten import Flatten
+from pydtnn.layers.input import Input
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 # NOTE: PyDTNN follows PyTorch's definitions
@@ -35,8 +40,8 @@ def mobileNet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequen
 
     _(AveragePool2D(pool_shape=(1, 1)))
     _(Flatten())
-    _(FC(shape=(1024,), activation=relu))
-    _(FC(shape=output_shape, activation=softmax))
+    _(FC(shape=(1024,), activation=Relu))
+    _(FC(shape=output_shape, activation=Softmax))
 
     return model
 

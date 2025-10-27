@@ -3,8 +3,8 @@ from collections import defaultdict
 
 import numpy as np
 
-from pydtnn.tracers import SimpleTracer
-from pydtnn.power_meters import PMLib
+from pydtnn.tracers.simple_tracer import SimpleTracer
+from pydtnn.power_meters.pmlib import PMLib
 
 from typing import TYPE_CHECKING
 

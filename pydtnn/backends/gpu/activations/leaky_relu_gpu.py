@@ -5,7 +5,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 import numpy as np
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
 import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule

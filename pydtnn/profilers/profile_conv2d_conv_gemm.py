@@ -17,7 +17,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from pydtnn.layers import Conv2D
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
 from pydtnn.utils import random
 

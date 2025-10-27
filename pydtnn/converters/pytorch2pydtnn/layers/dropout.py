@@ -3,16 +3,16 @@
 # _______________________________________________________________________________________________________________
 
 # Typing related (or non important) imports
-from typing import *
+from typing import Dict, Any
 
 # Functionality imports
-from pydtnn import layers
+from pydtnn.layers.dropout import Dropout as _Dropout
 import pydtnn.converters.pytorch2pydtnn.common as cm
 
 # ------------------- #
 
 
-def Dropout(args: Dict[str, Any]) -> layers.Dropout:
+def Dropout(args: Dict[str, Any]) -> _Dropout:
     # https://pytorch.org/docs/stable/generated/torch.nn.Dropout.html#torch.nn.Dropout
 
     # PyTorch attributes:
@@ -28,4 +28,4 @@ def Dropout(args: Dict[str, Any]) -> layers.Dropout:
 
     layer_args = cm.prepare_pydtnn_arguments(arguments=args[cm.ARGUMENTS], torch_dict_keys=torch_dict_keys, pydtnn_dict_keys=pydtnn_dict_keys)
 
-    return layers.Dropout(**layer_args)
+    return _Dropout(**layer_args)

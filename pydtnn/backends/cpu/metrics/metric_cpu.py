@@ -1,10 +1,9 @@
-from abc import ABC
-
-from pydtnn.metrics import Metric
+from pydtnn.metrics.metric import Metric
 
 from numpy import ndarray
 
-class MetricCPU(Metric[ndarray], ABC):
+
+class MetricCPU(Metric[ndarray]):
     """
     Extends a Metric class with the attributes and methods required by CPU Metrics.
     """

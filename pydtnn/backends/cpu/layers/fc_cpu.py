@@ -1,10 +1,10 @@
 import numpy as np
 
-from pydtnn.backends.cpu.layers import LayerCPU
-from pydtnn.layers import FC
+from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.layers.fc import FC
 from pydtnn.model import Model
 from pydtnn.performance_models import matmul_time
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
 class FCCPU(LayerCPU, FC):

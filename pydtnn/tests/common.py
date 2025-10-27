@@ -20,7 +20,7 @@ def verbose_test():
 
 class Params:
     def __init__(self) -> None:
-        self.dtype = np.float64
+        self.dtype = np.float32
         self.parallel = "sequential"
         self.tensor_format = TensorFormat.NHWC.upper()
 
@@ -29,6 +29,7 @@ class Params:
 
         dataset_name = os.environ.get("PYDTNN_TEST_DATASET", "mnist")
         self.dataset_name = dataset_name
+        # Make dataset monopath
         self.dataset_path = f"datasets/{dataset_name}"
         self.dataset_train_path = f"datasets/{dataset_name}"
         self.dataset_test_path = f"datasets/{dataset_name}"

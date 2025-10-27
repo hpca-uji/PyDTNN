@@ -3,10 +3,11 @@ import pycuda.gpuarray as gpuarray
 from pycuda.compiler import SourceModule
 from pycuda.driver import Function
 
-from pydtnn.losses import BinaryCrossEntropy
+from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
 from pydtnn.backends.gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
+
 
 class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy):
 

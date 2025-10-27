@@ -1,28 +1,9 @@
-#
-#  This file is part of Python Distributed Training of Neural Networks (PyDTNN)
-#
-#  Copyright (C) 2025 Universitat Jaume I
-#
-#  PyDTNN is free software: you can redistribute it and/or modify it under the
-#  terms of the GNU General Public License as published by the Free Software
-#  Foundation, either version 3 of the License, or (at your option) any later
-#  version.
-#
-#  This program is distributed in the hope that it will be useful, but WITHOUT
-#  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-#  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public
-#  License for more details.
-#
-#  You should have received a copy of the GNU General Public License along
-#  with this program. If not, see <https://www.gnu.org/licenses/>.
-#
-
-from pydtnn.layers import AdaptiveAveragePool2D
+from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 
 # Import from AbstractPool2DLayerGPU
 from pydtnn.utils.types import DTYPE2CTYPE
-from pydtnn.tracers import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
@@ -80,11 +61,11 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
         self.block = (self.threads, 1, 1)
 
         self.initialize_pool_2d_gpu(prev_shape, x)
-    
+
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.y = None
-    
+
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
 
         _func_name = ["cuda_adaptive_average_pooling_fwd"]
@@ -213,7 +194,7 @@ __global__ void {func_name}({T}* x, {T}* y,
         module = SourceModule(code).get_function(_func_name)
 
         return module
-    
+
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
 
         _func_name = ["cuda_adaptive_average_pooling_bwd"]
@@ -337,7 +318,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         module = SourceModule(code).get_function(_func_name)
 
         return module
-    
+
     def initialize_pool_2d_gpu(self, prev_shape, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
@@ -365,7 +346,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
             col2im_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
-        
+
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
@@ -401,7 +382,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
-    
+
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         match self.model.tensor_format:
@@ -421,12 +402,11 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         num_ops_last_worker = np.int32(num_elements - (num_active_workers - 1) * num_ops_per_worker)
 
         self.cuda_bwd_func(self.dx.ary, self.y.ary,
-                            np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                            np.int32(self.ho), np.int32(self.wo), num_elements,
-                            num_active_workers, num_ops_per_worker, num_ops_last_worker,
-                            grid=self.grid, block=self.block,
-                            stream=self.model.stream)
+                           np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+                           np.int32(self.ho), np.int32(self.wo), num_elements,
+                           num_active_workers, num_ops_per_worker, num_ops_last_worker,
+                           grid=self.grid, block=self.block,
+                           stream=self.model.stream)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
-    

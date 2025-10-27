@@ -7,9 +7,9 @@ if typing.TYPE_CHECKING:
 
 
 type ArrayShape = tuple[int, ...]
-DTYPE2CTYPE: dict[np.number, str] = {
-    np.float32: "float",
-    np.float64: "double"
+DTYPE2CTYPE: dict[np.dtype, str] = {
+    np.dtype(np.float32): "float",
+    np.dtype(np.float64): "double"
 }
 
 
