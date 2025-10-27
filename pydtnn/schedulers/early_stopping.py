@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 
-from pydtnn.schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -10,7 +10,7 @@ else:
     Model = object
 
 
-class EarlyStopping(LRSchedulerWithLossOrMetric):
+class EarlyStopping(SchedulerWithLossOrMetric):
     """
     EarlyStopping LRScheduler
     """

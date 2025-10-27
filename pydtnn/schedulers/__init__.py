@@ -7,7 +7,7 @@ If you want to add a new LR Scheduler:
     3) and, optionally, import your LR Scheduler on this file.
 
 """
-from pydtnn.schedulers.lr_scheduler import LRScheduler as _LRScheduler
+from pydtnn.schedulers.scheduler import Scheduler as _LRScheduler
 # NOTE: The following import is necessary for other imports:
 from pydtnn.schedulers.early_stopping import EarlyStopping as _EarlyStopping
 from pydtnn.schedulers.model_checkpoint import ModelCheckpoint as _ModelCheckpoint

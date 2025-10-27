@@ -1,10 +1,10 @@
-from pydtnn.schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 from numpy import ndarray
 
 from typing import TYPE_CHECKING
 
 
-class StopAtLoss(LRSchedulerWithLossOrMetric):
+class StopAtLoss(SchedulerWithLossOrMetric):
     """
     StopAtLoss LRScheduler
     """

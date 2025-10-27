@@ -3,10 +3,10 @@ import time
 
 import numpy as np
 
-from pydtnn.schedulers.lr_scheduler_with_loss_or_metric import LRSchedulerWithLossOrMetric
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
 
 
-class ModelCheckpoint(LRSchedulerWithLossOrMetric):
+class ModelCheckpoint(SchedulerWithLossOrMetric):
     """
     ModelCheckpoint LRScheduler
     """

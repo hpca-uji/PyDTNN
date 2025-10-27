@@ -1,9 +1,9 @@
 from pydtnn.backends import PromoteToBackend
 
 
-class LRScheduler(PromoteToBackend):
+class Scheduler(PromoteToBackend):
     """
-    LRScheduler base class
+    Scheduler base class
     """
 
     def __init__(self, verbose: bool):
@@ -15,7 +15,7 @@ class LRScheduler(PromoteToBackend):
         self.stop_training: bool = False
 
     def __str__(self):
-        return f"LRScheduler {type(self).__name__}"
+        return f"Scheduler {type(self).__name__}"
 
     def on_batch_begin(self, *args):
         pass

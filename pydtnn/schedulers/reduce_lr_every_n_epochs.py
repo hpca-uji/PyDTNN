@@ -1,8 +1,8 @@
-from pydtnn.schedulers.lr_scheduler import LRScheduler
+from pydtnn.schedulers.scheduler import Scheduler
 from numpy import ndarray
 
 
-class ReduceLREveryNEpochs(LRScheduler):
+class ReduceLREveryNEpochs(Scheduler):
     """
     ReduceLREveryNEpochs LRScheduler
     """

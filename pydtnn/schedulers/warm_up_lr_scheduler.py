@@ -1,9 +1,9 @@
-from pydtnn.schedulers.lr_scheduler import LRScheduler
+from pydtnn.schedulers.scheduler import Scheduler
 
 from numpy import ndarray
 
 
-class WarmUpLRScheduler(LRScheduler):
+class WarmUpLRScheduler(Scheduler):
     """
     WarmUpLRScheduler
     """
