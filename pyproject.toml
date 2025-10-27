@@ -55,6 +55,10 @@ fhe = [
     "openfhe>=1.4.0",
     "tenseal>=0.3.16"
 ]
+test = [
+    "torch>=2.6.0",
+    "torchvision>=0.21.0"
+]
 
 [project.scripts]
 pydtnn_benchmark = "pydtnn.pydtnn_benchmark:main"
