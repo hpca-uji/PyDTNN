@@ -37,7 +37,7 @@ mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
   --momentum=0.9 \
   --decay=0 \
   --loss_func=categorical_accuracy,categorical_cross_entropy \
-  --lr_schedulers=warm_up,stop_at_loss \
+  --schedulers=warm_up,stop_at_loss \
   --warm_up_epochs=5 \
   --early_stopping_metric=val_categorical_cross_entropy \
   --early_stopping_patience=20 \

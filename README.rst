@@ -243,7 +243,7 @@ The PyDTNN framework comes with a utility launcher called
 
 -  Learning rate schedulers parameters:
 
-   -  ``--lr_schedulers``: List of comma-separated LR schedulers:
+   -  ``--schedulers``: List of comma-separated LR schedulers:
       ``warm_up``, ``early_stopping``, ``reduce_lr_on_plateau``,
       ``reduce_lr_every_nepochs``, ``model_checkpoint``. 
       Default: ``early_stopping,reduce_lr_on_plateau,model_checkpoint``.
@@ -335,7 +335,7 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
           --optimizer=adam \
           --learning_rate=0.01 \
           --loss_func=categorical_cross_entropy \
-          --lr_schedulers=warm_up,reduce_lr_every_nepochs \
+          --schedulers=warm_up,reduce_lr_every_nepochs \
           --reduce_lr_every_nepochs_factor=0.5 \
           --reduce_lr_every_nepochs_nepochs=30 \
           --reduce_lr_every_nepochs_min_lr=0.001 \
@@ -407,7 +407,7 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
       rho                            : 0.9
       loss_func                      : categorical_cross_entropy
       metrics                        : categorical_accuracy
-      lr_schedulers                  : warm_up,reduce_lr_every_nepochs
+      schedulers                  : warm_up,reduce_lr_every_nepochs
       warm_up_epochs                 : 5
       early_stopping_metric          : val_categorical_cross_entropy
       early_stopping_patience        : 20
@@ -632,7 +632,7 @@ using 4 OpenMP threads::
       rho                            : 0.9
       loss_func                      : categorical_cross_entropy
       metrics                        : categorical_accuracy
-      lr_schedulers_names            : warm_up,reduce_lr_on_plateau,model_checkpoint,early_stopping
+      schedulers_names            : warm_up,reduce_lr_on_plateau,model_checkpoint,early_stopping
       warm_up_epochs                 : 5
       early_stopping_metric          : val_categorical_cross_entropy
       early_stopping_patience        : 20

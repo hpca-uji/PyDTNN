@@ -42,7 +42,7 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
   --momentum=0.9 \
   --loss_func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
-  --lr_schedulers=early_stopping,reduce_lr_on_plateau \
+  --schedulers=early_stopping,reduce_lr_on_plateau \
   --early_stopping_metric=val_categorical_cross_entropy \
   --early_stopping_patience=8 \
   --reduce_lr_on_plateau_metric=val_categorical_cross_entropy \

@@ -1,4 +1,4 @@
-from pydtnn.lr_schedulers.lr_scheduler import LRScheduler
+from pydtnn.schedulers.scheduler import Scheduler
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -6,9 +6,9 @@ else:
     Model = object
 
 
-class LRSchedulerWithLossOrMetric(LRScheduler):
+class SchedulerWithLossOrMetric(Scheduler):
     """
-    LRScheduler with metric base class
+    Scheduler with metric base class
     """
 
     def __init__(self, loss_or_metric: str, verbose: bool):

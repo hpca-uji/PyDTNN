@@ -266,40 +266,40 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
             default="categorical_accuracy",
             help="List of comma-separated metrics that are evaluated on each trained batch: \'categorical_accuracy\', \'categorical_hinge\', \'categorical_mse\', \'categorical_mae\', \'regression_mse\', \'regression_mae\'. Default: \'categorical_accuracy\'.")
 
-        # Learning rate schedulers options
-        _lr_group = self.add_argument_group("Learning rate schedulers options")
-        _lr_group.add_argument('--lr_schedulers', dest="lr_schedulers_names", type=str,
+        # Schedulers options
+        _sh_group = self.add_argument_group("Schedulers options")
+        _sh_group.add_argument('--schedulers', dest="schedulers_names", type=str,
                                default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
                                help="List of comma-separated LR schedulers: \'warm_up\', \'early_stopping\', \'reduce_lr_on_plateau\', \'reduce_lr_every_nepochs\', \'model_checkpoint\'. Default: \'early_stopping,reduce_lr_on_plateau,model_checkpoint\'.")
-        _lr_group.add_argument('--warm_up_epochs', type=int, default=5,
+        _sh_group.add_argument('--warm_up_epochs', type=int, default=5,
                                help="Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default: 5.")
-        _lr_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy",
+        _sh_group.add_argument('--early_stopping_metric', type=str, default="val_categorical_cross_entropy",
                                help="Loss metric monitored by early_stopping LR scheduler. Default: \'val_categorical_cross_entropy\'.")
-        _lr_group.add_argument('--early_stopping_patience', type=int, default=10,
+        _sh_group.add_argument('--early_stopping_patience', type=int, default=10,
                                help="Number of epochs with no improvement after which training will be stopped. Default: 10.")
-        _lr_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True,
+        _sh_group.add_argument('--early_stopping_minimize', type=bool_lambda, default=True,
                                help="Whether to minize the metric. If False, it will maximize. Default: True.")
-        _lr_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy",
+        _sh_group.add_argument('--reduce_lr_on_plateau_metric', type=str, default="val_categorical_cross_entropy",
                                help="Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default: \'val_categorical_cross_entropy\'.")
-        _lr_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1,
+        _sh_group.add_argument('--reduce_lr_on_plateau_factor', type=float, default=0.1,
                                help="Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1.")
-        _lr_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5,
+        _sh_group.add_argument('--reduce_lr_on_plateau_patience', type=int, default=5,
                                help="Number of epochs with no improvement after which LR will be reduced. Default: 5.")
-        _lr_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0,
+        _sh_group.add_argument('--reduce_lr_on_plateau_min_lr', type=float, default=0,
                                help="Lower bound on the learning rate. Default: 0.")
-        _lr_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1,
+        _sh_group.add_argument('--reduce_lr_every_nepochs_factor', type=float, default=0.1,
                                help="Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1.")
-        _lr_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5,
+        _sh_group.add_argument('--reduce_lr_every_nepochs_nepochs', type=int, default=5,
                                help="Number of epochs after which LR will be periodically reduced. Default: 5.")
-        _lr_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0,
+        _sh_group.add_argument('--reduce_lr_every_nepochs_min_lr', type=float, default=0,
                                help="Lower bound on the learning rate. Default: 0.")
-        _lr_group.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy",
+        _sh_group.add_argument('--stop_at_loss_metric', type=str, default="val_accuracy",
                                help="Loss metric monitored by stop_at_loss LR scheduler. Default: \'val_accuracy\'.")
-        _lr_group.add_argument('--stop_at_loss_threshold', type=float, default=0,
+        _sh_group.add_argument('--stop_at_loss_threshold', type=float, default=0,
                                help="Metric threshold monitored by stop_at_loss LR scheduler. Default: 0.")
-        _lr_group.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy",
+        _sh_group.add_argument('--model_checkpoint_metric', type=str, default="val_categorical_cross_entropy",
                                help="Loss metric monitored by model_checkpoint LR scheduler. Default: \'val_categorical_cross_entropy\'")
-        _lr_group.add_argument('--model_checkpoint_save_freq', type=int, default=2,
+        _sh_group.add_argument('--model_checkpoint_save_freq', type=int, default=2,
                                help="Frequency (in epochs) at which the model weights and bias will be saved by the model_checkpoint LR scheduler. Default: 2.")
 
         # Parallel execution options

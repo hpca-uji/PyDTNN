@@ -30,7 +30,7 @@ pydtnn_benchmark \
   --momentum=0.9 \
   --loss_func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
-  --lr_schedulers=warm_up,reduce_lr_on_plateau \
+  --schedulers=warm_up,reduce_lr_on_plateau \
   --warm_up_epochs=5 \
   --early_stopping_metric=val_categorical_cross_entropy \
   --early_stopping_patience=20 \
