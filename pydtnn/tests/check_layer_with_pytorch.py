@@ -6,6 +6,7 @@ import torch
 from pydtnn import Model
 from pydtnn.utils import random
 from pydtnn.tests.common import TestCase
+from unittest import skip
 
 import numpy as np
 
@@ -312,11 +313,9 @@ class CheckLayerWithPyTorch(TestCase):
         _x = CheckLayerWithPyTorch.get_test_data()
         self.do_test(_x = _x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Conv2D")
     # ---------
-    
-    def test_Dropout(self):
 
-        self.skipTest(reason="Dropout makes a random mask, then it can not be compared due both PyTorch and PyDTNN create different masks.")
-        
+    @skip(reason="Dropout makes a random mask, then it can not be compared due both PyTorch and PyDTNN create different masks.")
+    def test_Dropout(self):        
         pydtnn_layers = [Dropout()]
         torch_model = torch.nn.Dropout()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
