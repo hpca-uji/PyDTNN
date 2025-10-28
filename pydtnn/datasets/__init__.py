@@ -8,8 +8,14 @@ from pydtnn.datasets.imagenet import ImageNet
 from pydtnn.datasets.mnist import MNIST
 from pydtnn.datasets.folder import Folder
 from pydtnn.datasets.chestxray import ChestXRay
+from pydtnn.datasets.synthetic import Synthetic
 
 CustomImport = CustomDataset.import_
+
+
+__all__ = (
+    "get_dataset",
+)
 
 
 # TODO: REMOVE imports and use proper import_module path
@@ -20,7 +26,8 @@ def get_dataset(model) -> Dataset:
                         "imagenet": "ImageNet",
                         "archive": "CustomImport",
                         "folder": "DatasetFolderLoader",
-                        "chestxray": "ChestXRay"
+                        "chestxray": "ChestXRay",
+                        "synthetic": "Synthetic"
                         }
         dataset_mod = importlib.import_module("pydtnn.datasets")
         dataset_cls = getattr(dataset_mod, dataset_name[model.dataset_name])

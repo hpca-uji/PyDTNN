@@ -158,17 +158,16 @@ The PyDTNN framework comes with a utility launcher called
 -  Dataset parameters:
 
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
-      ``imagenet``, ``archive`` or ``folder``. Default: ``None``.
+      ``imagenet``, ``archive``, ``folder``, ``chestxray`` or ``synthetic``. Default: ``None``.
+   -  ``--dataset_path``: Path to dataset folder.
+   -  ``--synthetic_train_samples``: Number of synthetic train sample. Default: 1000.
+   -  ``--synthetic_test_samples``: Number of synthetic train sample. Default: 100.
+   -  ``--synthetic_input_shape``: Number of synthetic input shape (coma separated). Default: 3,32,32.
+   -  ``--synthetic_output_shape``: Number of synthetic input shape (coma separated). Default: 10.
    -  ``dataset_percentage``: Percentage of dataset that will be used. 
       If it is ``0``: it is deactivated; if is is a value below ``1`` (and above 0): 
       it will perform undersampling; and if is is a value above ``1``: it will perform 
       oversampling. Default: 0."
-   -  ``--use_synthetic_data``: Use synthetic data. Default: False.
-   -  ``--dataset_train_path``: Path to the training dataset.
-   -  ``--dataset_test_path``: Path to the training dataset.
-   -  ``--dataset_path``: Path to the unified custom dataset.
-   -  ``--dataset_export_split_weights``: When exporting, the weights
-      of each split, used to determine the number samples. Default: 1.
    -  ``--test_as_validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
       True if specified.

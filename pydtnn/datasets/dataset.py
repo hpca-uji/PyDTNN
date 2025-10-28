@@ -11,12 +11,10 @@ import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import BackgroundGenerator, random
-from pydtnn.utils.types import Array, ArrayShape
+from pydtnn.utils.types import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
-from enum import IntEnum
-from pydtnn.utils.types import ArrayShape
 
 
 class Dataset(ABC):
@@ -86,12 +84,8 @@ class Dataset(ABC):
         self._x: list[np.ndarray]
         self._y: list[np.ndarray]
 
-        if self.model.use_synthetic_data:
-            self._data_generator = self._synthetic_data_generator
-            self._init_synthetic_data()
-        else:
-            self._data_generator = self._actual_data_generator
-            self._init_actual_data()
+        self._data_generator = self._actual_data_generator
+        self._init_actual_data()
 
         self.x_empty_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
         self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
@@ -249,17 +243,6 @@ class Dataset(ABC):
 
         return int(local_offset), int(local_nsamples), int(nsamples)
 
-    def _init_synthetic_data(self):
-        for part in Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST:
-            local_batches = self._local_nsamples[part] // self.model.batch_size
-            nsamples = local_batches * self.model.batch_size
-            x_shape = (nsamples, *self.input_shape)
-            if self.model.tensor_format is TensorFormat.NHWC:
-                x_shape = tuple(x_shape[i] for i in (0, 2, 3, 1))
-            y_shape = (nsamples, *self.output_shape)
-            self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
-            self._y[part] = np.zeros(y_shape, dtype=self.model.dtype, order="C")
-
     @abstractmethod
     def _init_actual_data(self):
         """Generates initial self._x[] and self._y[]. To be implemented in derived classes."""
@@ -286,38 +269,6 @@ class Dataset(ABC):
         """Sets to 1 the corresponding entry in the 2D y array as indicated by the 1D array of classes"""
         y[np.arange(y.shape[0]), classes_list] = 1
 
-    def _synthetic_data_generator(self, part: Part):
-        """
-        Generates synthetic data for each dataset part returning (slices of) _x[part] and _y[part] initialized in
-        _init_synthetic_data().
-
-        The _local_remaining_nsamples[part] vector is used to keep track of:
-        - whether a fresh round of the given part should start (if it is -1), or
-        - the remaining number of samples for the given part to be yielded.
-
-        Although the data generator should be called in turns: one round of a part until it finishes, then another
-        round of the same or a different part, the current implementation, using -1 to mark the end of a round,
-        should also support being called for different parts in an interleaved manner. If another version of this
-        method is implemented, at least it should raise and exception if a new round begins when a round for another
-        part is still in progress.
-        """
-        for p in (Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST):
-            if self._local_remaining_nsamples[p] == -1:  # If not initialized
-                self._local_remaining_nsamples[p] = self._local_nsamples[p]
-        while self._local_remaining_nsamples[part] > 0:
-            # print()
-            # print(f"[part: {part} rank: {self.model.rank}] "
-            #       f"{self._local_remaining_nsamples[part]}/{self._x[part].shape[0]}\n")
-            if self._local_remaining_nsamples[part] > self._x[part].shape[0]:
-                self._local_remaining_nsamples[part] -= self._x[part].shape[0]
-                yield self._x[part], self._y[part]
-            else:
-                remaining_samples = self._local_remaining_nsamples[part]
-                self._local_remaining_nsamples[part] = 0
-                yield self._x[part][:remaining_samples, ...], self._y[part][:remaining_samples, ...]
-        # Mark that a round for part has finished (_local_remaining_nsamples[part] is set to -1 and nothing is yield)
-        self._local_remaining_nsamples[part] = -1
-
     @staticmethod
     def _offset2files(filenames: list[str], images_per_file: int, local_offset: int, local_nsamples: int) -> list[tuple[str, int, int]]:
         i = local_offset // images_per_file
@@ -338,9 +289,6 @@ class Dataset(ABC):
         yield
 
     def _data_transform(self, part: Part, data: np.ndarray) -> np.ndarray:
-        if self.model.use_synthetic_data:
-            return data
-
         # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
         data = data.copy()
 

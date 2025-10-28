@@ -155,14 +155,20 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
-        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder", "chestxray"],
-                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'archive\', \'folder\' or \'chestxray\'. Default: \'None\'.")
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder", "chestxray", "synthetic"],
+                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'archive\', \'folder\' \'chestxray\' or \'synthetic\'. Default: \'None\'.")
         _ds_group.add_argument('--dataset_percentage', type=float, default=0.0,
                                help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
-        _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda,
-                               help="Use synthetic data. Default: False.")
         _ds_group.add_argument('--dataset_path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
+        _ds_group.add_argument('--synthetic_train_samples', default=1000, type=int,
+                               help="Number of synthetic train sample. Default: 1000.")
+        _ds_group.add_argument('--synthetic_test_samples', default=100, type=int,
+                               help="Number of synthetic train sample. Default: 100.")
+        _ds_group.add_argument('--synthetic_input_shape', default="3,32,32", type=str,
+                               help="Number of synthetic input shape (coma separated). Default: 3,32,32.")
+        _ds_group.add_argument('--synthetic_output_shape', default="10", type=str,
+                               help="Number of synthetic input shape (coma separated). Default: 10.")
         _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda,
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
         _ds_group.add_argument('--validation_split', type=factor, default=0.2,
