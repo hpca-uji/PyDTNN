@@ -1,12 +1,13 @@
 import os
 import itertools
+from typing import TYPE_CHECKING
 
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.tensor import TensorFormat
 
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
@@ -59,7 +60,7 @@ class MNIST(Dataset):
 
         # Pregenerate GZIP indexs
         for gz in itertools.chain(self._x_filename, self._y_filename):
-            self._gzip_index(gz)
+            self._gzip_open(gz).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
         size = int(np.prod(INPUT_SHAPE))

@@ -1,16 +1,18 @@
 from pathlib import Path
 import warnings
 import itertools
-import gzip
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Generator, IO
+from enum import IntEnum
 
 import numpy as np
 from PIL import Image
 import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import BackgroundGenerator, string_substitute, random
-from typing import TYPE_CHECKING, Generator, IO
+from pydtnn.utils import BackgroundGenerator, random
+from pydtnn.utils.types import Array, ArrayShape
+
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
@@ -97,29 +99,27 @@ class Dataset(ABC):
         if self.debug:
             self._print_report()
 
-    def _gzip_index(self, path: str) -> str:
-        idx = Path(path).with_suffix(".gz.idx")
-        if not idx.exists():
-            with rapidgzip.RapidgzipFile(path, parallelization=1) as f:
-                f.export_index(str(idx))
-        return str(idx)
+    def _gzip_open(self, filename: str) -> IO[bytes]:
+        path = Path(filename)
+        plain = path.with_suffix("")
+        idx = path.with_suffix(f"{path.suffix}.idx")
 
-    def _gzip_open(self, path: str) -> gzip.GzipFile:
+        if plain.exists():
+            return open(plain, mode="rb")
         try:
             f = rapidgzip.RapidgzipFile(path, parallelization=1)
-            f.import_index(self._gzip_index(path))
+            if idx.exists():
+                f.import_index(str(idx))
+            else:
+                f.export_index(str(idx))
         except Exception:
             f.close()
             raise
         else:
             return f
 
-    def export(self, split_weights: list[float] | None = None):
+    def export(self, split_weights: list[float] = [1]):
         """Export dataset (possibly split and rank specific)"""
-
-        # Get split weights
-        if split_weights is None:
-            split_weights = list(map(float, self.model.dataset_export_split_weights.split(",")))
 
         # Data generators
         gen_train = self._data_generator(Dataset.Part.TRAIN)
@@ -169,7 +169,7 @@ class Dataset(ABC):
 
         # Save arrays
         for split, (x_train, y_train, x_test, y_test) in enumerate(zip(x_train, y_train, x_test, y_test)):
-            path = string_substitute(self.model.dataset_path, split=split)
+            path = Path(self.model.dataset_path) / f"archive.{split}.npz"
 
             # Export dataset
             np.savez_compressed(path,

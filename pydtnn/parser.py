@@ -163,8 +163,6 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Use synthetic data. Default: False.")
         _ds_group.add_argument('--dataset_path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
-        _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1",
-                               help="When exporting, the weights of each split, used to determine the number samples. Defualt: 1.")
         _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda,
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
         _ds_group.add_argument('--validation_split', type=factor, default=0.2,

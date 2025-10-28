@@ -1,6 +1,7 @@
 import os
 import copy
 import tarfile
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -8,7 +9,7 @@ from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
@@ -44,7 +45,9 @@ class CIFAR10(Dataset):
             [os.path.join("cifar-10-batches-bin", "test_batch.bin")]
         ]
         self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
-        self._gzip_index(self._src_filename)
+
+        # Pregenerate GZIP indexs
+        self._gzip_open(self._src_filename).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
         xy_filenames = self._xy_filenames[part]
