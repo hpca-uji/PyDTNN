@@ -5,7 +5,7 @@ from pycuda.driver import Function
 
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
-from pydtnn.backends.gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 

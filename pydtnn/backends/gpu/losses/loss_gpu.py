@@ -4,7 +4,7 @@ from pycuda.driver import Function
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
-from pydtnn.backends.gpu import TensorGPU
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.losses.loss import Loss
 from pydtnn.utils.types import ArrayShape
 
