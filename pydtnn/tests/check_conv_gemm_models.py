@@ -81,6 +81,7 @@ class CheckConvGemmModels(TestCase):
         loss_func = loss_cls(shape=(local_batch_size, *model1.layers[-1].shape))
         loss_func.set_backend(model1._backend)
         loss_func.set_model(model1)
+        loss_func.initialize()
         return model1, loss_func
 
     @staticmethod

@@ -18,12 +18,12 @@ from copy import deepcopy
 
 import numpy as np
 
+from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
-from pydtnn.model import Model
 from pydtnn.initializers import glorot_uniform, zeros
 
 

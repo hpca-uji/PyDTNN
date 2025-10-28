@@ -57,13 +57,7 @@ class ConvGemm:
         parent_layer: layer
             The layer that is using it (for tracing purposes).
         """
-        if isinstance(dtype, type):
-            self.dtype = dtype
-        else:
-            try:
-                self.dtype = {'float32': np.float32, 'float64': np.float64}[dtype]
-            except KeyError:
-                raise AttributeError("dtype '{}' not recognized".format(dtype)) from None
+        self.dtype = dtype
         if ConvGemm.lib_cg is None:
             ConvGemm.lib_cg = load_library("convGemm")
 

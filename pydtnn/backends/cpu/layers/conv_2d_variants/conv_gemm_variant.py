@@ -18,7 +18,7 @@ class ConvGemmVariant[T: Array](Conv2D[T]):
         super().initialize(prev_shape, x)
         # ConvGemm parameters
         if self.model.enable_conv_gemm:
-            self.cg:ConvGemm = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+            self.cg: ConvGemm = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
 
     def _forward_cg_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""
