@@ -1,7 +1,6 @@
 from pathlib import Path
 import warnings
 import itertools
-import gzip
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -97,17 +96,19 @@ class Dataset[T: Array](ABC):
         if self.debug:
             self._print_report()
 
-    def _gzip_index(self, path: str) -> str:
-        idx = Path(path).with_suffix(".gz.idx")
-        if not idx.exists():
-            with rapidgzip.RapidgzipFile(path, parallelization=1) as f:
-                f.export_index(str(idx))
-        return str(idx)
+    def _gzip_open(self, filename: str) -> IO[bytes]:
+        path = Path(filename)
+        plain = path.with_suffix("")
+        idx = path.with_suffix(f"{path.suffix}.idx")
 
-    def _gzip_open(self, path: str) -> gzip.GzipFile:
+        if plain.exists():
+            return open(plain, mode="rb")
         try:
             f = rapidgzip.RapidgzipFile(path, parallelization=1)
-            f.import_index(self._gzip_index(path))
+            if idx.exists():
+                f.import_index(str(idx))
+            else:
+                f.export_index(str(idx))
         except Exception:
             f.close()
             raise

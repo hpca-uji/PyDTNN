@@ -59,7 +59,7 @@ class MNIST(Dataset):
 
         # Pregenerate GZIP indexs
         for gz in itertools.chain(self._x_filename, self._y_filename):
-            self._gzip_index(gz)
+            self._gzip_open(gz).close()
 
     def _actual_data_generator(self, part: Dataset.Part):
         size = int(np.prod(INPUT_SHAPE))
