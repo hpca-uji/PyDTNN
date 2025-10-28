@@ -88,6 +88,7 @@ DEFAULT_BACH_SIZE = 64
 
 
 # NOTE: Check "_initialize_cuda" to get the actual types.
+# TODO: set the correct type.
 NCCL_Data_Type = TypeVar("NCCL_Data_Type")
 NCCL_Comm_Type = TypeVar("NCCL_Comm_Type")
 type Cudnn_Handle_Type = int
@@ -263,7 +264,7 @@ class Model[T: Array]:
     total_metrics: np.ndarray
 
     def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_gpu: bool = False,
-                 enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.float32, tracing: bool = False,
+                 enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
                  tracer_pmlib_device: str = "", **kwargs):
         global enable_cudnn
@@ -274,7 +275,7 @@ class Model[T: Array]:
         self.enable_gpu = enable_cudnn = self.enable_cudnn = enable_gpu
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
-        self.dtype: np.dtype = dtype
+        self.dtype: np.dtype = np.dtype(dtype)
 
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
