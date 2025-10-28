@@ -2,6 +2,8 @@ from pathlib import Path
 import warnings
 import itertools
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Generator, IO
+from enum import IntEnum
 
 import numpy as np
 from PIL import Image
@@ -9,11 +11,10 @@ import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import BackgroundGenerator, string_substitute, random
-from typing import TYPE_CHECKING, Generator, IO
+from pydtnn.utils.types import Array, ArrayShape
+
 if TYPE_CHECKING:
     from pydtnn.model import Model
-from enum import IntEnum
-from pydtnn.utils.types import Array, ArrayShape
 
 
 class Dataset[T: Array](ABC):
