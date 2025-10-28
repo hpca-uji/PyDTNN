@@ -13,9 +13,8 @@ fi
 mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=resnet \
-  --dataset=chestxray14 \
-  --dataset_metadata_path=datasets/chest_xray14 \
-  --dataset_path=datasets/chest_xray14 \
+  --dataset=chestxray \
+  --dataset_path=datasets/chest_xray \
   --test_as_validation=False \
   --batch_size=10 \
   --validation_split=0.2 \
@@ -48,5 +47,5 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --enable_gpu=False \
   --enable_gpudirect=False \
   --dtype=float32 \
-  --resize=True \
-  --resize_dimension=300
+  --transform_resize=True \
+  --transform_resize_size=300

@@ -7,10 +7,8 @@ pydtnn_benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_path=datasets/mnist \
-  --dataset_train_path=datasets/mnist \
-  --dataset_test_path=datasets/mnist \
   --test_as_validation=False \
-  --flip_images=True \
+  --augment_flip=True \
   --batch_size=64 \
   --validation_split=0.2 \
   --num_epochs=50 \

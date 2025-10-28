@@ -14,9 +14,9 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=simplecnn \
   --dataset=archive \
-  --dataset_path=datasets/mnist/dataset.npz \
+  --dataset_path=datasets/mnist \
   --test_as_validation=False \
-  --flip_images=True \
+  --augment_flip=True \
   --batch_size=64 \
   --validation_split=0.2 \
   --num_epochs=50 \

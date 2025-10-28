@@ -6,8 +6,8 @@ from pydtnn.datasets.cifar10 import CIFAR10
 from pydtnn.datasets.custom_dataset import CustomDataset
 from pydtnn.datasets.imagenet import ImageNet
 from pydtnn.datasets.mnist import MNIST
-from pydtnn.datasets.folder_loader import DatasetFolderLoader
-from pydtnn.datasets.chest_xray14 import ChestXRay14
+from pydtnn.datasets.folder import Folder
+from pydtnn.datasets.chestxray import ChestXRay
 
 CustomImport = CustomDataset.import_
 
@@ -20,7 +20,7 @@ def get_dataset(model) -> Dataset:
                         "imagenet": "ImageNet",
                         "archive": "CustomImport",
                         "folder": "DatasetFolderLoader",
-                        "chestxray14": "ChestXRay14"
+                        "chestxray": "ChestXRay"
                         }
         dataset_mod = importlib.import_module("pydtnn.datasets")
         dataset_cls = getattr(dataset_mod, dataset_name[model.dataset_name])

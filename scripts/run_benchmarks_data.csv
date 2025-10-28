@@ -90,8 +90,8 @@ profile;False;False;False;False;False;False;False;False;False;False;False;False;
 enable_gpu;False;False;False;False;False;False;False;False;False;False;False;False;False;False
 dtype;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32
 use_synthetic_data;;True;;True;;True;;True;;True;;True;;True
-flip_images;False;False;False;False;False;False;False;False;False;False;False;False;False;False
-crop_images;False;False;False;False;False;False;False;False;False;False;False;False;False;False
+augment_flip;False;False;False;False;False;False;False;False;False;False;False;False;False;False
+augment_crop;False;False;False;False;False;False;False;False;False;False;False;False;False;False
 nesterov;;;False;;False;False;False;False;False;False;False;False;False;False
 decay;;;1e-4;;;;;;;;1e-4;1e-4;;
 reduce_lr_every_nepochs_factor;;;0.5;;0.1;0.1;0.1;0.1;0.1;0.1;0.1;0.1;;
@@ -101,4 +101,4 @@ stop_at_loss_metric;;;;;;;;;;;;;;
 stop_at_loss_threshold;;;70.0;;70.0;70.0;70.0;70.0;70.0;70.0;70.0;70.0;70.0;70.0
 enable_cudnn_auto_conv_alg;;;False;;;;;;;;;;;
 enable_gpudirect;;;False;;False;False;False;False;False;False;True;True;False;False
-crop_images_size;;;;;16;16;16;16;16;16;16;16;16;16
+augment_crop_size;;;;;16;16;16;16;16;16;16;16;16;16

@@ -7,13 +7,13 @@ mpirun -np 2 \
   pydtnn_benchmark \
   --model=resnet18_cifar10 \
   --dataset=cifar10 \
-  --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+  --dataset_path=datasets/cifar10 \
   --normalize=True \
   --normalize_offset=-0.472 \
   --normalize_scale=1 \
-  --flip_images=True \
-  --crop_images=True \
-  --crop_images_size=16 \
+  --augment_flip=True \
+  --augment_crop=True \
+  --augment_crop_size=16 \
   --test_as_validation=True \
   --batch_size=64 \
   --validation_split=0.2 \

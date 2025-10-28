@@ -48,6 +48,10 @@ Supported datasets:
    is not included into the repository. Its can be downloaded from:
    https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
 
+-  **ChestXray**: the NIH Chest X-ray dataset consists of
+   100,000 de-identified images of chest x-rays. The images
+   are in PNG format. Its can be downloaded from:
+   https://nihcc.app.box.com/v/ChestXray-NIHCC
 
 Installing PyDTNN from source
 -----------------------------
@@ -170,20 +174,20 @@ The PyDTNN framework comes with a utility launcher called
       True if specified.
    -  ``--validation_split``: Split between training and validation
       data.
-   -  ``--flip_images``: Flip horizontally training images. Default:
+   -  ``--augment_flip``: Flip horizontally training images. Default:
       False.
-   -  ``--flip_images_prob``: Probability to flip training images.
+   -  ``--augment_flip_prob``: Probability to flip training images.
       Default: 0.5.
-   -  ``--crop_images``: Crop training images. Default: False.
-   -  ``--crop_images_size``: Size to crop training images. Default: 16.
-   -  ``--crop_images_prob``: Probability to crop training images.
+   -  ``--augment_crop``: Crop training images. Default: False.
+   -  ``--augment_crop_size``: Size to crop training images. Default: 16.
+   -  ``--augment_crop_prob``: Probability to crop training images.
       Default: 0.5.
    -  ``--validation_split``: Split between training and validation
       data.
    -  ``--crop``: Crop the images. True if specified.
-   -  ``--crop_dimension``: Central crop of the images. Default: 0.875.
-   -  ``--resize``: Resize the images. True if specified.
-   -  ``--resize_dimension``: New size of the images. Default: 300.
+   -  ``--transform_crop_perc``: Central crop of the images. Default: 0.875.
+   -  ``--transform_resize``: Resize the images. True if specified.
+   -  ``--transform_resize_size``: New size of the images. Default: 300.
    -  ``--normalize``: Normalize dataset. Default: False.
    -  ``--normalize_offset``: Offset samples by a value. Default: -0.45.
    -  ``--normalize_scale``: Scale samples by a value. Default: 3.75.
@@ -327,7 +331,7 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
           --dataset_train_path=datasets/mnist \
           --dataset_test_path=datasets/mnist \
           --test_as_validation=False \
-          --flip_images=True \
+          --augment_flip=True \
           --batch_size=64 \
           --validation_split=0.2 \
           --num_epochs=50 \
@@ -381,11 +385,11 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
       dataset_train_path             : datasets/mnist
       dataset_test_path              : datasets/mnist
       test_as_validation             : False
-      flip_images                    : True
-      flip_images_prob               : 0.5
-      crop_images                    : False
-      crop_images_size               : 16
-      crop_images_prob               : 0.5
+      augment_flip                    : True
+      augment_flip_prob               : 0.5
+      augment_crop                    : False
+      augment_crop_size               : 16
+      augment_crop_prob               : 0.5
       batch_size                     : 64
       global_batch_size              : None
       validation_split               : 0.2
@@ -614,11 +618,11 @@ using 4 OpenMP threads::
       use_synthetic_data             : False
       dataset_path                   : datasets/cifar10/cifar-10-binary.tar.gz
       test_as_validation             : True
-      flip_images                    : True
-      flip_images_prob               : 0.5
-      crop_images                    : True
-      crop_images_size               : 16
-      crop_images_prob               : 0.5
+      augment_flip                    : True
+      augment_flip_prob               : 0.5
+      augment_crop                    : True
+      augment_crop_size               : 16
+      augment_crop_prob               : 0.5
       validation_split               : 0.2
       optimizer_name                 : sgd
       learning_rate                  : 0.01

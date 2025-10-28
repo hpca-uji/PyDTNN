@@ -1,17 +1,18 @@
 import io
 import copy
 import tarfile
-import typing
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
 from scipy.io import loadmat
 
-from pydtnn.datasets.fromTar import DatasetFromTar
-from pydtnn.utils.archive import list_archive
+from pydtnn.datasets.dataset import Dataset
+from pydtnn.utils.archive import list_archive, load_archive
+from pydtnn.utils import random
 
 from typing import TYPE_CHECKING
+
+from pydtnn.utils.tensor import TensorFormat
 if TYPE_CHECKING:
     from pydtnn.model import Model
 
@@ -22,7 +23,7 @@ INPUT_SHAPE = (3, 300, 300)
 OUTPUT_SHAPE = (1000,)
 
 
-class ImageNet(DatasetFromTar):
+class ImageNet(Dataset):
     """
     ImageNet Dataset
 
@@ -32,8 +33,7 @@ class ImageNet(DatasetFromTar):
     1000 object classes and contains 1,281, 167 training images,
     50,000 validation images and 100,000 test images.
 
-    Source (SHA1):
-    https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
+    Source (SHA1): https://image-net.org/challenges/LSVRC/2012/2012-downloads.php
     43eda4fe35c1705d6606a6a7a633bc965d194284 ILSVRC2012_img_train.tar
     5f3f73da3395154b60528b2b2a2caf2374f5f178 ILSVRC2012_img_val.tar
     092a94ed6a05454b8b72d1c4ecf336fa48d37fda ILSVRC2012_devkit_t12.tar.gz
@@ -46,7 +46,7 @@ class ImageNet(DatasetFromTar):
     # std:  [0.2830013  0.2758762  0.28932407]
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, max_prefetch=model.batch_size, force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _get_label(self, code: int, labels: dict[int, int]) -> np.ndarray:
         """Transform a code (int) into a label (ndarray 1D uint8)"""
@@ -95,12 +95,12 @@ class ImageNet(DatasetFromTar):
             }
 
     def _init_actual_data(self):
-        if not self.model.resize:
-            raise ValueError("Model resize must be enabled for dataset!")
+        if not self.model.transform_resize:
+            raise ValueError("Model transform_resize must be enabled for dataset!")
 
-        meta = Path(self.model.dataset_metadata_path)
-        train = Path(self.model.dataset_train_path)
-        test = Path(self.model.dataset_test_path)
+        meta = Path(self.model.dataset_path) / "ILSVRC2012_devkit_t12.tar.gz"
+        train = Path(self.model.dataset_path) / "ILSVRC2012_img_train.tar"
+        test = Path(self.model.dataset_path) / "ILSVRC2012_img_val.tar"
 
         train_lables = self._get_train_labels(meta)
 
@@ -130,4 +130,38 @@ class ImageNet(DatasetFromTar):
             val_xy
         ]
 
+    def _actual_data_generator(self, part):
+        offset = self._local_offset[part]
+        nsamples = self._local_nsamples[part]
+        xy_filenames = self._xy_filenames[part]
 
+        if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
+            random.shuffle(xy_filenames)  # type: ignore (numpy shuffle's typing wasn't well defined.)
+
+        xy_filenames = xy_filenames[offset:offset + nsamples]
+
+        for path, y in xy_filenames:
+            with load_archive(*path) as fp:
+                x = self._load_rgb_image(fp)
+
+            # Add N dimension
+            x = x[None, ...]
+            y = y[None, ...]
+
+            # Set tensor format
+            match self.model.tensor_format:
+                case TensorFormat.NHWC:
+                    x = self._nchw2nhwc(x)
+                case TensorFormat.NCHW:
+                    pass
+                case _:
+                    raise ValueError("Unsupported tensor format")
+
+            # Set dtype and order
+            x = x.astype(dtype=self.model.dtype, order="C")
+            y = y.astype(dtype=self.model.dtype, order="C")
+
+            # Inplace normalization
+            x /= 255.0
+
+            yield x, y

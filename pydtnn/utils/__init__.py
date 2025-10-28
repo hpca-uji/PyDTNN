@@ -8,10 +8,39 @@ import weakref
 import functools
 import threading
 from glob import glob
+from queue import Queue
 from importlib import import_module
 from ctypes.util import find_library
+from collections.abc import Iterable
 
 import numpy as np
+
+
+class BackgroundGenerator[T](threading.Thread):
+    def __init__(self, generator: Iterable[T], max_prefetch=0):
+        super().__init__()
+        self.queue = Queue(max_prefetch)
+        self.generator = generator
+        self.daemon = True
+        self.done = False
+        self.start()
+
+    def run(self):
+        for item in self.generator:
+            self.queue.put(item)
+        self.queue.put(self)
+
+    def __next__(self) -> T:
+        if self.done:
+            raise StopIteration()
+        next_item = self.queue.get()
+        self.done = next_item is self
+        if self.done:
+            raise StopIteration()
+        return next_item
+
+    def __iter__(self):
+        return self
 
 
 class Random:

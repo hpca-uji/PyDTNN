@@ -7,17 +7,15 @@ mpirun -np 2 \
   pydtnn_benchmark \
   --model=densenet121_imagenet \
   --dataset=imagenet \
-  --dataset_metadata_path=datasets/imagenet/ILSVRC2012_devkit_t12.tar.gz \
-  --dataset_train_path=datasets/imagenet/ILSVRC2012_img_train.tar \
-  --dataset_test_path=datasets/imagenet/ILSVRC2012_img_val.tar \
+  --dataset_path=datasets/imagenet \
   --normalize=True \
   --normalize_offset=-0.449 \
   --normalize_scale=3.537 \
   --use_synthetic_data=True \
   --test_as_validation=False \
-  --flip_images=True \
-  --crop_images=True \
-  --crop_images_size=16 \
+  --augment_flip=True \
+  --augment_crop=True \
+  --augment_crop_size=16 \
   --test_as_validation=True \
   --batch_size=64 \
   --validation_split=0.2 \
