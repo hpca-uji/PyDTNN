@@ -64,8 +64,6 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
         beta_gpu = gpuarray.to_gpu(self.beta_cpu)
         self.beta = TensorGPU(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
-
         if self.model.gpudirect:
             self.dgamma_cpu, self.dgamma = TensorGPU.initialize_gpu_direct(drv, self.gamma.ary.shape, self.model.dtype,
                                                                            tensor_format=self.model.tensor_format,
@@ -100,6 +98,8 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
         self.save_inv_var = TensorGPU(save_inv_var_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.factor = 1.0 - self.momentum
+
+        self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
     # ---
 
     def forward(self, x: TensorGPU) -> TensorGPU:
