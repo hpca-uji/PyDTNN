@@ -32,7 +32,7 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   pydtnn_benchmark \
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
-  --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+  --dataset_path=datasets/cifar10 \
   --normalize=True \
   --normalize_offset=-0.472 \
   --normalize_scale=1 \

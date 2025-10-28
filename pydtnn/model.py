@@ -215,15 +215,15 @@ class Model[T: Array]:
     dataset_name: str
     shared_storage: bool
     encryption_name: str
-    flip_images: bool
-    crop_images: bool
-    crop: bool
-    crop_dimension: int
-    resize: bool
-    resize_dimension: int
-    flip_images_prob: float
-    crop_images_size: int
-    crop_images_prob: float
+    augment_flip: bool
+    augment_flip_prob: float
+    augment_crop: bool
+    augment_crop_size: int
+    augment_crop_prob: float
+    transform_crop: bool
+    transform_crop_perc: int
+    transform_resize: bool
+    transform_resize_dsize: int
     initial_model_sync: bool
     dataset_percentage: float
     use_mpi_buffers: bool

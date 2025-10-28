@@ -103,8 +103,8 @@ def extract_parameters():
     for model in models_files.keys():
         parameters_overwritten["model"][model] = model
         parameters_overwritten["evaluate"][model] = "True"
-        parameters_overwritten["flip_images"][model] = "False"
-        parameters_overwritten["crop_images"][model] = "False"
+        parameters_overwritten["augment_flip"][model] = "False"
+        parameters_overwritten["augment_crop"][model] = "False"
         parameters_overwritten["enable_gpu"][model] = "False"
     parameters_overwritten["optimizer"]["vgg16_imagenet"] = "sgd"
     parameters_overwritten["learning_rate"]["vgg16_imagenet"] = "0.01"

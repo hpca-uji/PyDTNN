@@ -1,47 +1,20 @@
-import queue
+from pathlib import Path
 import warnings
 import itertools
-import threading
+import gzip
 from abc import ABC, abstractmethod
 
 import numpy as np
 from PIL import Image
+import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import string_substitute, random
+from pydtnn.utils import BackgroundGenerator, string_substitute, random
 from typing import TYPE_CHECKING, Generator, IO
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
 from pydtnn.utils.types import Array, ArrayShape
-
-
-
-class _BackgroundGenerator[T](threading.Thread):
-    def __init__(self, generator: Generator[T], max_prefetch=1):
-        super().__init__()
-        self.queue = queue.Queue(max_prefetch)
-        self.generator = generator
-        self.daemon = True
-        self.done = False
-        self.start()
-
-    def run(self):
-        for item in self.generator:
-            self.queue.put(item)
-        self.queue.put(self)
-
-    def __next__(self) -> T:
-        if self.done:
-            raise StopIteration()
-        next_item = self.queue.get()
-        self.done = next_item is self
-        if self.done:
-            raise StopIteration()
-        return next_item
-
-    def __iter__(self):
-        return self
 
 
 class Dataset[T: Array](ABC):
@@ -57,9 +30,9 @@ class Dataset[T: Array](ABC):
         TRAIN = 0
         VAL = 1
         TEST = 2
-    
-    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: ArrayShape, 
-                 output_shape: ArrayShape, max_prefetch=1, force_test_as_validation=False, debug=False):
+
+    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: ArrayShape,
+                 output_shape: ArrayShape, force_test_as_validation=False, debug=False):
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -71,7 +44,6 @@ class Dataset[T: Array](ABC):
             warnings.warn(f"Output shape should have 1 dimension, but it has {len(output_shape)} (Output shape: {output_shape}). This may cause issues!", RuntimeWarning)
 
         self.model: Model = model
-        self.max_prefetch = max_prefetch
         self.debug: bool = debug
         self.test_as_validation: bool = self.model.test_as_validation or force_test_as_validation
         self._nsamples: list[int] = [train_nsamples, 0, test_nsamples]
@@ -81,20 +53,20 @@ class Dataset[T: Array](ABC):
             self._nsamples[Dataset.Part.VAL] = self._nsamples[Dataset.Part.TEST]
         else:
             self._nsamples[Dataset.Part.VAL] = min(self._nsamples[Dataset.Part.TRAIN] - self.model.nprocs,
-                                                  max(self.model.nprocs,
-                                                      int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split)))
+                                                   max(self.model.nprocs,
+                                                       int(self._nsamples[Dataset.Part.TRAIN] * self.model.validation_split)))
             self._nsamples[Dataset.Part.TRAIN] -= self._nsamples[Dataset.Part.VAL]
 
         # self.real_input_shape = tuple(input_shape)
         self.input_shape = tuple(input_shape)
         self.output_shape = tuple(output_shape)
 
-        if self.model.crop:
+        if self.model.transform_crop:
             crop, size = self._calculate_crop(self.input_shape[1:])
             self.input_shape = (self.input_shape[0], *size)
 
-        if self.model.resize:
-            self.input_shape = (self.input_shape[0], self.model.resize_dimension, self.model.resize_dimension)
+        if self.model.transform_resize:
+            self.input_shape = (self.input_shape[0], self.model.transform_resize_size, self.model.transform_resize_size)
 
         self._initial_nsamples = [self._nsamples[Dataset.Part.TRAIN], self._nsamples[Dataset.Part.VAL], self._nsamples[Dataset.Part.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
@@ -124,6 +96,23 @@ class Dataset[T: Array](ABC):
 
         if self.debug:
             self._print_report()
+
+    def _gzip_index(self, path: str) -> str:
+        idx = Path(path).with_suffix(".gz.idx")
+        if not idx.exists():
+            with rapidgzip.RapidgzipFile(path, parallelization=1) as f:
+                f.export_index(str(idx))
+        return str(idx)
+
+    def _gzip_open(self, path: str) -> gzip.GzipFile:
+        try:
+            f = rapidgzip.RapidgzipFile(path, parallelization=1)
+            f.import_index(self._gzip_index(path))
+        except Exception:
+            f.close()
+            raise
+        else:
+            return f
 
     def export(self, split_weights: list[float] | None = None):
         """Export dataset (possibly split and rank specific)"""
@@ -355,20 +344,21 @@ class Dataset[T: Array](ABC):
         # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
         data = data.copy()
 
-        if self.model.crop:
+        if self.model.transform_crop:
             data = self._do_crop(data)
 
-        if self.model.resize:
+        if self.model.transform_resize:
             data = self._do_resize(data)
 
         if part is Dataset.Part.TRAIN:
-            if self.model.flip_images:
+            if self.model.augment_flip:
                 data = self._do_flip_images(data)
 
-            if self.model.crop_images:
+            if self.model.augment_crop:
                 data = self._do_crop_images(data)
 
-            random.shuffle(data)
+            if self.model.augment_shuffle:
+                random.shuffle(data)
 
         if self.model.normalize:
             data = self._do_normalize(data)
@@ -385,7 +375,7 @@ class Dataset[T: Array](ABC):
             for x, y in self._data_generator(part):
                 yield self._data_transform(part, x), y
 
-        generator = _BackgroundGenerator(transform_generator(), max_prefetch=self.max_prefetch)
+        generator = transform_generator()
         nsamples = self._nsamples[part]
 
         batch_size = 0
@@ -422,7 +412,7 @@ class Dataset[T: Array](ABC):
                 nsamples -= global_batch_size
 
     def _batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
-        yield from self._actual_batch_generator(part)
+        yield from BackgroundGenerator(self._actual_batch_generator(part), max_prefetch=1)
         # NOTE: The following infinite loop provides of empty batches
         #        if there are asked more batches than actually are.
         while True:
@@ -444,7 +434,7 @@ class Dataset[T: Array](ABC):
             case _:
                 raise NotImplementedError(f"\"Dataset _do_flip_image\" is not implemented for \"{self.model.tensor_format}\" format.")
 
-        limit = min(n, int(n * self.model.flip_images_prob))
+        limit = min(n, int(n * self.model.augment_flip_prob))
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
@@ -459,8 +449,8 @@ class Dataset[T: Array](ABC):
                 n, h, w, c = data.shape
             case _:
                 raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
-        crop_size = min(self.model.crop_images_size, h, w)
-        limit = min(n, int(n * self.model.crop_images_prob))
+        crop_size = min(self.model.augment_crop_size, h, w)
+        limit = min(n, int(n * self.model.augment_crop_prob))
         s = np.arange(n)
         random.shuffle(s)
         s = s[:limit]
@@ -468,7 +458,7 @@ class Dataset[T: Array](ABC):
         ll = random.integers(0, w - crop_size, (limit,))
         for i, ri in enumerate(s):
             b, r = t[i] + crop_size, ll[i] + crop_size
-            # batch[ri,...] = resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
+            # batch[ri,...] = transform_resize(batch[ri,:,t[i]:b,l[i]:r], (ri.size,c,h,w))
             match self.model.tensor_format:
                 case TensorFormat.NCHW:
                     data[ri, :, :t[i], :ll[i]] = 0.0
@@ -483,131 +473,103 @@ class Dataset[T: Array](ABC):
         return data
 
     def _do_resize(self, data: np.ndarray) -> np.ndarray:
-        N = data.shape[0]
-
-        size = (self.model.resize_dimension, self.model.resize_dimension)
-
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                C = data.shape[3]
-                shape = (N, *size, C)
+                data = self._nhwc2nchw(data)
             case TensorFormat.NCHW:
-                C = data.shape[1]
-                shape = (N, C, *size)
+                pass
             case _:
                 raise ValueError("Unsupported tensor format")
+
+        size = (self.model.transform_resize_size, self.model.transform_resize_size)
+        shape = (*data.shape[:2], *size)
+        N, C, H, W = shape
 
         new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
 
         for n in range(N):
-            sample = data[n]
-
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    sample = self._hwc2chw(sample)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
-
-            new_sample = np.empty(shape=(C, *size), dtype=self.model.dtype, order="C")
-
             for c in range(C):
-                channel = sample[c]
+                channel = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = channel.transpose().astype(np.float32)
                 image = Image.fromarray(channel, mode="F")
                 image = image.resize(size)
                 channel = np.asarray(image, dtype=np.float32)
                 channel = channel.transpose().astype(self.model.dtype)
-                new_sample[c] = channel
+                new_data[n, c] = channel
 
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    new_sample = self._chw2hwc(new_sample)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                new_data = self._nchw2nhwc(new_data)
+            case TensorFormat.NCHW:
+                pass
+            case _:
+                raise ValueError("Unsupported tensor format")
 
-            new_data[n] = new_sample
         return new_data
     # ---
 
     def _calculate_crop(self, size: tuple[int, int]) -> tuple[tuple[int, int, int, int], tuple[int, int]]:
         width, height = size
-        frame_fraction = (1 - self.model.crop_dimension) / 2
+        frame_fraction = (1 - self.model.transform_crop_perc) / 2
         x_offset, y_offset = round(width * frame_fraction), round(height * frame_fraction)
         crop = (x_offset, y_offset, width - x_offset, height - y_offset)
         size = (crop[2] - crop[0], crop[3] - crop[1])
         return (crop, size)
 
     def _do_crop(self, data: np.ndarray) -> np.ndarray:
-        N = data.shape[0]
-
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                size = data.shape[1:3]
+                data = self._nhwc2nchw(data)
             case TensorFormat.NCHW:
-                size = data.shape[2:4]
+                pass
             case _:
                 raise ValueError("Unsupported tensor format")
 
+        size = data.shape[2:4]
         crop, size = self._calculate_crop(size)
-
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                C = data.shape[3]
-                shape = (N, *size, C)
-            case TensorFormat.NCHW:
-                C = data.shape[1]
-                shape = (N, C, *size)
-            case _:
-                raise ValueError("Unsupported tensor format")
+        shape = (*data.shape[:2], *size)
+        N, C, H, W = shape
 
         new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
 
         for n in range(N):
-            sample = data[n]
-
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    sample = self._hwc2chw(sample)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
-
-            new_sample = np.empty(shape=(C, *size), dtype=self.model.dtype, order="C")
-
             for c in range(C):
-                channel = sample[c]
+                channel = data[n, c]
                 # NOTE: PIL mode F is WH in float32
                 channel = channel.transpose().astype(np.float32)
                 image = Image.fromarray(channel, mode="F")
                 image = image.crop(crop)
                 channel = np.asarray(image, dtype=np.float32)
                 channel = channel.transpose().astype(self.model.dtype)
-                new_sample[c] = channel
+                new_data[n, c] = channel
 
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    new_sample = self._chw2hwc(new_sample)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                new_data = self._nchw2nhwc(new_data)
+            case TensorFormat.NCHW:
+                pass
+            case _:
+                raise ValueError("Unsupported tensor format")
 
-            new_data[n] = new_sample
         return new_data
     # ---
-
-    def _load_image(self, fp: IO[bytes] | str) -> np.ndarray:
-        """Transform a file-like (image) to array (ndarray CHW uint8)"""
+    def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
+        """Transform a file-like (RGB image) to array (ndarray CHW uint8)"""
         with Image.open(fp=fp) as image:
             image = image.convert("RGB")
             array = np.asarray(image)
             # NOTE: PIL mode RGB is WHC in unit8
             array = array.transpose(2, 1, 0)
+        return array
+
+    def _load_gray_image(self, fp: IO[bytes] | str) -> np.ndarray:
+        """Transform a file-like (gray-scale image) to array (ndarray CHW uint8)"""
+        with Image.open(fp=fp) as image:
+            image = image.convert("L")
+            array = np.asarray(image)
+            # NOTE: PIL mode L is WH in unit8
+            array = array.transpose(1, 0)
+            array = array[None, ...]
         return array
     # ----

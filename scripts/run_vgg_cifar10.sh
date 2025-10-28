@@ -11,13 +11,13 @@ export PYTHONUNBUFFERED="True"
 pydtnn_benchmark \
   --model=vgg3dobn \
   --dataset=cifar10 \
-  --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+  --dataset_path=datasets/cifar10 \
   --normalize=True \
   --normalize_offset=-0.472 \
   --normalize_scale=1 \
   --test_as_validation=True \
-  --flip_images=False \
-  --crop_images=False \
+  --augment_flip=False \
+  --augment_crop=False \
   --batch_size=64 \
   --validation_split=0.2 \
   --steps_per_epoch=0 \

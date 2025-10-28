@@ -1,6 +1,5 @@
 import os
 import copy
-import math
 import tarfile
 
 import numpy as np
@@ -25,7 +24,7 @@ class CIFAR10(Dataset):
     CIFAR10 Dataset
 
     Source (SHA1):
-    e8aa088b9774a44ad217101d2e2569f823d2d491 https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
+    e8aa088b9774a44ad217101d2e2569f823d2d491 cifar-10-binary.tar.gz https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
 
     Normalize:
     offset: -0.472
@@ -35,36 +34,38 @@ class CIFAR10(Dataset):
     # std:  [0.24761744 0.2437481  0.26142704]
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, max_prefetch=math.ceil(model.batch_size / IMAGES_PER_FILE), force_test_as_validation=force_test_as_validation, debug=debug)
+        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
-        self._src_filename = self.model.dataset_path
+        self._src_filename = os.path.join(self.model.dataset_path, "cifar-10-binary.tar.gz")
         self._xy_filenames = [
             [os.path.join("cifar-10-batches-bin", f"data_batch_{x}.bin") for x in range(1, 6)],
             [],
             [os.path.join("cifar-10-batches-bin", "test_batch.bin")]
         ]
         self._xy_filenames[Dataset.Part.VAL] = copy.copy(self._xy_filenames[Dataset.Part.TEST] if self.test_as_validation else self._xy_filenames[Dataset.Part.TRAIN])
+        self._gzip_index(self._src_filename)
 
     def _actual_data_generator(self, part: Dataset.Part):
         xy_filenames = self._xy_filenames[part]
 
-        if part is Dataset.Part.TRAIN:
+        if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             random.shuffle(xy_filenames)
 
-        with tarfile.open(self._src_filename, "r:gz") as t:
-            for filename, offset, nsamples in self._offset2files(xy_filenames, IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
-                with t.extractfile(filename) as f:
-                    x, y_classes = self._read_file(f, offset, nsamples)
-                x /= 255.0
+        with self._gzip_open(self._src_filename) as g:
+            with tarfile.open(fileobj=g) as t:
+                for filename, offset, nsamples in self._offset2files(xy_filenames, IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
+                    with t.extractfile(filename) as f:
+                        x, y_classes = self._read_file(f, offset, nsamples)
+                    x /= 255.0
 
-                y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype, order="C")
-                self._decode_class(y, y_classes)
+                    y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype, order="C")
+                    self._decode_class(y, y_classes)
 
-                if self.model.tensor_format is TensorFormat.NHWC:
-                    x = self._nchw2nhwc(x)
+                    if self.model.tensor_format is TensorFormat.NHWC:
+                        x = self._nchw2nhwc(x)
 
-                yield x, y
+                    yield x, y
 
     def _read_file(self, f, offset, nsamples):
         chunk_size = np.prod(INPUT_SHAPE) + 1

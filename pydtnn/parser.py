@@ -155,48 +155,39 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
-        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder", "chestxray14"],
-                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'archive\', \'folder\' or \'chestxray14\'. Default: \'None\'.")
-        _ds_group.add_argument(
-            '--dataset_percentage',
-            type=float,
-            default=0.0,
-            help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder", "chestxray"],
+                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'archive\', \'folder\' or \'chestxray\'. Default: \'None\'.")
+        _ds_group.add_argument('--dataset_percentage', type=float, default=0.0,
+                               help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--use_synthetic_data', default=False, type=bool_lambda,
                                help="Use synthetic data. Default: False.")
-        _ds_group.add_argument('--dataset_metadata_path', type=str, default=_default_dataset_path,
-                               help="Path to an external data, like a file with the labels of the samples, necessary to work with the dataset.")
-        _ds_group.add_argument('--dataset_train_path', type=str, default=_default_dataset_path,
-                               help="Path to the training dataset.")
-        _ds_group.add_argument('--dataset_test_path', type=str, default=_default_dataset_path,
-                               help="Path to the training dataset.")
         _ds_group.add_argument('--dataset_path', type=str, default=_default_dataset_path,
-                               help="Path to the unified dataset.")
+                               help="Path to the dataset.")
         _ds_group.add_argument('--dataset_export_split_weights', type=str, default="1",
                                help="When exporting, the weights of each split, used to determine the number samples. Defualt: 1.")
         _ds_group.add_argument('--test_as_validation', default=False, type=bool_lambda,
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
         _ds_group.add_argument('--validation_split', type=factor, default=0.2,
                                help="Split between training and validation data.")
-        _ds_group.add_argument('--test_split', type=factor, default=0.2,
-                               help="Split between the whole dataset and the test (only used in \"chestxray14\", ignored otherwise).")
-        _ds_group.add_argument('--flip_images', default=False, type=bool_lambda,
+        _ds_group.add_argument('--augment_shuffle', default=True, type=bool_lambda,
+                               help="Shuffle training images. Default: True.")
+        _ds_group.add_argument('--augment_flip', default=False, type=bool_lambda,
                                help="Flip horizontally training images. Default: False.")
-        _ds_group.add_argument('--flip_images_prob', type=factor, default=0.5,
+        _ds_group.add_argument('--augment_flip_prob', type=factor, default=0.5,
                                help="Probability to flip training images. Default: 0.5.")
-        _ds_group.add_argument('--crop_images', default=False, type=bool_lambda,
+        _ds_group.add_argument('--augment_crop', default=False, type=bool_lambda,
                                help="Crop training images. Default: False.")
-        _ds_group.add_argument('--crop_images_size', type=int, default=16,
+        _ds_group.add_argument('--augment_crop_size', type=int, default=16,
                                help="Size to crop training images. Default: 16.")
-        _ds_group.add_argument('--crop_images_prob', type=factor, default=0.5,
+        _ds_group.add_argument('--augment_crop_prob', type=factor, default=0.5,
                                help="Probability to crop training images. Default: 0.5.")
-        _ds_group.add_argument('--crop', default=False, type=bool_lambda,
+        _ds_group.add_argument('--transform_crop', default=False, type=bool_lambda,
                                help="Crop the images. True if specified.")
-        _ds_group.add_argument('--crop_dimension', type=float, default=0.875,
+        _ds_group.add_argument('--transform_crop_perc', type=float, default=0.875,
                                help="Central crop of the images. Default: 0.875.")
-        _ds_group.add_argument('--resize', default=False, type=bool_lambda,
+        _ds_group.add_argument('--transform_resize', default=False, type=bool_lambda,
                                help="Resize the images. True if specified.")
-        _ds_group.add_argument('--resize_dimension', type=int, default=300,
+        _ds_group.add_argument('--transform_resize_size', type=int, default=300,
                                help="New size of the images. Default: 300.")
         _ds_group.add_argument('--normalize', default=False, type=bool_lambda,
                                help="Normalize dataset. Default: False.")

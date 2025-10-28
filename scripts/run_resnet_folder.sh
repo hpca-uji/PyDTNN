@@ -14,8 +14,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   pydtnn_benchmark \
   --model=resnet \
   --dataset=folder \
-  --dataset_train_path=datasets/folder \
-  --dataset_test_path=datasets/folder \
+  --dataset_path=datasets/folder \
   --test_as_validation=False \
   --batch_size=20 \
   --validation_split=0.2 \
@@ -48,5 +47,5 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --enable_gpu=False \
   --enable_gpudirect=False \
   --dtype=float32 \
-  --resize=True \
-  --resize_dimension=300
+  --transform_resize=True \
+  --transform_resize_size=300

@@ -8,6 +8,7 @@ __pycache__/
 
 *.c
 *.so
+*.idx
 
 /datasets/*/
-!/datasets/mnist/
+!/datasets/mnist/*.gz

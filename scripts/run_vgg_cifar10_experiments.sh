@@ -16,7 +16,7 @@ for procs in 6 4 2 1; do
       pydtnn_benchmark \
       --model=vgg11bn_cifar10 \
       --dataset=cifar10 \
-      --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
+      --dataset_path=datasets/cifar10 \
       --normalize=True \
       --normalize_offset=-0.472 \
       --normalize_scale=1 \

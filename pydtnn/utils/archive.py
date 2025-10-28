@@ -3,7 +3,6 @@ import tarfile
 from collections import abc
 from pathlib import Path, PurePath
 from contextlib import contextmanager, ExitStack
-import itertools
 
 
 def is_tar(path: PurePath, suffixes={(".tar",), (".tar", ".gz"), (".tgz",)}) -> bool:
@@ -12,11 +11,9 @@ def is_tar(path: PurePath, suffixes={(".tar",), (".tar", ".gz"), (".tgz",)}) -> 
 
 
 def list_directory(root_path: Path) -> typing.Iterator[tuple[str, ...]]:
-    iter_archives = list[typing.Iterator[tuple[str, ...]]]()
     for file in root_path.iterdir():
-        iter_archives.append(list_archive(file))
-    return itertools.chain.from_iterable(iter_archives)
-# ---
+        if is_tar(file):
+            yield from list_archive(file)
 
 
 def list_archive(root_path: Path) -> typing.Iterator[tuple[str, ...]]:

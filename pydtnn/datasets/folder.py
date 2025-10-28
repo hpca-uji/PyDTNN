@@ -1,7 +1,6 @@
 import os
 import copy
 import numpy as np
-from PIL import Image
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils.tensor import TensorFormat
@@ -17,7 +16,8 @@ type ClassName = int
 
 SYNTHETIC_INPUT_SHAPE = (3, 600, 600)
 
-class DatasetFolderLoader(Dataset):
+
+class Folder(Dataset):
     """
     This class will receive the path to a dataset divided in different sub-folders where every sub-folder is a different data class, and will
     generate the samples.
@@ -60,7 +60,6 @@ class DatasetFolderLoader(Dataset):
         super().__init__(model=model, train_nsamples=self._nsamples[Dataset.Part.TRAIN],
                          test_nsamples=self._nsamples[Dataset.Part.TEST],
                          input_shape=SYNTHETIC_INPUT_SHAPE, output_shape=output_shape,
-                         max_prefetch=model.batch_size,
                          force_test_as_validation=force_test_as_validation,
                          debug=debug)
 
@@ -95,8 +94,8 @@ class DatasetFolderLoader(Dataset):
     
     @override
     def _init_actual_data(self):
-        if not self.model.resize:
-            raise ValueError("Model resize must be enabled for dataset!")
+        if not self.model.transform_resize:
+            raise ValueError("Model transform_resize must be enabled for dataset!")
     # ---
 
     @override
@@ -105,13 +104,13 @@ class DatasetFolderLoader(Dataset):
         nsamples = self._local_nsamples[part]
         labels_and_images = self.labels_and_images[part]
 
-        if part is Dataset.Part.TRAIN:
+        if part is Dataset.Part.TRAIN and self.model.augment_shuffle:
             random.shuffle(labels_and_images)
 
         labels_and_images = labels_and_images[offset:offset + nsamples]
 
         for label, path_image in labels_and_images:
-            x = self._load_image(path_image)
+            x = self._load_rgb_image(path_image)
             y = self._prepare_label(label, self.output_shape)
 
             # Add N dimension
