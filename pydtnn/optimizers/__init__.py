@@ -6,12 +6,10 @@ from pydtnn.optimizers.sgd import SGD as _SGD
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from pydtnn import Model
-else:
-    Model = object
+    from pydtnn.model import Model
 
 
-def get_optimizer(model: Model) -> _Optimizer:
+def get_optimizer(model: "Model") -> _Optimizer:
     """Get optimizer object from model attributes"""
     match model.optimizer_name:
 
@@ -43,6 +41,8 @@ def get_optimizer(model: Model) -> _Optimizer:
                            dtype=model.dtype)
         case _:
             raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
+
+    opt.set_backend(model._backend)
 
     if model.enable_cudnn:
         opt.set_gpudirect(model.gpudirect)
