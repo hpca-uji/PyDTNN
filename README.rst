@@ -183,7 +183,7 @@ The PyDTNN framework comes with a utility launcher called
       Default: 0.5.
    -  ``--validation_split``: Split between training and validation
       data.
-   -  ``--crop``: Crop the images. True if specified.
+   -  ``--transform_crop``: Crop the images. True if specified.
    -  ``--transform_crop_perc``: Central crop of the images. Default: 0.875.
    -  ``--transform_resize``: Resize the images. True if specified.
    -  ``--transform_resize_size``: New size of the images. Default: 300.
