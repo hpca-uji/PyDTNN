@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import assert_never
 from enum import auto, StrEnum
-
+from pydtnn.utils.types import ArrayShape
 
 class ChannelFormat(StrEnum):
     WH = auto()
@@ -87,14 +87,14 @@ def adjust_channel_shape(shape: tuple[int, int], src: ChannelFormat, dst: Channe
             assert_never(dst)
 
 
-def encode_tensor(shape, tensor_format=TensorFormat.NHWC):
+def encode_tensor(shape: ArrayShape, tensor_format=TensorFormat.NHWC) -> ArrayShape:
     if len(shape) == 3 and tensor_format is TensorFormat.NCHW:
         return shape[2], shape[0], shape[1]
     else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
         return shape
 
 
-def decode_tensor(shape, tensor_format=TensorFormat.NHWC):
+def decode_tensor(shape: ArrayShape, tensor_format=TensorFormat.NHWC) -> ArrayShape:
     if len(shape) == 3 and tensor_format is TensorFormat.NCHW:
         return shape[1], shape[2], shape[0]
     else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC

@@ -6,7 +6,7 @@ from pydtnn.utils.tensor import decode_tensor, encode_tensor
 from pydtnn.utils.types import Array
 
 
-class AbstractPool2DLayer[T: Array](Layer):
+class AbstractPool2DLayer[T: Array](Layer[T]):
 
     def __init__(self, pool_shape: tuple[int, int] | int = (2, 2), padding: tuple[int, int] | int = 0,
                  stride: tuple[int, int] | int = 1, dilation: tuple[int, int] | int = 1):

@@ -3,7 +3,7 @@ from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
 
 
-class Dropout[T: Array](Layer):
+class Dropout[T: Array](Layer[T]):
     def __init__(self, rate=0.5):
         super().__init__()
         self.rate = min(1., max(0., rate))

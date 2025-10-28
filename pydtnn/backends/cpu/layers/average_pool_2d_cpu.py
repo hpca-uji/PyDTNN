@@ -10,10 +10,11 @@ from pydtnn.utils.tensor import TensorFormat
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
-class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
+class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.y: np.ndarray
 
     def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
@@ -75,7 +76,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
-        dy_rows = np.tile(dy.reshape(-1, 1, copy=False) / pool_size, (1, pool_size))
+        dy_rows = np.tile(dy.reshape(-1, 1, copy=False) / pool_size, (1, pool_size))  # type: ignore (it is correct.)
         dx = np.zeros_like(dy, dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -102,7 +103,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
-        dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))
+        dy_cols = np.tile(dy.flatten() / pool_size, (pool_size, 1))  # type: ignore (it is correct.)
         dy_cols = np.asarray(dy_cols, dtype=self.model.dtype, order="C", copy=None)
         dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
 
@@ -111,7 +112,8 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D):
                                dy.shape[0], self.hi, self.wi, self.ci,
                                self.kh, self.kw, self.ho, self.wo,
                                self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
+                               self.vstride, self.hstride, 
+                               self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx.reshape((-1, self.ci, self.hi, self.wi), order="C", copy=None)
 

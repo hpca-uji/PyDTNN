@@ -1,7 +1,7 @@
 from pydtnn.activations.relu import Relu
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.types import ArrayShape, Array
 
-class LeakyRelu(Relu):
+class LeakyRelu[T: Array](Relu[T]):
 
     def __init__(self, shape: ArrayShape = (1,), negative_slope: float = 0.01):
         super().__init__(shape)

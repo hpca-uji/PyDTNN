@@ -1,12 +1,12 @@
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.layers.input import Input
-from numpy import ndarray, asarray
+import numpy as np
 
 
-class InputCPU(LayerCPU, Input):
+class InputCPU(LayerCPU, Input[np.ndarray]):
 
-    def forward(self, x: ndarray) -> ndarray:
-        return asarray(x, dtype=self.model.dtype, order="C", copy=None)
+    def forward(self, x: np.ndarray) -> np.ndarray:
+        return np.asarray(x, dtype=self.model.dtype, order="C", copy=None)
 
-    def backward(self, dy: ndarray) -> ndarray:
-        return asarray(dy, dtype=self.model.dtype, order="C", copy=None)
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        return np.asarray(dy, dtype=self.model.dtype, order="C", copy=None)

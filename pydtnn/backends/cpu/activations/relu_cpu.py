@@ -1,15 +1,16 @@
+import numpy as np
+
 from pydtnn.cython.relu_cython import relu_cython
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-import numpy as np
 from pydtnn.utils.types import ArrayShape
 
 
-class ReluCPU(ActivationCPU, Relu):
+class ReluCPU(ActivationCPU, Relu[np.ndarray]):
 
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
-        self.mask: np.ndarray = None
+        self.mask: np.ndarray = None # type: ignore (will be initalized in "initialize")
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)

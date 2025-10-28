@@ -9,20 +9,19 @@ try:
     from pydtnn.comm import MPI
 except Exception:
     pass
-
-from numpy import ndarray
 from pydtnn.utils.types import ArrayShape
+import numpy as np
 
 
-class LayerCPU(Layer[ndarray]):
+class LayerCPU(Layer[np.ndarray]):
     """
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.model: Model[ndarray]
+        self.model: Model[np.ndarray]
 
-    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):
@@ -32,7 +31,7 @@ class LayerCPU(Layer[ndarray]):
 
         for w_, dw_ in self.grad_vars.items():
             dw_ = dw_ if gradient else w_
-            dw: ndarray = getattr(self, dw_)
+            dw: np.ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)
@@ -64,7 +63,7 @@ class LayerCPU(Layer[ndarray]):
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
-            dw: ndarray = getattr(self, dw_)
+            dw: np.ndarray = getattr(self, dw_)
             dw *= self.model.rank_weight
             if self.model.crypt:
                 dw = self.model.crypt.encrypt(dw)

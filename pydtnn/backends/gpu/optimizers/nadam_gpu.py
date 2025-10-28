@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.gpuarray as gpuarray  #type: ignore
+from pycuda.compiler import SourceModule  #type: ignore
+from pycuda.elementwise import ElementwiseKernel  #type: ignore
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers.nadam import Nadam
@@ -11,7 +11,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 
-class NadamGPU(OptimizerGPU, Nadam):
+class NadamGPU(OptimizerGPU, Nadam[TensorGPU]):
     """
     NadamGPU optimizer
     """
@@ -56,8 +56,8 @@ class NadamGPU(OptimizerGPU, Nadam):
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
     def update(self, layer: LayerGPU) -> None:
-        self.context[layer]["it"] += 1
-        it = self.context[layer]["it"]
+        self.context[layer]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
+        it:int = self.context[layer]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

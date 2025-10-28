@@ -10,7 +10,7 @@ from enum import StrEnum, auto
 from pydtnn.utils.types import ArrayShape
 
 
-class Conv2D[T: Array](Layer):
+class Conv2D[T: Array](Layer[T]):
 
     class Grouping(StrEnum):
         DEPTHWISE = auto()
@@ -58,9 +58,9 @@ class Conv2D[T: Array](Layer):
         if self.use_bias:
             self.grad_vars["biases"] = "db"
         self.debug = False
-        # The next attributes will be initialized later
+        # The following attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
-        self.weights_shape: ArrayShape = None
+        self.weights_shape: ArrayShape = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
@@ -93,9 +93,10 @@ class Conv2D[T: Array](Layer):
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
-        self.nparams = np.prod(self.weights_shape) + (self.co if self.use_bias else 0)
+        self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
 
     def show(self, attrs: str = "") -> None:
+        self.weights: T
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "

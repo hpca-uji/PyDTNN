@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pydtnn.model import Model
     from pydtnn.activations.activation import Activation
@@ -12,17 +12,19 @@ from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
 from pydtnn.backends import PromoteToBackend
 
-
-DrvStream = TypeVar("pycuda_driver_Stream")  # PyCuda's driver Stream class. The initialization is on GPU's layers classes.
+try:
+    from pycuda.driver import Stream  # type: ignore
+except:
+    pass
 
 
 class LayerAndActivationBase[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape = ()) -> None:
         self.nparams: int = 0
         self.shape: ArrayShape = shape
-        self.x: T | None = None
-        self.y: T | None = None
-        self.weights: T | None = None
+        self.x: T = None  # type: ignore
+        self.y: T = None  # type: ignore
+        self.weights: T = None  # type: ignore
         self.biases: T | None = None
         self.act: type[Activation] | None = None
         self.grad_vars: dict[str, str] = {}
@@ -31,12 +33,12 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         self.paths: list[list[LayerAndActivationBase[T]]] = []
         self.reqs_allred = {}
 
-        # The next attributes will be initialized later
-        self.id: int = None
-        self.model: Model = None
-        self.prev_shape: ArrayShape = None
+        # The following attributes will be initialized later
+        self.id: int = None  # type: ignore
+        self.model: Model = None  # type: ignore
+        self.prev_shape: ArrayShape = None  # type: ignore
+        self.stream_2: Stream = None  # type: ignore
         self.is_block_layer: bool = False
-        self.stream_2: DrvStream = None
 
     @property
     def canonical_name(self) -> str:
@@ -67,7 +69,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         self.prev_shape = prev_shape
-        self.x = x
+        self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
 
     def forward(self, x: T) -> T:
         return x
@@ -84,7 +86,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def reduce_weights_sync(self, gradient: bool = True):
         pass
 
-    def show(self, attrs: str | None = "") -> str:
+    def show(self, attrs: str | None = "") -> None:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)

@@ -20,16 +20,16 @@ class NadamCPU(OptimizerCPU, Nadam):
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer.id]["it"] += 1
-        it: int = self.context[layer.id]["it"]
+        it: int = self.context[layer.id]["it"]  # type: ignore 
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             w: np.ndarray
             dw: np.ndarray
             # Momentum of the weight or bias of the given layer
-            m: np.ndarray = self.context[layer.id]["m_%s" % w_]
+            m: np.ndarray = self.context[layer.id]["m_%s" % w_]  # type: ignore 
             # Velocity of the weight or bias of the given layer
-            v: np.ndarray = self.context[layer.id]["v_%s" % w_]
+            v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # type: ignore 
 
             if not (self.are_all_zeros(w) and self.are_all_zeros(dw) or self.are_all_zeros(m) or self.are_all_zeros(v)):
 

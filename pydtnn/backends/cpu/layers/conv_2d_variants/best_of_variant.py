@@ -9,13 +9,13 @@ import numpy as np
 from pydtnn.utils.types import ArrayShape
 
 
-class BestOfVariant(ConvWinogradVariant, ConvDirectVariant):
+class BestOfVariant[T: np.ndarray](ConvWinogradVariant[np.ndarray], ConvDirectVariant[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # best_of related attributes (will be initialized in initialize())
-        self._best_fw: Optional[BestOf] = None
-        self._best_fw_bw_pipeline: Optional[BestOf] = None
+        self._best_fw: BestOf = None # type: ignore
+        self._best_fw_bw_pipeline: BestOf = None # type: ignore
         # Other parameters
         self.variant = None
 

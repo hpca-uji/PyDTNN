@@ -4,7 +4,7 @@ from pydtnn.activations.tanh import Tanh
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 
 
-class TanhCPU(ActivationCPU, Tanh):
+class TanhCPU(ActivationCPU, Tanh[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)

@@ -5,11 +5,9 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
-from pydtnn.layers.layer import LayerError
 
-
-class AdditionBlockGPU(LayerGPU, AdditionBlock):
-
+class AdditionBlockGPU(LayerGPU, AdditionBlock[TensorGPU]):
+    y: TensorGPU
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             y_i = x

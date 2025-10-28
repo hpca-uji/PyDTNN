@@ -2,10 +2,9 @@ import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-from numpy import ndarray
 
 
-class ArctanhCPU(ActivationCPU, Arctanh):
+class ArctanhCPU(ActivationCPU, Arctanh[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -15,12 +14,12 @@ class ArctanhCPU(ActivationCPU, Arctanh):
         self._y = np.empty(shape=(self.model.batch_size, *self.shape),
                            dtype=self.model.dtype, order="C")
 
-    def forward(self, x: ndarray) -> ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
         np.arctanh(x, out=self.y, casting="unsafe", dtype=self.model.dtype, order="C")
         return self.y
 
-    def backward(self, dy: ndarray) -> ndarray:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         # return 1 / (1 + dy ** 2)
         np.power(dy, 2, out=dy,
                  casting="unsafe", dtype=self.model.dtype)

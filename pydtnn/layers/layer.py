@@ -15,7 +15,7 @@ class ParameterException(LayerError):
     pass
 
 
-class Layer[T: Array](LayerAndActivationBase):
+class Layer[T: Array](LayerAndActivationBase[T]):
 
     @property
     def canonical_name_with_id(self) -> str:

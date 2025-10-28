@@ -7,7 +7,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.model import Model
 
 
-class PointwiseVariant(Conv2D[np.ndarray]):
+class PointwiseVariant[T: np.ndarray](Conv2D[np.ndarray]):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     y: np.ndarray
@@ -15,6 +15,7 @@ class PointwiseVariant(Conv2D[np.ndarray]):
     dw: np.ndarray
     dx: np.ndarray
     db: np.ndarray
+    biases: np.ndarray
     # ----
 
     def _forward_pointwise_nhwc(self, x: np.ndarray) -> np.ndarray:

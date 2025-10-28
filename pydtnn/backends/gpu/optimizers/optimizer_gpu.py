@@ -1,11 +1,9 @@
 from numpy import int32, prod
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from typing import TypeVar
-
 from pydtnn.optimizers.optimizer import Optimizer
 
 
-class OptimizerGPU(Optimizer):
+class OptimizerGPU(Optimizer[TensorGPU]):
     """
     Extends an Optimizer class with the attributes and methods required by GPU Optimizers.
     """

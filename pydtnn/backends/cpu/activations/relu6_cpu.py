@@ -1,13 +1,14 @@
+import numpy as np
 from pydtnn.cython.relu_cython import capped_relu_cython
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-import numpy as np
 
 
-class Relu6CPU(Relu6, ActivationCPU):
+class Relu6CPU(ActivationCPU, Relu6[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.mask: np.ndarray = None # type: ignore (will be initalized in "initialize")
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)

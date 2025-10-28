@@ -4,10 +4,10 @@ from pydtnn.backends.cpu.losses.loss_cpu import LossCPU
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 
 
-class CategoricalCrossEntropyCPU(LossCPU, CategoricalCrossEntropy):
+class CategoricalCrossEntropyCPU(LossCPU, CategoricalCrossEntropy[np.ndarray]):
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
-        y_pred: np.ndarray = np.clip(y_pred, a_min=self.eps, a_max=(1 - self.eps))
+    def compute(self, _y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
+        y_pred: np.ndarray = np.clip(_y_pred, a_min=self.eps, a_max=(1 - self.eps))
         b_range: np.ndarray = np.arange(y_pred.shape[0])
         loss: float = -np.sum(np.log(y_pred[b_range, np.argmax(y_targ, axis=1)])) / y_pred.shape[0]
         # NOTE/FIXME: The last line before the return raise an error if the model works in int8 due it is trying to store an float64 into a int8 [possible fix below].

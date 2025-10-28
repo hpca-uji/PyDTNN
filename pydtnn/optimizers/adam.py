@@ -1,14 +1,16 @@
-from pydtnn.optimizers.optimizer import Optimizer
 import numpy as np
 
+from pydtnn.optimizers.optimizer import Optimizer
+from pydtnn.utils.types import Array
 
-class Adam(Optimizer):
+
+class Adam[T: Array](Optimizer[T]):
     """
     Adam optimizer
     """
 
     def __init__(self, learning_rate: float = 1e-2, beta1: float = 0.99, beta2: float = 0.999,
-                 epsilon: float = 1e-7, decay: float = 0.0, dtype: np.dtype = np.float32):
+                 epsilon: float = 1e-7, decay: float = 0.0, dtype: np.dtype = np.dtype(np.float32)):
         super().__init__(learning_rate=learning_rate, dtype=dtype)
         self.beta1: float = beta1
         self.beta2: float = beta2

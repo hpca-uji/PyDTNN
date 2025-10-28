@@ -21,4 +21,3 @@ class NetworkAlgEnum(StrEnum):
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 type Array = np.ndarray | TensorGPU
-type ArrayArray = "np.ndarray | gpuarray.GPUArray"

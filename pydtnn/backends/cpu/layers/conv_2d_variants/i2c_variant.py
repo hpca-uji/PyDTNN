@@ -9,7 +9,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
-class I2CVariant(Conv2D[np.ndarray]):
+class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray
@@ -22,6 +22,7 @@ class I2CVariant(Conv2D[np.ndarray]):
     _dw: np.ndarray
     db: np.ndarray
     res_bw: np.ndarray
+    biases: np.ndarray
     # ----
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:

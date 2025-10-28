@@ -11,13 +11,14 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The next attributes will be initialized later
-        self.out_co: list[int] = None
-        self.idx_co: np.ndarray = None
-        self.concat_dim: int = None
+        self.out_co: list[int] = None  # type: ignore
+        self.idx_co: np.ndarray = None  # type: ignore
+        self.concat_dim: int = None  # type: ignore
+    # ---
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)
-        _x = [0] * len(self.paths)
+        _x:list[np.ndarray] = [np.ndarray((0,))] * len(self.paths)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         for i, p in enumerate(self.paths):

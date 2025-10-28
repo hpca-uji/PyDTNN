@@ -1,6 +1,6 @@
 import resource
 import sys
-from abc import abstractmethod
+import abc
 
 from typing import TYPE_CHECKING
 
@@ -129,12 +129,12 @@ class Tracer(metaclass=PostInitCaller):
                 ops_event[
                     layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.canonical_name}_{name[11:].lower()}"
 
-    @abstractmethod
+    @abc.abstractmethod
     def _emit_event(self, evt_type: int, evt_val: int, stream=None):
         """This method will be called only if tracing is enabled"""
         pass
 
-    @abstractmethod
+    @abc.abstractmethod
     def _emit_nevent(self, evt_evt: list[int], evt_val: list[int], stream=None):
         """This method will be called only if tracing is enabled"""
         pass

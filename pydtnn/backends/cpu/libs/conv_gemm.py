@@ -44,7 +44,7 @@ class ConvGemm:
 
     lib_cg = None  # will link to the libconvGemm.so library
 
-    def __init__(self, dtype: np.dtype = np.float32, debug: bool = False, parent_layer=None):
+    def __init__(self, dtype: np.dtype = np.dtype(np.float32), debug: bool = False, parent_layer=None):
         """
         Loads the libconvGemm.so library and creates the required auxiliary matrices ac_pack and bc_pack.
 

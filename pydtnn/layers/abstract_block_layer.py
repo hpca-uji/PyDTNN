@@ -1,7 +1,7 @@
 from pydtnn.layers.layer import Layer
+from pydtnn.utils.types import Array
 
-
-class AbstractBlockLayer(Layer):
+class AbstractBlockLayer[T: Array](Layer[T]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)

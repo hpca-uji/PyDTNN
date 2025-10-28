@@ -3,11 +3,11 @@ from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
-import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
+import pycuda.gpuarray as gpuarray  # type: ignore
 
 
-class TanhGPU(ActivationGPU, Tanh):
+class TanhGPU(ActivationGPU, Tanh[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1,10 +1,7 @@
-import pycuda.gpuarray as gpuarray
-from pycuda.driver import Function
+import pycuda.gpuarray as gpuarray  #type: ignore
+from pycuda.driver import Function  #type: ignore
 
 from pydtnn.metrics.metric import Metric
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from model import Model
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 

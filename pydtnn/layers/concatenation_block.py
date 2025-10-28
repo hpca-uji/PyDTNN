@@ -2,7 +2,7 @@ from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 
 from pydtnn.utils.tensor import decode_tensor, TensorFormat
 from pydtnn.layers.layer import LayerError
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.types import ArrayShape, Array
 
 import numpy as np
 
@@ -10,7 +10,7 @@ CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1
 
 
-class ConcatenationBlock(AbstractBlockLayer):
+class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
     def show(self, attrs="") -> None:
         print(
             f"|{self.id:^7d}"

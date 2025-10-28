@@ -3,14 +3,14 @@ from pydtnn.cython.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhw
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-
 import numpy as np
 
 
-class DepthwiseVariant(Conv2D[np.ndarray]):
+class DepthwiseVariant[T: np.ndarray](Conv2D[np.ndarray]):
     # NOTE: Attributes defined in conv_2d_cpu.
     dw: np.ndarray
     db: np.ndarray
+    biases: np.ndarray
     # ---
 
     def _forward_depthwise_nhwc(self, x: np.ndarray) -> np.ndarray:

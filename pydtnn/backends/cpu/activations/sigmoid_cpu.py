@@ -5,11 +5,11 @@ from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
 
 
-class SigmoidCPU(ActivationCPU, Sigmoid):
+class SigmoidCPU(ActivationCPU, Sigmoid[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self.y: np.ndarray = None
+        self.y: np.ndarray = None  # type: ignore (the value will be set in forward)
 
         self._y = np.ndarray(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
         self.dx = np.ndarray(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")

@@ -3,18 +3,18 @@ from functools import partialmethod
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from numpy import ndarray
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.types import ArrayShape, Array
 
+import numpy as np
 
-class ConvDirectVariant(Conv2D):
+class ConvDirectVariant[T:Array](Conv2D[T]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
 
-    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
         # ConvWinograd parameters
         if self.model.enable_conv_direct:
@@ -33,7 +33,7 @@ class ConvDirectVariant(Conv2D):
                     setattr(ConvDirectVariant, f"_backward_cd{n}_nhwc", partialmethod(ConvDirectVariant._backward_cd, n=n))
                     setattr(ConvDirectVariant, f"_backward_cd{n}_nchw", partialmethod(ConvDirectVariant._backward_cd, n=n))
 
-    def _forward_cd(self, x: ndarray, n=0) -> ndarray:
+    def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
         """Version of the forward function that uses the convDirect library"""
 
         biases = None
@@ -47,5 +47,5 @@ class ConvDirectVariant(Conv2D):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
-    def _backward_cd(self, y: ndarray, n=0) -> ndarray:
+    def _backward_cd(self, y: np.ndarray, n=0) -> np.ndarray:
         raise RuntimeError("Backward not implemented yet!")

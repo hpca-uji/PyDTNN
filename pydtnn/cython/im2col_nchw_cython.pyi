@@ -7,7 +7,8 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 
 def im2col_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
-                                 kh: int, kw: int,
+                                 cols: _npDT_2Dims[T],
+                                 kh: int, kw: int, ho: int, wo: int,
                                  vpadding: int, hpadding: int,
                                  vstride: int, hstride: int,
                                  vdilation: int, hdilation: int) -> None:
@@ -17,6 +18,8 @@ def im2col_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
         cols (npDT_2Dims): The 2 dimensional array where the image as columns will be stored (it should be initialized as zeros).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
+        ho (int): Output's heigth.
+        wo (int): Output's width.
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -29,18 +32,20 @@ def im2col_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
 
 
 def col2im_nchw_cython[T: _npDT](cols: _npDT_2Dims[T],
-                                 x: _npDT_4Dims[T],
+                                 dx: _npDT_4Dims[T],
                                  n: int, h: int, w: int, c: int,
-                                 kh: int, kw: int,
+                                 kh: int, kw: int, ho: int, wo: int,
                                  vpadding: int, hpadding: int,
                                  vstride: int, hstride: int,
                                  vdilation: int, hdilation: int) -> None:
     """
     Args:
         cols (npDT_2Dims): The 2 dimensional array (the image as columns).
-        x (npDT_4Dims): The 4 dimensional array wher the image will be stored (it should be initialized as zeros).
+        dx (npDT_4Dims): The 4 dimensional array wher the image will be stored (it should be initialized as zeros).
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
+        ho (int): Output's heigth.
+        wo (int): Output's width.
         vpadding (int): vertical padding value.
         hpadding (int): horizontal padding value.
         vstride (int): vertical stride value.
@@ -48,5 +53,5 @@ def col2im_nchw_cython[T: _npDT](cols: _npDT_2Dims[T],
         vdilation (int): vertical dilation value.
         hdilation (int): horizontal dilation value.
     Returns:
-        Nothing. The output is stored in "x".
+        Nothing. The output is stored in "dx".
     """

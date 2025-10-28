@@ -1,8 +1,8 @@
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.utils.types import Array
 
-
-class Conv2DBatchNormalizationRelu(Conv2D, BatchNormalization):
+class Conv2DBatchNormalizationRelu[T: Array](Conv2D[T], BatchNormalization[T]):
 
     def __init__(self, *args, **kwargs):
         from_parent = kwargs.pop("from_parent", None)

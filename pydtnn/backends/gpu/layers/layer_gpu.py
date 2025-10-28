@@ -18,24 +18,27 @@ from numpy import ndarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
+import pycuda.gpuarray as gpuarray  # type: ignore
+
 
 class LayerGPU(Layer[TensorGPU]):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """
-
+    y: TensorGPU
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
-        self.weights_cpu: ndarray = None
-        self.biases_cpu: ndarray = None
-        self.dx: TensorGPU = None
-        self.dw: TensorGPU = None
-        self.db: TensorGPU = None
-        self.dw_cpu: ndarray = None
-        self.db_cpu: ndarray = None
-        self.one_vec_cpu: ndarray = None
-        self.one_vec_gpu: TensorGPU = None
+        # NOTE: All of these values will be initalized in the "initialize" method.
+        self.weights_cpu: ndarray = None  #type: ignore
+        self.biases_cpu: ndarray = None  #type: ignore
+        self.dx: TensorGPU = None  #type: ignore
+        self.dw: TensorGPU = None  #type: ignore
+        self.db: TensorGPU = None  #type: ignore
+        self.dw_cpu: ndarray = None  #type: ignore
+        self.db_cpu: ndarray = None  #type: ignore
+        self.one_vec_cpu: ndarray = None  #type: ignore
+        self.one_vec_gpu: gpuarray.GPUArray = None  #type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
@@ -107,13 +110,13 @@ class LayerGPU(Layer[TensorGPU]):
         if not self.model.comm:
             return
 
-        if self.model.enable_nccl:
-            self.model.stream.synchronize()
-            dw = getattr(self, dw_)
-            # TODO: decrypt
-            setattr(self, dw_, dw)
-        else:
-            for w_, dw_ in self.grad_vars.items():
+        for w_, dw_ in self.grad_vars.items():
+            if self.model.enable_nccl:
+                self.model.stream.synchronize()
+                dw:TensorGPU = getattr(self, dw_)
+                # TODO: decrypt
+                setattr(self, dw_, dw)
+            else:
                 dw_ = dw_ if gradient else w_
                 self.reqs_allred[dw_].wait()
                 dw = getattr(self, dw_)

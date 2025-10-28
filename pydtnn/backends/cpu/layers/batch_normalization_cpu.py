@@ -4,13 +4,30 @@ from pydtnn.cython.bn_training_cython import bn_training_bwd_cython
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
-from pydtnn.utils.tensor import TensorFormat
-
+from pydtnn.utils.tensor import TensorFormat, decode_tensor
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
+
+        if self.spatial:
+            self.hi, self.wi, self.ci = decode_tensor(self.shape, self.model.tensor_format)
+            shape_ = (self.ci,)
+        else:
+            self.ci = self.shape[0]
+            shape_ = (self.ci,)
+
+        self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype, order="C")
+        self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
+        self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
+        self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
+        # self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+        self.inv_std = np.sqrt(self.running_var + self.epsilon, dtype=self.model.dtype, order="C")
+        np.reciprocal(self.inv_std, out=self.inv_std, dtype=self.model.dtype)
+        self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+
+
         self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
@@ -30,10 +47,14 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
     # --
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, _x: np.ndarray) -> np.ndarray:
+
+        self.y: np.ndarray
 
         if self.spatial:
-            x: np.ndarray = x.reshape((-1, self.ci), copy=False, order="C")
+            x = _x.reshape((-1, self.ci), copy=False, order="C")
+        else: 
+            x = _x
 
         y: np.ndarray = self.y[:x.shape[0], :]
 

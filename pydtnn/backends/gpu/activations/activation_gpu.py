@@ -29,8 +29,9 @@ class ActivationGPU(Activation[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.x = None
-        self.dx = None
+        # The following attributes will be initalized later.
+        self.x: TensorGPU = None  # type: ignore
+        self.dx: TensorGPU = None  # type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
@@ -102,13 +103,13 @@ class ActivationGPU(Activation[TensorGPU]):
         if not self.model.comm:
             return
 
-        if self.model.enable_nccl:
-            self.model.stream.synchronize()
-            dw = getattr(self, dw_)
-            # TODO: decrypt
-            setattr(self, dw_, dw)
-        else:
-            for w_, dw_ in self.grad_vars.items():
+        for w_, dw_ in self.grad_vars.items():
+            if self.model.enable_nccl:
+                self.model.stream.synchronize()
+                dw = getattr(self, dw_)
+                # TODO: decrypt
+                setattr(self, dw_, dw)
+            else:
                 dw_ = dw_ if gradient else w_
                 res = self.reqs_allred[dw_].wait()
                 if res is None:
@@ -136,7 +137,7 @@ class ActivationGPU(Activation[TensorGPU]):
                 #                            stream=self.stream_2.handle)
 
                 if not self.model.gpudirect:
-                    dw = getattr(self, dw_)
+                    dw: TensorGPU = getattr(self, dw_)
                     dw_cpu = getattr(self, f"{dw_}_cpu")
 
                     # If there is no CUDA-aware MPI, copy data back to GPU
@@ -152,7 +153,7 @@ class ActivationGPU(Activation[TensorGPU]):
                                           [self.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW,
                                            self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
             # stream = self.stream_2.handle)
-            dw = getattr(self, dw_)
+            dw: TensorGPU = getattr(self, dw_)
 
             if self.model.enable_nccl:
                 dw *= self.model.rank_weight

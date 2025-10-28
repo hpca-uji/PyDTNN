@@ -1,9 +1,11 @@
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-import pycuda.driver as drv
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.driver import Function
+import pycuda.driver as drv  #type: ignore
+import pycuda.gpuarray as gpuarray  #type: ignore
+from pycuda.compiler import SourceModule  #type: ignore
+from pycuda.driver import Function  #type: ignore
+
+import numpy as np
 
 from pydtnn.performance_models import matmul_time
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -36,14 +38,16 @@ MACROS_NHWC = \
 # ---
 
 
-class Conv2DGPU(LayerGPU, Conv2D):
+class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fwd_algo = None
-        self.fwd_time = None
-        self.bwd_dw_algo = None
-        self.bwd_dx_algo = None
+
+        # The following attributes will be initalized later.
+        self.fwd_algo: int = None  #type: ignore
+        self.fwd_time: int = None  #type: ignore
+        self.bwd_dw_algo: int = None  #type: ignore
+        self.bwd_dx_algo: int = None  #type: ignore
         self.conv_desc = None
     # ---
 
@@ -466,8 +470,8 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.grid = (self.blocks, 1, 1)
         self.block = (self.threads, 1, 1)
 
-        func_name: str = None
-        macros: str = None
+        func_name: str = ""
+        macros: str = ""
         self.bias_sum_bwd: Function = None
 
         match self.model.tensor_format:
@@ -513,6 +517,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             self.bias_sum_fwd(x.ary, self.biases.ary,
                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
@@ -545,6 +550,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             self.bias_sum_fwd(x.ary, self.biases.ary,
                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
@@ -577,6 +583,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
                               np.int32(c), np.int32(h), np.int32(w),
@@ -605,6 +612,7 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
                               np.int32(c), np.int32(n * h * w * c),
@@ -627,8 +635,8 @@ __global__ void {func_name}({T}* x, {T}* bias,
         self.grid = (self.blocks, 1, 1)
         self.block = (self.threads, 1, 1)
 
-        func_name: str = None
-        macros: str = None
+        func_name: str = ""
+        macros: str = ""
         self.bias_sum_bwd: Function = None
 
         match self.model.tensor_format:
@@ -810,6 +818,7 @@ __global__ void {func_name}({T}* y, {T}* b,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
             self.bias_sum_fwd(x.ary, self.biases.ary,
                               np.int32(n), np.int32(c), np.int32(h), np.int32(w),
@@ -846,6 +855,7 @@ __global__ void {func_name}({T}* y, {T}* b,
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
             self.bias_sum_bwd(dy.ary, self.db.ary,
                               np.int32(c), np.int32(h), np.int32(w),

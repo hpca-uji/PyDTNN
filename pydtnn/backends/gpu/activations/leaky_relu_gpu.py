@@ -7,20 +7,21 @@ from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 import numpy as np
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum
 
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.driver import Function
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
 
 
 class LeakyReluGPU(ActivationGPU, LeakyRelu):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mask: TensorGPU | None = None
-        self.y: TensorGPU | None = None
+        # The following attributes will be initialized later.
+        self.mask: TensorGPU = None # type: ignore
+        self.y: TensorGPU = None # type: ignore
     
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(self, prev_shape, x)
+        super().initialize(prev_shape, x)
 
         self.threads = min(self.model.batch_size, 1024)
         self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
@@ -33,6 +34,7 @@ class LeakyReluGPU(ActivationGPU, LeakyRelu):
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
         self.initialize_relu_2d_gpu(prev_shape)
+    # ---
     
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_leaky_relu_fwd"
@@ -71,6 +73,7 @@ __global__ void {func_name}({T}* x, {T}* max, {T}* mask,
         code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
+    # -----
     
     def cuda_adaptive_average_pooling_bwd(self, dtype: np.dtype) -> Function:
         _func_name = "cuda_leaky_relu_bwd"
@@ -90,6 +93,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         code = code.format(func_name=_func_name, T=_t)
 
         return SourceModule(code).get_function(_func_name)
+    # -----
     
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

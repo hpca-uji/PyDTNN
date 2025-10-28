@@ -1,22 +1,19 @@
-import pycuda.gpuarray as gpuarray
-from pycuda.driver import Function
+import pycuda.gpuarray as gpuarray  #type: ignore
+from pycuda.driver import Function  #type: ignore
 
-from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from pydtnn.model import Model
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.losses.loss import Loss
 from pydtnn.utils.types import ArrayShape
 
-class LossGPU(Loss):
+class LossGPU(Loss[TensorGPU]):
     """
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
 
     LIMIT_THREADS_AND_BLOCKS = 1024
 
-    def __init__(self, shape: ArrayShape, model: "Model", eps=1e-8):
-        super().__init__(shape, model, eps)
+    def __init__(self, shape: ArrayShape, eps=1e-8):
+        super().__init__(shape, eps)
         self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)

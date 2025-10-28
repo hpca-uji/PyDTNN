@@ -14,10 +14,10 @@ from typing import TYPE_CHECKING, Generator, IO
 if TYPE_CHECKING:
     from pydtnn.model import Model
 from enum import IntEnum
-from pydtnn.utils.types import Array, ArrayShape
+from pydtnn.utils.types import ArrayShape
 
 
-class Dataset[T: Array](ABC):
+class Dataset(ABC):
     """
     NOTE
     - input_shape is expected to be in NCHW format
@@ -62,7 +62,7 @@ class Dataset[T: Array](ABC):
         self.output_shape = tuple(output_shape)
 
         if self.model.transform_crop:
-            crop, size = self._calculate_crop(self.input_shape[1:])
+            crop, size = self._calculate_crop(self.input_shape[1:])  #type: ignore (The cropped input shape will be a tuple[int, int])
             self.input_shape = (self.input_shape[0], *size)
 
         if self.model.transform_resize:
@@ -198,11 +198,11 @@ class Dataset[T: Array](ABC):
     def test_nsamples(self):
         return self._nsamples[Dataset.Part.TEST]
 
-    def get_train_val_generator(self) -> tuple[Generator[tuple[T, T, int]], Generator[tuple[T, T, int]]]:
+    def get_train_val_generator(self) -> tuple[Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]]:
         return (self._batch_generator(Dataset.Part.TRAIN),
                 self._batch_generator(Dataset.Part.VAL))
 
-    def get_test_generator(self) -> Generator[tuple[T, T, int]]:
+    def get_test_generator(self) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         return self._batch_generator(Dataset.Part.TEST)
 
     def _print_report(self):
@@ -229,7 +229,7 @@ class Dataset[T: Array](ABC):
         batches_per_worker = nsamples / global_batch_size
 
         if self.model.dataset_percentage != 0:
-            nsamples *= self.model.dataset_percentage
+            nsamples = nsamples * self.model.dataset_percentage  # type: ignore (It's expected to receive a int as parameter and it's fine like this)
 
         if batches_per_worker > self.model.steps_per_epoch > 0:
             batches_per_worker = self.model.steps_per_epoch
@@ -266,23 +266,23 @@ class Dataset[T: Array](ABC):
         pass
 
     @staticmethod
-    def _nchw2nhwc(x: T) -> T:
+    def _nchw2nhwc(x: np.ndarray) -> np.ndarray:
         return x.transpose(0, 2, 3, 1)
 
     @staticmethod
-    def _nhwc2nchw(x: T) -> T:
+    def _nhwc2nchw(x: np.ndarray) -> np.ndarray:
         return x.transpose(0, 3, 1, 2)
 
     @staticmethod
-    def _chw2hwc(x: T) -> T:
+    def _chw2hwc(x: np.ndarray) -> np.ndarray:
         return x.transpose(1, 2, 0)
 
     @staticmethod
-    def _hwc2chw(x: T) -> T:
+    def _hwc2chw(x: np.ndarray) -> np.ndarray:
         return x.transpose(2, 0, 1)
 
     @staticmethod
-    def _decode_class(y: T, classes_list: np.ndarray) -> None:
+    def _decode_class(y: np.ndarray, classes_list: np.ndarray) -> None:
         """Sets to 1 the corresponding entry in the 2D y array as indicated by the 1D array of classes"""
         y[np.arange(y.shape[0]), classes_list] = 1
 

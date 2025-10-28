@@ -7,9 +7,9 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.driver import Function
+import pycuda.gpuarray as gpuarray   # type: ignore
+from pycuda.compiler import SourceModule   # type: ignore
+from pycuda.driver import Function   # type: ignore
 
 import numpy as np
 from pydtnn.utils.tensor import TensorFormat
@@ -46,7 +46,7 @@ ci = {macro_index_c}(idx, c);
 """
 
 
-class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
+class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D[TensorGPU]):
 
     def initialize(self, prev_shape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
@@ -64,7 +64,8 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.y = None
+        # NOTE: Will be initalized later.
+        self.y = None  # type: ignore
 
     def cuda_adaptive_average_pooling_fwd(self, dtype: np.dtype) -> Function:
 
@@ -327,7 +328,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
             case TensorFormat.NCHW:
                 pooling_shape = (self.co, self.ho, self.wo)
             case TensorFormat.NHWC:
-                (self.ho, self.wo, self.co)
+                pooling_shape = (self.ho, self.wo, self.co)
             case _:
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 

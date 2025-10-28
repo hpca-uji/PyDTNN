@@ -9,19 +9,18 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.utils.tensor import decode_tensor, TensorFormat
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import DTYPE2CTYPE, ArrayShape
 
 
-class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock):
+class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.concat = None
-        self.split = None
-        self.dy = None
-        self.out_co = None
-        self.idx_co = None
+        self.concat: ElementwiseKernel = None
+        self.split: ElementwiseKernel = None
+        self.dy: list[TensorGPU] = None  #type: ignore
+        self.idx_co = None  #type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

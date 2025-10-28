@@ -1,29 +1,39 @@
 from pydtnn.layers.abstract_pool_2d_layer import AbstractPool2DLayer
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-import pycuda.gpuarray as gpuarray
+import pycuda.gpuarray as gpuarray   # type: ignore
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import decode_tensor, encode_tensor
+from pydtnn.utils.tensor import encode_tensor
 from pydtnn.layers.layer import ParameterException
 from pydtnn.utils.types import ArrayShape
 
 
-class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer):
+class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer[TensorGPU]):
     """
     Provides common methods to Pool2DGPU classes.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.pool_desc = None
-        self.ci = self.hi = self.wi = self.kh = self.kw = self.co = self.ci = None
-        self.ho = self.wo = None
+        # The following attributes will be initalized later.
+        self.pool_desc = None # TODO: set CDNN descripor type
+        self.ci: int = None  # type: ignore
+        self.hi: int = None  # type: ignore
+        self.wi: int = None  # type: ignore
+        self.kh: int = None  # type: ignore
+        self.kw: int = None  # type: ignore
+        self.co: int = None  # type: ignore
+        self.ci: int = None  # type: ignore
+        self.ho: int = None  # type: ignore
+        self.wo: int = None  # type: ignore
 
     def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
         super().initialize(prev_shape, x)
+        self.x: TensorGPU
+
         if not (self.vdilation == 1 and self.hdilation == 1):
             raise ParameterException(f"cuDNN does not support dilated pooling. vdilation: {self.vdilation}, hdilation: {self.hdilation}")
 

@@ -1,4 +1,4 @@
-import pycuda.gpuarray as gpuarray
+import pycuda.gpuarray as gpuarray  #type: ignore
 
 from pydtnn.layers.input import Input
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
@@ -6,7 +6,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
 
-class InputGPU(LayerGPU, Input):
+class InputGPU(LayerGPU, Input[TensorGPU]):
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)

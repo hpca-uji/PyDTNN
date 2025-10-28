@@ -1,8 +1,8 @@
 import numpy as np
 
-import pycuda.driver as drv
-import pycuda.gpuarray as gpuarray
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.driver as drv  # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
@@ -14,22 +14,22 @@ from pydtnn.utils.tensor import decode_tensor
 from pydtnn.utils.types import ArrayShape
 
 
-class BatchNormalizationGPU(LayerGPU, BatchNormalization):
+class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # The next attributes will be initialized later
-        self.mode: int = None
+        # NOTE: The next attributes will be initialized later
         self.gamma_beta_mean_var_desc: int | None = None
-        self.gamma_cpu: np.ndarray = None
-        self.beta_cpu: np.ndarray = None
-        self.dgamma_cpu: np.ndarray = None
-        self.dbeta_cpu: np.ndarray = None
-        self.save_mean: TensorGPU = None
-        self.save_inv_var: TensorGPU = None
-        self.factor: float = None
+        self.mode: int = None  # type: ignore
+        self.gamma_cpu: np.ndarray = None  # type: ignore
+        self.beta_cpu: np.ndarray = None  # type: ignore
+        self.dgamma_cpu: np.ndarray = None  # type: ignore
+        self.dbeta_cpu: np.ndarray = None  # type: ignore
+        self.save_mean: TensorGPU = None  # type: ignore
+        self.save_inv_var: TensorGPU = None  # type: ignore
+        self.factor: float = None  # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 
@@ -102,7 +102,7 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
         self.factor = 1.0 - self.momentum
     # ---
 
-    def forward(self, x):
+    def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         match self.model.mode:
             case Model.Mode.TRAIN:
@@ -128,7 +128,9 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization):
                 raise RuntimeError(f"Unexpected model mode '{self.model.mode}'.")
         return self.y
 
-    def backward(self, dy):
+    def backward(self, dy: TensorGPU) -> TensorGPU:
+        self.x: TensorGPU
+        
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx, dgamma, dbeta

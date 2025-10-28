@@ -13,11 +13,13 @@ from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import ArrayShape
 
 
-class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D):
+class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.idx_max: np.ndarray = None
+        # The following attribute will be intialized later.
+        self.idx_max: np.ndarray = None # type: ignore
+        self.y: np.ndarray
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)

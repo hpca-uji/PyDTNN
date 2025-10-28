@@ -1,7 +1,9 @@
-import pycuda.driver as drv
-import pycuda.gpuarray as gpuarray
+import numpy as np
 
-from pydtnn.layers import FC
+import pycuda.driver as drv  # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+
+from pydtnn.layers.fc import FC
 from pydtnn.performance_models import matmul_time
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
@@ -10,7 +12,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.utils_gpu import matmul_gpu, matvec_gpu
 from pydtnn.utils.types import ArrayShape
 
-class FCGPU(LayerGPU, FC):
+class FCGPU(LayerGPU, FC[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,6 +47,7 @@ class FCGPU(LayerGPU, FC):
                                                                    cudnn_dtype=self.model.cudnn_dtype,
                                                                    gpudirect=self.model.gpudirect)
             if self.use_bias:
+                self.biases: TensorGPU
                 self.db_cpu, self.db = TensorGPU.initialize_gpu_direct(drv, self.biases.ary.shape, self.model.dtype,
                                                                        tensor_format=self.model.tensor_format,
                                                                        cudnn_dtype=self.model.cudnn_dtype,
@@ -55,6 +58,7 @@ class FCGPU(LayerGPU, FC):
                                                                        cudnn_dtype=self.model.cudnn_dtype,
                                                                        gpudirect=self.model.gpudirect)
             if self.use_bias:
+                self.biases: TensorGPU
                 self.db_cpu, self.db = TensorGPU.initialize_not_gpu_direct(self.biases.ary.shape, self.model.dtype,
                                                                            tensor_format=self.model.tensor_format,
                                                                            cudnn_dtype=self.model.cudnn_dtype,
@@ -91,6 +95,7 @@ class FCGPU(LayerGPU, FC):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
+            self.biases: TensorGPU
             alpha, beta = 1.0, 1.0
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
                                          self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
@@ -120,6 +125,7 @@ class FCGPU(LayerGPU, FC):
             self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
         if self.use_bias:
+            self.biases: TensorGPU
             # Compute db
             m = dy.ary.shape[0]
             n = lda = dy.ary.shape[1]

@@ -1,5 +1,5 @@
 from pydtnn.layers.abstract_pool_2d_layer import AbstractPool2DLayer
+from pydtnn.utils.types import Array
 
-
-class MaxPool2D(AbstractPool2DLayer):
+class MaxPool2D[T: Array](AbstractPool2DLayer[T]):
     pass

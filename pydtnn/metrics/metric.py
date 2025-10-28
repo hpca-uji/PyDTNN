@@ -1,11 +1,10 @@
 from abc import abstractmethod
 
 from pydtnn.backends import PromoteToBackend
-from pydtnn.utils.types import ArrayArray
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.types import ArrayShape, Array
 
 
-class Metric[T: ArrayArray](PromoteToBackend):
+class Metric[T: Array](PromoteToBackend):
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape

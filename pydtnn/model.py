@@ -59,7 +59,7 @@ try:
     import pycuda.driver as drv  # type: ignore
     from pydtnn.backends.gpu.libs import libcudnn as cudnn
 except Exception as e:
-    drv = None
+    drv = ModuleType | None
     cuda_errors.append(e)
 
 try:
@@ -89,13 +89,9 @@ DEFAULT_BACH_SIZE = 64
 
 # NOTE: Check "_initialize_cuda" to get the actual types.
 # TODO: set the correct type.
-NCCL_Data_Type = TypeVar("NCCL_Data_Type")
-NCCL_Comm_Type = TypeVar("NCCL_Comm_Type")
 type Cudnn_Handle_Type = int
 type Cublas_Handle_Type = int
-PyCuda_Stream_Type = TypeVar("PyCuda_Stream_Type")
 type Cudnn_dtype = int
-Cuda_Context = TypeVar("Cuda_Context")
 
 
 # NOTE: mpi4py has more functions, but no typing
@@ -242,11 +238,11 @@ class Model[T: Array]:
     MPI: MPI_MODULE | None
     comm: MPI_COMM | None
 
-    nccl_type: NCCL_Data_Type | None
-    nccl_comm: NCCL_Comm_Type | None
+    nccl_type: Any | None
+    nccl_comm: Any | None
     cudnn_handle: Cudnn_Handle_Type | None
     cublas_handle: Cublas_Handle_Type | None
-    stream: PyCuda_Stream_Type | None
+    stream: Any | None  # drv.Stream
     cudnn_dtype: Cudnn_dtype | None
     input_shape: ArrayShape
     output_shape: ArrayShape
@@ -424,9 +420,9 @@ class Model[T: Array]:
         supported_nccl = True
 
         assert drv is not None
-        device_id: int = self.comm_rank % drv.Device.count()
-        drv.init()
-        context: Cuda_Context = drv.Device(device_id).make_context()
+        device_id: int = self.comm_rank % drv.Device.count()  #type: ignore
+        drv.init()  #type: ignore
+        context = drv.Device(device_id).make_context()  #type: ignore
         # context: int = drv.Device(device_id).retain_primary_context()
 
         atexit.register(context.pop)
@@ -469,12 +465,12 @@ class Model[T: Array]:
                     raise SystemExit("Not able to run more processes than GPUs per node!")
 
             nccl_id = self.comm.bcast(nccl.ncclGetUniqueId() if self.comm_rank == 0 else None)
-            nccl_comm: NCCL_Comm_Type = nccl.ncclCommInitRank(self.nprocs, nccl_id, self.rank)
+            nccl_comm = nccl.ncclCommInitRank(self.nprocs, nccl_id, self.rank)
 
         cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
-        cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()
-        stream: PyCuda_Stream_Type = drv.Stream()
-        cublas.cublasSetStream(cublas_handle, stream.handle)
+        cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()  # type: ignore
+        stream: drv.Stream = drv.Stream()  # type: ignore
+        cublas.cublasSetStream(cublas_handle, stream.handle)  # type: ignore
         cudnn.cudnnSetStream(cudnn_handle, stream.handle)
 
         cudnn_types = {np.float64: CudnnDataType.FLAOT64,

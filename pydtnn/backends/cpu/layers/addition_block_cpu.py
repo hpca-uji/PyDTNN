@@ -5,7 +5,7 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
 import numpy as np
 
 
-class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock):
+class AdditionBlockCPU(AbstractBlockLayerCPU, AdditionBlock[np.ndarray]):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

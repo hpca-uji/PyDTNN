@@ -5,19 +5,19 @@ from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
-import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 
-class LogGPU(ActivationGPU, Log):
+class LogGPU(ActivationGPU, Log[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.log = None
-        self.dlog = None
+        self.log: ElementwiseKernel = None
+        self.dlog: ElementwiseKernel = None
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> TensorGPU:
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         self.log = ElementwiseKernel(

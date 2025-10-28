@@ -2,11 +2,11 @@ import numpy as np
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
+from pydtnn.utils.types import ArrayShape
 
+class SoftmaxCPU(ActivationCPU, Softmax[np.ndarray]):
 
-class SoftmaxCPU(ActivationCPU, Softmax):
-
-    def __init__(self, shape: np.ndarray = (1,)):
+    def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
 
     def initialize(self, prev_shape, x=None):

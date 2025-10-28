@@ -7,7 +7,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
 
-class ReluGPU(ActivationGPU, Relu):
+class ReluGPU(ActivationGPU, Relu[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

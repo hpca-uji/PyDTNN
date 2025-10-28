@@ -1,5 +1,4 @@
-import pycuda.gpuarray as gpuarray
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.gpuarray as gpuarray  #type: ignore
 
 from pydtnn.layers.flatten import Flatten
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -7,7 +6,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 
-class FlattenGPU(LayerGPU, Flatten):
+class FlattenGPU(LayerGPU, Flatten[TensorGPU]):
 
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)

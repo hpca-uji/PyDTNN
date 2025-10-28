@@ -46,7 +46,7 @@ class Folder(Dataset):
             raise NotADirectoryError(f"{self.model.dataset_test_path!r} should be a directory.")
 
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
-        self._nsamples: list[int, int, int] = [0, 0, 0]  # train, val, test
+        self._nsamples = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[Dataset.Part, list[tuple[ClassName, DataPath]]]()
 
         self.labels_and_images[Dataset.Part.TRAIN], num_classes_train, self._nsamples[Dataset.Part.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)

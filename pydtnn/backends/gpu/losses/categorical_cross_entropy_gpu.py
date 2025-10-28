@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.driver import Function
+import pycuda.gpuarray as gpuarray  #type: ignore
+from pycuda.compiler import SourceModule  #type: ignore
+from pycuda.driver import Function  #type: ignore
 
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 from pydtnn.backends.gpu.losses.loss_gpu import LossGPU
@@ -9,7 +9,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 
-class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy):
+class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
         module = SourceModule("""

@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.gpuarray as gpuarray  #type:ignore
+from pycuda.compiler import SourceModule  #type:ignore
+from pycuda.elementwise import ElementwiseKernel  #type:ignore
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers.adam import Adam
@@ -11,7 +11,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 
-class AdamGPU(OptimizerGPU, Adam):
+class AdamGPU(OptimizerGPU, Adam[TensorGPU]):
     """
     AdamGPU optimizer
     """
@@ -56,7 +56,7 @@ class AdamGPU(OptimizerGPU, Adam):
 
     def update(self, layer: LayerGPU):
         self.context[layer.id]["it"] += 1
-        it = self.context[layer.id]["it"]
+        it:int = self.context[layer.id]["it"]
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

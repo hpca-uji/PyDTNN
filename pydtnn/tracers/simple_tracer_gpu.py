@@ -1,5 +1,5 @@
 try:
-    import pycuda.driver as drv
+    import pycuda.driver as drv  #type: ignore
 except Exception as e:
     pass
 
@@ -23,7 +23,7 @@ class SimpleTracerGPU(SimpleTracer):
         super().__init__(tracing, output_filename, comm)
         self.event_vars = []
         # Attributes that will be initialized later
-        self.stream = None
+        self.stream: drv.Stream = None
 
     def _get_start_end_event(self) -> tuple:
         if len(self.event_vars) == 0:

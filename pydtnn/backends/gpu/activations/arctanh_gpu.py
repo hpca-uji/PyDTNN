@@ -1,21 +1,20 @@
 import numpy as np
 
-from pydtnn.activations.activation import Arctanh
+from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
-import pycuda.gpuarray as gpuarray
-from pydtnn.backends.gpu.libs import libcudnn as cudnn
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.gpuarray as gpuarray # type: ignore
+from pycuda.elementwise import ElementwiseKernel # type: ignore
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
 
-class ArctanhGPU(ActivationGPU, Arctanh):
+class ArctanhGPU(ActivationGPU, Arctanh[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.atanh = None
-        self.datanh = None
+        self.atanh: ElementwiseKernel = None
+        self.datanh: ElementwiseKernel = None
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

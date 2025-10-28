@@ -5,26 +5,32 @@ from pydtnn.utils.best_of import BestOf
 from typing import Callable
 
 
-def transpose_1023_numpy(original: np.ndarray, transposed: np.ndarray | None = None) -> np.ndarray:
+def transpose_1023_numpy(original: np.ndarray, 
+                         transposed: np.ndarray | None = None # type: ignore
+                         ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype, order="C")
     transposed[...] = original.transpose((1, 0, 2, 3))
     return transposed
 
 
-def transpose_1023_ijk_cython_wrapper(original: np.ndarray, transposed: np.ndarray | None = None) -> np.ndarray:
+def transpose_1023_ijk_cython_wrapper(original: np.ndarray, 
+                                      transposed: np.ndarray | None = None # type: ignore
+                                      ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype, order="C")
     transpose_1023_ijk_cython(original, transposed)
     return transposed
 
 
-def transpose_1023_jik_cython_wrapper(original: np.ndarray, transposed: np.ndarray | None = None) -> np.ndarray:
+def transpose_1023_jik_cython_wrapper(original: np.ndarray, 
+                                      transposed: np.ndarray | None = None # type: ignore
+                                      ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype, order="C")
     transpose_1023_jik_cython(original, transposed)
     return transposed
 

@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray
-from pycuda.compiler import SourceModule
-from pycuda.elementwise import ElementwiseKernel
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers.rmsprop import RMSProp
@@ -10,7 +10,7 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 
-class RMSPropGPU(OptimizerGPU, RMSProp):
+class RMSPropGPU(OptimizerGPU, RMSProp[TensorGPU]):
     """
     RMSPropGPU Optimizer
     """

@@ -7,13 +7,17 @@ from pydtnn.performance_models import matmul_time
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
-class FCCPU(LayerCPU, FC):
+class FCCPU(LayerCPU, FC[np.ndarray]):
+
+    biases: np.ndarray
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.x: np.ndarray = None
-        self.dw: np.ndarray = None
-        self.db: np.ndarray = None
+        # The following attributes will be initalized in "initalize"
+        self.x: np.ndarray = None  #type: ignore
+        self.dw: np.ndarray = None  #type: ignore
+        self.db: np.ndarray = None  #type: ignore
+    # --
 
     def initialize(self, prev_shape, x = None):
         super().initialize(prev_shape, x)
@@ -39,6 +43,7 @@ class FCCPU(LayerCPU, FC):
             matmul_time(m=self.model.batch_size, n=self.weights.shape[0], k=self.weights.shape[1],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
+    # ----
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         if self.model.mode is Model.Mode.TRAIN:
@@ -56,6 +61,7 @@ class FCCPU(LayerCPU, FC):
                    dtype=self.model.dtype, order="C")
 
         return np.asarray(dy, dtype=self.model.dtype, order='C', copy=None)
+    # ---
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
@@ -77,3 +83,4 @@ class FCCPU(LayerCPU, FC):
                   dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+    # --

@@ -19,7 +19,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.output_shape = output_shape
 
         # This value will change in initialize:
-        self._forward_pooling_not_needed: bool = None
+        self._forward_pooling_not_needed: bool = None  # type: ignore
     # ---  END __init__ --- #
 
     def initialize(self, prev_shape: tuple[int, int], x: T | None = None) -> None:

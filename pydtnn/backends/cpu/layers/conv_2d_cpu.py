@@ -5,30 +5,31 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import BestOfVa
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGemmVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
-from pydtnn.performance_models import im2col_time, matmul_time, col2im_time
+from pydtnn.performance_models import im2col_time, matmul_time
 from pydtnn.utils.tensor import TensorFormat
-
-from numpy import ndarray, empty, zeros
 from pydtnn.utils.types import ArrayShape
+
+import numpy as np
+import abc
 
 
 class Conv2DCPU(LayerCPU,
-                DepthwiseVariant,
-                PointwiseVariant,
+                DepthwiseVariant[np.ndarray],
+                PointwiseVariant[np.ndarray],
                 # I2CVariant (provided from ConvWinogradVariant)
-                ConvGemmVariant,
+                ConvGemmVariant[np.ndarray],
                 # ConvWinogradVariant (provided from BestOfVariant)
                 # ConvDirectVariant (provided from BestOfVariant)
-                BestOfVariant):
+                BestOfVariant[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Other parameters initialized in initialize()
+        # More parameters initialized in initialize()
         self.variant = None
-        self.weights = None
-        self.biases = None
-        self.fwd_time = None
-        self.bwd_time = None
+        self.biases = None # type: ignore
+        self.weights = None  # type: ignore
+        self.fwd_time = None  # type: ignore
+        self.bwd_time = None  # type: ignore
 
     def initialize_i2c(self) -> None:
         # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
@@ -37,47 +38,47 @@ class Conv2DCPU(LayerCPU,
         self.dim_c = self.ci * self.kh * self.kw
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self._x_cols = zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
-                self.res = empty(shape=(self.co, dim_n), dtype=self.model.dtype, order="C")
-                self._dw = empty(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
-                self.res_bw = empty(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
+                self._x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
+                self.res = np.ndarray(shape=(self.co, dim_n), dtype=self.model.dtype, order="C")
+                self._dw = np.ndarray(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res_bw = np.ndarray(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
-                self._x_rows = zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
-                self.res = empty(shape=(dim_n, self.co), dtype=self.model.dtype, order="C")
-                self._dw = empty(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
-                self.res_bw = empty(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                self._x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res = np.ndarray(shape=(dim_n, self.co), dtype=self.model.dtype, order="C")
+                self._dw = np.ndarray(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
+                self.res_bw = np.ndarray(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
             case _:
                 raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         #  NOTE: This is necessary for the initial "reduce_weights_async"
-        self.dw: ndarray = zeros(self.weights.shape, dtype=self.model.dtype, order="C")
+        self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
     # ---
 
     def initialize_depthwise(self):
-        self.dw = zeros(self.weights_shape, dtype=self.model.dtype, order="C")
+        self.dw = np.zeros(self.weights_shape, dtype=self.model.dtype, order="C")
     # ---
 
     def initialize_pointwise(self):
 
-        self.dw = empty(shape=self.weights_shape, dtype=self.model.dtype, order="C")
+        self.dw = np.ndarray(shape=self.weights_shape, dtype=self.model.dtype, order="C")
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.y = empty(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
-                self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
+                self.y = np.ndarray(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
+                self.dx = np.ndarray(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
-                self.y = empty(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
-                self.dx = empty(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
+                self.y = np.ndarray(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
+                self.dx = np.ndarray(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
 
-    def initialize(self, prev_shape: ArrayShape, x: ndarray | None = None) -> None:
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer((self.co,), self.model.dtype)
-            self.db = empty(shape=(self.co, ), dtype=self.model.dtype, order="C")
+            self.db = np.ndarray(shape=(self.co, ), dtype=self.model.dtype, order="C")
         # Select variants if it has not been already selected (e.g., by BestOfVariant)
         if self.variant is None:
             # Select variant when best_of is not enabled
@@ -141,11 +142,13 @@ class Conv2DCPU(LayerCPU,
                                      k=self.co, cpu_speed=self.model.cpu_speed,
                                      memory_bw=self.model.memory_bw, dtype=self.model.dtype)
 
-    def forward(self, x: ndarray) -> ndarray:
+    @abc.abstractmethod
+    def forward(self, x: np.ndarray) -> np.ndarray:
         msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""
         NotImplementedError(f"Conv2DCPU forward: {msg}")
 
-    def backward(self, dy: ndarray) -> ndarray:
+    @abc.abstractmethod
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         msg = """This is a fake backward function. It must be masked on initialization by a _backward implementation"""
         NotImplementedError(f"Conv2DCPU backward: {msg}")
 
