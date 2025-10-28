@@ -3,6 +3,7 @@ from pycuda.driver import Function  #type: ignore
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.losses.loss import Loss
+from pydtnn.model import Model
 from pydtnn.utils.types import ArrayShape
 
 class LossGPU(Loss[TensorGPU]):
@@ -14,6 +15,10 @@ class LossGPU(Loss[TensorGPU]):
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         super().__init__(shape, eps)
+
+    def initialize(self) -> None:
+        super().initialize()
+        # NOTE: the model must be executed before this one.
         self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)

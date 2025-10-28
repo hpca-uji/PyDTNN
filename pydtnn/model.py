@@ -13,7 +13,7 @@ import time
 from functools import cached_property
 from timeit import default_timer as timer
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
 from collections import abc
 
@@ -91,7 +91,7 @@ DEFAULT_BACH_SIZE = 64
 # TODO: set the correct type.
 type Cudnn_Handle_Type = int
 type Cublas_Handle_Type = int
-type Cudnn_dtype = int
+int = int
 
 
 # NOTE: mpi4py has more functions, but no typing
@@ -242,8 +242,8 @@ class Model[T: Array]:
     nccl_comm: Any | None
     cudnn_handle: Cudnn_Handle_Type | None
     cublas_handle: Cublas_Handle_Type | None
-    stream: Any | None  # drv.Stream
-    cudnn_dtype: Cudnn_dtype | None
+    stream: Any  # drv.Stream
+    cudnn_dtype: int
     input_shape: ArrayShape
     output_shape: ArrayShape
 
@@ -480,7 +480,7 @@ class Model[T: Array]:
 
         cudnn_type: str = cudnn_types.get(self.dtype, CudnnDataType.FLOAT32)
 
-        cudnn_dtype: Cudnn_dtype = cudnn.cudnnDataType[cudnn_type]
+        cudnn_dtype: int = cudnn.cudnnDataType[cudnn_type]
         self.tracer.set_default_stream(stream)
 
         self.nccl_type = nccl_type
@@ -699,6 +699,7 @@ class Model[T: Array]:
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
         self.loss_func.set_backend(self._backend)
         self.loss_func.set_model(self)
+        self.loss_func.initialize()
         self.metrics_funcs = [metrics.select(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         for metric in self.metrics_funcs:
