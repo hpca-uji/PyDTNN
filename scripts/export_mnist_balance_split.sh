@@ -9,9 +9,7 @@ export PYTHONUNBUFFERED="True"
 python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
-  --dataset_train_path=datasets/mnist \
-  --dataset_test_path=datasets/mnist \
-  --dataset_path='datasets/mnist/dataset.${split}.npz' \
-  --dataset_export_split_weights=1,1,1,1 \
+  --dataset_path=datasets/mnist \
+  --export_weights=1,1,1,1 \
   --parallel=sequential \
   --shared_storage=True

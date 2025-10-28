@@ -10,7 +10,7 @@ from PIL import Image
 import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import BackgroundGenerator, string_substitute, random
+from pydtnn.utils import BackgroundGenerator, random
 from pydtnn.utils.types import Array, ArrayShape
 
 if TYPE_CHECKING:
@@ -116,12 +116,8 @@ class Dataset[T: Array](ABC):
         else:
             return f
 
-    def export(self, split_weights: list[float] | None = None):
+    def export(self, split_weights: list[float] = [1]):
         """Export dataset (possibly split and rank specific)"""
-
-        # Get split weights
-        if split_weights is None:
-            split_weights = list(map(float, self.model.dataset_export_split_weights.split(",")))
 
         # Data generators
         gen_train = self._data_generator(Dataset.Part.TRAIN)
@@ -171,7 +167,7 @@ class Dataset[T: Array](ABC):
 
         # Save arrays
         for split, (x_train, y_train, x_test, y_test) in enumerate(zip(x_train, y_train, x_test, y_test)):
-            path = string_substitute(self.model.dataset_path, split=split)
+            path = Path(self.model.dataset_path) / f"archive.{split}.npz"
 
             # Export dataset
             np.savez_compressed(path,
