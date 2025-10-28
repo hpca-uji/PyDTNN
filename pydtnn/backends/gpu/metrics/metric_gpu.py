@@ -13,6 +13,9 @@ class MetricGPU(Metric[TensorGPU]):
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         super().__init__(shape, eps)
+    
+    def initialize(self) -> None:
+        super().initialize()
         self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         self.kernel = self.__init_gpu_kernel__()
 

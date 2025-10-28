@@ -705,6 +705,7 @@ class Model[T: Array]:
         for metric in self.metrics_funcs:
             metric.set_backend(self._backend)
             metric.set_model(self)
+            metric.initialize()
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)

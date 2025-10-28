@@ -10,6 +10,9 @@ class Metric[T: Array](PromoteToBackend):
         self.shape = shape
         self.eps = eps
 
+    def initialize(self) -> None:
+        pass
+
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float:
         pass
