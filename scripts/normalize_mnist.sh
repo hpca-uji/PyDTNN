@@ -6,7 +6,7 @@ dir="${self%/*}"
 export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-python3 "${dir:?}/export_dataset.py" \
+python3 "${dir:?}/normalize_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
   --dataset_path=datasets/mnist \
