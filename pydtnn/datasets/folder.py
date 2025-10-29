@@ -40,17 +40,17 @@ class Folder(Dataset):
 
         # NOTE: Validation dataset is extracted from the Test one.
         self.model = model
-        if not os.path.isdir(self.model.dataset_train_path):
-            raise NotADirectoryError(f"{self.model.dataset_train_path!r} should be a directory.")
-        if not os.path.isdir(self.model.dataset_test_path):
-            raise NotADirectoryError(f"{self.model.dataset_test_path!r} should be a directory.")
+        if not os.path.isdir(self.model.dataset_path):
+            raise NotADirectoryError(f"{self.model.dataset_path!r} should be a directory.")
+        dataset_train_path = os.path.join(self.model.dataset_path, "train")
+        dataset_test_path = os.path.join(self.model.dataset_path, "test")
 
         # self.new_size = (new_size, new_size) if isinstance(new_size, int) else new_size
         self._nsamples = [0, 0, 0]  # train, val, test
         self.labels_and_images = dict[Dataset.Part, list[tuple[ClassName, DataPath]]]()
 
-        self.labels_and_images[Dataset.Part.TRAIN], num_classes_train, self._nsamples[Dataset.Part.TRAIN] = self._get_dict_class_and_file(path=self.model.dataset_train_path)
-        self.labels_and_images[Dataset.Part.TEST], num_classes_test, self._nsamples[Dataset.Part.TEST] = self._get_dict_class_and_file(path=self.model.dataset_test_path)
+        self.labels_and_images[Dataset.Part.TRAIN], num_classes_train, self._nsamples[Dataset.Part.TRAIN] = self._get_dict_class_and_file(path=dataset_train_path)
+        self.labels_and_images[Dataset.Part.TEST], num_classes_test, self._nsamples[Dataset.Part.TEST] = self._get_dict_class_and_file(path=dataset_test_path)
 
         if num_classes_train != num_classes_test:
             raise ValueError(f"The number of train classes ({num_classes_train}) must be the same as the number of test classes {num_classes_test}.")
