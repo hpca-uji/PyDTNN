@@ -163,7 +163,7 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--synthetic_train_samples``: Number of synthetic train sample. Default: 1000.
    -  ``--synthetic_test_samples``: Number of synthetic train sample. Default: 100.
    -  ``--synthetic_input_shape``: Number of synthetic input shape (coma separated). Default: 3,32,32.
-   -  ``--synthetic_output_shape``: Number of synthetic input shape (coma separated). Default: 10.
+   -  ``--synthetic_output_shape``: Number of synthetic output shape (coma separated). Default: 10.
    -  ``dataset_percentage``: Percentage of dataset that will be used. 
       If it is ``0``: it is deactivated; if is is a value below ``1`` (and above 0): 
       it will perform undersampling; and if is is a value above ``1``: it will perform 
