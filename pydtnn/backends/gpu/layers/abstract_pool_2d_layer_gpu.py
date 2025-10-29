@@ -30,7 +30,8 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer[TensorGPU]):
         self.ho: int = None  # type: ignore
         self.wo: int = None  # type: ignore
 
-    def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorGPU, pool_mode: cudnn.CudnnPoolingMode) -> None:
+    def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorGPU, pool_mode: int) -> None:
+        # pool_mode comes from cudnn.CudnnPoolingMode
         super().initialize(prev_shape, x)
         self.x: TensorGPU
 

@@ -45,7 +45,6 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
 
         # The following attributes will be initalized later.
         self.fwd_algo: int = None  #type: ignore
-        self.fwd_time: int = None  #type: ignore
         self.bwd_dw_algo: int = None  #type: ignore
         self.bwd_dx_algo: int = None  #type: ignore
         self.conv_desc = None
@@ -74,12 +73,12 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
 
         self.fwd_time = \
             matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) 
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) + \
             matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), k=self.co,
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (It is correct.)
 
         # Derivative dw and derivative db
         if self.model.gpudirect:

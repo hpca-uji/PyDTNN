@@ -117,7 +117,7 @@ class ActivationGPU(Activation[TensorGPU]):
                 else:
                     dw = res
                 if self.model.crypt:
-                    dw = self.model.crypt.decrypt(dw)
+                    dw = self.model.crypt.decrypt(dw)  #type: ignore
                 setattr(self, dw_, dw)
 
                 # # Hierarchical mode NCCL + MPI
@@ -156,7 +156,7 @@ class ActivationGPU(Activation[TensorGPU]):
             dw: TensorGPU = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                dw *= self.model.rank_weight
+                dw *= self.model.rank_weight # TODO: Check this!!
                 self.stream_2.synchronize()
                 # TODO: crypt
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,

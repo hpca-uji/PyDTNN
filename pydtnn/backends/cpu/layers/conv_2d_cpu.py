@@ -133,7 +133,7 @@ class Conv2DCPU(LayerCPU,
                         dtype=self.model.dtype) + \
             matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
+                        dtype=self.model.dtype)  # type: ignore (It works well.)
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,

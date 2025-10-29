@@ -1,6 +1,6 @@
 import ctypes
 
-import pycuda.driver as drv
+import pycuda.driver as drv  # type: ignore
 
 
 # The below code will allocate the maximum used memory, which will be shared
@@ -18,6 +18,7 @@ def checkConvolutionMemory(size):
     # we re-allocated that size
     if size.value > ws_size:
         ws_size = size.value
+        assert not isinstance(ws, int), f"\"ws\" must not be an \"int\" here ({type(ws)=} || {ws=})."
         ws.free()
         ws = drv.mem_alloc(ws_size) if ws_size > 0 else 0
         ws_ptr = ctypes.c_void_p(int(ws))

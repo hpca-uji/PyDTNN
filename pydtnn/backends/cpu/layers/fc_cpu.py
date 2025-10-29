@@ -42,7 +42,7 @@ class FCCPU(LayerCPU, FC[np.ndarray]):
                         dtype=self.model.dtype) + \
             matmul_time(m=self.model.batch_size, n=self.weights.shape[0], k=self.weights.shape[1],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
+                        dtype=self.model.dtype)  # type: ignore (It works well.)
     # ----
 
     def forward(self, x: np.ndarray) -> np.ndarray:

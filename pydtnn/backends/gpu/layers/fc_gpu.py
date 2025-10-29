@@ -77,7 +77,7 @@ class FCGPU(LayerGPU, FC[TensorGPU]):
                         dtype=self.model.dtype) + \
             matmul_time(m=self.model.batch_size, n=self.weights_cpu.shape[0], k=self.weights_cpu.shape[1],
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
+                        dtype=self.model.dtype)  # type: ignore (This is correct)
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         m = x.ary.shape[0]
