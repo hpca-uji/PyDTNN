@@ -880,6 +880,9 @@ class Model[T: Array]:
                 x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
                 y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
+            
+            x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
+            y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
 
             assert isinstance(self.layers[0].y, TensorGPU) and isinstance(self.y_batch, TensorGPU)
             self.layers[0].y.ary.set(x_batch)
