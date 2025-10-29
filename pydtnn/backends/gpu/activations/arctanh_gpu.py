@@ -20,13 +20,13 @@ class ArctanhGPU(ActivationGPU, Arctanh[TensorGPU]):
         super().initialize(prev_shape, x)
 
         self.atanh = ElementwiseKernel(
-            "T *in, T *out".replace("T", DTYPE2CTYPE[self.model.dtype]),
-            "out[i] = %s(in[i]);" % {np.float32: "atanhf", np.float64: "atanh"}[self.model.dtype],
+            "{T} *in, {T} *out".format(T=DTYPE2CTYPE[self.model.dtype]),
+            "out[i] = {func}(in[i]);" .format(func={np.float32: "atanhf", np.float64: "atanh"}[self.model.dtype]),
             "atanh")
 
         self.datanh = ElementwiseKernel(
-            "T *in, T *out".replace("T", DTYPE2CTYPE[self.model.dtype]),
-            "out[i] = 1.0 / (1.0 + %s(in[i], 2));" % {np.float32: "powf", np.float64: "pow"}[self.model.dtype],
+            "{T} *in, {T} *out".format("T", DTYPE2CTYPE[self.model.dtype]),
+            "out[i] = 1.0 / (1.0 + {func}(in[i], 2));".format(func={np.float32: "powf", np.float64: "pow"}[self.model.dtype]),
             "datanh")
 
         # Activations y

@@ -11,16 +11,18 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        module = SourceModule("""
-        __global__ void binary_cross_entropy(T *y_targ, T *y_pred, T *res,
-                                             T *dx, int b, int n, T eps)
-        {
+        _name = "binary_cross_entropy"
+        code = """
+        __global__ void {name}({T} *y_targ, {T} *y_pred, {T} *res,
+                               {T} *dx, int b, int n, {T} eps)
+        {{
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
             if (idx < b) {
                 int i = 0, max = 0;
-                T pred;
+                {T} pred;
                 res[idx] = 0;
-                for ( i = 0; i < n; i++ ) {
+                for ( i = 0; i < n; i++ ) 
+                {{
                     res[idx]+= logf(fmaxf((1 - y_targ[idx * n + i] ) -
                                                y_pred[idx * n + i], eps));
                     pred = y_pred[idx * n + max];
@@ -28,12 +30,17 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy[TensorGPU]):
                     else if ( pred > (1-eps) ) pred = (1-eps);
                     dx[idx * n + i] = (-(y_targ[idx * n + i]  / pred) +
                                    ((1 - y_targ[idx * n + i]) / pred) ) / b;
-                }
-            }
+                }}
+            }}
             return;
-        }
-        """.replace("T", DTYPE2CTYPE[self.model.dtype]))
-        return module.get_function("binary_cross_entropy")
+        }}
+        """.format(
+            T = DTYPE2CTYPE[self.model.dtype],
+            name = _name
+            )
+        
+        module = SourceModule(code).get_function(_name)
+        return module
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
         assert len(y_targ.shape) == 2

@@ -12,25 +12,32 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        module = SourceModule("""
-        __global__ void categorical_accuracy(T *y_targ, T *y_pred, T *res, int b, int n)
-        {
+        _name = "categorical_accuracy"
+        code = """
+        __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, int b, int n)
+        {{
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < b){
+            if (idx < b)
+            {{
                 int i = 0, max = 0;
-                T max_value = y_pred[idx * n];
-                for ( i = 1; i < n; i++ ) {
-                    if ( y_pred[idx * n + i] > max_value ){
+                {T} max_value = y_pred[idx * n];
+                for ( i = 1; i < n; i++ ) 
+                {{
+                    if ( y_pred[idx * n + i] > max_value )
+                    {{
                         max = i;
                         max_value = y_pred[idx * n + i];
-                    }
-                }
+                    }}
+                }}
                 res[idx] = y_targ[idx * n + max];
-            }
+            }}
             return;
-        }
-        """.replace("T", DTYPE2CTYPE[self.model.dtype]))
-        return module.get_function("categorical_accuracy")
+        }}
+        """.format(T=DTYPE2CTYPE[self.model.dtype],
+                   name=_name)
+        
+        module = SourceModule(code).get_function(_name)
+        return module
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
         threads = min(self.model.batch_size, 1024)

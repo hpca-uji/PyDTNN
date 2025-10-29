@@ -12,32 +12,44 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        module = SourceModule("""
-        __global__ void categorical_cross_entropy(T *y_targ, T *y_pred, T *res,
-                                                  T *dx, int b, int n, float eps)
-        {
+        _name = "categorical_cross_entropy"
+        code ="""
+        __global__ void {name}({T} *y_targ, {T} *y_pred, {T} *res,
+                               {T} *dx, int b, int n, float eps)
+        {{
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < b) {
+            if (idx < b) 
+            {{
                 int i = 0, max = 0;
-                T max_value = y_targ[idx * n];
+                {T} max_value = y_targ[idx * n];
                 dx[idx * n] = y_targ[idx * n];
-                for ( i = 1; i < n; i++ ) {
+                for ( i = 1; i < n; i++ ) 
+                {{
                     dx[idx * n + i] = y_targ[idx * n + i];
-                    if ( y_targ[idx * n + i] > max_value ) {
+                    if ( y_targ[idx * n + i] > max_value ) 
+                    {{
                         max = i;
                         max_value = y_targ[idx * n + i];
-                    }
-                }
-                T pred = y_pred[idx * n + max];
+                    }}
+                }}
+                
+                {T} pred = y_pred[idx * n + max];
                 if ( pred < eps )          pred = eps;
                 else if ( pred > (1-eps) ) pred = (1-eps);
+
                 res[idx] = logf(pred);
                 dx[idx * n + max] /= -(pred * b);
-            }
+            }}
             return;
-        }
-        """.replace("T", DTYPE2CTYPE[self.model.dtype]))
-        return module.get_function("categorical_cross_entropy")
+        }}
+        """.format(
+            T=DTYPE2CTYPE[self.model.dtype],
+            name=_name
+        )
+
+        module = SourceModule(code).get_function(_name)
+
+        return module
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
         threads, blocks = self.get_threads_and_blocks()

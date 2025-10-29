@@ -18,25 +18,37 @@ class SGDGPU(OptimizerGPU, SGD[TensorGPU]):
     def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype: np.dtype = np.dtype(np.float32)):
         super().__init__(learning_rate, momentum, nesterov, decay, dtype)
 
-        if not self.gpudirect:
-            self.update_gpu = ElementwiseKernel("T *w, T * dw, T * v, \
-                               float lr, float decay, float momentum".replace("T", DTYPE2CTYPE[dtype]),
-                                                "v[i] = momentum * v[i] + dw[i]; %s;" %
-                                                ({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                                                  False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]),
-                                                "SGD_kernel")
-        else:
-            self.update_gpu = SourceModule(("""
-            __global__ void SGD_kernel(T *w, T *dw, T *v,
-                               float lr, float decay, float momentum, int N) {
-                int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N) {
-                    v[i] = momentum * v[i] + dw[i];
-                    %s;
-                }
-             }""" % ({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                      False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov])).replace("T",DTYPE2CTYPE[dtype])
-            ).get_function("SGD_kernel")
+        # --- GPU ---
+        parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[dtype])
+        ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
+                   False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]
+        operations_gpu = "v[i] = momentum * v[i] + dw[i]; {neserov_ops};".format(nesterov_ops=ops_gpu)
+        
+        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
+        # ------------
+    
+        # GPU Direct -
+        _name = "SGD_kernel_gpudirect"
+        code = """
+        __global__ void {name}({T} *w, {T} *dw, {T} *v,
+                            float lr, float decay, float momentum, int N) 
+        {{
+            int i = blockIdx.x * blockDim.x + threadIdx.x;
+            if (i < N) 
+            {{
+                v[i] = momentum * v[i] + dw[i];
+                {nesterov_ops};
+            }}
+            }}
+        """.format(
+            T = DTYPE2CTYPE[dtype],
+            nesterov_ops=({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
+                            False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]),
+            name = _name
+        )
+        
+        self.update_gpudirect = SourceModule(code).get_function(_name)
+        # ------------
     
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
@@ -60,11 +72,11 @@ class SGDGPU(OptimizerGPU, SGD[TensorGPU]):
                 n = self.get_batch_size(w)
                 threads, blocks = self.get_threads_and_blocks()
 
-                self.update_gpu(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
-                                np.float32(self.learning_rate), np.float32(self.decay),
-                                np.float32(self.momentum), np.int32(n),
-                                grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
-                                stream=layer.stream_2)
+                self.update_gpudirect(w.ary.gpudata, dw.ptr_intp, velocity.gpudata,
+                                      np.float32(self.learning_rate), np.float32(self.decay),
+                                      np.float32(self.momentum), np.int32(n),
+                                      grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
+                                      stream=layer.stream_2)
             else:
                 n = np.int32(np.prod(w.shape))
                 self.update_gpu(w.ary, dw.ary, velocity, np.float32(self.learning_rate),

@@ -18,24 +18,33 @@ class RMSPropGPU(OptimizerGPU, RMSProp[TensorGPU]):
     def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0, dtype=np.dtype(np.float32)):
         super().__init__(learning_rate, rho, epsilon, decay, dtype)
 
-        self.update_gpu = ElementwiseKernel("T *w, T *dw, T *cache, \
-                               float lr, float decay, float rho, float epsilon".replace("T",DTYPE2CTYPE[dtype]),
-                                            "cache[i] = rho * cache[i] + (1 - rho) * pow(dw[i], 2); \
-                                             w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".
-                                            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
-                                            "RMSProp_kernel")
+        pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[dtype]
 
-        self.update_gpudirect = SourceModule("""
-            __global__ void RMSProp_kernel(T *w, T *dw, T *cache,
-                                float lr, float decay, float rho, float epsilon, int N) {
+        # --- GPU ---
+        parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[dtype])
+        operations_gpu = "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2); \
+                                             w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(func=pow_func)
+        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
+        # -----------
+
+        # GPU DIRECT -
+        _name = "RMSProp_kernel_gpudirect"
+        code = """
+        __global__ void {name}({T} *w, {T} *dw, {T} *cache,
+                                float lr, float decay, float rho, float epsilon, int N) 
+        {{
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N) {
-                    cache[i] = rho * cache[i] + (1 - rho) * pow(dw[i], 2);
+                if (i < N) {{
+                    cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2);
                     w[i] -= lr * (decay * w[i] + (dw[i] / sqrt(cache[i] + epsilon)));
-                }
-            }""".replace("T", DTYPE2CTYPE[dtype]).
-            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype])
-        ).get_function("RMSProp_kernel")
+                }}
+        }}
+        """.format(T=DTYPE2CTYPE[dtype],
+                   func=pow_func,
+                   name = _name
+                   )
+        self.update_gpudirect = SourceModule(code).get_function(_name)
+        # -------------
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:

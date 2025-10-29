@@ -19,30 +19,42 @@ class AdamGPU(OptimizerGPU, Adam[TensorGPU]):
     def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype: np.dtype = np.dtype(np.float32)):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
 
-        self.update_gpu = ElementwiseKernel("T *w, T *dw, T *m, T *v, \
-                               float it, float lr, float decay, \
-                               float beta1, float beta2, float epsilon".replace("T", DTYPE2CTYPE[dtype]),
-                                            "m[i] = beta1 * m[i] + (1 - beta1) * dw[i]; \
-                                             v[i] = beta2 * v[i] + (1 - beta2) * pow(dw[i], 2); \
-                                             w[i] -= lr * (decay * w[i] + ((m[i] / (1 - pow(beta1, it))) / \
-                                                                       sqrt(v[i] / (1 - pow(beta2, it)) + epsilon)))".
-                                            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
-                                            "Adam_kernel")
+        func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
-        self.update_gpudirect = SourceModule("""
-            __global__ void Adam_kernel(T *w, T *dw, T *m, T *v,
-                               float it, float lr, float decay,
-                               float beta1, float beta2, float epsilon, int N) {
+        # --- GPU ---
+        parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, " \
+                         "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[dtype])
+        operations_gpu = """
+            m[i] = beta1 * m[i] + (1 - beta1) * dw[i]; 
+            v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2); 
+            w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
+        """.format(func=func_pow[dtype])
+
+        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
+        # -----------
+
+        # GPU DIRECT-
+        _name = "Adam_kernel_gpudirect"
+        code = """
+            __global__ void {name}({T} *w, {T} *dw, {T} *m, {T} *v,
+                                   float it, float lr, float decay,
+                                   float beta1, float beta2, float epsilon, int N) 
+            {{
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N) {
+                if (i < N) 
+                {{
                     m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
-                    v[i] = beta2 * v[i] + (1 - beta2) * pow(dw[i], 2);
-                    w[i] -= lr * (decay * w[i] + ((m[i] / (1 - pow(beta1, it))) /
-                                              sqrt(v[i] / (1 - pow(beta2, it)) + epsilon)));
-                }
-            }""".replace("T", DTYPE2CTYPE[dtype]).
-            replace("pow", {np.float32: "powf", np.float64: "pow"}[dtype]),
-        ).get_function("Adam_kernel")
+                    v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
+                    w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) /
+                                              sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
+                }}
+            }}"""
+        code = code.format(T=DTYPE2CTYPE[dtype], 
+                           func=func_pow[dtype], 
+                           name=_name)
+
+        self.update_gpudirect = SourceModule(code).get_function(_name)
+        # -----------
 
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
@@ -55,8 +67,8 @@ class AdamGPU(OptimizerGPU, Adam[TensorGPU]):
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
     def update(self, layer: LayerGPU):
-        self.context[layer.id]["it"] += 1
-        it:int = self.context[layer.id]["it"]
+        self.context[layer.id]["it"] += 1  #type: ignore ("it" is an "int".)
+        it:int = self.context[layer.id]["it"]  #type: ignore ("it" is an "int".)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
