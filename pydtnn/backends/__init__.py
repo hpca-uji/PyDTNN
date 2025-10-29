@@ -35,6 +35,12 @@ class PromoteToBackend:
             return getattr(backend, name)
 
     def set_backend(self, backend: BackendType) -> None:
+        """
+        Change the backend implementation used
+
+        **Notice**: All object attributes are cleared when called.
+        So, if used, this method should be the first called.
+        """
         # Clear backend
         try:
             del self._backend
@@ -57,4 +63,5 @@ class PromoteToBackend:
     model: "model_module.Model"
 
     def set_model(self, model: "model_module.Model") -> None:
+        """Link a to a new model instance"""
         self.model = model

@@ -896,27 +896,25 @@ class Model[T: Array]:
 
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
-        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
-        last_layer = len(self.layers) - 1
         if blocking:
-            for i in range(last_layer, first_layer - 1, -1):
+            for layer in self.layers:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
-                self.layers[i].reduce_weights_sync(gradient=gradient)
+                                       layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+                layer.reduce_weights_sync(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         else:
-            for i in range(last_layer, first_layer - 1, -1):
+            for layer in self.layers:
                 self.tracer.emit_event(PYDTNN_MDL_EVENT,
-                                       self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
-                self.layers[i].reduce_weights_async(gradient=gradient)
+                                       layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.ALLREDUCE_DW)
+                layer.reduce_weights_async(gradient=gradient)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
-            for i in range(last_layer, first_layer - 1, -1):
+            for layer in self.layers:
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT],
-                                        [self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW,
-                                        self.layers[i].id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
-                self.layers[i].wait_allreduce_async(gradient=gradient)
+                                        [layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.WAIT_DW,
+                                        layer.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.OPS_ALLREDUCE_DW])
+                layer.wait_allreduce_async(gradient=gradient)
                 self.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
 
     def train_dataset(self, bar_width=BAR_WIDTH) -> dict[str, list[np.ndarray]]:
@@ -956,8 +954,8 @@ class Model[T: Array]:
                             ascii=" ▁▂▃▄▅▆▇█", smoothing=0.3,
                             desc=epoch_string % (epoch + 1, self.num_epochs), unit=" samples")
 
-            for lr_sched in self.schedulers:
-                lr_sched.on_epoch_begin(self, self.rank)
+            for sched in self.schedulers:
+                sched.on_epoch_begin(self, self.rank)
 
             # --- TRAIN --- #
             for i_batch, (x_batch, y_batch, batch_size) in enumerate(train_batch_generator):
@@ -1058,9 +1056,9 @@ class Model[T: Array]:
                 for c in range(len(self.loss_and_metrics)):
                     self.history["val_" + self.loss_and_metrics[c]].append(val_total_loss[c])
 
-            for lr_sched in self.schedulers:
-                lr_sched.on_epoch_end(train_total_loss, val_total_loss)
-                if lr_sched.stop_training:
+            for sched in self.schedulers:
+                sched.on_epoch_end(train_total_loss, val_total_loss)
+                if sched.stop_training:
                     terminate = True
 
             if self.comm_rank == 0:
@@ -1085,9 +1083,9 @@ class Model[T: Array]:
     def _train_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.TRAIN
 
-        # LR schedulers begin
-        for lr_sched in self.schedulers:
-            lr_sched.on_batch_begin()
+        # Schedulers begin
+        for sched in self.schedulers:
+            sched.on_batch_begin()
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
@@ -1143,9 +1141,9 @@ class Model[T: Array]:
                 if self.layers[i].grad_vars:
                     self.layers[i].stream_2.synchronize()  # type: ignore
 
-        # LR schedulers end
-        for lr_sched in self.schedulers:
-            lr_sched.on_batch_end(self)
+        # Schedulers end
+        for sched in self.schedulers:
+            sched.on_batch_end(self)
 
         return self.total_metrics
 
