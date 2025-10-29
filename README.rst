@@ -163,7 +163,7 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--synthetic_train_samples``: Number of synthetic train sample. Default: 1000.
    -  ``--synthetic_test_samples``: Number of synthetic train sample. Default: 100.
    -  ``--synthetic_input_shape``: Number of synthetic input shape (coma separated). Default: 3,32,32.
-   -  ``--synthetic_output_shape``: Number of synthetic input shape (coma separated). Default: 10.
+   -  ``--synthetic_output_shape``: Number of synthetic output shape (coma separated). Default: 10.
    -  ``dataset_percentage``: Percentage of dataset that will be used. 
       If it is ``0``: it is deactivated; if is is a value below ``1`` (and above 0): 
       it will perform undersampling; and if is is a value above ``1``: it will perform 
@@ -272,9 +272,9 @@ The PyDTNN framework comes with a utility launcher called
       which LR will be periodically reduced. Default: 5.
    -  ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning
       rate. Default: 0.
-   -  ``stop_at_loss_metric``: Loss metric monitored by
+   -  ``--stop_at_loss_metric``: Loss metric monitored by
       stop\_at\_loss LR scheduler. Default: ``val_accuracy``.
-   -  ``stop_at_loss_threshold``: Metric threshold monitored by
+   -  ``--stop_at_loss_threshold``: Metric threshold monitored by
       stop\_at\_loss LR scheduler. Default: 0.
    -  ``--model_checkpoint_metric``: Loss metric monitored by
       model\_checkpoint LR scheduler. Default: ``val_categorical_cross_entropy``
@@ -286,7 +286,7 @@ The PyDTNN framework comes with a utility launcher called
 
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data`` (MPI). Default: ``sequential``.
-   -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives. Default: True.
+   -  ``--use_blocking_mpi``: Enable blocking MPI primitives. Default: True.
    -  ``--use_mpi_buffers``: Enable the use of MPI buffers. 
       Possible values: ``True`` (MPI operations by buffer), ``False`` (MPI operations by object) or undefined (auto-select the better option). Default: undefined.
    -  ``--enable_gpu``: Enable GPU, use cuDNN library. Default: False.
