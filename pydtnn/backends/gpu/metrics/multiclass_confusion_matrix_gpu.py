@@ -10,39 +10,40 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
+        
         _name = "multiclass_confusion_matrix"
-        module = SourceModule("""
+        code = """
         
         #define INDEX_FIRST_ONE_ON(y, var_class) for(i = 0; (i < num_classes) && !(y[i]); i++); var_class = i;
+        #define SHIFT_POINTER_CM(p, i, j, num_classes) p + (i * num_classes + j)
+        #define SHIFT_POINTER_LOCAL_CM(p, idx, i, j, num_n, n_clss) p + ((idx * num_n + i) * n_clss + j)
         
-        __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int num_classes, int workers, int n)
+        __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int *local_cm, const int num_classes, const int workers, const int n)
         {{
             int idx, idx_i, i, j, target_class, predicted_class;
 
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
-            int local_cm[n][num_classes][num_classes];
 
             for(idx = base_idx; idx < n; idx += workers)
             {{
-                // Initializing the "thread"'s local confusion matrix.
-                for(i = 0; i < num_classes; i++) for(j = 0; j < num_classes; j++, local_cm[idx][i][j] = 0);
-
                 INDEX_FIRST_ONE_ON(y_targ, target_class)
                 INDEX_FIRST_ONE_ON(y_pred, predicted_class)
-            
-                local_cm[idx][label][target_class][predicted_class] += 1;
+
+                (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx, target_class, predicted_class, n, num_classes))) += 1;
             }}
             
             // Accumulating the local values
             if (base_idx == 0)
             {{   
-                for(idx_i = blockDim.x/2; s > 0; s >>= 1)
+                for(idx_i = blockDim.x/2; idx_i > 0; idx_i >>= 1)
                 {{
                     if(base_idx < idx_i)
-                        for(label = 0; label < num_classes; label++)
-                            for(i = 0; i < 2; i++) for(j = 0; j < 2; j++)
-                                local_cm[base_idx][label][i][j] += local_cm[base_idx + idx_i][label][i][j];
-
+                    {{
+                        for(i = 0; i < num_classes; i++) for(j = 0; j < num_classes; j++)
+                        {{
+                            (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx, i, j, n, num_classes))) += (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx + idx_i, i, j, n, num_classes)));
+                        }}
+                    }}
                     __syncthreads();
                 }}
             }}
@@ -50,16 +51,21 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
             // Accumulating the local values into the output's tensor.
             if (base_idx == 0)
             {{
-                for(label = 0; label < num_classes; label++)
-                    for(i = 0; i < 2; i++) for(j = 0; j < 2; j++)
-                        cm[label][i][j] = local_cm[base_idx][label][i][j];
+                for(i = 0; i < num_classes; i++) for(j = 0; j < num_classes; j++)
+                {{
+                    (*(SHIFT_POINTER_CM(cm, i, j, num_classes))) = (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx, i, j, n, num_classes)));
+                }}
             }}
         }}
-        """.format(
-            T = DTYPE2CTYPE[self.model.dtype]),
+        """
+        
+        code = code.format(
+            T = DTYPE2CTYPE[self.model.dtype],
             name = _name
         )
-        return module.get_function(_name)
+        module = SourceModule(code).get_function(_name)
+
+        return module 
     #---
 
 
@@ -85,8 +91,11 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
         num_classes = np.int32(target_classes)
         num_workers = np.prod(grid, dtype=np.int32) * np.prod(block, dtype=np.int32)
         n = np.int32(y_pred.size)
+        local_cm = TensorGPU.create_zeros_tensor(shape=(y_pred.size, target_classes, target_classes), dtype=np.dtype(np.int32), 
+                                                tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-        self.kernel(y_targ.ary, y_pred.ary, conf_matrix,
+        self.kernel(y_targ.ary, y_pred.ary, 
+                    conf_matrix.ary, local_cm.ary,
                     num_classes, num_workers, n,
                     grid=grid, block=block,
                     stream=self.model.stream)
