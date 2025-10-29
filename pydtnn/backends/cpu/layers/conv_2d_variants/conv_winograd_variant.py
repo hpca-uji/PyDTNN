@@ -4,12 +4,12 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.i2c_variant import I2CVariant
 from pydtnn.backends.cpu.libs.conv_winograd import ConvWinograd
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.types import Array
+#from pydtnn.utils.types import Array
 
 import numpy as np
 
 
-class ConvWinogradVariant[T: Array](I2CVariant[T]):
+class ConvWinogradVariant[T: np.ndarray](I2CVariant[T]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -83,8 +83,12 @@ class ConvWinogradVariant[T: Array](I2CVariant[T]):
         self.x_cols = np.zeros((c * self.kh * self.kw, n * self.ho * self.wo))
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
         im2col_nchw_cython(self.cw_x,
-                           self.kh, self.kw, self.vpadding, self.hpadding,
-                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+                           self.x_cols,
+                           self.kh, self.kw, 
+                           self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, 
+                           self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return self._backward_i2c_nchw(dy)

@@ -36,11 +36,10 @@ class ConvDirectVariant[T:Array](Conv2D[T]):
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
         """Version of the forward function that uses the convDirect library"""
 
-        biases = None
         biases_vector = self.biases if self.use_bias else None
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT)
-        y = self.cd[n].conv_direct(self.weights, x, biases,
+        y = self.cd[n].conv_direct(self.weights, x, biases_vector,
                                    vpadding=self.vpadding, hpadding=self.hpadding,
                                    vstride=self.vstride, hstride=self.hstride,
                                    vdilation=self.vdilation, hdilation=self.hdilation)
