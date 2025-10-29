@@ -272,9 +272,9 @@ The PyDTNN framework comes with a utility launcher called
       which LR will be periodically reduced. Default: 5.
    -  ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning
       rate. Default: 0.
-   -  ``stop_at_loss_metric``: Loss metric monitored by
+   -  ``--stop_at_loss_metric``: Loss metric monitored by
       stop\_at\_loss LR scheduler. Default: ``val_accuracy``.
-   -  ``stop_at_loss_threshold``: Metric threshold monitored by
+   -  ``--stop_at_loss_threshold``: Metric threshold monitored by
       stop\_at\_loss LR scheduler. Default: 0.
    -  ``--model_checkpoint_metric``: Loss metric monitored by
       model\_checkpoint LR scheduler. Default: ``val_categorical_cross_entropy``
