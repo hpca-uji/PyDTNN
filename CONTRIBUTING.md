@@ -19,9 +19,19 @@
 
 - **Prefer modules without `__init__.py`**
 
-  Modules constuction should be avoided.
+  Modules construction should be avoided.
 
   It can easly cause circular imports if combined with submodules.
+
+# Coding recommendations
+- **Every CUDA's kernel must have a different name**
+  If two kernels have the same name, CUDA will not identify the correct function and will throw and error.
+
+- **Always test the new changes in every backend (cpu, gpu, ...)**
+  Be careful: any change made in the abstract class in order to improve one backend may broke something in the other backends.
+
+- **In the CPU' backend, it is better to use the numpy's functions**
+  Eg: even if technically are the same, sometimes, numpy.add(a, b, out=a) works better "a += b" (where "a" and/or "b" are numpy arrays)
 
 # Planned
 - Extract GPU `SourceModule` to `.cu` files.
