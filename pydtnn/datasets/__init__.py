@@ -25,7 +25,7 @@ def get_dataset(model) -> Dataset:
                         "cifar10": "CIFAR10",
                         "imagenet": "ImageNet",
                         "archive": "CustomImport",
-                        "folder": "DatasetFolderLoader",
+                        "folder": "Folder",
                         "chestxray": "ChestXRay",
                         "synthetic": "Synthetic"
                         }
