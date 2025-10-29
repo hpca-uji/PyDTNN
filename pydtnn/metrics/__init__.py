@@ -5,6 +5,8 @@ from pydtnn.metrics.categorical_mse import CategoricalMSE as _CategoricalMSE
 from pydtnn.metrics.metric import Metric as _Metric
 from pydtnn.metrics.regression_mae import RegressionMAE as _RegressionMAE
 from pydtnn.metrics.regression_mse import RegressionMSE as _RegressionMSE
+from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix as _BinaryConfusionMatrix
+from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix as _MulticlassConfusionMatrix
 
 metric_format = {"categorical_accuracy": "acc: %5.2f%%",
                  "categorical_cross_entropy": "cce: %.7f",
@@ -38,5 +40,9 @@ def select(loss_func_name: str) -> type[_Metric]:
             return _RegressionMAE
         case _RegressionMSE.__name__:
             return _RegressionMSE
+        case _BinaryConfusionMatrix.__name__:
+            return _BinaryConfusionMatrix
+        case _MulticlassConfusionMatrix.__name__:
+            return _MulticlassConfusionMatrix
         case _:
             raise NotImplementedError(f"\'{loss_func_name}\' is not implemented!")

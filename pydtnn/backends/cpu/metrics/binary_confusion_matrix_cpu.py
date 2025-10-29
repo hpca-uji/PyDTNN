@@ -1,5 +1,5 @@
 from pydtnn.backends.cpu.metrics.metric_cpu import MetricCPU
-from pydtnn.metrics.confusion_matrix import ConfusionMatrix
+from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
 import numpy as np
 
@@ -24,7 +24,7 @@ _dict_indexes = {
     }
 }
 
-class BinaryConfusionMatrixCPU(MetricCPU, ConfusionMatrix[np.ndarray]):
+class BinaryConfusionMatrixCPU(MetricCPU, BinaryConfusionMatrix[np.ndarray]):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """

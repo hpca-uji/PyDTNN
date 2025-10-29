@@ -1,9 +1,9 @@
 from pydtnn.backends.cpu.metrics.metric_cpu import MetricCPU
-from pydtnn.metrics.confusion_matrix import ConfusionMatrix
+from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
 import numpy as np
 
-class BinaryConfusionMatrixCPU(MetricCPU, ConfusionMatrix[np.ndarray]):
+class MulticlassConfusionMatrixCPU(MetricCPU, MulticlassConfusionMatrix[np.ndarray]):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """

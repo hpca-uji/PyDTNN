@@ -1,5 +1,5 @@
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
-from pydtnn.metrics.confusion_matrix import ConfusionMatrix
+from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 import numpy as np
@@ -7,7 +7,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 from pydtnn.utils.types import DTYPE2CTYPE
 
-class BinaryConfusionMatrixGPU(MetricGPU, ConfusionMatrix[TensorGPU]):
+class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
