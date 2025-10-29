@@ -286,7 +286,7 @@ The PyDTNN framework comes with a utility launcher called
 
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data`` (MPI). Default: ``sequential``.
-   -  ``--non_blocking_mpi``: Enable non-blocking MPI primitives. Default: True.
+   -  ``--use_blocking_mpi``: Enable blocking MPI primitives. Default: True.
    -  ``--use_mpi_buffers``: Enable the use of MPI buffers. 
       Possible values: ``True`` (MPI operations by buffer), ``False`` (MPI operations by object) or undefined (auto-select the better option). Default: undefined.
    -  ``--enable_gpu``: Enable GPU, use cuDNN library. Default: False.
