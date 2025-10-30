@@ -1,13 +1,12 @@
+from typing import TYPE_CHECKING
 import time
 
 import numpy as np
 
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
-from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from pydtnn.model import Model
-else:
-    Model = object
 
 
 class EarlyStopping(SchedulerWithLossOrMetric):
@@ -42,3 +41,9 @@ class EarlyStopping(SchedulerWithLossOrMetric):
             # Restore weights + bias
             self.model.load_weights_and_bias(self.best_weights_filename)
             self.log(f"Metric '{self.loss_or_metric}' did not improve for {self.patience} epochs, stop training.")
+
+    @classmethod
+    def from_model(cls, model: "Model") -> "EarlyStopping":
+        return EarlyStopping(model.early_stopping_metric,
+                             model.early_stopping_patience,
+                             model.early_stopping_minimize)

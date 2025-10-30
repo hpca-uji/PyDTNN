@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.types import Array
+
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+
 
 class Nadam[T:Array](Optimizer[T]):
     """
@@ -15,3 +21,12 @@ class Nadam[T:Array](Optimizer[T]):
         self.beta2 = beta2
         self.epsilon = epsilon
         self.decay = decay
+
+    @classmethod
+    def from_model(cls, model: "Model") -> "Nadam":
+        return Nadam(learning_rate=model.learning_rate,
+                     beta1=model.beta1,
+                     beta2=model.beta2,
+                     epsilon=model.epsilon,
+                     decay=model.decay,
+                     dtype=model.dtype)

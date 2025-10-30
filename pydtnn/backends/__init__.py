@@ -65,3 +65,7 @@ class PromoteToBackend:
     def set_model(self, model: "model_module.Model") -> None:
         """Link a to a new model instance"""
         self.model = model
+
+    @classmethod
+    def from_model[C](cls: type[C], model: "model_module.Model") -> C:
+        raise NotImplementedError("Use a concrete optimizer!")

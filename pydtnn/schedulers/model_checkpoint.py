@@ -1,9 +1,13 @@
+from typing import TYPE_CHECKING
 import os
 import time
 
 import numpy as np
 
 from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+
+if TYPE_CHECKING:
+    from pydtnn.model import Model
 
 
 class ModelCheckpoint(SchedulerWithLossOrMetric):
@@ -36,4 +40,8 @@ class ModelCheckpoint(SchedulerWithLossOrMetric):
                 if self.model.comm_rank == 0 and self.last_filename is not None:
                     os.remove(self.last_filename)
                 self.last_filename = self.filename
-    
+
+    @classmethod
+    def from_model(cls, model: "Model") -> "ModelCheckpoint":
+        return ModelCheckpoint(model.model_checkpoint_metric,
+                               model.model_checkpoint_save_freq)

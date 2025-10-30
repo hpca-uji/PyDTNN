@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.types import Array
+
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+
 
 class SGD[T: Array](Optimizer[T]):
     """
@@ -14,3 +20,11 @@ class SGD[T: Array](Optimizer[T]):
         self.momentum: float = momentum
         self.nesterov: bool = nesterov
         self.decay: float = decay
+
+    @classmethod
+    def from_model(cls, model: "Model") -> "SGD":
+        return SGD(learning_rate=model.learning_rate,
+                   momentum=model.momentum,
+                   nesterov=model.nesterov,
+                   decay=model.decay,
+                   dtype=model.dtype)

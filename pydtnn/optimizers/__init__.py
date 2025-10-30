@@ -11,34 +11,16 @@ def select(model: "_Model") -> "_Optimizer":
 
         case "rmsprop":
             from pydtnn.optimizers.rmsprop import RMSProp
-            opt = RMSProp(learning_rate=model.learning_rate,
-                          rho=model.rho,
-                          epsilon=model.epsilon,
-                          decay=model.decay,
-                          dtype=model.dtype)
+            opt = RMSProp.from_model(model)
         case "adam":
             from pydtnn.optimizers.adam import Adam
-            opt = Adam(learning_rate=model.learning_rate,
-                       beta1=model.beta1,
-                       beta2=model.beta2,
-                       epsilon=model.epsilon,
-                       decay=model.decay,
-                       dtype=model.dtype)
+            opt = Adam.from_model(model)
         case "nadam":
             from pydtnn.optimizers.nadam import Nadam
-            opt = Nadam(learning_rate=model.learning_rate,
-                        beta1=model.beta1,
-                        beta2=model.beta2,
-                        epsilon=model.epsilon,
-                        decay=model.decay,
-                        dtype=model.dtype)
+            opt = Nadam.from_model(model)
         case "sgd":
             from pydtnn.optimizers.sgd import SGD
-            opt = SGD(learning_rate=model.learning_rate,
-                      momentum=model.momentum,
-                      nesterov=model.nesterov,
-                      decay=model.decay,
-                      dtype=model.dtype)
+            opt = SGD.from_model(model)
         case _:
             raise ValueError(f"Optimizer {model.optimizer_name!r} not found!")
 

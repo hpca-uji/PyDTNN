@@ -1,7 +1,13 @@
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.types import Array
+
+if TYPE_CHECKING:
+    from pydtnn.model import Model
+
 
 class RMSProp[T: Array](Optimizer[T]):
     """
@@ -14,3 +20,11 @@ class RMSProp[T: Array](Optimizer[T]):
         self.rho = rho
         self.epsilon = epsilon
         self.decay = decay
+
+    @classmethod
+    def from_model(cls, model: "Model") -> "RMSProp":
+        return RMSProp(learning_rate=model.learning_rate,
+                       rho=model.rho,
+                       epsilon=model.epsilon,
+                       decay=model.decay,
+                       dtype=model.dtype)

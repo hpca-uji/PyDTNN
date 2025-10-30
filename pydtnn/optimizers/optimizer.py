@@ -1,4 +1,3 @@
-import abc
 import numpy as np
 
 from pydtnn.backends import PromoteToBackend

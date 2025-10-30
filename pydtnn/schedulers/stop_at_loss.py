@@ -1,7 +1,11 @@
-from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+from typing import TYPE_CHECKING
+
 from numpy import ndarray
 
-from typing import TYPE_CHECKING
+from pydtnn.schedulers.scheduler_with_loss_or_metric import SchedulerWithLossOrMetric
+
+if TYPE_CHECKING:
+    from pydtnn.model import Model
 
 
 class StopAtLoss(SchedulerWithLossOrMetric):
@@ -22,3 +26,8 @@ class StopAtLoss(SchedulerWithLossOrMetric):
                 ("accuracy" not in self.loss_or_metric and loss[idx] < self.threshold_value):
             self.stop_training = True
             self.log("Metric '{self.loss_or_metric}' reached threshold value {self.threshold_value}, stop training.")
+
+    @classmethod
+    def from_model(cls, model: "Model") -> "StopAtLoss":
+        return StopAtLoss(model.stop_at_loss_metric,
+                          model.stop_at_loss_threshold)
