@@ -16,7 +16,7 @@ class PromoteToBackend:
     def __new__(cls, *args, **kwds):
         # Save top-level constructor arguments
         self = super().__new__(cls)
-        self._backend_new = (args, kwds)  # type: ignore
+        self._new_backend = (args, kwds)  # type: ignore
         return self
 
     def __getattribute__(self, name: str):
@@ -29,7 +29,7 @@ class PromoteToBackend:
             backend = None
 
         # Skip backend if internal
-        if backend is None or ref in name:
+        if backend is None or name.endswith(ref):
             return super().__getattribute__(name)
         else:
             return getattr(backend, name)
@@ -56,7 +56,7 @@ class PromoteToBackend:
         cls = getattr(backend_module, cls_name)
 
         # Create backend instance
-        args, kwds = self._backend_new
+        args, kwds = self._new_backend
         self._backend = cls(*args, **kwds)
 
     # Base class
