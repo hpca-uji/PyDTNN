@@ -21,7 +21,7 @@ from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 import torch
 
-from pydtnn import Model
+from pydtnn.model import Model
 from pydtnn.utils import random
 from pydtnn.tests.common import TestCase
 from unittest import skip
@@ -30,8 +30,8 @@ import numpy as np
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    import pycuda.gpuarray as gpuarray
-from pydtnn.backends.gpu import TensorGPU
+    import pycuda.gpuarray as gpuarray # type: ignore
+from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 
 # setting random seed
 SEED = 1234
