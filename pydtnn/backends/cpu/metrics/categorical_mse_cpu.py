@@ -6,12 +6,8 @@ from pydtnn.metrics.categorical_mse import CategoricalMSE
 
 class CategoricalMSECPU(MetricCPU, CategoricalMSE[np.ndarray]):
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
-        b = y_targ.shape[0]
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:        
         # return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
-
-        y = y_pred[np.arange(b), np.argmax(y_targ, axis=1)]
-        y *= -1
-        y += 1
-        np.square(y, out=y, dtype=self.model.dtype, casting="unsafe")
-        return y.mean(dtype=self.model.dtype)
+        error = np.subtract(y_pred, y_targ, dtype=self.model.dtype)
+        np.power(error, 2, out=error, dtype=self.model.dtype, casting="unsafe")
+        return np.mean(error, dtype=self.model.dtype)

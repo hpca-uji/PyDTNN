@@ -18,6 +18,12 @@ class MetricGPU(Metric[TensorGPU]):
         super().initialize()
         self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         self.kernel = self.__init_gpu_kernel__()
+        
+        self.threads = min(self.model.batch_size, 1024)
+        self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
+        
+        self.grid = (self.blocks, 1, 1)
+        self.block = (self.threads, 1, 1)
 
     def __init_gpu_kernel__(self) -> Function:
         raise NotImplementedError()

@@ -18,11 +18,12 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
         #define SHIFT_POINTER_CM(p, i, j, num_classes) p + (i * num_classes + j)
         #define SHIFT_POINTER_LOCAL_CM(p, idx, i, j, num_n, n_clss) p + ((idx * num_n + i) * n_clss + j)
         
-        __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int *local_cm, const int num_classes, const int workers, const int n)
+        __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int *local_cm, const int num_classes, const int n)
         {{
             int idx, idx_i, i, j, target_class, predicted_class;
 
-            int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
+            const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
+            const int workers = blockDim.x * gridDim.x;
 
             for(idx = base_idx; idx < n; idx += workers)
             {{
@@ -78,25 +79,19 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
               |1| F0 | T1 | F2 |
               |2| F0 | F1 | T2 |
         """
-        threads = min(self.model.batch_size, 1024)
-        blocks = max(self.model.batch_size, 1024) // threads + 1
-        
-        grid = (blocks, 1, 1)
-        block = (threads, 1, 1)
 
         target_classes = self.model.output_shape[0]
         conf_matrix = TensorGPU.create_zeros_tensor(shape=(target_classes, target_classes), dtype=np.dtype(np.int32), 
                                                     tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         
         num_classes = np.int32(target_classes)
-        num_workers = np.prod(grid, dtype=np.int32) * np.prod(block, dtype=np.int32)
         n = np.int32(y_pred.size)
-        local_cm = TensorGPU.create_zeros_tensor(shape=(y_pred.size, target_classes, target_classes), dtype=np.dtype(np.int32), 
+        local_cm = TensorGPU.create_zeros_tensor(shape=(y_pred.shape[0], target_classes, target_classes), dtype=np.dtype(np.int32), 
                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
         self.kernel(y_targ.ary, y_pred.ary, 
                     conf_matrix.ary, local_cm.ary,
-                    num_classes, num_workers, n,
-                    grid=grid, block=block,
+                    num_classes, n,
+                    grid=self.grid, block=self.block,
                     stream=self.model.stream)
         return conf_matrix

@@ -8,6 +8,6 @@ class RegressionMAECPU(MetricCPU, RegressionMAE[np.ndarray]):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         # return np.sum(np.absolute(y_targ - y_pred))
-        diff = y_targ - y_pred
+        diff = np.subtract(y_targ, y_pred, dtype=self.model.dtype)
         np.absolute(diff, out=diff, dtype=self.model.dtype, casting="unsafe")
-        return np.sum(diff, dtype=self.model.dtype)
+        return np.mean(diff, dtype=self.model.dtype)

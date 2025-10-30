@@ -7,10 +7,18 @@ from pydtnn.metrics.categorical_mae import CategoricalMAE
 class CategoricalMAECPU(MetricCPU, CategoricalMAE[np.ndarray]):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
-        b = y_targ.shape[0]
         # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
-        y = y_pred[np.arange(b), np.argmax(y_targ, axis=1)]
-        y *= -1
-        y += 1
-        np.absolute(y, out=y, dtype=self.model.dtype, casting="unsafe")
-        return np.sum(y)
+        error = np.subtract(y_pred, y_targ, dtype=self.model.dtype)
+        print(f"{error.shape=} {error=} error = np.subtract(y_pred, y_targ, dtype=self.model.dtype)")
+        np.absolute(error, out=error, dtype=self.model.dtype)
+        print(f"{error.shape=} {error=} np.absolute(error, out=error, dtype=self.model.dtype)")
+        return np.mean(error, dtype=self.model.dtype)
+
+
+def compute(y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
+    # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
+    error = np.subtract(y_pred, y_targ, dtype=y_pred.dtype)
+    print(f"{error.shape=} {error=} error = np.subtract(y_pred, y_targ, dtype=self.model.dtype)")
+    np.absolute(error, out=error, dtype=y_pred.dtype)
+    print(f"{error.shape=} {error=} np.absolute(error, out=error, dtype=self.model.dtype)")
+    return np.mean(error, dtype=y_pred.dtype)

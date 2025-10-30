@@ -11,16 +11,20 @@ class CategoricalHingeCPU(MetricCPU, CategoricalHinge[np.ndarray]):
         # neg = np.max((1.0 - y_targ) * y_pred, axis=-1)
         # return np.mean(np.maximum(0.0, neg - pos + 1), axis=-1)
 
-        pos = y_targ * y_pred
-        pos = np.sum(pos, axis=-1)
+        pos:np.ndarray = np.multiply(y_targ, y_pred, dtype=self.model.dtype)
+        pos = np.sum(pos, axis=-1, dtype=self.model.dtype)
 
-        neg = -1 * y_targ
-        neg += 1.0
-        neg *= y_pred
-        neg = np.max(neg, axis=-1)
+        neg = np.multiply(-1, y_targ, dtype=self.model.dtype)
+        np.add(neg, 1, out=neg, dtype=self.model.dtype)
+        np.multiply(neg, y_pred, out= neg, dtype=self.model.dtype)
+        neg:np.ndarray = np.max(neg, axis=-1)
 
-        neg -= pos
-        neg += 1
+        np.subtract(neg, pos, out=neg, dtype=self.model.dtype)
+        np.add(neg, 1, out=neg, dtype=self.model.dtype)
         maximum = np.maximum(0.0, neg)
 
-        return np.mean(maximum, axis=-1)
+        maximum = np.mean(maximum, axis=-1)
+
+        print(f"{pos.shape=} | {neg.shape=} | {maximum.shape=}")
+
+        return maximum
