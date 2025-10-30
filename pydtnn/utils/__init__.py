@@ -284,3 +284,19 @@ def debug_func(func):
             return result
 
     return wrapper
+
+
+def find_component(type: str, name: str):
+    def normalize(text: str) -> str:
+        return text.lower().replace("_", "")
+
+    try:
+        module = import_module(f"pydtnn.{type}.{name}")
+    except Exception as e:
+        raise ValueError(f"{name!r} not found in {type!r}!") from e
+
+    for attr in dir(module):
+        if normalize(name) == normalize(attr):
+            return getattr(module, attr)
+    else:
+        raise ValueError(f"{name!r} not found in {module!r}!")
