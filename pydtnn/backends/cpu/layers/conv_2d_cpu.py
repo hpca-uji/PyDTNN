@@ -5,7 +5,7 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import BestOfVa
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGemmVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
-from pydtnn.performance_models import im2col_time, matmul_time
+from pydtnn.utils.performance_models import im2col_time, matmul_time
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import ArrayShape
 

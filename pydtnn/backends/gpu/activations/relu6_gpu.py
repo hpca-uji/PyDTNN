@@ -1,5 +1,5 @@
 from pydtnn.activations.relu6 import Relu6
-from pydtnn.performance_models import im2col_time, col2im_time
+from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU

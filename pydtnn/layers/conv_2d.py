@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
-from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
+from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils.tensor import decode_tensor, encode_tensor, TensorFormat
 from pydtnn.utils.types import Array
 import numpy as np

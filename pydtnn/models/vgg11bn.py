@@ -11,7 +11,7 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from pydtnn.initializers import he_uniform
+from pydtnn.utils.initializers import he_uniform
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
 

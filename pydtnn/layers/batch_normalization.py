@@ -4,7 +4,7 @@ from pydtnn.layers.layer import Layer
 
 from typing import Callable
 
-from pydtnn.initializers import zeros
+from pydtnn.utils.initializers import zeros
 
 from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape

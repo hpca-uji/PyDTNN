@@ -5,7 +5,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.performance_models import im2col_time, col2im_time
+from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor, encode_tensor
 import pycuda.gpuarray as gpuarray   # type: ignore
 from pycuda.compiler import SourceModule   # type: ignore

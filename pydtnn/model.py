@@ -29,7 +29,7 @@ from pydtnn.datasets.dataset import Dataset
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.losses.loss import Loss
 from pydtnn.parser import PydtnnArgumentParser
-from pydtnn.performance_models import allreduce_time
+from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
 from pydtnn.tracers.simple_tracer import SimpleTracer

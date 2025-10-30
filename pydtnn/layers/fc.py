@@ -3,7 +3,7 @@ if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.types import Array
-from pydtnn.initializers import InitializerFunc, glorot_uniform, zeros
+from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils.types import ArrayShape
 
 

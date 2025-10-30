@@ -1,6 +1,6 @@
 from pydtnn.activations.relu import Relu
 from pydtnn.activations.softmax import Softmax
-from pydtnn.initializers import he_uniform
+from pydtnn.utils.initializers import he_uniform
 
 from collections.abc import Sequence
 from pydtnn.layers.addition_block import AdditionBlock

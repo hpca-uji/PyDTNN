@@ -24,7 +24,7 @@ from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
-from pydtnn.initializers import glorot_uniform, zeros
+from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
 def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:

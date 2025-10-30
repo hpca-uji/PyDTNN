@@ -9,7 +9,7 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
-from pydtnn.initializers import he_uniform
+from pydtnn.utils.initializers import he_uniform
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
