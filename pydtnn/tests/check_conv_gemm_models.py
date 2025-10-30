@@ -26,7 +26,8 @@ from pydtnn.tests.common import verbose_test
 from pydtnn.layers.layer import Layer
 from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import print_with_header, random
+from pydtnn.utils import find_component, print_with_header, random
+from pydtnn.utils.types import Components
 
 
 class CheckConvGemmModels(TestCase):
@@ -77,7 +78,7 @@ class CheckConvGemmModels(TestCase):
         # loss function
         loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
-        loss_cls = losses.select(loss_func_name)
+        loss_cls = find_component(Components.LOSSES, loss_func_name)
         loss_func = loss_cls(shape=(local_batch_size, *model1.layers[-1].shape))
         loss_func.set_backend(model1._backend)
         loss_func.set_model(model1)

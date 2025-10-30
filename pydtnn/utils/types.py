@@ -1,9 +1,5 @@
 import numpy as np
-import typing
 from enum import auto, StrEnum
-
-if typing.TYPE_CHECKING:
-    import pycuda.gpuarray as gpuarray  # type: ignore
 
 
 type ArrayShape = tuple[int, ...]
@@ -16,6 +12,18 @@ DTYPE2CTYPE: dict[np.dtype, str] = {
 class NetworkAlgEnum(StrEnum):
     BTA = auto()
     VDG = auto()
+
+
+class Components(StrEnum):
+    DATASETS = auto()
+    ACTIVATIONS = auto()
+    LAYERS = auto()
+    LOSSES = auto()
+    METRICS = auto()
+    MODELS = auto()
+    OPTIMIZERS = auto()
+    SCHEDULERS = auto()
+    TRACERS = auto()
 
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU

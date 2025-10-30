@@ -22,9 +22,11 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests import CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
+from pydtnn.utils import find_component
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.losses.loss import Loss
 from pydtnn import losses
+from pydtnn.utils.types import Components
 
 
 class CheckGPUModels(CheckConvGemmModels):
@@ -65,7 +67,7 @@ class CheckGPUModels(CheckConvGemmModels):
         # loss function
         loss_func_name = model1.loss_func_name
         local_batch_size = model1.batch_size
-        loss_func = losses.select(loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape))
+        loss_func = find_component(Components.LOSSES, loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape))
         loss_func.set_backend(model1._backend)
         loss_func.set_model(model1)
         loss_func.initialize()

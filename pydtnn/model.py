@@ -25,12 +25,9 @@ from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
-from pydtnn.datasets import select as select_dataset
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.losses.loss import Loss
-from pydtnn.schedulers import select as select_schedulers
-from pydtnn.optimizers import select as select_optimizer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -43,7 +40,7 @@ from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.types import Array, NetworkAlgEnum, ArrayShape
+from pydtnn.utils.types import Array, Components, NetworkAlgEnum, ArrayShape
 from pydtnn.metrics.metric import Metric
 
 
@@ -348,7 +345,7 @@ class Model[T: Array]:
             self.load_weights_and_bias(self.weights_and_bias_filename)
         # Dataset
         if self.dataset_name:
-            self.dataset: Dataset = select_dataset(self)
+            self.dataset: Dataset = utils.find_component(Components.DATASETS, self.dataset_name)(self)
 
         # Optimizers and LRSchedulers
         if self.learning_rate_scaling:
@@ -357,8 +354,14 @@ class Model[T: Array]:
             # but for now it just a parser option difference that helps testing
             self.learning_rate = self.learning_rate / self.comm_size
 
-        self.optimizer = select_optimizer(self)
-        self.schedulers = select_schedulers(self)
+        self.optimizer = utils.find_component(Components.OPTIMIZERS, self.optimizer_name).from_model(self)
+        self.optimizer.set_backend(self._backend)
+        self.optimizer.set_model(self)
+
+        self.schedulers = [
+            utils.find_component(Components.SCHEDULERS, scheduler_name).from_model(self)
+            for scheduler_name in filter(None, self.schedulers_names.split(","))
+        ]
         for scheduler in self.schedulers:
             scheduler.set_model(self)
 
@@ -695,12 +698,12 @@ class Model[T: Array]:
             return
         self._apply_layer_fusion(self.enable_fused_bn_relu, self.enable_fused_conv_relu,
                                  self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu)
-        loss_cls = losses.select(self.loss_func_name)
+        loss_cls = utils.find_component(Components.LOSSES, self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
         self.loss_func.set_backend(self._backend)
         self.loss_func.set_model(self)
         self.loss_func.initialize()
-        self.metrics_funcs = [metrics.select(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
+        self.metrics_funcs = [utils.find_component(Components.METRICS, m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         for metric in self.metrics_funcs:
             metric.set_backend(self._backend)

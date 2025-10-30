@@ -3,6 +3,8 @@ from model_convertor import convert_model
 from typing import Dict
 
 from pydtnn.activations.softmax import Softmax
+from pydtnn.utils import find_component
+from pydtnn.utils.types import Components
 from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
 from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16
 
@@ -291,7 +293,7 @@ def main():
     print("== Testing Inference ==")
     print("=======================")
 
-    dataset: Dataset = select(old_model)
+    dataset: Dataset = find_component(Components.DATASETS, old_model.dataset_name)(old_model)
 
     dataloader = list(dataset._actual_batch_generator(Dataset.Part.TRAIN))
 
