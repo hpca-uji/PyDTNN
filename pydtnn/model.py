@@ -1072,8 +1072,11 @@ class Model[T: Array]:
                 time.sleep(.5)
 
             if sync_epoch:
-                op = MPI.LAND  # type: ignore
-                global_terminate = self.comm.allreduce(terminate, op=op) if self.comm else terminate
+                if self.com is not None:
+                    op = MPI.LAND  # type: ignore
+                    global_terminate = self.comm.allreduce(terminate, op=op)
+                else:
+                    global_terminate = terminate
 
             if global_terminate:
                 break

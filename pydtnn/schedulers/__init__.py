@@ -14,23 +14,22 @@ def select(model: "_Model") -> "list[_LRScheduler]":
     from pydtnn.schedulers.stop_at_loss import StopAtLoss
     from pydtnn.schedulers.warm_up_lr_scheduler import WarmUp
 
+    scheduler = {
+        "warm_up": WarmUp,
+        "early_stopping": EarlyStopping,
+        "reduce_lr_on_plateau": ReduceLROnPlateau,
+        "reduce_lr_every_nepochs": ReduceLREveryNEpochs,
+        "stop_at_loss": StopAtLoss,
+        "model_checkpoint": ModelCheckpoint,
+        "warm_up": WarmUp,
+    }
+
     schedulers = []
     for scheduler_name in filter(None, model.schedulers_names.split(",")):
-        match scheduler_name:
-            case "warm_up":
-                scheduler = WarmUp.from_model(model)
-            case "early_stopping":
-                scheduler = EarlyStopping.from_model(model)
-            case "reduce_lr_on_plateau":
-                scheduler = ReduceLROnPlateau.from_model(model)
-            case "reduce_lr_every_nepochs":
-                scheduler = ReduceLREveryNEpochs.from_model(model)
-            case "stop_at_loss":
-                scheduler = StopAtLoss.from_model(model)
-            case "model_checkpoint":
-                scheduler = ModelCheckpoint.from_model(model)
-            case _:
-                raise SystemExit(f"LRScheduler '{model.optimizer}' not supported yet!")
-        schedulers.append(scheduler)
+        try:
+            cls = scheduler[scheduler_name]
+        except KeyError:
+            raise ValueError(f"Scheduler {scheduler_name!r} not found!") from None
+        schedulers.append(cls.from_model(model))
 
     return schedulers

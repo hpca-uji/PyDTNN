@@ -7,21 +7,21 @@ if TYPE_CHECKING:
 
 def select(model: "_Model") -> "_Optimizer":
     """Get optimizer object from model attributes"""
-    match model.optimizer_name:
+    from pydtnn.optimizers.rmsprop import RMSProp
+    from pydtnn.optimizers.adam import Adam
+    from pydtnn.optimizers.nadam import Nadam
+    from pydtnn.optimizers.sgd import SGD
 
-        case "rmsprop":
-            from pydtnn.optimizers.rmsprop import RMSProp
-            opt = RMSProp.from_model(model)
-        case "adam":
-            from pydtnn.optimizers.adam import Adam
-            opt = Adam.from_model(model)
-        case "nadam":
-            from pydtnn.optimizers.nadam import Nadam
-            opt = Nadam.from_model(model)
-        case "sgd":
-            from pydtnn.optimizers.sgd import SGD
-            opt = SGD.from_model(model)
-        case _:
-            raise ValueError(f"Optimizer {model.optimizer_name!r} not found!")
+    optimizer = {
+        "rmsprop": RMSProp,
+        "adam": Adam,
+        "nadam": Nadam,
+        "sgd": SGD,
+    }
 
-    return opt
+    try:
+        cls = optimizer[model.optimizer_name]
+    except KeyError:
+        raise ValueError(f"Optimizer {model.optimizer_name!r} not found!") from None
+
+    return cls.from_model(model)
