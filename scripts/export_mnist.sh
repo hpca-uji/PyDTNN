@@ -9,6 +9,6 @@ export PYTHONUNBUFFERED="True"
 python3 "${dir:?}/export_dataset.py" \
   --model=simplecnn \
   --dataset=mnist \
-  --dataset_path=datasets/mnist \
+  --dataset-path=datasets/mnist \
   --parallel=sequential \
-  --shared_storage=True
+  --shared-storage=True

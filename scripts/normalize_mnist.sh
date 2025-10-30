@@ -9,6 +9,6 @@ export PYTHONUNBUFFERED="True"
 python3 "${dir:?}/normalize_dataset.py" \
   --model=simplecnn \
   --dataset=chestxray \
-  --dataset_path=datasets/chestxray \
+  --dataset-path=datasets/chestxray \
   --parallel=sequential \
-  --shared_storage=True
+  --shared-storage=True

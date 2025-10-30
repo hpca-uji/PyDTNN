@@ -19,20 +19,20 @@ function run_model() {
   pydtnn_benchmark \
     --model="${1:?}" \
     --dataset="${DATASET:?}" \
-    --dataset_train_path="datasets/${DATASET:?}" \
-    --dataset_test_path="datasets/${DATASET:?}" \
-    --batch_size=1 \
-    --steps_per_epoch=1 \
-    --num_epochs=1 \
+    --dataset-train-path="datasets/${DATASET:?}" \
+    --dataset-test-path="datasets/${DATASET:?}" \
+    --batch-size=1 \
+    --steps-per-epoch=1 \
+    --num-epochs=1 \
     --evaluate=True \
     --optimizer=sgd \
-    --learning_rate=0.01 \
-    --loss_func=categorical_cross_entropy \
+    --learning-rate=0.01 \
+    --loss-func=categorical_cross_entropy \
     --schedulers= \
     --parallel=sequential \
     --tracing=False \
     --profile=False \
-    --enable_gpu=False \
+    --enable-gpu=False \
     --dtype=float32
 }
 

@@ -166,7 +166,7 @@ else
 fi
 if grep -q "${SEARCH_TEXT}" ./*"${FILE_NAME_NO_MACHINE_NO_DATE}"*.out 2>/dev/null; then
   echo "The next result files (with '${SEARCH_TEXT}') have been found:"
-  grep --files-with-matches "${SEARCH_TEXT}" ./*"${FILE_NAME_NO_MACHINE_NO_DATE}"*.out
+  grep --files-with-matches "${SEARCH-TEXT}" ./*"${FILE-NAME-NO-MACHINE-NO-DATE}"*.out
   echo "Refusing to relaunch the same experiment."
   echo
   exit
@@ -232,7 +232,7 @@ function run_benchmark() {
       CMD="mpirun -np ${NODES} -ppn ${MPI_PPN:-1} -iface ${MPI_IFACE:-ib0} ${MPI_EXTRA_FLAGS}"
     elif ${MPI_RUN} --version | grep -q "Open MPI"; then
       # shellcheck disable=SC2086  # MPI_EXTRA_FLAGS must be without ""
-      CMD="mpirun -np ${NODES} -N ${MPI_PPN:-1} --bind-to none ${MPI_EXTRA_FLAGS}"
+      CMD="mpirun -np ${NODES} -N ${MPI_PPN:-1} --bind-to none ${MPI-EXTRA-FLAGS}"
     else
       echo "Error: current MPI version is not yet supported!"
       echo "Output of ${MPI_RUN} --version is:"
@@ -247,23 +247,23 @@ function run_benchmark() {
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
   LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn_benchmark \
     --model="${MODEL}" \
-    --tensor_format="${TENSOR_FORMAT}" \
-    --dataset_train_path="${DATASET_TRAIN_PATH}" \
-    --dataset_test_path="${DATASET_TEST_PATH}" \
+    --tensor-format="${TENSOR_FORMAT}" \
+    --dataset-train-path="${DATASET_TRAIN_PATH}" \
+    --dataset-test-path="${DATASET_TEST_PATH}" \
     --parallel="${PARALLEL}" \
-    --tracer_output="${SIMPLE_TRACER_OUTPUT}" \
-    --tracer_pmlib_device="${TRACER_PMLIB_DEVICE}" \
+    --tracer-output="${SIMPLE_TRACER_OUTPUT}" \
+    --tracer-pmlib-device="${TRACER_PMLIB_DEVICE}" \
     --evaluate="${EVALUATE}" \
-    --evaluate_only="${EVALUATE_ONLY}" \
-    --test_as_validation="${TEST_AS_VALIDATION}" \
-    --enable_best_of="${ENABLE_BEST_OF}" \
-    --enable_conv_i2c="${ENABLE_CONV_I2C:-"True"}" \
-    --enable_conv_gemm="${ENABLE_CONV_GEMM}" \
-    --enable_conv_winograd="${ENABLE_CONV_WINOGRAD}" \
-    --enable_conv_direct="${ENABLE_CONV_DIRECT}" \
-    --conv_direct_method="${CONV_DIRECT_METHOD:-""}" \
-    --conv_direct_methods_for_best_of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
-    --enable_memory_cache="${ENABLE_MEMORY_CACHE}" \
+    --evaluate-only="${EVALUATE_ONLY}" \
+    --test-as-validation="${TEST_AS_VALIDATION}" \
+    --enable-best-of="${ENABLE_BEST_OF}" \
+    --enable-conv-i2c="${ENABLE_CONV_I2C:-"True"}" \
+    --enable-conv-gemm="${ENABLE_CONV_GEMM}" \
+    --enable-conv-winograd="${ENABLE_CONV_WINOGRAD}" \
+    --enable-conv-direct="${ENABLE_CONV_DIRECT}" \
+    --conv-direct-method="${CONV_DIRECT_METHOD:-""}" \
+    --conv-direct-methods-for-best-of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
+    --enable-memory-cache="${ENABLE_MEMORY_CACHE}" \
     --history="${HISTORY_FILENAME}" \
     ${MODEL_FLAGS} |
     tee "${OUTPUT_FILENAME}"
