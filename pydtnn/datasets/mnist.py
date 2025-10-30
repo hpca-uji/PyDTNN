@@ -27,12 +27,10 @@ class MNIST(Dataset):
     c3a25af1f52dad7f726cce8cacb138654b760d48 t10k-images-idx3-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/t10k-images-idx3-ubyte.gz
     763e7fa3757d93b0cdec073cef058b2004252c17 t10k-labels-idx1-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/t10k-labels-idx1-ubyte.gz
 
-    Normalize:
+    Normalize (z-score):
     offset: -0.131
-    scale:   3.245
+    scale:  +3.245
     """
-    # mean: [0.1307281]
-    # std:  [0.30818242]
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)

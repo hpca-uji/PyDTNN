@@ -25,11 +25,12 @@ from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
-from pydtnn.datasets import Dataset, get_dataset
+from pydtnn.datasets import select as select_dataset
+from pydtnn.datasets.dataset import Dataset
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.losses.loss import Loss
-from pydtnn.schedulers import get_schedulers
-from pydtnn.optimizers import get_optimizer
+from pydtnn.schedulers import select as select_schedulers
+from pydtnn.optimizers import select as select_optimizer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -43,9 +44,7 @@ from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import Array, NetworkAlgEnum, ArrayShape
-
 from pydtnn.metrics.metric import Metric
-from pydtnn.metrics import metric_format
 
 
 cuda_errors = []
@@ -349,7 +348,7 @@ class Model[T: Array]:
             self.load_weights_and_bias(self.weights_and_bias_filename)
         # Dataset
         if self.dataset_name:
-            self.dataset: Dataset = get_dataset(self)
+            self.dataset: Dataset = select_dataset(self)
 
         # Optimizers and LRSchedulers
         if self.learning_rate_scaling:
@@ -358,8 +357,8 @@ class Model[T: Array]:
             # but for now it just a parser option difference that helps testing
             self.learning_rate = self.learning_rate / self.comm_size
 
-        self.optimizer = get_optimizer(self)
-        self.schedulers = get_schedulers(self)
+        self.optimizer = select_optimizer(self)
+        self.schedulers = select_schedulers(self)
         for scheduler in self.schedulers:
             scheduler.set_model(self)
 
@@ -708,6 +707,7 @@ class Model[T: Array]:
             metric.set_model(self)
             metric.initialize()
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
+        self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
         self.tracer.define_event_types(self)
         self._initialized = True
@@ -856,7 +856,7 @@ class Model[T: Array]:
         string = ""
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(self.loss_and_metrics)):
-            loss_str = metric_format.get(self.loss_and_metrics[c], self.loss_and_metrics[c])
+            loss_str = self.loss_and_metrics_format[c]
             string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string

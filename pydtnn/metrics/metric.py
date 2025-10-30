@@ -5,6 +5,7 @@ from pydtnn.utils.types import ArrayShape, Array
 
 
 class Metric[T: Array](PromoteToBackend):
+    format = ""
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape

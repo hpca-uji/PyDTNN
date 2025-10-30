@@ -6,6 +6,7 @@ from pydtnn.utils.types import ArrayShape
 
 
 class Loss[T: Array](PromoteToBackend):
+    format = ""
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape
@@ -14,6 +15,5 @@ class Loss[T: Array](PromoteToBackend):
     def initialize(self) -> None:
         pass
 
-    @abc.abstractmethod
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
-        pass
+        raise NotImplementedError()

@@ -22,10 +22,9 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu[np.ndarray]):
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
 
-    @abc.abstractmethod
     def forward(self, x: np.ndarray) -> np.ndarray:
         """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
-        pass
+        raise NotImplementedError("Use a real forward variant!")
 
     def _forward_nchw_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
@@ -79,6 +78,5 @@ class Conv2DReluCPU(LayerCPU, Conv2DRelu[np.ndarray]):
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
-    @abc.abstractmethod
     def backward(self, x: np.ndarray) -> np.ndarray:
-        raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")
+        raise NotImplementedError("Use a real backwards variant!")

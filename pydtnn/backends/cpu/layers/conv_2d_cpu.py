@@ -142,15 +142,11 @@ class Conv2DCPU(LayerCPU,
                                      k=self.co, cpu_speed=self.model.cpu_speed,
                                      memory_bw=self.model.memory_bw, dtype=self.model.dtype)
 
-    @abc.abstractmethod
     def forward(self, x: np.ndarray) -> np.ndarray:
-        msg = """This is a fake forward function. It must be masked on initialization by a _forward implementation"""
-        NotImplementedError(f"Conv2DCPU forward: {msg}")
+        raise NotImplementedError("Use a real forward variant!")
 
-    @abc.abstractmethod
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        msg = """This is a fake backward function. It must be masked on initialization by a _backward implementation"""
-        NotImplementedError(f"Conv2DCPU backward: {msg}")
+        raise NotImplementedError("Use a real backwards variant!")
 
     def print_in_convdirect_format(self) -> None:
         if self.hstride != 1 or self.vstride != 1:

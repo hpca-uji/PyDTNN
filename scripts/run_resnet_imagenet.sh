@@ -6,12 +6,11 @@ export PYTHONUNBUFFERED="True"
 mpirun -np 2 \
   pydtnn_benchmark \
   --model=resnet18_imagenet \
-  --dataset=imagenet \
-  --dataset_path=datasets/imagenet \
-  --normalize=True \
-  --normalize_offset=-0.449 \
-  --normalize_scale=3.537 \
-  --use_synthetic_data=True \
+  --dataset=synthetic \
+  --synthetic_train_samples=1281167 \
+  --synthetic_test_samples=50000 \
+  --synthetic_input_shape=3,227,227 \
+  --synthetic_output_shape=1000 \
   --test_as_validation=False \
   --augment_flip=True \
   --augment_crop=True \

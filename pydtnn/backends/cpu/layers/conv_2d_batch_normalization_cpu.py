@@ -23,10 +23,9 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization[np.ndarray]
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
 
-    @abc.abstractmethod
     def forward(self, x: np.ndarray) -> np.ndarray:
         """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
-        pass
+        raise NotImplementedError("Use a real forward variant!")
 
     def _forward_nchw_cw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd + BatchNorm + """
@@ -81,6 +80,5 @@ class Conv2DBatchNormalizationCPU(LayerCPU, Conv2DBatchNormalization[np.ndarray]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
-    @abc.abstractmethod
     def backward(self, x: np.ndarray) -> np.ndarray:
-        raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")
+        raise NotImplementedError("Use a real backward variant!")

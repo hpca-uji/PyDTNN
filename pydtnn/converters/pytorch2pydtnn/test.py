@@ -25,7 +25,7 @@ from pydtnn.models.resnet152_cifar10 import create_resnet152_cifar10
 from pydtnn.models.inceptionv3_cifar10 import create_inceptionv3_cifar10
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.datasets import get_dataset
+from pydtnn.datasets import select
 from pydtnn.utils.best_of import BestOf
 
 import torch
@@ -291,7 +291,7 @@ def main():
     print("== Testing Inference ==")
     print("=======================")
 
-    dataset: Dataset = get_dataset(old_model)
+    dataset: Dataset = select(old_model)
 
     dataloader = list(dataset._actual_batch_generator(Dataset.Part.TRAIN))
 

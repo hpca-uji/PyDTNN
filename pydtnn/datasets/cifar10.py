@@ -27,12 +27,10 @@ class CIFAR10(Dataset):
     Source (SHA1):
     e8aa088b9774a44ad217101d2e2569f823d2d491 cifar-10-binary.tar.gz https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
 
-    Normalize:
+    Normalize (z-score):
     offset: -0.472
-    scale:   3.985
+    scale:  +3.985
     """
-    # mean: [0.48995113 0.4807823  0.4451906 ]
-    # std:  [0.24761744 0.2437481  0.26142704]
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)

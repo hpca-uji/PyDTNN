@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 50000
-INPUT_SHAPE = (3, 300, 300)
+INPUT_SHAPE = (3, 227, 227)
 OUTPUT_SHAPE = (1000,)
 
 
@@ -99,12 +99,10 @@ class ImageNet(Dataset):
     5f3f73da3395154b60528b2b2a2caf2374f5f178 ILSVRC2012_img_val.tar
     092a94ed6a05454b8b72d1c4ecf336fa48d37fda ILSVRC2012_devkit_t12.tar.gz
 
-    Normalize:
+    Normalize (z-score):
     offset: -0.449
-    scale:   3.537
+    scale:  +3.537
     """
-    # mean: [0.48079005 0.4571948  0.40758193]
-    # std:  [0.2830013  0.2758762  0.28932407]
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)

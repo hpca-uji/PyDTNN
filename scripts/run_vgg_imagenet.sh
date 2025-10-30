@@ -9,6 +9,10 @@ pydtnn_benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
   --dataset_path=datasets/imagenet \
+  --transform_crop=True \
+  --transform_crop_perc=0.875 \
+  --transform_resize=True \
+  --transform_reize_size=227 \
   --normalize=True \
   --normalize_offset=-0.449 \
   --normalize_scale=3.537 \

@@ -57,6 +57,10 @@ class ChestXRay(Dataset):
     30216f59778f259db91d77bcd3d0495c8fce88ef images_10.tar.gz https://nihcc.box.com/shared/static/l6nilvfa9cg3s28tqv1qc1olm3gnz54p.gz
     97985118ba36f18c27d62371d28c1698478cecfa images_11.tar.gz https://nihcc.box.com/shared/static/hhq8fkdgvcari67vfhs7ppg2w6ni4jze.gz
     cb2865369f434a9deea11e2d5222b8472890681b images_12.tar.gz https://nihcc.box.com/shared/static/ioqwiy20ihqwyr8pf4c24eazhh281pbu.gz
+
+    Normalize (z-score):
+    offset: pending
+    scale:  pending
     """
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
