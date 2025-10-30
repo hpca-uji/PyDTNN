@@ -23,6 +23,7 @@ from tqdm import tqdm
 from pydtnn import crypt, losses, metrics, utils
 from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets import Dataset, get_dataset
 from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
@@ -712,6 +713,10 @@ class Model[T: Array]:
         self._initialized = True
 
         self.optimizer.set_backend(self._backend)
+        if self.enable_cudnn:
+            assert isinstance(self.optimizer, OptimizerGPU), f"CUDA is enable but the optimizer's backend is not a GPU one ({type(self.optimizer)=})"
+            self.optimizer.set_gpudirect(self.gpudirect)
+
         self.optimizer.set_model(self)
         self.optimizer.initialize(self.get_all_layers(self.layers))
 

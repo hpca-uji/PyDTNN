@@ -41,9 +41,4 @@ def get_optimizer(model: "Model") -> _Optimizer:
                            dtype=model.dtype)
         case _:
             raise SystemExit(f"Optimizer '{model.optimizer}' not supported yet!")
-
-    opt.set_backend(model._backend)
-
-    if model.enable_cudnn:
-        opt.set_gpudirect(model.gpudirect)
     return opt
