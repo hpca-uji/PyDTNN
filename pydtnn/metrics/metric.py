@@ -6,6 +6,7 @@ from pydtnn.utils.types import ArrayShape, Array
 
 class Metric[T: Array](PromoteToBackend):
     format = ""
+    order = 0   # No need of special order.
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape
@@ -17,3 +18,5 @@ class Metric[T: Array](PromoteToBackend):
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float:
         pass
+
+
