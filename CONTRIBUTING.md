@@ -27,13 +27,17 @@
 
   If two kernels have the same name, CUDA will not identify the correct function and will throw and error.
 
-- **Always test the new changes in every backend (cpu, gpu, ...)**
+- **Test changes in every backend (cpu, gpu, ...)**
 
   Be careful: any change made in the abstract class in order to improve one backend may break something in the other backends.
 
 - **Use numpy's functions over its operands**
 
   Even if technically they are the same, sometimes, numpy.add(a, b, out=a) has better precision than "a += b".
+
+- **Ensure ``parser`` and ``README`` are in-sync**
+
+  When adding, modifing or deleting options, check changes are reflected on both sources.
 
 # Planned
 - Extract GPU `SourceModule` to `.cu` files.
