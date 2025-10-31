@@ -27,7 +27,7 @@ class Params:
         model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
         self.model_name = model_name
 
-        dataset_name = os.environ.get("PYDTNN_TEST_DATASET", "mnist")
+        dataset_name = os.environ.get("PYDTNN_TEST_DATASET", "cifar10")
         self.dataset_name = dataset_name
         self.dataset_path = f"datasets/{dataset_name}"
 
