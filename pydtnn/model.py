@@ -559,7 +559,8 @@ class Model[T: Array]:
         create_model = select_model(model_name)
 
         # NOTE: Dataset is always in NCHW
-        input_shape = SampleFormat.CHW.reshape(self.dataset.input_shape, self.tensor_format.as_sample())
+        # Change input_shape to model.tensor_format
+        input_shape = SampleFormat.CHW.reshape(self.dataset.input_shape, self.tensor_format.as_sample())  # type: ignore
         if len(input_shape) != 3:
             warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
         launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is TensorFormat.NHWC \
