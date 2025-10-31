@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 import rapidgzip
 
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat
 from pydtnn.utils import BackgroundGenerator, find_component, random
 from pydtnn.utils.types import ArrayShape
 
@@ -140,14 +140,8 @@ class Dataset(ABC):
         x_test, y_test = map(np.concat, zip(*gen_test))
 
         # Ensure dataset is in NCHW
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                pass
-            case TensorFormat.NHWC:
-                x_train = self._nhwc2nchw(x_train)
-                x_test = self._nhwc2nchw(x_test)
-            case _:
-                raise NotImplementedError(f"Unsupported tensor format {self.model.tensor_format}")
+        x_train = self.model.tensor_format.transpose(x_train, TensorFormat.NCHW)
+        x_test = self.model.tensor_format.transpose(x_test, TensorFormat.NCHW)
 
         # Ensure dataset is in float64
         match self.model.dtype:
@@ -259,19 +253,19 @@ class Dataset(ABC):
 
     @staticmethod
     def _nchw2nhwc(x: np.ndarray) -> np.ndarray:
-        return x.transpose(0, 2, 3, 1)
+        return TensorFormat.NCHW.transpose(x, TensorFormat.NHWC)
 
     @staticmethod
     def _nhwc2nchw(x: np.ndarray) -> np.ndarray:
-        return x.transpose(0, 3, 1, 2)
+        return TensorFormat.NHWC.transpose(x, TensorFormat.NCHW)
 
     @staticmethod
     def _chw2hwc(x: np.ndarray) -> np.ndarray:
-        return x.transpose(1, 2, 0)
+        return SampleFormat.CHW.transpose(x, SampleFormat.HWC)
 
     @staticmethod
     def _hwc2chw(x: np.ndarray) -> np.ndarray:
-        return x.transpose(2, 0, 1)
+        return SampleFormat.HWC.transpose(x, SampleFormat.CHW)
 
     @staticmethod
     def _decode_class(y: np.ndarray, classes_list: np.ndarray) -> None:
@@ -383,12 +377,11 @@ class Dataset(ABC):
         return data
 
     def _do_flip_images(self, data: np.ndarray) -> np.ndarray:
+        n = data.shape[0]
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                n, c, h, w = data.shape
                 width_dim = -1
             case TensorFormat.NHWC:
-                n, h, w, c = data.shape
                 width_dim = 2
             case _:
                 raise NotImplementedError(f"\"Dataset _do_flip_image\" is not implemented for \"{self.model.tensor_format}\" format.")
@@ -401,13 +394,7 @@ class Dataset(ABC):
         return data
 
     def _do_crop_images(self, data: np.ndarray) -> np.ndarray:
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                n, c, h, w = data.shape
-            case TensorFormat.NHWC:
-                n, h, w, c = data.shape
-            case _:
-                raise NotImplementedError(f"\"Dataset _do_crop_images\" is not implemented for \"{self.model.tensor_format}\" format.")
+        n, c, h, w = self.model.tensor_format.reshape(data.shape, TensorFormat.NCHW)
         crop_size = min(self.model.augment_crop_size, h, w)
         limit = min(n, int(n * self.model.augment_crop_prob))
         s = np.arange(n)
@@ -432,13 +419,7 @@ class Dataset(ABC):
         return data
 
     def _do_resize(self, data: np.ndarray) -> np.ndarray:
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                data = self._nhwc2nchw(data)
-            case TensorFormat.NCHW:
-                pass
-            case _:
-                raise ValueError("Unsupported tensor format")
+        data = self.model.tensor_format.transpose(data, TensorFormat.NCHW)
 
         size = (self.model.transform_resize_size, self.model.transform_resize_size)
         shape = (*data.shape[:2], *size)
@@ -457,13 +438,7 @@ class Dataset(ABC):
                 channel = channel.transpose().astype(self.model.dtype)
                 new_data[n, c] = channel
 
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                new_data = self._nchw2nhwc(new_data)
-            case TensorFormat.NCHW:
-                pass
-            case _:
-                raise ValueError("Unsupported tensor format")
+        new_data = TensorFormat.NCHW.transpose(new_data, self.model.tensor_format)
 
         return new_data
     # ---
@@ -477,13 +452,7 @@ class Dataset(ABC):
         return (crop, size)
 
     def _do_crop(self, data: np.ndarray) -> np.ndarray:
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                data = self._nhwc2nchw(data)
-            case TensorFormat.NCHW:
-                pass
-            case _:
-                raise ValueError("Unsupported tensor format")
+        data = self.model.tensor_format.transpose(data, TensorFormat.NCHW)
 
         size = data.shape[2:4]
         crop, size = self._calculate_crop(size)
@@ -503,13 +472,7 @@ class Dataset(ABC):
                 channel = channel.transpose().astype(self.model.dtype)
                 new_data[n, c] = channel
 
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                new_data = self._nchw2nhwc(new_data)
-            case TensorFormat.NCHW:
-                pass
-            case _:
-                raise ValueError("Unsupported tensor format")
+        new_data = TensorFormat.NCHW.transpose(new_data, self.model.tensor_format)
 
         return new_data
     # ---
@@ -519,7 +482,7 @@ class Dataset(ABC):
             image = image.convert("RGB")
             array = np.asarray(image)
             # NOTE: PIL mode RGB is WHC in unit8
-            array = array.transpose(2, 1, 0)
+            array = SampleFormat.WHC.transpose(array, SampleFormat.CHW)
         return array
 
     def _load_gray_image(self, fp: IO[bytes] | str) -> np.ndarray:
@@ -528,7 +491,7 @@ class Dataset(ABC):
             image = image.convert("L")
             array = np.asarray(image)
             # NOTE: PIL mode L is WH in unit8
-            array = array.transpose(1, 0)
+            array = ChannelFormat.WH.transpose(array, ChannelFormat.HW)
             array = array[None, ...]
         return array
     # ----

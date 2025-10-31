@@ -45,7 +45,7 @@ from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import SampleFormat, TensorFormat
 from pydtnn.utils.types import Array, Components, NetworkAlgEnum, ArrayShape
 from pydtnn.metrics.metric import Metric
 
@@ -559,8 +559,7 @@ class Model[T: Array]:
         create_model = select_model(model_name)
 
         # NOTE: Dataset is always in NCHW
-        c, h, w = self.dataset.input_shape
-        input_shape = (h, w, c) if self.tensor_format is TensorFormat.NHWC else (c, h, w)
+        input_shape = SampleFormat.CHW.reshape(self.dataset.input_shape, self.tensor_format.as_sample())
         if len(input_shape) != 3:
             warn(f"Input layer does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
         launch_shape_warning = len(input_shape) == 3 and not (input_shape[0] > input_shape[2]) if self.tensor_format is TensorFormat.NHWC \

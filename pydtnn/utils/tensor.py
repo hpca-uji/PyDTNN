@@ -12,6 +12,8 @@ class ChannelFormat(StrEnum):
     HW = auto()
 
     def reshape(self, shape: tuple[int, int], format: ChannelFormat) -> tuple[int, int]:
+        assert len(shape) == len(self), f"Unexpected dimensions (got: {shape}, expect: {self})"
+
         match self:
             case ChannelFormat.HW:
                 h, w = shape
@@ -44,6 +46,8 @@ class SampleFormat(StrEnum):
         return TensorFormat(f"n{self}")
 
     def reshape(self, shape: tuple[int, int, int], format: SampleFormat) -> tuple[int, int, int]:
+        assert len(shape) == len(self), f"Unexpected dimensions (got: {shape}, expect: {self})"
+
         match self:
             case SampleFormat.HWC:
                 h, w, c = shape
@@ -76,6 +80,8 @@ class TensorFormat(StrEnum):
         return SampleFormat(self.strip("n"))
 
     def reshape(self, shape: tuple[int, int, int, int], format: TensorFormat) -> tuple[int, int, int, int]:
+        assert len(shape) == len(self), f"Unexpected dimensions (got: {shape}, expect: {self})"
+
         match self:
             case TensorFormat.NHWC:
                 n, h, w, c = shape
@@ -97,14 +103,8 @@ class TensorFormat(StrEnum):
 
 
 def encode_tensor(shape: ArrayShape, tensor_format=TensorFormat.NHWC) -> ArrayShape:
-    if len(shape) == 3 and tensor_format is TensorFormat.NCHW:
-        return shape[2], shape[0], shape[1]
-    else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
-        return shape
+    return SampleFormat.HWC.reshape(shape, tensor_format.as_sample()) if len(shape) == 3 else shape
 
 
 def decode_tensor(shape: ArrayShape, tensor_format=TensorFormat.NHWC) -> ArrayShape:
-    if len(shape) == 3 and tensor_format is TensorFormat.NCHW:
-        return shape[1], shape[2], shape[0]
-    else:  # Assuming PYDTNN_TENSOR_FORMAT.NHWC
-        return shape
+    return tensor_format.as_sample().reshape(shape, SampleFormat.HWC) if len(shape) == 3 else shape

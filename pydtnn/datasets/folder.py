@@ -76,7 +76,7 @@ class Folder(Dataset):
                 data_set = set(file for file in [os.path.join(path_folder, file) for file in sorted(os.listdir(path_folder))] if os.path.isfile(file))
                 dict_class_file[class_name] = data_set
                 num_images += len(data_set)
-        
+
         if len(dict_class_file.values()) == 0:
             raise ValueError(f"There are no directories in \'{path}\'.")
 
@@ -84,13 +84,13 @@ class Folder(Dataset):
 
         return (labels_and_images, num_classes, num_images)
     # ---
-    
+
     def _prepare_label(self, label: int, num_classes: ArrayShape) -> np.ndarray:
         """Transform class numer into class mask (ndarray 1D unit8)"""
         np_label = np.zeros(shape=num_classes, dtype=np.uint8, order="C")
         np_label[label] = 1
         return np_label
-    
+
     @override
     def _init_actual_data(self):
         if not self.model.transform_resize:
@@ -117,13 +117,7 @@ class Folder(Dataset):
             y = y[None, ...]
 
             # Set tensor format
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    x = self._nchw2nhwc(x)
-                case TensorFormat.NCHW:
-                    pass  # Format is correct
-                case _:
-                    raise TypeError(f"{self.model.tensor_format} format is not supported")
+            x = TensorFormat.NCHW.transpose(x, self.model.tensor_format)
 
             # Set dtype and order
             x = x.astype(dtype=self.model.dtype, order="C")
@@ -133,5 +127,3 @@ class Folder(Dataset):
             x /= 255.0
 
             yield x, y
-    
-
