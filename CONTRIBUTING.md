@@ -38,3 +38,6 @@
 # Planned
 - Extract GPU `SourceModule` to `.cu` files.
 - Replace `print` statments with `logger` calls.
+- Explore `TenSEAL` serialization preformance.
+- Explore `net-queue`'s `TCP+TLS` preformance.
+- Explore `pympi`'s 1, 2 & 3 client preformance.
