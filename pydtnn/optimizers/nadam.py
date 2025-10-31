@@ -25,8 +25,8 @@ class Nadam[T:Array](Optimizer[T]):
     @classmethod
     def from_model(cls, model: "Model") -> "Nadam":
         return Nadam(learning_rate=model.learning_rate,
-                     beta1=model.beta1,
-                     beta2=model.beta2,
-                     epsilon=model.epsilon,
-                     decay=model.decay,
+                     beta1=model.optimizer_beta1,
+                     beta2=model.optimizer_beta2,
+                     epsilon=model.optimizer_epsilon,
+                     decay=model.optimizer_decay,
                      dtype=model.dtype)

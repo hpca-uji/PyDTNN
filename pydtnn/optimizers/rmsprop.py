@@ -24,7 +24,7 @@ class RMSProp[T: Array](Optimizer[T]):
     @classmethod
     def from_model(cls, model: "Model") -> "RMSProp":
         return RMSProp(learning_rate=model.learning_rate,
-                       rho=model.rho,
-                       epsilon=model.epsilon,
-                       decay=model.decay,
+                       rho=model.optimizer_rho,
+                       epsilon=model.optimizer_epsilon,
+                       decay=model.optimizer_decay,
                        dtype=model.dtype)

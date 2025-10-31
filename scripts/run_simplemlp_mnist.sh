@@ -15,7 +15,7 @@ pydtnn-benchmark \
   --evaluate=False \
   --optimizer=sgd \
   --learning-rate=0.1 \
-  --momentum=0.0 \
+  --optimizer-momentum=0.0 \
   --loss-func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
   --schedulers="" \
