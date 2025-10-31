@@ -2,7 +2,7 @@
 
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-pydtnn_benchmark \
+pydtnn-benchmark \
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \

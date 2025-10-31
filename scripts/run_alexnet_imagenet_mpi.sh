@@ -22,7 +22,7 @@ export PYTHONUNBUFFERED="True"
 
 # -genv LD_PRELOAD $EXTRAELIB
 mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=alexnet \
   --dataset=imagenet \
   --dataset-path=datasets/imagenet \

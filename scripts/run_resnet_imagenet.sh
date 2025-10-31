@@ -4,7 +4,7 @@ export OMP_NUM_THREADS=16
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 mpirun -np 2 \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=resnet18_imagenet \
   --dataset=synthetic \
   --synthetic-train-samples=1281167 \

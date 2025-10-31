@@ -19,7 +19,7 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
 mpirun -iface ib0 -genv LD_PRELOAD $EXTRAELIB -ppn 1 -np $procs -host $hosts \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=vgg11bn_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \

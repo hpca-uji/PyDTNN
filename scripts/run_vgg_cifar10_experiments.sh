@@ -13,7 +13,7 @@ for procs in 6 4 2 1; do
     export PYTHONUNBUFFERED="True"
 
     mpirun -iface ib0 -ppn 1 -np $procs -host $hosts \
-      pydtnn_benchmark \
+      pydtnn-benchmark \
       --model=vgg11bn_cifar10 \
       --dataset=cifar10 \
       --dataset-path=datasets/cifar10 \

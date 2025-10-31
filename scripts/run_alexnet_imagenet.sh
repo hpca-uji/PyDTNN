@@ -2,7 +2,7 @@
 
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
-pydtnn_benchmark \
+pydtnn-benchmark \
   --model=alexnet_imagenet \
   --dataset=synthetic \
   --synthetic-train-samples=1281167 \

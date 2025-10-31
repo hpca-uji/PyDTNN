@@ -117,7 +117,7 @@ def extract_parameters():
         parameters_overwritten["reduce_lr_on_plateau_metric"][model] = ""
         parameters_overwritten["stop_at_loss_metric"][model] = ""
     # Patterns
-    command_pattern = re.compile(r"[^#]*.*pydtnn_benchmark")
+    command_pattern = re.compile(r"[^#]*.*pydtnn-benchmark")
     parameter_pattern = re.compile(r"--([^=]+)=([^ ]+)")
     ignore_parameters = ("dataset_train_path", "dataset_test_path", "parallel", "history_file")
     # Extract the parameters

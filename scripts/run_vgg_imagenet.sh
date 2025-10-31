@@ -5,7 +5,7 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 #mpirun --use-hwthread-cpus -np 16 \
 #  --steps-per-epoch=10 \
-pydtnn_benchmark \
+pydtnn-benchmark \
   --model=vgg11_imagenet \
   --dataset=imagenet \
   --dataset-path=datasets/imagenet \

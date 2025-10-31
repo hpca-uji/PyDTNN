@@ -62,7 +62,7 @@ test = [
 ]
 
 [project.scripts]
-pydtnn_benchmark = "pydtnn.pydtnn_benchmark:main"
+pydtnn-benchmark = "pydtnn.pydtnn_benchmark:main"
 
 [build-system]
 requires = [

@@ -29,7 +29,7 @@ fi
 
 # -genv LD_PRELOAD $EXTRAELIB
 mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS "${MPI_ARGS[@]}" \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=alexnet_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \

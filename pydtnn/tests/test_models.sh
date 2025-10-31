@@ -16,7 +16,7 @@ function models() {
 }
 
 function run_model() {
-  pydtnn_benchmark \
+  pydtnn-benchmark \
     --model="${1:?}" \
     --dataset="${DATASET:?}" \
     --dataset-train-path="datasets/${DATASET:?}" \

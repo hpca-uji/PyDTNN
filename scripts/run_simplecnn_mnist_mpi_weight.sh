@@ -4,7 +4,7 @@ export OMP_NUM_THREADS=1
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 mpirun -np 4 \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \

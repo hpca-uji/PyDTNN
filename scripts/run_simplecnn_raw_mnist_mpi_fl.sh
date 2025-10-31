@@ -11,7 +11,7 @@ if $(mpirun --version | grep -q 'Open MPI) [5-9].'); then
 fi
 
 mpirun -np 4 "${MPI_ARGS[@]}" \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=simplecnn \
   --dataset=archive \
   --dataset-path=datasets/mnist \

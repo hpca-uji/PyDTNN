@@ -241,11 +241,11 @@ function run_benchmark() {
     fi
   fi
 
-  # 3) Launch pydtnn_benchmark
+  # 3) Launch pydtnn-benchmark
   export PYTHONOPTIMIZE=2
   export PYTHONUNBUFFERED="True"
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
-  LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn_benchmark \
+  LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn-benchmark \
     --model="${MODEL}" \
     --tensor-format="${TENSOR_FORMAT}" \
     --dataset-train-path="${DATASET_TRAIN_PATH}" \

@@ -8,7 +8,7 @@ export PYTHONOPTIMIZE=2
 #export OMP_DISPLAY_AFFINITY=True
 export PYTHONUNBUFFERED="True"
 #mpirun -np 2 \
-pydtnn_benchmark \
+pydtnn-benchmark \
   --model=vgg3dobn \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \

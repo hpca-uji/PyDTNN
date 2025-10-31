@@ -4,7 +4,7 @@ export OMP_NUM_THREADS=16
 export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 mpirun -np 1 \
-  pydtnn_benchmark \
+  pydtnn-benchmark \
   --model=densenet121_cifar10 \
   --dataset=cifar10 \
   --dataset-path=datasets/cifar10 \
