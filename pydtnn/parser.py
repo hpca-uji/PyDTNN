@@ -134,24 +134,27 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Load weights and bias from file. Default: None.")
         self.add_argument('--history-file', type=str, default=None,
                           help="Filename to save training loss and metrics.")
-        self.add_argument('--shared-storage', default=True, type=bool_lambda,
-                          help="If \'True\' ranks assume they share the file system. Default: True.")
-        self.add_argument('--model-sync-freq', type=int, default=0,
-                          help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Default: 0.")
-        self.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
-                          help="Aggregation method used to syncronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
-        self.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
-                          help="Rank participation to syncronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
-        self.add_argument('--model-sync-min-avail', type=int, default=0,
-                          help="Minumun ranks with data required to syncronize models. Default: 0.")
-        self.add_argument('--initial-model-sync', type=bool_lambda, default=True,
-                          help="Sincronize models on training start. Default: True.")
-        self.add_argument('--final-model-sync', type=bool_lambda, default=True,
-                          help="Sincronize models on training end. Default: True.")
         self.add_argument('--tensor-format', type=lambda s: str(s).upper(), default="NHWC",
                           help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable-gpu\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
         self.add_argument('--random-seed', type=int, default=57005,
                           help='Initial state of random number generator. Default: 57005.')
+
+        # Synchronization options
+        _sy_group = self.add_argument_group("Synchronization options")
+        _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
+                               help="If \'True\' ranks assume they share the file system. Default: True.")
+        _sy_group.add_argument('--model-sync-freq', type=int, default=0,
+                               help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Default: 0.")
+        _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
+                               help="Aggregation method used to syncronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
+        _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
+                               help="Rank participation to syncronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
+        _sy_group.add_argument('--model-sync-min-avail', type=int, default=0,
+                               help="Minumun ranks with data required to syncronize models. Default: 0.")
+        _sy_group.add_argument('--initial-model-sync', type=bool_lambda, default=True,
+                               help="Sincronize models on training start. Default: True.")
+        _sy_group.add_argument('--final-model-sync', type=bool_lambda, default=True,
+                               help="Sincronize models on training end. Default: True.")
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
