@@ -323,7 +323,7 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
 
     $ export OMP_NUM_THREADS=4
     $ mpirun -np 12 \
-        python3 -Ou pydtnn-benchmark.py \
+        pydtnn-benchmark \
           --model=simplecnn \
           --dataset=mnist \
           --dataset_path=datasets/mnist \
@@ -492,7 +492,7 @@ In this example, we perform inference with the CNN VGG16 for the CIFAR-10 datase
 using 4 OpenMP threads::
 
     $ export OMP_NUM_THREADS=4
-    $ python3 -Ou pydtnn-benchmark.py \
+    $ pydtnn-benchmark \
         --model=vgg16_cifar10 \
         --dataset=cifar10 \
         --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
