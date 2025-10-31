@@ -24,10 +24,10 @@ pydtnn-benchmark \
   --num-epochs=10 \
   --evaluate=False \
   --optimizer=sgd \
-  --nesterov=False \
+  --optimizer-nesterov=False \
   --learning-rate=0.01 \
-  --decay=1e-4 \
-  --momentum=0.9 \
+  --optimizer-decay=1e-4 \
+  --optimizer-momentum=0.9 \
   --loss-func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau \

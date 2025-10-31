@@ -55,7 +55,7 @@ def get_full_x(dataset: Dataset) -> abc.Iterable[np.ndarray]:
 
 
 parser = PydtnnArgumentParser()
-args = {**parser.to_dict(), "tensor_format": TensorFormat.NCHW, "batch_size": 1}
+args = {**parser.to_dict(), "tensor_format": TensorFormat.NCHW, "batch_size": 1, "augment_shuffle": False}
 model = Model(**args)
 
 dataset = get_full_x(model.dataset)

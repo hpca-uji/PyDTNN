@@ -1,6 +1,6 @@
 # Typing related
 from typing import List, Dict, Tuple
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer import LayerAndActivationBase
 from pydtnn.activations.activation import Activation
 import numpy as np
 

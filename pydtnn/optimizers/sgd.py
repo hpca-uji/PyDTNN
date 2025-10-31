@@ -24,7 +24,7 @@ class SGD[T: Array](Optimizer[T]):
     @classmethod
     def from_model(cls, model: "Model") -> "SGD":
         return SGD(learning_rate=model.learning_rate,
-                   momentum=model.momentum,
-                   nesterov=model.nesterov,
-                   decay=model.decay,
+                   momentum=model.optimizer_momentum,
+                   nesterov=model.optimizer_nesterov,
+                   decay=model.optimizer_decay,
                    dtype=model.dtype)

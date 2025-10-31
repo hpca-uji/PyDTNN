@@ -3,8 +3,7 @@ from model_convertor import convert_model
 from typing import Dict
 
 from pydtnn.activations.softmax import Softmax
-from pydtnn.utils import find_component
-from pydtnn.utils.types import Components
+from pydtnn.datasets.dataset import select as select_dataset
 from torchvision.models import vgg19, alexnet, densenet169, resnet50, googlenet
 from torchvision.models import densenet121, densenet201, resnet18, resnet34, resnet101, resnet152, vgg11, vgg16
 
@@ -12,41 +11,42 @@ from torchmetrics import Accuracy, Metric
 
 from pydtnn.datasets.dataset import Dataset
 
-from pydtnn.models.vgg11 import create_vgg11
-from pydtnn.models.vgg16 import create_vgg16
-from pydtnn.models.vgg19_imagenet import create_vgg19_imagenet
-from pydtnn.models.alexnet_cifar10 import create_alexnet_cifar10
-from pydtnn.models.densenet121_cifar10 import create_densenet121_cifar10
-from pydtnn.models.densenet169_cifar10 import create_densenet169_cifar10
-from pydtnn.models.densenet201_cifar10 import create_densenet201_cifar10
-from pydtnn.models.resnet18_cifar10 import create_resnet18_cifar10
-from pydtnn.models.resnet34_cifar10 import create_resnet34_cifar10
-from pydtnn.models.resnet50_cifar10 import create_resnet50_cifar10
-from pydtnn.models.resnet101_cifar10 import create_resnet101_cifar10
-from pydtnn.models.resnet152_cifar10 import create_resnet152_cifar10
-from pydtnn.models.inceptionv3_cifar10 import create_inceptionv3_cifar10
+from pydtnn.models.vgg11 import vgg11 as pydtnn_vgg11
+from pydtnn.models.vgg16 import vgg16 as pydtnn_vgg16
+from pydtnn.models.vgg19_imagenet import vgg19_imagenet as pydtnn_vgg19_imagenet
+from pydtnn.models.alexnet_cifar10 import alexnet_cifar10 as pydtnn_alexnet_cifar10
+from pydtnn.models.densenet121_cifar10 import densenet121_cifar10 as pydtnn_densenet121_cifar10
+from pydtnn.models.densenet169_cifar10 import densenet169_cifar10 as pydtnn_densenet169_cifar10
+from pydtnn.models.densenet201_cifar10 import densenet201_cifar10 as pydtnn_densenet201_cifar10
+from pydtnn.models.resnet18_cifar10 import resnet18_cifar10 as pydtnn_resnet18_cifar10
+from pydtnn.models.resnet34_cifar10 import resnet34_cifar10 as pydtnn_resnet34_cifar10
+from pydtnn.models.resnet50_cifar10 import resnet50_cifar10 as pydtnn_resnet50_cifar10
+from pydtnn.models.resnet101_cifar10 import resnet101_cifar10 as pydtnn_resnet101_cifar10
+from pydtnn.models.resnet152_cifar10 import resnet152_cifar10 as pydtnn_resnet152_cifar10
+from pydtnn.models.inceptionv3_cifar10 import inceptionv3_cifar10 as pydtnn_inceptionv3_cifar10
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.datasets import select
+from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.utils.best_of import BestOf
 
 import torch
 from torch.nn import CrossEntropyLoss
 
+
 dict_test = {
-    "vgg11": (vgg11, create_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
-    "vgg16": (vgg16, create_vgg16, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
-    "vgg19": (vgg19, create_vgg19_imagenet, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "alexnet": (alexnet, create_alexnet_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "densenet121": (densenet121, create_densenet121_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "densenet169": (densenet169, create_densenet169_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "densenet201": (densenet201, create_densenet201_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "resnet18": (resnet18, create_resnet18_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "resnet34": (resnet34, create_resnet34_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "resnet50": (resnet50, create_resnet50_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "resnet101": (resnet101, create_resnet101_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
-    "resnet152": (resnet152, create_resnet152_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
-    "googlenet": (googlenet, create_inceptionv3_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (299, 299, 3)
+    "vgg11": (vgg11, pydtnn_vgg11, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
+    "vgg16": (vgg16, pydtnn_vgg16, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (224, 224, 3)
+    "vgg19": (vgg19, pydtnn_vgg19_imagenet, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+    "alexnet": (alexnet, pydtnn_alexnet_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+    "densenet121": (densenet121, pydtnn_densenet121_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+    "densenet169": (densenet169, pydtnn_densenet169_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+    "densenet201": (densenet201, pydtnn_densenet201_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+    "resnet18": (resnet18, pydtnn_resnet18_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+    "resnet34": (resnet34, pydtnn_resnet34_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+    "resnet50": (resnet50, pydtnn_resnet50_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+    "resnet101": (resnet101, pydtnn_resnet101_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),
+    "resnet152": (resnet152, pydtnn_resnet152_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, not None),
+    "googlenet": (googlenet, pydtnn_inceptionv3_cifar10, (524, 524, 3), "cifar10", {"num_classes": 5}, None),  # (299, 299, 3)
 }
 
 # ----- EXECUTION PARAMETERS ----- #
@@ -293,7 +293,7 @@ def main():
     print("== Testing Inference ==")
     print("=======================")
 
-    dataset: Dataset = find_component(Components.DATASETS, old_model.dataset_name)(old_model)
+    dataset: Dataset = select_dataset(old_model.dataset_name)(old_model)
 
     dataloader = list(dataset._actual_batch_generator(Dataset.Part.TRAIN))
 

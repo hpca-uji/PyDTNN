@@ -8,12 +8,12 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer import LayerAndActivationBase
 from pydtnn.utils.initializers import he_uniform
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
 
-def create_vgg16bn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+def vgg16bn(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
     model = list[LayerAndActivationBase]()
     _ = model.append
 

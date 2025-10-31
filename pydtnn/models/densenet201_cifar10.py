@@ -1,1 +1,1 @@
-from pydtnn.models.densenet201 import create_densenet201 as create_densenet201_cifar10
+from pydtnn.models.densenet201 import densenet201 as densenet201_cifar10

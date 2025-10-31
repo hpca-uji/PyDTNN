@@ -21,9 +21,9 @@ mpirun -np 2 \
   --num-epochs=400 \
   --evaluate=False \
   --optimizer=sgd \
-  --nesterov=False \
+  --optimizer-nesterov=False \
   --learning-rate=0.1 \
-  --momentum=0.9 \
+  --optimizer-momentum=0.9 \
   --loss-func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau,early_stopping \

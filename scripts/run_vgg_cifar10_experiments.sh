@@ -28,8 +28,8 @@ for procs in 6 4 2 1; do
       --evaluate=False \
       --optimizer=sgd \
       --learning-rate=0.001 \
-      --momentum=0.9 \
-      --decay=0 \
+      --optimizer-momentum=0.9 \
+      --optimizer-decay=0 \
       --loss-func=categorical_accuracy,categorical_cross_entropy \
       --schedulers=warm_up,stop_at_loss \
       --warm-up-epochs=5 \

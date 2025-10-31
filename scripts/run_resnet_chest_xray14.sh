@@ -22,9 +22,9 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --num-epochs=15 \
   --evaluate=False \
   --optimizer=sgd \
-  --nesterov=True \
+  --optimizer-nesterov=True \
   --learning-rate=0.1 \
-  --momentum=0.9 \
+  --optimizer-momentum=0.9 \
   --loss-func=categorical_cross_entropy \
   --metrics=categorical_accuracy \
   --schedulers=warm_up,reduce_lr_on_plateau,early_stopping \

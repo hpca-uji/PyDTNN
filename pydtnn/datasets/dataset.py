@@ -10,7 +10,7 @@ from PIL import Image
 import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import BackgroundGenerator, random
+from pydtnn.utils import BackgroundGenerator, find_component, random
 from pydtnn.utils.types import ArrayShape
 
 if TYPE_CHECKING:
@@ -31,8 +31,17 @@ class Dataset(ABC):
         VAL = 1
         TEST = 2
 
-    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: ArrayShape,
-                 output_shape: ArrayShape, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (),
+                 output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+
+        if train_nsamples <= 0:
+            raise ValueError("Dataset has no training samples!")
+        elif test_nsamples <= 0:
+            raise ValueError("Dataset has no test samples!")
+        elif len(input_shape) <= 0:
+            raise ValueError("Dataset has no input shape!")
+        elif len(output_shape) <= 0:
+            raise ValueError("Dataset has no output shape!")
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -288,30 +297,32 @@ class Dataset(ABC):
         return
         yield
 
-    def _data_transform(self, part: Part, data: np.ndarray) -> np.ndarray:
+    def _data_transform(self, part: Part, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
-        data = data.copy()
+        x, y = x.copy(), y.copy()
 
         if self.model.transform_crop:
-            data = self._do_crop(data)
+            x = self._do_crop(x)
 
         if self.model.transform_resize:
-            data = self._do_resize(data)
+            x = self._do_resize(x)
 
         if part is Dataset.Part.TRAIN:
             if self.model.augment_flip:
-                data = self._do_flip_images(data)
+                x = self._do_flip_images(x)
 
             if self.model.augment_crop:
-                data = self._do_crop_images(data)
+                x = self._do_crop_images(x)
 
             if self.model.augment_shuffle:
-                random.shuffle(data)
+                idx = np.arange(x.shape[0])
+                random.shuffle(idx)
+                x, y = x[idx], y[idx]
 
         if self.model.normalize:
-            data = self._do_normalize(data)
+            x = self._do_normalize(x)
 
-        return data
+        return x, y
 
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
@@ -321,7 +332,7 @@ class Dataset(ABC):
 
         def transform_generator():
             for x, y in self._data_generator(part):
-                yield self._data_transform(part, x), y
+                yield self._data_transform(part, x, y)
 
         generator = transform_generator()
         nsamples = self._nsamples[part]
@@ -521,3 +532,8 @@ class Dataset(ABC):
             array = array[None, ...]
         return array
     # ----
+
+
+def select(name: str) -> type[Dataset]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)

@@ -1,6 +1,7 @@
 from abc import abstractmethod
 
 from pydtnn.backends import PromoteToBackend
+from pydtnn.utils import find_component
 from pydtnn.utils.types import ArrayShape, Array
 
 
@@ -20,3 +21,6 @@ class Metric[T: Array](PromoteToBackend):
         pass
 
 
+def select(name: str) -> type[Metric]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)

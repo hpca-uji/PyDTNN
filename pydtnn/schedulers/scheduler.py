@@ -1,4 +1,5 @@
 from pydtnn.backends import PromoteToBackend
+from pydtnn.utils import find_component
 
 
 class Scheduler(PromoteToBackend):
@@ -32,3 +33,8 @@ class Scheduler(PromoteToBackend):
     def log(self, text: str):
         if self.verbose and self.model.comm_rank == 0:
             print(f"{self}: {text}")
+
+
+def select(name: str) -> type[Scheduler]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)
