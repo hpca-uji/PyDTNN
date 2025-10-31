@@ -288,30 +288,32 @@ class Dataset(ABC):
         return
         yield
 
-    def _data_transform(self, part: Part, data: np.ndarray) -> np.ndarray:
+    def _data_transform(self, part: Part, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
-        data = data.copy()
+        x, y = x.copy(), y.copy()
 
         if self.model.transform_crop:
-            data = self._do_crop(data)
+            x = self._do_crop(x)
 
         if self.model.transform_resize:
-            data = self._do_resize(data)
+            x = self._do_resize(x)
 
         if part is Dataset.Part.TRAIN:
             if self.model.augment_flip:
-                data = self._do_flip_images(data)
+                x = self._do_flip_images(x)
 
             if self.model.augment_crop:
-                data = self._do_crop_images(data)
+                x = self._do_crop_images(x)
 
             if self.model.augment_shuffle:
-                random.shuffle(data)
+                idx = np.arange(x.shape[0])
+                random.shuffle(idx)
+                x, y = x[idx], y[idx]
 
         if self.model.normalize:
-            data = self._do_normalize(data)
+            x = self._do_normalize(x)
 
-        return data
+        return x, y
 
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
@@ -321,7 +323,7 @@ class Dataset(ABC):
 
         def transform_generator():
             for x, y in self._data_generator(part):
-                yield self._data_transform(part, x), y
+                yield self._data_transform(part, x, y)
 
         generator = transform_generator()
         nsamples = self._nsamples[part]
