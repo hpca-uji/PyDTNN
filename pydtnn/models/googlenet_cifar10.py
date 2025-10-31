@@ -1,1 +1,1 @@
-from pydtnn.models.googlenet import create_googlenet as create_googlenet_cifar10
+from pydtnn.models.googlenet import googlenet as googlenet_cifar10

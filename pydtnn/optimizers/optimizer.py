@@ -1,7 +1,8 @@
 import numpy as np
 
 from pydtnn.backends import PromoteToBackend
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer import LayerAndActivationBase
+from pydtnn.utils import find_component
 from pydtnn.utils.types import Array
 
 
@@ -21,3 +22,8 @@ class Optimizer[T: Array](PromoteToBackend):
 
     def update(self, layer: LayerAndActivationBase) -> None:
         raise NotImplementedError("method \"update\" of an Optimizer's child class is not implemented")
+
+
+def select(name: str) -> type[Optimizer]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)

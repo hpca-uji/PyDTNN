@@ -1,1 +1,1 @@
-from pydtnn.models.densenet169 import create_densenet169 as create_densenet169_imagenet
+from pydtnn.models.densenet169 import densenet169 as densenet169_imagenet

@@ -1,1 +1,1 @@
-from pydtnn.models.resnet20 import create_resnet20 as create_resnet20_cifar10
+from pydtnn.models.resnet20 import resnet20 as resnet20_cifar10

@@ -20,14 +20,20 @@ from collections import abc
 import numpy as np
 from tqdm import tqdm
 
-from pydtnn import crypt, losses, metrics, utils
+from pydtnn import crypt, utils
 from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer import LayerAndActivationBase
 from pydtnn.losses.loss import Loss
+from pydtnn.datasets.dataset import select as select_dataset
+from pydtnn.losses.loss import select as select_loss
+from pydtnn.optimizers.optimizer import select as select_optimizer
+from pydtnn.metrics.metric import select as select_metic
+from pydtnn.models.model import select as select_model
+from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -345,7 +351,7 @@ class Model[T: Array]:
             self.load_weights_and_bias(self.weights_and_bias_filename)
         # Dataset
         if self.dataset_name:
-            self.dataset: Dataset = utils.find_component(Components.DATASETS, self.dataset_name)(self)
+            self.dataset: Dataset = select_dataset(self.dataset_name)(self)
 
         # Optimizers and LRSchedulers
         if self.learning_rate_scaling:
@@ -354,12 +360,12 @@ class Model[T: Array]:
             # but for now it just a parser option difference that helps testing
             self.learning_rate = self.learning_rate / self.comm_size
 
-        self.optimizer = utils.find_component(Components.OPTIMIZERS, self.optimizer_name).from_model(self)
+        self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
         self.optimizer.set_backend(self._backend)
         self.optimizer.set_model(self)
 
         self.schedulers = [
-            utils.find_component(Components.SCHEDULERS, scheduler_name).from_model(self)
+            select_scheduler(scheduler_name).from_model(self)
             for scheduler_name in filter(None, self.schedulers_names.split(","))
         ]
         for scheduler in self.schedulers:
@@ -550,10 +556,7 @@ class Model[T: Array]:
         return crypt
 
     def _read_model(self, model_name: str) -> None:
-        try:
-            model_module = importlib.import_module(f"pydtnn.models.{model_name}")
-        except Exception as e:
-            raise SystemExit(f"Model {model_name!r} not found!") from e
+        create_model = select_model(model_name)
 
         # NOTE: Dataset is always in NCHW
         c, h, w = self.dataset.input_shape
@@ -571,8 +574,8 @@ class Model[T: Array]:
         self.input_shape = input_shape
         self.output_shape = output_shape
 
-        layers = getattr(model_module, f"create_{model_name}")(input_shape, output_shape)
-        self.add_layers(layers)
+        layers = create_model(input_shape, output_shape)
+        self.add_layers(layers)  # type: ignore
 
         self._initialize()
 
@@ -698,12 +701,12 @@ class Model[T: Array]:
             return
         self._apply_layer_fusion(self.enable_fused_bn_relu, self.enable_fused_conv_relu,
                                  self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu)
-        loss_cls = utils.find_component(Components.LOSSES, self.loss_func_name)
+        loss_cls = select_loss(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
         self.loss_func.set_backend(self._backend)
         self.loss_func.set_model(self)
         self.loss_func.initialize()
-        self.metrics_funcs = [utils.find_component(Components.METRICS, m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
+        self.metrics_funcs = [select_metic(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         for metric in self.metrics_funcs:
             metric.set_backend(self._backend)

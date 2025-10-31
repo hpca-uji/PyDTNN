@@ -5,6 +5,7 @@ import abc
 from typing import TYPE_CHECKING
 
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils import find_component
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -149,3 +150,8 @@ class Tracer(metaclass=PostInitCaller):
 
     def set_default_stream(self, stream):
         pass
+
+
+def select(name: str) -> type[Tracer]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)

@@ -1,1 +1,1 @@
-from pydtnn.models.mobilenetv1 import create_mobilenetv1 as create_mobilenetv1_cifar10
+from pydtnn.models.mobilenetv1 import mobilenetv1 as mobilenetv1_cifar10

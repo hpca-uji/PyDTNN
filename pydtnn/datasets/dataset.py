@@ -10,7 +10,7 @@ from PIL import Image
 import rapidgzip
 
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import BackgroundGenerator, random
+from pydtnn.utils import BackgroundGenerator, find_component, random
 from pydtnn.utils.types import ArrayShape
 
 if TYPE_CHECKING:
@@ -31,8 +31,17 @@ class Dataset(ABC):
         VAL = 1
         TEST = 2
 
-    def __init__(self, model: "Model", train_nsamples: int, test_nsamples: int, input_shape: ArrayShape,
-                 output_shape: ArrayShape, force_test_as_validation=False, debug=False):
+    def __init__(self, model: "Model", train_nsamples: int = 0, test_nsamples: int = 0, input_shape: ArrayShape = (),
+                 output_shape: ArrayShape = (), force_test_as_validation=False, debug=False):
+
+        if train_nsamples <= 0:
+            raise ValueError("Dataset has no training samples!")
+        elif test_nsamples <= 0:
+            raise ValueError("Dataset has no test samples!")
+        elif len(input_shape) <= 0:
+            raise ValueError("Dataset has no input shape!")
+        elif len(output_shape) <= 0:
+            raise ValueError("Dataset has no output shape!")
 
         if len(input_shape) != 3:
             warnings.warn(f"Input shape does not have 3 dimensions ({input_shape}), it may cause issues!", RuntimeWarning)
@@ -523,3 +532,8 @@ class Dataset(ABC):
             array = array[None, ...]
         return array
     # ----
+
+
+def select(name: str) -> type[Dataset]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)

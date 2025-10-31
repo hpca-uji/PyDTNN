@@ -1,1 +1,1 @@
-from pydtnn.models.vgg16 import create_vgg16 as create_vgg16_cifar10
+from pydtnn.models.vgg16 import vgg16 as vgg16_cifar10

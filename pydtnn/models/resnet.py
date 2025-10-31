@@ -10,7 +10,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layers.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
 # NOTE: PyDTNN follows PyTorch's definitions
@@ -59,4 +59,4 @@ def resNet50(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequenc
     return model
 
 
-create_resnet = resNet50
+resnet = resNet50

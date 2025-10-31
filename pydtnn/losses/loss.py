@@ -1,6 +1,5 @@
-import abc
-
 from pydtnn.backends import PromoteToBackend
+from pydtnn.utils import find_component
 from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
 
@@ -17,3 +16,8 @@ class Loss[T: Array](PromoteToBackend):
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         raise NotImplementedError()
+
+
+def select(name: str) -> type[Loss]:
+    assert __package__, "Package not found!"
+    return find_component(__package__, name)
