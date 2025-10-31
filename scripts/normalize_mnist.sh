@@ -8,7 +8,7 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 python3 "${dir:?}/normalize_dataset.py" \
   --model=simplecnn \
-  --dataset=mnist \
-  --dataset-path=datasets/mnist \
+  --dataset=chestxray \
+  --dataset-path=datasets/chestxray \
   --parallel=sequential \
   --shared-storage=True

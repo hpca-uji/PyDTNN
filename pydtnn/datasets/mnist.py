@@ -29,7 +29,7 @@ class MNIST(Dataset):
 
     Normalize (z-score):
     offset: -0.131
-    scale:  +3.245
+    scale:  +3.237
     """
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):

@@ -28,8 +28,8 @@ class CIFAR10(Dataset):
     e8aa088b9774a44ad217101d2e2569f823d2d491 cifar-10-binary.tar.gz https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
 
     Normalize (z-score):
-    offset: -0.472
-    scale:  +3.985
+    offset: -0.475
+    scale:  +3.964
     """
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):

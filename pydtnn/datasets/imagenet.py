@@ -100,8 +100,8 @@ class ImageNet(Dataset):
     092a94ed6a05454b8b72d1c4ecf336fa48d37fda ILSVRC2012_devkit_t12.tar.gz
 
     Normalize (z-score):
-    offset: -0.449
-    scale:  +3.537
+    offset: pending
+    scale:  pending
     """
 
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
