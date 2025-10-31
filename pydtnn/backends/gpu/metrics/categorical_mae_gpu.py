@@ -4,7 +4,6 @@ from pydtnn.metrics.categorical_mae import CategoricalMAE
 
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
@@ -13,7 +12,7 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class CategoricalMAEGPU(MetricGPU, CategoricalMAE[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        _name = "categorical_accuracy"
+        _name = "categorical_mae"
         code = """
         #define SHIFT_2D_AR(p, i, j, dim_i) (p + ((i * dim_i) + j))
 
@@ -36,42 +35,38 @@ class CategoricalMAEGPU(MetricGPU, CategoricalMAE[TensorGPU]):
                     val_pred = (*SHIFT_2D_AR(y_pred, idx, i, n));
                     
                     error = ({T}) (val_targ - val_pred);
-                    (error * error)
-                    if ( (i == 0) || (max < neg))
-                        max = neg;
+                    error = error > 0 ? error : (-1) * error; // absolute error
+                    *(local_res + idx) += error;
                 }}
-                max = ({T}) ((max - pos) + 1);
-                *(local_res + idx) = ({T}) (max > 0 ? max : 0);
             }}
-            
-            
+
+            // Getting the mean and accumulating it on the output's buffer.
             if(base_idx == 0)
             {{
                 for(idx = 1; idx < n; idx++)
-                    *(res) += *(local_res + idx);
+                    *(local_res) += *(local_res + idx);
 
-                *(res) = ({T}) (*(res) / n);
+                *(res) = ({T}) (*(local_res) / (n * labels));
             }}
         }}
-        """..format(T=DTYPE2CTYPE[self.model.dtype],
+        """.format(T=DTYPE2CTYPE[self.model.dtype],
                    name=_name)
         
         module = SourceModule(code).get_function(_name)
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:
-        b = y_targ.shape[0]
-        # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:        
+        n = np.int32(y_pred.shape[0])
+        num_classes = np.int32(y_pred.shape[1])
 
-        # Obtenemos la matriz con los valores predichos donde deberían haber 1s.
-        y = y_pred[np.arange(b), np.argmax(y_targ, axis=1)]
+        res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
+                                            tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        local_res = TensorGPU.create_zeros_tensor(shape=(y_pred.shape[0], ), dtype=np.dtype(self.model.dtype), 
+                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-        # Lo invertimos (0 * -1 + 1 = 1; (1*-1 +1 = 0)
-        np.multiply(y, -1, out=y, dtype=self.model.dtype)
-        np.add(y, 1, out=y, dtype=self.model.dtype)
-
-        # Acamos el valor absoluto
-        np.absolute(y, out=y, dtype=self.model.dtype, casting="unsafe")
-
-        # Sumamos lso valores
-        return np.sum(y)
+        self.kernel(y_targ.ary, y_pred.ary, 
+                    res.ary, local_res.ary,
+                    n, num_classes,
+                    grid=self.grid, block=self.block,
+                    stream=self.model.stream)
+        return res

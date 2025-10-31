@@ -13,26 +13,43 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class CategoricalMSEGPU(MetricGPU, CategoricalMSE[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        _name = "categorical_accuracy"
+        _name = "categorical_mse"
         code = """
-        __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, int b, int n)
+        #define SHIFT_2D_AR(p, i, j, dim_i) (p + ((i * dim_i) + j))
+
+        __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, {T} *local_res, int n, int labels)
         {{
-            int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < b)
+            int i, idx;
+            {T} val_targ, val_pred, error;
+        
+            int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
+            int workers = blockDim.x * gridDim.x;
+
+            for(idx = base_idx; idx < n; idx += workers)
             {{
-                int i = 0, max = 0;
-                {T} max_value = y_pred[idx * n];
-                for ( i = 1; i < n; i++ ) 
+                for(i = 0, sum = ({T}) 0.0, max = ({T}) 0.0; i < labels; i++)
                 {{
-                    if ( y_pred[idx * n + i] > max_value )
-                    {{
-                        max = i;
-                        max_value = y_pred[idx * n + i];
-                    }}
+                    // val_targ = y_targ[idx][i];
+                    val_targ = (*SHIFT_2D_AR(y_targ, idx, i, n));
+
+                    // val_pred = y_pred[idx][i];
+                    val_pred = (*SHIFT_2D_AR(y_pred, idx, i, n));
+                    
+                    error = ({T}) (val_targ - val_pred);
+                    error *= error;  //squared error
+
+                    (*(local_res + idx)) += error;
                 }}
-                res[idx] = y_targ[idx * n + max];
             }}
-            return;
+
+            // Getting the mean and accumulating it on the output's buffer.
+            if(base_idx == 0)
+            {{
+                for(idx = 1; idx < n; idx++)
+                    (*local_res) += (*(local_res + idx));
+
+                (*res) = ({T}) (*(local_res) / (n * labels));
+            }}
         }}
         """.format(T=DTYPE2CTYPE[self.model.dtype],
                    name=_name)
@@ -40,12 +57,18 @@ class CategoricalMSEGPU(MetricGPU, CategoricalMSE[TensorGPU]):
         module = SourceModule(code).get_function(_name)
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:
-        b = y_targ.shape[0]
-        # return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:        
+        n = np.int32(y_pred.shape[0])
+        num_classes = np.int32(y_pred.shape[1])
 
-        y = y_pred[np.arange(b), np.argmax(y_targ, axis=1)]
-        np.multiply(y, -1, out=y, dtype=self.model.dtype)
-        np.add(y, 1, out=y, dtype=self.model.dtype)
-        np.square(y, out=y, dtype=self.model.dtype, casting="unsafe")
-        return y.mean(dtype=self.model.dtype)
+        res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
+                                            tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        local_res = TensorGPU.create_zeros_tensor(shape=(y_pred.shape[0], ), dtype=np.dtype(self.model.dtype), 
+                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+
+        self.kernel(y_targ.ary, y_pred.ary, 
+                    res.ary, local_res.ary,
+                    n, num_classes,
+                    grid=self.grid, block=self.block,
+                    stream=self.model.stream)
+        return res

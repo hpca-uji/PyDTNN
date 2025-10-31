@@ -12,7 +12,7 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        _name = "categorical_accuracy"
+        _name = "regression_mae"
         code = """
 
         #define SHIFT_2D_AR(p, i, j, dim_i) (p + ((i * dim_i) + j))
@@ -44,8 +44,13 @@ class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
             }}
 
             if(base_idx == 0)
+            {{
+                (*res) = (*local_res);
                 for(idx = 1; (idx < n); idx++)
-                    *(res) += *(local_res + idx);
+                    (*res) += (*(local_res + idx));
+                
+                (*res) /= (n * labels);
+            }}
         }}
         """.format(T=DTYPE2CTYPE[self.model.dtype],
                    name=_name)
@@ -54,9 +59,9 @@ class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
         return module
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:
-        target_classes = self.model.output_shape[0]
-        num_classes = np.int32(target_classes)
-        n = np.int32(y_pred.size)
+        
+        n = np.int32(y_pred.shape[0])
+        num_classes = np.int32(y_pred.shape[1])
 
         res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)

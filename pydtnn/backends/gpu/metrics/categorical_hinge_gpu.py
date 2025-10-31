@@ -4,7 +4,6 @@ from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
@@ -13,7 +12,7 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        _name = "categorical_accuracy"
+        _name = "categorical_hinge"
         code = """
 
         #define SHIFT_2D_AR(p, i, j, dim_i) (p + ((i * dim_i) + j))
@@ -49,9 +48,9 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
             if(base_idx == 0)
             {{
                 for(idx = 1; idx < n; idx++)
-                    *(res) += *(local_res + idx);
+                    *(local_res) += *(local_res + idx);
 
-                *(res) = ({T}) (*(res) / n);
+                *(res) = ({T}) (*(local_res) / (n * labels));
             }}
         }}
         """.format(T=DTYPE2CTYPE[self.model.dtype],
@@ -60,10 +59,9 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
         module = SourceModule(code).get_function(_name)
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:
-        target_classes = self.model.output_shape[0]
-        num_classes = np.int32(target_classes)
-        n = np.int32(y_pred.size)
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:        
+        n = np.int32(y_pred.shape[0])
+        num_classes = np.int32(y_pred.shape[1])
 
         res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
                                             tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
