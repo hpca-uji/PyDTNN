@@ -126,118 +126,116 @@ The PyDTNN framework comes with a utility launcher called
 
    -  ``--model``: Neural network model: ``simplemlp``, ``simplecnn``,
       ``alexnet``, ``vgg11``, ``vgg16``, etc. Default: ``None``.
-   -  ``--batch_size``: Batch size per MPI rank. Default: ``None``.
-   -  ``--global_batch_size``: Batch size between all MPI ranks. Default: ``None``.
-   -  ``--dtype``: Datatype to use: ``float32``, ``float64``. Default: float32.
-   -  ``--num_epochs``: Number of epochs to perform. Default: 1.
-   -  ``--steps_per_epoch``: Trims the training data depending on the
-      given number of steps per epoch. Default: 0, i.e., do not trim.
+   -  ``--batch-size``: Batch size per MPI rank. Default: ``None``.
+   -  ``--global-batch-size``: Batch size between all MPI ranks. Default: ``None``.
+   -  ``--dtype``: Datatype to use: ``float32``, ``float64``. Default: ``float32``.
+   -  ``--num-epochs``: Number of epochs to perform. Default: ``1``.
+   -  ``--steps-per-epoch``: Trims the training data depending on the
+      given number of steps per epoch. Default: ``0``, i.e., do not trim.
    -  ``--evaluate``: Evaluate the model before and after training the
-      model. Default: False.
-   -  ``--evaluate_only``: Only evaluate the model. Default: False.
-   -  ``--weights_and_bias_filename``: Load weights and bias from file.
+      model. Default: ``False``.
+   -  ``--evaluate-only``: Only evaluate the model. Default: ``False``.
+   -  ``--weights-and-bias-filename``: Load weights and bias from file.
       Default: ``None``.
-   -  ``--history_file``: Filename to save training loss and metrics.
-   -  ``--shared_storage``: If ``True`` ranks assume they share the file
-      system. Default: True.
-   -  ``--model_sync_freq``: Number of batches between model syncronization.
+   -  ``--history-file``: Filename to save training loss and metrics.
+   -  ``--shared-storage``: If ``True`` ranks assume they share the file
+      system. Default: ``True``.
+   -  ``--model-sync-freq``: Number of batches between model syncronization.
       The ``0`` value syncronizes gradients every batch. Positive values
-      syncronizes gradients and weights every N batches. Default: 0.
-   -  ``--model_sync_alg``: Aggregation method used to syncronize models:
+      syncronizes gradients and weights every N batches. Default: ``0``.
+   -  ``--model-sync-alg``: Aggregation method used to syncronize models:
       ``avg``, ``wavg`` or ``invwavg``. Default: ``avg``.
-   -  ``--model_sync_participation``: Rank participation to syncronize models:
+   -  ``--model-sync-participation``: Rank participation to syncronize models:
       ``all`` or ``avail2all``. Default: ``all``.
-   -  ``--model_sync_min_avail``: Minumun ranks with data required to
-      syncronize models. Default: 0.
-   -  ``--initial_model_sync``: Sincronize models on training start. Default: True.
-   -  ``--final_model_sync``: Sincronize models on training end. Default: True.
-   -  ``--tensor_format``: Data format to be used: ``NHWC`` or ``NCHW``.
+   -  ``--model-sync-min-avail``: Minumun ranks with data required to
+      syncronize models. Default: ``0``.
+   -  ``--initial-model-sync``: Sincronize models on training start. Default: ``True``.
+   -  ``--final-model-sync``: Sincronize models on training end. Default: ``True``.
+   -  ``--tensor-format``: Data format to be used: ``NHWC`` or ``NCHW``.
       Optionally, the ``AUTO`` value sets ``NCHW`` when the option
-      ``--enable_gpu`` is set and ``NHWC`` otherwise. Default: ``NHWC``.
+      ``--enable-gpu`` is set and ``NHWC`` otherwise. Default: ``NHWC``.
 
 -  Dataset parameters:
 
    -  ``--dataset``: Dataset to train: ``mnist``, ``cifar10``,
       ``imagenet``, ``archive``, ``folder``, ``chestxray`` or ``synthetic``. Default: ``None``.
-   -  ``--dataset_path``: Path to dataset folder.
-   -  ``--synthetic_train_samples``: Number of synthetic train sample. Default: 1000.
-   -  ``--synthetic_test_samples``: Number of synthetic train sample. Default: 100.
-   -  ``--synthetic_input_shape``: Number of synthetic input shape (coma separated). Default: 3,32,32.
-   -  ``--synthetic_output_shape``: Number of synthetic output shape (coma separated). Default: 10.
-   -  ``dataset_percentage``: Percentage of dataset that will be used. 
-      If it is ``0``: it is deactivated; if is is a value below ``1`` (and above 0): 
+   -  ``--dataset-path``: Path to dataset folder.
+   -  ``--synthetic-train-samples``: Number of synthetic train sample. Default: ``1000``.
+   -  ``--synthetic-test-samples``: Number of synthetic train sample. Default: ``100``.
+   -  ``--synthetic-input-shape``: Number of synthetic input shape (coma separated). Default: ``3,32,32``.
+   -  ``--synthetic-output-shape``: Number of synthetic output shape (coma separated). Default: ``10``.
+   -  ``--dataset-percentage``: Percentage of dataset that will be used. 
+      If it is ``0``: it is deactivated; if is is a value below ``1`` (and above ``0``): 
       it will perform undersampling; and if is is a value above ``1``: it will perform 
-      oversampling. Default: 0."
-   -  ``--test_as_validation``: Prevent making partitions on training
+      oversampling. Default: ``0``.
+   -  ``--test-as-validation``: Prevent making partitions on training
       data for training+validation data, use test data for validation.
-      True if specified.
-   -  ``--validation_split``: Split between training and validation
+      ``True`` if specified.
+   -  ``--validation-split``: Split between training and validation
       data.
-   -  ``--augment_flip``: Flip horizontally training images. Default:
-      False.
-   -  ``--augment_flip_prob``: Probability to flip training images.
-      Default: 0.5.
-   -  ``--augment_crop``: Crop training images. Default: False.
-   -  ``--augment_crop_size``: Size to crop training images. Default: 16.
-   -  ``--augment_crop_prob``: Probability to crop training images.
-      Default: 0.5.
-   -  ``--validation_split``: Split between training and validation
+   -  ``--augment-flip``: Flip horizontally training images. Default:
+      ``False``.
+   -  ``--augment-flip-prob``: Probability to flip training images.
+      Default: ``0.5``.
+   -  ``--augment-crop``: Crop training images. Default: ``False``.
+   -  ``--augment-crop-size``: Size to crop training images. Default: ``16``.
+   -  ``--augment-crop-prob``: Probability to crop training images.
+      Default: ``0.5``.
+   -  ``--validation-split``: Split between training and validation
       data.
-   -  ``--transform_crop``: Crop the images. True if specified.
-   -  ``--transform_crop_perc``: Central crop of the images. Default: 0.875.
-   -  ``--transform_resize``: Resize the images. True if specified.
-   -  ``--transform_resize_size``: New size of the images. Default: 300.
-   -  ``--normalize``: Normalize dataset. Default: False.
-   -  ``--normalize_offset``: Offset samples by a value. Default: -0.45.
-   -  ``--normalize_scale``: Scale samples by a value. Default: 3.75.
+   -  ``--transform-crop``: Crop the images. ``True`` if specified.
+   -  ``--transform-crop-perc``: Central crop of the images. Default: ``0.875``.
+   -  ``--transform-resize``: Resize the images. ``True`` if specified.
+   -  ``--transform-resize-size``: New size of the images. Default: ``300``.
+   -  ``--normalize``: Normalize dataset. Default: ``False``.
+   -  ``--normalize-offset``: Offset samples by a value. Default: ``-0.45``.
+   -  ``--normalize-scale``: Scale samples by a value. Default: ``3.75``.
 
 -  Optimization parameters:
 
-   -  ``--enable_best_of``: Enable the BestOf auto-tuner.
-   -  ``--enable_memory_cache``: Enable the memory cache module to
+   -  ``--enable-best-of``: Enable the ``BestOf`` auto-tuner.
+   -  ``--enable-memory-cache``: Enable the memory cache module to
       use persistent memory.
-   -  ``--enable_fused_bn_relu``: Fuse BatchNormalization and Relu
-      layers. True if specified.
-   -  ``--enable_fused_conv_relu``: Fuse Conv2D and Relu layers.
-      True if specified.
-   -  ``--enable_fused_conv_bn``: Fuse Conv2D and BatchNormalization
-      layers. True if specified.
-   -  ``--enable_fused_conv_bn_relu``: Fuse Conv2D and
-      BatchNormalization and Relu layers. Default: False.
+   -  ``--enable-fused-bn-relu``: Fuse ``BatchNormalization`` and ``Relu``
+      layers. ``True`` if specified.
+   -  ``--enable-fused-conv-relu``: Fuse ``Conv2D`` and ``Relu`` layers.
+      ``True`` if specified.
+   -  ``--enable-fused-conv-bn``: Fuse ``Conv2D`` and ``BatchNormalization``
+      layers. ``True`` if specified.
+   -  ``--enable-fused-conv-bn-relu``: Fuse ``Conv2D`` and
+      ``BatchNormalization`` and ``Relu`` layers. Default: ``False``.
 
 -  Convolution operation parameters:
 
-   -  ``--enable_conv_i2c``: Use ConvI2C module to
-      realize convolutions in Conv2D layers. True if specified.
-   -  ``--enable_conv_gemm``: Use ConvGemm (implicit gemm) module to
-      realize convolutions in Conv2D layers. True if specified.
-   -  ``--enable_conv_winograd``: Use the Winograd algorithm to
-      realize convolutions in Conv2D layers. True if specified.
-   -  ``--conv_direct_method``: The ConvDirect module to
-      realize convolutions in Conv2D layers.
-   -  ``--conv_direct_method``: Use ConvDirect module to
-      realize convolutions in Conv2D layers. True if specified.
-   -  ``--conv_direct_methods_for_best_of``: ConvDirect modules to
+   -  ``--enable-conv-i2c``: Use ``ConvI2C`` module to
+      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
+   -  ``--enable-conv-gemm``: Use ConvGemm (implicit gemm) module to
+      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
+   -  ``--enable-conv-winograd``: Use the Winograd algorithm to
+      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
+   -  ``--conv-direct-method``: The ``ConvDirect`` module to
+      realize convolutions in ``Conv2D`` layers.
+   -  ``--conv-direct-method``: Use ``ConvDirect`` module to
+      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
+   -  ``--conv-direct-methods-for-best-of``: ``ConvDirect`` modules to
       compare in ``best_of`` option if specified.
 
 -  Optimizer parameters:
 
    -  ``--optimizer``: Optimizers: ``sgd``, ``rmsprop``, ``adam``,
       ``nadam``. Default: ``sgd``. 
-   -  ``--learning_rate``: Learning rate. Default: 0.01.
-   -  ``--learning_rate_scaling``: Scale learning rate in data
-      parallelism: new\_lr = lr / num\_procs.  True if specified.
-   -  ``--momentum``: Decay rate for ``sgd`` optimizer. Default: 0.9.
-      optimizers. Default: 1e-8.
-   -  ``--decay``: Decay rate for optimizers. Default: 0.0.
-   -  ``--nesterov``: Whether to apply Nesterov momentum. Default: False.
-   -  ``--beta1``: Variable for ``adam``, ``nadam`` optimizers. Default:
-      0.99.
-   -  ``--beta2``: Variable for ``adam``, ``nadam`` optimizers. Default:
-      0.999.
-   -  ``--epsilon``: Variable for ``rmsprop``, ``adam``, ``nadam``. Default=1e-7.
-   -  ``--rho``: Variable for ``rmsprop`` optimizers. Default: 0.99.
-   -  ``--loss_func``: Loss functions that is evaluated on each trained
+   -  ``--learning-rate``: Learning rate. Default: ``0.01``.
+   -  ``--learning-rate-scaling``: Scale learning rate in data
+      parallelism: ``new_lr = lr/num_procs``. ``True`` if specified.
+   -  ``--optimizer-momentum``: Decay rate for ``sgd`` optimizer. Default: ``0.9``.
+      optimizers. Default: ``1e-8``.
+   -  ``--optimizer-decay``: Decay rate for optimizers. Default: ``0.0``.
+   -  ``--optimizer-nesterov``: Whether to apply Nesterov momentum. Default: ``False``.
+   -  ``--optimizer-beta1``: Variable for ``adam``, ``nadam`` optimizers. Default: ``0.99``.
+   -  ``--optimizer-beta2``: Variable for ``adam``, ``nadam`` optimizers. Default: ``0.999``.
+   -  ``--optimizer-epsilon``: Variable for ``rmsprop``, ``adam``, ``nadam``. Default: ``1e-7``.
+   -  ``--optimizer-rho``: Variable for ``rmsprop`` optimizers. Default: ``0.99``.
+   -  ``--loss-func``: Loss functions that is evaluated on each trained
       batch: ``categorical_cross_entropy``, ``binary_cross_entropy``. Default ``categorical_cross_entropy``.
    -  ``--metrics``: List of comma-separated metrics that are evaluated
       on each trained batch:
@@ -250,70 +248,69 @@ The PyDTNN framework comes with a utility launcher called
       ``warm_up``, ``early_stopping``, ``reduce_lr_on_plateau``,
       ``reduce_lr_every_nepochs``, ``model_checkpoint``. 
       Default: ``early_stopping,reduce_lr_on_plateau,model_checkpoint``.
-   -  ``--warm_up_batches``: Number of batches (ramp up) that the LR is
-      scaled up from 0 until LR. Default: 5.
-   -  ``--early_stopping_metric``: Loss metric monitored by
-      early\_stopping LR scheduler. Default: ``val_categorical_cross_entropy``.
-   -  ``--early_stopping_patience``: Number of epochs with no
-      improvement after which training will be stopped. Default: 10.
-   -  ``--early_stopping_minimize``: Whether to minize the metric.
-      If False, it will maximize. Default: True.
-   -  ``--reduce_lr_on_plateau_metric``: Loss metric monitored by
-      reduce\_lr\_on\_plateau LR scheduler. Default: ``val_categorical_cross_entropy``.
-   -  ``--reduce_lr_on_plateau_factor``: Factor by which the learning
-      rate will be reduced. new\_lr = lr \* factor. Default: 0.1.
-   -  ``--reduce_lr_on_plateau_patience``: Number of epochs with no
-      improvement after which LR will be reduced. Default: 5.
-   -  ``--reduce_lr_on_plateau_min_lr``: Lower bound on the learning
-      rate. Default: 0.
-   -  ``--reduce_lr_every_nepochs_factor``: Factor by which the learning
-      rate will be reduced. new\_lr = lr \* factor. Default: 0.1.
-   -  ``--reduce_lr_every_nepochs_nepochs``: Number of epochs after
-      which LR will be periodically reduced. Default: 5.
-   -  ``--reduce_lr_every_nepochs_min_lr``: Lower bound on the learning
-      rate. Default: 0.
-   -  ``--stop_at_loss_metric``: Loss metric monitored by
-      stop\_at\_loss LR scheduler. Default: ``val_accuracy``.
-   -  ``--stop_at_loss_threshold``: Metric threshold monitored by
-      stop\_at\_loss LR scheduler. Default: 0.
-   -  ``--model_checkpoint_metric``: Loss metric monitored by
-      model\_checkpoint LR scheduler. Default: ``val_categorical_cross_entropy``
-   -  ``--model_checkpoint_save_freq``: Frequency (in epochs) at which
-      the model weights and bias will be saved by the model\_checkpoint
-      LR scheduler. Default: 2.
+   -  ``--warm-up-batches``: Number of batches (ramp up) that the LR is
+      scaled up from 0 until LR. Default: ``5``.
+   -  ``--early-stopping-metric``: Loss metric monitored by
+      ``early_stopping`` scheduler. Default: ``val_categorical_cross_entropy``.
+   -  ``--early-stopping-patience``: Number of epochs with no
+      improvement after which training will be stopped. Default: ``10``.
+   -  ``--early-stopping-minimize``: Whether to minize the metric.
+      If False, it will maximize. Default: ``True``.
+   -  ``--reduce-lr-on-plateau-metric``: Loss metric monitored by
+      ``reduce_lr_on_plateau`` scheduler. Default: ``val_categorical_cross_entropy``.
+   -  ``--reduce-lr-on-plateau-factor``: Factor by which the learning
+      rate will be reduced. ``new_lr = lr *factor``. Default: ``0.1``.
+   -  ``--reduce-lr-on-plateau-patience``: Number of epochs with no
+      improvement after which LR will be reduced. Default: ``5``.
+   -  ``--reduce-lr-on-plateau-min-lr``: Lower bound on the learning
+      rate. Default: ``0``.
+   -  ``--reduce-lr-every-nepochs-factor``: Factor by which the learning
+      rate will be reduced. ``new_lr = lr*factor``. Default: ``0.1``.
+   -  ``--reduce-lr-every-nepochs-nepochs``: Number of epochs after
+      which LR will be periodically reduced. Default: ``5``.
+   -  ``--reduce-lr-every-nepochs-min-lr``: Lower bound on the learning
+      rate. Default: ``0``.
+   -  ``--stop-at-loss-metric``: Loss metric monitored by
+      ``stop_at_loss`` scheduler. Default: ``val_accuracy``.
+   -  ``--stop-at-loss-threshold``: Metric threshold monitored by
+      ``stop_at_loss`` scheduler. Default: ``0``.
+   -  ``--model-checkpoint-metric``: Loss metric monitored by
+      ``model_checkpoint`` scheduler. Default: ``val_categorical_cross_entropy``
+   -  ``--model-checkpoint-save-freq``: Frequency (in epochs) at which
+      the model weights and bias will be saved by the ``model_checkpoint``
+      scheduler. Default: ``2``.
 
 -  Parallelization and other performance-related parameters:
 
    -  ``--parallel``: Data parallelization modes: ``sequential``,
       ``data`` (MPI). Default: ``sequential``.
-   -  ``--use_blocking_mpi``: Enable blocking MPI primitives. Default: True.
-   -  ``--use_mpi_buffers``: Enable the use of MPI buffers. 
-      Possible values: ``True`` (MPI operations by buffer), ``False`` (MPI operations by object) or undefined (auto-select the better option). Default: undefined.
-   -  ``--enable_gpu``: Enable GPU, use cuDNN library. Default: False.
-   -  ``--enable_gpudirect``: Enable GPU pinned memory for gradients
-      when using a CUDA-aware MPI version. Default: False.
-   -  ``--enable_nccl``: Enable the use of the NCCL library for 
+   -  ``--use-blocking-mpi``: Enable blocking MPI primitives. Default: ``True``.
+   -  ``--use-mpi-buffers``: Enable the use of MPI buffers. 
+      Possible values: ``True`` (MPI operations by buffer), ``False`` (MPI operations by object) or ``None`` (auto-select the better option). Default: ``None``.
+   -  ``--enable-gpu``: Enable GPU, use ``cuDNN`` library. Default: ``False``.
+   -  ``--enable-gpudirect``: Enable GPU pinned memory for gradients
+      when using a CUDA-aware MPI version. Default: ``False``.
+   -  ``--enable-nccl``: Enable the use of the ``NCCL`` library for 
       collective communications on GPUs. This option can only be set 
-      with ``--enable_gpu``. Default. False.
-   -  ``--enable_cudnn_auto_conv_alg``: Let cuDNN to select the best
-      performing convolution algorithm. Default: True.
+      with ``--enable-gpu``. Default. ``False``.
+   -  ``--enable-cudnn-auto-conv-alg``: Let ``cuDNN`` to select the best
+      performing convolution algorithm. Default: ``True``.
 
 -  Encryption parameters:
 
-   - ``--encryption``: Encryption library: ``tenseal``, ``openfhe``, ```` (None). Default ```` (None).
-   - ``--encryption_poly_degree``: Encryption polynomial degree.. 2 ^ value. Default: 13.
-   - ``--encryption_global_scale``: Encryption global scale. 2 ^ value. Default: 40.
-   - ``--encryption_security_level``: Encryption security level: 0 (Not set), 128, 192, 256. Default: 128.
+   - ``--encryption``: Encryption library: ``tenseal``, ``openfhe``, ``None``. Default ``None``.
+   - ``--encryption-poly-degree``: Encryption polynomial degree. ``2 ^ value``. Default: ``13``.
+   - ``--encryption-global-scale``: Encryption global scale. ``2 ^ value``. Default: ``40``.
+   - ``--encryption-security-level``: Encryption security level: ``0`` (Not set), ``128``, ``192``, ``256``. Default: ``128``.
 
 -  Tracing and profiling parameters:
 
-   -  ``--tracing``: Obtain Simple/Extrae-based traces. Default: False.
-   -  ``--tracer_output``: Output file to store the Simple/Extrae-based 
-      traces.
-   -  ``--tracer_pmlib_server``: Address of PMlib tracer server. Default: ``127.0.0.1``.
-   -  ``--tracer_pmlib_port``: Port of PMlib tracer server. Default: 6526.
-   -  ``--tracer_pmlib_device``: Port of PMlib tracer device.
-   -  ``--profile``: Obtain cProfile profiles. Default: False.
+   -  ``--tracing``: Obtain Simple/Extrae-based traces. Default: ``False``.
+   -  ``--tracer-output``: Output file to store the Simple/Extrae-based traces.
+   -  ``--tracer-pmlib-server``: Address of PMlib tracer server. Default: ``127.0.0.1``.
+   -  ``--tracer-pmlib-port``: Port of PMlib tracer server. Default: ``6526``.
+   -  ``--tracer-pmlib-device``: Port of PMlib tracer device.
+   -  ``--profile``: Obtain cProfile profiles. Default: ``False``.
 
 Example: distributed training of a CNN for the MNIST dataset
 ------------------------------------------------------------
@@ -326,28 +323,28 @@ parallelism and 12 MPI ranks each using 4 OpenMP threads::
         pydtnn-benchmark \
           --model=simplecnn \
           --dataset=mnist \
-          --dataset_path=datasets/mnist \
-          --dataset_train_path=datasets/mnist \
-          --dataset_test_path=datasets/mnist \
-          --test_as_validation=False \
-          --augment_flip=True \
-          --batch_size=64 \
-          --validation_split=0.2 \
-          --num_epochs=50 \
+          --dataset-path=datasets/mnist \
+          --dataset-train-path=datasets/mnist \
+          --dataset-test-path=datasets/mnist \
+          --test-as-validation=False \
+          --augment-flip=True \
+          --batch-size=64 \
+          --validation-split=0.2 \
+          --num-epochs=50 \
           --evaluate=True \
           --optimizer=adam \
-          --learning_rate=0.01 \
-          --loss_func=categorical_cross_entropy \
+          --learning-rate=0.01 \
+          --loss-func=categorical_cross_entropy \
           --schedulers=warm_up,reduce_lr_every_nepochs \
-          --reduce_lr_every_nepochs_factor=0.5 \
-          --reduce_lr_every_nepochs_nepochs=30 \
-          --reduce_lr_every_nepochs_min_lr=0.001 \
-          --early_stopping_metric=val_categorical_cross_entropy \
-          --early_stopping_patience=20 \
+          --reduce-lr-every-nepochs-factor=0.5 \
+          --reduce-lr-every-nepochs-nepochs=30 \
+          --reduce-lr-every-nepochs-min-lr=0.001 \
+          --early-stopping-metric=val_categorical_cross_entropy \
+          --early-stopping-patience=20 \
           --parallel=sequential \
           --tracing=False \
           --profile=False \
-          --enable_gpu=True \
+          --enable-gpu=True \
           --dtype=float32
 
 
@@ -495,14 +492,14 @@ using 4 OpenMP threads::
     $ pydtnn-benchmark \
         --model=vgg16_cifar10 \
         --dataset=cifar10 \
-        --dataset_path=datasets/cifar10/cifar-10-binary.tar.gz \
-        --evaluate_only=True \
-        --batch_size=64 \
-        --validation_split=0.2 \
-        --weights_and_bias_filename=vgg16-weights-nhwc.npz \
+        --dataset-path=datasets/cifar10/cifar-10-binary.tar.gz \
+        --evaluate-only=True \
+        --batch-size=64 \
+        --validation-split=0.2 \
+        --weights-and-bias-filename=vgg16-weights-nhwc.npz \
         --tracing=False \
         --profile=False \
-        --enable_gpu=True \
+        --enable-gpu=True \
         --dtype=float32
 
 
