@@ -23,15 +23,18 @@
 
   It can easly cause circular imports if combined with submodules.
 
-# Coding recommendations
 - **Every CUDA's kernel must have a different name**
+
   If two kernels have the same name, CUDA will not identify the correct function and will throw and error.
 
 - **Always test the new changes in every backend (cpu, gpu, ...)**
-  Be careful: any change made in the abstract class in order to improve one backend may broke something in the other backends.
 
-- **In the CPU' backend, it is better to use the numpy's functions**
-  Eg: even if technically are the same, sometimes, numpy.add(a, b, out=a) works better "a += b" (where "a" and/or "b" are numpy arrays)
+  Be careful: any change made in the abstract class in order to improve one backend may break something in the other backends.
+
+- **Use numpy's functions over its operands**
+
+  Even if technically they are the same, sometimes, numpy.add(a, b, out=a) has better precision than "a += b".
 
 # Planned
 - Extract GPU `SourceModule` to `.cu` files.
+- Replace `print` statments with `logger` calls.
