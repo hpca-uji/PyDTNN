@@ -863,7 +863,8 @@ class Model[T: Array]:
         total = ((curr * batch_size) + (total * count)) / (count + batch_size)
         for c in range(len(self.loss_and_metrics)):
             loss_str = self.loss_and_metrics_format[c]
-            string += ("%s, " % (prefix + loss_str)) % total[c]
+            if loss_str:
+                string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
 
@@ -1078,7 +1079,7 @@ class Model[T: Array]:
                 time.sleep(.5)
 
             if sync_epoch:
-                if self.com is not None:
+                if self.comm is not None:
                     op = MPI.LAND  # type: ignore
                     global_terminate = self.comm.allreduce(terminate, op=op)
                 else:
