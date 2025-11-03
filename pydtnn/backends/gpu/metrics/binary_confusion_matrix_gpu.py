@@ -10,7 +10,7 @@ from pydtnn.utils.types import DTYPE2CTYPE
 class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
-        _name = "binary_confusion_matrix"        
+        _name = "binary_confusion_matrix"
         code = """
         #define TRUE_POSITIVE  {{0,0}}
         #define TRUE_NEGATIVE  {{1,1}}
@@ -101,4 +101,6 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
                     num_classes, n,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return conf_matrix
+        self.conf_matrix = conf_matrix
+        
+        return self.conf_matrix

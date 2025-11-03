@@ -26,6 +26,9 @@ _dict_indexes = {
 
 class BinaryConfusionMatrixCPU(MetricCPU, BinaryConfusionMatrix[np.ndarray]):
 
+    def initialize(self) -> None:
+        super().initialize()
+
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """
         For every label in target class, the output will have one confusion matrix like this:
@@ -44,5 +47,20 @@ class BinaryConfusionMatrixCPU(MetricCPU, BinaryConfusionMatrix[np.ndarray]):
             for label in range(target_classes):
                 conf_matrix[label, *(_dict_indexes[y_targ[i, label] == y_pred[i, label]] [bool(y_targ[i, label])])] += 1
 
-        return conf_matrix
+        self.conf_matrix = conf_matrix
+
+        return self.conf_matrix
+
+    def get_true_positives(self): 
+        return self.conf_matrix[:, *TRUE_POSITIVE]
+
+    def get_true_negatives(self): 
+        return self.conf_matrix[:, *TRUE_NEGATIVE]
+
+    def get_false_positives(self): 
+        return self.conf_matrix[:, *FALSE_NEGATIVE]
+
+    def get_false_negatives(self): 
+        return self.conf_matrix[:, *FALSE_POSITIVE]
+
 

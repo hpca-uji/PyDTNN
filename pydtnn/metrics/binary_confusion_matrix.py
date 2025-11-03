@@ -3,4 +3,4 @@ from pydtnn.utils.types import Array
 
 
 class BinaryConfusionMatrix[T: Array](ConfusionMatrix[T]):
-    pass
+    conf_matrix: T = None  # type: ignore
