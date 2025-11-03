@@ -296,7 +296,7 @@ def find_component(package: str, name: str):
         raise ValueError(f"{name!r} not found in {package!r}!") from e
 
     for attr in dir(module):
-        if normalize(name) == normalize(attr):
+        if not attr.startswith("_") and normalize(name) == normalize(attr):
             return getattr(module, attr)
     else:
         raise ValueError(f"{name!r} not found in {module!r}!")
