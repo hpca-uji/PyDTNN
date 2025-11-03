@@ -29,9 +29,10 @@
 
 # Knowledge
 - `enable_gpu` changes the backed from CPU to GPU
-- `enable_gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable_gpu`
-- `enable_nccl` changes where reductions are made, from CPU with `MPI` to GPU with `NCCL`, and requries `enable_gpudirect`
+- `enable_gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable_gpu`.
+- `enable_nccl` changes where reductions are made, from CPU with `MPI` to GPU with `NCCL`, and requries `enable_gpudirect`.
 - `encryption` requies `NCCL` to be off, it it is on, encryption will be skipped.
+- If the execution of `pip install --config-settings editable_mode=compat -e .` ends because `no such option: --config-settings` and a Conda environment is activated, a possible fix is to deactivate all the Conda's environments activated in that terminal and then reactivate only the environment where you want to execute that `pip install` command (that happened to us in VSCode's terminal).
 
 # Planned
 - Extract GPU `SourceModule` to `.cu` files.
