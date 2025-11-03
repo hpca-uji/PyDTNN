@@ -27,7 +27,7 @@
 - **Ensure ``parser`` and ``README`` are in-sync**
   When adding, modifing or deleting options, check changes are reflected on both sources.
 
-# Knowlage
+# Knowledge
 - `enable_gpu` changes the backed from CPU to GPU
 - `enable_gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable_gpu`
 - `enable_nccl` changes where reductions are made, from CPU with `MPI` to GPU with `NCCL`, and requries `enable_gpudirect`
