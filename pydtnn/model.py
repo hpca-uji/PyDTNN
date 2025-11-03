@@ -660,7 +660,7 @@ class Model[T: Array]:
                     curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer)
                     curr_layer.set_backend(self._backend)
                     curr_layer.set_model(self)
-                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, cv_layer.prev_shape, cv_layer.x)
+                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_shape=cv_layer.prev_shape, x=cv_layer.x)
 
             # Look-back (2 layer context) (conv2d + bn|relu)
             elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
@@ -677,7 +677,7 @@ class Model[T: Array]:
                     curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
                     curr_layer.set_backend(self._backend)
                     curr_layer.set_model(self)
-                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_layer.prev_shape, prev_layer.x)
+                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_layer=prev_layer.prev_shape, x=prev_layer.x)
 
             # Look-back (2 layer context) (bn + relu)
             elif bn_relu and len(fused_layers) > 0 and \
@@ -690,7 +690,7 @@ class Model[T: Array]:
                 curr_layer = fused_layer(from_parent=prev_layer)
                 curr_layer.set_backend(self._backend)
                 curr_layer.set_model(self)
-                curr_layer.initialize(prev_layer.prev_shape, prev_layer.x)
+                curr_layer.initialize(prev_shape=prev_layer.prev_shape, x=prev_layer.x)
 
             fused_layers.append(curr_layer)
         return fused_layers
