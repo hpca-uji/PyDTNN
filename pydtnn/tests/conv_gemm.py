@@ -1,16 +1,3 @@
-"""
-Unitary tests for convGemm.
-
-For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.ConvGemmTestCase
-
-For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.ConvGemmTestCase
-
-For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.ConvGemmTestCase.test_name
-"""
-
 import inspect
 import sys
 import unittest

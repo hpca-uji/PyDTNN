@@ -63,8 +63,7 @@ class CIFAR10(Dataset):
                     y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype, order="C")
                     self._decode_class(y, y_classes)
 
-                    if self.model.tensor_format is TensorFormat.NHWC:
-                        x = self._nchw2nhwc(x)
+                    x = TensorFormat.NCHW.transpose(x, self.model.tensor_format)
 
                     yield x, y
 

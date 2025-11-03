@@ -258,10 +258,6 @@ class CheckLayerWithPyTorch(TestCase):
     # ----
 
     def do_test(self, _x: np.ndarray, pydtnn_model: Model, torch_model: torch.nn.Module, name_test:str, rtol=1e-6, atol= 1e-6) -> None:
-
-        torch.manual_seed(SEED)
-        np.random.seed(SEED)
-
         self.copy_grad_vars(pydtnn_model, torch_model)
 
         num_elems = (len("Testing: ") + len(name_test))
@@ -335,7 +331,7 @@ class CheckLayerWithPyTorch(TestCase):
     # ---------
 
     @skip(reason="Dropout makes a random mask, then it can not be compared due both PyTorch and PyDTNN create different masks.")
-    def test_Dropout(self):        
+    def test_Dropout(self):
         pydtnn_layers = [Dropout()]
         torch_model = torch.nn.Dropout()
         pydtnn_model = CheckLayerWithPyTorch.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)

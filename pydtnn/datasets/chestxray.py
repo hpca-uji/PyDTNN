@@ -131,13 +131,7 @@ class ChestXRay(Dataset):
             y = y[None, ...]
 
             # Set tensor format
-            match self.model.tensor_format:
-                case TensorFormat.NHWC:
-                    x = self._nchw2nhwc(x)
-                case TensorFormat.NCHW:
-                    pass
-                case _:
-                    raise ValueError("Unsupported tensor format")
+            x = TensorFormat.NCHW.transpose(x, self.model.tensor_format)
 
             # Set dtype and order
             x = x.astype(dtype=self.model.dtype, order="C")
