@@ -10,6 +10,7 @@
 		"files.exclude": {
 			"pydtnn.egg-info": true,
 			"build": true,
+			"vendor/build": true,
 			"**/__pycache__": true,
 			"**/*.so": true,
 			"**/*.c": true,
