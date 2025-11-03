@@ -658,6 +658,8 @@ class Model[T: Array]:
                                                                      bn_layer.id, type(bn_layer).__name__,
                                                                      curr_layer.id, type(curr_layer).__name__))
                     curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer)
+                    curr_layer.set_backend(self._backend)
+                    curr_layer.set_model(self)
                     curr_layer.initialize(from_parent_dict=cv_layer.__dict__)
             elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
                     (curr_layer.canonical_name == "Relu" or
@@ -673,6 +675,8 @@ class Model[T: Array]:
                     print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                             curr_layer.id, type(curr_layer).__name__))
                     curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
+                    curr_layer.set_backend(self._backend)
+                    curr_layer.set_model(self)
                     curr_layer.initialize(from_parent_dict=prev_layer.__dict__)
             elif bn_relu and len(fused_layers) > 0 and \
                     curr_layer.canonical_name == "Relu" and \

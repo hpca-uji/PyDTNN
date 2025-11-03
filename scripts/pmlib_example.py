@@ -2,7 +2,7 @@
 
 import time
 
-from pydtnn.power_meters.pmlib import PMLib
+from pydtnn.utils.pmlib import PMLib
 
 # Configuration
 SERVER_IP = "127.0.0.1"
