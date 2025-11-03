@@ -6,7 +6,7 @@ from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
 class CategoricalHingeCPU(MetricCPU, CategoricalHinge[np.ndarray]):
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         # pos = np.sum(y_targ * y_pred, axis=-1)
         # neg = np.max((1.0 - y_targ) * y_pred, axis=-1)
         # return np.mean(np.maximum(0.0, neg - pos + 1), axis=-1)
@@ -24,7 +24,5 @@ class CategoricalHingeCPU(MetricCPU, CategoricalHinge[np.ndarray]):
         maximum = np.maximum(0.0, neg)
 
         maximum = np.mean(maximum, axis=-1)
-
-        print(f"{pos.shape=} | {neg.shape=} | {maximum.shape=}")
 
         return maximum

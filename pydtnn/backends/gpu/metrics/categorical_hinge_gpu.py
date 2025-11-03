@@ -59,7 +59,7 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
         module = SourceModule(code).get_function(_name)
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:        
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
         n = np.int32(y_pred.shape[0])
         num_classes = np.int32(y_pred.shape[1])
 
@@ -73,4 +73,4 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
                     n, num_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return res
+        return res.ary[0]

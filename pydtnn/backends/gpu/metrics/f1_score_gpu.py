@@ -56,7 +56,7 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
         return module
     #---
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
 
         target_classes = self.model.output_shape[0]
 
@@ -71,4 +71,4 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
         
-        return f1
+        return f1.ary[0]

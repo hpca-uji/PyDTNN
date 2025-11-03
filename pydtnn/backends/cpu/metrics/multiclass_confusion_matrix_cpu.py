@@ -24,5 +24,5 @@ class MulticlassConfusionMatrixCPU(MetricCPU, MulticlassConfusionMatrix[np.ndarr
             target_class = np.nonzero(y_targ[i]== 1)[0]
             predicted_class = np.nonzero(y_pred[i]== 1)[0]
             conf_matrix[target_class, predicted_class] += 1
+        
         return conf_matrix
-

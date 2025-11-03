@@ -9,9 +9,9 @@ class F1ScoreCPU(MetricCPU, F1Score[np.ndarray]):
 
     conf_matrix_metric: BinaryConfusionMatrixCPU
 
-    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
+    def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         true_positives = self.conf_matrix_metric.get_true_positives()
         false_positives = self.conf_matrix_metric.get_false_positives()
         false_negatives = self.conf_matrix_metric.get_false_negatives()
 
-        return np.average(2 * true_positives / (2 * true_positives + false_positives + false_negatives))
+        return float(np.average(2 * true_positives / (2 * true_positives + false_positives + false_negatives)))

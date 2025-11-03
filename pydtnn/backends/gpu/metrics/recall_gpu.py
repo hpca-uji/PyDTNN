@@ -70,4 +70,4 @@ class RecallCPU(MetricGPU, Recall[TensorGPU]):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
         
-        return recall
+        return recall.ary[0]

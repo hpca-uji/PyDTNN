@@ -17,7 +17,7 @@ class Metric[T: Array](PromoteToBackend):
         pass
 
     @abstractmethod
-    def compute(self, y_pred: T, y_targ: T) -> float:
+    def compute(self, y_pred: T, y_targ: T) -> float | T:
         pass
 
 
