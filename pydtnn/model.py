@@ -31,7 +31,7 @@ from pydtnn.losses.loss import Loss
 from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.losses.loss import select as select_loss
 from pydtnn.optimizers.optimizer import select as select_optimizer
-from pydtnn.metrics.metric import select as select_metic
+from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.parser import PydtnnArgumentParser
@@ -706,8 +706,10 @@ class Model[T: Array]:
         self.loss_func.set_backend(self._backend)
         self.loss_func.set_model(self)
         self.loss_func.initialize()
-        self.metrics_funcs = [select_metic(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
+        self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
+        self.metrics_funcs.sort(key=lambda metric: metric.order)
+        
         for metric in self.metrics_funcs:
             metric.set_backend(self._backend)
             metric.set_model(self)
