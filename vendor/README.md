@@ -4,7 +4,7 @@ Execute each from project root, modify paths as desired.
 ```sh
 # Configuration
 SRC="$PWD/vendor"
-PREFIX="$HOME/opt"
+PREFIX="$PWD/vendor/build"
 NPROC=$(nproc)
 ```
 
