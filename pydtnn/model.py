@@ -836,7 +836,7 @@ class Model[T: Array]:
 
         if y_targ.shape[0] > 0:
             metrics = [func.compute(y_pred, y_targ) for func in self.metrics_funcs]
-            _losses = np.array([loss, *metrics], dtype=self.dtype)
+            _losses = np.array([loss, *metrics], dtype=np.object_)
         else:
             _losses = self.total_metrics.copy()
             _losses[0] = loss
@@ -846,9 +846,9 @@ class Model[T: Array]:
 
             _losses /= self.comm_size
             if blocking:
-                self.comm.Allreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
+                _losses = self.comm.allreduce(_losses, op=MPI.SUM)
             else:
-                loss_req = self.comm.Iallreduce(MPI.IN_PLACE, _losses, op=MPI.SUM)
+                loss_req = self.comm.iallreduce(_losses, op=MPI.SUM)
         else:
             if blocking:
                 pass
