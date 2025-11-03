@@ -21,12 +21,15 @@ import numpy as np
 from tqdm import tqdm
 
 from pydtnn import crypt, utils
+from pydtnn.activations.relu import Relu
 from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.losses.loss import Loss
 from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.losses.loss import select as select_loss
@@ -430,9 +433,9 @@ class Model[T: Array]:
         supported_nccl = True
 
         assert drv is not None
-        device_id: int = self.comm_rank % drv.Device.count()  #type: ignore
-        drv.init()  #type: ignore
-        context = drv.Device(device_id).make_context()  #type: ignore
+        device_id: int = self.comm_rank % drv.Device.count()  # type: ignore
+        drv.init()  # type: ignore
+        context = drv.Device(device_id).make_context()  # type: ignore
         # context: int = drv.Device(device_id).retain_primary_context()
 
         atexit.register(context.pop)
@@ -647,9 +650,9 @@ class Model[T: Array]:
 
             # Look-back (3 layer context) (conv2d + bn + relu)
             elif conv_bn_relu and len(fused_layers) > 1 and \
-                    curr_layer.canonical_name == "Relu" and \
-                    fused_layers[-1].canonical_name == "BatchNormalization" and \
-                    fused_layers[-2].canonical_name == "Conv2D":
+                    isinstance(curr_layer, Relu) and \
+                    isinstance(fused_layers[-1], BatchNormalization) and \
+                    isinstance(fused_layers[-2], Conv2D):
                 fused_layer = select_layer("conv_2d_batch_normalization_relu")
                 if fused_layers[-2].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
                     bn_layer = fused_layers.pop()
@@ -664,25 +667,30 @@ class Model[T: Array]:
 
             # Look-back (2 layer context) (conv2d + bn|relu)
             elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
-                    (curr_layer.canonical_name == "Relu" or
-                        curr_layer.canonical_name == "BatchNormalization") and \
-                    fused_layers[-1].canonical_name == "Conv2D" and \
-                    not (conv_bn_relu and i + 1 < len(layers) and layers[i + 1].canonical_name == "Relu"):
-                extra_layer = "relu" if curr_layer.canonical_name == "Relu" else "batch_normalization"
+                    (isinstance(curr_layer, Relu) or
+                        isinstance(curr_layer, BatchNormalization)) and \
+                    isinstance(fused_layers[-1], Conv2D) and \
+                    not (conv_bn_relu and i + 1 < len(layers) and isinstance(layers[i + 1], Relu)):
+                extra_layer = "relu" if isinstance(curr_layer, Relu) else "batch_normalization"
                 fused_layer = select_layer(f"conv_2d_{extra_layer}")
-                if fused_layers[-1].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
-                    prev_layer = fused_layers.pop()
-                    print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
-                                                            curr_layer.id, type(curr_layer).__name__))
-                    curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
-                    curr_layer.set_backend(self._backend)
-                    curr_layer.set_model(self)
+                prev_layer = fused_layers.pop()
+                print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
+                                                        curr_layer.id, type(curr_layer).__name__))
+                new_curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
+                new_curr_layer.set_backend(self._backend)
+                new_curr_layer.set_model(self)
+
+                if prev_layer.forward.__name__ in new_curr_layer.__dict__:  # or self.enable_best_of:
+                    curr_layer = new_curr_layer
                     curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_layer=prev_layer.prev_shape, x=prev_layer.x)
+                else:
+                    print(f"Aborted fusion, unsuported {prev_layer.forward.__name__}")
+                    fused_layers.append(prev_layer)
 
             # Look-back (2 layer context) (bn + relu)
             elif bn_relu and len(fused_layers) > 0 and \
-                    curr_layer.canonical_name == "Relu" and \
-                    fused_layers[-1].canonical_name == "BatchNormalization":
+                    isinstance(curr_layer, Relu) and \
+                    isinstance(fused_layers[-1], BatchNormalization):
                 prev_layer = fused_layers.pop()
                 print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                         curr_layer.id, type(curr_layer).__name__))
@@ -718,7 +726,7 @@ class Model[T: Array]:
         self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
-        
+
         for metric in self.metrics_funcs:
             metric.set_backend(self._backend)
             metric.set_model(self)
@@ -903,7 +911,7 @@ class Model[T: Array]:
                 x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
                 y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
-            
+
             x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
             y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
 
