@@ -35,6 +35,8 @@
 
 # Planned
 - Extract GPU `SourceModule` to `.cu` files.
+- Rework the `Conv2D` variant implementation.
+- Rework the layer fusion implementation.
 - Replace `print` statments with `logger` calls.
 - Explore `TenSEAL` serialization preformance.
 - Explore `net-queue`'s `TCP+TLS` preformance.

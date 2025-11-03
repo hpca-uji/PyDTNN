@@ -162,3 +162,7 @@ class Conv2DCPU(LayerCPU,
         tensor_format = self.model.tensor_format
         return (getattr(self, f'_forward_{variant}_{tensor_format}'),
                 getattr(self, f'_backward_{variant}_{tensor_format}'))
+
+    @property
+    def canonical_name(self) -> str:
+        return f"{super().canonical_name}({self.variant})"

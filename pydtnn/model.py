@@ -679,13 +679,13 @@ class Model[T: Array]:
                 new_curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
                 new_curr_layer.set_backend(self._backend)
                 new_curr_layer.set_model(self)
-
-                if prev_layer.forward.__name__ in new_curr_layer.__dict__:  # or self.enable_best_of:
-                    curr_layer = new_curr_layer
-                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_layer=prev_layer.prev_shape, x=prev_layer.x)
-                else:
-                    print(f"Aborted fusion, unsuported {prev_layer.forward.__name__}")
+                try:
+                    new_curr_layer.initialize(from_parent_dict=prev_layer.__dict__, prev_shape=prev_layer.prev_shape, x=prev_layer.x)
+                except Exception as e:
+                    warn(f"Aborted fusion, {e}")
                     fused_layers.append(prev_layer)
+                else:
+                    curr_layer = new_curr_layer
 
             # Look-back (2 layer context) (bn + relu)
             elif bn_relu and len(fused_layers) > 0 and \

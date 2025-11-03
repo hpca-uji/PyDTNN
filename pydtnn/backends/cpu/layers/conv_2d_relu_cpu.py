@@ -1,5 +1,6 @@
 import abc
 
+from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
@@ -11,14 +12,14 @@ import numpy as np
 # noinspection PyAbstractClass
 
 
-class Conv2DReluCPU(LayerCPU, Conv2DRelu[np.ndarray]):
+class Conv2DReluCPU(Conv2DCPU, Conv2DRelu[np.ndarray]):
 
     # TODO: Check "from_parent_dict"
     def initialize(self, from_parent_dict=None, *args, **kwargs) -> None:
-        super().initialize(args, **kwargs)
-        self.forward = {"_forward_nchw_cg": self._forward_nchw_cg,
-                        "_forward_nhwc_cg": self._forward_nhwc_cg,
-                        "_forward_nchw_cw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
+        super().initialize(*args, **kwargs)
+        self.forward = {"_forward_cg_nchw": self._forward_nchw_cg,
+                        "_forward_cg_nhwc": self._forward_nhwc_cg,
+                        "_forward_cw_nchw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]
         self.biases = from_parent_dict["biases"]
 

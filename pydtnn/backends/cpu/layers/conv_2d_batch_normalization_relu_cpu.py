@@ -1,3 +1,4 @@
+from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.model import Model
@@ -6,7 +7,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 import numpy as np
 import abc
 
-class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu[np.ndarray]):
+class Conv2DBatchNormalizationReluCPU(Conv2DCPU, Conv2DBatchNormalizationRelu[np.ndarray]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -14,9 +15,9 @@ class Conv2DBatchNormalizationReluCPU(LayerCPU, Conv2DBatchNormalizationRelu[np.
     # TODO: Check "from_parent_dict" typing
     def initialize(self, from_parent_dict: dict = None, *args, **kwargs):
         super().initialize(*args, **kwargs)
-        self.forward = {"_forward_nchw_cw": self._forward_nchw_cw,
-                        "_forward_nchw_cg": self._forward_nchw_cg,
-                        "_forward_nhwc_cg": self._forward_nhwc_cg}[from_parent_dict["forward"].__name__]
+        self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,
+                        "_forward_cg_nchw": self._forward_nchw_cg,
+                        "_forward_cg_nhwc": self._forward_nhwc_cg}[from_parent_dict["forward"].__name__]
         # self.forward = {"_forward_nchw_cw": self._forward_nchw_cw, \
         #                 "_forward_nchw_best_of": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
         self.weights = from_parent_dict["weights"]

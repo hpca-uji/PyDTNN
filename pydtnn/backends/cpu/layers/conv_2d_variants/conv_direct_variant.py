@@ -16,9 +16,12 @@ class ConvDirectVariant[T:Array](Conv2D[T]):
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
+
         # ConvWinograd parameters
         if self.model.enable_conv_direct:
-            methods = [self.model.conv_direct_method, ]
+            methods = []
+            if self.model.conv_direct_method:
+                methods.append(self.model.conv_direct_method)
             if self.model.enable_best_of:
                 if self.model.conv_direct_methods_for_best_of != "":
                     methods = self.model.conv_direct_methods_for_best_of.split(',')
@@ -28,6 +31,8 @@ class ConvDirectVariant[T:Array](Conv2D[T]):
                 try:
                     getattr(ConvDirectVariant, f"_forward_cd{n}_nhwc")
                 except AttributeError:
+                    # FIXME: partailmethod does not have __name__ so it errors on fusion
+                    # FIXME: this should modify the instance not the class
                     setattr(ConvDirectVariant, f"_forward_cd{n}_nhwc", partialmethod(ConvDirectVariant._forward_cd, n=n))
                     setattr(ConvDirectVariant, f"_forward_cd{n}_nchw", partialmethod(ConvDirectVariant._forward_cd, n=n))
                     setattr(ConvDirectVariant, f"_backward_cd{n}_nhwc", partialmethod(ConvDirectVariant._backward_cd, n=n))

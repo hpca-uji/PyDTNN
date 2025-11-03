@@ -116,6 +116,7 @@ class ConvDirect:
             n, hi, wi, ci = x.shape
             ci, kh, kw, co = weights.shape
 
+        # TODO: use encode/decode tensor or TensorFormat methods
         if biases is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
