@@ -22,7 +22,7 @@
   Be careful: any change made in the abstract class in order to improve one backend may break something in the other backends.
 
 - **Use numpy's functions over its operands**
-  Even if technically they are the same, sometimes, numpy.add(a, b, out=a) has better precision than "a += b".
+  Even if technically they are the same, sometimes, `numpy.add(a, b, out=a)` has better precision than `a += b`.
 
 - **Ensure ``parser`` and ``README`` are in-sync**
   When adding, modifing or deleting options, check changes are reflected on both sources.
