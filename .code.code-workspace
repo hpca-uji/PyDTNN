@@ -11,6 +11,7 @@
 			"**/__pycache__": true,
 			"**/*.so": true,
 			"**/*.c": true,
+			"**/*.idx": true,
 		},
 		"flake8.importStrategy": "fromEnvironment",
 		"flake8.args": [
