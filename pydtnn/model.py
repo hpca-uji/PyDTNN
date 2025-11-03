@@ -34,6 +34,7 @@ from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.schedulers.scheduler import select as select_scheduler
+from pydtnn.layers.layer import select as select_layer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -638,19 +639,18 @@ class Model[T: Array]:
     def __layer_fusion(self, layers: list[LayerAndActivationBase], bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
         fused_layers: list[LayerAndActivationBase] = []
         for i, curr_layer in enumerate(layers):
-            # if i > 0: print(i, curr_layer.canonical_name, fused_layers[-1].canonical_name)
+
+            # Recurse if layer group
             if curr_layer.is_block_layer:
                 for j, p in enumerate(curr_layer.paths):
                     curr_layer.paths[j] = self.__layer_fusion(p, bn_relu, conv_relu, conv_bn, conv_bn_relu)
+
+            # Look-back (3 layer context) (conv2d + bn + relu)
             elif conv_bn_relu and len(fused_layers) > 1 and \
                     curr_layer.canonical_name == "Relu" and \
                     fused_layers[-1].canonical_name == "BatchNormalization" and \
                     fused_layers[-2].canonical_name == "Conv2D":
-                backend = "gpu" if self.enable_cudnn else "cpu"
-                fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
-                                      fused_layers[-2].canonical_name +
-                                      fused_layers[-1].canonical_name +
-                                      type(curr_layer).__name__)
+                fused_layer = select_layer("conv_2d_batch_normalization_relu")
                 if fused_layers[-2].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
                     bn_layer = fused_layers.pop()
                     cv_layer = fused_layers.pop()
@@ -660,16 +660,16 @@ class Model[T: Array]:
                     curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer)
                     curr_layer.set_backend(self._backend)
                     curr_layer.set_model(self)
-                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__)
+                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, cv_layer.prev_shape, cv_layer.x)
+
+            # Look-back (2 layer context) (conv2d + bn|relu)
             elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
                     (curr_layer.canonical_name == "Relu" or
                         curr_layer.canonical_name == "BatchNormalization") and \
                     fused_layers[-1].canonical_name == "Conv2D" and \
                     not (conv_bn_relu and i + 1 < len(layers) and layers[i + 1].canonical_name == "Relu"):
-                backend = "gpu" if self.enable_cudnn else "cpu"
-                fused_layer = getattr(importlib.import_module(f"pydtnn.backends.{backend}.layers"),
-                                      fused_layers[-1].canonical_name +
-                                      type(curr_layer).__name__)
+                extra_layer = "relu" if curr_layer.canonical_name == "Relu" else "batch_normalization"
+                fused_layer = select_layer(f"conv_2d_{extra_layer}")
                 if fused_layers[-1].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
                     prev_layer = fused_layers.pop()
                     print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
@@ -677,16 +677,21 @@ class Model[T: Array]:
                     curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
                     curr_layer.set_backend(self._backend)
                     curr_layer.set_model(self)
-                    curr_layer.initialize(from_parent_dict=prev_layer.__dict__)
+                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_layer.prev_shape, prev_layer.x)
+
+            # Look-back (2 layer context) (bn + relu)
             elif bn_relu and len(fused_layers) > 0 and \
                     curr_layer.canonical_name == "Relu" and \
                     fused_layers[-1].canonical_name == "BatchNormalization":
                 prev_layer = fused_layers.pop()
                 print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
                                                         curr_layer.id, type(curr_layer).__name__))
-                curr_layer = getattr(importlib.import_module("pydtnn.layers"),
-                                     prev_layer.canonical_name +
-                                     curr_layer.canonical_name)(from_parent=prev_layer)
+                fused_layer = select_layer("batch_normalization_relu")
+                curr_layer = fused_layer(from_parent=prev_layer)
+                curr_layer.set_backend(self._backend)
+                curr_layer.set_model(self)
+                curr_layer.initialize(prev_layer.prev_shape, prev_layer.x)
+
             fused_layers.append(curr_layer)
         return fused_layers
 
