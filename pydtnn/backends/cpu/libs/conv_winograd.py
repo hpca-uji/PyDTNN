@@ -90,7 +90,7 @@ class ConvWinograd:
             elif platform.machine() == 'x86_64':
                 if self.dtype == np.float32:
                     routine_names = [(intr, f"conv_winograd_{m}x{m}_{r}x{r}_{intr}_fp32_{self.tensor_format}")
-                                     for intr in ["sse", "avx", "avx512"]]
+                                     for intr in ["native", "sse", "avx", "avx512"]]
                 else:
                     raise NotImplementedError(
                         f"Type {str(self.dtype)} not supported by this version of libconvWinograd!")
@@ -103,8 +103,9 @@ class ConvWinograd:
                           getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
             except AttributeError:
                 print(f"Winograd {routine_names} routine not found. Fallback to numpy version!")
-                funcs = [(self._conv_winograd_numpy, None, None)]
+                funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
+            # breakpoint()
             for intr, f in funcs:
                 self.alternatives[r].append((f"cw{m}{r}{intr}", partial(f[0], m, r, g, bt, at, f[1], f[2])))
 
@@ -266,7 +267,7 @@ class ConvWinograd:
         else:
             setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
     
-    def _conv_winograd_numpy(self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray, x_winograd_nchw,
+    def _conv_winograd_numpy(self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray, pre, kernel,
                              weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0,
                              vstride=1, hstride=1, vdilation=1, hdilation=1,
                              relu=False, bn=False,
@@ -304,8 +305,8 @@ class ConvWinograd:
             y = self.y_cache[(n, co, ho, wo)]  # Output
         else:
             y = self.y_cache[(n, ho, wo, co)]  # Output
-        u = self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
-        v = self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
+        u = np.zeros((t, t, co, ci), self.dtype, order="C")                     # FIXME: self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
+        v = np.zeros((t, t, ci, (n * tile_h * tile_w)), self.dtype, order="C")  # FIXME: self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
         # m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
         d = self.d_cache[(t, t)]
 
