@@ -6,7 +6,7 @@ from pydtnn.utils.types import Array
 class Precision[T: Array](Metric[T]):
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
-    format = "prec: %4.2f%%"
+    format = "prec: %4.2f"
 
     def initialize(self) -> None:
 

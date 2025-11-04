@@ -24,7 +24,7 @@ class RecallCPU(MetricGPU, Recall[TensorGPU]):
         
         __global__ void {name}({T} *recall, int *cm, {T} *local_recall, const int num_classes)
         {{
-            int label, idx, true_positive, false_negative, false_positive;
+            int label, idx, true_positive, false_negative, false_positive, div;
 
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             const int workers = blockDim.x * gridDim.x;
@@ -33,8 +33,9 @@ class RecallCPU(MetricGPU, Recall[TensorGPU]):
             {{
                 true_positive = (*(SHIFT_POINTER_CM(cm, label, TRUE_POSITIVE[0], TRUE_POSITIVE[1], num_classes)));
                 false_negative = (*(SHIFT_POINTER_CM(cm, label, FALSE_NEGATIVE[0], FALSE_NEGATIVE[1], num_classes)));
+                div = true_positive + false_negative;
 
-                (*(local_recall + idx)) += ({T}) (true_positive / (true_positive + false_negative));
+                (*(local_recall + idx)) += ({T}) (div == 0 ? 0 : (true_positive / div));
             }}
 
             // Accumulating the local values into the output's tensor.

@@ -6,7 +6,7 @@ from pydtnn.utils.types import Array
 class Recall[T: Array](Metric[T]):
     order = BinaryConfusionMatrix.order + 1
     conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
-    format = "rec: %5.2f%%"
+    format = "rec: %5.2f"
 
     def initialize(self) -> None:
 

@@ -24,7 +24,7 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
         
         __global__ void {name}({T} *f1, int *cm, {T} *local_f1, const int num_classes)
         {{
-            int label, idx, true_positive, false_negative, false_positive;
+            int label, idx, true_positive, false_negative, false_positive, div;
 
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             const int workers = blockDim.x * gridDim.x;
@@ -34,8 +34,9 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
                 true_positive = (*(SHIFT_POINTER_CM(cm, label, TRUE_POSITIVE[0], TRUE_POSITIVE[1], num_classes)));
                 true_negative = (*(SHIFT_POINTER_CM(cm, label, FALSE_NEGATIVE[0], FALSE_NEGATIVE[1], num_classes)));
                 false_positive = (*(SHIFT_POINTER_CM(cm, label, FALSE_POSITIVE[0], FALSE_POSITIVE[1], num_classes)));
+                div = 2 * true_positive + false_positive + false_negative;
 
-                (*(local_f1 + idx)) += ({T}) (2 * true_positive / (2 * true_positive + false_positive + false_negative));
+                (*(local_f1 + idx)) += ({T}) (div == 0 ? 0 : (2 * true_positive / div));
             }}
             
             // Accumulating the local values into the output's tensor.
