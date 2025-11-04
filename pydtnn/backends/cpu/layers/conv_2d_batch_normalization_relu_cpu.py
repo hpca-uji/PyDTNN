@@ -29,10 +29,6 @@ class Conv2DBatchNormalizationReluCPU(Conv2DCPU, Conv2DBatchNormalizationRelu[np
 
     def _forward_nchw_cw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd + BatchNorm + Relu"""
-
-        if self.model.mode is Model.Mode.TRAIN:
-            raise SystemExit("Sorry, fused layers cannot be used in training mode!")
-
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y: np.ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases_vector,
@@ -48,10 +44,6 @@ class Conv2DBatchNormalizationReluCPU(Conv2DCPU, Conv2DBatchNormalizationRelu[np
 
     def _forward_nchw_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
-
-        if self.model.mode is Model.Mode.TRAIN:
-            raise SystemExit("Sorry, fused layers cannot be used in training mode!")
-
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res: np.ndarray = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
@@ -65,10 +57,6 @@ class Conv2DBatchNormalizationReluCPU(Conv2DCPU, Conv2DBatchNormalizationRelu[np
 
     def _forward_nhwc_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
-
-        if self.model.mode is Model.Mode.TRAIN:
-            raise RuntimeError("Fused layers cannot be used in training mode!")
-
         biases_vector = self.biases if self.use_bias else None
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res: np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x, biases=None,

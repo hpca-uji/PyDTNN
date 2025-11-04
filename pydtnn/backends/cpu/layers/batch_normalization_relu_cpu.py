@@ -41,4 +41,4 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu[np.ndarray]):
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def backward(self, x: np.ndarray) -> np.ndarray:
-        raise SystemExit(f"Backward method of {self.__class__.__name__} should not be called")
+        raise NotImplementedError("Use a real backward variant!")

@@ -1,4 +1,4 @@
-from functools import partialmethod
+from functools import partial, partialmethod
 
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.layers.conv_2d import Conv2D
@@ -17,11 +17,15 @@ class ConvDirectVariant[T:Array](Conv2D[T]):
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
 
-        # ConvWinograd parameters
+        def new(name, func):
+            func.__name__ = name
+            setattr(self, name, func)
+
+        # ConvDirect parameters
         if self.model.enable_conv_direct:
             methods = []
             if self.model.conv_direct_method:
-                methods.append(self.model.conv_direct_method)
+                methods = [self.model.conv_direct_method]
             if self.model.enable_best_of:
                 if self.model.conv_direct_methods_for_best_of != "":
                     methods = self.model.conv_direct_methods_for_best_of.split(',')
@@ -29,14 +33,12 @@ class ConvDirectVariant[T:Array](Conv2D[T]):
                 self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format,
                                           debug=self.debug, parent_layer=self))
                 try:
-                    getattr(ConvDirectVariant, f"_forward_cd{n}_nhwc")
+                    getattr(self, f"_forward_cd{n}_nhwc")
                 except AttributeError:
-                    # FIXME: partailmethod does not have __name__ so it errors on fusion
-                    # FIXME: this should modify the instance not the class
-                    setattr(ConvDirectVariant, f"_forward_cd{n}_nhwc", partialmethod(ConvDirectVariant._forward_cd, n=n))
-                    setattr(ConvDirectVariant, f"_forward_cd{n}_nchw", partialmethod(ConvDirectVariant._forward_cd, n=n))
-                    setattr(ConvDirectVariant, f"_backward_cd{n}_nhwc", partialmethod(ConvDirectVariant._backward_cd, n=n))
-                    setattr(ConvDirectVariant, f"_backward_cd{n}_nchw", partialmethod(ConvDirectVariant._backward_cd, n=n))
+                    new(f"_forward_cd{n}_nhwc", partial(self._forward_cd, n=n))
+                    new(f"_forward_cd{n}_nchw", partial(self._forward_cd, n=n))
+                    new(f"_backward_cd{n}_nhwc", partial(self._backward_cd, n=n))
+                    new(f"_backward_cd{n}_nchw", partial(self._backward_cd, n=n))
 
     def _forward_cd(self, x: np.ndarray, n=0) -> np.ndarray:
         """Version of the forward function that uses the convDirect library"""
