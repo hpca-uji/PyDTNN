@@ -28,6 +28,7 @@ from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.losses.loss import Loss
@@ -757,13 +758,12 @@ class Model[T: Array]:
                 - "Model.LoadStoreMode.STORE" (that is "store") mode stores the data from the Model into "d".
         """
         for layer in layers:
-            name = layer.canonical_name
-            if name in ["AdditionBlock", "ConcatenationBlock"]:
+            if isinstance(layer, AbstractBlockLayer):
                 for path in layer.paths:
                     self.load_store_path(path, d, mode)
             else:
                 grad_vars = [g for g in layer.grad_vars] + \
-                    (["running_var", "running_mean"] if name == "BatchNormalization" else [])
+                    (["running_var", "running_mean"] if isinstance(layer, BatchNormalization) else [])
                 for key in grad_vars:
                     base = f"{layer.id}_{name}_{key}"
                     if mode is Model.LoadStoreMode.LOAD and base not in d:

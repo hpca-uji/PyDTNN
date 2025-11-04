@@ -17,6 +17,13 @@ import warnings
 
 import numpy as np
 
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.dropout import Dropout
+from pydtnn.layers.fc import FC
+from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase as _CheckConvGemmModels
@@ -35,16 +42,16 @@ class TensorFormatTestCase(_CheckConvGemmModels):
     model2_desc = "using the CPU backend tensor format NCHW"
 
     rtol_dict = {
-        "AdditionBlock": 1e-2,
-        "ConcatenationBlock": 1e-2,
+        AdditionBlock: 1e-2,
+        ConcatenationBlock: 1e-2,
     }
 
     atol_dict = {
-        "AdditionBlock": 1e-2,
-        "BatchNormalization": 6e-5,
-        "ConcatenationBlock": 1e-2,
-        "Conv2D": 1e-5,
-        "FC": 1e-5,
+        AdditionBlock: 1e-2,
+        BatchNormalization: 6e-5,
+        ConcatenationBlock: 1e-2,
+        Conv2D: 1e-5,
+        FC: 1e-5,
     }
 
     @staticmethod
@@ -70,7 +77,7 @@ class TensorFormatTestCase(_CheckConvGemmModels):
         Copy weights and biases from Model 1 to Model 2
         """
         for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
-            if layer1.canonical_name == "Conv2D":
+            if isinstance(layer1, Conv2D):
                 # TODO: Check this (the transpose)
                 layer2.weights = layer1.weights.transpose(3, 0, 1, 2).copy()
             elif layer2.weights is not None:
@@ -85,7 +92,7 @@ class TensorFormatTestCase(_CheckConvGemmModels):
         for i, layer in enumerate(model2.layers[1:], 1):
             if verbose_test():
                 print(layer)
-            if layer.canonical_name == "Flatten":
+            if isinstance(layer, Flatten):
                 x2.append(layer.forward(x1[i - 1]))
             else:
                 x2.append(layer.forward(self.nhwc2nchw(x1[i - 1])))
@@ -110,7 +117,7 @@ class TensorFormatTestCase(_CheckConvGemmModels):
             print(f"Comparing outputs of both models...")
         for i, layer in enumerate(model1.layers[1:], 1):
             # Skip test on layers that behave randomly
-            if layer.canonical_name != "Dropout":
+            if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
                 self.assertTrue(np.allclose(self.nhwc2nchw(x1[i]), x2[i], rtol=rtol, atol=atol),
                                 f"Forward result from layers {layer.canonical_name_with_id} differ"
@@ -122,7 +129,7 @@ class TensorFormatTestCase(_CheckConvGemmModels):
             print()
             print(f"Comparing dw of both models...")
         for i, layer in reversed(list(enumerate(model2.layers[1:], 1))):
-            if layer.canonical_name in ["Conv2D", "FC"]:
+            if isinstance(layer, (Conv2D, FC)):
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
                     # layer.dw:np.ndarray
@@ -142,7 +149,7 @@ class TensorFormatTestCase(_CheckConvGemmModels):
             print()
             print(f"Comparing db of both models...")
         for i, layer in reversed(list(enumerate(model2.layers[1:], 1))):
-            if layer.canonical_name in ["Conv2D", "FC"] and layer.use_bias:
+            if isinstance(layer, (Conv2D, FC)) and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
                 # layer.db:np.ndarray
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
@@ -154,7 +161,7 @@ class TensorFormatTestCase(_CheckConvGemmModels):
             print(f"Comparing dx of both models...")
         for i, layer in reversed(list(enumerate(model2.layers[2:], 2))):
             # Skip test on layers that behave randomly
-            if layer.canonical_name not in ["Dropout", "Flatten"]:
+            if not isinstance(layer, (Dropout, Flatten)):
                 rtol, atol = self.get_tolerance(layer)
                 if self.nhwc2nchw(dx1[i]).shape == dx2[i].shape:
                     allclose = np.allclose(self.nhwc2nchw(dx1[i]), dx2[i], rtol=rtol, atol=atol)

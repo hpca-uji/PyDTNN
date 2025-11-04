@@ -31,6 +31,7 @@ class Conv2DReluTestCase(_Conv2DConvGemmTestCase):
         params = Params()
         params.tensor_format = TensorFormat.NHWC.upper()
         params.batch_size = d.b
+        params.enable_conv_gemm = True
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 

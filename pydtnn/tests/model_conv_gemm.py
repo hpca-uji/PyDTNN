@@ -17,6 +17,11 @@ import warnings
 
 import numpy as np
 
+from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.dropout import Dropout
 from pydtnn.losses.loss import Loss, select as select_loss
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
@@ -40,20 +45,31 @@ class ModelConvGemmTestCase(TestCase):
     rtol_default = 1e-5
     atol_default = 1e-6
     rtol_dict = {
-        "AdditionBlock": 1e-4,
+        AdditionBlock: 1e-4,
     }
     atol_dict = {
-        "AdditionBlock": 3e-4,
-        "ConcatenationBlock": 5e-4,
-        "Conv2D": 1e-5,
+        AdditionBlock: 3e-4,
+        ConcatenationBlock: 5e-4,
+        Conv2D: 1e-5,
     }
 
     def get_tolerance(self, layer: Layer) -> tuple[float, float]:
-        rtol, atol = (self.rtol_dict.get(layer.canonical_name, self.rtol_default),
-                      self.atol_dict.get(layer.canonical_name, self.atol_default))
-        if layer.canonical_name in ("AdditionBlock", "ConcatenationBlock"):
+        rtol = self.rtol_default
+        for cls, tol in self.rtol_dict.items():
+            if isinstance(layer, cls):
+                rtol = tol
+                break
+
+        atol = self.atol_default
+        for cls, tol in self.atol_dict.items():
+            if isinstance(layer, cls):
+                atol = tol
+                break
+
+        if isinstance(layer, AbstractBlockLayer):
             rtol *= len(layer.children)
             atol *= len(layer.children)
+
         return rtol, atol
 
     @staticmethod
@@ -184,7 +200,7 @@ class ModelConvGemmTestCase(TestCase):
             print(f"Comparing outputs of both models...")
         for i, layer in enumerate(model1.layers[1:], 1):
             # Skip test on layers that behave randomly
-            if layer.canonical_name != "Dropout":
+            if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
                 self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol),
                                 f"Forward result from layers {layer.canonical_name_with_id} differ"
@@ -197,7 +213,7 @@ class ModelConvGemmTestCase(TestCase):
             print(f"Comparing dx of both models...")
         for i, layer in reversed(list(enumerate(model2.layers[2:], 2))):
             # Skip test on layers that behave randomly
-            if layer.canonical_name != "Dropout":
+            if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
                 if dx1[i].shape == dx2[i].shape:
                     allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)

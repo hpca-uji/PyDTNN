@@ -173,7 +173,6 @@ class Conv2DConvGemmTestCase(TestCase):
         Test that the default parameters lead to the same solution on the forward step
         """
         d = D()
-        print(f"d:\n{d}")
         conv2d_i2c, conv2d_cg = self._get_layers(d)
         x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
         y_i2c = conv2d_i2c.forward(x)

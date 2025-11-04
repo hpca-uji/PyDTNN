@@ -18,6 +18,11 @@ import warnings
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.fc import FC
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase as _CheckConvGemmModels
@@ -36,16 +41,16 @@ class ModelGpuTestCase(_CheckConvGemmModels):
     model2_desc = "using the GPU backend"
 
     rtol_dict = {
-        "AdditionBlock": 1e-2,
-        "ConcatenationBlock": 1e-2,
+        AdditionBlock: 1e-2,
+        ConcatenationBlock: 1e-2,
     }
 
     atol_dict = {
-        "AdditionBlock": 1e-2,
-        "BatchNormalization": 6e-5,
-        "ConcatenationBlock": 1e-2,
-        "Conv2D": 4e-3,
-        "FC": 1e-5,
+        AdditionBlock: 1e-2,
+        BatchNormalization: 6e-5,
+        ConcatenationBlock: 1e-2,
+        Conv2D: 4e-3,
+        FC: 1e-5,
     }
 
     @staticmethod
