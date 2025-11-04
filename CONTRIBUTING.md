@@ -32,9 +32,11 @@
 - `enable_gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable_gpu`.
 - `enable_nccl` changes where reductions are made, from CPU with `MPI` to GPU with `NCCL`, and requries `enable_gpudirect`.
 - `encryption` requies `NCCL` to be off, it it is on, encryption will be skipped.
-- If the execution of `pip install --config-settings editable_mode=compat -e .` ends because `no such option: --config-settings` and a Conda environment is activated, a possible fix is to deactivate all the Conda's environments activated in that terminal and then reactivate only the environment where you want to execute that `pip install` command (that happened to us in VSCode's terminal).
+- If using `conda` and `pip install --config-settings editable_mode=compat -e .` errors with `no such option: --config-settings`
+  deactivate all environments and then reactivate only the one you want.
 
 # Planned
+- Cython move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
 - Rework the `Conv2D` variant implementation.
 - Rework the layer fusion implementation.
