@@ -5,6 +5,7 @@ PyDTNN convWinograd module
 import ctypes
 import math
 import platform
+from warnings import warn
 import weakref
 from collections import defaultdict
 from functools import partial
@@ -102,7 +103,7 @@ class ConvWinograd:
                           getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
                           getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
             except AttributeError:
-                print(f"Winograd {routine_names} routine not found. Fallback to numpy version!")
+                warn(f"Winograd {routine_names} routine not found. Fallback to numpy version!", RuntimeWarning)
                 funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
             # breakpoint()
