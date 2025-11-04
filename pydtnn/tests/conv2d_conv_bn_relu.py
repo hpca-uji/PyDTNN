@@ -1,10 +1,17 @@
 import inspect
 import sys
 import unittest
-from copy import deepcopy
 
 import numpy as np
 
+from pydtnn.activations.relu import Relu
+from pydtnn.backends.cpu.activations.relu_cpu import ReluCPU
+from pydtnn.backends.cpu.layers.concatenation_block_cpu import ConcatenationBlockCPU
+from pydtnn.backends.cpu.layers.conv_2d_relu_cpu import Conv2DReluCPU
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.layers.concatenation_block import ConcatenationBlock
+from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
@@ -16,43 +23,42 @@ from pydtnn.utils.initializers import glorot_uniform, zeros
 
 def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
     params = Params()
-    params.tensor_format = TensorFormat.NCHW.upper()
+    params.tensor_format = TensorFormat.NHWC.upper()
     params.batch_size = d.b
-    params.enable_conv_gemm = False
-    params.enable_best_of = False
-    model_i2c = Model(**vars(params))
-    model_i2c.mode = Model.Mode.TRAIN
-    params_gc = deepcopy(params)
-    params_gc.enable_conv_gemm = True
-    params_gc.conv_gemm_cache = True
-    params_gc.conv_gemm_fallback_to_im2col = False
-    params_gc.conv_gemm_deconv = deconv
-    params_gc.conv_gemm_trans = trans
-    model_cg = Model(**vars(params_gc))
-    model_cg.mode = Model.Mode.TRAIN
-    conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                           padding=(d.vpadding, d.hpadding),
-                           stride=(d.vstride, d.hstride),
-                           dilation=(d.vdilation, d.hdilation),
-                           use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-    conv2d_i2c.set_model(model_i2c)
-    conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                          padding=(d.vpadding, d.hpadding),
-                          stride=(d.vstride, d.hstride),
-                          dilation=(d.vdilation, d.hdilation),
-                          use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-    conv2d_cg.set_model(model_cg)
-    for layer in (conv2d_i2c, conv2d_cg):
-        layer.initialize(prev_shape=(d.c, d.h, d.w))
+    model = Model(**vars(params))
+    model.mode = Model.Mode.TRAIN
+
+    conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                    padding=(d.vpadding, d.hpadding),
+                    stride=(d.vstride, d.hstride),
+                    dilation=(d.vdilation, d.hdilation),
+                    use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+    bn = BatchNormalization()
+    relu = Relu()
+    chain = ConcatenationBlock([
+        conv2d,
+        bn,
+        relu
+    ])
+    chain.set_backend(model._backend)
+    chain.set_model(model)
+    chain.initialize(prev_shape=(d.c, d.h, d.w))
+
+    fuse = Conv2DBatchNormalizationRelu(from_parent=conv2d, from_parent2=bn)
+    fuse.set_backend(model._backend)
+    fuse.set_model(model)
+    fuse.initialize(from_parent_dict=conv2d.__dict__, prev_shape=(d.c, d.h, d.w))
+
     # Set the same initial weights and biases to both layers
-    conv2d_cg.weights = conv2d_i2c.weights.copy()
-    conv2d_cg.biases = conv2d_i2c.biases.copy()
-    return conv2d_i2c, conv2d_cg
+    fuse.weights = conv2d.weights.copy()
+    fuse.biases = conv2d.biases.copy()
+
+    return chain, fuse
 
 
-class Conv2DConvGemmTestCase(TestCase):
+class Conv2DBatchNormalizationReluTestCase(TestCase):
     """
-    Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T
+    Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu
     """
 
     x_2x4 = np.array([[[[1, 2, 4, 8],
@@ -96,18 +102,18 @@ class Conv2DConvGemmTestCase(TestCase):
 
     def _test_forward_backward_inner(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False, deconv=False, trans=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d, deconv, trans)
-        conv2d_i2c.weights = weights.copy()
-        conv2d_cg.weights = weights.copy()
+        conv2d_concat, conv2d_fuse = get_conv2d_cpu_layers(d, deconv, trans)
+        conv2d_concat.paths[0][0].weights = weights.copy()
+        conv2d_fuse.weights = weights.copy()
         # Forward pass
-        y_i2c = conv2d_i2c.forward(x)
-        y_cg = conv2d_cg.forward(x)
+        y_i2c = conv2d_concat.forward(x)
+        y_cg = conv2d_fuse.forward(x)
         dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
         # Backward pass
-        dx_i2c = conv2d_i2c.backward(dy)
-        dx_cg = conv2d_cg.backward(dy)
+        dx_i2c = conv2d_concat.backward(dy)
+        dx_cg = conv2d_fuse.backward(dy)
         # All close?
-        dw_allclose = np.allclose(conv2d_i2c.dw, conv2d_cg.dw)
+        dw_allclose = np.allclose(conv2d_concat.dw, conv2d_fuse.dw)
         dx_allclose = np.allclose(dx_i2c, dx_cg)
         if verbose_test():
             print_with_header(inspect.stack()[1][3])
@@ -119,24 +125,24 @@ class Conv2DConvGemmTestCase(TestCase):
             print()
             print("---=[ dy_cols * i2c.T ]=---")
             print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
-            print("x_cols.T:\n", conv2d_i2c.x_cols.T)
-            print("dw:\n", conv2d_i2c.dw)
+            print("x_cols.T:\n", conv2d_concat.x_cols.T)
+            print("dw:\n", conv2d_concat.dw)
             print()
             print("---=[ conv_gemm(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
             try:
-                print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
+                print("x:\n", conv2d_fuse.cg_x.transpose((1, 0, 2, 3)))
             except AttributeError:
                 pass
             try:
-                print("x indexed:\n", conv2d_cg.cg_x_indexed)
+                print("x indexed:\n", conv2d_fuse.cg_x_indexed)
             except AttributeError:
                 pass
-            print("dw:\n", conv2d_cg.dw)
+            print("dw:\n", conv2d_fuse.dw)
             print()
             print("---[ dw comparison ]---")
-            print("dw_i2c.shape:", conv2d_i2c.dw.shape)
-            print("dw_cg.shape: ", conv2d_cg.dw.shape)
+            print("dw_i2c.shape:", conv2d_concat.dw.shape)
+            print("dw_cg.shape: ", conv2d_fuse.dw.shape)
             print("dw allclose: ", dw_allclose)
             print()
             print("---[ dx comparison ]---")
@@ -148,10 +154,10 @@ class Conv2DConvGemmTestCase(TestCase):
                 print(dx_cg)
             print("dx allclose: ", dx_allclose)
             if print_times:
-                forward_i2c_t = timeit(lambda: conv2d_i2c.forward(x), number=10) / 10
-                forward_cg_t = timeit(lambda: conv2d_cg.forward(x), number=10) / 10
-                backward_i2c_t = timeit(lambda: conv2d_i2c.backward(dy), number=10) / 10
-                backward_cg_t = timeit(lambda: conv2d_cg.backward(dy), number=10) / 10
+                forward_i2c_t = timeit(lambda: conv2d_concat.forward(x), number=10) / 10
+                forward_cg_t = timeit(lambda: conv2d_fuse.forward(x), number=10) / 10
+                backward_i2c_t = timeit(lambda: conv2d_concat.backward(dy), number=10) / 10
+                backward_cg_t = timeit(lambda: conv2d_fuse.backward(dy), number=10) / 10
                 print()
                 print("---[ times comparison ]---")
                 print("            i2c     cg")

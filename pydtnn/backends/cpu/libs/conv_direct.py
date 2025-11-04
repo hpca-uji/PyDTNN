@@ -48,7 +48,7 @@ class ConvDirect:
     def _set_methods(self, method_name):
         return
 
-    def __init__(self, method_name, dtype:np.dtype=np.dtype(np.float32), tensor_format=TensorFormat.NHWC,
+    def __init__(self, method_name, dtype: np.dtype = np.dtype(np.float32), tensor_format=TensorFormat.NHWC,
                  debug=False, parent_layer=None):
         """
         Loads the libconvDirect.so library.

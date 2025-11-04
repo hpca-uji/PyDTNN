@@ -106,6 +106,7 @@ class Dataset(ABC):
         path = Path(filename)
         plain = path.with_suffix("")
         idx = path.with_suffix(f"{path.suffix}.idx")
+        f = None
 
         if plain.exists():
             return open(plain, mode="rb")
@@ -116,7 +117,8 @@ class Dataset(ABC):
             else:
                 f.export_index(str(idx))
         except Exception:
-            f.close()
+            if f:
+                f.close()
             raise
         else:
             return f

@@ -5,6 +5,7 @@ PyDTNN convWinograd module
 import ctypes
 import math
 import platform
+from warnings import warn
 import weakref
 from collections import defaultdict
 from functools import partial
@@ -52,7 +53,7 @@ class ConvWinograd:
     lib_cw = None  # will link to the libconvwinograd.so library
 
     def __init__(self, kh: int, kw: int, vstride: int, hstride: int, vdilation: int, hdilation: int,
-                 dtype: np.dtype = np.float32, tensor_format=TensorFormat.NCHW,
+                 dtype: np.dtype = np.dtype(np.float32), tensor_format=TensorFormat.NCHW,
                  debug=False, parent_layer=None):
         """
         Loads the libconvWinograd.so library.
@@ -102,7 +103,7 @@ class ConvWinograd:
                           getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
                           getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
             except AttributeError:
-                print(f"Winograd {routine_names} routine not found. Fallback to numpy version!")
+                warn(f"Winograd {routine_names} routine not found. Fallback to numpy version!", RuntimeWarning)
                 funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
             # breakpoint()
@@ -266,7 +267,7 @@ class ConvWinograd:
             ))
         else:
             setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
-    
+
     def _conv_winograd_numpy(self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray, pre, kernel,
                              weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0,
                              vstride=1, hstride=1, vdilation=1, hdilation=1,
