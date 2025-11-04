@@ -1,17 +1,12 @@
 import inspect
 import sys
 import unittest
+from copy import deepcopy
 
 import numpy as np
 
-from pydtnn.activations.relu import Relu
-from pydtnn.backends.cpu.activations.relu_cpu import ReluCPU
-from pydtnn.backends.cpu.layers.concatenation_block_cpu import ConcatenationBlockCPU
-from pydtnn.backends.cpu.layers.conv_2d_relu_cpu import Conv2DReluCPU
-from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
@@ -28,37 +23,48 @@ def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, C
     model = Model(**vars(params))
     model.mode = Model.Mode.TRAIN
 
-    conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                    padding=(d.vpadding, d.hpadding),
-                    stride=(d.vstride, d.hstride),
-                    dilation=(d.vdilation, d.hdilation),
-                    use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-    bn = BatchNormalization()
-    relu = Relu()
+    conv2d_depth = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                          grouping=Conv2D.Grouping.DEPTHWISE,
+                          padding=(d.vpadding, d.hpadding),
+                          stride=(d.vstride, d.hstride),
+                          dilation=(d.vdilation, d.hdilation),
+                          use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+    conv2d_pair = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                         grouping=Conv2D.Grouping.POINTWISE,
+                         padding=(d.vpadding, d.hpadding),
+                         stride=(d.vstride, d.hstride),
+                         dilation=(d.vdilation, d.hdilation),
+                         use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
     chain = ConcatenationBlock([
-        conv2d,
-        bn,
-        relu
+        conv2d_depth,
+        conv2d_pair
     ])
     chain.set_backend(model._backend)
     chain.set_model(model)
     chain.initialize(prev_shape=(d.c, d.h, d.w))
 
-    fuse = Conv2DBatchNormalizationRelu(from_parent=conv2d, from_parent2=bn)
-    fuse.set_backend(model._backend)
-    fuse.set_model(model)
-    fuse.initialize(from_parent_dict=conv2d.__dict__, prev_shape=(d.c, d.h, d.w))
+    conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                    grouping=Conv2D.Grouping.STANDARD,
+                    padding=(d.vpadding, d.hpadding),
+                    stride=(d.vstride, d.hstride),
+                    dilation=(d.vdilation, d.hdilation),
+                    use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+    conv2d.set_backend(model._backend)
+    conv2d.set_model(model)
+    conv2d.initialize(prev_shape=(d.c, d.h, d.w))
 
     # Set the same initial weights and biases to both layers
-    fuse.weights = conv2d.weights.copy()
-    fuse.biases = conv2d.biases.copy()
+    conv2d_depth.weights = conv2d.weights.copy()
+    conv2d_depth.biases = conv2d.biases.copy()
+    conv2d_pair.weights = conv2d.weights.copy()
+    conv2d_pair.biases = conv2d.biases.copy()
 
-    return chain, fuse
+    return conv2d, chain
 
 
-class Conv2DBatchNormalizationReluTestCase(TestCase):
+class Conv2DConvGroupTestCase(TestCase):
     """
-    Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu
+    Tests that Conv2D with Depth+Pair leads to the same results than Conv2D Standard
     """
 
     x_2x4 = np.array([[[[1, 2, 4, 8],
@@ -102,18 +108,18 @@ class Conv2DBatchNormalizationReluTestCase(TestCase):
 
     def _test_forward_backward_inner(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False, deconv=False, trans=False):
         from timeit import timeit
-        conv2d_concat, conv2d_fuse = get_conv2d_cpu_layers(d, deconv, trans)
+        conv2d_std, conv2d_concat = get_conv2d_cpu_layers(d, deconv, trans)
+        conv2d_std.weights = weights.copy()
         conv2d_concat.paths[0][0].weights = weights.copy()
-        conv2d_fuse.weights = weights.copy()
         # Forward pass
-        y_i2c = conv2d_concat.forward(x)
-        y_cg = conv2d_fuse.forward(x)
+        y_i2c = conv2d_std.forward(x)
+        y_cg = conv2d_concat.forward(x)
         dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
         # Backward pass
-        dx_i2c = conv2d_concat.backward(dy)
-        dx_cg = conv2d_fuse.backward(dy)
+        dx_i2c = conv2d_std.backward(dy)
+        dx_cg = conv2d_concat.backward(dy)
         # All close?
-        dw_allclose = np.allclose(conv2d_concat.dw, conv2d_fuse.dw)
+        dw_allclose = np.allclose(conv2d_std.dw, conv2d_concat.dw)
         dx_allclose = np.allclose(dx_i2c, dx_cg)
         if verbose_test():
             print_with_header(inspect.stack()[1][3])
@@ -125,24 +131,24 @@ class Conv2DBatchNormalizationReluTestCase(TestCase):
             print()
             print("---=[ dy_cols * i2c.T ]=---")
             print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
-            print("x_cols.T:\n", conv2d_concat.x_cols.T)
-            print("dw:\n", conv2d_concat.dw)
+            print("x_cols.T:\n", conv2d_std.x_cols.T)
+            print("dw:\n", conv2d_std.dw)
             print()
             print("---=[ conv_gemm(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
             try:
-                print("x:\n", conv2d_fuse.cg_x.transpose((1, 0, 2, 3)))
+                print("x:\n", conv2d_concat.cg_x.transpose((1, 0, 2, 3)))
             except AttributeError:
                 pass
             try:
-                print("x indexed:\n", conv2d_fuse.cg_x_indexed)
+                print("x indexed:\n", conv2d_concat.cg_x_indexed)
             except AttributeError:
                 pass
-            print("dw:\n", conv2d_fuse.dw)
+            print("dw:\n", conv2d_concat.dw)
             print()
             print("---[ dw comparison ]---")
-            print("dw_i2c.shape:", conv2d_concat.dw.shape)
-            print("dw_cg.shape: ", conv2d_fuse.dw.shape)
+            print("dw_i2c.shape:", conv2d_std.dw.shape)
+            print("dw_cg.shape: ", conv2d_concat.dw.shape)
             print("dw allclose: ", dw_allclose)
             print()
             print("---[ dx comparison ]---")
@@ -154,10 +160,10 @@ class Conv2DBatchNormalizationReluTestCase(TestCase):
                 print(dx_cg)
             print("dx allclose: ", dx_allclose)
             if print_times:
-                forward_i2c_t = timeit(lambda: conv2d_concat.forward(x), number=10) / 10
-                forward_cg_t = timeit(lambda: conv2d_fuse.forward(x), number=10) / 10
-                backward_i2c_t = timeit(lambda: conv2d_concat.backward(dy), number=10) / 10
-                backward_cg_t = timeit(lambda: conv2d_fuse.backward(dy), number=10) / 10
+                forward_i2c_t = timeit(lambda: conv2d_std.forward(x), number=10) / 10
+                forward_cg_t = timeit(lambda: conv2d_concat.forward(x), number=10) / 10
+                backward_i2c_t = timeit(lambda: conv2d_std.backward(dy), number=10) / 10
+                backward_cg_t = timeit(lambda: conv2d_concat.backward(dy), number=10) / 10
                 print()
                 print("---[ times comparison ]---")
                 print("            i2c     cg")

@@ -99,18 +99,18 @@ class Conv2DReluTestCase(TestCase):
 
     def _test_forward_backward_inner(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False, deconv=False, trans=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d, deconv, trans)
-        conv2d_i2c.weights = weights.copy()
-        conv2d_cg.weights = weights.copy()
+        conv2d_concat, conv2d_fuse = get_conv2d_cpu_layers(d, deconv, trans)
+        conv2d_concat.paths[0][0].weights = weights.copy()
+        conv2d_fuse.weights = weights.copy()
         # Forward pass
-        y_i2c = conv2d_i2c.forward(x)
-        y_cg = conv2d_cg.forward(x)
+        y_i2c = conv2d_concat.forward(x)
+        y_cg = conv2d_fuse.forward(x)
         dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
         # Backward pass
-        dx_i2c = conv2d_i2c.backward(dy)
-        dx_cg = conv2d_cg.backward(dy)
+        dx_i2c = conv2d_concat.backward(dy)
+        dx_cg = conv2d_fuse.backward(dy)
         # All close?
-        dw_allclose = np.allclose(conv2d_i2c.dw, conv2d_cg.dw)
+        dw_allclose = np.allclose(conv2d_concat.dw, conv2d_fuse.dw)
         dx_allclose = np.allclose(dx_i2c, dx_cg)
         if verbose_test():
             print_with_header(inspect.stack()[1][3])
@@ -122,24 +122,24 @@ class Conv2DReluTestCase(TestCase):
             print()
             print("---=[ dy_cols * i2c.T ]=---")
             print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
-            print("x_cols.T:\n", conv2d_i2c.x_cols.T)
-            print("dw:\n", conv2d_i2c.dw)
+            print("x_cols.T:\n", conv2d_concat.x_cols.T)
+            print("dw:\n", conv2d_concat.dw)
             print()
             print("---=[ conv_gemm(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
             try:
-                print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
+                print("x:\n", conv2d_fuse.cg_x.transpose((1, 0, 2, 3)))
             except AttributeError:
                 pass
             try:
-                print("x indexed:\n", conv2d_cg.cg_x_indexed)
+                print("x indexed:\n", conv2d_fuse.cg_x_indexed)
             except AttributeError:
                 pass
-            print("dw:\n", conv2d_cg.dw)
+            print("dw:\n", conv2d_fuse.dw)
             print()
             print("---[ dw comparison ]---")
-            print("dw_i2c.shape:", conv2d_i2c.dw.shape)
-            print("dw_cg.shape: ", conv2d_cg.dw.shape)
+            print("dw_i2c.shape:", conv2d_concat.dw.shape)
+            print("dw_cg.shape: ", conv2d_fuse.dw.shape)
             print("dw allclose: ", dw_allclose)
             print()
             print("---[ dx comparison ]---")
@@ -151,10 +151,10 @@ class Conv2DReluTestCase(TestCase):
                 print(dx_cg)
             print("dx allclose: ", dx_allclose)
             if print_times:
-                forward_i2c_t = timeit(lambda: conv2d_i2c.forward(x), number=10) / 10
-                forward_cg_t = timeit(lambda: conv2d_cg.forward(x), number=10) / 10
-                backward_i2c_t = timeit(lambda: conv2d_i2c.backward(dy), number=10) / 10
-                backward_cg_t = timeit(lambda: conv2d_cg.backward(dy), number=10) / 10
+                forward_i2c_t = timeit(lambda: conv2d_concat.forward(x), number=10) / 10
+                forward_cg_t = timeit(lambda: conv2d_fuse.forward(x), number=10) / 10
+                backward_i2c_t = timeit(lambda: conv2d_concat.backward(dy), number=10) / 10
+                backward_cg_t = timeit(lambda: conv2d_fuse.backward(dy), number=10) / 10
                 print()
                 print("---[ times comparison ]---")
                 print("            i2c     cg")
