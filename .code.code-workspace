@@ -13,7 +13,7 @@
 			"vendor/build": true,
 			"**/__pycache__": true,
 			"**/*.so": true,
-			"**/*.c": true,
+			"pydtnn/**/*.c": true,
 			"**/*.idx": true,
 		},
 		"flake8.importStrategy": "fromEnvironment",
