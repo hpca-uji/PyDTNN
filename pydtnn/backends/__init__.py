@@ -2,7 +2,8 @@ import enum
 import importlib
 import typing
 
-from pydtnn import model as model_module
+if typing.TYPE_CHECKING:
+    from pydtnn import model as model_module
 
 
 class BackendType(enum.StrEnum):

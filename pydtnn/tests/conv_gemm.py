@@ -308,7 +308,7 @@ class ConvGemmTestCase(TestCase):
                 if vstride == hstride:
                     continue
                 conv_gemm_result: np.ndarray = self._compute(weights, x,
-                                                         kw=d.kw, kh=d.kh,
+                                                             kw=d.kw, kh=d.kh,
                                                              vpadding=d.vpadding, hpadding=d.hpadding,
                                                              vstride=vstride, hstride=hstride,
                                                              vdilation=d.vdilation, hdilation=d.hdilation)

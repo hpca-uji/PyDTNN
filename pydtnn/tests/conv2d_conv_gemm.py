@@ -14,46 +14,46 @@ from pydtnn.utils import print_with_header, random
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-def get_conv2d_cpu_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
-    params = Params()
-    params.tensor_format = TensorFormat.NCHW.upper()
-    params.batch_size = d.b
-    params.enable_conv_gemm = False
-    params.enable_best_of = False
-    model_i2c = Model(**vars(params))
-    model_i2c.mode = Model.Mode.TRAIN
-    params_gc = deepcopy(params)
-    params_gc.enable_conv_gemm = True
-    params_gc.conv_gemm_cache = True
-    params_gc.conv_gemm_fallback_to_im2col = False
-    params_gc.conv_gemm_deconv = deconv
-    params_gc.conv_gemm_trans = trans
-    model_cg = Model(**vars(params_gc))
-    model_cg.mode = Model.Mode.TRAIN
-    conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                           padding=(d.vpadding, d.hpadding),
-                           stride=(d.vstride, d.hstride),
-                           dilation=(d.vdilation, d.hdilation),
-                           use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-    conv2d_i2c.set_model(model_i2c)
-    conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                          padding=(d.vpadding, d.hpadding),
-                          stride=(d.vstride, d.hstride),
-                          dilation=(d.vdilation, d.hdilation),
-                          use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-    conv2d_cg.set_model(model_cg)
-    for layer in (conv2d_i2c, conv2d_cg):
-        layer.initialize(prev_shape=(d.c, d.h, d.w))
-    # Set the same initial weights and biases to both layers
-    conv2d_cg.weights = conv2d_i2c.weights.copy()
-    conv2d_cg.biases = conv2d_i2c.biases.copy()
-    return conv2d_i2c, conv2d_cg
-
-
 class Conv2DConvGemmTestCase(TestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T
     """
+
+    @staticmethod
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
+        params = Params()
+        params.tensor_format = TensorFormat.NCHW.upper()
+        params.batch_size = d.b
+        params.enable_conv_gemm = False
+        params.enable_best_of = False
+        model_i2c = Model(**vars(params))
+        model_i2c.mode = Model.Mode.TRAIN
+        params_gc = deepcopy(params)
+        params_gc.enable_conv_gemm = True
+        params_gc.conv_gemm_cache = True
+        params_gc.conv_gemm_fallback_to_im2col = False
+        params_gc.conv_gemm_deconv = deconv
+        params_gc.conv_gemm_trans = trans
+        model_cg = Model(**vars(params_gc))
+        model_cg.mode = Model.Mode.TRAIN
+        conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                               padding=(d.vpadding, d.hpadding),
+                               stride=(d.vstride, d.hstride),
+                               dilation=(d.vdilation, d.hdilation),
+                               use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+        conv2d_i2c.set_model(model_i2c)
+        conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                              padding=(d.vpadding, d.hpadding),
+                              stride=(d.vstride, d.hstride),
+                              dilation=(d.vdilation, d.hdilation),
+                              use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+        conv2d_cg.set_model(model_cg)
+        for layer in (conv2d_i2c, conv2d_cg):
+            layer.initialize(prev_shape=(d.c, d.h, d.w))
+        # Set the same initial weights and biases to both layers
+        conv2d_cg.weights = conv2d_i2c.weights.copy()
+        conv2d_cg.biases = conv2d_i2c.biases.copy()
+        return conv2d_i2c, conv2d_cg
 
     x_2x4 = np.array([[[[1, 2, 4, 8],
                         [16, 32, 64, 128]]]]).astype(np.float32, order='C')
@@ -96,7 +96,7 @@ class Conv2DConvGemmTestCase(TestCase):
 
     def _test_forward_backward_inner(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False, deconv=False, trans=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d, deconv, trans)
+        conv2d_i2c, conv2d_cg = self._get_layers(d, deconv, trans)
         conv2d_i2c.weights = weights.copy()
         conv2d_cg.weights = weights.copy()
         # Forward pass
@@ -174,7 +174,7 @@ class Conv2DConvGemmTestCase(TestCase):
         """
         d = D()
         print(f"d:\n{d}")
-        conv2d_i2c, conv2d_cg = get_conv2d_cpu_layers(d)
+        conv2d_i2c, conv2d_cg = self._get_layers(d)
         x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
         y_i2c = conv2d_i2c.forward(x)
         y_cg = conv2d_cg.forward(x)

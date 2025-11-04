@@ -28,7 +28,7 @@ from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
 
 
-class CheckConvGemmModels(TestCase):
+class ModelConvGemmTestCase(TestCase):
     """
     Tests that two models with different parameters lead to the same results
     """

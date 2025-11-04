@@ -20,13 +20,13 @@ import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests import CheckConvGemmModels as _CheckConvGemmModels
+from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase as _CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.losses.loss import Loss, select as select_loss
 
 
-class CheckGPUModels(_CheckConvGemmModels):
+class ModelGpuTestCase(_CheckConvGemmModels):
     """
     Tests that two models with different parameters lead to the same results
     """

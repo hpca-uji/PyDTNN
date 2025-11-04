@@ -19,13 +19,13 @@ import numpy as np
 
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests import CheckConvGemmModels as _CheckConvGemmModels
+from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase as _CheckConvGemmModels
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 
-class CheckTensorFormatModels(_CheckConvGemmModels):
+class TensorFormatTestCase(_CheckConvGemmModels):
     """
     Tests that two models with different parameters lead to the same results
     """
