@@ -6,7 +6,7 @@ from pydtnn.utils.types import Array
 class F1Score[T: Array](Metric[T]):
     order = BinaryConfusionMatrix.order + 1  
     conf_matrix_metric: BinaryConfusionMatrix = None  # type: ignore
-    format = "f1: %.2f"
+    format = "f1: %.4f"
 
     def initialize(self) -> None:
 

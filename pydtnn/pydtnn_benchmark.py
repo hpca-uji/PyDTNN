@@ -117,7 +117,7 @@ def main():
                 keys = [k for k in history]
                 for v in range(len(history[keys[0]])):
                     f.write(' '.join(["%3d" % v] +
-                                     [('%20.4f' % history[k][v]) for k in keys]) + '\n')
+                                     [('%20.4f' % history[k][v]) for k in keys if isinstance(history[k][v], float)]) + '\n')
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
