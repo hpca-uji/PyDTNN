@@ -8,16 +8,16 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 def div_arrays_set_if_zero[T: _npDT](dividend: _npDT_1Dims[T],
                                      divider: _npDT_1Dims[T],
-                                     default_value: T): # type: ignore
+                                     default_value: T):  # type: ignore
     """
-    This function execute a element wise division between dividend and divider (\"dividend / divider\"), but if divider is 0, then the result is 0 too.
+    This function execute a element wise division between dividend and divider ("dividend / divider"), but if divider is 0, then the result is 0 too.
     Example:
         dividend = [-1, 1, 0, 10, -29, 3, 0, 0]
         divider = [0, 40, 0, 0, 3, 0, 10, -30]
         default_value = 0
 
         result = [0, 1/40, 0, 0, -29/3, 0, 0, 0]
-    
+
     Another example:
         dividend = [-1, 1, 0, 10, -29, 3, 0, 0]
         divider = [0, 40, 0, 0, 3, 0, 10, -30]
@@ -31,5 +31,5 @@ def div_arrays_set_if_zero[T: _npDT](dividend: _npDT_1Dims[T],
         default_value (npDT): The va
 
     Returns:
-        Nothing. The value is stores in \"dividend\".
+        Nothing. The value is stores in "dividend".
     """
