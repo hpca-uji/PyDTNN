@@ -151,7 +151,7 @@ def get_batch_size(local_size: int | None, global_size: int | None, comm_size: i
         batch_size = default
 
     if batch_size < 1:
-        raise SystemExit(f"'batch_size' ({batch_size}) too small or too many processes (num processes: {comm_size})")
+        raise ValueError(f"'batch_size' ({batch_size}) too small or too many processes (num processes: {comm_size})")
 
     return batch_size
 
@@ -401,10 +401,10 @@ class Model[T: Array]:
                 self.MPI, self.comm = (None, None)
             case "data":
                 if not MPI:
-                    raise SystemExit("Please, install mpi4py to allow parallel MPI execution!")
+                    raise ValueError("Please, install mpi4py to allow parallel MPI execution!")
                 self.MPI, self.comm = (MPI, MPI.COMM_WORLD)
             case _:
-                raise SystemExit(f"Parallel option '{self.parallel}' not recognized.")
+                raise ValueError(f"Parallel option '{self.parallel}' not recognized.")
 
         # Comunication size
         self.rank_weight = 1.0
@@ -424,7 +424,7 @@ class Model[T: Array]:
             case bool():
                 pass
             case _:
-                raise SystemExit(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
+                raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
     def _initialize_cuda(self) -> None:
 
@@ -452,7 +452,7 @@ class Model[T: Array]:
             except Exception as e:
                 supported_nccl = False
                 msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
-                raise SystemExit(msg) from e
+                raise ValueError(msg) from e
 
             nccl_types = {np.float64: nccl.DataType.Float64,
                           np.float32: nccl.DataType.Float32,
@@ -475,7 +475,7 @@ class Model[T: Array]:
             # Check that no more processes than GPUs per node are used
             for host, ranks_in_host in hosts.items():
                 if len(ranks_in_host) > self.gpus_per_node:
-                    raise SystemExit("Not able to run more processes than GPUs per node!")
+                    raise ValueError("Not able to run more processes than GPUs per node!")
 
             nccl_id = self.comm.bcast(nccl.ncclGetUniqueId() if self.comm_rank == 0 else None)
             nccl_comm = nccl.ncclCommInitRank(self.nprocs, nccl_id, self.rank)
@@ -1191,7 +1191,7 @@ class Model[T: Array]:
                 else:
                     return 0.0
             case _:
-                raise SystemExit(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: \"{list(Model.SyncParticipation)}\"")
+                raise ValueError(f"Model synchronization participation option '{self.model_sync_participation}' not recognized. Only recognized: \"{list(Model.SyncParticipation)}\"")
 
         min_nsamples, max_nsamples, total_nsamples = min(comm_nsamples), max(comm_nsamples), sum(comm_nsamples)
         comm_size = len(comm_nsamples)
@@ -1205,7 +1205,7 @@ class Model[T: Array]:
                 inverse_nsamples = min_nsamples + (max_nsamples - self.dataset._nsamples[part])
                 return inverse_nsamples / total_nsamples
             case _:
-                raise SystemExit(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: \"{list(Model.SyncAlg)}\"")
+                raise ValueError(f"Model synchronization algorithm option '{self.model_sync_alg}' not recognized. Only recognized: \"{list(Model.SyncAlg)}\"")
 
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.EVALUATE

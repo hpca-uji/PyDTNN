@@ -129,7 +129,7 @@ def load_library(name):
         elif sys.platform == 'win32':
             full_name = f"lib{name}.dll"
         else:
-            raise SystemExit(f"Trying to load '{name}' library, but platform '{sys.platform}' is not yet supported!")
+            raise NotImplementedError(f"Trying to load '{name}' library, but platform '{sys.platform}' is not yet supported!")
 
         for current_path in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
             if os.path.exists(os.path.join(current_path, full_name)):

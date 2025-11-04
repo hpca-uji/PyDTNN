@@ -20,8 +20,8 @@ class SchedulerWithLossOrMetric(Scheduler):
     def _get_idx(self):
         try:
             return self.model.loss_and_metrics.index(self.loss_or_metric)
-        except ValueError:
-            raise SystemExit("{self}: loss or metric '{self.loss_or_metric}' not found in current model!")
+        except ValueError as e:
+            raise ValueError("{self}: loss or metric '{self.loss_or_metric}' not found in current model!") from e
 
     @classmethod
     def from_model(cls, model: "Model") -> "WarmUpLRScheduler":

@@ -17,10 +17,6 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu[np.ndarray]):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the BN + Relu"""
-
-        if self.model.mode is Model.Mode.TRAIN:
-            raise SystemExit("Sorry, fused layers cannot be used in training mode!")
-
         if self.spatial:
             if self.model.tensor_format is TensorFormat.NCHW:
                 x = best_transpose_0231(x)

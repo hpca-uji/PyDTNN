@@ -26,7 +26,7 @@ class CustomDataset(Dataset):
                 x_test = x_train
                 y_test = y_train
             else:
-                raise SystemExit("Both x_test and y_test must be provided or, alternatively, none of them!")
+                raise ValueError("Both x_test and y_test must be provided or, alternatively, none of them!")
 
         if input_shape is None:
             _input_shape: ArrayShape = x_train.shape[1:]

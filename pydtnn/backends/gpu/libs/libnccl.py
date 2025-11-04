@@ -14,7 +14,7 @@ elif sys.platform == 'darwin':
 elif sys.platform == 'win32':
     _libnccl_libname_list = ['libnccl.dll']
 else:
-    raise SystemExit('PyDTNN NCCL: current platform is not yet supported!')
+    raise NotImplementedError('PyDTNN NCCL: current platform is not yet supported!')
 
 _libnccl = None
 for _libnccl_libname in _libnccl_libname_list:
