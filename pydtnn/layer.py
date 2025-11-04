@@ -89,7 +89,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def show(self, attrs: str | None = "") -> None:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
-        print(f"|{self.id:^7d}|{type(self).__name__:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
+        print(f"|{self.id:^7d}|{self.canonical_name:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
 
     def print_in_convdirect_format(self):
         pass

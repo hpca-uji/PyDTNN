@@ -117,7 +117,7 @@ class ConvWinograd:
             enable_best_of = False
             self.evaluate_only = True
 
-        if isinstance(dtype, type):
+        if isinstance(dtype, np.dtype):
             self.dtype = dtype
         else:
             try:
