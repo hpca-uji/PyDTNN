@@ -10,6 +10,7 @@ import numpy as np
 
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import load_library
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
 try:
     load_library("convDirect")
@@ -74,7 +75,7 @@ class ConvDirect:
         # Parent layer
         if parent_layer is not None:
             self.get_parent_layer = weakref.ref(parent_layer)
-            self.evaluate_only = self.get_parent_layer().model.evaluate_only
+            self.evaluate_only = self.get_parent_layer().model.evaluate_only  # type: ignore
             if not self.evaluate_only:
                 print("The convDirect module only works in evaluate_only mode!")
                 sys.exit(1)
@@ -104,33 +105,38 @@ class ConvDirect:
             self._reuse_processed_weights = True
         self._weights_already_processed = False
 
-    def conv_direct(self, weights, x, biases=None, vpadding=0, hpadding=0,
-                    vstride=1, hstride=1, vdilation=1, hdilation=1,
-                    relu=False, bn=False, running_mean=None, inv_std=None,
-                    gamma=None, beta=None):
+    def conv_direct(self, weights: np.ndarray, x: np.ndarray, 
+                    biases: np.ndarray | None = None,  # type: ignore
+                    vpadding=0, hpadding=0,
+                    vstride=1, hstride=1, 
+                    vdilation=1, hdilation=1,
+                    relu=False, bn=False, running_mean=None, 
+                    inv_std=None, gamma=None, beta=None):
 
-        if self.tensor_format == TensorFormat.NCHW:
+        if self.tensor_format is TensorFormat.NCHW:
             n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
             n, hi, wi, ci = x.shape
             ci, kh, kw, co = weights.shape
 
+        # TODO: Move to Conv2D_CPU (or remove)
         # TODO: use encode/decode tensor or TensorFormat methods
         if biases is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            if self.tensor_format == TensorFormat.NCHW:
+            if self.tensor_format is TensorFormat.NCHW:
                 biases = np.zeros((n, co, ho, wo), weights.dtype, order="C")
             else:
                 biases = np.zeros((n, ho, wo, co), weights.dtype, order="C")
         else:
-            if self.tensor_format == TensorFormat.NCHW:
+            if self.tensor_format is TensorFormat.NCHW:
                 bb, knb, ho, wo = biases.shape
             else:
                 bb, ho, wo, knb = biases.shape
             assert co == knb, "Number of filters must be the same!"
             assert n == bb, "Batch sizes must be the same!"
+        biases: np.ndarray
 
         # int t = n, Co = co, Ci = ci, Ho = h, Wo = w, Hf = r, Wf = s;
         (t, Co, Ci, Ho, Wo, Hf, Wf) = (n, co, ci, hi, wi, kh, kw)
@@ -272,7 +278,7 @@ def __usage_example__():
 
     x_c = np.zeros(((x.shape[0] * ho * wo), (x.shape[-1] * kh * kw)), dtype=x.dtype)
     im2row_nhwc_cython(x, x_c,
-                       kh, kw,
+                       kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(-1, kn)
     im2col_mm_result_nhwc = (x_c @ w_c + biases.reshape(b * ho * wo, kn)).reshape(-1, ho, wo, kn)

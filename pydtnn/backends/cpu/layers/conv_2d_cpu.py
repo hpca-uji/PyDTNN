@@ -75,14 +75,13 @@ class Conv2DCPU(LayerCPU,
         super().initialize(prev_shape, x)
         # Weights
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
-        # Biases
-        if self.use_bias:
-            self.biases = self.biases_initializer((self.co,), self.model.dtype)
-            self.db = np.ndarray(shape=(self.co, ), dtype=self.model.dtype, order="C")
         # Select variants if it has not been already selected (e.g., by BestOfVariant)
+        bias_shape = (self.co,)
+
         if self.variant is None:
             # Select variant when best_of is not enabled
             variant = Conv2DCPU.Variant.I2C  # Default Convolution variant.
+            # bias_shape = (self.co,) # I2C, POINTWISE, DEPTHWISE
             match self.grouping:
                 case Conv2DCPU.Grouping.POINTWISE:
                     variant = Conv2DCPU.Variant.POINTWISE
@@ -97,6 +96,7 @@ class Conv2DCPU(LayerCPU,
                             sys.exit(1)
                         elif self.cw_constraints_fulfilled:
                             variant = Conv2DCPU.Variant.WINOGRAD
+                            #bias_shape = (self.co,)
                         # else: variant = None # Value set before the match-case statement
                     if variant == Conv2DCPU.Variant.I2C:
                         # assert not self.model.enable_conv_winograd or (self.model.enable_conv_winograd and not self.cw_constraints_fulfilled)
@@ -108,11 +108,24 @@ class Conv2DCPU(LayerCPU,
                                 sys.exit(1)
                             else:
                                 variant = Conv2DCPU.Variant.GEMM
+                                # TODO: Change this.
+                                if self.model.tensor_format is TensorFormat.NCHW:
+                                    bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
+                                else:
+                                    bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
+
                         elif self.model.enable_conv_direct:
                             # -> ConvDirect:
                             variant = Conv2DCPU.Variant.DIRECT
+                            # TODO: Change this.
+                            bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
                         # else: variant = Conv2DCPU.Variant.I2C # Already set.
             self.variant = variant
+        
+        # Biases
+        if self.use_bias:
+            self.biases = self.biases_initializer(bias_shape, self.model.dtype)
+            self.db = np.ndarray(shape=(self.co, ), dtype=self.model.dtype, order="C")
 
         match self.variant:
             case Conv2DCPU.Variant.I2C:
