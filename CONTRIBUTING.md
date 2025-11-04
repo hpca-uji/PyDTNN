@@ -17,6 +17,7 @@
   deactivate all environments and then reactivate only the one you want.
 
 # Planned
+- Change `layer.show` to return sequence, so `model.show` can do the formatting.
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
 - Rework the `Conv2D` variant implementation.
