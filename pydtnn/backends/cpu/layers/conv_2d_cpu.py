@@ -165,4 +165,4 @@ class Conv2DCPU(LayerCPU,
 
     @property
     def canonical_name(self) -> str:
-        return f"{super().canonical_name}({self.variant})"
+        return f"{super().canonical_name}_{self.variant}"
