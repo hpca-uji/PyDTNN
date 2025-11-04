@@ -18,7 +18,7 @@ from time import time
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-        import pycuda.gpuarray as gpuarray
+    import pycuda.gpuarray as gpuarray
 from pydtnn.backends.gpu import TensorGPU
 
 # setting random seed
