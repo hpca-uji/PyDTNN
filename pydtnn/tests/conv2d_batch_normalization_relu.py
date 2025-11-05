@@ -31,7 +31,7 @@ class Conv2DBatchNormalizationReluTestCase(_Conv2DConvGemmTestCase):
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
         params = Params()
-        params.tensor_format = TensorFormat.NHWC.upper()
+        params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
         params.enable_conv_gemm = True
         model = Model(**vars(params))
@@ -49,14 +49,17 @@ class Conv2DBatchNormalizationReluTestCase(_Conv2DConvGemmTestCase):
             bn,
             relu
         ])
+        shape = (d.c, d.h, d.w)
         chain.set_backend(model._backend)
         chain.set_model(model)
-        chain.initialize(prev_shape=(d.c, d.h, d.w))
-
-        fuse = Conv2DBatchNormalizationRelu(from_parent=conv2d, from_parent2=bn)
+        chain.initialize(prev_shape=shape)
+        
+        from_parent = conv2d.__dict__ | bn.__dict__
+        fuse = Conv2DBatchNormalizationRelu(from_parent=from_parent)
         fuse.set_backend(model._backend)
         fuse.set_model(model)
-        fuse.initialize(from_parent_dict=conv2d.__dict__, prev_shape=(d.c, d.h, d.w))
+        fuse.__dict__.update(from_parent)
+        fuse.initialize(prev_shape=shape)
 
         # Set the same initial weights and biases to both layers
         fuse.weights = conv2d.weights.copy()
