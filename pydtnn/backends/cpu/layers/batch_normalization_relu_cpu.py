@@ -2,18 +2,14 @@ from pydtnn.cython.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.cpu.layers.batch_normalization_cpu import BatchNormalizationCPU
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.utils.tensor import TensorFormat
-import typing
+from pydtnn.utils.types import ArrayShape
 
 import numpy as np
 
 
 class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np.ndarray]):
 
-    @typing.override
-    def post_initialize(self):
-        pass
-
-    def initialize(self, prev_shape, x=None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         self.y: np.ndarray = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 

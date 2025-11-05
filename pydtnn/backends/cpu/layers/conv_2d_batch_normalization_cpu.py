@@ -1,24 +1,18 @@
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
-from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.types import ArrayShape
 
 import numpy as np
-import abc
 
 
 class Conv2DBatchNormalizationCPU(Conv2DCPU, Conv2DBatchNormalization[np.ndarray]):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def initialize(self, from_parent_dict: dict, *args, **kwargs):
-        super().initialize(*args, **kwargs)
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super().initialize(prev_shape, x)
         self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,
                         "_forward_cg_nchw": self._forward_nchw_cg,
-                        "_forward_cg_nhwc": self._forward_nhwc_cg}[from_parent_dict["forward"].__name__]
-        self.__dict__.update(from_parent_dict)
+                        "_forward_cg_nhwc": self._forward_nhwc_cg}[self.forward.__name__]
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """This is a fake forward function. It will be masked on initialization by a _forward implementation"""

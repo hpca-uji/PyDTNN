@@ -103,3 +103,14 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
     def update_weights(self, optimizer: Optimizer) -> None:
         optimizer.update(self)
+
+
+
+class FusedLayerMixIn[T: Array]():
+    def __init__(self, *args, **kwargs):
+        from_parent = kwargs.pop("from_parent", None)
+        if from_parent is None:
+            super().__init__(*args, **kwargs)
+        else:
+            from_parent.pop("forward", None)
+            self.__dict__.update(from_parent)

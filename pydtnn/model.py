@@ -7,10 +7,11 @@ import enum
 import importlib
 import itertools
 from math import ceil
+import operator
 import os
 import sys
 import time
-from functools import cached_property
+from functools import cached_property, reduce
 from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
@@ -27,10 +28,12 @@ from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer import LayerAndActivationBase, FusedLayerMixIn
 from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
+from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.losses.loss import Loss
 from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.losses.loss import select as select_loss
@@ -51,7 +54,7 @@ from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat
-from pydtnn.utils.types import Array, Components, NetworkAlgEnum, ArrayShape
+from pydtnn.utils.types import Array, NetworkAlgEnum, ArrayShape
 from pydtnn.metrics.metric import Metric
 
 
@@ -640,75 +643,92 @@ class Model[T: Array]:
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def __layer_fusion(self, layers: list[LayerAndActivationBase], bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
-        fused_layers: list[LayerAndActivationBase] = []
-        for i, curr_layer in enumerate(layers):
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str, list[LayerAndActivationBase]]:
+        layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
+        layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
+        layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
+
+        layer_name = None
+
+        match (layer0, layer1, layer2):
+            case (_, FusedLayerMixIn(), _): pass # else: layer_name = None
+            case (Conv2D(), BatchNormalization(), Relu()):
+                if self.enable_fused_conv_bn_relu:
+                    layer_name = "conv_2d_batch_normalization_relu"
+                # else: layer_name = None
+            case default: pass # else: layer_name = None
+
+        return layer_name, [layer0, layer1, layer2]
+    # ----
+
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerAndActivationBase]]:
+        layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
+        layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
+
+        layer_name = None
+
+        match (layer1, layer2):
+            case (FusedLayerMixIn(), _): pass # else: layer_name = None
+                # else: layer_name = None
+            case (Conv2D(), BatchNormalization()):
+                if self.enable_fused_conv_bn:
+                    layer_name = "conv_2d_batch_normalization"
+                # else: layer_name = None
+            case (Conv2D(), Relu()):
+                if self.enable_fused_conv_relu:
+                    layer_name = "conv_2d_relu"
+                # else: layer_name = None
+            case (BatchNormalization(), Relu()):
+                if self.enable_fused_bn_relu:
+                    layer_name = "batch_normalization_relu"
+                # else: layer_name = None
+            case default: pass # else: layer_name = None
+
+        return layer_name, [layer1, layer2]
+    # ----
+
+
+    def __layer_fusion(self, layers: list[LayerAndActivationBase], switch_fusion: abc.Callable) -> None:
+        i = 0
+        while i < len(layers):
+            curr_layer = layers[i]
 
             # Recurse if layer group
             if curr_layer.is_block_layer:
                 for j, p in enumerate(curr_layer.paths):
-                    curr_layer.paths[j] = self.__layer_fusion(p, bn_relu, conv_relu, conv_bn, conv_bn_relu)
+                    self.__layer_fusion(curr_layer.paths[j], switch_fusion)
+            else:
+                layer_name, layers_to_fuse = switch_fusion(layers[:i])
+                
+                if layer_name:
+                    dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)) )
+                    print(f"Fusing {' + '.join(map(str, layers_to_fuse))}")
+                    fused_layer = select_layer(layer_name)
+                    
+                    new_curr_layer = fused_layer(from_parent=dict_params)
+                    new_curr_layer.set_backend(self._backend)
+                    new_curr_layer.set_model(self)
+                    new_curr_layer.__dict__.update(dict_params)
+                    try:
+                        new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
+                    except Exception as e:
+                        warn(f"Aborted fusion, {e}")
+                    else:
+                        start = i -len(layers_to_fuse)
+                        del layers[start : i]
+                        layers.insert(start, new_curr_layer)
 
-            # Look-back (3 layer context) (conv2d + bn + relu)
-            elif conv_bn_relu and len(fused_layers) > 1 and \
-                    isinstance(curr_layer, Relu) and \
-                    isinstance(fused_layers[-1], BatchNormalization) and \
-                    isinstance(fused_layers[-2], Conv2D):
-                fused_layer = select_layer("conv_2d_batch_normalization_relu")
-                if fused_layers[-2].forward.__name__ in fused_layer.__dict__:  # or self.enable_best_of:
-                    bn_layer = fused_layers.pop()
-                    cv_layer = fused_layers.pop()
-                    print("Fusing %03d_%s + %03d_%s + %03d_%s..." % (cv_layer.id, type(cv_layer).__name__,
-                                                                     bn_layer.id, type(bn_layer).__name__,
-                                                                     curr_layer.id, type(curr_layer).__name__))
-                    curr_layer = fused_layer(from_parent=cv_layer, from_parent2=bn_layer)
-                    curr_layer.set_backend(self._backend)
-                    curr_layer.set_model(self)
-                    curr_layer.initialize(from_parent_dict=cv_layer.__dict__, prev_shape=cv_layer.prev_shape, x=cv_layer.x)
+                    i -= len(layers_to_fuse)
+                #else: Nothing
+            i += 1
 
-            # Look-back (2 layer context) (conv2d + bn|relu)
-            elif (conv_relu or conv_bn) and len(fused_layers) > 0 and \
-                    (isinstance(curr_layer, Relu) or
-                        isinstance(curr_layer, BatchNormalization)) and \
-                    isinstance(fused_layers[-1], Conv2D) and \
-                    not (conv_bn_relu and i + 1 < len(layers) and isinstance(layers[i + 1], Relu)):
-                extra_layer = "relu" if isinstance(curr_layer, Relu) else "batch_normalization"
-                fused_layer = select_layer(f"conv_2d_{extra_layer}")
-                prev_layer = fused_layers.pop()
-                print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
-                                                        curr_layer.id, type(curr_layer).__name__))
-                new_curr_layer = fused_layer(from_parent=prev_layer, from_parent2=curr_layer)
-                new_curr_layer.set_backend(self._backend)
-                new_curr_layer.set_model(self)
-                try:
-                    new_curr_layer.initialize(from_parent_dict=prev_layer.__dict__, prev_shape=prev_layer.prev_shape, x=prev_layer.x)
-                except Exception as e:
-                    warn(f"Aborted fusion, {e}")
-                    fused_layers.append(prev_layer)
-                else:
-                    curr_layer = new_curr_layer
-
-            # Look-back (2 layer context) (bn + relu)
-            elif bn_relu and len(fused_layers) > 0 and \
-                    isinstance(curr_layer, Relu) and \
-                    isinstance(fused_layers[-1], BatchNormalization):
-                prev_layer = fused_layers.pop()
-                print("Fusing %03d_%s + %03d_%s ..." % (prev_layer.id, type(prev_layer).__name__,
-                                                        curr_layer.id, type(curr_layer).__name__))
-                fused_layer = select_layer("batch_normalization_relu")
-                curr_layer = fused_layer(from_parent=prev_layer)
-                curr_layer.set_backend(self._backend)
-                curr_layer.set_model(self)
-                curr_layer.initialize(prev_shape=prev_layer.prev_shape, x=prev_layer.x)
-
-            fused_layers.append(curr_layer)
-        return fused_layers
-
-    def _apply_layer_fusion(self, bn_relu=False, conv_relu=False, conv_bn=False, conv_bn_relu=False):
+    def _apply_layer_fusion(self):
         """ Apply layer fusion in a recursive manner """
 
-        if not self.enable_cudnn and (bn_relu or conv_relu or conv_bn, conv_bn_relu):
-            self.layers = self.__layer_fusion(self.layers, bn_relu, conv_relu, conv_bn, conv_bn_relu)
+        if not self.enable_cudnn and any([self.enable_fused_bn_relu, self.enable_fused_conv_relu, self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu]):
+            # NOTE: 1st the 3 layers fusion, then the rest:
+            self.__layer_fusion(self.layers, self._select_fusion_3)
+            self.__layer_fusion(self.layers, self._select_fusion_2)
 
     @property
     def _backend(self) -> BackendType:
@@ -717,8 +737,7 @@ class Model[T: Array]:
     def _initialize(self):
         if self._initialized:
             return
-        self._apply_layer_fusion(self.enable_fused_bn_relu, self.enable_fused_conv_relu,
-                                 self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu)
+        self._apply_layer_fusion()
         loss_cls = select_loss(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
         self.loss_func.set_backend(self._backend)

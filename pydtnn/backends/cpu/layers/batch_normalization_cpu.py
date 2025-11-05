@@ -5,30 +5,11 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.utils.tensor import TensorFormat, decode_tensor
+from pydtnn.utils.types import ArrayShape
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
-    def post_initialize(self):
-        # Variables in BatchNormalizationCPU but not in BatchNormalizationReluCPU
-        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var_eps: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        if self.spatial:
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-        else:
-            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-    # ---
-
-    def initialize(self, prev_shape, x=None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
 
         if self.spatial:
@@ -47,7 +28,22 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         np.reciprocal(self.inv_std, out=self.inv_std, dtype=self.model.dtype)
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-        self.post_initialize()
+        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var_eps: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        if self.spatial:
+            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.dy_xn = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+        else:
+            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
+            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.dy_xn = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
     # --
 
     def forward(self, _x: np.ndarray) -> np.ndarray:
