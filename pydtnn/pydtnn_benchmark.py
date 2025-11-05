@@ -119,7 +119,6 @@ def main():
                     f.write(f"epoch: {epoch}\n")
                     for key in history:
                         f.write(f"    {key}: {history[key][epoch]}\n")
-                    f.write("\n")
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:
