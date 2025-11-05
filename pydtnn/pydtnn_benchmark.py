@@ -114,10 +114,12 @@ def main():
                   f'{(model.dataset.train_nsamples * model.perf_counter.num_epochs) / total_time:5.4f} samples/s')
         if model.history_file:
             with open(model.history_file, "w") as f:
-                keys = [k for k in history]
-                for v in range(len(history[keys[0]])):
-                    f.write(' '.join(["%3d" % v] +
-                                     [('%20.4f' % history[k][v]) for k in keys if isinstance(history[k][v], float)]) + '\n')
+                epochs = max(len(v) for v in history.values())
+                for epoch in range(epochs):
+                    f.write(f"epoch: {epoch}\n")
+                    for key in history:
+                        f.write(f"    {key}: {history[key][epoch]}\n")
+                    f.write("\n")
     # Second (and last) evaluation
     if model.evaluate_on_train:
         if model.comm_rank == 0:

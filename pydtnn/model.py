@@ -1116,6 +1116,13 @@ class Model[T: Array]:
                 # Sleep for half a second to allow pbar to write its output before returning
                 time.sleep(.5)
 
+            for c in range(len(self.loss_and_metrics)):
+                if not self.loss_and_metrics_format[c]:
+                    print(f"{self.loss_and_metrics[c]}: {train_total_loss[c]}")
+            for c in range(len(self.loss_and_metrics)):
+                if not self.loss_and_metrics_format[c]:
+                    print(f"val_{self.loss_and_metrics[c]}: {val_total_loss[c]}")
+
             if sync_epoch:
                 if self.comm is not None:
                     op = MPI.LAND  # type: ignore
