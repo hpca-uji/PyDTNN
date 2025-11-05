@@ -8,6 +8,26 @@ from pydtnn.utils.tensor import TensorFormat, decode_tensor
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
+    def post_initialize(self):
+        # Variables in BatchNormalizationCPU but not in BatchNormalizationReluCPU
+        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var_eps: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        if self.spatial:
+            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.dy_xn = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+        else:
+            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
+            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.dy_xn = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+    # ---
+
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
 
@@ -27,29 +47,13 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         np.reciprocal(self.inv_std, out=self.inv_std, dtype=self.model.dtype)
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-
-        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var_eps: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        if self.spatial:
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-        else:
-            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-
+        self.post_initialize()
     # --
 
     def forward(self, _x: np.ndarray) -> np.ndarray:
 
         self.y: np.ndarray
+        n = _x.shape[0]
 
         if self.spatial:
             x = _x.reshape((-1, self.ci), copy=False, order="C")
@@ -77,6 +81,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
             # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
             self.xn = x
 
+            # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
             np.mean(self.xn, axis=0, out=self.mu,
                     dtype=self.model.dtype)
             np.subtract(self.xn, self.mu, out=self.xn,
@@ -118,9 +123,9 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         if self.spatial:
             match self.model.tensor_format:
                 case TensorFormat.NCHW:
-                    y = y.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                    y = y.reshape((n, self.ci, self.hi, self.wi), copy=False)
                 case TensorFormat.NHWC:
-                    y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                    y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
                 case _:
                     raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
 
@@ -147,9 +152,9 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         if self.spatial:
             match self.model.tensor_format:
                 case TensorFormat.NCHW:
-                    dx = dx.reshape((-1, self.ci, self.hi, self.wi), copy=False)
+                    dx = dx.reshape((n, self.ci, self.hi, self.wi), copy=False)
                 case TensorFormat.NHWC:
-                    dx = dx.reshape((-1, self.hi, self.wi, self.ci), copy=False)
+                    dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
                 case _:
                     raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
 

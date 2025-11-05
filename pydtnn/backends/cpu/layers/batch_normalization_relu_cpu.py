@@ -1,15 +1,17 @@
 from pydtnn.cython.bn_inference_cython import bn_relu_inference_cython
-from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
+from pydtnn.backends.cpu.layers.batch_normalization_cpu import BatchNormalizationCPU
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
-from pydtnn.model import Model
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.best_transpose_0231 import best_transpose_0231
-from pydtnn.utils.best_transpose_0312 import best_transpose_0312
+import typing
 
 import numpy as np
 
 
-class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu[np.ndarray]):
+class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np.ndarray]):
+
+    @typing.override
+    def post_initialize(self):
+        pass
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
@@ -17,12 +19,12 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu[np.ndarray]):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the BN + Relu"""
+
+        n = x.shape[0]
         if self.spatial:
-            if self.model.tensor_format is TensorFormat.NCHW:
-                x = best_transpose_0231(x)
             x = x.reshape((-1, self.ci), copy=False, order="C")
 
-        y: np.ndarray = self.y[: x.shape[0], :]
+        y: np.ndarray = self.y[:n, :]
         bn_relu_inference_cython(x,
                                  y.reshape((-1, self.ci), copy=False, order="C"),
                                  self.running_mean,
@@ -31,9 +33,14 @@ class BatchNormalizationReluCPU(LayerCPU, BatchNormalizationRelu[np.ndarray]):
                                  self.beta)
 
         if self.spatial:
-            y = y.reshape((-1, self.hi, self.wi, self.ci), copy=False)
-            if self.model.tensor_format is TensorFormat.NCHW:
-                y = best_transpose_0312(y)
+            match self.model.tensor_format:
+                case TensorFormat.NCHW:
+                    y = y.reshape((n, self.ci, self.hi, self.wi), copy=False)
+                case TensorFormat.NHWC:
+                    y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
+                case _:
+                    raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
+
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def backward(self, x: np.ndarray) -> np.ndarray:

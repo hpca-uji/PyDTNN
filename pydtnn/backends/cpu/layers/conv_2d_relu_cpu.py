@@ -14,14 +14,12 @@ import numpy as np
 
 class Conv2DReluCPU(Conv2DCPU, Conv2DRelu[np.ndarray]):
 
-    # TODO: Check "from_parent_dict"
-    def initialize(self, from_parent_dict=None, *args, **kwargs) -> None:
+    def initialize(self, from_parent_dict: dict, *args, **kwargs) -> None:
         super().initialize(*args, **kwargs)
         self.forward = {"_forward_cg_nchw": self._forward_nchw_cg,
                         "_forward_cg_nhwc": self._forward_nhwc_cg,
                         "_forward_cw_nchw": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
-        self.weights = from_parent_dict["weights"]
-        self.biases = from_parent_dict["biases"]
+        self.__dict__.update(from_parent_dict)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """This is a fake forward function. It will be masked on initialization by a _forward implementation"""

@@ -12,16 +12,12 @@ class Conv2DBatchNormalizationReluCPU(Conv2DCPU, Conv2DBatchNormalizationRelu[np
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    # TODO: Check "from_parent_dict" typing
-    def initialize(self, from_parent_dict: dict = None, *args, **kwargs):
+    def initialize(self, from_parent_dict: dict, *args, **kwargs):
         super().initialize(*args, **kwargs)
         self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,
                         "_forward_cg_nchw": self._forward_nchw_cg,
                         "_forward_cg_nhwc": self._forward_nhwc_cg}[from_parent_dict["forward"].__name__]
-        # self.forward = {"_forward_nchw_cw": self._forward_nchw_cw, \
-        #                 "_forward_nchw_best_of": self._forward_nchw_cw}[from_parent_dict["forward"].__name__]
-        self.weights = from_parent_dict["weights"]
-        self.biases = from_parent_dict["biases"]
+        self.__dict__.update(from_parent_dict)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
