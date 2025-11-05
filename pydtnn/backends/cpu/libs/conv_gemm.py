@@ -90,9 +90,17 @@ class ConvGemm:
         except AttributeError:
             pass
 
-    def conv_gemm_nchw(self, weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                       vdilation=1, hdilation=1, biases_vector=None, trans=False, bn_running_mean=None, bn_inv_std=None,
-                       bn_gamma=None, bn_beta=None, relu=False):
+    def conv_gemm_nchw(self, weights: np.ndarray, x:np.ndarray, 
+                       biases: np.ndarray | None = None,  # type: ignore
+                       vpadding=0, hpadding=0, vstride=1, hstride=1,
+                       vdilation=1, hdilation=1, 
+                       biases_vector:np.ndarray | None = None,   # type: ignore
+                       trans=False, 
+                       bn_running_mean: np.ndarray | None = None,  # type: ignore
+                       bn_inv_std: np.ndarray | None = None,  # type: ignore
+                       bn_gamma: np.ndarray | None = None,   # type: ignore
+                       bn_beta: np.ndarray | None = None,   # type: ignore
+                       relu=False):
         """
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
@@ -145,6 +153,7 @@ class ConvGemm:
             if biases is None:
                 biases = np.zeros((b, kn, ho, wo), weights.dtype, order="C")
             else:
+                biases = biases[:b, :]
                 bb, knb, hob, wob = biases.shape
                 assert bb == b, "Batch size of the biases must be the same as in the input!"
                 assert knb == kn, "Number of filters in biases must be the same as in the filter tensor!"
@@ -157,6 +166,13 @@ class ConvGemm:
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
+
+        biases: np.ndarray
+        biases_vector: np.ndarray
+        bn_running_mean: np.ndarray
+        bn_inv_std: np.ndarray
+        bn_gamma: np.ndarray
+        bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
         assert weights.dtype == x.dtype == biases.dtype, \
@@ -184,9 +200,18 @@ class ConvGemm:
 
         return biases
 
-    def conv_gemm_nhwc(self, weights, x, biases=None, vpadding=0, hpadding=0, vstride=1, hstride=1,
-                       vdilation=1, hdilation=1, biases_vector=None, trans=False, bn_running_mean=None, bn_inv_std=None,
-                       bn_gamma=None, bn_beta=None, relu=False):
+    # TODO: Check for what is "biases" used inside "x_conv_gemm_nhwc" (and set better varible names).
+    def conv_gemm_nhwc(self, weights: np.ndarray, x:np.ndarray, 
+                       biases: np.ndarray | None = None,  # type: ignore
+                       vpadding=0, hpadding=0, vstride=1, hstride=1,
+                       vdilation=1, hdilation=1, 
+                       biases_vector:np.ndarray | None = None,   # type: ignore
+                       trans=False, 
+                       bn_running_mean: np.ndarray | None = None,  # type: ignore
+                       bn_inv_std: np.ndarray | None = None,  # type: ignore
+                       bn_gamma: np.ndarray | None = None,   # type: ignore
+                       bn_beta: np.ndarray | None = None,   # type: ignore
+                       relu=False):
 
         # Get matrices dimensions
         b, h, w, c = x.shape
@@ -197,6 +222,7 @@ class ConvGemm:
             if biases is None:
                 biases = np.zeros((b, ho, wo, kn), weights.dtype, order="C")
             else:
+                biases = biases[:b, :]
                 bb, hob, wob, knb = biases.shape
                 assert bb == b, "Batch size of the biases must be the same as in the input!"
                 assert hob == ho, "Biases image height must be the same as the output image height!"
@@ -209,6 +235,20 @@ class ConvGemm:
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
+
+        biases: np.ndarray
+        biases_vector: np.ndarray
+        bn_running_mean: np.ndarray
+        bn_inv_std: np.ndarray
+        bn_gamma: np.ndarray
+        bn_beta: np.ndarray
+
+        # Check that dtype is the same on all the matrices
+        assert weights.dtype == x.dtype == biases.dtype, \
+            "All the matrices must have the same type of data!"
+        assert weights.dtype == self.dtype, \
+            "The input matrices must have the same type of data as the one specified when " \
+            "this class was instantiated!"
 
         # Call the appropriate convGemm function from libconvGemm
         self.x_conv_gemm_nhwc(ctypes.c_char(b'Y' if trans else b'N'),
@@ -229,8 +269,12 @@ class ConvGemm:
 
         return biases
 
-    def deconv_gemm_nchw(self, weights, dy, dx, vpadding=0, hpadding=0,
-                         vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def deconv_gemm_nchw(self, weights: np.ndarray, 
+                         dy: np.ndarray, 
+                         dx: np.ndarray, 
+                         vpadding=0, hpadding=0, 
+                         vstride=1, hstride=1, 
+                         vdilation=1, hdilation=1):
         """
         Calls the appropriate deconv_gemm function from libconvGemm.so to perform
         an inplace matrix matrix multiplication and deconvolution:
@@ -288,8 +332,12 @@ class ConvGemm:
 
         return dx
 
-    def deconv_gemm_nhwc(self, weights, dy, dx, vpadding=0, hpadding=0,
-                         vstride=1, hstride=1, vdilation=1, hdilation=1):
+    def deconv_gemm_nhwc(self, weights: np.ndarray, 
+                         dy: np.ndarray, 
+                         dx: np.ndarray, 
+                         vpadding=0, hpadding=0, 
+                         vstride=1, hstride=1, 
+                         vdilation=1, hdilation=1):
 
         ck, kh, kw, kn = weights.shape
         b2, ho, wo, kn2 = dy.shape

@@ -130,6 +130,8 @@ class ConvDirect:
             else:
                 biases = np.zeros((n, ho, wo, co), weights.dtype, order="C")
         else:
+            biases = biases[:n, :]
+
             if self.tensor_format is TensorFormat.NCHW:
                 bb, knb, ho, wo = biases.shape
             else:

@@ -1,5 +1,6 @@
 import sys
 
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.backends.cpu.layers.conv_2d_variants.best_of_variant import BestOfVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGemmVariant
@@ -10,7 +11,6 @@ from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import ArrayShape
 
 import numpy as np
-import abc
 
 
 class Conv2DCPU(LayerCPU,
@@ -20,7 +20,9 @@ class Conv2DCPU(LayerCPU,
                 ConvGemmVariant[np.ndarray],
                 # ConvWinogradVariant (provided from BestOfVariant)
                 # ConvDirectVariant (provided from BestOfVariant)
-                BestOfVariant[np.ndarray]):
+                BestOfVariant[np.ndarray],
+                Conv2D[np.ndarray]
+                ):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -112,7 +114,7 @@ class Conv2DCPU(LayerCPU,
                                 if self.model.tensor_format is TensorFormat.NCHW:
                                     bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
                                 else:
-                                    bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
+                                    bias_shape = (self.model.batch_size, self.ho, self.wo, self.co)
 
                         elif self.model.enable_conv_direct:
                             # -> ConvDirect:
@@ -125,7 +127,7 @@ class Conv2DCPU(LayerCPU,
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer(bias_shape, self.model.dtype)
-            self.db = np.ndarray(shape=(self.co, ), dtype=self.model.dtype, order="C")
+            self.db = np.ndarray(shape=bias_shape, dtype=self.model.dtype, order="C")
 
         match self.variant:
             case Conv2DCPU.Variant.I2C:
