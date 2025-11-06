@@ -13,7 +13,7 @@ python -m unittest -v pydtnn.tests.conv2d_conv_gemm_slow.Conv2DConvGemmSlowTestC
 
 ## CUDA
 ```sh
-python -m unittest -v pydtnn.tests.check_gpu_models
+python -m unittest -v pydtnn.tests.model_gpu
 ```
 
 ## Specific

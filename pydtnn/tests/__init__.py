@@ -6,18 +6,25 @@ try:
 except Exception:
     warn("PyTorch not available, skiping tests!")
 
-from pydtnn.tests.tensor_format import TensorFormatTestCase
-
 # Convolutions
-from pydtnn.tests.conv2d_conv_group import Conv2DConvGroupTestCase
+from pydtnn.tests.conv2d_group import Conv2DGroupTestCase
 from pydtnn.tests.conv2d_relu import Conv2DReluTestCase
+from pydtnn.tests.conv2d_batch_normalization import Conv2DBatchNormalizationTestCase
 from pydtnn.tests.conv2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase
+from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase
+
+# Models
+from pydtnn.tests.model_tensor import ModelTensorTestCase
+try:
+    from pydtnn.tests.model_gpu import ModelGpuTestCase
+except Exception:
+    warn("GPU not available, skiping tests!")
 
 # Libraries
 try:
     from pydtnn.tests.conv_gemm import ConvGemmTestCase
-    from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
     from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
+    from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
 except Exception:
     warn("ConvGemm not available, skiping tests!")
 
@@ -30,9 +37,3 @@ try:
     from pydtnn.tests.conv_direct import ConvDirectTestCase
 except Exception:
     warn("ConvDirect not available, skiping tests!")
-
-# Models
-try:
-    from pydtnn.tests.model_gpu import ModelGpuTestCase
-except Exception:
-    warn("GPU not available, skiping tests!")

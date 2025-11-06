@@ -27,8 +27,10 @@ class MemoryCache(dict):
             return ret
 
     @classmethod
-    def disable(cls):
+    def disable(cls, update: bool = False):
         cls._preserve_values = False
+        if not update:
+            return
         import gc
         for obj in gc.get_objects():
             if isinstance(obj, cls):

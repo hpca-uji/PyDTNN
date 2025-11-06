@@ -1,73 +1,22 @@
 import inspect
-import sys
-import unittest
 
 import numpy as np
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
-from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
-from pydtnn.tests.common import verbose_test, D, alexnet_layers
-from pydtnn.tests.conv_common import ConvCommonTestCase
+from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
 from pydtnn.utils import print_with_header, random
 
 
-class ConvGemmTestCase(ConvCommonTestCase):
+class ConvCommonTestCase(TestCase):
     """
-    Tests that conv_gemm leads to the same results as i2c and mm.
+    Tests that conv leads to the same results as i2c and mm.
     """
-    global ConvCommonTestCase
-    del ConvCommonTestCase
 
     @classmethod
     def _compute_both(cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,
                       vpadding=0, hpadding=0, vstride=1, hstride=1,
                       vdilation=1, hdilation=1) -> tuple[np.ndarray, np.ndarray]:
-        c, kh, kw, kn = weights.shape
-        # b, c, h, w = x.shape
-        cg_biases = biases.copy() if biases is not None else None
-        conv_gemm_result: np.ndarray = cls._compute(weights, x, biases=cg_biases,
-                                                    kh=kh, kw=kw,
-                                                    vpadding=vpadding, hpadding=hpadding,
-                                                    vstride=vstride, hstride=hstride,
-                                                    vdilation=vdilation, hdilation=hdilation)
-        conv_gemm_result: np.ndarray = conv_gemm_result.reshape((-1, kn), copy=False)
-
-        n, h, w, c = x.shape
-
-        ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
-        wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-
-        dim_n = n * ho * wo
-        dim_c = c * kh * kw
-
-        x_c: np.ndarray = np.zeros(shape=(dim_n, dim_c), dtype=x.dtype)
-
-        im2row_nhwc_cython(x, x_c,
-                           kh, kw, ho, wo,
-                           vpadding, hpadding,
-                           vstride, hstride,
-                           vdilation, hdilation)
-        w_c = weights.reshape((-1, kn), copy=False)
-        if biases is None:
-            im2row_mm_result: np.ndarray = x_c @ w_c
-        else:
-            im2row_mm_result: np.ndarray = x_c @ w_c + biases.reshape((-1, kn), copy=False)
-        if verbose_test():
-            print_with_header("{} conv_gemm_result".format(inspect.stack()[1][3]), conv_gemm_result)
-            print("Shape: ", conv_gemm_result.shape,
-                  " Sum: ", conv_gemm_result.sum(),
-                  " Min: ", conv_gemm_result.min(),
-                  " Max: ", conv_gemm_result.max())
-            print_with_header("{} im2row_mm_result".format(inspect.stack()[1][3]), im2row_mm_result)
-            print("Shape: ", im2row_mm_result.shape,
-                  " Sum: ", im2row_mm_result.sum(),
-                  " Min: ", im2row_mm_result.min(),
-                  " Max: ", im2row_mm_result.max())
-            print("---")
-            print("Maximum difference: ",
-                  max([abs(x - y) for x, y in zip(conv_gemm_result.flatten(), im2row_mm_result.flatten())]))
-            print("---")
-        return conv_gemm_result, im2row_mm_result
+        raise NotImplementedError()
 
     @staticmethod
     def _get_config() -> D:
@@ -75,7 +24,7 @@ class ConvGemmTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
-        return ConvGemm(debug=False).conv_gemm_nhwc(weights, x, biases, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+        raise NotImplementedError()
 
     def test_raise_on_different_strides(self):
         d = self._get_config()
@@ -424,11 +373,3 @@ class ConvGemmTestCase(ConvCommonTestCase):
                     print(conv_gemm_result.flags)
             self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result),
                             f"Results differ for AlexNet Cifar and ImageNet layers number {n}")
-
-
-if __name__ == '__main__':
-    try:
-        ConvGemm()
-    except NameError:
-        sys.exit(-1)
-    unittest.main()

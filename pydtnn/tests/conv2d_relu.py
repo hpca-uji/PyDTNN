@@ -1,27 +1,21 @@
-import inspect
 import sys
 import unittest
 
-import numpy as np
-
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.cpu.activations.relu_cpu import ReluCPU
-from pydtnn.backends.cpu.layers.concatenation_block_cpu import ConcatenationBlockCPU
-from pydtnn.backends.cpu.layers.conv_2d_relu_cpu import Conv2DReluCPU
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.common import Params, TestCase
+from pydtnn.tests.common import D
+from pydtnn.tests.common import Params
+from pydtnn.tests.conv2d_common import Conv2DCommonTestCase
 from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import print_with_header, random
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-class Conv2DReluTestCase(Conv2DConvGemmTestCase):
+class Conv2DReluTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+Relu leads to the same results than Conv2DRelu
     """
@@ -29,7 +23,7 @@ class Conv2DReluTestCase(Conv2DConvGemmTestCase):
     del Conv2DConvGemmTestCase
 
     @staticmethod
-    def _get_layers(d:D, deconv=False, trans=False)-> tuple[Conv2DCPU, Conv2DCPU]:
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
@@ -38,23 +32,23 @@ class Conv2DReluTestCase(Conv2DConvGemmTestCase):
         model.mode = Model.Mode.TRAIN
 
         conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                             padding=(d.vpadding, d.hpadding),
-                             stride=(d.vstride, d.hstride),
-                             dilation=(d.vdilation, d.hdilation),
-                             use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+                        padding=(d.vpadding, d.hpadding),
+                        stride=(d.vstride, d.hstride),
+                        dilation=(d.vdilation, d.hdilation),
+                        use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
 
         relu = Relu()
         chain = ConcatenationBlock([
             conv2d,
             relu
         ])
-        shape =(d.c, d.h, d.w)
+        shape = (d.c, d.h, d.w)
         chain.set_backend(model._backend)
         chain.set_model(model)
         chain.initialize(prev_shape=shape)
-        
-        from_parent =(relu.__dict__ | conv2d.__dict__)
-        fuse = Conv2DRelu(from_parent= from_parent)
+
+        from_parent = (relu.__dict__ | conv2d.__dict__)
+        fuse = Conv2DRelu(from_parent=from_parent)
         fuse.set_backend(model._backend)
         fuse.set_model(model)
         fuse.__dict__.update(from_parent)
@@ -65,6 +59,13 @@ class Conv2DReluTestCase(Conv2DConvGemmTestCase):
         fuse.biases = conv2d.biases.copy()
 
         return chain, fuse
+
+    @staticmethod
+    def _set_state(layer: Conv2D, weights) -> None:
+        if isinstance(layer, ConcatenationBlock):
+            layer.paths[0][0].weights = weights.copy()
+        else:
+            layer.weights = weights.copy()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_larger_handmade_array_stride3(self):
@@ -109,6 +110,7 @@ class Conv2DReluTestCase(Conv2DConvGemmTestCase):
     @unittest.skip("Backward not implemented")
     def test_forward_backward_alexnet_cifar10_first_conv2d(self):
         raise NotImplementedError()
+
 
 if __name__ == '__main__':
     try:

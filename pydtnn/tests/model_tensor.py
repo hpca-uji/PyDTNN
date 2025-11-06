@@ -26,35 +26,22 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
+from pydtnn.tests.model_common import ModelCommonTestCase
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 
-class TensorFormatTestCase(ModelConvGemmTestCase):
+class ModelTensorTestCase(ModelCommonTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
-    global ModelConvGemmTestCase
-    del ModelConvGemmTestCase
+    global ModelCommonTestCase
+    del ModelCommonTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using the CPU backend tensor format NHWC"
     model2_desc = "using the CPU backend tensor format NCHW"
-
-    rtol_dict = {
-        AdditionBlock: 1e-2,
-        ConcatenationBlock: 1e-2,
-    }
-
-    atol_dict = {
-        AdditionBlock: 1e-2,
-        BatchNormalization: 6e-5,
-        ConcatenationBlock: 1e-2,
-        Conv2D: 1e-5,
-        FC: 1e-5,
-    }
 
     @staticmethod
     def get_model2(model_name: str):

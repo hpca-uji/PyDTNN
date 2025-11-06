@@ -76,10 +76,6 @@ def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     params = Params()
     params.batch_size = d.b
     params.enable_conv_gemm = False
-    params.conv_gemm_cache = False
-    params.conv_gemm_fallback_to_im2col = False
-    params.conv_gemm_deconv = False
-    params.conv_gemm_trans = False
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
     params_gc.enable_conv_gemm = True

@@ -6,9 +6,9 @@ import numpy as np
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
 from pydtnn.backends.cpu.libs.conv_winograd import ConvWinograd
-from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
-from pydtnn.tests.conv_gemm import ConvGemmTestCase
-from pydtnn.utils import print_with_header, random
+from pydtnn.tests.common import verbose_test, D
+from pydtnn.tests.conv_common import ConvCommonTestCase
+from pydtnn.utils import print_with_header
 from pydtnn.utils.tensor import TensorFormat
 
 # if (kh, kw) == (2, 2) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
@@ -17,12 +17,12 @@ from pydtnn.utils.tensor import TensorFormat
 # if (kh, kw) == (5, 5) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
 
 
-class ConvWinogradTestCase(ConvGemmTestCase):
+class ConvWinogradTestCase(ConvCommonTestCase):
     """
     Tests that conv_winograd leads to the same results as i2c and mm.
     """
-    global ConvGemmTestCase
-    del ConvGemmTestCase
+    global ConvCommonTestCase
+    del ConvCommonTestCase
 
     @classmethod
     def _compute_both(cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,

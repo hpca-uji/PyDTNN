@@ -16,14 +16,13 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layers.layer import Layer
 from pydtnn.layer import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 import torch
 
 from pydtnn.model import Model
 from pydtnn.utils import random
-from pydtnn.tests.common import TestCase
+from pydtnn.tests.common import TestCase, verbose_test
 from unittest import skip
 
 import numpy as np
@@ -261,7 +260,8 @@ class LayerPyTorchTestCase(TestCase):
         self.copy_grad_vars(pydtnn_model, torch_model)
 
         num_elems = (len("Testing: ") + len(name_test))
-        print(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
+        if verbose_test():
+            print(f"\n\n{'=' * num_elems}\nTesting: {name_test}\n{'=' * num_elems}")
 
         x = np.copy(_x)
 
@@ -275,10 +275,12 @@ class LayerPyTorchTestCase(TestCase):
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C", copy=None)
 
-        print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}")
+        if verbose_test():
+            print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}")
 
         diff = x_pydtnn - x_torch
-        print(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}")
+        if verbose_test():
+            print(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}")
 
         # if not (diff < rtol).all():
         #    print(f"x_pydtnn:\n{x_pydtnn}")

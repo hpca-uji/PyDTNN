@@ -18,64 +18,24 @@ import warnings
 import pycuda.gpuarray as gpuarray
 
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.fc import FC
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
+from pydtnn.tests.model_common import ModelCommonTestCase
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.losses.loss import Loss, select as select_loss
 
 
-class ModelGpuTestCase(ModelConvGemmTestCase):
+class ModelGpuTestCase(ModelCommonTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
-    global ModelConvGemmTestCase
-    del ModelConvGemmTestCase
+    global ModelCommonTestCase
+    del ModelCommonTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using the CPU backend"
     model2_desc = "using the GPU backend"
-
-    rtol_dict = {
-        AdditionBlock: 1e-2,
-        ConcatenationBlock: 1e-2,
-    }
-
-    atol_dict = {
-        AdditionBlock: 1e-2,
-        BatchNormalization: 6e-5,
-        ConcatenationBlock: 1e-2,
-        Conv2D: 4e-3,
-        FC: 1e-5,
-    }
-
-    @staticmethod
-    def get_model1_and_loss_func(model_name: str) -> tuple[Model, Loss]:
-        # CPU model with no convGemm
-        params = Params()
-        params.model_name = model_name
-        params.enable_conv_gemm = False
-        params.conv_gemm_cache = False
-        params.tensor_format = TensorFormat.NHWC.upper()
-        params_dict = vars(params)
-        try:
-            model1 = Model(**params_dict)
-        except LayerError as exc:
-            raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
-        # loss function
-        loss_func_name = model1.loss_func_name
-        local_batch_size = model1.batch_size
-        loss_func = select_loss(loss_func_name)(shape=(local_batch_size, *model1.layers[-1].shape))
-        loss_func.set_backend(model1._backend)
-        loss_func.set_model(model1)
-        loss_func.initialize()
-        return model1, loss_func
 
     @staticmethod
     def get_model2(model_name: str) -> Model:
@@ -100,7 +60,7 @@ class ModelGpuTestCase(ModelConvGemmTestCase):
         for cpu_layer, gpu_layer in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             if cpu_layer.weights is None:
                 continue
-            if "Conv2D" in type(gpu_layer).__name__:
+            if isinstance(gpu_layer, Conv2D):
                 if model2.tensor_format is TensorFormat.NHWC:
                     # TODO: check this.
                     gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()

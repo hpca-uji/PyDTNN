@@ -1,28 +1,23 @@
-import inspect
 import sys
 import unittest
-from copy import deepcopy
-
-import numpy as np
 
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.common import Params, TestCase
-from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
+from pydtnn.tests.common import D
+from pydtnn.tests.common import Params
+from pydtnn.tests.conv2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import print_with_header, random
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-class Conv2DConvGroupTestCase(Conv2DConvGemmTestCase):
+class Conv2DGroupTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D with Depth+Pair leads to the same results than Conv2D Standard
     """
-    global Conv2DConvGemmTestCase
-    del Conv2DConvGemmTestCase
+    global Conv2DCommonTestCase
+    del Conv2DCommonTestCase
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
@@ -69,6 +64,14 @@ class Conv2DConvGroupTestCase(Conv2DConvGemmTestCase):
         conv2d_pair.biases = conv2d.biases.copy()
 
         return conv2d, chain
+
+    @staticmethod
+    def _set_state(layer: Conv2D, weights) -> None:
+        if isinstance(layer, ConcatenationBlock):
+            layer.paths[0][0].weights = weights.copy()
+            layer.paths[0][1].weights = weights.copy()
+        else:
+            layer.weights = weights.copy()
 
 
 if __name__ == '__main__':

@@ -98,12 +98,21 @@ class ConvWinograd:
             else:
                 raise NotImplementedError(f"Platform '{str(platform.machine())}' not yet supported")
 
-            try:
-                funcs = [(rn[0], (self._conv_winograd_c,
-                          getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
-                          getattr(self.__class__.lib_cw, f"{rn[1]}_kernel"))) for rn in routine_names]
-            except AttributeError:
-                warn(f"Winograd {routine_names} routine not found. Fallback to numpy version!", RuntimeWarning)
+            funcs = []
+            for rn in routine_names:
+                try:
+                    funcs.append((
+                        rn[0],
+                        (
+                            self._conv_winograd_c,
+                            getattr(self.__class__.lib_cw, f"{rn[1]}_pre"),
+                            getattr(self.__class__.lib_cw, f"{rn[1]}_kernel")
+                        )
+                    ))
+                except AttributeError:
+                    pass
+            if not funcs:
+                warn("Winograd routine not found. Fallback to numpy version!", RuntimeWarning)
                 funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
             # breakpoint()

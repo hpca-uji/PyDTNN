@@ -1,34 +1,26 @@
-import inspect
 import sys
 import unittest
 
-import numpy as np
-
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.cpu.activations.relu_cpu import ReluCPU
-from pydtnn.backends.cpu.layers.concatenation_block_cpu import ConcatenationBlockCPU
-from pydtnn.backends.cpu.layers.conv_2d_relu_cpu import Conv2DReluCPU
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
-from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.common import Params, TestCase
-from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
+from pydtnn.tests.common import D
+from pydtnn.tests.common import Params
+from pydtnn.tests.conv2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils import print_with_header, random
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-class Conv2DBatchNormalizationReluTestCase(Conv2DConvGemmTestCase):
+class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu
     """
-    global Conv2DConvGemmTestCase
-    del Conv2DConvGemmTestCase
+    global Conv2DCommonTestCase
+    del Conv2DCommonTestCase
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
@@ -55,7 +47,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DConvGemmTestCase):
         chain.set_backend(model._backend)
         chain.set_model(model)
         chain.initialize(prev_shape=shape)
-        
+
         from_parent = relu.__dict__ | bn.__dict__ | conv2d.__dict__
         fuse = Conv2DBatchNormalizationRelu(from_parent=from_parent)
         fuse.set_backend(model._backend)
@@ -68,6 +60,13 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DConvGemmTestCase):
         fuse.biases = conv2d.biases.copy()
 
         return chain, fuse
+
+    @staticmethod
+    def _set_state(layer: Conv2D, weights) -> None:
+        if isinstance(layer, ConcatenationBlock):
+            layer.paths[0][0].weights = weights.copy()
+        else:
+            layer.weights = weights.copy()
 
     @unittest.skip("Backward not implemented")
     def test_forward_backward_larger_handmade_array_stride3(self):
@@ -112,6 +111,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DConvGemmTestCase):
     @unittest.skip("Backward not implemented")
     def test_forward_backward_alexnet_cifar10_first_conv2d(self):
         raise NotImplementedError()
+
 
 if __name__ == '__main__':
     try:

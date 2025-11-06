@@ -247,12 +247,14 @@ class BestOf:
         return current_execution
 
     @classmethod
-    def use_always_the_first_alternative(cls):
+    def use_always_the_first_alternative(cls, update: bool = False):
         """
         Forces all BestOf classes to always call the first alternative,
         deactivating any competition among the different alternatives.
         """
         cls._use_first_alternative = True
+        if not update:
+            return
         import gc
         for obj in gc.get_objects():
             if isinstance(obj, cls):
