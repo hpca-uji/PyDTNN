@@ -784,9 +784,9 @@ class Model[T: Array]:
                 grad_vars = [g for g in layer.grad_vars] + \
                     (["running_var", "running_mean"] if isinstance(layer, BatchNormalization) else [])
                 for key in grad_vars:
-                    base = f"{layer.id}_{name}_{key}"
+                    base = f"{layer.id}_{key}"
                     if mode is Model.LoadStoreMode.LOAD and base not in d:
-                        print(f"Could not find '{base}' for layer '{name}' in file!")
+                        print(f"Could not find '{base}' for layer '{layer}' in file!")
                         continue
                     match mode:
                         case Model.LoadStoreMode.LOAD:
