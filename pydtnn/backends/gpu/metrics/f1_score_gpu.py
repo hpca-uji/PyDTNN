@@ -16,9 +16,17 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
-        #define TRUE_POSITIVE  {{0,0}}
-        #define FALSE_NEGATIVE {{0,1}}
-        #define FALSE_POSITIVE {{1,0}}
+        //#define TRUE_POSITIVE  {{0,0}}
+        #define TRUE_POSITIVE_0  0
+        #define TRUE_POSITIVE_1  0
+
+        //#define FALSE_NEGATIVE {{0,1}}
+        #define FALSE_NEGATIVE_0 0
+        #define FALSE_NEGATIVE_1 1
+        
+        //#define FALSE_POSITIVE {{1,0}}
+        #define FALSE_POSITIVE_0 1
+        #define FALSE_POSITIVE_1 0
 
         #define SHIFT_POINTER_CM(p, label, i, j, n_clss) p + (label * n_clss + i) * 2 + j
         
@@ -31,9 +39,9 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
 
             for(idx = base_idx, local_f1[idx] = 0; idx < num_classes; idx += workers)
             {{
-                true_positive = (*(SHIFT_POINTER_CM(cm, label, TRUE_POSITIVE[0], TRUE_POSITIVE[1], num_classes)));
-                true_negative = (*(SHIFT_POINTER_CM(cm, label, FALSE_NEGATIVE[0], FALSE_NEGATIVE[1], num_classes)));
-                false_positive = (*(SHIFT_POINTER_CM(cm, label, FALSE_POSITIVE[0], FALSE_POSITIVE[1], num_classes)));
+                true_positive = (*(SHIFT_POINTER_CM(cm, label, (TRUE_POSITIVE_0), (TRUE_POSITIVE_1), num_classes)));
+                false_negative = (*(SHIFT_POINTER_CM(cm, label, (FALSE_NEGATIVE_0), (FALSE_NEGATIVE_1), num_classes)));
+                false_positive = (*(SHIFT_POINTER_CM(cm, label, (FALSE_POSITIVE_0), (FALSE_POSITIVE_1), num_classes)));
                 div = 2 * true_positive + false_positive + false_negative;
 
                 (*(local_f1 + idx)) += ({T}) (div == 0 ? 0 : (2 * true_positive / div));
@@ -72,4 +80,4 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
         
-        return f1.ary[0]
+        return f1.ary.get()[0]

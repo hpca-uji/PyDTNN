@@ -20,14 +20,14 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
         __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, {T} *local_res, int n, int labels)
         {{
             int i, idx;
-            {T} pos, neg, max, val_targ, val_pred;
+            {T} pos, neg, max_v, val_targ, val_pred;
         
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             int workers = blockDim.x * gridDim.x;
 
             for(idx = base_idx; idx < n; idx += workers)
             {{
-                for(i = 0, sum = ({T}) 0.0, max = ({T}) 0.0; i < labels; i++)
+                for(i = 0, max_v = ({T}) 0.0; i < labels; i++)
                 {{
                     // val_targ = y_targ[idx][i];
                     val_targ = (*SHIFT_2D_AR(y_targ, idx, i, n));
@@ -37,11 +37,11 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
                     
                     pos += ({T}) (val_targ * val_pred);
                     neg = ({T}) (-1 * val_targ) + 1;
-                    if ( (i == 0) || (max < neg))
-                        max = neg;
+                    if ( (i == 0) || (max_v < neg))
+                        max_v = neg;
                 }}
-                max = ({T}) ((max - pos) + 1);
-                *(local_res + idx) = ({T}) (max > 0 ? max : 0);
+                max_v = ({T}) ((max_v - pos) + 1);
+                *(local_res + idx) = ({T}) (max_v > 0 ? max_v : 0);
             }}
             
             
@@ -73,4 +73,4 @@ class CategoricalHingeGPU(MetricGPU, CategoricalHinge[TensorGPU]):
                     n, num_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return res.ary[0]
+        return res.ary.get()[0]

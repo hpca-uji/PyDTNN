@@ -70,7 +70,7 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
     #---
 
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> TensorGPU:
+    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> np.ndarray:
         """
         The output will be a confusion matrix like this:
                 |Predicted     |
@@ -86,7 +86,7 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
         
         num_classes = np.int32(target_classes)
         n = np.int32(y_pred.size)
-        local_cm = TensorGPU.create_zeros_tensor(shape=(y_pred.shape[0], target_classes, target_classes), dtype=np.dtype(np.int32), 
+        local_cm = TensorGPU.create_zeros_tensor(shape=(1, y_pred.shape[0], target_classes, target_classes), dtype=np.dtype(np.int32), 
                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
         self.kernel(y_targ.ary, y_pred.ary, 
@@ -94,4 +94,4 @@ class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGP
                     num_classes, n,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return conf_matrix
+        return conf_matrix.ary.get()

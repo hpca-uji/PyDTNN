@@ -22,7 +22,7 @@ class SGDGPU(OptimizerGPU, SGD[TensorGPU]):
         parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[dtype])
         ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
                    False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]
-        operations_gpu = "v[i] = momentum * v[i] + dw[i]; {neserov_ops};".format(nesterov_ops=ops_gpu)
+        operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
         
         self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
         # ------------

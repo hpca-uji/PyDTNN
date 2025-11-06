@@ -26,7 +26,7 @@ class CategoricalMAEGPU(MetricGPU, CategoricalMAE[TensorGPU]):
 
             for(idx = base_idx; idx < n; idx += workers)
             {{
-                for(i = 0, sum = ({T}) 0.0, max = ({T}) 0.0; i < labels; i++)
+                for(i = 0; i < labels; i++)
                 {{
                     // val_targ = y_targ[idx][i];
                     val_targ = (*SHIFT_2D_AR(y_targ, idx, i, n));
@@ -69,4 +69,4 @@ class CategoricalMAEGPU(MetricGPU, CategoricalMAE[TensorGPU]):
                     n, num_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return res.ary[0]
+        return res.ary.get()[0]

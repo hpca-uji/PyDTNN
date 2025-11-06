@@ -18,9 +18,10 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
         #define FALSE_POSITIVE {{1,0}}
 
         #define SHIFT_POINTER_CM(p, label, i, j, n_clss) p + (label * n_clss + i) * 2 + j
-        #define SHIFT_POINTER_LOCAL_CM(p, idx, label i, j, num_n, n_clss) p + (((idx * num_n + label) * n_clss + i) * 2 + j)
+        #define SHIFT_POINTER_LOCAL_CM(p, idx, label, i, j, num_n, n_clss) p + (((idx * num_n + label) * n_clss + i) * 2 + j)
+        #define SHIFT_POINTER_Y(p, i, j, n) p + (i * n + j)
 
-        const short indexes[2][2][2] = {{
+        __constant__ const short indexes[2][2][2] = {{
             {{TRUE_POSITIVE, TRUE_NEGATIVE}}, 
             {{FALSE_NEGATIVE, FALSE_POSITIVE}}
         }};
@@ -30,6 +31,7 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
         {{
             int label, i, j, idx_i, is_pred_correct, idx;
             short index_0, index_1;
+            {T} value_targ, value_pred;
 
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             const int workers = blockDim.x * gridDim.x;
@@ -38,10 +40,13 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
             {{
                 for(label = 0; label < num_classes; label++)
                 {{
+                    value_targ = (*(SHIFT_POINTER_Y(y_targ, idx, label, n)));
+                    value_pred = (*(SHIFT_POINTER_Y(y_pred, idx, label, n)));
+                
                     // NOTE: y_pred[idx][label]' only possible values are 0 or 1.
-                    is_pred_correct = (y_targ[idx][label] == y_pred[idx][label]);
-                    index_0 = indexes[is_pred_correct][(y_pred[idx][label])][0];
-                    index_1 = indexes[is_pred_correct][(y_pred[idx][label])][1];
+                    is_pred_correct = (value_targ == value_pred);
+                    index_0 = indexes[is_pred_correct][((int) value_pred)][0];
+                    index_1 = indexes[is_pred_correct][((int) value_pred)][1];
                     (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx, label, index_0, index_1, n, num_classes))) += 1;
                 }}
             }}
@@ -49,7 +54,7 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
             // Accumulating the local values
             if (base_idx == 0)
             {{   
-                for(idx_i = blockDim.x/2; s > 0; s >>= 1)
+                for(idx_i = blockDim.x/2; idx_i > 0; idx_i >>= 1)
                 {{
                     if(base_idx < idx_i)
                         for(label = 0; label < num_classes; label++)
@@ -88,7 +93,7 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
         """
 
         target_classes = self.model.output_shape[0]
-        conf_matrix = TensorGPU.create_zeros_tensor(shape=(target_classes, 2, 2), dtype=np.dtype(np.int32), 
+        conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, target_classes, 2, 2), dtype=np.dtype(np.int32), 
                                                     tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         
         num_classes = np.int32(target_classes)
@@ -103,4 +108,4 @@ class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
                     stream=self.model.stream)
         self.conf_matrix = conf_matrix
         
-        return self.conf_matrix
+        return conf_matrix.ary.get()

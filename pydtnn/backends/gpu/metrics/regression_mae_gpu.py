@@ -20,7 +20,7 @@ class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
         __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, {T} *local_res, int n, int labels)
         {{
             int i, idx;
-            {T} diff;
+            {T} diff, val_targ, val_pred;
         
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             int workers = blockDim.x * gridDim.x;
@@ -29,7 +29,7 @@ class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
             {{
                 *(local_res + idx) = ({T}) 0.0;
                 
-                for(i = 0, sum = ({T}) 0.0, max = ({T}) 0.0; i < labels; i++)
+                for(i = 0; i < labels; i++)
                 {{
                     // val_targ = y_targ[idx][i];
                     val_targ = (*SHIFT_2D_AR(y_targ, idx, i, n));
@@ -74,4 +74,4 @@ class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
                     n, num_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return res.ary[0]
+        return res.ary.get()[0]
