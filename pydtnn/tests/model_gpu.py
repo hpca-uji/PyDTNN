@@ -25,16 +25,18 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase as _CheckConvGemmModels
+from pydtnn.tests.model_conv_gemm import ModelConvGemmTestCase
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.losses.loss import Loss, select as select_loss
 
 
-class ModelGpuTestCase(_CheckConvGemmModels):
+class ModelGpuTestCase(ModelConvGemmTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
+    global ModelConvGemmTestCase
+    del ModelConvGemmTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
     model1_desc = "using the CPU backend"

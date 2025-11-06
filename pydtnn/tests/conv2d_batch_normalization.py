@@ -13,16 +13,18 @@ from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.common import Params, TestCase
-from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase as _Conv2DConvGemmTestCase
+from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-class Conv2DBatchNormalizationTestCase(_Conv2DConvGemmTestCase):
+class Conv2DBatchNormalizationTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D+BatchNormalization leads to the same results than Conv2DBatchNormalization
     """
+    global Conv2DConvGemmTestCase
+    del Conv2DConvGemmTestCase
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:

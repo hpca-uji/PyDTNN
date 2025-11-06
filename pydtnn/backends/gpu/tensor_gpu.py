@@ -4,8 +4,8 @@ from typing import TypeVar
 from enum import StrEnum, auto
 
 import numpy as np
-from pydtnn.utils.tensor import decode_tensor, TensorFormat
 from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.tensor import decode_tensor, TensorFormat
 
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore

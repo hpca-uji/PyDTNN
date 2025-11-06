@@ -8,14 +8,16 @@ from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
 from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
-from pydtnn.tests.conv_gemm import ConvGemmTestCase as _ConvGemmTestCase
+from pydtnn.tests.conv_gemm import ConvGemmTestCase
 from pydtnn.utils import print_with_header, random
 
 
-class ConvDirectTestCase(_ConvGemmTestCase):
+class ConvDirectTestCase(ConvGemmTestCase):
     """
     Tests that conv_direct leads to the same results as i2c and mm.
     """
+    global ConvGemmTestCase
+    del ConvGemmTestCase
 
     @classmethod
     def _compute_both(cls, weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None,

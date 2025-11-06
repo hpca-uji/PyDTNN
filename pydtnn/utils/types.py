@@ -1,5 +1,7 @@
-import numpy as np
+import typing
 from enum import auto, StrEnum
+
+import numpy as np
 
 
 type ArrayShape = tuple[int, ...]
@@ -27,5 +29,6 @@ class Components(StrEnum):
 
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-type Array = np.ndarray | TensorGPU
+if typing.TYPE_CHECKING:
+    from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+type Array = "np.ndarray | TensorGPU"

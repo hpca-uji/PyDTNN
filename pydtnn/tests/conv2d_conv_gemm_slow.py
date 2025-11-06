@@ -1,16 +1,3 @@
-"""
-Unitary tests (exhaustive ones) for Conv2D layer using the convGemm library
-
-For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.Conv2DConvGemmSlowTestCase
-
-For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.Conv2DConvGemmSlowTestCase
-
-For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.Conv2DConvGemmSlowTestCase.test_name
-"""
-
 import sys
 import time
 import unittest
@@ -19,16 +6,18 @@ import itertools
 import numpy as np
 
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.tests.conv2d_conv_gemm import D, Conv2DConvGemmTestCase as _Conv2DConvGemmTestCase
+from pydtnn.tests.conv2d_conv_gemm import D, Conv2DConvGemmTestCase
 from pydtnn.utils import random
 
 from pydtnn.comm import MPI
 
 
-class Conv2DConvGemmSlowTestCase(_Conv2DConvGemmTestCase):
+class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """
+    global Conv2DConvGemmTestCase
+    del Conv2DConvGemmTestCase
 
     random.seed(0)  # type: ignore
     dtype = np.float32
