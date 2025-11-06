@@ -3,7 +3,7 @@ from abc import abstractmethod
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils import find_component
 from pydtnn.utils.types import ArrayShape, Array
-
+import numpy as np
 
 class Metric[T: Array](PromoteToBackend):
     format = ""
@@ -17,7 +17,7 @@ class Metric[T: Array](PromoteToBackend):
         pass
 
     @abstractmethod
-    def compute(self, y_pred: T, y_targ: T) -> float | T:
+    def compute(self, y_pred: T, y_targ: T) -> float | np.ndarray:
         pass
 
 

@@ -240,7 +240,8 @@ The PyDTNN framework comes with a utility launcher called
    -  ``--metrics``: List of comma-separated metrics that are evaluated
       on each trained batch:
       ``categorical_accuracy``, ``categorical_hinge``, ``categorical_mse``,
-      ``categorical_mae``, ``regression_mse``, ``regression_mae``. Default: ``categorical_accuracy``.
+      ``categorical_mae``, ``regression_mse``, ``regression_mae``, ``binary_confusion_matrix``, 
+      ``multiclass_confusion_matrix``, ``precision``, ``recall``, ``f1_score``. Default: ``categorical_accuracy``.
 
 -  Learning rate schedulers parameters:
 

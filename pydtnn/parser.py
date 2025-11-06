@@ -262,7 +262,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
             '--metrics',
             type=str,
             default="categorical_accuracy",
-            help="List of comma-separated metrics that are evaluated on each trained batch: \'categorical_accuracy\', \'categorical_hinge\', \'categorical_mse\', \'categorical_mae\', \'regression_mse\', \'regression_mae\', \'binary_confusion_matrix\', \'multiclass_confusion_matrix\'. Default: \'categorical_accuracy\'.")
+            help="List of comma-separated metrics that are evaluated on each trained batch: \'categorical_accuracy\', \'categorical_hinge\', \'categorical_mse\', \'categorical_mae\', \'regression_mse\', \'regression_mae\', \'binary_confusion_matrix\', \'multiclass_confusion_matrix\', \'precision\', \'recall\', \'f1_score\'. Default: \'categorical_accuracy\'.")
 
         # Schedulers options
         _sh_group = self.add_argument_group("Schedulers options")
