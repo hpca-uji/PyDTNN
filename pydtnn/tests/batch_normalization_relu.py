@@ -5,12 +5,10 @@ import unittest
 import numpy as np
 
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.cpu.activations.relu_cpu import ReluCPU
 from pydtnn.backends.cpu.layers.concatenation_block_cpu import ConcatenationBlockCPU
-from pydtnn.backends.cpu.layers.conv_2d_relu_cpu import Conv2DReluCPU
+from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.conv_2d_relu import Conv2DRelu
+from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.common import verbose_test, D
@@ -21,13 +19,13 @@ from pydtnn.utils import print_with_header, random
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-class Conv2DReluTestCase(_Conv2DConvGemmTestCase):
+class BatchNormalizationReluTestCase(_Conv2DConvGemmTestCase):
     """
-    Tests that Conv2D+Relu leads to the same results than Conv2DRelu
+    Tests that BatchNormalization+Relu leads to the same results than BatchNormalizationRelu
     """
 
     @staticmethod
-    def _get_layers(d:D, deconv=False, trans=False)-> tuple[Conv2DCPU, Conv2DCPU]:
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple:
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
@@ -35,32 +33,27 @@ class Conv2DReluTestCase(_Conv2DConvGemmTestCase):
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 
-        conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                             padding=(d.vpadding, d.hpadding),
-                             stride=(d.vstride, d.hstride),
-                             dilation=(d.vdilation, d.hdilation),
-                             use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-
+        bn = BatchNormalization()
         relu = Relu()
         chain = ConcatenationBlock([
-            conv2d,
+            bn,
             relu
         ])
-        shape =(d.c, d.h, d.w)
+        shape = (d.c, d.h, d.w)
         chain.set_backend(model._backend)
         chain.set_model(model)
         chain.initialize(prev_shape=shape)
         
-        from_parent =(relu.__dict__ | conv2d.__dict__)
-        fuse = Conv2DRelu(from_parent= from_parent)
+        from_parent =  relu.__dict__ | bn.__dict__
+        fuse = BatchNormalizationRelu(from_parent=from_parent)
         fuse.set_backend(model._backend)
         fuse.set_model(model)
         fuse.__dict__.update(from_parent)
         fuse.initialize(prev_shape=shape)
 
         # Set the same initial weights and biases to both layers
-        fuse.weights = conv2d.weights.copy()
-        fuse.biases = conv2d.biases.copy()
+        fuse.running_mean = bn.running_mean.copy()
+        fuse.running_var = bn.running_var.copy()
 
         return chain, fuse
 

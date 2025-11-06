@@ -16,10 +16,7 @@ class Conv2DReluCPU(Conv2DCPU, Conv2DRelu[np.ndarray]):
         self.forward = {"_forward_cg_nchw": self._forward_nchw_cg,
                         "_forward_cg_nhwc": self._forward_nhwc_cg,
                         "_forward_cw_nchw": self._forward_nchw_cw}[self.forward.__name__]
-
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        """This is a fake forward function. It will be masked on initialization by a _forward implementation"""
-        raise NotImplementedError("Use a real forward variant!")
+        self.backward = self._backward
 
     def _forward_nchw_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
@@ -61,5 +58,5 @@ class Conv2DReluCPU(Conv2DCPU, Conv2DRelu[np.ndarray]):
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
-    def backward(self, x: np.ndarray) -> np.ndarray:
+    def _backward(self, dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Use a real backwards variant!")

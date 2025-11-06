@@ -46,24 +46,24 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
             self.dy_xn = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
     # --
 
-    def forward(self, _x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
 
         self.y: np.ndarray
-        n = _x.shape[0]
+        n = x.shape[0]
 
         if self.spatial:
-            x = _x.reshape((-1, self.ci), copy=False, order="C")
+            _x = x.reshape((-1, self.ci), copy=False, order="C")
         else: 
-            x = _x
+            _x = x
 
-        y: np.ndarray = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y[:_x.shape[0], :]
 
         if self.model.mode is Model.Mode.EVALUATE:
             # y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
 
-            np.subtract(x, self.running_mean, out=x,
+            np.subtract(_x, self.running_mean, out=_x,
                         dtype=self.model.dtype)
-            np.multiply(self.gamma, x, out=y,
+            np.multiply(self.gamma, _x, out=y,
                         dtype=self.model.dtype)
             np.sqrt(self.running_var + self.epsilon, out=self.std,
                     dtype=self.model.dtype)
@@ -75,7 +75,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         else:  # ModelModeEnum.TRAIN:
 
             # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
-            self.xn = x
+            self.xn = _x
 
             # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
             np.mean(self.xn, axis=0, out=self.mu,

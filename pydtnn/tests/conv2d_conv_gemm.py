@@ -97,7 +97,7 @@ class Conv2DConvGemmTestCase(TestCase):
     def _test_forward_backward_inner(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False, deconv=False, trans=False):
         from timeit import timeit
         conv2d_i2c, conv2d_cg = self._get_layers(d, deconv, trans)
-        conv2d_i2c.weights = weights.copy()
+        conv2d_i2c.weights = weights.copy()  # TODO/FIXME: Fix this (it's a concat layer)
         conv2d_cg.weights = weights.copy()
         # Forward pass
         y_i2c = conv2d_i2c.forward(x)

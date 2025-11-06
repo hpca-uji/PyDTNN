@@ -54,7 +54,7 @@ class Conv2DBatchNormalizationReluTestCase(_Conv2DConvGemmTestCase):
         chain.set_model(model)
         chain.initialize(prev_shape=shape)
         
-        from_parent = conv2d.__dict__ | bn.__dict__
+        from_parent = relu.__dict__ | bn.__dict__ | conv2d.__dict__
         fuse = Conv2DBatchNormalizationRelu(from_parent=from_parent)
         fuse.set_backend(model._backend)
         fuse.set_model(model)
@@ -67,6 +67,49 @@ class Conv2DBatchNormalizationReluTestCase(_Conv2DConvGemmTestCase):
 
         return chain, fuse
 
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_larger_handmade_array_stride3(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_larger_handmade_array_stride2(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_handmade_array(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_even_larger_handmade_array_stride3_filter1x2(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_even_larger_handmade_array_stride3_filter1x1(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_defaults(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_handmade_array_stride2(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_even_larger_handmade_array_stride3(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_even_larger_handmade_array_stride12(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_alexnet_imagenet_first_conv2d(self):
+        raise NotImplementedError()
+
+    @unittest.skip("Backward not implemented")
+    def test_forward_backward_alexnet_cifar10_first_conv2d(self):
+        raise NotImplementedError()
 
 if __name__ == '__main__':
     try:

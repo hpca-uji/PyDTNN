@@ -12,8 +12,10 @@ class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         self.y: np.ndarray = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.forward = self._forward
+        self.backward = self._backward
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
+    def _forward(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the BN + Relu"""
 
         n = x.shape[0]
@@ -39,5 +41,5 @@ class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
-    def backward(self, x: np.ndarray) -> np.ndarray:
-        raise NotImplementedError("Use a real backward variant!")
+    def _backward(self, dy: np.ndarray) -> np.ndarray:
+        raise NotImplementedError("Use a real backwards variant!")
