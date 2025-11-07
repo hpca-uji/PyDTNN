@@ -159,7 +159,7 @@ class TensorFormat(StrEnum):
 def encode_tensor(shape: ArrayShape, encoded_format=TensorFormat.NHWC) -> ArrayShape:
     """
     Returns the `shape` (exepcted in `HWC`) in `encoded_format` order.
-    If does not have 3 dimensions, it is returned as-is.
+    If `shape` does not have 3 dimensions, it is returned as-is.
     Args:
         shape (ArrayShape): shape in `HWC` format.
         encoded_format (TensorFormat): The encoded tensor format. Default: `TensorFormat.NHWC`.
@@ -172,7 +172,7 @@ def encode_tensor(shape: ArrayShape, encoded_format=TensorFormat.NHWC) -> ArrayS
 def decode_tensor(shape: ArrayShape, encoded_format=TensorFormat.NHWC) -> ArrayShape:
     """
     Returns the `shape` (exepcted in `encoded_format`) in `HWC` order.
-    If does not have 3 dimensions, it is returned as-is.
+    If `shape` does not have 3 dimensions, it is returned as-is.
     Args:
         shape (ArrayShape): shape in `encoded_format` format.
         encoded_format (TensorFormat): The encoded format. Default: `TensorFormat.NHWC`.
