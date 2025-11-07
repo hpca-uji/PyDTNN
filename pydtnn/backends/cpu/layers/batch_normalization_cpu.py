@@ -129,14 +129,15 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         n = dy.shape[0]
         if self.spatial:
-            dy = self.model.tensor_format.transpose(dy, TensorFormat.NHWC)
-            dy = dy.reshape((-1, self.ci), copy=None)
+            num_elems = (n * self.hi * self.wi)
 
-            dx: np.ndarray = self.dx[: (n * self.hi * self.wi), :]
-            dy_xn: np.ndarray = self.dy_xn[: (n * self.hi * self.wi), :]
+            dy = self.model.tensor_format.transpose(dy, TensorFormat.NHWC)
+            dy = dy.reshape((num_elems, self.ci), copy=None)
         else:
-            dx: np.ndarray = self.dx[:n, :]
-            dy_xn: np.ndarray = self.dy_xn[:n, :]
+            num_elems = n
+
+        dx: np.ndarray = self.dx[: num_elems, :]
+        dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
 
         # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
