@@ -81,7 +81,7 @@ class TensorFormat(StrEnum):
 
     def reshape(self, shape: tuple[int, int, int, int], dst: TensorFormat) -> tuple[int, int, int, int]:
         """
-        Reshape \"shape"
+        Changes the shape to \"shape\" with the tensor format \"dst\".
 
         Args:
             shape (tuple[int, int, int, int]): New shape.
