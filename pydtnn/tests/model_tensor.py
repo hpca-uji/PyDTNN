@@ -17,9 +17,6 @@ import warnings
 
 import numpy as np
 
-from pydtnn.layers.addition_block import AdditionBlock
-from pydtnn.layers.batch_normalization import BatchNormalization
-from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
@@ -29,7 +26,6 @@ from pydtnn.model import Model
 from pydtnn.tests.model_common import ModelCommonTestCase
 from pydtnn.tests.common import verbose_test, Params
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 
 
 class ModelTensorTestCase(ModelCommonTestCase):
@@ -58,7 +54,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
     @staticmethod
     def nhwc2nchw(x: np.ndarray):
-        return best_transpose_0312(x) if len(x.shape) == 4 else x
+        return np.asarray((TensorFormat.NHWC.transpose(x, TensorFormat.NCHW) if len(x.shape) == 4 else x), order="C", copy=None)
 
     @staticmethod
     def copy_weights_and_biases(model1: Model, model2: Model):
@@ -67,8 +63,23 @@ class ModelTensorTestCase(ModelCommonTestCase):
         """
         for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
             if isinstance(layer1, Conv2D):
-                # TODO: Check this (the transpose)
-                layer2.weights = layer1.weights.transpose(3, 0, 1, 2).copy()
+                assert layer1.grouping is layer2.grouping, f"Both conv_2D layer's grouping must be the same (layer1: {layer1.grouping}, layer2:{layer2.grouping})"
+
+                match layer1.grouping:
+                    case Conv2D.Grouping.DEPTHWISE:
+                        pass # Both tensor have the same weights' shape.
+                    case Conv2D.Grouping.POINTWISE:
+                        # NHWC's shape: ci, co
+                        # NCHW's shape: co, ci
+                        layer2.weights = np.asarray(layer1.weights.T, order="C", copy=True)
+                    case Conv2D.Grouping.STANDARD:
+                        # NHWC's shape (indexes from NHWC):
+                        # ci (0), kh (1), kw (2), co (3)
+                        # NCHW's shape (indexes from NHWC):
+                        # co (3), ci (0), kh (1), kw (2)
+                        layer2.weights = np.asarray(layer1.weights.transpose(3, 0, 1, 2), order="C", copy=True)
+                    case _:
+                        raise ValueError(f"Layer grouping (\"{layer1.grouping}\") not in ({list(Conv2D.Grouping)})")
             elif layer2.weights is not None:
                 layer2.weights = layer1.weights.copy()
             layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
