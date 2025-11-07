@@ -20,8 +20,8 @@
 - Change `layer.show` to return sequence, so `model.show` can do the formatting.
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
-- Rework `BestOf` to not use gloabls.
-- Rework `MemoryCache` to not use gloabls.
+- Rework `BestOf` to not use globals.
+- Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
 - Rework the `Conv2D` variant implementation.
 - Replace `print` statments with `logger` calls.
