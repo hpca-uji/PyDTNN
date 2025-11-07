@@ -58,9 +58,11 @@ class SampleFormat(StrEnum):
     CHW = auto()
 
     def as_channel(self) -> ChannelFormat:
+        """Down-cast format to just the channel"""
         return ChannelFormat(self.strip("c"))
 
     def as_tensor(self) -> TensorFormat:
+        """Up-cast format to include sample number"""
         return TensorFormat(f"n{self}")
 
     def reshape(self, shape: tuple[int, int, int], dst_order: SampleFormat) -> tuple[int, int, int]:
@@ -113,6 +115,7 @@ class TensorFormat(StrEnum):
     NCHW = auto()
 
     def as_sample(self) -> SampleFormat:
+        """Down-cast format to just the sample"""
         return SampleFormat(self.strip("n"))
 
     def reshape(self, shape: tuple[int, int, int, int], dst_order: TensorFormat) -> tuple[int, int, int, int]:
