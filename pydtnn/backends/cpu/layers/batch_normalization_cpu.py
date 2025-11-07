@@ -52,18 +52,19 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         n = x.shape[0]
 
         if self.spatial:
-            _x = x.reshape((-1, self.ci), copy=False, order="C")
-        else: 
-            _x = x
+            # NOTE: Executing in this format gives better results.
+            x = self.model.tensor_format.transpose(x, TensorFormat.NHWC)
+            x = x.reshape((-1, self.ci), copy=None, order="C")
+        # else: x = x (no reshape needed)
 
-        y: np.ndarray = self.y[:_x.shape[0], :]
+        y: np.ndarray = self.y[:x.shape[0], :]
 
         if self.model.mode is Model.Mode.EVALUATE:
             # y = self.gamma * (x - self.running_mean) / np.sqrt(self.running_var + self.epsilon) + self.beta
 
-            np.subtract(_x, self.running_mean, out=_x,
+            np.subtract(x, self.running_mean, out=x,
                         dtype=self.model.dtype)
-            np.multiply(self.gamma, _x, out=y,
+            np.multiply(self.gamma, x, out=y,
                         dtype=self.model.dtype)
             np.sqrt(self.running_var + self.epsilon, out=self.std,
                     dtype=self.model.dtype)
@@ -74,8 +75,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         else:  # ModelModeEnum.TRAIN:
 
-            # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
-            self.xn = _x
+            self.xn = x
 
             # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
             np.mean(self.xn, axis=0, out=self.mu,
@@ -105,6 +105,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
                         dtype=self.model.dtype)
             np.multiply(self.mu, inv_momentum, out=self.mu_var_momentum,
                         dtype=self.model.dtype)
+            
+            # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
             np.add(self.running_mean, self.mu_var_momentum, out=self.running_mean,
                    order="C", dtype=self.model.dtype, casting="unsafe")
 
@@ -113,17 +115,13 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
                         dtype=self.model.dtype)
             np.multiply(self.var, inv_momentum, out=self.mu_var_momentum,
                         dtype=self.model.dtype)
+            # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
             np.add(self.running_var, self.mu_var_momentum, out=self.running_var,
                    order="C", dtype=self.model.dtype, casting="unsafe")
 
         if self.spatial:
-            match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    y = y.reshape((n, self.ci, self.hi, self.wi), copy=False)
-                case TensorFormat.NHWC:
-                    y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
-                case _:
-                    raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
+            y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
+            y = TensorFormat.NHWC.transpose(y, self.model.tensor_format)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
@@ -131,7 +129,9 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         n = dy.shape[0]
         if self.spatial:
-            dy = dy.reshape((-1, self.ci), copy=True)
+            dy = self.model.tensor_format.transpose(dy, TensorFormat.NHWC)
+            dy = dy.reshape((-1, self.ci), copy=None)
+
             dx: np.ndarray = self.dx[: (n * self.hi * self.wi), :]
             dy_xn: np.ndarray = self.dy_xn[: (n * self.hi * self.wi), :]
         else:
@@ -146,12 +146,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
-            match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    dx = dx.reshape((n, self.ci, self.hi, self.wi), copy=False)
-                case TensorFormat.NHWC:
-                    dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
-                case _:
-                    raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
+            dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
+            dx = TensorFormat.NHWC.transpose(dx, self.model.tensor_format)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)

@@ -320,7 +320,7 @@ class LayerPyTorchTestCase(TestCase):
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
 
         _x = LayerPyTorchTestCase.get_test_data()
-        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e0, atol=1e0)
+        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e-4)
     # ---------
 
     def test_Conv2D(self):
