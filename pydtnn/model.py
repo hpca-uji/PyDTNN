@@ -829,8 +829,6 @@ class Model[T: Array]:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time
         total_time: np.ndarray = np.zeros((4,), dtype=np.float32)
 
-        first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
-        last_layer = len(self.layers) - 1
         # Forward pass (FP)
         for layer in self.layers:
             total_time += layer.fwd_time
