@@ -832,19 +832,19 @@ class Model[T: Array]:
         first_layer = 1  # Remember: The "Input" layer (the 0th layer) forward and backward function do nothing, so we skip it.
         last_layer = len(self.layers) - 1
         # Forward pass (FP)
-        for layer in range(first_layer, last_layer + 1):
-            total_time += self.layers[layer].fwd_time
+        for layer in self.layers:
+            total_time += layer.fwd_time
 
         if self.blocking_mpi:
             # Blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(last_layer, first_layer - 1, -1):
-                total_time += self.layers[layer].bwd_time
+            for layer in self.layers:
+                total_time += layer.bwd_time
 
             # Weight update (WU)
-            for layer in range(last_layer, first_layer - 1, -1):
-                weights_size = 0 if (weights := self.layers[layer].weights) is None else weights.size
-                biases_size = 0 if (biases := self.layers[layer].biases) is None else biases.size
+            for layer in self.layers:
+                weights_size = 0 if (weights := layer.weights) is None else weights.size
+                biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
                     total_time += allreduce_time(weights_size + biases_size,
                                                  self.cpu_speed, self.network_bw, self.network_lat,
@@ -853,10 +853,10 @@ class Model[T: Array]:
             total_time_iar: int = 0
             # Non-blocking MPI
             # Back propagation. Gradient computation (GC) and weights update (WU)
-            for layer in range(last_layer, -1, -1):
-                total_time += self.layers[layer].bwd_time
-                weights_size = 0 if (weights := self.layers[layer].weights) is None else weights.size
-                biases_size = 0 if (biases := self.layers[layer].biases) is None else biases.size
+            for layer in self.layers:
+                total_time += layer.bwd_time
+                weights_size = 0 if (weights := layer.weights) is None else weights.size
+                biases_size = 0 if (biases := layer.biases) is None else biases.size
                 if self.comm and weights_size > 0:
                     time_iar = allreduce_time(weights_size + biases_size,
                                               self.cpu_speed, self.network_bw, self.network_lat,
@@ -1149,15 +1149,13 @@ class Model[T: Array]:
 
         x, y_targ = self._sync_x_y(x_batch, y_batch)
 
-        last_layer = len(self.layers) - 1
-
         has_batch = x_batch.shape[0] > 0
 
         if has_batch:
             # Forward pass (FP)
-            for i in range(len(self.layers)):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
-                x = self.layers[i].forward(x)
+            for layer in self.layers:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.FORWARD)
+                x = layer.forward(x)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             loss, dx = self.loss_func.compute(x, y_targ, self.real_batch_size)
         else:
@@ -1171,9 +1169,9 @@ class Model[T: Array]:
 
         if has_batch:
             # Backward pass (BP)
-            for i in range(last_layer, -1, -1):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
-                dx = self.layers[i].backward(dx)
+            for layer in reversed(self.layers):
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.BACKWARD)
+                dx = layer.backward(dx)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.enable_cudnn:
@@ -1187,9 +1185,9 @@ class Model[T: Array]:
         if has_batch or sync_model:
 
             # Optimizer
-            for i in range(last_layer, -1, -1):
-                self.tracer.emit_event(PYDTNN_MDL_EVENT, self.layers[i].id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
-                self.layers[i].update_weights(self.optimizer)
+            for layer in self.layers:
+                self.tracer.emit_event(PYDTNN_MDL_EVENT, layer.id * PYDTNN_MDL_EVENTS + PYDTNN_MDL_EVENT_enum.UPDATE_DW)
+                layer.update_weights(self.optimizer)
                 self.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weight update
@@ -1197,9 +1195,9 @@ class Model[T: Array]:
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 
         if self.enable_cudnn:
-            for i in range(last_layer, -1, -1):
-                if self.layers[i].grad_vars:
-                    self.layers[i].stream_2.synchronize()  # type: ignore
+            for layer in self.layers:
+                if layer.grad_vars:
+                    layer.stream_2.synchronize()  # type: ignore
 
         # Schedulers end
         for sched in self.schedulers:
