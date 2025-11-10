@@ -91,12 +91,12 @@ class TensorGPU:
         else:
             match self.tensor_type:
                 case self.TensorTypeEnum.TENSOR:
-                    n, h, w, c = (self.shape[0], *decode_tensor(tuple(self.shape[1:]), tensor_format=self.tensor_format))
+                    n, h, w, c = (self.shape[0], *decode_tensor(tuple(self.shape[1:]), encoded_format=self.tensor_format))
                     self.desc = cudnn.cudnnCreateTensorDescriptor()
                     cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
                                                      self.cudnn_dtype, n, c, h, w)
                 case self.TensorTypeEnum.FILTER:
-                    n, h, w, c = (self.shape[0], *decode_tensor(tuple(self.shape[1:]), tensor_format=self.tensor_format))
+                    n, h, w, c = (self.shape[0], *decode_tensor(tuple(self.shape[1:]), encoded_format=self.tensor_format))
                     self.desc = cudnn.cudnnCreateFilterDescriptor()
                     cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
                                                      self.cudnn_tensor_format, n, c, h, w)
