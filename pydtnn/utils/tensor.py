@@ -8,8 +8,15 @@ from pydtnn.utils.types import ArrayShape
 
 
 class ChannelFormat(StrEnum):
-    WH = auto()
     HW = auto()
+    WH = auto()
+
+    def as_sample(self) -> SampleFormat:
+        """Up-cast format to include channel number (prefers left-side up-cast)"""
+        try:
+            return SampleFormat(f"c{self}")
+        except ValueError:
+            return SampleFormat(f"{self}c")
 
     def reshape(self, shape: tuple[int, int], dst_order: ChannelFormat) -> tuple[int, int]:
         """
@@ -53,17 +60,21 @@ class ChannelFormat(StrEnum):
 
 
 class SampleFormat(StrEnum):
-    WHC = auto()
-    HWC = auto()
     CHW = auto()
+    CWH = auto()
+    HWC = auto()
+    WHC = auto()
 
     def as_channel(self) -> ChannelFormat:
         """Down-cast format to just the channel"""
         return ChannelFormat(self.strip("c"))
 
     def as_tensor(self) -> TensorFormat:
-        """Up-cast format to include sample number"""
-        return TensorFormat(f"n{self}")
+        """Up-cast format to include sample number (prefers left-side up-cast)"""
+        try:
+            return TensorFormat(f"n{self}")
+        except ValueError:
+            return TensorFormat(f"{self}n")
 
     def reshape(self, shape: tuple[int, int, int], dst_order: SampleFormat) -> tuple[int, int, int]:
         """
@@ -78,10 +89,12 @@ class SampleFormat(StrEnum):
         assert len(shape) == len(self), f"Unexpected dimensions (got: {shape}, expect: {self})"
 
         match self:
-            case SampleFormat.HWC:
-                h, w, c = shape
             case SampleFormat.CHW:
                 c, h, w = shape
+            case SampleFormat.CWH:
+                c, w, h = shape
+            case SampleFormat.HWC:
+                h, w, c = shape
             case SampleFormat.WHC:
                 w, h, c = shape
             case _:
@@ -90,6 +103,8 @@ class SampleFormat(StrEnum):
         match dst_order:
             case SampleFormat.CHW:
                 return (c, h, w)
+            case SampleFormat.CWH:
+                return (c, w, h)
             case SampleFormat.HWC:
                 return (h, w, c)
             case SampleFormat.WHC:
@@ -111,8 +126,14 @@ class SampleFormat(StrEnum):
 
 
 class TensorFormat(StrEnum):
-    NHWC = auto()
     NCHW = auto()
+    NCWH = auto()
+    NHWC = auto()
+    NWHC = auto()
+    CHWN = auto()
+    CWHN = auto()
+    HWCN = auto()
+    WHCN = auto()
 
     def as_sample(self) -> SampleFormat:
         """Down-cast format to just the sample"""
@@ -131,18 +152,42 @@ class TensorFormat(StrEnum):
         assert len(shape) == len(self), f"Unexpected dimensions (got: {shape}, expect: {self})"
 
         match self:
-            case TensorFormat.NHWC:
-                n, h, w, c = shape
             case TensorFormat.NCHW:
                 n, c, h, w = shape
+            case TensorFormat.NCWH:
+                n, c, w, h = shape
+            case TensorFormat.NHWC:
+                n, h, w, c = shape
+            case TensorFormat.NWHC:
+                n, w, h, c = shape
+            case TensorFormat.CHWN:
+                c, h, w, n = shape
+            case TensorFormat.CWHN:
+                c, w, h, n = shape
+            case TensorFormat.HWCN:
+                h, w, c, n = shape
+            case TensorFormat.WHCN:
+                w, h, c, n = shape
             case _:
                 assert_never(self)
 
         match dst_order:
             case TensorFormat.NCHW:
                 return (n, c, h, w)
+            case TensorFormat.NCWH:
+                return (n, c, w, h)
             case TensorFormat.NHWC:
                 return (n, h, w, c)
+            case TensorFormat.NWHC:
+                return (n, w, h, c)
+            case TensorFormat.CHWN:
+                return (c, h, w, n)
+            case TensorFormat.CWHN:
+                return (c, w, h, n)
+            case TensorFormat.HWCN:
+                return (h, w, c, n)
+            case TensorFormat.WHCN:
+                return (w, h, c, n)
             case _:
                 assert_never(dst_order)
 
