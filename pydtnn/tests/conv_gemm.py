@@ -15,6 +15,7 @@ class ConvGemmTestCase(ConvCommonTestCase):
     """
     Tests that conv_gemm leads to the same results as i2c and mm.
     """
+    # NOTE: Delete parent test to prevent re-export and re-testing
     global ConvCommonTestCase
     del ConvCommonTestCase
 

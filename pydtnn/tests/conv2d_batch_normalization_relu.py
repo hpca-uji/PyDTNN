@@ -19,6 +19,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu
     """
+    # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
     del Conv2DCommonTestCase
 

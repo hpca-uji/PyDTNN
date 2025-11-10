@@ -32,6 +32,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
+    # NOTE: Delete parent test to prevent re-export and re-testing
     global ModelCommonTestCase
     del ModelCommonTestCase
 

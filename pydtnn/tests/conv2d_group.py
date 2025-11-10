@@ -16,6 +16,7 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D with Depth+Pair leads to the same results than Conv2D Standard
     """
+    # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
     del Conv2DCommonTestCase
 

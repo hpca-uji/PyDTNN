@@ -19,6 +19,7 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
     """
     Tests that Conv2D+Relu leads to the same results than Conv2DRelu
     """
+    # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DConvGemmTestCase
     del Conv2DConvGemmTestCase
 

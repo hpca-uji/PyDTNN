@@ -16,6 +16,7 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
     """
     Tests that Conv2D with conv_gemm leads to the same results than Conv2d with mm and i2c.T (exhaustive version)
     """
+    # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DConvGemmTestCase
     del Conv2DConvGemmTestCase
 
