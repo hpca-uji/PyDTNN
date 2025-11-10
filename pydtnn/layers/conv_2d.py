@@ -80,15 +80,17 @@ class Conv2D[T: Array](Layer[T]):
                     case TensorFormat.NHWC:
                         self.weights_shape = (self.ci, self.co)
                     case _:
-                        raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
-            case _:
+                        raise NotImplementedError(f"\"Conv2D\" is not implemented for \"{self.model.tensor_format}\" format.")
+            case Conv2D.Grouping.STANDARD:
                 match self.model.tensor_format:
                     case TensorFormat.NCHW:
                         self.weights_shape = (self.co, self.ci, *self.filter_shape)
                     case TensorFormat.NHWC:
                         self.weights_shape = (self.ci, *self.filter_shape, self.co)
                     case _:
-                        raise NotImplementedError(f"\"ConcatenationBlockCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+                        raise NotImplementedError(f"\"Conv2D\" is not implemented for \"{self.model.tensor_format}\" format.")
+            case _:
+                raise NotImplementedError(f"\"Conv2D\" grouping \"{self.grouping}\" not recognized.")
 
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
