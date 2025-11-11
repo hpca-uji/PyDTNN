@@ -14,6 +14,7 @@ from pydtnn.tests.conv2d_batch_normalization_relu import Conv2DBatchNormalizatio
 from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase
 
 # Models
+from pydtnn.tests.model_dtype import ModelDTypeTestCase
 from pydtnn.tests.model_tensor import ModelTensorTestCase
 try:
     from pydtnn.tests.model_gpu import ModelGpuTestCase

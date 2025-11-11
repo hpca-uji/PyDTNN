@@ -115,7 +115,6 @@ class ConvWinograd:
                 warn("Winograd routine not found. Fallback to numpy version!", RuntimeWarning)
                 funcs = [("numpy", (self._conv_winograd_numpy, None, None))]
 
-            # breakpoint()
             for intr, f in funcs:
                 self.alternatives[r].append((f"cw{m}{r}{intr}", partial(f[0], m, r, g, bt, at, f[1], f[2])))
 

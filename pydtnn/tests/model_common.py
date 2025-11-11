@@ -260,3 +260,9 @@ class ModelCommonTestCase(TestCase):
         Compares results between a Densenet model {self.model1_desc} and other {self.model1_desc}
         """
         self.do_test_model("densenet_cifar10")
+
+    def test_simplecnn(self):
+        f"""
+        Compares results between a SimpleCNN model {self.model1_desc} and other {self.model1_desc}
+        """
+        self.do_test_model("simplecnn")
