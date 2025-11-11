@@ -105,13 +105,8 @@ GRAD_EQUIVALENCES: dict[str, str] = {
 # ==============
 
 # ==============
-ignore_model = Model(**KWARGS)  # NOTE: Do not delete this (it's related to the initalization of Model).
-# ==============
-
-# ==============
 # PyTorch models
 # ==============
-
 
 class TorchArcTanH(torch.nn.Module):
     def __init__(self, *args, **kwargs):

@@ -9,7 +9,7 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.model_common import ModelCommonTestCase
 from pydtnn.tests.common import verbose_test, Params
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class ModelGpuTestCase(ModelCommonTestCase):
@@ -49,8 +49,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
                 continue
             if isinstance(gpu_layer, Conv2D):
                 if model2.tensor_format is TensorFormat.NHWC:
-                    # TODO: check this.
-                    gpu_layer.weights_cpu = cpu_layer.weights.transpose(3, 1, 2, 0).copy()
+                    gpu_layer.weights_cpu = format_transpose(cpu_layer.weights, "IHWO", "OHWI").copy()
                 else:
                     gpu_layer.weights_cpu = cpu_layer.weights.copy()
             else:
