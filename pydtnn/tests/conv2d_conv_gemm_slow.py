@@ -93,8 +93,4 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
 
 
 if __name__ == "__main__":
-    try:
-        Conv2DCPU()
-    except NameError:
-        sys.exit(-1)
     unittest.main()

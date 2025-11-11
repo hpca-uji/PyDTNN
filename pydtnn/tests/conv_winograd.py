@@ -105,9 +105,5 @@ class ConvWinogradTestCase(ConvCommonTestCase):
         raise NotImplementedError()
 
 
-if __name__ == '__main__':
-    try:
-        ConvWinograd(0, 0, 0, 0, 0, 0, tensor_format=TensorFormat.NHWC)
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()

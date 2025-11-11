@@ -52,9 +52,5 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
         return conv2d_i2c, conv2d_cg
 
 
-if __name__ == '__main__':
-    try:
-        Conv2DCPU()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()

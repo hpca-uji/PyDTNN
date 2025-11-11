@@ -21,5 +21,5 @@ def main():
     bop.print_results()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -123,9 +123,5 @@ class ModelGpuTestCase(ModelCommonTestCase):
         return dx2
 
 
-if __name__ == '__main__':
-    try:
-        Model()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()

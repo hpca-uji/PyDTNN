@@ -37,13 +37,13 @@ Please, report bugs to <barrachi@uji.es>.
 
 def log(text):
     """Log a message to stderr."""
-    sys.stderr.write(">>> %s\n" % text)
+    print(f">>> {text}\n", file=sys.stderr)
 
 
 def error(text):
     """Report an error message and exit."""
-    sys.stderr.write("ERROR: %s\n" % text)
-    sys.exit(-1)
+    print(f"ERROR: {text}\n", file=sys.stderr)
+    raise SystemExit(-1)
 
 
 # Global command line parameters
@@ -61,7 +61,7 @@ def get_opts():
     for opt, arg in optlist:
         if opt in ('-h', '--help'):
             my_help()
-            sys.exit()
+            raise SystemExit()
         elif opt in ('-v', '--verbosity'):
             VERBOSE = 1
     # Check required arguments

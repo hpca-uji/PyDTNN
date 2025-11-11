@@ -75,9 +75,6 @@ class ConvDirectTestCase(ConvCommonTestCase):
         return ConvDirect(method_name="convdirect_original_nhwc_default", debug=False).conv_direct(weights, x, biases, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
 
 
-if __name__ == '__main__':
-    try:
-        ConvDirect(method_name="convdirect_original_nhwc_default")
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()
+

@@ -136,9 +136,8 @@ if __name__ == "__main__":
     if not os.path.exists(IN_FILE):
         try:
             urllib.request.urlretrieve(PATH + IN_FILE, IN_FILE)
-        except BaseException:
-            print(f"Error while downloading {PATH + IN_FILE}")
-            sys.exit(-1)
+        except BaseException as exc:
+            raise SystemExit(f"Error while downloading {PATH + IN_FILE}") from exc
 
     f = h5py.File("resnet50_weights_tf_dim_ordering_tf_kernels.h5", "r")
     out = {}

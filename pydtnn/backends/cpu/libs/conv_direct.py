@@ -77,8 +77,7 @@ class ConvDirect:
             self.get_parent_layer = weakref.ref(parent_layer)
             self.evaluate_only = self.get_parent_layer().model.evaluate_only  # type: ignore
             if not self.evaluate_only:
-                print("The convDirect module only works in evaluate_only mode!")
-                sys.exit(1)
+                raise NotImplementedError("The convDirect module only works in evaluate_only mode!")
         else:
             self.evaluate_only = True
 
@@ -94,11 +93,10 @@ class ConvDirect:
              self._conv_direct_kernel,
              self._conv_direct_post] = [getattr(self.__class__.lib_cd, method_name + suffix)
                                         for suffix in ('_pre', '_kernel', '_post')]
-        except AttributeError:
-            print("Error: Method '{}' not supported by convDirect library.\n"
-                  "       Run convDirect_info to see the convDirect supported methods."
-                  "".format(method_name))
-            sys.exit(1)
+        except AttributeError as exc:
+            raise NotImplementedError("Error: Method '{}' not supported by convDirect library.\n"
+                                      "       Run convDirect_info to see the convDirect supported methods."
+                                      "".format(method_name)) from exc
 
         self._reuse_processed_weights = False
         if self.evaluate_only and method_name.find("convdirect_block_blis") == 0:

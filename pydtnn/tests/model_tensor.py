@@ -176,9 +176,6 @@ class ModelTensorTestCase(ModelCommonTestCase):
                                 f" (max diff: {self.max_diff(self.nhwc2nchw(dx1[i]), dx2[i])}, rtol: {rtol}, atol: {atol})")
 
 
-if __name__ == '__main__':
-    try:
-        Model()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()
+

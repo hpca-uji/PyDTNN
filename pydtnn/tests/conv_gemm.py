@@ -427,9 +427,5 @@ class ConvGemmTestCase(ConvCommonTestCase):
                             f"Results differ for AlexNet Cifar and ImageNet layers number {n}")
 
 
-if __name__ == '__main__':
-    try:
-        ConvGemm()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()

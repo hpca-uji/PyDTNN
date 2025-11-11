@@ -76,7 +76,7 @@ def main():
                 print(f'Testing throughput: {model.dataset.test_nsamples / total_time:5.4f} samples/s')
         if model.evaluate_only:
             print_model_reports(model)
-            sys.exit(0)
+            raise SystemExit(0)
     # Barrier
     if model.parallel in ["data"]:
         model.comm.Barrier()

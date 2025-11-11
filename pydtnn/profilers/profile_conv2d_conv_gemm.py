@@ -247,7 +247,7 @@ class PerfTestConv2DConvGemm:
         self._test_forward_backward(d, x, weights, print_times=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     c = PerfTestConv2DConvGemm()
     for i in range(1, 2):
         print()

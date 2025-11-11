@@ -543,9 +543,7 @@ class Model[T: Array]:
         try:
             module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
         except Exception as exc:
-            import traceback
-            print(traceback.print_exception(exc))
-            sys.exit(-1)
+            raise ValueError(f"Unsupported encryption module {encryption_name}!") from exc
 
         if self.comm_rank == 0:
             crypt = module.Context(

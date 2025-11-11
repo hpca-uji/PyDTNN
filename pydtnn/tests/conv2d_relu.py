@@ -113,9 +113,6 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
         raise NotImplementedError()
 
 
-if __name__ == '__main__':
-    try:
-        Conv2DCPU()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()
+

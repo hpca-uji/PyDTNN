@@ -53,9 +53,5 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
         return model2
 
 
-if __name__ == '__main__':
-    try:
-        Model()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()

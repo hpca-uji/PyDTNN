@@ -44,7 +44,7 @@ def log(text):
 def error(text):
     """Report an error message and exit."""
     sys.stderr.write("ERROR: %s\n" % text)
-    sys.exit(-1)
+    raise SystemExit(-1)
 
 
 # Global command line parameters
@@ -62,7 +62,7 @@ def get_opts():
     for opt, arg in optlist:
         if opt in ('-h', '--help'):
             my_help()
-            sys.exit()
+            raise SystemExit()
         elif opt in ('-v', '--verbosity'):
             VERBOSE = 1
     # Check required arguments
@@ -83,25 +83,20 @@ def file_to_dict(file):
     # ncalls, tottime, percall, cumtime, percall, filename:lineno(function)
     file.readline()  # Ignore header
     for line in file.readlines():
-        try:
-            values = line.split(',', 5)
-        except ValueError:
-            print(line)
-            sys.exit(-1)
-        else:
-            for i in range(5):
+        values = line.split(',', 5)
+        for i in range(5):
+            try:
+                values[i] = int(values[i])
+            except ValueError:
                 try:
-                    values[i] = int(values[i])
+                    values[i] = float(values[i])
                 except ValueError:
-                    try:
-                        values[i] = float(values[i])
-                    except ValueError:
-                        pass
-            # Remove part of the path from values[5]
-            splat_by_slash = values[5].split('/')
-            values[5] = '/'.join(splat_by_slash[-3:])
-            _dict[values[5]] = values[0:5]
-            total_time += values[1]
+                    pass
+        # Remove part of the path from values[5]
+        splat_by_slash = values[5].split('/')
+        values[5] = '/'.join(splat_by_slash[-3:])
+        _dict[values[5]] = values[0:5]
+        total_time += values[1]
     return _dict, total_time
 
 

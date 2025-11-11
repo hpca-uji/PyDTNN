@@ -75,9 +75,5 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
             layer.weights = weights.copy()
 
 
-if __name__ == '__main__':
-    try:
-        Conv2DCPU()
-    except NameError:
-        sys.exit(-1)
+if __name__ == "__main__":
     unittest.main()
