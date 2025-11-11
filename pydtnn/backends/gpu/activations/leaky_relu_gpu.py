@@ -1,6 +1,5 @@
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import decode_tensor
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
@@ -124,7 +123,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         return self.dx
     
     def initialize_relu_2d_gpu(self, prev_shape: ArrayShape) -> None:
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+        self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.shape = prev_shape
 
         n: int = self.model.batch_size * self.hi * self.wi * self.ci

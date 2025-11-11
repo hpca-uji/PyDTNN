@@ -32,7 +32,7 @@ class Synthetic(Dataset):
             local_batches = self._local_nsamples[part] // self.model.batch_size
             nsamples = local_batches * self.model.batch_size
             x_shape = (nsamples, *self.input_shape)
-            x_shape = TensorFormat.NCHW.reshape(x_shape, self.model.tensor_format)  # type: ignore
+            x_shape = self.model.encode_shape(x_shape)  # type: ignore
             y_shape = (nsamples, *self.output_shape)
             self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
             self._y[part] = np.zeros(y_shape, dtype=self.model.dtype, order="C")

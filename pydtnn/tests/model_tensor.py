@@ -25,7 +25,7 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.model_common import ModelCommonTestCase
 from pydtnn.tests.common import verbose_test, Params
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class ModelTensorTestCase(ModelCommonTestCase):
@@ -55,7 +55,9 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
     @staticmethod
     def nhwc2nchw(x: np.ndarray):
-        return np.asarray((TensorFormat.NHWC.transpose(x, TensorFormat.NCHW) if len(x.shape) == 4 else x), order="C", copy=None)
+        if len(x.shape) == 4:
+            x = format_transpose(x, TensorFormat.NHWC, TensorFormat.NCHW)
+        return np.asarray(x, order="C", copy=None)
 
     @staticmethod
     def copy_weights_and_biases(model1: Model, model2: Model):
@@ -68,7 +70,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
                 match layer1.grouping:
                     case Conv2D.Grouping.DEPTHWISE:
-                        pass # Both tensor have the same weights' shape.
+                        pass  # Both tensor have the same weights' shape.
                     case Conv2D.Grouping.POINTWISE:
                         # NHWC's shape: ci, co
                         # NCHW's shape: co, ci

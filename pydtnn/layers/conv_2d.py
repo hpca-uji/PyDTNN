@@ -3,7 +3,7 @@ if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.tensor import decode_tensor, encode_tensor, TensorFormat
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
@@ -65,7 +65,7 @@ class Conv2D[T: Array](Layer[T]):
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+        self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape
 
         match self.grouping:
@@ -92,7 +92,7 @@ class Conv2D[T: Array](Layer[T]):
 
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
-        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
+        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
 
     def show(self, attrs: str = "") -> None:

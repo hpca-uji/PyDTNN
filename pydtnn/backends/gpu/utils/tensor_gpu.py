@@ -1,11 +1,10 @@
 import ctypes
-from typing import TypeVar
-
 from enum import StrEnum, auto
 
 import numpy as np
+
 from pydtnn.utils.types import ArrayShape
-from pydtnn.utils.tensor import decode_tensor, TensorFormat
+from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
@@ -61,6 +60,12 @@ class TensorGPU:
         self._initalize(gpu_arr, desc)
     # ---
 
+    def encode_shape(self, shape):
+        return encode_shape(shape, self.tensor_format)
+
+    def decode_shape(self, shape):
+        return decode_shape(shape, self.tensor_format)
+
     def _set_shape(self, gpu_arr: "gpuarray.GPUArray") -> None:
 
         match len(gpu_arr.shape):
@@ -100,12 +105,12 @@ class TensorGPU:
         else:
             match self.tensor_type:
                 case self.TensorTypeEnum.TENSOR:
-                    n, h, w, c = (self.shape[0], *decode_tensor(tuple(self.shape[1:]), encoded_format=self.tensor_format))
+                    n, c, h, w = self.decode_shape(self.shape)
                     self.desc = cudnn.cudnnCreateTensorDescriptor()
                     cudnn.cudnnSetTensor4dDescriptor(self.desc, self.cudnn_tensor_format,
                                                      self.cudnn_dtype, n, c, h, w)
                 case self.TensorTypeEnum.FILTER:
-                    n, h, w, c = (self.shape[0], *decode_tensor(tuple(self.shape[1:]), encoded_format=self.tensor_format))
+                    n, c, h, w = self.decode_shape(self.shape)
                     self.desc = cudnn.cudnnCreateFilterDescriptor()
                     cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
                                                      self.cudnn_tensor_format, n, c, h, w)

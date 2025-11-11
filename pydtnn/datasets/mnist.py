@@ -69,7 +69,7 @@ class MNIST(Dataset):
             x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE) / 255.0
         x = x.astype(self.model.dtype)
 
-        x = TensorFormat.NCHW.transpose(x, self.model.tensor_format)
+        x = self.model.encode_tensor(x)
 
         offset = self._labels_header_offset + self._local_offset[part] * 1  # The output class is encoded as a number
         nbytes = self._local_nsamples[part] * 1  # The output class is encoded as a number

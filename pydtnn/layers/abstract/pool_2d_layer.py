@@ -1,8 +1,6 @@
 import numpy as np
 
 from pydtnn.layers.layer import Layer, LayerError
-from pydtnn.utils.tensor import decode_tensor, encode_tensor
-
 from pydtnn.utils.types import Array
 
 
@@ -22,7 +20,7 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
 
     def initialize(self, prev_shape, x: T | None = None):
         super().initialize(prev_shape, x)
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+        self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         if self.pool_shape[0] == 0:
             self.pool_shape = (self.hi, self.pool_shape[1])
         if self.pool_shape[1] == 0:
@@ -31,9 +29,9 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         self.co = self.ci
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
-        if not(self.ho > 0 and self.wo > 0):
+        if not (self.ho > 0 and self.wo > 0):
             raise LayerError(f"Output dimensions must be greater than 0. ho: {self.ho}, wo: {self.wo}.")
-        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
+        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
 
     def show(self, attrs=""):

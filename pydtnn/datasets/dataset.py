@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 import rapidgzip
 
-from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat
+from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
 from pydtnn.utils import BackgroundGenerator, find_component, random
 from pydtnn.utils.types import ArrayShape
 
@@ -142,8 +142,8 @@ class Dataset(ABC):
         x_test, y_test = map(np.concat, zip(*gen_test))
 
         # Ensure dataset is in NCHW
-        x_train = self.model.tensor_format.transpose(x_train, TensorFormat.NCHW)
-        x_test = self.model.tensor_format.transpose(x_test, TensorFormat.NCHW)
+        x_train = self.model.decode_tensor(x_train)
+        x_test = self.model.decode_tensor(x_test)
 
         # Ensure dataset is in float64
         match self.model.dtype:
@@ -255,19 +255,19 @@ class Dataset(ABC):
 
     @staticmethod
     def _nchw2nhwc(x: np.ndarray) -> np.ndarray:
-        return TensorFormat.NCHW.transpose(x, TensorFormat.NHWC)
+        return format_transpose(x, TensorFormat.NCHW, TensorFormat.NHWC)
 
     @staticmethod
     def _nhwc2nchw(x: np.ndarray) -> np.ndarray:
-        return TensorFormat.NHWC.transpose(x, TensorFormat.NCHW)
+        return format_transpose(x, TensorFormat.NHWC, TensorFormat.NCHW)
 
     @staticmethod
     def _chw2hwc(x: np.ndarray) -> np.ndarray:
-        return SampleFormat.CHW.transpose(x, SampleFormat.HWC)
+        return format_transpose(x, SampleFormat.CHW, SampleFormat.HWC)
 
     @staticmethod
     def _hwc2chw(x: np.ndarray) -> np.ndarray:
-        return SampleFormat.HWC.transpose(x, SampleFormat.CHW)
+        return format_transpose(x, SampleFormat.HWC, SampleFormat.CHW)
 
     @staticmethod
     def _decode_class(y: np.ndarray, classes_list: np.ndarray) -> None:
@@ -396,7 +396,7 @@ class Dataset(ABC):
         return data
 
     def _do_crop_images(self, data: np.ndarray) -> np.ndarray:
-        n, c, h, w = self.model.tensor_format.reshape(data.shape, TensorFormat.NCHW)
+        n, c, h, w = self.model.decode_shape(data.shape)
         crop_size = min(self.model.augment_crop_size, h, w)
         limit = min(n, int(n * self.model.augment_crop_prob))
         s = np.arange(n)
@@ -421,7 +421,7 @@ class Dataset(ABC):
         return data
 
     def _do_resize(self, data: np.ndarray) -> np.ndarray:
-        data = self.model.tensor_format.transpose(data, TensorFormat.NCHW)
+        data = self.model.decode_tensor(data)
 
         size = (self.model.transform_resize_size, self.model.transform_resize_size)
         shape = (*data.shape[:2], *size)
@@ -440,7 +440,7 @@ class Dataset(ABC):
                 channel = channel.transpose().astype(self.model.dtype)
                 new_data[n, c] = channel
 
-        new_data = TensorFormat.NCHW.transpose(new_data, self.model.tensor_format)
+        new_data = self.model.encode_tensor(new_data)
 
         return new_data
     # ---
@@ -454,7 +454,7 @@ class Dataset(ABC):
         return (crop, size)
 
     def _do_crop(self, data: np.ndarray) -> np.ndarray:
-        data = self.model.tensor_format.transpose(data, TensorFormat.NCHW)
+        data = self.model.decode_tensor(data)
 
         size = data.shape[2:4]
         crop, size = self._calculate_crop(size)
@@ -474,7 +474,7 @@ class Dataset(ABC):
                 channel = channel.transpose().astype(self.model.dtype)
                 new_data[n, c] = channel
 
-        new_data = TensorFormat.NCHW.transpose(new_data, self.model.tensor_format)
+        new_data = self.model.encode_tensor(new_data)
 
         return new_data
     # ---
@@ -484,7 +484,7 @@ class Dataset(ABC):
             image = image.convert("RGB")
             array = np.asarray(image)
             # NOTE: PIL mode RGB is WHC in unit8
-            array = SampleFormat.WHC.transpose(array, SampleFormat.CHW)
+            array = format_transpose(array, SampleFormat.WHC, SampleFormat.CHW)
         return array
 
     def _load_gray_image(self, fp: IO[bytes] | str) -> np.ndarray:
@@ -493,7 +493,7 @@ class Dataset(ABC):
             image = image.convert("L")
             array = np.asarray(image)
             # NOTE: PIL mode L is WH in unit8
-            array = ChannelFormat.WH.transpose(array, ChannelFormat.HW)
+            array = format_transpose(array, ChannelFormat.WH, ChannelFormat.HW)
             array = array[None, ...]
         return array
     # ----

@@ -4,7 +4,7 @@ from pydtnn.cython.bn_training_cython import bn_training_bwd_cython
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
-from pydtnn.utils.tensor import TensorFormat, decode_tensor
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 from pydtnn.utils.types import ArrayShape
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
@@ -13,7 +13,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         super().initialize(prev_shape, x)
 
         if self.spatial:
-            self.hi, self.wi, self.ci = decode_tensor(self.shape, self.model.tensor_format)
+            self.hi, self.wi, self.ci = self.model.decode_shape(self.shape)
             shape_ = (self.ci,)
         else:
             self.ci = self.shape[0]
@@ -53,7 +53,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         if self.spatial:
             # NOTE: Executing in this format gives better results.
-            x = self.model.tensor_format.transpose(x, TensorFormat.NHWC)
+            x = format_transpose(x, self.model.tensor_format, TensorFormat.NHWC)
             x = x.reshape((-1, self.ci), copy=None, order="C")
         # else: x = x (no reshape needed)
 
@@ -105,7 +105,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
                         dtype=self.model.dtype)
             np.multiply(self.mu, inv_momentum, out=self.mu_var_momentum,
                         dtype=self.model.dtype)
-            
+
             # NOTE: casting="unsafe", means that numpy will cast the data to the new type always.
             np.add(self.running_mean, self.mu_var_momentum, out=self.running_mean,
                    order="C", dtype=self.model.dtype, casting="unsafe")
@@ -121,7 +121,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         if self.spatial:
             y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
-            y = TensorFormat.NHWC.transpose(y, self.model.tensor_format)
+            y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 

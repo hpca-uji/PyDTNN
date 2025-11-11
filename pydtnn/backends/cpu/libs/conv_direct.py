@@ -8,7 +8,7 @@ import weakref
 
 import numpy as np
 
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
@@ -105,6 +105,12 @@ class ConvDirect:
             self._reuse_processed_weights = True
         self._weights_already_processed = False
 
+    def encode_shape(self, shape):
+        return encode_shape(shape, self.tensor_format)
+
+    def decode_shape(self, shape):
+        return decode_shape(shape, self.tensor_format)
+
     def conv_direct(self, weights: np.ndarray, x: np.ndarray,
                     biases: np.ndarray | None = None,  # type: ignore
                     vpadding=0, hpadding=0,
@@ -113,7 +119,7 @@ class ConvDirect:
                     relu=False, bn=False, running_mean=None,
                     inv_std=None, gamma=None, beta=None):
 
-        n, ci, hi, wi = TensorFormat.NCHW.reshape(x.shape, self.tensor_format)
+        n, ci, hi, wi = self.decode_shape(x.shape)
 
         if self.tensor_format is TensorFormat.NCHW:
             co, ci, kh, kw = weights.shape
@@ -125,7 +131,7 @@ class ConvDirect:
         if biases is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            bias_shape = TensorFormat.NCHW.reshape((n, co, ho, wo), self.tensor_format)
+            bias_shape = self.encode_shape((n, co, ho, wo))
             biases = np.zeros(bias_shape, weights.dtype, order="C")
         else:
             biases = biases[:n, :]

@@ -6,7 +6,6 @@ from pydtnn.utils.types import DTYPE2CTYPE
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import SampleFormat, decode_tensor, encode_tensor
 import pycuda.gpuarray as gpuarray   # type: ignore
 from pycuda.compiler import SourceModule   # type: ignore
 from pycuda.driver import Function   # type: ignore
@@ -321,9 +320,9 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         return module
 
     def initialize_pool_2d_gpu(self, prev_shape, x):
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
-        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
-        pooling_shape = SampleFormat.CHW.reshape((self.co, self.ho, self.wo), self.model.tensor_format.as_sample())
+        self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
+        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
+        pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
@@ -346,7 +345,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         if self.pooling_not_needed:
             self.y = x
         else:
-            n, c, h, w = self.model.tensor_format.reshape(x.shape, TensorFormat.NCHW)
+            n, c, h, w = self.model.decode_shape(x.shape)
 
             # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be np.prod(x.shape),
             #   but in this case we are putting elements in the output instead of processing the input's elements.
@@ -372,7 +371,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-        n, c, h, w = self.model.tensor_format.reshape(dy.shape, TensorFormat.NCHW)
+        n, c, h, w = self.model.decode_shape(dy.shape)
 
         num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
 

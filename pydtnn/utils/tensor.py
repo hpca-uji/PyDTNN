@@ -3,9 +3,9 @@ from __future__ import annotations
 from enum import auto, StrEnum
 
 import numpy as np
-from pydtnn.utils.types import ArrayShape
 
 
+# Formats
 class ChannelFormat(StrEnum):
     HW = auto()
     WH = auto()
@@ -17,35 +17,11 @@ class ChannelFormat(StrEnum):
         except ValueError:
             return SampleFormat(f"{self}c")
 
-    def reshape(self, shape: tuple[int, int], dst: ChannelFormat) -> tuple[int, int]:
-        """
-        Transform the `shape` from its current order to `dst` channel order.
-
-        Args:
-            shape (tuple[int, int, int, int]): source shape.
-            dst (ChannelFormat): desired channel format.
-        Returns:
-            (tuple[int, int, int, int]): `shape` with `dst` channel order.
-        """
-        return format_reshape(shape, self, dst)  # type: ignore
-
-    def transpose(self, data: np.ndarray, dst: ChannelFormat) -> np.ndarray:
-        """
-        Transpose elements of `data` from its current format to `dst` channel format.
-
-        Args:
-            data (np.ndarray): numpy array to transpose to a new channel format.
-            dst (ChannelFormat): data's new channel format.
-        Returns:
-            np.ndarray: `data` with `dst` as it channel format.
-        """
-        return format_transpose(data, self, dst)
-
 
 class SampleFormat(StrEnum):
     CHW = auto()
     HWC = auto()
-    CWH = auto()
+    WHC = auto()
 
     def as_channel(self) -> ChannelFormat:
         """Down-cast format to just the channel"""
@@ -58,30 +34,6 @@ class SampleFormat(StrEnum):
         except ValueError:
             return TensorFormat(f"{self}n")
 
-    def reshape(self, shape: tuple[int, int, int], dst: SampleFormat) -> tuple[int, int, int]:
-        """
-        Transform the `shape` from its current order to `dst` sample order.
-
-        Args:
-            shape (tuple[int, int, int, int]): source shape.
-            dst (SampleFormat): desired sample format.
-        Returns:
-            (tuple[int, int, int, int]): `shape` with `dst` sample order.
-        """
-        return format_reshape(shape, self, dst)  # type: ignore
-
-    def transpose(self, data: np.ndarray, dst: SampleFormat) -> np.ndarray:
-        """
-        Transpose elements of `data` from its current format to `dst` sample format.
-
-        Args:
-            data (np.ndarray): numpy array to transpose to a new sample format.
-            dst (SampleFormat): data's new sample format.
-        Returns:
-            np.ndarray: `data` with `dst` as it sample format.
-        """
-        return format_transpose(data, self, dst)
-
 
 class TensorFormat(StrEnum):
     NCHW = auto()
@@ -91,31 +43,8 @@ class TensorFormat(StrEnum):
         """Down-cast format to just the sample"""
         return SampleFormat(self.strip("n"))
 
-    def reshape(self, shape: tuple[int, int, int, int], dst: TensorFormat) -> tuple[int, int, int, int]:
-        """
-        Transform the `shape` from its current order to `dst` tensor order.
 
-        Args:
-            shape (tuple[int, int, int, int]): source shape.
-            dst (TensorFormat): desired tensor format.
-        Returns:
-            (tuple[int, int, int, int]): `shape` with `dst` tensor order.
-        """
-        return format_reshape(shape, self, dst)  # type: ignore
-
-    def transpose(self, data: np.ndarray, dst: TensorFormat) -> np.ndarray:
-        """
-        Transpose elements of `data` from its current format to `dst` tensor format.
-
-        Args:
-            data (np.ndarray): numpy array to transpose to a new tensor format.
-            dst (TensorFormat): data's new tensor format.
-        Returns:
-            np.ndarray: `data` with `dst` as it tensor format.
-        """
-        return format_transpose(data, self, dst)
-
-
+# Helpers
 def format_reshape(shape: tuple[int, ...], src: str, dst: str) -> tuple[int, ...]:
     """
     Transform the `shape` from its current `src` order to `dst` order.
@@ -133,6 +62,8 @@ def format_reshape(shape: tuple[int, ...], src: str, dst: str) -> tuple[int, ...
     assert set(src) == len(set(src)), f"Duplicate dimension names ({src=})"
     assert set(dst) == len(set(dst)), f"Duplicate dimension names ({dst=})"
 
+    if src == dst:
+        return shape
     dims = dict(zip(src, shape))
     return tuple(dims[i] for i in dst)  # type: ignore
 
@@ -148,30 +79,59 @@ def format_transpose(data: np.ndarray, src: str, dst: str) -> np.ndarray:
     Returns:
         np.ndarray: `data` with `dst` format.
     """
+    if src == dst:
+        return data
     return data.transpose(format_reshape(range(len(data.shape)), src, dst))  # type: ignore
 
 
-def encode_tensor(shape: ArrayShape, encoded_format=TensorFormat.NHWC) -> ArrayShape:
+# Encoders
+def encode_shape(shape: tuple[int, ...], format: str = TensorFormat.NCHW) -> tuple[int, ...]:
     """
-    Returns the `shape` (exepcted in `HWC`) in `encoded_format` order.
-    If `shape` does not have 3 dimensions, it is returned as-is.
+    Transform the `shape` from its current `NCHW` order to `format` order (or less).
+
     Args:
-        shape (ArrayShape): shape in `HWC` format.
-        encoded_format (TensorFormat): The encoded tensor format. Default: `TensorFormat.NHWC`.
+        shape (tuple[int, ...]): source shape data.
+        format (str): encoded format (NCHW).
     Returns:
-        np.ndarray: `shape` with `encoded_format` tensor format.
+        (tuple[int, ...]): `shape` with encoded order.
     """
-    return SampleFormat.HWC.reshape(shape, encoded_format.as_sample()) if len(shape) == 3 else shape
+    return format_reshape(shape, TensorFormat.NCHW[-len(shape):], format[-len(shape):])
 
 
-def decode_tensor(shape: ArrayShape, encoded_format=TensorFormat.NHWC) -> ArrayShape:
+def decode_shape(shape: tuple[int, ...], format: str = TensorFormat.NCHW) -> tuple[int, ...]:
     """
-    Returns the `shape` (exepcted in `encoded_format`) in `HWC` order.
-    If `shape` does not have 3 dimensions, it is returned as-is.
+    Transform the `shape` from its current `format` order to `NCHW` order (or less).
+
     Args:
-        shape (ArrayShape): shape in `encoded_format` format.
-        encoded_format (TensorFormat): The encoded format. Default: `TensorFormat.NHWC`.
+        shape (tuple[int, ...]): encoded shape data.
+        format (str): encoded format (NCHW).
     Returns:
-        np.ndarray: `shape` with `HWC` tensor format.
+        (tuple[int, ...]): `shape` with `NCHW` order.
     """
-    return encoded_format.as_sample().reshape(shape, SampleFormat.HWC) if len(shape) == 3 else shape
+    return format_reshape(shape, format[-len(shape):], TensorFormat.NCHW[-len(shape):])
+
+
+def encode_tensor(data: np.ndarray, format: str = TensorFormat.NCHW) -> np.ndarray:
+    """
+    Transpose elements of `data` from its current `NCHW` format to `format` format.
+
+    Args:
+        data (np.ndarray): source data.
+        format (str): encoded format (NCHW).
+    Returns:
+        (np.ndarray): `data` with encoded order.
+    """
+    return format_transpose(data, TensorFormat.NCHW[-len(data.shape):], format[-len(data.shape):])
+
+
+def decode_tensor(data: np.ndarray, format: str = TensorFormat.NCHW) -> np.ndarray:
+    """
+    Transpose elements of `data` from its current `format` format to `NCHW` format.
+
+    Args:
+        data (np.ndarray): encoded data.
+        format (str): encoded format (NCHW).
+    Returns:
+        (np.ndarray): `data` with `NCHW` order.
+    """
+    return format_transpose(data, format[-len(data.shape):], TensorFormat.NCHW[-len(data.shape):])

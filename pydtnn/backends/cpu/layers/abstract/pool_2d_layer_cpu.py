@@ -31,7 +31,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer[np.ndarray]):
         # setattr(self, "backward", self._backward_nhwc_i2c)
 
         # The following variable is only for NCHW implementation (not for i2c implementation)
-        y_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+        y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         self.y = np.empty(y_shape, dtype=self.model.dtype, order="C")
 
         self.fwd_time = \

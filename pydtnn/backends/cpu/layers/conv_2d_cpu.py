@@ -63,7 +63,7 @@ class Conv2DCPU(LayerCPU,
     def initialize_pointwise(self):
 
         self.dw = np.ndarray(shape=self.weights_shape, dtype=self.model.dtype, order="C")
-        y_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+        y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         self.y = np.ndarray(shape=y_shape, dtype=self.model.dtype, order="C")
 
         match self.model.tensor_format:
@@ -99,7 +99,7 @@ class Conv2DCPU(LayerCPU,
                     if self.model.enable_conv_gemm:
                         variant = Conv2DCPU.Variant.GEMM
                         # TODO: Change this.
-                        bias_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+                        bias_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
 
                     elif self.model.enable_conv_winograd:
                         if self.cw_constraints_fulfilled:
@@ -111,7 +111,7 @@ class Conv2DCPU(LayerCPU,
                     elif self.model.enable_conv_direct:
                         variant = Conv2DCPU.Variant.DIRECT
                         # TODO: Change this.
-                        bias_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+                        bias_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
 
             self.variant = variant
 
@@ -158,7 +158,7 @@ class Conv2DCPU(LayerCPU,
         if self.hstride != 1 or self.vstride != 1:
             return
         # #l kn wo ho t kh kw ci wi hi"
-        ci, hi, wi = self.model.tensor_format.as_sample().reshape(self.prev_shape, SampleFormat.CHW)  # type: ignore
+        ci, hi, wi = self.model.decode_shape(self.prev_shape)
         print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
 
     def _get_forward_and_backward(self, variant: str):

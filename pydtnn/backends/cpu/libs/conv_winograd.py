@@ -14,7 +14,7 @@ import numpy as np
 from pydtnn.cython.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
@@ -277,6 +277,12 @@ class ConvWinograd:
         else:
             setattr(self, f"conv_winograd_{self.tensor_format}", self.alternatives[r][0][1])
 
+    def encode_shape(self, shape):
+        return encode_shape(shape, self.tensor_format)
+
+    def decode_shape(self, shape):
+        return decode_shape(shape, self.tensor_format)
+
     def _conv_winograd_numpy(self, m: int, r: int, g: np.ndarray, bt: np.ndarray, at: np.ndarray, pre, kernel,
                              weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, vpadding=0, hpadding=0,
                              vstride=1, hstride=1, vdilation=1, hdilation=1,
@@ -312,7 +318,7 @@ class ConvWinograd:
         tile_h = math.ceil((hi + 2 * vpadding - t) / s) + 1
         tile_w = math.ceil((wi + 2 * hpadding - t) / s) + 1
 
-        y_shape = TensorFormat.NCHW.reshape((n, co, ho, wo), self.tensor_format)
+        y_shape = self.encode_shape((n, co, ho, wo))
         y = self.y_cache[y_shape]
         u = np.zeros((t, t, co, ci), self.dtype, order="C")                     # FIXME: self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
         v = np.zeros((t, t, ci, (n * tile_h * tile_w)), self.dtype, order="C")  # FIXME: self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
@@ -469,7 +475,7 @@ class ConvWinograd:
         _weights_already_processed, _u, = self.cw_cache_pre[(m, r, co, ci)]
         _v, _m = self.cw_cache_kernel[(m, r, n, co, ci, hi, wi, kh, kw, vpadding, hpadding)]
 
-        y_shape = TensorFormat.NCHW.reshape((n, co, ho, wo), self.tensor_format)
+        y_shape = self.encode_shape((n, co, ho, wo))
         y = self.y_cache[y_shape]
 
         match self.tensor_format:

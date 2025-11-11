@@ -31,7 +31,7 @@ class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np
                                  self.beta)
 
         if self.spatial:
-            y_shape = TensorFormat.NCHW.reshape((n, self.ci, self.hi, self.wi), self.model.tensor_format)
+            y_shape = self.model.encode_shape((n, self.ci, self.hi, self.wi))
             y = y.reshape(y_shape, copy=False)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)

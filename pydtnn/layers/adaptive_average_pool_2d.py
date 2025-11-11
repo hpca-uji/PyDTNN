@@ -1,8 +1,7 @@
-from pydtnn.layers.layer import Layer, LayerError
-
-from pydtnn.utils.tensor import decode_tensor, encode_tensor
-from pydtnn.utils.types import Array
 import numpy as np
+
+from pydtnn.layers.layer import Layer, LayerError
+from pydtnn.utils.types import Array
 
 
 class AdaptiveAveragePool2D[T: Array](Layer):
@@ -25,7 +24,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
     def initialize(self, prev_shape: tuple[int, int], x: T | None = None) -> None:
         super().initialize(prev_shape, x)
 
-        self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+        self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
 
         if self.output_shape is None:
             self.ho, self.wo = self.hi, self.wi
@@ -39,7 +38,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         # If the output and the input shapes are the same, there is no need of pooling.
         self.pooling_not_needed = (self.hi == self.ho) and (self.wi == self.wo)
 
-        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
+        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
     # - END initialize - #
 

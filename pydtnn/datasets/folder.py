@@ -117,7 +117,7 @@ class Folder(Dataset):
             y = y[None, ...]
 
             # Set tensor format
-            x = TensorFormat.NCHW.transpose(x, self.model.tensor_format)
+            x = self.model.encode_tensor(x)
 
             # Set dtype and order
             x = x.astype(dtype=self.model.dtype, order="C")

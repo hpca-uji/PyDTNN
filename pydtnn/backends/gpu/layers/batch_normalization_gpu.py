@@ -1,8 +1,6 @@
 import numpy as np
-
 import pycuda.driver as drv  # type: ignore
 import pycuda.gpuarray as gpuarray  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
@@ -10,7 +8,6 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.tensor import decode_tensor
 from pydtnn.utils.types import ArrayShape
 
 
@@ -49,10 +46,10 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
         cudnn.cudnnDeriveBNTensorDescriptor(self.gamma_beta_mean_var_desc,
                                             x.desc, self.mode)
         if self.spatial:
-            self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
+            self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
             shape_ = (1, self.ci, 1, 1)  # 1 x C x 1 x 1
         else:
-            (self.ci,) = decode_tensor(prev_shape, self.model.tensor_format)
+            self.ci, = prev_shape
             shape_ = (1, self.ci, 1, 1)  # 1 x C x H x W
 
         # gamma

@@ -18,7 +18,7 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D[np.ndarray]):
 
     def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
-        y_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+        y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         self.y = np.empty(y_shape, dtype=self.model.dtype, order="C")
 
 

@@ -6,7 +6,6 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import encode_tensor
 from pydtnn.layers.layer import ParameterException
 from pydtnn.utils.types import ArrayShape
 
@@ -46,7 +45,7 @@ class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer[TensorGPU]):
                                           self.vstride, self.hstride)
         # Get output dimensions
         _, _, self.ho, self.wo = cudnn.cudnnGetPooling2dForwardOutputDim(self.pool_desc, x.desc)
-        self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
+        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)

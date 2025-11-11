@@ -1,7 +1,6 @@
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
-
-from pydtnn.utils.tensor import decode_tensor, TensorFormat
 from pydtnn.layers.layer import LayerError
+from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import ArrayShape, Array
 
 import numpy as np
@@ -41,4 +40,4 @@ class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
                 self.shape: ArrayShape = (*self.out_shapes[0][:CONCAT_DIM_NHWC], sum(self.out_co))
             case tensor_format:
                 raise NotImplementedError(f"\"ConcatenationBlock\" is not implemented for \"{tensor_format}\" format.")
-        self.ho, self.wo, self.co = decode_tensor(self.shape, self.model.tensor_format)
+        self.co, self.ho, self.wo = self.model.decode_shape(self.shape)
