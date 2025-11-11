@@ -59,8 +59,8 @@ def format_reshape(shape: tuple[int, ...], src: str, dst: str) -> tuple[int, ...
 
     assert len(shape) == len(src) == len(dst), f"Inconsistent number of dimensions ({shape=}, {src=}, {dst=})"
     assert set(src) == set(dst), f"Inconsistent dimension names ({src=}, {dst=})"
-    assert set(src) == len(set(src)), f"Duplicate dimension names ({src=})"
-    assert set(dst) == len(set(dst)), f"Duplicate dimension names ({dst=})"
+    assert len(src) == len(set(src)), f"Duplicate dimension names ({src=})"
+    assert len(dst) == len(set(dst)), f"Duplicate dimension names ({dst=})"
 
     if src == dst:
         return shape
