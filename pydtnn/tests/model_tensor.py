@@ -72,15 +72,13 @@ class ModelTensorTestCase(ModelCommonTestCase):
                     case Conv2D.Grouping.DEPTHWISE:
                         pass  # Both tensor have the same weights' shape.
                     case Conv2D.Grouping.POINTWISE:
-                        # NHWC's shape: ci, co
-                        # NCHW's shape: co, ci
-                        layer2.weights = np.asarray(layer1.weights.T, order="C", copy=True)
+                        # NHWC's src: ci, co
+                        # NCHW's dst: co, ci
+                        layer2.weights = np.asarray(format_transpose(layer1.weights, "IO", "OI"), order="C", copy=True)
                     case Conv2D.Grouping.STANDARD:
-                        # NHWC's shape (indexes from NHWC):
-                        # ci (0), kh (1), kw (2), co (3)
-                        # NCHW's shape (indexes from NHWC):
-                        # co (3), ci (0), kh (1), kw (2)
-                        layer2.weights = np.asarray(layer1.weights.transpose(3, 0, 1, 2), order="C", copy=True)
+                        # NHWC's src: ci, kh, kw, co
+                        # NCHW's dst: co, ci, kh, kw
+                        layer2.weights = np.asarray(format_transpose(layer1.weights, "IHWO", "OIHW"), order="C", copy=True)
                     case _:
                         raise ValueError(f"Layer grouping (\"{layer1.grouping}\") not in ({list(Conv2D.Grouping)})")
             elif layer2.weights is not None:
