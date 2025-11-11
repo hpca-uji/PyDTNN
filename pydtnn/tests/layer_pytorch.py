@@ -1,3 +1,4 @@
+import unittest
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.activations.log import Log
@@ -468,3 +469,7 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Softmax")
     # ---------
     # ====================
+
+
+if __name__ == "__main__":
+    unittest.main()

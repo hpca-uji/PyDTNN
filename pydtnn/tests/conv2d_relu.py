@@ -115,4 +115,3 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
