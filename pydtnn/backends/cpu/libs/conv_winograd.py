@@ -290,7 +290,7 @@ class ConvWinograd:
                              running_mean: np.ndarray | None = None, inv_std: np.ndarray | None = None,
                              gamma: np.ndarray | None = None, beta: np.ndarray | None = None) -> np.ndarray:
 
-        n, ci, hi, wi = self.tensor_format.reshape(x.shape, TensorFormat.NCHW)
+        n, ci, hi, wi = self.decode_shape(x.shape)
 
         if self.tensor_format == TensorFormat.NCHW:
             co, ci, kh, kw = weights.shape
@@ -444,7 +444,7 @@ class ConvWinograd:
                          running_mean: np.ndarray | None = None, inv_std: np.ndarray | None = None,
                          gamma: np.ndarray | None = None, beta: np.ndarray | None = None) -> np.ndarray:
 
-        n, ci, hi, wi = self.tensor_format.reshape(x.shape, TensorFormat.NCHW)
+        n, ci, hi, wi = self.decode_shape(x.shape)
 
         match self.tensor_format:
             case TensorFormat.NCHW:

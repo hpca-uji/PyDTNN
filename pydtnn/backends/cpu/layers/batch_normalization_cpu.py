@@ -131,7 +131,8 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         if self.spatial:
             num_elems = (n * self.hi * self.wi)
 
-            dy = self.model.tensor_format.transpose(dy, TensorFormat.NHWC)
+            # NOTE: Executing in this format gives better results.
+            dy = format_transpose(dy, self.model.tensor_format, TensorFormat.NHWC)
             dy = dy.reshape((num_elems, self.ci), copy=None)
         else:
             num_elems = n
@@ -148,6 +149,6 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
 
         if self.spatial:
             dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
-            dx = TensorFormat.NHWC.transpose(dx, self.model.tensor_format)
+            dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
