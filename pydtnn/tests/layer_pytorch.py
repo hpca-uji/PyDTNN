@@ -26,6 +26,7 @@ from pydtnn.layer import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.utils import random
+from pydtnn.utils.tensor import format_reshape
 from pydtnn.tests.common import TestCase, verbose_test
 
 
@@ -47,7 +48,7 @@ C = 3
 H = 524
 W = 524
 FORMAT = "NCHW"
-SHAPE = (C, H, W) if FORMAT == "NCHW" else (H, W, C)
+SHAPE = format_reshape((C, H, W), "CHW", FORMAT[1:])
 
 KWARGS = {
     "model_name": None,
@@ -459,7 +460,7 @@ class LayerPyTorchTestCase(TestCase):
 
     def test_Softmax(self):
         pydtnn_layers = [Softmax()]
-        torch_model = torch.nn.Softmax()
+        torch_model = torch.nn.Softmax(dim=1)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
         _x = LayerPyTorchTestCase.get_test_data()
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Softmax")
