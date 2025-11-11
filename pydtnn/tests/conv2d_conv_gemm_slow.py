@@ -90,7 +90,3 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
         weights = self.W[:d.kn, :d.c, :d.kh, :d.kw].copy(order="C")
 
         self._test_forward_backward(d, x, weights)
-
-
-if __name__ == "__main__":
-    unittest.main()

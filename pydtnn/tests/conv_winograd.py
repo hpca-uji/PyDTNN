@@ -103,7 +103,3 @@ class ConvWinogradTestCase(ConvCommonTestCase):
     @unittest.skip("Winograd only supports a subset of kernel sizes")
     def test_alexnet_layers(self):
         raise NotImplementedError()
-
-
-if __name__ == "__main__":
-    unittest.main()

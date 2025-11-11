@@ -425,7 +425,3 @@ class ConvGemmTestCase(ConvCommonTestCase):
                     print(conv_gemm_result.flags)
             self.assertTrue(np.allclose(conv_gemm_result, im2row_mm_result),
                             f"Results differ for AlexNet Cifar and ImageNet layers number {n}")
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -38,7 +38,3 @@ try:
     from pydtnn.tests.conv_direct import ConvDirectTestCase
 except Exception:
     warn("ConvDirect not available, skiping tests!")
-
-
-if __name__ == "__main__":
-    unittest.main()

@@ -121,7 +121,3 @@ class ModelGpuTestCase(ModelCommonTestCase):
             out = layer.backward(model2.layers[i + 1].dx)
             dx2[i] = out.ary.get()
         return dx2
-
-
-if __name__ == "__main__":
-    unittest.main()

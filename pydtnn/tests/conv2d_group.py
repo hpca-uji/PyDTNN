@@ -73,7 +73,3 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
             layer.paths[0][1].weights = weights.copy()
         else:
             layer.weights = weights.copy()
-
-
-if __name__ == "__main__":
-    unittest.main()

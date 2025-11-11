@@ -112,7 +112,3 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     @unittest.skip("Backward not implemented")
     def test_forward_backward_alexnet_cifar10_first_conv2d(self):
         raise NotImplementedError()
-
-
-if __name__ == "__main__":
-    unittest.main()

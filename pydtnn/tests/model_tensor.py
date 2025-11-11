@@ -174,7 +174,3 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 self.assertTrue(allclose,
                                 f"Backward result from layer {layer.canonical_name_with_id} differ"
                                 f" (max diff: {self.max_diff(self.nhwc2nchw(dx1[i]), dx2[i])}, rtol: {rtol}, atol: {atol})")
-
-
-if __name__ == "__main__":
-    unittest.main()

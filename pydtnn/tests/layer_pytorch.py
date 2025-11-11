@@ -469,7 +469,3 @@ class LayerPyTorchTestCase(TestCase):
         self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="Softmax")
     # ---------
     # ====================
-
-
-if __name__ == "__main__":
-    unittest.main()
