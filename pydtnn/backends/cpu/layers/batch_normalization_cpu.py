@@ -13,7 +13,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         super().initialize(prev_shape, x)
 
         if self.spatial:
-            self.hi, self.wi, self.ci = self.model.decode_shape(self.shape)
+            self.ci, self.hi, self.wi = self.model.decode_shape(self.shape)
             shape_ = (self.ci,)
         else:
             self.ci = self.shape[0]
