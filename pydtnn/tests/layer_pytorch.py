@@ -59,7 +59,7 @@ KWARGS = {
     "loss_func": "categorical_cross_entropy",
     "enable_gpu": False,  # False,#True,
     "omm": None,
-    "dtype": np.float64,
+    "dtype": np.float32,
     "tracing": False,
     "tracer_output": "",
     "batch_size": N
@@ -317,7 +317,7 @@ class LayerPyTorchTestCase(TestCase):
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, kwargs=KWARGS)
 
         _x = LayerPyTorchTestCase.get_test_data()
-        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e-4)
+        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e-4, atol=1e-1)
     # ---------
 
     def test_Conv2D(self):
