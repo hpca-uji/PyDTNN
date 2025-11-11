@@ -30,7 +30,7 @@ import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import pycuda.gpuarray as gpuarray  # type: ignore
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 # setting random seed
 SEED = 1234

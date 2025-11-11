@@ -15,7 +15,7 @@ except Exception as e:
     pass
 
 from numpy import ndarray
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
 import pycuda.gpuarray as gpuarray  # type: ignore

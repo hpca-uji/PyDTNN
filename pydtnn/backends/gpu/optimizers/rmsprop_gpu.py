@@ -6,7 +6,7 @@ from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.types import DTYPE2CTYPE
 
 

@@ -1,9 +1,9 @@
 import pycuda.gpuarray as gpuarray  #type: ignore
 
 from pydtnn.layers.max_pool_2d import MaxPool2D
-from pydtnn.backends.gpu.layers.abstract_pool_2d_layer_gpu import AbstractPool2DLayerGPU
+from pydtnn.backends.gpu.layers.abstract.pool_2d_layer_gpu import AbstractPool2DLayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.types import ArrayShape
 
 

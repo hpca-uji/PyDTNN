@@ -7,7 +7,8 @@ from pydtnn.utils.types import DTYPE2CTYPE
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+
 
 class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
 
@@ -57,27 +58,27 @@ class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
             }}
         }}
         """.format(
-            T = DTYPE2CTYPE[self.model.dtype],
-            name = _name
+            T=DTYPE2CTYPE[self.model.dtype],
+            name=_name
         )
         module = SourceModule(code).get_function(_name)
 
         return module
-    #---
+    # ---
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
 
         target_classes = self.model.output_shape[0]
 
         num_classes = np.int32(target_classes)
-        f1 = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_f1 = TensorGPU.create_zeros_tensor(shape=(int(num_classes), ), dtype=np.dtype(np.int32), 
+        f1 = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
+                                           tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        local_f1 = TensorGPU.create_zeros_tensor(shape=(int(num_classes), ), dtype=np.dtype(np.int32),
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-        self.kernel(f1.ary, self.conf_matrix_metric.conf_matrix.ary, 
+        self.kernel(f1.ary, self.conf_matrix_metric.conf_matrix.ary,
                     local_f1.ary, num_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        
+
         return f1.ary.get()[0]

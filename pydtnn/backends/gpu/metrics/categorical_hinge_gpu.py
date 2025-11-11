@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 

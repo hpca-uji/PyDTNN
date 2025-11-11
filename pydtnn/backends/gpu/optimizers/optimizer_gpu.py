@@ -1,5 +1,5 @@
 from numpy import int32, prod
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.optimizers.optimizer import Optimizer
 
 

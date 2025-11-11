@@ -1,10 +1,10 @@
-from pydtnn.layers.abstract_pool_2d_layer import AbstractPool2DLayer
+from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 import pycuda.gpuarray as gpuarray   # type: ignore
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import encode_tensor
 from pydtnn.layers.layer import ParameterException

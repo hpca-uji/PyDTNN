@@ -9,7 +9,7 @@ from copy import deepcopy
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils import random
 
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 try:
     import pycuda.gpuarray as gpuarray
     from pydtnn.backends.gpu.libs import libcudnn as cudnn

@@ -1,4 +1,4 @@
-from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.utils.types import Array
 
 class AdditionBlock[T: Array](AbstractBlockLayer[T]):

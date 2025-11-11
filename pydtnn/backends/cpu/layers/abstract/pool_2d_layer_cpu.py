@@ -1,5 +1,5 @@
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
-from pydtnn.layers.abstract_pool_2d_layer import AbstractPool2DLayer
+from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.types import ArrayShape

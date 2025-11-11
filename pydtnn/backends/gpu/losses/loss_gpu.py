@@ -1,7 +1,7 @@
 import pycuda.gpuarray as gpuarray  #type: ignore
 from pycuda.driver import Function  #type: ignore
 
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.losses.loss import Loss
 from pydtnn.model import Model
 from pydtnn.utils.types import ArrayShape

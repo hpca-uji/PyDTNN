@@ -7,7 +7,7 @@ from pydtnn.utils.types import DTYPE2CTYPE
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 
 class PrecisionGPU(MetricGPU, Precision[TensorGPU]):

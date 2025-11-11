@@ -24,12 +24,12 @@ from tqdm import tqdm
 from pydtnn import crypt, utils
 from pydtnn.activations.relu import Relu
 from pydtnn.backends import BackendType
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer import LayerAndActivationBase, FusedLayerMixIn
-from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
@@ -61,7 +61,7 @@ from pydtnn.metrics.metric import Metric
 cuda_errors = []
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
-    import pydtnn.backends.gpu.tensor_gpu
+    import pydtnn.backends.gpu.utils.tensor_gpu
 except Exception as e:
     gpuarray = None
     cuda_errors.append(e)
@@ -971,7 +971,7 @@ class Model[T: Array]:
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
+            tensor_gpu = pydtnn.backends.gpu.utils.tensor_gpu.TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_gpu  # type: ignore
@@ -1261,7 +1261,7 @@ class Model[T: Array]:
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = pydtnn.backends.gpu.tensor_gpu.TensorGPU(
+            tensor_gpu = pydtnn.backends.gpu.utils.tensor_gpu.TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_gpu  # type: ignore

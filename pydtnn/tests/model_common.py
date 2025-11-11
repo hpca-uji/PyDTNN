@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 
-from pydtnn.layers.abstract_block_layer import AbstractBlockLayer
+from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D

@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 import pycuda.gpuarray as gpuarray # type: ignore
 from pycuda.elementwise import ElementwiseKernel # type: ignore

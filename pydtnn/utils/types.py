@@ -30,5 +30,5 @@ class Components(StrEnum):
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU
 if typing.TYPE_CHECKING:
-    from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+    from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 type Array = "np.ndarray | TensorGPU"

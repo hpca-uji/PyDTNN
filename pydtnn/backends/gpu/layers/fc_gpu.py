@@ -8,8 +8,8 @@ from pydtnn.utils.performance_models import matmul_time
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
-from pydtnn.backends.gpu.utils_gpu import matmul_gpu, matvec_gpu
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils import matmul_gpu, matvec_gpu
 from pydtnn.utils.types import ArrayShape
 
 class FCGPU(LayerGPU, FC[TensorGPU]):

@@ -17,7 +17,7 @@ import warnings
 
 import pycuda.gpuarray as gpuarray
 
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model

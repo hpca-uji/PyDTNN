@@ -1,7 +1,7 @@
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import decode_tensor
-from pydtnn.backends.gpu.tensor_gpu import TensorGPU
+from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 import numpy as np
