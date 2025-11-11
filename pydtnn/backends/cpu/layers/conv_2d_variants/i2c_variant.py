@@ -93,8 +93,8 @@ class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             for i in range(self.co):
-                _res = res.reshape((self.co, -1), copy=False)[i]
-                np.add(_res, self.biases[i], out=_res, 
+                res: np.ndarray = res.reshape((self.co, -1), copy=False)
+                np.add(res[i], self.biases[i], out=res[i], 
                        dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
