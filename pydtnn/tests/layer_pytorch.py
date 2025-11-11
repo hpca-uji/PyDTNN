@@ -1,4 +1,9 @@
-import unittest
+from typing import TYPE_CHECKING
+from unittest import skip
+
+import numpy as np
+import torch
+
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.activations.log import Log
@@ -19,19 +24,15 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
-import torch
-
 from pydtnn.model import Model
 from pydtnn.utils import random
 from pydtnn.tests.common import TestCase, verbose_test
-from unittest import skip
 
-import numpy as np
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import pycuda.gpuarray as gpuarray  # type: ignore
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+
 
 # setting random seed
 SEED = 1234

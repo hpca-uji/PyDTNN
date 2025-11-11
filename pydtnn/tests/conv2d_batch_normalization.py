@@ -1,8 +1,4 @@
-import inspect
-import sys
 import unittest
-
-import numpy as np
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock

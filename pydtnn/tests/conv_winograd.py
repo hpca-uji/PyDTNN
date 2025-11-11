@@ -1,10 +1,9 @@
 import inspect
-import sys
 import unittest
 
 import numpy as np
-from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.backends.cpu.libs.conv_winograd import ConvWinograd
 from pydtnn.tests.common import verbose_test, D
 from pydtnn.tests.conv_common import ConvCommonTestCase

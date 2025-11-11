@@ -1,4 +1,3 @@
-import unittest
 from warnings import warn
 
 # Implementation

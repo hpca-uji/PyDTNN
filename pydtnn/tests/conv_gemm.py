@@ -1,10 +1,8 @@
 import inspect
-import sys
-import unittest
 
 import numpy as np
-from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
 from pydtnn.tests.common import verbose_test, D, alexnet_layers
 from pydtnn.tests.conv_common import ConvCommonTestCase

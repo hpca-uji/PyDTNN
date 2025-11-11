@@ -1,17 +1,3 @@
-"""
-Unitary tests for ConvGemm with different models' layers
-
-For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.CheckConvGemmModels
-
-For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.CheckConvGemmModels
-
-For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.CheckConvGemmModels.test_name
-"""
-
-import sys
 import unittest
 
 from pydtnn.layers.layer import LayerError

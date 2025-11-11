@@ -1,5 +1,3 @@
-import sys
-import unittest
 from copy import deepcopy
 
 from pydtnn.model import Model

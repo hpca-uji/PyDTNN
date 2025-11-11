@@ -1,14 +1,10 @@
-import sys
 import time
-import unittest
 import itertools
 
 import numpy as np
 
-from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.tests.conv2d_conv_gemm import D, Conv2DConvGemmTestCase
 from pydtnn.utils import random
-
 from pydtnn.comm import MPI
 
 

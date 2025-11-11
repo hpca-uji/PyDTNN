@@ -1,11 +1,9 @@
 import inspect
-import sys
-import unittest
 
 import numpy as np
+
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
-
 from pydtnn.tests.common import verbose_test
 from pydtnn.tests.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header

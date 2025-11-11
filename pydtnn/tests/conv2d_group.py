@@ -1,6 +1,3 @@
-import sys
-import unittest
-
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model

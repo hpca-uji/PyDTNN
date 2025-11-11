@@ -1,17 +1,3 @@
-"""
-Unitary tests for CPU using different tensor formats
-
-For running all the tests quietly, execute the next command:
-    python -um unittest pydtnn.tests.CheckTensorFormatModels
-
-For running all the tests verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.CheckTensorFormatModels
-
-For running an individual test verbosely, execute the next command:
-    python -um unittest -v pydtnn.tests.CheckTensorFormatModels.test_name
-"""
-
-import sys
 import unittest
 import warnings
 
