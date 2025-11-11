@@ -6,7 +6,7 @@ from pydtnn.utils.types import DTYPE2CTYPE
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.utils.tensor import decode_tensor, encode_tensor
+from pydtnn.utils.tensor import SampleFormat, decode_tensor, encode_tensor
 import pycuda.gpuarray as gpuarray   # type: ignore
 from pycuda.compiler import SourceModule   # type: ignore
 from pycuda.driver import Function   # type: ignore
@@ -97,7 +97,7 @@ class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D[TensorGPU]):
                 _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
                 # -- END cuda_adaptive_average_pooling_fwd_nhwc --
             case _:
-                NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
+                raise NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
@@ -222,7 +222,7 @@ __global__ void {func_name}({T}* x, {T}* y,
                 _full_macro_index_c = _FULL_MACRO_INDEX_C_NHWC
                 _dimension_index_code = _DIMENSION_INDEX_CODE_NHWC
             case _:
-                NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
+                raise NotImplementedError(f"{self.model.tensor_format} is not an implemented format.")
 
         _func_name = "".join(_func_name)
         _full_macro_shift_pointer = "".join(_full_macro_shift_pointer)
@@ -323,15 +323,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
     def initialize_pool_2d_gpu(self, prev_shape, x):
         self.hi, self.wi, self.ci = decode_tensor(prev_shape, self.model.tensor_format)
         self.shape = encode_tensor((self.ho, self.wo, self.co), self.model.tensor_format)
-
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                pooling_shape = (self.co, self.ho, self.wo)
-            case TensorFormat.NHWC:
-                pooling_shape = (self.ho, self.wo, self.co)
-            case _:
-                raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
-
+        pooling_shape = SampleFormat.CHW.reshape((self.co, self.ho, self.wo), self.model.tensor_format.as_sample())
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
         self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
@@ -354,13 +346,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         if self.pooling_not_needed:
             self.y = x
         else:
-            match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    n, c, h, w = x.shape
-                case TensorFormat.NHWC:
-                    n, h, w, c = x.shape
-                case _:
-                    raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+            n, c, h, w = self.model.tensor_format.reshape(x.shape, TensorFormat.NCHW)
 
             # NOTE: "num_elements" (or simply "N") is the number of elements to process. Usually it would be np.prod(x.shape),
             #   but in this case we are putting elements in the output instead of processing the input's elements.
@@ -386,13 +372,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                n, c, h, w = dy.shape
-            case TensorFormat.NHWC:
-                n, h, w, c = dy.shape
-            case _:
-                raise NotImplementedError(f"\"AdaptiveAveragePool2DGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+        n, c, h, w = self.model.tensor_format.reshape(dy.shape, TensorFormat.NCHW)
 
         num_elements = np.prod((n, c, self.ho, self.wo), dtype=np.int32)
 

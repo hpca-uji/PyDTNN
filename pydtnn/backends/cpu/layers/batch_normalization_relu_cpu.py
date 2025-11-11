@@ -31,13 +31,8 @@ class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np
                                  self.beta)
 
         if self.spatial:
-            match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    y = y.reshape((n, self.ci, self.hi, self.wi), copy=False)
-                case TensorFormat.NHWC:
-                    y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
-                case _:
-                    raise ValueError(f"{self.model.tensor_format} tensor format not supported. Tensor format supported: {list(self.model.tensor_format)}")
+            y_shape = TensorFormat.NCHW.reshape((n, self.ci, self.hi, self.wi), self.model.tensor_format)
+            y = y.reshape(y_shape, copy=False)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 

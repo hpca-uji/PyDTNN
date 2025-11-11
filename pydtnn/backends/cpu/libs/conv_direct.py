@@ -105,19 +105,19 @@ class ConvDirect:
             self._reuse_processed_weights = True
         self._weights_already_processed = False
 
-    def conv_direct(self, weights: np.ndarray, x: np.ndarray, 
+    def conv_direct(self, weights: np.ndarray, x: np.ndarray,
                     biases: np.ndarray | None = None,  # type: ignore
                     vpadding=0, hpadding=0,
-                    vstride=1, hstride=1, 
+                    vstride=1, hstride=1,
                     vdilation=1, hdilation=1,
-                    relu=False, bn=False, running_mean=None, 
+                    relu=False, bn=False, running_mean=None,
                     inv_std=None, gamma=None, beta=None):
 
+        n, ci, hi, wi = TensorFormat.NCHW.reshape(x.shape, self.tensor_format)
+
         if self.tensor_format is TensorFormat.NCHW:
-            n, ci, hi, wi = x.shape
             co, ci, kh, kw = weights.shape
         else:
-            n, hi, wi, ci = x.shape
             ci, kh, kw, co = weights.shape
 
         # TODO: Move to Conv2D_CPU (or remove)
@@ -125,17 +125,18 @@ class ConvDirect:
         if biases is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            if self.tensor_format is TensorFormat.NCHW:
-                biases = np.zeros((n, co, ho, wo), weights.dtype, order="C")
-            else:
-                biases = np.zeros((n, ho, wo, co), weights.dtype, order="C")
+            bias_shape = TensorFormat.NCHW.reshape((n, co, ho, wo), self.tensor_format)
+            biases = np.zeros(bias_shape, weights.dtype, order="C")
         else:
             biases = biases[:n, :]
 
-            if self.tensor_format is TensorFormat.NCHW:
-                bb, knb, ho, wo = biases.shape
-            else:
-                bb, ho, wo, knb = biases.shape
+            match self.tensor_format:
+                case TensorFormat.NCHW:
+                    bb, knb, ho, wo = biases.shape
+                case TensorFormat.NHWC:
+                    bb, ho, wo, knb = biases.shape
+                case tensor_format:
+                    raise NotImplementedError(f"No support for {tensor_format} tensor format!")
             assert co == knb, "Number of filters must be the same!"
             assert n == bb, "Batch sizes must be the same!"
         biases: np.ndarray

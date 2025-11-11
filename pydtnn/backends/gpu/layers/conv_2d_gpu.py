@@ -66,8 +66,8 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.FILTER)
         # Biases
         if self.use_bias:
-            self.biases_cpu = self.biases_initializer((1, self.co, 1, 1)
-                                                      if self.model.tensor_format is TensorFormat.NCHW else (1, 1, 1, self.co), self.model.dtype)
+            biases_shape = TensorFormat.NCHW.reshape((1, self.co, 1, 1), self.model.tensor_format)
+            self.biases_cpu = self.biases_initializer(biases_shape, self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
@@ -799,14 +799,7 @@ __global__ void {func_name}({T}* y, {T}* b,
         self.x = x
         y_gpu = gpuarray.to_gpu(np.zeros(shape=(x.shape[0], *self.shape), dtype=self.model.dtype))
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                n, c, h, w = x.shape
-            case TensorFormat.NHWC:
-                n, h, w, c = x.shape
-            case _:
-                raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+        n, c, h, w = self.model.tensor_format.reshape(x.shape, TensorFormat.NCHW)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.fwd_func(x.ary, self.weights.ary, self.y.ary,
@@ -830,13 +823,7 @@ __global__ void {func_name}({T}* y, {T}* b,
     # -----
 
     def _backward_pointwise(self, dy: TensorGPU) -> TensorGPU:
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                n, c, h, w = dy.shape
-            case TensorFormat.NHWC:
-                n, h, w, c = dy.shape
-            case _:
-                raise NotImplementedError(f"\"Pointwise_conv_2dGPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+        n, c, h, w = self.model.tensor_format.reshape(dy.shape, TensorFormat.NCHW)
 
         dx_gpu = gpuarray.zeros((n, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)

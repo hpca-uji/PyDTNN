@@ -65,16 +65,25 @@ class TensorGPU:
 
         match len(gpu_arr.shape):
             case 1:
-                self.shape = (1, *gpu_arr.shape, 1, 1) if self.tensor_format is TensorFormat.NCHW else (1, 1, 1, *gpu_arr.shape)
+                match self.tensor_format:
+                    case TensorFormat.NCHW:
+                        self.shape = (1, *gpu_arr.shape, 1, 1)
+                    case TensorFormat.NHWC:
+                        self.shape = (1, 1, 1, *gpu_arr.shape)
+                    case tensor_format:
+                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 2:
-                if self.tensor_format is TensorFormat.NCHW:
-                    self.shape = (*gpu_arr.shape, 1, 1)
-                else:
-                    self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
+                match self.tensor_format:
+                    case TensorFormat.NCHW:
+                        self.shape = (*gpu_arr.shape, 1, 1)
+                    case TensorFormat.NHWC:
+                        self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
+                    case tensor_format:
+                        raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
             case 4:
                 self.shape = gpu_arr.shape
             case _:
-                raise ValueError(f"The expected len shape are 1, 2 or 4. Shape received: \"{len(gpu_arr.shape)}\".")
+                raise ValueError(f"The expected len shape are 1, 2 or 4. Shape received: {len(gpu_arr.shape)}.")
     # ---
 
     def _set_prt(self, gpu_arr: "gpuarray.GPUArray") -> None:

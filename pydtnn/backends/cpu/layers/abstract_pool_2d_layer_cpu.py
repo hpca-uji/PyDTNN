@@ -18,25 +18,21 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer[np.ndarray]):
             case TensorFormat.NCHW:
                 self.forward = self._forward_nchw_cython
                 self.backward = self._backward_nchw_cython
-
-                # The following variable is only for NCHW implementation (not for i2c implementation)
-                self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
-
-                # I2C-based implementations have been temporarily discarded
-                # setattr(self, "forward", self._forward_nchw_i2c)
-                # setattr(self, "backward", self._backward_nchw_i2c)
             case TensorFormat.NHWC:
                 self.forward = self._forward_nhwc_cython
                 self.backward = self._backward_nhwc_cython
-
-                # The following variable is only for NHWC implementation (not for i2c implementation)
-                self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype)
-
-                # I2C-based implementations have been temporarily discarded
-                # setattr(self, "forward", self._forward_nhwc_i2c)
-                # setattr(self, "backward", self._backward_nhwc_i2c)
             case _:
                 raise TypeError(f"Function: \'AbstractPool2DLayerCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
+
+        # I2C-based implementations have been temporarily discarded
+        # setattr(self, "forward", self._forward_nchw_i2c)
+        # setattr(self, "backward", self._backward_nchw_i2c)
+        # setattr(self, "forward", self._forward_nhwc_i2c)
+        # setattr(self, "backward", self._backward_nhwc_i2c)
+
+        # The following variable is only for NCHW implementation (not for i2c implementation)
+        y_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+        self.y = np.empty(y_shape, dtype=self.model.dtype, order="C")
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),

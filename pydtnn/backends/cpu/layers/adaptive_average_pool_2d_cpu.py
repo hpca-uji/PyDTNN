@@ -27,17 +27,16 @@ class AdaptiveAveragePool2DCPU(LayerCPU, AdaptiveAveragePool2D[np.ndarray]):
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.y = np.empty((self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
-
                 self._forward = self._forward_nchw_cython
                 self._backward = self._backward_nchw_cython
             case TensorFormat.NHWC:
-                self.y = np.empty((self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
-
                 self._forward = self._forward_nhwc_cython
                 self._backward = self._backward_nhwc_cython
             case _:
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
+
+        y_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+        self.y = np.empty(y_shape, dtype=self.model.dtype, order="C")
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)

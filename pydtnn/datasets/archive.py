@@ -20,14 +20,8 @@ def archive(model: "Model", force_test_as_validation=False, debug=False) -> "Cus
         input_shape: ArrayShape = x_train.shape[1:]
 
     # Ensure dataset is in model.tensor_format
-    match model.tensor_format:
-        case TensorFormat.NCHW:
-            pass
-        case TensorFormat.NHWC:
-            x_train = CustomDataset._nchw2nhwc(x_train)
-            x_test = CustomDataset._nchw2nhwc(x_test)
-        case _:
-            raise NotImplementedError(f"Unsupported tensor format {model.tensor_format}")
+    x_train = TensorFormat.NCHW.transpose(x_train, model.tensor_format)
+    x_test = TensorFormat.NCHW.transpose(x_test, model.tensor_format)
 
     # Ensure dataset is in model.dtype
     match model.dtype:

@@ -1,4 +1,5 @@
 import sys
+from warnings import warn
 
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
@@ -7,7 +8,7 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGe
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.utils.performance_models import im2col_time, matmul_time
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import SampleFormat, TensorFormat
 from pydtnn.utils.types import ArrayShape
 
 import numpy as np
@@ -28,29 +29,29 @@ class Conv2DCPU(LayerCPU,
         super().__init__(*args, **kwargs)
         # More parameters initialized in initialize()
         self.variant = None
-        self.biases = None # type: ignore
+        self.biases = None  # type: ignore
         self.weights = None  # type: ignore
         self.fwd_time = None  # type: ignore
         self.bwd_time = None  # type: ignore
 
     def initialize_i2c(self) -> None:
-        # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
+        # self.dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
-        dim_n = self.model.batch_size * self.ho * self.wo
+        self.dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self._x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
-                self.res = np.ndarray(shape=(self.co, dim_n), dtype=self.model.dtype, order="C")
+                self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
+                self.res = np.ndarray(shape=(self.co, self.dim_n), dtype=self.model.dtype, order="C")
                 self._dw = np.ndarray(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
-                self.res_bw = np.ndarray(shape=(self.dim_c, dim_n), dtype=self.model.dtype, order="C")
+                self.res_bw = np.ndarray(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
-                self._x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
-                self.res = np.ndarray(shape=(dim_n, self.co), dtype=self.model.dtype, order="C")
+                self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res = np.ndarray(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
                 self._dw = np.ndarray(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
-                self.res_bw = np.ndarray(shape=(dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res_bw = np.ndarray(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
             case _:
-                raise not NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         #  NOTE: This is necessary for the initial "reduce_weights_async"
         self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
     # ---
@@ -62,12 +63,13 @@ class Conv2DCPU(LayerCPU,
     def initialize_pointwise(self):
 
         self.dw = np.ndarray(shape=self.weights_shape, dtype=self.model.dtype, order="C")
+        y_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+        self.y = np.ndarray(shape=y_shape, dtype=self.model.dtype, order="C")
+
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.y = np.ndarray(shape=(self.model.batch_size, self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
                 self.dx = np.ndarray(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
-                self.y = np.ndarray(shape=(self.model.batch_size, self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
                 self.dx = np.ndarray(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
@@ -89,41 +91,30 @@ class Conv2DCPU(LayerCPU,
                     variant = Conv2DCPU.Variant.POINTWISE
                 case Conv2DCPU.Grouping.DEPTHWISE:
                     variant = Conv2DCPU.Variant.DEPTHWISE
-                case convWinograd_or_Gemm_or_Direct:
+                case _:  # convGemm or convWinograd or convDirect
                     # Check colliding options
-                    # -> WINOGRAD:
-                    if self.model.enable_conv_winograd:
-                        if self.model.enable_conv_direct:
-                            sys.stderr.write("Error: please, select exactly one of conv_winograd or conv_direct")
-                            sys.exit(1)
-                        elif self.cw_constraints_fulfilled:
-                            variant = Conv2DCPU.Variant.WINOGRAD
-                            #bias_shape = (self.co,)
-                        # else: variant = None # Value set before the match-case statement
-                    if variant == Conv2DCPU.Variant.I2C:
-                        # assert not self.model.enable_conv_winograd or (self.model.enable_conv_winograd and not self.cw_constraints_fulfilled)
-                        # -> GEMM or ConvDirect:
-                        if self.model.enable_conv_gemm:
-                            # -> GEMM:
-                            if self.model.enable_conv_direct:
-                                sys.stderr.write("Error: please, select exactly one of conv_gemm or conv_direct")
-                                sys.exit(1)
-                            else:
-                                variant = Conv2DCPU.Variant.GEMM
-                                # TODO: Change this.
-                                if self.model.tensor_format is TensorFormat.NCHW:
-                                    bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
-                                else:
-                                    bias_shape = (self.model.batch_size, self.ho, self.wo, self.co)
+                    if (self.model.enable_conv_gemm + self.model.enable_conv_winograd + self.model.enable_conv_direct) > 1:
+                        raise ValueError("Select exactly one of convGemm or convWinograd or convDirect")
 
-                        elif self.model.enable_conv_direct:
-                            # -> ConvDirect:
-                            variant = Conv2DCPU.Variant.DIRECT
-                            # TODO: Change this.
-                            bias_shape = (self.model.batch_size, self.co, self.ho, self.wo)
-                        # else: variant = Conv2DCPU.Variant.I2C # Already set.
+                    if self.model.enable_conv_gemm:
+                        variant = Conv2DCPU.Variant.GEMM
+                        # TODO: Change this.
+                        bias_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+
+                    elif self.model.enable_conv_winograd:
+                        if self.cw_constraints_fulfilled:
+                            variant = Conv2DCPU.Variant.WINOGRAD
+                            # bias_shape = (self.co,)
+                        else:
+                            warn("Winograd constraints not fulfilled, using fallback!")
+
+                    elif self.model.enable_conv_direct:
+                        variant = Conv2DCPU.Variant.DIRECT
+                        # TODO: Change this.
+                        bias_shape = TensorFormat.NCHW.reshape((self.model.batch_size, self.co, self.ho, self.wo), self.model.tensor_format)
+
             self.variant = variant
-        
+
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer(bias_shape, self.model.dtype)
@@ -167,10 +158,7 @@ class Conv2DCPU(LayerCPU,
         if self.hstride != 1 or self.vstride != 1:
             return
         # #l kn wo ho t kh kw ci wi hi"
-        if self.model.tensor_format is TensorFormat.NCHW:
-            ci, hi, wi = self.prev_shape
-        else:
-            hi, wi, ci = self.prev_shape
+        ci, hi, wi = self.model.tensor_format.as_sample().reshape(self.prev_shape, SampleFormat.CHW)  # type: ignore
         print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
 
     def _get_forward_and_backward(self, variant: str):
