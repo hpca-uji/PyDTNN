@@ -50,7 +50,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         """
         Copy weights and biases from Model 1 to Model 2
         """
-        for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
+        for layer1, layer2 in zip(model1.get_all_layers(), model2.get_all_layers()):
             if isinstance(layer1, Conv2D):
                 assert layer1.grouping is layer2.grouping, f"Both conv_2D layer's grouping must be the same (layer1: {layer1.grouping}, layer2:{layer2.grouping})"
 
@@ -60,16 +60,16 @@ class ModelTensorTestCase(ModelCommonTestCase):
                     case Conv2D.Grouping.POINTWISE:
                         # NHWC's src: ci, co
                         # NCHW's dst: co, ci
-                        layer2.weights = np.asarray(format_transpose(layer1.weights, "IO", "OI"), order="C", copy=True)
+                        layer2.weights = np.asarray(format_transpose(layer1.weights, "IO", "OI"), dtype=layer2.model.dtype, order="C", copy=True)
                     case Conv2D.Grouping.STANDARD:
                         # NHWC's src: ci, kh, kw, co
                         # NCHW's dst: co, ci, kh, kw
-                        layer2.weights = np.asarray(format_transpose(layer1.weights, "IHWO", "OIHW"), order="C", copy=True)
+                        layer2.weights = np.asarray(format_transpose(layer1.weights, "IHWO", "OIHW"), dtype=layer2.model.dtype, order="C", copy=True)
                     case _:
                         raise ValueError(f"Layer grouping (\"{layer1.grouping}\") not in ({list(Conv2D.Grouping)})")
-            elif layer2.weights is not None:
-                layer2.weights = layer1.weights.copy()
-            layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
+            else:
+                layer2.weights = np.asarray(layer1.weights, dtype=layer2.model.dtype, order="C", copy=True)
+            layer2.biases = np.asarray(layer1.biases, dtype=layer2.model.dtype, order="C", copy=True) if layer1.biases is not None else None
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """

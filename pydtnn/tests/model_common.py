@@ -92,14 +92,14 @@ class ModelCommonTestCase(TestCase):
         """
         Copy weights and biases from Model 1 to Model 2
         """
-        for layer1, layer2 in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
-            layer2.weights = layer1.weights.copy() if layer1.weights is not None else None
-            layer2.biases = layer1.biases.copy() if layer1.biases is not None else None
+        for layer1, layer2 in zip(model1.get_all_layers(), model2.get_all_layers()):
+            layer2.weights = np.asarray(layer1.weights, dtype=model2.dtype, order="C", copy=True) if layer1.weights is not None else None
+            layer2.biases = np.asarray(layer1.biases, dtype=model2.dtype, order="C", copy=True) if layer1.biases is not None else None
 
     @staticmethod
     def get_first_dx(model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
         # random y target
-        y_targ = random.random(x.shape).astype(np.float32, order='C')
+        y_targ = np.asarray(random.random(x.shape), dtype=model.dtype, order='C', copy=None)
         # obtain first dx1
         global_batch_size = model.batch_size
         loss, dx = loss_func.compute(x, y_targ, global_batch_size)
@@ -110,16 +110,15 @@ class ModelCommonTestCase(TestCase):
         return np.max([abs(x1 - x2) for x1, x2 in zip(x1, x2)])
 
     @staticmethod
-    def do_model1_forward_pass(model1: Model) -> list[np.ndarray]:
+    def do_model1_forward_pass(model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 1 forward pass
         """
-        x1 = [random.random((model1.batch_size, *model1.layers[0].shape)).astype(np.float32, order='C'), ]
-        # Store results from layer 1 to last layer on Model 1
-        for i, layer in enumerate(model1.layers[1:], 1):
+        x1 = [np.asarray(x0[0], model1.dtype, order="C", copy=None)]
+        for _, layer in enumerate(model1.layers):
             if verbose_test():
                 print(layer)
-            x1.append(layer.forward(x1[i - 1]))
+            x1.append(layer.forward(np.asarray(x1[-1], dtype=model1.dtype, order="C", copy=None)))
         return x1
 
     @staticmethod
@@ -127,24 +126,23 @@ class ModelCommonTestCase(TestCase):
         """
         Model 2 forward pass
         """
-        x2 = [x1[0]]
-        for i, layer in enumerate(model2.layers[1:], 1):
+        x2 = [np.asarray(x1[0], model2.dtype, order="C", copy=None)]
+        for i, layer in enumerate(model2.layers):
             if verbose_test():
                 print(layer)
-            x2.append(layer.forward(x1[i - 1]))
+            x2.append(layer.forward(np.asarray(x1[i], dtype=model2.dtype, order="C", copy=None)))
         return x2
 
     @staticmethod
-    def do_model1_backward_pass(model1: Model, first_dx: np.ndarray) -> list[np.ndarray]:
+    def do_model1_backward_pass(model1: Model, dx0: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 1 backward pass
         """
-        dx1 = [None] * len(model1.layers)
-        dx1[-1] = first_dx
-        for i, layer in reversed(list(enumerate(model1.layers[1:-1], 1))):
+        dx1 = [np.asarray(dx0[0], model1.dtype, order="C", copy=None)]
+        for _, layer in reversed(list(enumerate(model1.layers))):
             if verbose_test():
                 print(layer)
-            dx1[i] = layer.backward(dx1[i + 1])
+            dx1.insert(0, layer.backward(np.asarray(dx1[0], dtype=model1.dtype, order="C", copy=None)))
         return dx1
 
     @staticmethod
@@ -152,12 +150,11 @@ class ModelCommonTestCase(TestCase):
         """
         Model 2 backward pass
         """
-        dx2 = [None] * len(model2.layers)
-        dx2[-1] = dx1[-1]
-        for i, layer in reversed(list(enumerate(model2.layers[1:-1], 1))):
+        dx2 = [np.asarray(dx1[-1], model2.dtype, order="C", copy=None)]
+        for i, layer in reversed(list(enumerate(model2.layers))):
             if verbose_test():
                 print(layer)
-            dx2[i] = layer.backward(dx1[i + 1])
+            dx2.insert(0, layer.backward(np.asarray(dx1[i + 1], dtype=model2.dtype, order="C", copy=None)))
         return dx2
 
     def compare_forward(self, model1: Model, x1: list[np.ndarray], model2: Model, x2: list[np.ndarray]):
@@ -165,7 +162,7 @@ class ModelCommonTestCase(TestCase):
         if verbose_test():
             print()
             print(f"Comparing outputs of both models...")
-        for i, layer in enumerate(model1.layers[1:], 1):
+        for i, layer in enumerate(model1.layers, 1):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
@@ -201,10 +198,15 @@ class ModelCommonTestCase(TestCase):
         # Model 1 forward
         model1, loss_func1 = self.get_model1_and_loss_func(model_name)
         model1.mode = Model.Mode.TRAIN
+
+        x = [np.asarray(random.random((model1.batch_size, *model1.layers[0].shape)), dtype=model1.dtype, order='C', copy=None)]
+
         if verbose_test():
             print()
             print_with_header(f"Model {model1.model_name} 1 forward pass")
-        x1 = self.do_model1_forward_pass(model1)
+        x1 = self.do_model1_forward_pass(model1, x)
+
+        x2 = x1.copy()
 
         # Model 2 forward
         model2 = self.get_model2(model_name)
@@ -212,7 +214,7 @@ class ModelCommonTestCase(TestCase):
         self.copy_weights_and_biases(model1, model2)
         if verbose_test():
             print_with_header(f"Model {model2.model_name} 2 forward pass")
-        x2 = self.do_model2_forward_pass(model2, x1)
+        x2 = self.do_model2_forward_pass(model2, x2)
 
         # Compare forward results
         self.compare_forward(model1, x1, model2, x2)
@@ -220,13 +222,16 @@ class ModelCommonTestCase(TestCase):
         # Model 1 backward
         if verbose_test():
             print_with_header(f"Model {model1.model_name} 1 backward pass")
-        first_dx = self.get_first_dx(model1, loss_func1, x1[-1])
-        dx1 = self.do_model1_backward_pass(model1, first_dx)
+        dx = [self.get_first_dx(model1, loss_func1, x1[-1])]
+        
+        dx1 = self.do_model1_backward_pass(model1, dx)
+        
+        dx2 = dx1.copy()
 
         # Model 2 backward
         if verbose_test():
             print_with_header(f"Model {model2.model_name} 2 backward pass")
-        dx2 = self.do_model2_backward_pass(model2, dx1)
+        dx2 = self.do_model2_backward_pass(model2, dx2)
 
         # Compare backward results
         self.compare_backward(model1, dx1, model2, dx2)
