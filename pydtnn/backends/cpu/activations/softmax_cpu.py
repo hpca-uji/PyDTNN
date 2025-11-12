@@ -56,7 +56,7 @@ class SoftmaxCPU(ActivationCPU, Softmax[np.ndarray]):
         mul_dy.sum(axis=self.axis_dim, keepdims=True, out=sum_dy)
         np.subtract(dy, sum_dy, out=dy,
                     dtype=self.model.dtype)
-        np.multiply(self.y, dy, out=self.y,
+        np.multiply(self.y, dy, out=dy,
                     dtype=self.model.dtype, order="C")
 
-        return self.y
+        return dy
