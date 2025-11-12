@@ -18,7 +18,7 @@ class DropoutCPU(LayerCPU, Dropout[np.ndarray]):
             case Model.Mode.TRAIN:
                 # NOTE: Remember, it's necessary a new random mask every training's forward call.
                 # self.mask = random.binomial(1, (1 - self.rate), size=self.shape).astype(self.model.dtype) / (1 - self.rate)
-                self.mask = random.binomial(n=1, p=(1 - self.rate), size=self.shape).astype(dtype=self.model.dtype, order="C", copy=None) # type: ignore (It is correct.)
+                self.mask = np.asarray(random.binomial(n=1, p=(1 - self.rate), size=self.shape), dtype=self.model.dtype, order="C", copy=None)
                 np.divide(self.mask, (1 - self.rate), out=self.mask, dtype=self.model.dtype)
                 np.multiply(x, self.mask, out=x, order="C", dtype=self.model.dtype)
             case Model.Mode.EVALUATE:
