@@ -1,3 +1,5 @@
+from copy import deepcopy
+from typing import Self
 import numpy as np
 
 from pydtnn.layers.layer import Layer, LayerError
@@ -18,7 +20,7 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.output_shape = output_shape
 
         # This value will change in initialize:
-        self._forward_pooling_not_needed: bool = None  # type: ignore
+        self.pooling_not_needed: bool = None  # type: ignore
     # ---  END __init__ --- #
 
     def initialize(self, prev_shape: tuple[int, int], x: T | None = None) -> None:
@@ -41,6 +43,12 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
     # - END initialize - #
+
+    def copy_from(self, other: Self) -> None:
+        super().copy_from(other)
+        self.output_shape = deepcopy(other.output_shape)
+        self.pooling_not_needed = other.pooling_not_needed
+
 
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format(f"",

@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, Optional
+from copy import deepcopy
+from typing import TYPE_CHECKING, Optional, Self
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
@@ -94,6 +95,34 @@ class Conv2D[T: Array](Layer[T]):
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
+
+    def copy_from(self, other: Self) -> None:
+        super().copy_from(other)
+
+        # Non-objects
+        self.ci = other.ci
+        self.hi = other.hi
+        self.wi = other.wi
+        self.kh = other.kh
+        self.kw = other.kw
+        self.ho = other.ho
+        self.wo = other.wo
+        self.act = other.act
+        self.co = other.co
+        self.grouping = other.grouping
+        self.stride = other.stride
+        self.vpadding = other.vpadding
+        self.vstride = other.vstride
+        self.vdilation = other.vdilation
+        self.use_bias = other.use_bias
+        self.weights_initializer = other.weights_initializer # Functions
+        self.biases_initializer = other.biases_initializer # Functions
+
+        # "Objects"
+        self.weights_shape = deepcopy(other.weights_shape)
+        self.filter_shape = deepcopy(other.filter_shape)
+        self.padding = deepcopy(other.padding)
+        self.dilation = deepcopy(other.dilation)
 
     def show(self, attrs: str = "") -> None:
         self.weights: T

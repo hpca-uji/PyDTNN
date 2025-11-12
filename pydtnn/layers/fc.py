@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
@@ -8,7 +8,6 @@ from pydtnn.utils.types import ArrayShape
 
 
 class FC[T: Array](Layer[T]):
-    weights: T
 
     def __init__(self, shape: ArrayShape = (1,),
                  activation: "type[Activation] | None" = None,
@@ -23,6 +22,14 @@ class FC[T: Array](Layer[T]):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
+    
+    def copy_from(self, other: Self) -> None:
+        super().copy_from(other)
+        self.act = other.act
+        self.use_bias = other.use_bias
+        self.weights_initializer = other.weights_initializer  # Functions
+        self.biases_initializer = other.biases_initializer  # Functions
+        
 
     def show(self, attrs="") -> None:
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape), ""))

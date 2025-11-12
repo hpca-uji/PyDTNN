@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from typing import Self
+from copy import deepcopy
+
 import numpy as np
 
 from typing import TYPE_CHECKING
@@ -104,6 +107,38 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def update_weights(self, optimizer: Optimizer) -> None:
         optimizer.update(self)
 
+    def copy_from(self, other: Self) -> None:
+        """
+        Copies all the state-attribute values from \"other\" into self.
+
+        Args:
+            other (Self): Other layer of the same type. 
+
+        Returns:
+            Nothing. The changes are applied in self's attributes.
+        """
+        assert type(other) == type(self), f"other and self types must be the same ({type(other)} != {type(self)})"
+
+        # non-object attributes
+        self.nparams = other.nparams
+
+        # "object" attributes
+        self.shape = deepcopy(other.shape)
+        self.prev_shape = deepcopy(other.prev_shape)
+
+        self.x = other.x.copy()
+        self.y = other.y.copy()
+
+        self.weights = other.weights.copy()
+        self.biases = other.biases.copy() if other.biases is not None else None
+
+        self.grad_vars = deepcopy(other.grad_vars)
+        
+        self.fwd_time = deepcopy(other.fwd_time)
+        self.bwd_time = deepcopy(other.bwd_time)
+
+        self.paths = deepcopy(other.paths)
+    # -----
 
 
 class FusedLayerMixIn[T: Array]():

@@ -2,6 +2,7 @@ from pydtnn.layer import LayerAndActivationBase
 from pydtnn.utils import find_component
 from pydtnn.utils.types import ArrayShape, Array
 
+from typing import Self
 
 class Activation[T: Array](LayerAndActivationBase):
 
@@ -16,6 +17,10 @@ class Activation[T: Array](LayerAndActivationBase):
     @property
     def canonical_name_with_id(self) -> str:
         return f"{self._id_prefix}{self.canonical_name}"
+
+    def copy_from(self, other: Self) -> None:
+        super().copy_from(other)
+        self.y = self.y.copy()
 
 
 def select(name: str) -> type[Activation]:

@@ -46,12 +46,12 @@ class TensorGPU:
                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int | None = None,
                  gpudirect: bool = False, cublas: bool = False):
 
-        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
         self.tensor_format = TensorFormat(tensor_format.lower())
         self.cudnn_dtype = cudnn_dtype
         self.tensor_type = tensor_type
         self.gpudirect = gpudirect
         self.cublas = cublas
+        self.cudnn_tensor_format = cudnn.cudnnTensorFormat['CUDNN_TENSOR_' + tensor_format.upper()]
         # The following atributes will be initalized in _initalize:
         self.ary: gpuarray.GPUArray = None
         self.size: int = -1
@@ -59,6 +59,15 @@ class TensorGPU:
         # ---
         self._initalize(gpu_arr, desc)
     # ---
+
+    def copy(self):
+        return TensorGPU(gpu_arr=self.ary.copy(),
+                         tensor_format=self.tensor_format,
+                         cudnn_dtype=self.cudnn_dtype,
+                         tensor_type=self.tensor_type,
+                         gpudirect=self.gpudirect,
+                         cublas=self.cublas,
+                         desc=-1)
 
     def encode_shape(self, shape):
         return encode_shape(shape, self.tensor_format)
