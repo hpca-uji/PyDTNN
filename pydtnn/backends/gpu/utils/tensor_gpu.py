@@ -1,4 +1,5 @@
 import ctypes
+import copy
 from enum import StrEnum, auto
 
 import numpy as np
@@ -61,13 +62,27 @@ class TensorGPU:
     # ---
 
     def copy(self):
-        return TensorGPU(gpu_arr=self.ary.copy(),
+        return copy.deepcopy(self)
+
+    def __copy__(self):
+        return TensorGPU(gpu_arr=self.ary,
                          tensor_format=self.tensor_format,
                          cudnn_dtype=self.cudnn_dtype,
                          tensor_type=self.tensor_type,
                          gpudirect=self.gpudirect,
                          cublas=self.cublas,
-                         desc=-1)
+                         desc=self.desc)
+
+    def __deepcopy__(self, memo):
+        obj = TensorGPU(gpu_arr=self.ary.copy(),
+                        tensor_format=self.tensor_format,
+                        cudnn_dtype=self.cudnn_dtype,
+                        tensor_type=self.tensor_type,
+                        gpudirect=self.gpudirect,
+                        cublas=self.cublas,
+                        desc=-1)
+        memo[id(self)] = obj
+        return obj
 
     def encode_shape(self, shape):
         return encode_shape(shape, self.tensor_format)

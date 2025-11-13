@@ -106,7 +106,25 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def update_weights(self, optimizer: Optimizer) -> None:
         optimizer.update(self)
 
-    def export(self) -> dict:
+    def export(self):
+        data = self._export()
+
+        for key, value in data.items():
+            if isinstance(value, np.ndarray):
+                data[key] = np.asarray(value, dtype=np.float64, order="C", copy=None)
+
+        return deepcopy(data)
+
+    def import_(self, data) -> None:
+        data = deepcopy(data)
+
+        for key, value in data.items():
+            if isinstance(value, np.ndarray):
+                data[key] = np.asarray(value, dtype=self.model.dtype, order="C", copy=None)
+
+        self._import(data)
+
+    def _export(self) -> dict:
         data = {}
 
         if self.x is not None:
@@ -131,7 +149,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
         return data
 
-    def import_(self, data) -> None:
+    def _import(self, data) -> None:
 
         if self.x is not None:
             self.x = data["x"]

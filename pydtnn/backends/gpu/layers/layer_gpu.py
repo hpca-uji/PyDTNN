@@ -40,8 +40,8 @@ class LayerGPU(Layer[TensorGPU]):
         self.one_vec_cpu: ndarray = None  #type: ignore
         self.one_vec_gpu: gpuarray.GPUArray = None  #type: ignore
 
-    def export(self) -> dict:
-        data = super().export()
+    def _export(self) -> dict:
+        data = super()._export()
 
         for key, value in data.items():
             if isinstance(value, TensorGPU):
@@ -49,8 +49,8 @@ class LayerGPU(Layer[TensorGPU]):
 
         return data
 
-    def import_(self, data) -> None:
-        ref = super().export()
+    def _import(self, data) -> None:
+        ref = super()._export()
 
         for key, value in ref.items():
             if isinstance(value, TensorGPU):
@@ -58,7 +58,7 @@ class LayerGPU(Layer[TensorGPU]):
                 ary.set(data[key].reshape(ary.shape))
                 data[key] = ary
 
-        return super().import_(data)
+        return super()._import(data)
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

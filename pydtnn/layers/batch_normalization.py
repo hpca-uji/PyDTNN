@@ -38,8 +38,8 @@ class BatchNormalization[T: Array](Layer[T]):
         self.dbeta: T = None  # type: ignore
         self.inv_std: np.ndarray = None  # type: ignore
 
-    def export(self) -> None:
-        data = super().export()
+    def _export(self) -> None:
+        data = super()._export()
 
         if self.running_mean is not None:
             data["running_mean"] = self.running_mean

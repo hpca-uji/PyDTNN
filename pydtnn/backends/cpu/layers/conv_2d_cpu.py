@@ -34,8 +34,8 @@ class Conv2DCPU(LayerCPU,
         self.fwd_time = None  # type: ignore
         self.bwd_time = None  # type: ignore
 
-    def export(self) -> dict:
-        data = super().export()
+    def _export(self) -> dict:
+        data = super()._export()
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
@@ -51,7 +51,7 @@ class Conv2DCPU(LayerCPU,
 
         return data
 
-    def import_(self, data) -> None:
+    def _import(self, data) -> None:
         match self.model.tensor_format:
             case TensorFormat.NHWC:
                 match self.grouping:
@@ -64,7 +64,7 @@ class Conv2DCPU(LayerCPU,
                         # NHWC's dst: ci, kh, kw, co
                         data["weights"] = format_transpose(data["weights"], "OIHW", "IHWO")
 
-        super().import_(data)
+        super()._import(data)
 
     def initialize_i2c(self) -> None:
         # self.dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.

@@ -135,7 +135,6 @@ def main():
     # Print model reports
     if model.comm_rank == 0:
         print_model_reports(model)
-    breakpoint()
     # Barrier and finalize
     if model.comm is not None and model.MPI is not None:
         model.comm.Barrier()
