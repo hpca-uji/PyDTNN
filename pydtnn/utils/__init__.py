@@ -245,6 +245,19 @@ def string_substitute(template, /, **mappings):
     return string.Template(template).safe_substitute(mappings)
 
 
+def debug_line(*args):
+    """Get line trace"""
+    log = print
+
+    frame_info = inspect.stack()[1]
+    try:
+        context = f"{frame_info.frame.f_globals["__name__"]}.{frame_info.function}:{frame_info.lineno}"
+    finally:
+        del frame_info
+
+    log(f"{context} from {os.getpid()}:{threading.get_native_id()}", *args)
+
+
 def debug_stack(*args):
     """Get stack trace"""
     log = print
@@ -262,7 +275,7 @@ def debug_stack(*args):
 
 
 def debug_func(func):
-    """Wraps a functions and traces the calls"""
+    """Functions trace decorator"""
     log = print
 
     @functools.wraps(func)
