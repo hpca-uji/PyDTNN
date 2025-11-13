@@ -62,6 +62,7 @@ class TensorGPU:
     # ---
 
     def copy(self):
+        """ NumPy-like copy. """
         return copy.deepcopy(self)
 
     def __copy__(self):
@@ -73,7 +74,7 @@ class TensorGPU:
                          cublas=self.cublas,
                          desc=self.desc)
 
-    def __deepcopy__(self, memo):
+    def __deepcopy__(self, memo: dict):
         obj = TensorGPU(gpu_arr=self.ary.copy(),
                         tensor_format=self.tensor_format,
                         cudnn_dtype=self.cudnn_dtype,

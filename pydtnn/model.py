@@ -181,10 +181,6 @@ class Model[T: Array]:
         TRAIN = enum.auto()
         UNSPECIFIED = enum.auto()
 
-    class LoadStoreMode(enum.Enum):
-        LOAD = enum.auto()
-        STORE = enum.auto()
-
     class SyncAlg(enum.StrEnum):
         AVG = enum.auto()
         WAVG = enum.auto()
@@ -778,46 +774,6 @@ class Model[T: Array]:
 
         self.optimizer.set_model(self)
         self.optimizer.initialize(self.get_all_layers(self.layers))
-
-    def load_store_path(self, layers: list[LayerAndActivationBase], d: dict[str, np.ndarray], mode: LoadStoreMode) -> None:
-        """
-        Method to load and store the weigths and biases.
-
-        Args:
-            layers: the list of the layers.
-            d: The dictionary of layers (keys) with their respective Weights and Biases (values), that are numpy's ndarray.
-            mode: Values from the enum "LoadStoreMode".
-                - "Model.LoadStoreMode.LOAD" (that is "load") mode loads the data from "d" into the Model.
-                - "Model.LoadStoreMode.STORE" (that is "store") mode stores the data from the Model into "d".
-        """
-        for layer in layers:
-            if isinstance(layer, AbstractBlockLayer):
-                for path in layer.paths:
-                    self.load_store_path(path, d, mode)
-            else:
-                grad_vars = [g for g in layer.grad_vars] + \
-                    (["running_var", "running_mean"] if isinstance(layer, BatchNormalization) else [])
-                for key in grad_vars:
-                    base = f"{layer.id}_{key}"
-                    if mode is Model.LoadStoreMode.LOAD and base not in d:
-                        print(f"Could not find '{base}' for layer '{layer}' in file!")
-                        continue
-                    match mode:
-                        case Model.LoadStoreMode.LOAD:
-                            if self.enable_cudnn:
-                                # NOTE: getattr(layer, key): TensorGPU, ary: gpuarray
-                                ary = getattr(layer, key).ary
-                                ary.set(d[base].reshape(ary.shape))
-                            else:
-                                setattr(layer, key, d[base])
-                        case Model.LoadStoreMode.STORE:
-                            if self.enable_cudnn:
-                                # NOTE: getattr(layer, key): TensorGPU
-                                d[base] = getattr(layer, key).ary.get()
-                            else:
-                                d[base] = getattr(layer, key)
-                        case _:
-                            raise NotImplementedError(f"Function: \"load_store_path\". mode:\"{mode}\"")
 
     def export(self):
         data = {}

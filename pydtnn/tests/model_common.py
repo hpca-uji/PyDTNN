@@ -1,3 +1,4 @@
+from copy import deepcopy
 import unittest
 import warnings
 
@@ -93,8 +94,13 @@ class ModelCommonTestCase(TestCase):
         Copy weights and biases from Model 1 to Model 2
         """
         for layer1, layer2 in zip(model1.get_all_layers(), model2.get_all_layers()):
-            layer2.weights = np.asarray(layer1.weights, dtype=model2.dtype, order="C", copy=True) if layer1.weights is not None else None
-            layer2.biases = np.asarray(layer1.biases, dtype=model2.dtype, order="C", copy=True) if layer1.biases is not None else None
+            if layer1.weights is not None:
+                layer2.set_weights(np.asarray(layer1.weights, dtype=model2.dtype, order="C", copy=None))
+            # else: Nothing special
+
+            if layer1.biases is not None:
+                layer2.set_biases(np.asarray(layer1.biases, dtype=model2.dtype, order="C", copy=None))
+            # else: Nothing special
 
     @staticmethod
     def get_first_dx(model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
@@ -106,8 +112,11 @@ class ModelCommonTestCase(TestCase):
         return dx
 
     @staticmethod
-    def max_diff(x1: list[np.ndarray], x2: list[np.ndarray]) -> list[np.ndarray]:
-        return np.max([abs(x1 - x2) for x1, x2 in zip(x1, x2)])
+    def max_diff(x1: np.ndarray, x2: np.ndarray) -> list[np.ndarray]:
+        
+        diff = x1 - x2
+        print(f"{x1.max()=}\n {x2.max()=}\n {diff.max()=}\n {x1.min()=}\n {x2.min()=}\n {diff.min()=}\n {x1.std()=}\n {x2.std()=}\n {diff.std()=}")
+        return np.max(np.abs(diff))
 
     @staticmethod
     def do_model1_forward_pass(model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
