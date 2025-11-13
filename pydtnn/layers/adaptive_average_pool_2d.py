@@ -44,12 +44,6 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.n = np.prod(self.shape)
     # - END initialize - #
 
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
-        self.output_shape = deepcopy(other.output_shape)
-        self.pooling_not_needed = other.pooling_not_needed
-
-
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format(f"",
                                                 f"inp. shape=({self.hi},{self.wi}), "

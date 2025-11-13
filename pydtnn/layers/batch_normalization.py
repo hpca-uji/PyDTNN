@@ -38,32 +38,16 @@ class BatchNormalization[T: Array](Layer[T]):
         self.dbeta: T = None  # type: ignore
         self.inv_std: np.ndarray = None  # type: ignore
 
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
+    def export(self) -> None:
+        data = super().export()
 
-        # Non-object
-        self.gamma_init_val = other.gamma_init_val # Functions | Borrar?
-        self.beta_init_val = other.beta_init_val # Functions | Borrar?
-        self.sync_stats = other.sync_stats # Borrar?
+        if self.running_mean is not None:
+            data["running_mean"] = self.running_mean
 
-        self.momentum = other.momentum
-        self.epsilon = other.epsilon
-        self.co = other.co
-        self.ci = other.ci
-        self.hi = other.hi
-        self.wi = other.wi
-        self.spatial = other.spatial
-        
-        # Object
-        self.gamma = other.gamma.copy()
-        self.beta = other.beta.copy()
-        self.running_mean = other.running_mean.copy()
-        self.running_var = other.running_var.copy()
-        self.std = other.std.copy()
-        self.xn = other.xn.copy()
-        self.dgamma = other.dgamma.copy()
-        self.dbeta = other.dbeta.copy()
-        self.inv_std = other.inv_std.copy()
+        if self.running_var is not None:
+            data["running_var"] = self.running_var
+
+        return data
     # ---
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):

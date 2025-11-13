@@ -8,7 +8,7 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGe
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.utils.performance_models import im2col_time, matmul_time
-from pydtnn.utils.tensor import SampleFormat, TensorFormat
+from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_transpose
 from pydtnn.utils.types import ArrayShape
 
 import numpy as np
@@ -33,6 +33,38 @@ class Conv2DCPU(LayerCPU,
         self.weights = None  # type: ignore
         self.fwd_time = None  # type: ignore
         self.bwd_time = None  # type: ignore
+
+    def export(self) -> dict:
+        data = super().export()
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                match self.grouping:
+                    case Conv2D.Grouping.POINTWISE:
+                        # NHWC's src: ci, co
+                        # NCHW's dst: co, ci
+                        data["weights"] = format_transpose(data["weights"], "IO", "OI")
+                    case Conv2D.Grouping.STANDARD:
+                        # NHWC's src: ci, kh, kw, co
+                        # NCHW's dst: co, ci, kh, kw
+                        data["weights"] = format_transpose(data["weights"], "IHWO", "OIHW")
+
+        return data
+
+    def import_(self, data) -> None:
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                match self.grouping:
+                    case Conv2D.Grouping.POINTWISE:
+                        # NCHW's src: co, ci
+                        # NHWC's dst: ci, co
+                        data["weights"] = format_transpose(data["weights"], "OI", "IO")
+                    case Conv2D.Grouping.STANDARD:
+                        # NCHW's src: co, ci, kh, kw
+                        # NHWC's dst: ci, kh, kw, co
+                        data["weights"] = format_transpose(data["weights"], "OIHW", "IHWO")
+
+        super().import_(data)
 
     def initialize_i2c(self) -> None:
         # self.dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.

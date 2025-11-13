@@ -34,27 +34,6 @@ class AbstractBlockLayer[T: Array](Layer[T]):
                 self.nparams += layer.nparams
             self.out_shapes.append(prev_shape)
         self.shape = self.out_shapes[0]
-    
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
-        
-        num_paths = len(self.paths)
-        assert num_paths == len(other.paths), f"Both layers must have the same number of paths (self: {num_paths}, other: {len(other.paths)})"
-        for p in range(num_paths):
-            path = self.paths[p]
-            other_path = other.paths[p]
-
-            num_layers = len(path)
-
-            assert num_layers == len(other_path), f"Both paths must have the same number of layers (self: {num_layers}, other: {len(other_path)})"
-            for l in range(num_layers):
-                layer = path[l]
-                other_layer = other_path[l]
-                layer.copy_from(other_layer)
-
-        self.out_shapes = deepcopy(other.out_shapes)
-     # ----
-
 
     def update_weights(self, optimizer):
         for p in self.paths:

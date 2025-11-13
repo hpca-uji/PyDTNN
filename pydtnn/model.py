@@ -819,25 +819,35 @@ class Model[T: Array]:
                         case _:
                             raise NotImplementedError(f"Function: \"load_store_path\". mode:\"{mode}\"")
 
+    def export(self):
+        data = {}
+
+        data["layers"] = [
+            layer.export()
+            for layer in self.layers
+        ]
+
+        return data
+
+    def import_(self, data) -> None:
+        for layer, data in zip(self.layers, data["layers"]):
+            layer.import_(data)
+
     def load_weights_and_bias(self, filename: str) -> None:
         """
         ARGS:
             filename: Path to the file with the weights and biases to load.
         """
-        d = np.load(filename)
-        self.load_store_path(self.layers, d, Model.LoadStoreMode.LOAD)
+        with np.load(filename, allow_pickle=True) as data:
+            self.import_(data)
 
     def store_weights_and_bias(self, filename: str, compress=True) -> None:
         """
         ARGS:
             filename: Path to the file were the weights and biases will be stored.
         """
-        d = {}
-        self.load_store_path(self.layers, d, Model.LoadStoreMode.STORE)
-        if compress:
-            np.savez_compressed(filename, **d)
-        else:
-            np.savez(filename, **d)
+        save = np.savez_compressed if compress else np.savez
+        save(filename, **self.export())
 
     def calculate_time(self) -> np.ndarray:
         # Total elapsed_time, Comp elapsed_time, Memo elapsed_time, Net elapsed_time

@@ -22,14 +22,6 @@ class FC[T: Array](Layer[T]):
         self.grad_vars = {"weights": "dw"}
         if self.use_bias:
             self.grad_vars["biases"] = "db"
-    
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
-        self.act = other.act
-        self.use_bias = other.use_bias
-        self.weights_initializer = other.weights_initializer  # Functions
-        self.biases_initializer = other.biases_initializer  # Functions
-        
 
     def show(self, attrs="") -> None:
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape), ""))

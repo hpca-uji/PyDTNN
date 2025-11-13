@@ -1,4 +1,3 @@
-from typing import Self
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.types import Array
 from pydtnn.utils.types import ArrayShape
@@ -12,10 +11,6 @@ class Dropout[T: Array](Layer[T]):
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)
         self.shape = prev_shape
-    
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
-        self.rate = other.rate
 
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format("", "rate=%.2f" % self.rate))

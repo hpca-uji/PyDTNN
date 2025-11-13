@@ -18,10 +18,6 @@ class Activation[T: Array](LayerAndActivationBase):
     def canonical_name_with_id(self) -> str:
         return f"{self._id_prefix}{self.canonical_name}"
 
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
-        self.y = self.y.copy()
-
 
 def select(name: str) -> type[Activation]:
     assert __package__, "Package not found!"

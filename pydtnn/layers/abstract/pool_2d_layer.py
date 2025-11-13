@@ -36,32 +36,6 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
 
-    def copy_from(self, other: Self) -> None:
-        super().copy_from(other)
-
-        # Non-objects
-        self.hpadding = other.hpadding
-        self.vpadding = other.vpadding
-        self.hstride = other.hstride
-        self.vstride = other.vstride
-        self.hdilation = other.hdilation
-        self.vdilation = other.vdilation
-        self.hi = other.hi
-        self.wi = other.wi
-        self.ci = other.ci
-        self.kh = other.kh
-        self.kw = other.kw
-        self.ho = other.ho
-        self.wo = other.wo
-        self.co = other.co
-        self.n = other.n
-
-        # "Objects"
-        self.pool_shape = deepcopy(other.pool_shape)
-        self.padding = deepcopy(other.padding)
-        self.stride = deepcopy(other.stride)
-        self.dilation = deepcopy(other.dilation)
-
     def show(self, attrs=""):
         super().show("|{:^19s}|{:^37s}|".format(str(self.pool_shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from typing import Self
 from copy import deepcopy
 
 import numpy as np
@@ -107,37 +106,52 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def update_weights(self, optimizer: Optimizer) -> None:
         optimizer.update(self)
 
-    def copy_from(self, other: Self) -> None:
-        """
-        Copies all the state-attribute values from \"other\" into self.
+    def export(self) -> dict:
+        data = {}
 
-        Args:
-            other (Self): Other layer of the same type. 
+        if self.x is not None:
+            data["x"] = self.x
 
-        Returns:
-            Nothing. The changes are applied in self's attributes.
-        """
-        assert type(other) == type(self), f"other and self types must be the same ({type(other)} != {type(self)})"
+        if self.y is not None:
+            data["y"] = self.y
 
-        # non-object attributes
-        self.nparams = other.nparams
+        if self.weights is not None:
+            data["weights"] = self.weights
 
-        # "object" attributes
-        self.shape = deepcopy(other.shape)
-        self.prev_shape = deepcopy(other.prev_shape)
+        if self.biases is not None:
+            data["biases"] = self.biases
 
-        self.x = other.x.copy()
-        self.y = other.y.copy()
+        for key, value in self.grad_vars.items():
+            data[key] = getattr(self, key)
+            data[value] = getattr(self, value)
 
-        self.weights = other.weights.copy()
-        self.biases = other.biases.copy() if other.biases is not None else None
+        paths = data["paths"] = []
+        for path in self.paths:
+            paths.append([layer.export() for layer in path])
 
-        self.grad_vars = deepcopy(other.grad_vars)
-        
-        self.fwd_time = deepcopy(other.fwd_time)
-        self.bwd_time = deepcopy(other.bwd_time)
+        return data
 
-        self.paths = deepcopy(other.paths)
+    def import_(self, data) -> None:
+
+        if self.x is not None:
+            self.x = data["x"]
+
+        if self.y is not None:
+            self.y = data["y"]
+
+        if self.weights is not None:
+            self.weights = data["weights"]
+
+        if self.biases is not None:
+            self.biases = data["biases"]
+
+        for key, value in self.grad_vars.items():
+            setattr(self, key, data[key])
+            setattr(self, value, data[value])
+
+        for layer_path, data_path in zip(self.paths, data["paths"]):
+            for layer, layer_data in zip(layer_path, data_path):
+                layer.import_(layer_data)
     # -----
 
 
