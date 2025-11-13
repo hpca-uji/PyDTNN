@@ -68,8 +68,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
                     gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
                                                  gpu_layer.model.cudnn_dtype)
 
-    @staticmethod
-    def do_model2_forward_pass(model2: Model, x1: list[TensorGPU]) -> list[TensorGPU]:
+    def do_model2_forward_pass(self, model2: Model, x1: list[TensorGPU]) -> list[TensorGPU]:
         """
         Model 2 forward pass
         """

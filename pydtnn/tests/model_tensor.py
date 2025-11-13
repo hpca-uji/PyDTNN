@@ -108,7 +108,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 rtol, atol = self.get_tolerance(layer)
                 self.assertTrue(np.allclose(self.nhwc2nchw(x1[i]), x2[i], rtol=rtol, atol=atol),
                                 f"Forward result from layers {layer.canonical_name_with_id} differ"
-                                f" (max diff: {self.max_diff(self.nhwc2nchw(x1[i]), x2[i])}, rtol: {rtol}, atol: {atol})")
+                                f" ({self.print_stats(self.nhwc2nchw(x1[i]), x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
@@ -125,13 +125,13 @@ class ModelTensorTestCase(ModelCommonTestCase):
                                                atol=atol)
                         self.assertTrue(allclose,
                                         f"Backward dw from layer {layer.canonical_name_with_id} differ"
-                                        f" (max diff: {self.max_diff(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
+                                        f" ({self.print_stats(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol, atol)})")
                 else:
                     if layer.dw.shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw, model1.layers[i].dw, rtol=rtol, atol=atol)
                         self.assertTrue(allclose,
                                         f"Backward dw from layer {layer.canonical_name_with_id} differ"
-                                        f" (max diff: {self.max_diff(layer.dw, model1.layers[i].dw)}, rtol: {rtol}, atol: {atol})")
+                                        f" ({self.print_stats(layer.dw, model1.layers[i].dw, rtol, atol)})")
         if verbose_test():
             print()
             print(f"Comparing db of both models...")
@@ -142,7 +142,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
                                 f"Backward db from layer {layer.canonical_name_with_id} differ"
-                                f" (max diff: {self.max_diff(layer.db, model1.layers[i].db)}, rtol: {rtol}, atol: {atol})")
+                                f" ({self.print_stats(layer.db, model1.layers[i].db, rtol, atol)})")
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")
@@ -159,4 +159,4 @@ class ModelTensorTestCase(ModelCommonTestCase):
                     allclose = np.allclose(self.nhwc2nchw(dx1[i]).flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
                                 f"Backward result from layer {layer.canonical_name_with_id} differ"
-                                f" (max diff: {self.max_diff(self.nhwc2nchw(dx1[i]), dx2[i])}, rtol: {rtol}, atol: {atol})")
+                                f" ({self.print_stats(self.nhwc2nchw(dx1[i]), dx2[i], rtol, atol)})")

@@ -59,6 +59,8 @@ class PromoteToBackend:
         # Create backend instance
         args, kwds = self._new_backend
         self._backend = cls(*args, **kwds)
+        # self._frontend: instance of the original
+        self._backend._frontend = self
 
     # Base class
     model: "model_module.Model"

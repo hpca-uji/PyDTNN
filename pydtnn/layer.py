@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import numpy as np
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Self
 if TYPE_CHECKING:
     from pydtnn.model import Model
     from pydtnn.activations.activation import Activation
@@ -115,7 +115,10 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
         return deepcopy(data)
 
-    def import_(self, data) -> None:
+    def import_(self, data: dict[str, Any] | LayerAndActivationBase) -> None:
+        if isinstance(data, LayerAndActivationBase):
+            data = data.export()
+
         data = deepcopy(data)
 
         for key, value in data.items():
@@ -124,8 +127,10 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
         self._import(data)
 
-    def _export(self) -> dict:
+    def _export(self) -> dict[str, Any]:
         data = {}
+
+        data["name"] = type(self._frontend).__name__
 
         if self.x is not None:
             data["x"] = self.x
@@ -150,6 +155,9 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         return data
 
     def _import(self, data) -> None:
+
+        if data["name"] != type(self._frontend).__name__:
+            raise TypeError(f"self type must be the same as the stored data type  (self: {type(self._frontend).__name__}, stored: {data["name"]})")
 
         if self.x is not None:
             self.x = data["x"]
