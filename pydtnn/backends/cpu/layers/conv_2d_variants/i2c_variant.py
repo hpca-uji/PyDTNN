@@ -33,10 +33,6 @@ class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
         x_rows = self._x_rows[:dim_n, :]
         res = self.res[:dim_n, :]
 
-        print(f"{x.max()=}\n{x.min()=}\n{x.std()=}\n-----")
-        print(f"{self.weights.shape=} {self.weights.max()=}\n{self.weights.min()=}\n{self.weights.std()=}\n-----")
-        print(f"{self.model.dtype=} - weights:\n{self.weights} \n---")
-
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_nhwc_cython(x, x_rows,
                            self.kh, self.kw, self.ho, self.wo,
@@ -46,8 +42,6 @@ class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
 
         self.x_rows = x_rows
 
-        print(f"{x_rows.max()=}\n{x_rows.min()=}\n{x_rows.std()=}\n-----")
-
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
         w_cols = self.weights.reshape((-1, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -56,8 +50,6 @@ class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
         np.matmul(x_rows, w_cols, out=res, 
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        print(f"{res.max()=}\n{res.min()=}\n{res.std()=}\n-----")
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
@@ -70,8 +62,6 @@ class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
         y = res.reshape((-1, self.ho, self.wo, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        print(f"{y.max()=}\n{y.min()=}\n{y.std()=}\n-----")
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
