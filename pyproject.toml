@@ -60,6 +60,9 @@ test = [
     "torch>=2.6.0",
     "torchvision>=0.21.0"
 ]
+profile = [
+    "memray>=1.19.1"
+]
 dev = [
     "autopep8>=2.3.1",
     "flake8>=7.1.1",
