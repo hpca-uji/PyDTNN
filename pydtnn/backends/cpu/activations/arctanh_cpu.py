@@ -11,7 +11,7 @@ class ArctanhCPU(ActivationCPU, Arctanh[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        # NOTE: This attribute only stores data, its value before the operation doesn't matters.
+        # NOTE: This attribute only stores data, its value before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape),
                            dtype=self.model.dtype, order="C")
 

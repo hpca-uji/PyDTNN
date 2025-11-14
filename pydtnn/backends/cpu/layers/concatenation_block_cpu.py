@@ -18,7 +18,7 @@ class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)
-        _x:list[np.ndarray] = [np.ndarray((0,))] * len(self.paths)
+        _x:list[np.ndarray] = [np.empty((0,))] * len(self.paths)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         for i, p in enumerate(self.paths):

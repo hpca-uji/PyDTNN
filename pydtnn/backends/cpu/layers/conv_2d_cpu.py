@@ -74,14 +74,16 @@ class Conv2DCPU(LayerCPU,
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
-                self.res = np.ndarray(shape=(self.co, self.dim_n), dtype=self.model.dtype, order="C")
-                self._dw = np.ndarray(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
-                self.res_bw = np.ndarray(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
+                # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+                self.res = np.zeros(shape=(self.co, self.dim_n), dtype=self.model.dtype, order="C")
+                self._dw = np.zeros(shape=(self.co, self.dim_c), dtype=self.model.dtype, order="C")
+                self.res_bw = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
                 self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
-                self.res = np.ndarray(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
-                self._dw = np.ndarray(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
-                self.res_bw = np.ndarray(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+                self.res = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
+                self._dw = np.zeros(shape=(self.dim_c, self.co), dtype=self.model.dtype, order="C")
+                self.res_bw = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         #  NOTE: This is necessary for the initial "reduce_weights_async"
@@ -94,15 +96,19 @@ class Conv2DCPU(LayerCPU,
 
     def initialize_pointwise(self):
 
-        self.dw = np.ndarray(shape=self.weights_shape, dtype=self.model.dtype, order="C")
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        self.y = np.ndarray(shape=y_shape, dtype=self.model.dtype, order="C")
+        
+        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype, order="C")
+        self.y = np.zeros(shape=y_shape, dtype=self.model.dtype, order="C")
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.dx = np.ndarray(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
+                # NOTE: This attribute only stores data, its values before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+                self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
-                self.dx = np.ndarray(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
+                # NOTE: This attribute only stores data, its values before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
+                self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
             case _:
                 raise NotImplementedError(f"\"DepthwiseVariant\" does not support \"{self.model.tensor_format}\" format.")
     # ---
@@ -150,7 +156,7 @@ class Conv2DCPU(LayerCPU,
         # Biases
         if self.use_bias:
             self.biases = self.biases_initializer(bias_shape, self.model.dtype)
-            self.db = np.ndarray(shape=bias_shape, dtype=self.model.dtype, order="C")
+            self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype, order="C")
 
         match self.variant:
             case Conv2DCPU.Variant.I2C:

@@ -17,7 +17,7 @@ class SoftmaxCPU(ActivationCPU, Softmax[np.ndarray]):
         shape_intermediate_ops = list(self.shape)
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
-        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape),
                            dtype=self.model.dtype, order="C")
         self.mul_dy = np.zeros(shape=(self.model.batch_size, *self.shape),

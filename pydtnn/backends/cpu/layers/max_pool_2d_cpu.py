@@ -25,7 +25,7 @@ class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D[np.ndarray]):
         super().initialize(prev_shape, x)
         self.minval = np.iinfo(self.model.dtype).min if np.issubdtype(self.model.dtype, np.integer) else np.finfo(self.model.dtype).min
         idx_max_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        # NOTE: This attribute only stores data, its value before the operation doesn't matter.
+        # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._idx_max = np.zeros(idx_max_shape, dtype=np.int32)
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:

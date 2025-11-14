@@ -8,7 +8,7 @@ class TanhCPU(ActivationCPU, Tanh[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        # NOTE: This attribute only stores data, its value before the operation doesn't matters.
+        # NOTE: This attribute only stores data, its value before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:

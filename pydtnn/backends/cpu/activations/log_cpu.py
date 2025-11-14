@@ -9,7 +9,7 @@ class LogCPU(ActivationCPU, Log[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
         self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 

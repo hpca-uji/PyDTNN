@@ -11,8 +11,9 @@ class SigmoidCPU(ActivationCPU, Sigmoid[np.ndarray]):
         super().initialize(prev_shape, x)
         self.y: np.ndarray = None  # type: ignore (the value will be set in forward)
 
-        self._y = np.ndarray(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
-        self.dx = np.ndarray(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
+        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        self._y = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
+        self.dx = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

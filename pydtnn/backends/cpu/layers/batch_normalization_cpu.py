@@ -28,7 +28,7 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         np.reciprocal(self.inv_std, out=self.inv_std, dtype=self.model.dtype)
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.mu: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.mu_var_momentum: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.var: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")

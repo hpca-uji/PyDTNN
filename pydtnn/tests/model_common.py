@@ -1,4 +1,3 @@
-from copy import deepcopy
 import unittest
 import warnings
 
@@ -14,7 +13,7 @@ from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
 from pydtnn.tests.common import verbose_test
 
-from pydtnn.layers.layer import Layer
+from pydtnn.layers.layer import LayerAndActivationBase
 from pydtnn.tests.common import Params, TestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
@@ -40,7 +39,7 @@ class ModelCommonTestCase(TestCase):
         Conv2D: 1e-5,
     }
 
-    def get_tolerance(self, layer: Layer) -> tuple[float, float]:
+    def get_tolerance(self, layer: LayerAndActivationBase) -> tuple[float, float]:
         rtol = self.rtol_default
         for cls, tol in self.rtol_dict.items():
             if isinstance(layer, cls):

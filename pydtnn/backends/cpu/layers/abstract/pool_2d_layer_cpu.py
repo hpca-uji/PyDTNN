@@ -32,7 +32,7 @@ class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer[np.ndarray]):
 
         # The following variable is only for NCHW implementation (not for i2c implementation)
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        # NOTE: This attribute only stores data, its value before the operation doesn't matter.
+        # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
 
         self.fwd_time = \

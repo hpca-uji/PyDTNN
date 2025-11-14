@@ -12,7 +12,7 @@ class LeakyReluCPU(ActivationCPU, LeakyRelu[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        # NOTE: These attributes only store data, their values before the operation doesn't matter.
+        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
 
