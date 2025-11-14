@@ -14,9 +14,10 @@ class ReluCPU(ActivationCPU, Relu[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self._y = np.empty((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
-        self._mask = np.empty((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
-        self.dx = np.empty((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
+        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
+        self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
+        self.dx = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         n = x.shape[0]

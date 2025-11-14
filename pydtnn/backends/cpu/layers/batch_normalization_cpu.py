@@ -28,22 +28,23 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         np.reciprocal(self.inv_std, out=self.inv_std, dtype=self.model.dtype)
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
-        self.mu: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.mu_var_momentum: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var_eps: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dgamma: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dbeta: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.std: np.ndarray = np.empty(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        self.mu: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.mu_var_momentum: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.var_eps: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dgamma: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.dbeta: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.std: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         if self.spatial:
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.empty((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.zeros((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
+            self.dy_xn = np.zeros((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
         else:
             # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
-            self.dx: np.ndarray = np.empty(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.empty((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.y = np.zeros((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+            self.dy_xn = np.zeros((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
     # --
 
     def forward(self, x: np.ndarray) -> np.ndarray:

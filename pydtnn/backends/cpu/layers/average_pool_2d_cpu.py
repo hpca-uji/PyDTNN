@@ -19,7 +19,8 @@ class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D[np.ndarray]):
     def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        self.y = np.empty(y_shape, dtype=self.model.dtype, order="C")
+        # NOTE: This attribute only stores data, its value before the operation doesn't matter.
+        self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
 
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:

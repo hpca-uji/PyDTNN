@@ -8,7 +8,8 @@ class TanhCPU(ActivationCPU, Tanh[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self._y = np.empty((self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
+        # NOTE: This attribute only stores data, its value before the operation doesn't matters.
+        self._y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]

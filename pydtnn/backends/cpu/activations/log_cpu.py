@@ -9,8 +9,9 @@ class LogCPU(ActivationCPU, Log[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self.y = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-        self.dx = np.empty(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 
     def _forward_numpy(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:

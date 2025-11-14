@@ -12,20 +12,21 @@ class SoftmaxCPU(ActivationCPU, Softmax[np.ndarray]):
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         self.y: np.ndarray
-        self._y = np.empty(shape=(self.model.batch_size, *self.shape),
-                           dtype=self.model.dtype, order="C")
-        self.mul_dy = np.empty(shape=(self.model.batch_size, *self.shape),
-                               dtype=self.model.dtype, order="C")
 
         self.axis_dim = 1
         shape_intermediate_ops = list(self.shape)
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
-        self.max_x = np.empty(shape=(self.model.batch_size, *shape_intermediate_ops),
+        # NOTE: These attributes only store data, their value before the operation doesn't matter.
+        self._y = np.zeros(shape=(self.model.batch_size, *self.shape),
+                           dtype=self.model.dtype, order="C")
+        self.mul_dy = np.zeros(shape=(self.model.batch_size, *self.shape),
+                               dtype=self.model.dtype, order="C")
+        self.max_x = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
                               dtype=self.model.dtype, order="C")
-        self.sum_y = np.empty(shape=(self.model.batch_size, *shape_intermediate_ops),
+        self.sum_y = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
                               dtype=self.model.dtype, order="C")
-        self.sum_dy = np.empty(shape=(self.model.batch_size, *shape_intermediate_ops),
+        self.sum_dy = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
                                dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:

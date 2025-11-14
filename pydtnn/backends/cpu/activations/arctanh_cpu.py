@@ -11,7 +11,8 @@ class ArctanhCPU(ActivationCPU, Arctanh[np.ndarray]):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self._y = np.empty(shape=(self.model.batch_size, *self.shape),
+        # NOTE: This attribute only stores data, its value before the operation doesn't matters.
+        self._y = np.zeros(shape=(self.model.batch_size, *self.shape),
                            dtype=self.model.dtype, order="C")
 
     def forward(self, x: np.ndarray) -> np.ndarray:

@@ -36,7 +36,8 @@ class AdaptiveAveragePool2DCPU(LayerCPU, AdaptiveAveragePool2D[np.ndarray]):
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        self.y = np.empty(y_shape, dtype=self.model.dtype, order="C")
+        # NOTE: This attribute only stores data, its value before the operation doesn't matter.
+        self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)
