@@ -5,6 +5,7 @@ Common methods and properties for various unitary tests
 import os
 import sys
 import unittest
+import warnings
 
 import numpy as np
 
@@ -35,7 +36,13 @@ class Params:
 class TestCase(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
+
         random.seed(0)
+
+        if verbose_test():
+            warnings.resetwarnings()
+        else:
+            warnings.simplefilter("ignore")
 
 
 class D:
