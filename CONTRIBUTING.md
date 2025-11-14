@@ -7,6 +7,7 @@
 - Test changes in every backend (cpu, gpu, ...). Changes base clases may have unexpected changes in some backends.
 - Use `numpy`'s functions over its operands  versions. Sometimes they over better precision, even if theoretically identical.
 - Ensure `README.rst` and `parser.py` are in-sync. When adding, modifing or deleting options, check changes are reflected on both sources.
+- If a test to compare some layers' outputs of different models is being implemented, it is necessary to ensure the copy of those outputs before executing the following layer, due there are some layers that operate with their input inplace.
 
 # Knowledge
 - `enable_gpu` changes the backed from CPU to GPU.
