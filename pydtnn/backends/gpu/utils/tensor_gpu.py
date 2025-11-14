@@ -75,7 +75,7 @@ class TensorGPU:
                          desc=self.desc)
 
     def __deepcopy__(self, memo: dict):
-        obj = TensorGPU(gpu_arr=self.ary.copy(),
+        obj = TensorGPU(gpu_arr=copy.deepcopy(self.ary, memo),
                         tensor_format=self.tensor_format,
                         cudnn_dtype=self.cudnn_dtype,
                         tensor_type=self.tensor_type,
