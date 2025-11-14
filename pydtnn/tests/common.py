@@ -36,13 +36,12 @@ class Params:
 class TestCase(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
-
         random.seed(0)
+        warnings.simplefilter("error")
 
-        if verbose_test():
-            warnings.resetwarnings()
-        else:
-            warnings.simplefilter("ignore")
+    def tearDown(self) -> None:
+        warnings.resetwarnings()
+        super().tearDown()
 
 
 class D:
