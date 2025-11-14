@@ -86,8 +86,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
             x2.append(out.ary.get())
         return x2
 
-    @staticmethod
-    def do_model2_backward_pass(model2: Model, dx1: list[TensorGPU]) -> list[TensorGPU]:
+    def do_model2_backward_pass(self, model2: Model, dx1: list[TensorGPU]) -> list[TensorGPU]:
         """
         Model 2 backward pass
         """

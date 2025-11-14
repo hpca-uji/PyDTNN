@@ -785,7 +785,10 @@ class Model[T: Array]:
 
         return data
 
-    def import_(self, data) -> None:
+    def import_(self, data: "dict[str, Any] | Model") -> None:
+        if isinstance(data, Model):
+            data = data.export()
+
         for layer, data in zip(self.layers, data["layers"]):
             layer.import_(data)
 

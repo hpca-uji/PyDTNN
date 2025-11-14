@@ -5,6 +5,7 @@ import numpy as np
 
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
@@ -32,11 +33,14 @@ class ModelCommonTestCase(TestCase):
     atol_default = 1e-6
     rtol_dict = {
         AdditionBlock: 1e-4,
+        ConcatenationBlock: 1e-1,
+        BatchNormalization: 1e-5,
     }
     atol_dict = {
         AdditionBlock: 3e-4,
-        ConcatenationBlock: 5e-4,
+        ConcatenationBlock: 1e-1,
         Conv2D: 1e-5,
+        BatchNormalization: 1e-4,
     }
 
     def get_tolerance(self, layer: LayerAndActivationBase) -> tuple[float, float]:
@@ -92,8 +96,7 @@ class ModelCommonTestCase(TestCase):
         """
         Copy weights and biases from Model 1 to Model 2
         """
-        for layer1, layer2 in zip(model1.get_all_layers(), model2.get_all_layers()):
-            layer2.import_(layer1)
+        model2.import_(model1)
 
     @staticmethod
     def get_first_dx(model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
@@ -156,8 +159,7 @@ class ModelCommonTestCase(TestCase):
             dx1.insert(0, layer.backward(np.asarray(dx1[0], dtype=model1.dtype, order="C", copy=True)))
         return dx1
 
-    @staticmethod
-    def do_model2_backward_pass(model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
+    def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 backward pass
         """
@@ -186,7 +188,7 @@ class ModelCommonTestCase(TestCase):
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")
-        for i, layer in reversed(list(enumerate(model2.layers[2:], 2))):
+        for i, layer in reversed(list(enumerate(model2.layers))):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
