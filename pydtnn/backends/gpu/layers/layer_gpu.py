@@ -59,7 +59,7 @@ class LayerGPU(Layer[TensorGPU]):
             return super()._import_prop(key, value)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C", copy=True)
+        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C", copy=None)
         gpu_ary.set(cpu_ary)
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
