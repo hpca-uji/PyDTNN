@@ -34,13 +34,10 @@ class ConvWinogradVariant[T: np.ndarray](I2CVariant[T]):
     def _forward_cw_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd library"""
 
-        if self.model.mode is Model.Mode.TRAIN:
-            self.cw_x = x
-
-        biases_vector = self.biases if self.use_bias else None
+        self.cw_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
-        y: np.ndarray = self.cw.conv_winograd_nhwc(self.weights, x, biases=biases_vector,
+        y: np.ndarray = self.cw.conv_winograd_nhwc(self.weights, x, biases=self.biases,
                                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                                 vstride=self.vstride, hstride=self.hstride,
                                                 vdilation=self.vdilation, hdilation=self.hdilation)
@@ -50,13 +47,10 @@ class ConvWinogradVariant[T: np.ndarray](I2CVariant[T]):
     def _forward_cw_nchw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd library"""
 
-        if self.model.mode is Model.Mode.TRAIN:
-            self.cw_x = x
-
-        biases_vector = self.biases if self.use_bias else None
+        self.cw_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
-        y: np.ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases=biases_vector,
+        y: np.ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases=self.biases,
                                                 vpadding=self.vpadding, hpadding=self.hpadding,
                                                 vstride=self.vstride, hstride=self.hstride,
                                                 vdilation=self.vdilation, hdilation=self.hdilation)

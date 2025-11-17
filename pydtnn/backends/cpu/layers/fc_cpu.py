@@ -21,7 +21,7 @@ class FCCPU(LayerCPU, FC[np.ndarray]):
 
     def initialize(self, prev_shape, x = None):
         super().initialize(prev_shape, x)
-        self.weights = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
+        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
         # Initialize outputs:
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.db = np.zeros(self.shape, dtype=self.model.dtype, order="C")

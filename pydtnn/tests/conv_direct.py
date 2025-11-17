@@ -70,4 +70,4 @@ class ConvDirectTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
-        return ConvDirect(method_name="convdirect_original_nhwc_default", debug=False).conv_direct(weights, x, biases, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+        return ConvDirect(method_name="convdirect_original_nhwc_default", debug=False).conv_direct(weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation)

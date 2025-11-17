@@ -4,7 +4,7 @@ import numpy as np
 
 from pydtnn.datasets.custom_dataset import CustomDataset
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

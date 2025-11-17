@@ -1,5 +1,5 @@
 from pydtnn.activations.relu import Relu
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 
 from typing import Self
 class LeakyRelu[T: Array](Relu[T]):

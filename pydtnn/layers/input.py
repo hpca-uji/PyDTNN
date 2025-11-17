@@ -1,6 +1,6 @@
 from pydtnn.layers.layer import Layer
 
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 
 class Input[T: Array](Layer[T]):

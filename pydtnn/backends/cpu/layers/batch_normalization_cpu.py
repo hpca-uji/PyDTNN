@@ -5,9 +5,15 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape, Parameters
 
 class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
+
+    @property
+    def _ary_prop(self) -> set[str]:
+        return {Parameters.RUNNING_MEAN, 
+                Parameters.RUNNING_VAR, 
+                *super()._ary_prop}
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)

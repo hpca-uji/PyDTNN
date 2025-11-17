@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Self
 from pydtnn.layers.layer import Layer
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 class AbstractBlockLayer[T: Array](Layer[T]):
 

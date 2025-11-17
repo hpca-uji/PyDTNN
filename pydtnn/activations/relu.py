@@ -1,6 +1,6 @@
 from typing import Self
 from pydtnn.activations.activation import Activation
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 
 
 class Relu[T: Array](Activation[T]):

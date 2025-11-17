@@ -1,5 +1,5 @@
 from pydtnn.metrics.confusion_matrix import ConfusionMatrix
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 
 class BinaryConfusionMatrix[T: Array](ConfusionMatrix[T]):

@@ -3,7 +3,7 @@ from pycuda.driver import Function  #type: ignore
 
 from pydtnn.metrics.metric import Metric
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 class MetricGPU(Metric[TensorGPU]):

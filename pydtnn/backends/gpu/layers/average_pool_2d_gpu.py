@@ -2,7 +2,7 @@ from pydtnn.layers.average_pool_2d import AveragePool2D
 from pydtnn.backends.gpu.layers.abstract.pool_2d_layer_gpu import AbstractPool2DLayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 class AveragePool2DGPU(AbstractPool2DLayerGPU, AveragePool2D[TensorGPU]):

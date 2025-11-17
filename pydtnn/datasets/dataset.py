@@ -11,7 +11,7 @@ import rapidgzip
 
 from pydtnn.utils.tensor import ChannelFormat, SampleFormat, TensorFormat, format_transpose
 from pydtnn.utils import BackgroundGenerator, find_component, random
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

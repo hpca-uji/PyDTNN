@@ -25,7 +25,7 @@ class ConvDirect:
 
     Methods
     -------
-    conv_direct(weights, x, biases, vpadding, hpadding,
+    conv_direct(weights, x, out, vpadding, hpadding,
                 vstride, hstride, vdilation, hdilation)
         calls the appropriate convDirect function from libconvDirect.so to perform
         the selected convDirect method.
@@ -110,7 +110,8 @@ class ConvDirect:
         return decode_shape(shape, self.tensor_format)
 
     def conv_direct(self, weights: np.ndarray, x: np.ndarray,
-                    biases: np.ndarray | None = None,  # type: ignore
+                    # NOTE: "out" originally was called "biases"
+                    out: np.ndarray | None = None,  # type: ignore
                     vpadding=0, hpadding=0,
                     vstride=1, hstride=1,
                     vdilation=1, hdilation=1,
@@ -126,31 +127,31 @@ class ConvDirect:
 
         # TODO: Move to Conv2D_CPU (or remove)
         # TODO: use encode/decode tensor or TensorFormat methods
-        if biases is None:
+        if out is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
             bias_shape = self.encode_shape((n, co, ho, wo))
-            biases = np.zeros(bias_shape, weights.dtype, order="C")
+            out = np.zeros(bias_shape, weights.dtype, order="C")
         else:
-            biases = biases[:n, :]
+            out = out[:n, :]
 
             match self.tensor_format:
                 case TensorFormat.NCHW:
-                    bb, knb, ho, wo = biases.shape
+                    bb, knb, ho, wo = out.shape
                 case TensorFormat.NHWC:
-                    bb, ho, wo, knb = biases.shape
+                    bb, ho, wo, knb = out.shape
                 case tensor_format:
                     raise NotImplementedError(f"No support for {tensor_format} tensor format!")
             assert co == knb, "Number of filters must be the same!"
             assert n == bb, "Batch sizes must be the same!"
-        biases: np.ndarray
+        out: np.ndarray
 
         # int t = n, Co = co, Ci = ci, Ho = h, Wo = w, Hf = r, Wf = s;
         (t, Co, Ci, Ho, Wo, Hf, Wf) = (n, co, ci, hi, wi, kh, kw)
 
         if self._reuse_processed_weights and self._weights_already_processed:
             self._DT = x.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
-            self._YT = biases.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
+            self._YT = out.ctypes.data_as(ctypes.POINTER(ctypes.c_float))
         else:
             # #define CONVDIRECT_PRE_PARAMS \
             #     int t, int Co, int Ci,    \
@@ -167,7 +168,7 @@ class ConvDirect:
                                   ctypes.c_int(Hf), ctypes.c_int(Wf),
                                   ctypes.c_void_p(x.ctypes.data),
                                   ctypes.c_void_p(weights.ctypes.data),
-                                  ctypes.c_void_p(biases.ctypes.data),
+                                  ctypes.c_void_p(out.ctypes.data),
                                   ctypes.byref(self._DT),
                                   ctypes.byref(self._FT),
                                   ctypes.byref(self._YT))
@@ -213,11 +214,11 @@ class ConvDirect:
                                    ctypes.byref(self._DT),
                                    ctypes.byref(self._FT),
                                    ctypes.byref(self._YT),
-                                   ctypes.c_void_p(biases.ctypes.data))
-        return biases
+                                   ctypes.c_void_p(out.ctypes.data))
+        return out
 
 
-def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
                  b: int, kn: int,
                  ho: int, wo: int, kh: int, kw: int,
                  vpadding: int, hpadding: int, vstride: int, hstride: int,
@@ -229,7 +230,7 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
-    res += biases.reshape(b * ho * wo, kn)
+    res += out.reshape(b * ho * wo, kn)
     return res
 
 
@@ -251,7 +252,7 @@ def __usage_example__():
     hstride = 1  # Horizontal stride
     vdilation = 1  # Vertical dilation
     hdilation = 1  # Horizontal dilation
-    # Create weights, x, and biases matrices from previous parameters. If no biases
+    # Create weights, x, and out matrices from previous parameters. If no out
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
     random.seed(0)
@@ -264,19 +265,19 @@ def __usage_example__():
     # NCHW --------------------------
     weights = random.random((c, kh, kw, kn)).astype(np.float32, order='C')
     x = random.random((b, h, w, c)).astype(np.float32, order='C')
-    biases = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order='C')
+    out = (np.ones((b, ho, wo, kn)) * 10).astype(np.float32, order='C')
 
-    print("Using conv_direct to compute weights * x + biases...")
+    print("Using conv_direct to compute weights * x + out...")
     # conv_direct = ConvDirect("convdirect_im2row_nhwc_default")
     conv_direct = ConvDirect("convdirect_block_blis_nhwc_blis")
     # conv_direct = ConvDirect("convdirect_conv_gemm_nhwc_default")
     # from ipdb import launch_ipdb_on_exception
     # with launch_ipdb_on_exception():
-    conv_direct_result = conv_direct.conv_direct(weights, x, biases,
+    conv_direct_result = conv_direct.conv_direct(weights, x, out,
                                                  vpadding=vpadding, hpadding=hpadding,
                                                  vstride=vstride, hstride=hstride,
                                                  vdilation=vdilation, hdilation=hdilation)
-    conv_direct_t = timeit(lambda: conv_direct.conv_direct(weights, x, biases,
+    conv_direct_t = timeit(lambda: conv_direct.conv_direct(weights, x, out,
                                                            vpadding=vpadding, hpadding=hpadding,
                                                            vstride=vstride, hstride=hstride,
                                                            vdilation=vdilation, hdilation=hdilation),
@@ -288,9 +289,9 @@ def __usage_example__():
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(-1, kn)
-    im2col_mm_result_nhwc = (x_c @ w_c + biases.reshape(b * ho * wo, kn)).reshape(-1, ho, wo, kn)
+    im2col_mm_result_nhwc = (x_c @ w_c + out.reshape(b * ho * wo, kn)).reshape(-1, ho, wo, kn)
     mm_t = timeit(
-        lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
+        lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
         number=10) / 10
 
     print("conv_direct time: {:.4f}".format(conv_direct_t))

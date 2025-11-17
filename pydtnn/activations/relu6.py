@@ -1,5 +1,5 @@
 from pydtnn.activations.relu import Relu
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 
 # NOTE -> "CappedRelu": https://www.cs.utoronto.ca/~kriz/conv-cifar10-aug2010.pdf
 

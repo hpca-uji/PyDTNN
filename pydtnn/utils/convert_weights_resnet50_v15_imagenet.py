@@ -7,6 +7,7 @@ import sys
 import h5py
 import urllib.request
 import numpy as np
+from pydtnn.utils.constants import Parameters
 
 # PyDTNN <-> Keras layer conversion
 layers = {"1_Conv2D": "conv1_conv",
@@ -118,10 +119,10 @@ layers = {"1_Conv2D": "conv1_conv",
           "175_FC": "probs"}
 
 # PyDTNN <-> Keras weights name conversion
-weights = {"kernel": "weights",
-           "bias": "biases",
-           "gamma": "gamma",
-           "beta": "beta",
+weights = {"kernel": Parameters.WEIGHTS,
+           "bias": Parameters.BIASES,
+           Parameters.GAMMA: Parameters.GAMMA,
+           Parameters.BETA: Parameters.BETA,
            "moving_mean": "running_mean",
            "moving_variance": "running_var"}
 

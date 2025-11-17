@@ -27,6 +27,7 @@ from pydtnn.model import Model
 from pydtnn.utils import random
 from pydtnn.utils.tensor import format_reshape
 from pydtnn.tests.common import Params, TestCase, verbose_test
+from pydtnn.utils.constants import Parameters
 
 
 #from torch.testing._internal.common_utils import numpy_to_torch_dtype_dict
@@ -90,12 +91,12 @@ MAX_POOL_DILATION = 1
 
 
 GRAD_EQUIVALENCES: dict[str, str] = {
-    "weights": "weight",
-    "biases": "bias",
-    # "running_mean": "running_mean", # Not PyDTNN's grading var.
-    # "running_var": "running_var", # Not PyDTNN's grading var.
-    # "beta": "", # Not in PyTorch
-    # "gamma": "", # Not in PyTorch
+    Parameters.WEIGHTS: "weight",
+    Parameters.BIASES: "bias",
+    # Parameters.RUNNING_MEAN: "running_mean", # Not PyDTNN's grading var.
+    # Parameters.RUNNING_VAR: "running_var", # Not PyDTNN's grading var.
+    # Parameters.BETA: "", # Not in PyTorch
+    # Parameters.GAMMA: "", # Not in PyTorch
 }
 # ==============
 
@@ -271,7 +272,7 @@ class LayerPyTorchTestCase(TestCase):
                     case FC():
                         for grad_var in layer.grad_vars.keys():
                             grad: np.ndarray = getattr(layer, grad_var)
-                            grad = grad if grad_var != "weights" else grad.T
+                            grad = grad if grad_var != Parameters.WEIGHTS else grad.T
                             self._copy_grad_vars(grad, grad_var, torch_layer)
                     case _:
                         for grad_var in layer.grad_vars.keys():

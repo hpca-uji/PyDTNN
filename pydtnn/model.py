@@ -54,7 +54,7 @@ from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, format_transpose, encode_shape, encode_tensor, decode_shape, decode_tensor
-from pydtnn.utils.types import Array, NetworkAlgEnum, ArrayShape
+from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
 
 
@@ -672,6 +672,7 @@ class Model[T: Array]:
     # ----
 
     def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerAndActivationBase]]:
+        print(f"{fused_layers=}")
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -707,29 +708,29 @@ class Model[T: Array]:
             if curr_layer.is_block_layer:
                 for j, p in enumerate(curr_layer.paths):
                     self.__layer_fusion(curr_layer.paths[j], switch_fusion)
-            else:
-                layer_name, layers_to_fuse = switch_fusion(layers[:i])
-                
-                if layer_name:
-                    dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)) )
-                    print(f"Fusing {' + '.join(map(str, layers_to_fuse))}")
-                    fused_layer = select_layer(layer_name)
-                    
-                    new_curr_layer = fused_layer(from_parent=dict_params)
-                    new_curr_layer.set_backend(self._backend)
-                    new_curr_layer.set_model(self)
-                    new_curr_layer.__dict__.update(dict_params)
-                    try:
-                        new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
-                    except Exception as e:
-                        warn(f"Aborted fusion, {e}")
-                    else:
-                        start = i -len(layers_to_fuse)
-                        del layers[start : i]
-                        layers.insert(start, new_curr_layer)
+            #else: Nothing special
 
-                    i -= len(layers_to_fuse)
-                #else: Nothing
+            layer_name, layers_to_fuse = switch_fusion(layers[:i])
+            
+            if layer_name:
+                dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)) )
+                print(f"Fusing {' + '.join(map(str, layers_to_fuse))}")
+                fused_layer = select_layer(layer_name)
+                
+                new_curr_layer = fused_layer(from_parent=dict_params)
+                new_curr_layer.set_backend(self._backend)
+                new_curr_layer.set_model(self)
+                new_curr_layer.__dict__.update(dict_params)
+                try:
+                    new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
+                except Exception as e:
+                    warn(f"Aborted fusion, {e}")
+                else:
+                    start = i -len(layers_to_fuse)
+                    del layers[start : i]
+                    layers.insert(start, new_curr_layer)
+
+                i -= len(layers_to_fuse)
             i += 1
 
     def _apply_layer_fusion(self):
@@ -779,9 +780,9 @@ class Model[T: Array]:
         data = {}
 
         if self.model_name is not None:
-            data["model_name"] = self.model_name
+            data[Parameters.MODEL_NAME] = self.model_name
 
-        data["layers"] = [
+        data[Parameters.LAYERS] = [
             layer.export()
             for layer in self.layers
         ]
@@ -792,11 +793,11 @@ class Model[T: Array]:
         if isinstance(data, Model):
             data = data.export()
 
-        model_name = str(data.get("model_name"))
+        model_name = str(data.get(Parameters.MODEL_NAME))
         if model_name != self.model_name:
-            warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})")
+            warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})", RuntimeWarning)
 
-        for layer, data in zip(self.layers, data["layers"]):
+        for layer, data in zip(self.layers, data[Parameters.LAYERS]):
             layer.import_(data)
 
     def load_weights_and_bias(self, filename: str) -> None:

@@ -2,7 +2,7 @@ from pydtnn.activations.relu6 import Relu6
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.activations.activation_gpu import ActivationGPU
-from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 import numpy as np
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum

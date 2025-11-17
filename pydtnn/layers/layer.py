@@ -5,7 +5,7 @@ PyDTNN Layer base class
 
 from pydtnn.layer import LayerAndActivationBase
 from pydtnn.utils import find_component
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 
 class LayerError(ValueError):

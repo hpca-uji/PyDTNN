@@ -1,4 +1,4 @@
-import sys
+from typing import Any
 from warnings import warn
 
 from pydtnn.layers.conv_2d import Conv2D
@@ -8,8 +8,8 @@ from pydtnn.backends.cpu.layers.conv_2d_variants.conv_gemm_variant import ConvGe
 from pydtnn.backends.cpu.layers.conv_2d_variants.depthwise_variant import DepthwiseVariant
 from pydtnn.backends.cpu.layers.conv_2d_variants.pointwise_variant import PointwiseVariant
 from pydtnn.utils.performance_models import im2col_time, matmul_time
-from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_transpose
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape, Parameters
 
 import numpy as np
 
@@ -35,8 +35,9 @@ class Conv2DCPU(LayerCPU,
         self.bwd_time = None  # type: ignore
 
     def _export_prop(self, key: str):
-        if key != "weights":
+        if key not in {Parameters.WEIGHTS, Parameters.DW}:
             return super()._export_prop(key)
+        value = getattr(self, key)
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
@@ -44,15 +45,15 @@ class Conv2DCPU(LayerCPU,
                     case Conv2D.Grouping.POINTWISE:
                         # NHWC's src: ci, co
                         # NCHW's dst: co, ci
-                        return np.asarray(format_transpose(self.weights, "IO", "OI"), dtype=np.float64, order="C", copy=True)
+                        return np.asarray(format_transpose(value, "IO", "OI"), dtype=np.float64, order="C", copy=True)
                     case Conv2D.Grouping.STANDARD:
                         # NHWC's src: ci, kh, kw, co
                         # NCHW's dst: co, ci, kh, kw
-                        return np.asarray(format_transpose(self.weights, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+                        return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
         return super()._export_prop(key)
 
     def _import_prop(self, key: str, value) -> None:
-        if key != "weights":
+        if key not in {Parameters.WEIGHTS, Parameters.DW}:
             return super()._import_prop(key, value)
 
         match self.model.tensor_format:
@@ -61,12 +62,12 @@ class Conv2DCPU(LayerCPU,
                     case Conv2D.Grouping.POINTWISE:
                         # NCHW's src: co, ci
                         # NHWC's dst: ci, co
-                        self.weights = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=True)
+                        value = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=True)
                         return
                     case Conv2D.Grouping.STANDARD:
                         # NCHW's src: co, ci, kh, kw
                         # NHWC's dst: ci, kh, kw, co
-                        self.weights = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=True)
+                        value = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=True)
                         return
         return super()._import_prop(key, value)
 
@@ -140,20 +141,20 @@ class Conv2DCPU(LayerCPU,
 
                     if self.model.enable_conv_gemm:
                         variant = Conv2DCPU.Variant.GEMM
-                        # TODO: Change this.
-                        bias_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+                        #bias_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+                        # bias_shape = (self.co,)
 
                     elif self.model.enable_conv_winograd:
                         if self.cw_constraints_fulfilled:
                             variant = Conv2DCPU.Variant.WINOGRAD
                             # bias_shape = (self.co,)
                         else:
-                            warn("Winograd constraints not fulfilled, using fallback!")
+                            warn("Winograd constraints not fulfilled, using fallback!", RuntimeWarning)
 
                     elif self.model.enable_conv_direct:
                         variant = Conv2DCPU.Variant.DIRECT
-                        # TODO: Change this.
-                        bias_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+                        if self.use_bias:
+                            warn("Conv Direct variant do not use biases.", RuntimeWarning)
 
             self.variant = variant
 

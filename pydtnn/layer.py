@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-from copy import deepcopy
-
 import numpy as np
 
-from typing import TYPE_CHECKING, Any, Self
+from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from pydtnn.model import Model
     from pydtnn.activations.activation import Activation
     from pydtnn.optimizers.optimizer import Optimizer
 
-from pydtnn.utils.types import Array
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.backends import PromoteToBackend
 
 try:
@@ -117,7 +114,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
     def _export_prop(self, key: str):
         match key:
-            case "paths":
+            case Parameters.PATHS:
                 return [
                     [layer.export() for layer in path]
                     for path in self.paths
@@ -128,7 +125,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
     def _import_prop(self, key: str, value) -> None:
         match key:
-            case "paths":
+            case Parameters.PATHS:
                 for layer_path, data_path in zip(self.paths, value):
                     for layer, layer_data in zip(layer_path, data_path):
                         layer.import_(layer_data)
@@ -139,39 +136,27 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def export(self) -> dict[str, Any]:
         data = {}
 
-        data["canonical_name"] = self._export_prop("canonical_name")
-
-        if self.weights is not None:
-            data["weights"] = self._export_prop("weights")
-
-        if self.biases is not None:
-            data["biases"] = self._export_prop("biases")
+        data[Parameters.CANONICAL_NAME] = self._export_prop(Parameters.CANONICAL_NAME)
 
         for key, value in self.grad_vars.items():
             data[key] = self._export_prop(key)
             data[value] = self._export_prop(value)
 
         if self.paths:
-            data["paths"] = self._export_prop("paths")
+            data[Parameters.PATHS] = self._export_prop(Parameters.PATHS)
 
         return data
 
-    def import_(self, data) -> None:
-        if data["canonical_name"] != self.canonical_name:
-            raise TypeError(f"self type must be the same as the stored data type  (self: {self.canonical_name}, stored: {data["canonical_name"]})")
-
-        if "weights" in data:
-            self._import_prop("weights", data["weights"])
-
-        if "biases" in data:
-            self._import_prop("biases", data["biases"])
+    def import_(self, data: dict[str, Any]) -> None:
+        if data[Parameters.CANONICAL_NAME] != self.canonical_name:
+            raise TypeError(f"self type must be the same as the stored data type  (self: {self.canonical_name}, stored: {data[Parameters.CANONICAL_NAME]})")
 
         for key, value in self.grad_vars.items():
             self._import_prop(key, data[key])
             self._import_prop(value, data[value])
 
-        if "paths" in data:
-            self._import_prop("paths", data["paths"])
+        if Parameters.PATHS in data:
+            self._import_prop(Parameters.PATHS, data[Parameters.PATHS])
     # -----
 
 

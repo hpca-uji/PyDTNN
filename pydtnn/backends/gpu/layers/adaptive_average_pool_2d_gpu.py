@@ -2,7 +2,7 @@ from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 
 # Import from AbstractPool2DLayerGPU
-from pydtnn.utils.types import DTYPE2CTYPE
+from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time

@@ -10,7 +10,7 @@ from collections import abc
 from dataclasses import dataclass
 
 import numpy as np
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 __all__ = (

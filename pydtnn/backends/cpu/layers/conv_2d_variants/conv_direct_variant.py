@@ -3,7 +3,7 @@ from functools import partial, partialmethod
 from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 
 import numpy as np
 

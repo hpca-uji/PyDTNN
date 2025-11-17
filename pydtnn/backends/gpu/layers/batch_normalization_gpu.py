@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 import pycuda.driver as drv  # type: ignore
 import pycuda.gpuarray as gpuarray  # type: ignore
@@ -8,11 +9,17 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape, Parameters
 
 
 class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
 
+    @property
+    def _ary_prop(self) -> set[str]:
+        return {Parameters.RUNNING_MEAN, 
+                Parameters.RUNNING_VAR, 
+                *super()._ary_prop}
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
@@ -47,10 +54,10 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
                                             x.desc, self.mode)
         if self.spatial:
             self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
-            shape_ = (1, self.ci, 1, 1)  # 1 x C x 1 x 1
         else:
             self.ci, = prev_shape
-            shape_ = (1, self.ci, 1, 1)  # 1 x C x H x W
+
+        shape_ = (1, self.ci, 1, 1)
 
         # gamma
         self.gamma_cpu = np.full(shape_, self.gamma_init_val, self.model.dtype)
@@ -145,3 +152,34 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
             self.dgamma.ary.get_async(self.stream_2, self.dgamma_cpu)
             self.dbeta.ary.get_async(self.stream_2, self.dbeta_cpu)
         return self.dx
+    # -----
+
+    def _export_gamma_beta(self, key: str) -> Any:
+        value = getattr(self, key)
+        gpu_ary = value.ary
+        cpu_ary = gpu_ary.get()
+        return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C", copy=True)
+    # ---
+
+    def _export_prop(self, key: str) -> Any:
+        match key:
+            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA :
+                return self._export_gamma_beta(key)
+            case _:
+                return super()._export_prop(key)
+    # ----
+
+    def _import_gamma_beta(self, key: str, value: Any) -> None:
+        attribute = getattr(self, key)
+        cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C", copy=None)
+        attribute.ary.set(cpu_ary)
+        return
+    # ---
+
+    def _import_prop(self, key: str, value) -> None:
+        match key:
+            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA :
+                return self._import_gamma_beta(key, value)
+            case _:
+                return super()._import_prop(key, value)
+    # -----

@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 
 import pycuda.driver as drv  # type: ignore
@@ -10,7 +11,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.utils import matmul_gpu, matvec_gpu
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape, Parameters
 
 class FCGPU(LayerGPU, FC[TensorGPU]):
 
@@ -19,12 +20,44 @@ class FCGPU(LayerGPU, FC[TensorGPU]):
         self.matmul = matmul_gpu
         self.matvec = matvec_gpu
 
+    def _import_biases_db(self, key: str, value: Any) -> None:
+        attribute = getattr(self, key)
+        
+        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C", copy=None)
+        attribute.ary.set(cpu_ary)
+        return
+    # ---
+
+    def _import_prop(self, key: str, value) -> None:
+        match key:
+            case Parameters.BIASES | Parameters.DB:
+                return self._import_biases_db(key, value)
+            # 
+            case _:
+                return super()._import_prop(key, value)
+    # -----
+
+    def _export_biases_db(self, key: str) -> Any:
+        value = getattr(self, key)
+        gpu_ary = value.ary
+        cpu_ary = gpu_ary.get()
+
+        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64, order="C", copy=True)
+    # ---
+
+    def _export_prop(self, key: str) -> Any:
+        match key:
+            case Parameters.BIASES | Parameters.DB:
+                return self._export_biases_db(key)
+            case _:
+                return super()._export_prop(key)
+
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
         self.stream_2 = drv.Stream()
 
         # Weights
-        self.weights_cpu = self.weights_initializer((*prev_shape, *self.shape), self.model.dtype)
+        self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 

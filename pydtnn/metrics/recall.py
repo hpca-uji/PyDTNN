@@ -1,6 +1,6 @@
 from pydtnn.metrics.metric import Metric
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 
 class Recall[T: Array](Metric[T]):

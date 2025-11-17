@@ -1,5 +1,5 @@
 from pydtnn.metrics.metric import Metric
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 
 class CategoricalMAE[T: Array](Metric[T]):

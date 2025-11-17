@@ -1,6 +1,6 @@
 from pydtnn.layers.layer import Layer
-from pydtnn.utils.types import Array
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import ArrayShape
 
 
 class Dropout[T: Array](Layer[T]):

@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
 from pydtnn.backends.gpu.metrics.binary_confusion_matrix_gpu import BinaryConfusionMatrixGPU
 from pydtnn.metrics.f1_score import F1Score
-from pydtnn.utils.types import DTYPE2CTYPE
+from pydtnn.utils.constants import DTYPE2CTYPE
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 

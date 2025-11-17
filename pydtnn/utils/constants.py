@@ -27,6 +27,26 @@ class Components(StrEnum):
     SCHEDULERS = auto()
     TRACERS = auto()
 
+class Parameters(StrEnum):
+    PATHS = auto()
+    CANONICAL_NAME = auto()
+    MODEL_NAME = auto()
+    LAYERS = auto()
+
+    RUNNING_MEAN = auto()
+    RUNNING_VAR = auto()
+    GAMMA = auto()
+    DGAMMA = auto()
+    BETA = auto()
+    DBETA = auto()
+
+    WEIGHTS = auto()
+    DW = auto()
+
+    BIASES = auto()
+    DB = auto()
+
+
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU
 if typing.TYPE_CHECKING:

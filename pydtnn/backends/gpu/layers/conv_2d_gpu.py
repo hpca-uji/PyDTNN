@@ -1,3 +1,4 @@
+from typing import Any
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 import pycuda.driver as drv  #type: ignore
@@ -13,7 +14,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import TensorFormat, format_transpose
-from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
 
 MACROS_NCHW = \
     """
@@ -88,7 +89,7 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
                                                                    gpudirect=self.model.gpudirect,
                                                                    tensor_type=TensorGPU.TensorTypeEnum.FILTER)
             if self.use_bias:
-                self.db_cpu, self.db = TensorGPU.initialize_gpu_direct(self.biases.ary.shape, self.weights.ary.shape,
+                self.db_cpu, self.db = TensorGPU.initialize_gpu_direct(self.biases.ary.shape, self.biases.ary.shape,
                                                                        self.model.dtype, tensor_format=self.model.tensor_format,
                                                                        cudnn_dtype=self.model.cudnn_dtype,
                                                                        gpudirect=self.model.gpudirect)
@@ -112,9 +113,8 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
             case Conv2D.Grouping.POINTWISE:
                 self.initialize_pointwise_grouping()
 
-    def _export_prop(self, key: str):
-        if key != "weights":
-            return super()._export_prop(key)
+    def _export_weights_dw(self, key: str) -> Any:
+        value = getattr(self, key)
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
@@ -122,46 +122,127 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
                     case Conv2D.Grouping.POINTWISE:
                         # NHWC's src: ci, co
                         # NCHW's dst: co, ci
-                        gpu_ary = self.weights.ary
+                        gpu_ary = value.ary
                         cpu_ary = gpu_ary.get()
-                        return np.asarray(format_transpose(cpu_ary, "IO", "OI"), dtype=np.float64, order="C", copy=True)
+                        return np.asarray(format_transpose(np.squeeze(cpu_ary, axis=(1, 2)), "IO", "OI"), dtype=np.float64, order="C", copy=True)
                     case Conv2D.Grouping.DEPTHWISE:
-                        gpu_ary = self.weights.ary
-                        cpu_ary = gpu_ary.get()[0]
+                        gpu_ary = value.ary
+                        cpu_ary = np.squeeze(gpu_ary.get(), axis=0)
                         return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
                     case Conv2D.Grouping.STANDARD:
                         # NHWC's src: ci, kh, kw, co
                         # NCHW's dst: co, ci, kh, kw
-                        gpu_ary = self.weights.ary
+                        gpu_ary = value.ary
                         cpu_ary = gpu_ary.get()
                         return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+                    # case default: (last method's return)
+            case TensorFormat.NCHW:
+                match self.grouping:
+                    case Conv2D.Grouping.POINTWISE:
+                        # NHWC's src: ci, co
+                        # NCHW's dst: co, ci
+                        gpu_ary = value.ary
+                        cpu_ary = gpu_ary.get()
+                        return np.asarray(np.squeeze(cpu_ary, axis=(2, 3)), dtype=np.float64, order="C", copy=True)
+                    case Conv2D.Grouping.DEPTHWISE:
+                        gpu_ary = value.ary
+                        cpu_ary = np.squeeze(gpu_ary.get(), axis=0)
+                        return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
+                    # case default: (next return)
         return super()._export_prop(key)
+    # ------
 
-    def _import_prop(self, key: str, value) -> None:
-        if key != "weights":
-            return super()._import_prop(key, value)
+    def _export_biases_db(self, key: str) -> Any:
+        value = getattr(self, key)
+        gpu_ary = value.ary
+        cpu_ary = gpu_ary.get()
 
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                return np.asarray(np.squeeze(cpu_ary, axis=(0, 1, 2)), dtype=np.float64, order="C", copy=True)
+            case TensorFormat.NCHW:
+                return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C", copy=True)
+            case _:
+                return super()._export_prop(key)
+    # ---
+
+    def _export_prop(self, key: str) -> Any:
+        match key:
+            case Parameters.WEIGHTS | Parameters.DW:
+                return self._export_weights_dw(key)
+            case Parameters.BIASES | Parameters.DB:
+                return self._export_biases_db(key)
+            case _:
+                return super()._export_prop(key)
+    # ----
+
+    def _import_weights_dw(self, key: str, value: Any) -> None:
+        attribute = getattr(self, key)
         match self.model.tensor_format:
             case TensorFormat.NHWC:
                 match self.grouping:
                     case Conv2D.Grouping.POINTWISE:
                         # NCHW's src: co, ci
                         # NHWC's dst: ci, co
-                        cpu_ary = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=None)
-                        self.weights.ary.set(cpu_ary)
+                        cpu_ary = np.asarray(np.expand_dims(format_transpose(value, "OI", "IO"), axis=(1, 2)), dtype=self.model.dtype, order="C", copy=None)
+                        attribute.ary.set(cpu_ary)
                         return
                     case Conv2D.Grouping.DEPTHWISE:
                         cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C", copy=None)
-                        cpu_ary = cpu_ary[None, ...]
-                        self.weights.ary.set(cpu_ary)
+                        cpu_ary = np.expand_dims(cpu_ary, axis=0)
+                        attribute.ary.set(cpu_ary)
+                        return
                     case Conv2D.Grouping.STANDARD:
                         # NCHW's src: co, ci, kh, kw
                         # NHWC's dst: ci, kh, kw, co
                         cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
-                        self.weights.ary.set(cpu_ary)
+                        attribute.ary.set(cpu_ary)
                         return
+                    # case default: (last method's return)
+            case TensorFormat.NCHW:
+                match self.grouping:
+                    case Conv2D.Grouping.POINTWISE:
+                        # NHWC's src: ci, co
+                        # NCHW's dst: co, ci
+                        gpu_ary = attribute.ary
+                        cpu_ary = np.asarray(np.expand_dims(value, axis=(2, 3)), dtype=self.model.dtype, order="C", copy=None)
+                        gpu_ary.set(cpu_ary)
+                        return 
+                    case Conv2D.Grouping.DEPTHWISE:
+                        gpu_ary = attribute.ary
+                        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C", copy=None)
+                        gpu_ary.set(cpu_ary)
+                        return 
+                    # case default: (next return)
+            # case default: (next return)
         return super()._import_prop(key, value)
+    # ---
 
+    def _import_biases_db(self, key: str, value: Any) -> None:
+        attribute = getattr(self, key)
+        
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 1, 2)), dtype=self.model.dtype, order="C", copy=None)
+                attribute.ary.set(cpu_ary)
+                return
+            case TensorFormat.NCHW:
+                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C", copy=None)
+                attribute.ary.set(cpu_ary)
+                return
+            # case default: (next return)
+        return super()._import_prop(key, value)
+    # ---
+
+    def _import_prop(self, key: str, value) -> None:
+        match key:
+            case Parameters.WEIGHTS | Parameters.DW:
+                return self._import_weights_dw(key, value)
+            case Parameters.BIASES | Parameters.DB:
+                return self._import_biases_db(key, value)
+            # 
+            case _:
+                return super()._import_prop(key, value)
     # -----
 
     def forward(self, x: TensorGPU) -> TensorGPU:
@@ -705,8 +786,8 @@ __global__ void {func_name}({T}* x, {T}* bias,
 
         self.forward = self._forward_pointwise
         self.backward = self._backward_pointwise
-        self.fwd_func: Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
-        self.bwd_func: Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
+        self.fwd_func: Function = self.cuda_pointwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
+        self.bwd_func: Function = self.cuda_pointwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
         self.bias_sum_fwd: Function = self.cuda_bias_pointwise_conv_2d_fwd("bias_pointwise_conv_2d_fwd", macros)
     # -----
 

@@ -7,7 +7,7 @@ import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
-from pydtnn.utils.types import DTYPE2CTYPE
+from pydtnn.utils.constants import DTYPE2CTYPE
 
 class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
 

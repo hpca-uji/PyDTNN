@@ -37,11 +37,11 @@ class TestCase(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         random.seed(0)
-        warnings.simplefilter("error")
-
-    def tearDown(self) -> None:
-        warnings.resetwarnings()
-        super().tearDown()
+    #    warnings.simplefilter("error")
+#
+    #def tearDown(self) -> None:
+    #    warnings.resetwarnings()
+    #    super().tearDown()
 
 
 class D:

@@ -1,7 +1,7 @@
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.layer import LayerError
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 
 import numpy as np
 

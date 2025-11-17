@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils import find_component
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 import numpy as np
 
 class Metric[T: Array](PromoteToBackend):

@@ -6,7 +6,7 @@ import numpy as np
 import scipy.stats as stats
 from enum import StrEnum, auto
 from typing import Callable
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils import random
 
 

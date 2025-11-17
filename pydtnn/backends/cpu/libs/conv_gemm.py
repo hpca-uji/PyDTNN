@@ -24,8 +24,8 @@ class ConvGemm:
 
     Methods
     -------
-    conv_gemm(weights, x, biases, vpadding, hpadding, vstride, hstride,
-              vdilation, hdilation, biases_vector)
+    conv_gemm(weights, x, out, vpadding, hpadding, vstride, hstride,
+              vdilation, hdilation, biases)
         Calls the appropriate convGemm function from libconvGemm.so to perform a
         matrix matrix multiplication with an implicit im2col.
 
@@ -91,10 +91,12 @@ class ConvGemm:
             pass
 
     def conv_gemm_nchw(self, weights: np.ndarray, x:np.ndarray, 
-                       biases: np.ndarray | None = None,  # type: ignore
+                       # res originaly was called "biases"
+                       out: np.ndarray | None = None,  # type: ignore
                        vpadding=0, hpadding=0, vstride=1, hstride=1,
                        vdilation=1, hdilation=1, 
-                       biases_vector:np.ndarray | None = None,   # type: ignore
+                       # biases originaly was called "biases_vector"
+                       biases:np.ndarray | None = None,   # type: ignore
                        trans=False, 
                        bn_running_mean: np.ndarray | None = None,  # type: ignore
                        bn_inv_std: np.ndarray | None = None,  # type: ignore
@@ -108,10 +110,10 @@ class ConvGemm:
         The matrix matrix product is in the form C = A * B, where:
             + A is the weights matrix,
             + B is the im2col(x) matrix, and
-            + C is the biases matrix.
+            + C is the out matrix.
 
-        If the biases vector is supplied, the xapplyBias function of the libconvGemm library will be called. This
-        function sums each element of the biases vector to all the elements in the corresponding output channel.
+        If the out vector is supplied, the xapplyBias function of the libconvGemm library will be called. This
+        function sums each element of the out vector to all the elements in the corresponding output channel.
 
         Parameters
         ----------
@@ -119,8 +121,8 @@ class ConvGemm:
             The weights matrix (kn x c x kh x kw).
         x : array_like
             The layers matrix (b x c x h x w).
-        biases : array_like
-            An optional biases matrix (kn x b*ho*wo). If provided, can be overwritten.
+        out : array_like
+            An optional out matrix (kn x b*ho*wo). If provided, can be overwritten.
         vpadding : int
             The vertical padding to be applied to the x matrix.
         hpadding : int
@@ -133,8 +135,8 @@ class ConvGemm:
             The vertical dilation.
         hdilation : int
             The horizontal dilation.
-        biases_vector: array_like
-            The biases that have to be summed to all the elements in each output channel.
+        biases: array_like
+            The out that have to be summed to all the elements in each output channel.
         trans: bool
             Perform the im2col(x) if False, or the im2colT(x) if True.
 
@@ -150,32 +152,32 @@ class ConvGemm:
             kn, ck, kh, kw = weights.shape
             ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            if biases is None:
-                biases = np.zeros((b, kn, ho, wo), weights.dtype, order="C")
+            if out is None:
+                out = np.zeros((b, kn, ho, wo), weights.dtype, order="C")
             else:
-                biases = biases[:b, :]
-                bb, knb, hob, wob = biases.shape
-                assert bb == b, "Batch size of the biases must be the same as in the input!"
-                assert knb == kn, "Number of filters in biases must be the same as in the filter tensor!"
+                out = out[:b, :]
+                bb, knb, hob, wob = out.shape
+                assert bb == b, "Batch size of the out must be the same as in the input!"
+                assert knb == kn, "Number of filters in out must be the same as in the filter tensor!"
                 assert hob == ho, "Biases image height must be the same as the output image height!"
                 assert wob == wo, "Biases image width must be the same as the output image width!"
         else:
-            assert biases is not None, "If using the transposed convGemm, the biases matrix must be supplied"
-            kn, ck, kh, kw = biases.shape
+            assert out is not None, "If using the transposed convGemm, the out matrix must be supplied"
+            kn, ck, kh, kw = out.shape
             bw, knw, ho, wo = weights.shape
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
 
+        out: np.ndarray
         biases: np.ndarray
-        biases_vector: np.ndarray
         bn_running_mean: np.ndarray
         bn_inv_std: np.ndarray
         bn_gamma: np.ndarray
         bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == biases.dtype, \
+        assert weights.dtype == x.dtype == out.dtype, \
             "All the matrices must have the same type of data!"
         assert weights.dtype == self.dtype, \
             "The input matrices must have the same type of data as the one specified when " \
@@ -190,22 +192,22 @@ class ConvGemm:
                               ctypes.c_int(vdilation), ctypes.c_int(hdilation),
                               ctypes.c_void_p(weights.ctypes.data),
                               ctypes.c_void_p(x.ctypes.data),
-                              ctypes.c_void_p(biases.ctypes.data),
-                              ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
+                              ctypes.c_void_p(out.ctypes.data),
+                              ctypes.c_void_p(None if biases is None else biases.ctypes.data),
                               ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
                               ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
                               ctypes.c_void_p(None if bn_gamma is None else bn_gamma.ctypes.data),
                               ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
                               self.ac_pack, self.bc_pack)
 
-        return biases
+        return out
 
-    # TODO: Check for what is "biases" used inside "x_conv_gemm_nhwc" (and set better varible names).
+    # TODO: Check for what is out used inside "x_conv_gemm_nhwc" (and set better varible names).
     def conv_gemm_nhwc(self, weights: np.ndarray, x:np.ndarray, 
-                       biases: np.ndarray | None = None,  # type: ignore
+                       out: np.ndarray | None = None,  # type: ignore
                        vpadding=0, hpadding=0, vstride=1, hstride=1,
                        vdilation=1, hdilation=1, 
-                       biases_vector:np.ndarray | None = None,   # type: ignore
+                       biases:np.ndarray | None = None,   # type: ignore
                        trans=False, 
                        bn_running_mean: np.ndarray | None = None,  # type: ignore
                        bn_inv_std: np.ndarray | None = None,  # type: ignore
@@ -219,32 +221,32 @@ class ConvGemm:
             ck, kh, kw, kn = weights.shape
             ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-            if biases is None:
-                biases = np.zeros((b, ho, wo, kn), weights.dtype, order="C")
+            if out is None:
+                out = np.zeros((b, ho, wo, kn), weights.dtype, order="C")
             else:
-                biases = biases[:b, :]
-                bb, hob, wob, knb = biases.shape
-                assert bb == b, "Batch size of the biases must be the same as in the input!"
+                out = out[:b, :]
+                bb, hob, wob, knb = out.shape
+                assert bb == b, "Batch size of the out must be the same as in the input!"
                 assert hob == ho, "Biases image height must be the same as the output image height!"
                 assert wob == wo, "Biases image width must be the same as the output image width!"
-                assert knb == kn, "Number of filters in biases must be the same as in the filter tensor!"
+                assert knb == kn, "Number of filters in out must be the same as in the filter tensor!"
         else:
-            assert biases is not None, "If using the transposed convGemm, the output matrix must be supplied"
-            ck, kh, kw, kn = biases.shape
+            assert out is not None, "If using the transposed convGemm, the output matrix must be supplied"
+            ck, kh, kw, kn = out.shape
             bw, ho, wo, knw = weights.shape
             assert kn == knw, "Number of filters must be the same!"
             assert b == bw, "Batch size must be the same!"
         assert ck == c, "Number of channels in weights and x should be the same!"
 
+        out: np.ndarray
         biases: np.ndarray
-        biases_vector: np.ndarray
         bn_running_mean: np.ndarray
         bn_inv_std: np.ndarray
         bn_gamma: np.ndarray
         bn_beta: np.ndarray
 
         # Check that dtype is the same on all the matrices
-        assert weights.dtype == x.dtype == biases.dtype, \
+        assert weights.dtype == x.dtype == out.dtype, \
             "All the matrices must have the same type of data!"
         assert weights.dtype == self.dtype, \
             "The input matrices must have the same type of data as the one specified when " \
@@ -259,15 +261,15 @@ class ConvGemm:
                               ctypes.c_int(vdilation), ctypes.c_int(hdilation),
                               ctypes.c_void_p(weights.ctypes.data),
                               ctypes.c_void_p(x.ctypes.data),
-                              ctypes.c_void_p(biases.ctypes.data),
-                              ctypes.c_void_p(None if biases_vector is None else biases_vector.ctypes.data),
+                              ctypes.c_void_p(out.ctypes.data),
+                              ctypes.c_void_p(None if biases is None else biases.ctypes.data),
                               ctypes.c_void_p(None if bn_running_mean is None else bn_running_mean.ctypes.data),
                               ctypes.c_void_p(None if bn_inv_std is None else bn_inv_std.ctypes.data),
                               ctypes.c_void_p(None if bn_gamma is None else bn_gamma.ctypes.data),
                               ctypes.c_void_p(None if bn_beta is None else bn_beta.ctypes.data), ctypes.c_bool(relu),
                               self.ac_pack, self.bc_pack)
 
-        return biases
+        return out
 
     def deconv_gemm_nchw(self, weights: np.ndarray, 
                          dy: np.ndarray, 
@@ -378,7 +380,7 @@ def __free__(pack):
     libc.free(pack)
 
 
-def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
+def time_it_func(x: np.ndarray, w_c: np.ndarray, out: np.ndarray,
                  b: int, kn: int,
                  ho: int, wo: int, kh: int, kw: int,
                  vpadding: int, hpadding: int, vstride: int, hstride: int,
@@ -391,7 +393,7 @@ def time_it_func(x: np.ndarray, w_c: np.ndarray, biases: np.ndarray,
                        vpadding, hpadding, vstride, hstride,
                        vdilation, hdilation)
     res = res @ w_c
-    res += biases.reshape(b * ho * wo, kn)
+    res += out.reshape(b * ho * wo, kn)
     return res
 
 
@@ -412,7 +414,7 @@ def __usage_example__():
     hstride = 2  # Horizontal stride
     vdilation = 1  # Vertical dilation
     hdilation = 1  # Horizontal dilation
-    # Create weights, x, and biases matrices from previous parameters. If no biases
+    # Create weights, x, and out matrices from previous parameters. If no out
     # matrix is provided, a proper one filled with zeros will be automatically
     # created.
     weights = np.zeros((kn, c, kh, kw)).astype(np.float32, order='C')
@@ -422,14 +424,14 @@ def __usage_example__():
     x = np.ones((b, c, h, w)).astype(np.float32, order='C')
     ho = (h + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
     wo = (w + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
-    biases = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
-    print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * biases...")
+    out = (np.ones((kn, b * ho * wo)) * 10).astype(np.float32, order='C')
+    print("Using conv_gemm to compute alpha * weights * im2col(x) + beta * out...")
     conv_gemm = ConvGemm(debug=False)
     conv_gemm_result = conv_gemm.conv_gemm_nchw(weights, x,
                                                 vpadding=vpadding, hpadding=hpadding,
                                                 vstride=vstride, hstride=hstride,
                                                 vdilation=vdilation, hdilation=hdilation,
-                                                biases=biases.reshape(kn, b, ho, wo))
+                                                out=out.reshape(kn, b, ho, wo))
     print(conv_gemm_result)
     print("Sum: ", conv_gemm_result.sum())
     print()
@@ -439,7 +441,7 @@ def __usage_example__():
                        kh, kw, ho, wo,
                        vpadding, hpadding, vstride, hstride, vdilation, hdilation)
     w_c = weights.reshape(kn, -1)
-    im2col_mm_result = (w_c @ x_c + biases).reshape(kn, b, ho, wo).transpose(1, 0, 2, 3)
+    im2col_mm_result = (w_c @ x_c + out).reshape(kn, b, ho, wo).transpose(1, 0, 2, 3)
     print(im2col_mm_result)
     print("Sum: ", im2col_mm_result.sum())
     print("np.allclose: ", np.allclose(conv_gemm_result, im2col_mm_result))
@@ -453,9 +455,9 @@ def __usage_example__():
     print("Times")
     print("-----")
     print("conv_gemm time: {:.4f}".format(conv_gemm_t))
-    im2col_t = timeit(lambda: time_it_func(x, w_c, biases, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
+    im2col_t = timeit(lambda: time_it_func(x, w_c, out, b, kn, ho, wo, kh, kw, vpadding, hpadding, vstride, hstride, vdilation, hdilation),
                       number=10) / 10
-    mm_t = timeit(lambda: w_c @ x_c + biases, number=10) / 10
+    mm_t = timeit(lambda: w_c @ x_c + out, number=10) / 10
     print("im2col+mm time: {:.4f}  (im2col: {:.4f}  mm: {:.4f}".format(im2col_t + mm_t, im2col_t, mm_t))
 
 

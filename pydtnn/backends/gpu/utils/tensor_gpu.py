@@ -4,7 +4,7 @@ from enum import StrEnum, auto
 
 import numpy as np
 
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 
 try:

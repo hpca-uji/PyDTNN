@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.types import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape, Array
 
 
 class ConvGemmVariant[T: Array](Conv2D[T]):
@@ -23,17 +23,14 @@ class ConvGemmVariant[T: Array](Conv2D[T]):
     def _forward_cg_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""
 
-        if self.model.mode is Model.Mode.TRAIN:
-            self.cg_x = x
-
-        biases_vector = self.biases if self.use_bias else None
+        self.cg_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y: np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x,
                                                vpadding=self.vpadding, hpadding=self.hpadding,
                                                vstride=self.vstride, hstride=self.hstride,
                                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                               biases_vector=biases_vector)
+                                               biases=self.biases)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return y
@@ -41,17 +38,14 @@ class ConvGemmVariant[T: Array](Conv2D[T]):
     def _forward_cg_nchw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""
 
-        if self.model.mode is Model.Mode.TRAIN:
-            self.cg_x = x
-
-        biases_vector = self.biases if self.use_bias else None
+        self.cg_x = x
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
-        res = self.cg.conv_gemm_nchw(self.weights, x, biases=None,
+        res = self.cg.conv_gemm_nchw(self.weights, x,
                                      vpadding=self.vpadding, hpadding=self.hpadding,
                                      vstride=self.vstride, hstride=self.hstride,
                                      vdilation=self.vdilation, hdilation=self.hdilation,
-                                     biases_vector=biases_vector)
+                                     biases=self.biases)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
 
@@ -59,7 +53,7 @@ class ConvGemmVariant[T: Array](Conv2D[T]):
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM)
         res: np.ndarray = np.zeros(self.weights.shape, dtype=dy.dtype)
-        self.cg.conv_gemm_nhwc(dy, self.cg_x, biases=res,
+        self.cg.conv_gemm_nhwc(dy, self.cg_x, out=res,
                                vpadding=self.vpadding, hpadding=self.hpadding,
                                vstride=self.vstride, hstride=self.hstride,
                                vdilation=self.vdilation, hdilation=self.hdilation,
@@ -87,7 +81,8 @@ class ConvGemmVariant[T: Array](Conv2D[T]):
         """Version of the backward function that uses the convGemm library"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM)
         res = np.zeros(self.weights.shape, dtype=dy.dtype)
-        self.cg.conv_gemm_nchw(dy, self.cg_x, biases=res,
+        # NOTE: conv_gemm_nchw, in this context seems that is being used as a matrix multiplication instead of a convolution.
+        self.cg.conv_gemm_nchw(dy, self.cg_x, out=res,
                                vpadding=self.vpadding, hpadding=self.hpadding,
                                vstride=self.vstride, hstride=self.hstride,
                                vdilation=self.vdilation, hdilation=self.hdilation,

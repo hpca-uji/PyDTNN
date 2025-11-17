@@ -13,7 +13,7 @@ class AdamCPU(OptimizerCPU, Adam[np.ndarray]):
             self.context[layer.id] = dict[str, int | np.ndarray]()
             self.context[layer.id]["it"] = 0
 
-            for w_ in layer..keys():
+            for w_ in layer.grad_vars.keys():
                 w: np.ndarray = getattr(layer, w_)
                 self.context[layer.id]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
                 self.context[layer.id]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
@@ -22,7 +22,7 @@ class AdamCPU(OptimizerCPU, Adam[np.ndarray]):
         self.context[layer.id]["it"] += 1
         it: int = self.context[layer.id]["it"]  # type: ignore 
 
-        for w_, dw_ in layer..items():
+        for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             w: np.ndarray
             dw: np.ndarray

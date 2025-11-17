@@ -9,7 +9,7 @@ try:
     from pydtnn.comm import MPI
 except Exception:
     pass
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 import numpy as np
 
 
@@ -26,7 +26,7 @@ class LayerCPU(Layer[np.ndarray]):
 
     @property
     def _ary_prop(self) -> set[str]:
-        return {"weights", "biases", *self.grad_vars.keys(), *self.grad_vars.values()}
+        return {*self.grad_vars.keys(), *self.grad_vars.values()}
 
     def _export_prop(self, key: str):
         if key not in self._ary_prop:

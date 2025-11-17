@@ -3,7 +3,7 @@ from typing import Self
 import numpy as np
 
 from pydtnn.layers.layer import Layer, LayerError
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 
 class AdaptiveAveragePool2D[T: Array](Layer):

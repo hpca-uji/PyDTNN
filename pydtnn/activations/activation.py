@@ -1,8 +1,6 @@
 from pydtnn.layer import LayerAndActivationBase
 from pydtnn.utils import find_component
-from pydtnn.utils.types import ArrayShape, Array
-
-from typing import Self
+from pydtnn.utils.constants import ArrayShape, Array
 
 class Activation[T: Array](LayerAndActivationBase):
 

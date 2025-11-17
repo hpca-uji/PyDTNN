@@ -8,7 +8,7 @@ from pydtnn.optimizers.nadam import Nadam
 
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.types import DTYPE2CTYPE
+from pydtnn.utils.constants import DTYPE2CTYPE
 
 
 class NadamGPU(OptimizerGPU, Nadam[TensorGPU]):

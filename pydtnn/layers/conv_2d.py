@@ -1,14 +1,13 @@
 from copy import deepcopy
-from typing import TYPE_CHECKING, Optional, Self
+from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.types import Array
 import numpy as np
 from enum import StrEnum, auto
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 
 class Conv2D[T: Array](Layer[T]):
@@ -55,9 +54,9 @@ class Conv2D[T: Array](Layer[T]):
         self.use_bias = use_bias
         self.weights_initializer: InitializerFunc = weights_initializer
         self.biases_initializer: InitializerFunc = biases_initializer
-        self.grad_vars = {"weights": "dw"}
+        self.grad_vars = {Parameters.WEIGHTS: Parameters.DW}
         if self.use_bias:
-            self.grad_vars["biases"] = "db"
+            self.grad_vars[Parameters.BIASES] = Parameters.DB
         self.debug = False
         # The following attributes will be initialized later
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0

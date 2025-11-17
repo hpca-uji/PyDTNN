@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 class SoftmaxCPU(ActivationCPU, Softmax[np.ndarray]):
 

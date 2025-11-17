@@ -1,6 +1,6 @@
 from math import ceil, log
 import numpy as np
-from pydtnn.utils.types import NetworkAlgEnum
+from pydtnn.utils.constants import NetworkAlgEnum
 
 
 def roofline(intensity, cpu_speed, memory_bw):

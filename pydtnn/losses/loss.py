@@ -1,7 +1,7 @@
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils import find_component
-from pydtnn.utils.types import Array
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import Array
+from pydtnn.utils.constants import ArrayShape
 
 
 class Loss[T: Array](PromoteToBackend):

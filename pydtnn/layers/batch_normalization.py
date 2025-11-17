@@ -2,12 +2,11 @@ import numpy as np
 
 from pydtnn.layers.layer import Layer
 
-from typing import Callable, Self
+from typing import Any, Callable
 
 from pydtnn.utils.initializers import zeros
 
-from pydtnn.utils.types import Array
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 
 class BatchNormalization[T: Array](Layer[T]):
@@ -23,7 +22,7 @@ class BatchNormalization[T: Array](Layer[T]):
         self.epsilon = epsilon
         self.moving_mean_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = moving_mean_initializer
         self.moving_variance_initializer: Callable[[ArrayShape, np.dtype], np.ndarray] = moving_variance_initializer
-        self.grad_vars = {"beta": "dbeta", "gamma": "dgamma"}
+        self.grad_vars = {Parameters.BETA: Parameters.DBETA, Parameters.GAMMA: Parameters.DGAMMA}
         self.sync_stats = sync_stats
         # The following attributes will be initialized later
         self.co = self.ci = self.hi = self.wi = 0
@@ -38,17 +37,21 @@ class BatchNormalization[T: Array](Layer[T]):
         self.dbeta: T = None  # type: ignore
         self.inv_std: np.ndarray = None  # type: ignore
 
-    def _export(self) -> None:
-        data = super()._export()
+    def export(self) -> dict[str, Any]:
+        data = super().export()
 
-        if self.running_mean is not None:
-            data["running_mean"] = self.running_mean
-
-        if self.running_var is not None:
-            data["running_var"] = self.running_var
+        data[Parameters.RUNNING_MEAN] = self._export_prop(Parameters.RUNNING_MEAN)
+        data[Parameters.RUNNING_VAR] = self._export_prop(Parameters.RUNNING_VAR)
 
         return data
     # ---
+
+    def import_(self, data: dict[str, Any]) -> None:
+
+        self._import_prop(Parameters.RUNNING_MEAN, data[Parameters.RUNNING_MEAN])
+        self._import_prop(Parameters.RUNNING_VAR, data[Parameters.RUNNING_VAR])
+
+        return super().import_(data)
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)

@@ -10,7 +10,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.types import DTYPE2CTYPE, ArrayShape
+from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 
 class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock[TensorGPU]):

@@ -18,7 +18,7 @@ except Exception as e:
 
 from numpy import ndarray
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 import pycuda.gpuarray as gpuarray  # type: ignore
 
@@ -44,7 +44,7 @@ class LayerGPU(Layer[TensorGPU]):
 
     @property
     def _ary_prop(self) -> set[str]:
-        return {"weights", "biases", *self.grad_vars.keys(), *self.grad_vars.values()}
+        return {*self.grad_vars.keys(), *self.grad_vars.values()}
 
     def _export_prop(self, key: str):
         if key not in self._ary_prop:

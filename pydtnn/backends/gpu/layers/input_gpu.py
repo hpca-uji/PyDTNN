@@ -3,7 +3,7 @@ import pycuda.gpuarray as gpuarray  #type: ignore
 from pydtnn.layers.input import Input
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 class InputGPU(LayerGPU, Input[TensorGPU]):

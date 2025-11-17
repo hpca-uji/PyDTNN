@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.cython.relu_cython import relu_cython
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.cpu.activations.activation_cpu import ActivationCPU
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 class ReluCPU(ActivationCPU, Relu[np.ndarray]):

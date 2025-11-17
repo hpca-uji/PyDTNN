@@ -7,7 +7,7 @@ from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.layers.layer import ParameterException
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer[TensorGPU]):

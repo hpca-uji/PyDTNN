@@ -6,7 +6,7 @@ from pydtnn.model import Model
 from pydtnn.utils.best_of import BestOf
 
 import numpy as np
-from pydtnn.utils.types import ArrayShape
+from pydtnn.utils.constants import ArrayShape
 
 
 class BestOfVariant[T: np.ndarray](ConvWinogradVariant[np.ndarray], ConvDirectVariant[np.ndarray]):

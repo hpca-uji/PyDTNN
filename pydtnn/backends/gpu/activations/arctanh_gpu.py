@@ -6,7 +6,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 import pycuda.gpuarray as gpuarray # type: ignore
 from pycuda.elementwise import ElementwiseKernel # type: ignore
-from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
+from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 
 class ArctanhGPU(ActivationGPU, Arctanh[TensorGPU]):

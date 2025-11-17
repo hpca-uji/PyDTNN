@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn.optimizers.optimizer import Optimizer
-from pydtnn.utils.types import Array
+from pydtnn.utils.constants import Array
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
