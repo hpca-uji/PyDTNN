@@ -44,7 +44,16 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
     @property
     def canonical_name(self) -> str:
+        frontend = getattr(self, "_frontend", self)
+        return type(frontend).__name__
+
+    @property
+    def name(self) -> str:
         return self.__class__.__name__
+
+    @property
+    def name_with_id(self) -> str:
+        return f"{self._id_prefix}{self.name}"
 
     @property
     def _id_prefix(self) -> str:
@@ -91,7 +100,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def show(self, attrs: str | None = "") -> None:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
-        print(f"|{self.id:^7d}|{self.canonical_name:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
+        print(f"|{self.id:^7d}|{self.name:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
 
     def print_in_convdirect_format(self):
         pass
@@ -106,78 +115,63 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def update_weights(self, optimizer: Optimizer) -> None:
         optimizer.update(self)
 
-    def export(self):
-        data = self._export()
+    def _export_prop(self, key: str):
+        match key:
+            case "paths":
+                return [
+                    [layer.export() for layer in path]
+                    for path in self.paths
+                ]
 
-        for key, value in data.items():
-            if isinstance(value, np.ndarray):
-                data[key] = np.asarray(value, dtype=np.float64, order="C", copy=None)
+            case _:
+                return getattr(self, key, None)
 
-        return deepcopy(data)
+    def _import_prop(self, key: str, value) -> None:
+        match key:
+            case "paths":
+                for layer_path, data_path in zip(self.paths, value):
+                    for layer, layer_data in zip(layer_path, data_path):
+                        layer.import_(layer_data)
 
-    def import_(self, data: dict[str, Any] | LayerAndActivationBase) -> None:
-        if isinstance(data, LayerAndActivationBase):
-            data = data.export()
+            case _:
+                setattr(self, key, value)
 
-        data = deepcopy(data)
-
-        for key, value in data.items():
-            if isinstance(value, np.ndarray):
-                data[key] = np.asarray(value, dtype=self.model.dtype, order="C", copy=None)
-
-        self._import(data)
-
-    def _export(self) -> dict[str, Any]:
+    def export(self) -> dict[str, Any]:
         data = {}
 
-        data["name"] = type(self._frontend).__name__
-
-        if self.x is not None:
-            data["x"] = self.x
-
-        if self.y is not None:
-            data["y"] = self.y
+        data["canonical_name"] = self._export_prop("canonical_name")
 
         if self.weights is not None:
-            data["weights"] = self.weights
+            data["weights"] = self._export_prop("weights")
 
         if self.biases is not None:
-            data["biases"] = self.biases
+            data["biases"] = self._export_prop("biases")
 
         for key, value in self.grad_vars.items():
-            data[key] = getattr(self, key)
-            data[value] = getattr(self, value)
+            data[key] = self._export_prop(key)
+            data[value] = self._export_prop(value)
 
-        paths = data["paths"] = []
-        for path in self.paths:
-            paths.append([layer.export() for layer in path])
+        if self.paths:
+            data["paths"] = self._export_prop("paths")
 
         return data
 
-    def _import(self, data) -> None:
+    def import_(self, data) -> None:
+        if data["canonical_name"] != self.canonical_name:
+            raise TypeError(f"self type must be the same as the stored data type  (self: {self.canonical_name}, stored: {data["canonical_name"]})")
 
-        if data["name"] != type(self._frontend).__name__:
-            raise TypeError(f"self type must be the same as the stored data type  (self: {type(self._frontend).__name__}, stored: {data["name"]})")
+        if "weights" in data:
+            self._import_prop("weights", data["weights"])
 
-        if self.x is not None:
-            self.x = data["x"]
-
-        if self.y is not None:
-            self.y = data["y"]
-
-        if self.weights is not None:
-            self.weights = data["weights"]
-
-        if self.biases is not None:
-            self.biases = data["biases"]
+        if "biases" in data:
+            self._import_prop("biases", data["biases"])
 
         for key, value in self.grad_vars.items():
-            setattr(self, key, data[key])
-            setattr(self, value, data[value])
+            self._import_prop(key, data[key])
+            self._import_prop(value, data[value])
 
-        for layer_path, data_path in zip(self.paths, data["paths"]):
-            for layer, layer_data in zip(layer_path, data_path):
-                layer.import_(layer_data)
+        if "paths" in data:
+            self._import_prop("paths", data["paths"])
     # -----
 
 

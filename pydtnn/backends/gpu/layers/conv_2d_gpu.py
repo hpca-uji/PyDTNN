@@ -12,7 +12,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.backends.gpu.layers.layer_gpu import LayerGPU
 from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 from pydtnn.utils.types import ArrayShape, DTYPE2CTYPE
 
 MACROS_NCHW = \
@@ -111,6 +111,57 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
                 self.initialize_depthwise_grouping()
             case Conv2D.Grouping.POINTWISE:
                 self.initialize_pointwise_grouping()
+
+    def _export_prop(self, key: str):
+        if key != "weights":
+            return super()._export_prop(key)
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                match self.grouping:
+                    case Conv2D.Grouping.POINTWISE:
+                        # NHWC's src: ci, co
+                        # NCHW's dst: co, ci
+                        gpu_ary = self.weights.ary
+                        cpu_ary = gpu_ary.get()
+                        return np.asarray(format_transpose(cpu_ary, "IO", "OI"), dtype=np.float64, order="C", copy=True)
+                    case Conv2D.Grouping.DEPTHWISE:
+                        gpu_ary = self.weights.ary
+                        cpu_ary = gpu_ary.get()[0]
+                        return np.asarray(cpu_ary, dtype=np.float64, order="C", copy=True)
+                    case Conv2D.Grouping.STANDARD:
+                        # NHWC's src: ci, kh, kw, co
+                        # NCHW's dst: co, ci, kh, kw
+                        gpu_ary = self.weights.ary
+                        cpu_ary = gpu_ary.get()
+                        return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+        return super()._export_prop(key)
+
+    def _import_prop(self, key: str, value) -> None:
+        if key != "weights":
+            return super()._import_prop(key, value)
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                match self.grouping:
+                    case Conv2D.Grouping.POINTWISE:
+                        # NCHW's src: co, ci
+                        # NHWC's dst: ci, co
+                        cpu_ary = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=None)
+                        self.weights.ary.set(cpu_ary)
+                        return
+                    case Conv2D.Grouping.DEPTHWISE:
+                        cpu_ary = np.asarray(value, dtype=self.model.dtype, order="C", copy=None)
+                        cpu_ary = cpu_ary[None, ...]
+                        self.weights.ary.set(cpu_ary)
+                    case Conv2D.Grouping.STANDARD:
+                        # NCHW's src: co, ci, kh, kw
+                        # NHWC's dst: ci, kh, kw, co
+                        cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
+                        self.weights.ary.set(cpu_ary)
+                        return
+        return super()._import_prop(key, value)
+
     # -----
 
     def forward(self, x: TensorGPU) -> TensorGPU:
