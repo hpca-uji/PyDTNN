@@ -87,19 +87,16 @@ class ModelCommonTestCase(TestCase):
         loss_func.initialize()
         return model1, loss_func
 
-    @staticmethod
-    def get_model2(model_name: str, overwrite_params: dict | None = None) -> Model:
+    def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
         raise NotImplementedError()
 
-    @staticmethod
-    def copy_weights_and_biases(model1: Model, model2: Model):
+    def copy_weights_and_biases(self, model1: Model, model2: Model):
         """
         Copy weights and biases from Model 1 to Model 2
         """
         model2.import_(model1)
 
-    @staticmethod
-    def get_first_dx(model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
+    def get_first_dx(self, model: Model, loss_func: Loss, x: np.ndarray) -> np.ndarray:
         # random y target
         y_targ = np.asarray(random.random(x.shape), dtype=model.dtype, order='C', copy=True)
         # obtain first dx1
@@ -107,8 +104,7 @@ class ModelCommonTestCase(TestCase):
         loss, dx = loss_func.compute(x, y_targ, global_batch_size)
         return dx
 
-    @staticmethod
-    def print_stats(x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:
+    def print_stats(self, x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:
         
         diff = x1 - x2
         return '\n' \

@@ -24,8 +24,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
     model1_desc = "using the CPU backend"
     model2_desc = "using the GPU backend"
 
-    @staticmethod
-    def get_model2(model_name: str) -> Model:
+    def get_model2(self, model_name: str) -> Model:
         # GPU model
         params = Params()
         params.model_name = model_name
@@ -39,8 +38,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
             raise unittest.SkipTest(f"Model {model_name} incompatible with {params_dict['dataset_name']}") from exc
         return model2
 
-    @staticmethod
-    def copy_weights_and_biases(model1: Model, model2: Model):
+    def copy_weights_and_biases(self, model1: Model, model2: Model):
         """
         Copy weights and biases from Model 1 to Model 2
         """

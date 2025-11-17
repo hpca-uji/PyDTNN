@@ -20,8 +20,7 @@ class ModelDTypeTestCase(ModelCommonTestCase):
     model1_desc = "using float32"
     model2_desc = "using float64"
 
-    @staticmethod
-    def get_model2(model_name: str, overwrite_params: dict | None = None) -> Model:
+    def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
         # CPU model with float64
         params = Params()
         # Begin of params configuration

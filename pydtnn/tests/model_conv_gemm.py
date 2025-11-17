@@ -20,8 +20,7 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
     model1_desc = "using Im2Col+MM"
     model2_desc = "using ConvGemm"
 
-    @staticmethod
-    def get_model2(model_name: str, overwrite_params: dict | None = None) -> Model:
+    def get_model2(self, model_name: str, overwrite_params: dict | None = None) -> Model:
         # CPU model with convGemm
         params = Params()
         # Begin of params configuration
