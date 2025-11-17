@@ -151,7 +151,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                     t_backward += time() - t
 
                 if True:
-                    # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{name}_{opt.canonical_name}_{i}.bin", native_traces=True):
+                    # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{name}_{opt.name}_{i}.bin", native_traces=True):
                     t = time()
                     for layer in reversed(model.layers):
                         layer.update_weights(opt)
@@ -202,7 +202,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                     x = layer.backward(x)
                 t_backward += time() - t
             if True:
-                # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{test}_{opt.canonical_name}_{i}.bin", native_traces=True, ):
+                # with memray.Tracker(f"./z_memray/{KWARGS['tensor_format']}/opt/{test}_{opt.name}_{i}.bin", native_traces=True, ):
                 t = time()
                 for layer in reversed(model.layers):
                     layer.update_weights(opt)

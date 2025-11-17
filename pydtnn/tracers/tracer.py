@@ -125,7 +125,7 @@ class Tracer(metaclass=PostInitCaller):
         ops_constants = [(event._name_, event._value_) for event in PYDTNN_OPS_EVENT_enum]
         for layer in model.get_all_layers():
             for (name, val) in mdl_constants:
-                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.canonical_name_with_id}_{name[11:].lower()}"
+                mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.name_with_id}_{name[11:].lower()}"
             for (name, val) in ops_constants:
                 ops_event[
                     layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.name}_{name[11:].lower()}"

@@ -1,5 +1,6 @@
 import unittest
 import warnings
+import numpy as np
 
 import pycuda.gpuarray as gpuarray
 
@@ -66,7 +67,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
                     gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
                                                  gpu_layer.model.cudnn_dtype)
 
-    def do_model2_forward_pass(self, model2: Model, x1: list[TensorGPU]) -> list[TensorGPU]:
+    def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 forward pass
         """
@@ -77,7 +78,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
             try:
                 model2.layers[i - 1].y.ary.set(x1[i - 1])
             except ValueError:
-                warnings.warn(f"Output of model 1 {model2.layers[i - 1].canonical_name_with_id}"
+                warnings.warn(f"Output of model 1 {model2.layers[i - 1].name_with_id}"
                               f" is not ordered [x.strides: {x1[i - 1].strides}")
                 model2.layers[i - 1].y.ary.set(x1[i - 1].copy())
             out = layer.forward(model2.layers[i - 1].y)
@@ -96,7 +97,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
             try:
                 model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape))
             except ValueError:
-                warnings.warn(f"dx of model 1 {model2.layers[i + 1].canonical_name_with_id}"
+                warnings.warn(f"dx of model 1 {model2.layers[i + 1].name_with_id}"
                               f" is not ordered [dx.strides: {dx1[i + 1].strides}")
                 model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape).copy())
             out = layer.backward(model2.layers[i + 1].dx)

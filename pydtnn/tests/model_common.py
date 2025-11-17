@@ -176,7 +176,7 @@ class ModelCommonTestCase(TestCase):
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
                 self.assertTrue(np.allclose(x1[i], x2[i], rtol=rtol, atol=atol),
-                                f"Forward result from layers {layer.canonical_name_with_id} differ"
+                                f"Forward result from layers {layer.name_with_id} differ"
                                 f" ({self.print_stats(x1[i], x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
@@ -191,12 +191,12 @@ class ModelCommonTestCase(TestCase):
                 if dx1[i].shape == dx2[i].shape:
                     allclose = np.allclose(dx1[i], dx2[i], rtol=rtol, atol=atol)
                 else:
-                    warnings.warn(f"dx shape on both models for {layer.canonical_name_with_id} differ:"
+                    warnings.warn(f"dx shape on both models for {layer.name_with_id} differ:"
                                   f" [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
                     # Try flattening both
                     allclose = np.allclose(dx1[i].flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
-                                f"Backward result from layer {layer.canonical_name_with_id} differ"
+                                f"Backward result from layer {layer.name_with_id} differ"
                                 f" ({self.print_stats(dx1[i], dx2[i], rtol, atol)})")
 
     def do_test_model(self, model_name: str):
