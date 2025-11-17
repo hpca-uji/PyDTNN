@@ -115,13 +115,13 @@ class ModelTensorTestCase(ModelCommonTestCase):
                         allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol,
                                                atol=atol)
                         self.assertTrue(allclose,
-                                        f"Backward dw from layer {layer.canonical_name_with_id} differ"
+                                        f"Backward dw from layer {layer.name_with_id} differ"
                                         f" ({self.print_stats(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol, atol)})")
                 else:
                     if layer.dw.shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw, model1.layers[i].dw, rtol=rtol, atol=atol)
                         self.assertTrue(allclose,
-                                        f"Backward dw from layer {layer.canonical_name_with_id} differ"
+                                        f"Backward dw from layer {layer.name_with_id} differ"
                                         f" ({self.print_stats(layer.dw, model1.layers[i].dw, rtol, atol)})")
         if verbose_test():
             print()
@@ -132,7 +132,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 # layer.db:np.ndarray
                 allclose = np.allclose(layer.db, model1.layers[i].db, rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
-                                f"Backward db from layer {layer.canonical_name_with_id} differ"
+                                f"Backward db from layer {layer.name_with_id} differ"
                                 f" ({self.print_stats(layer.db, model1.layers[i].db, rtol, atol)})")
         if verbose_test():
             print()

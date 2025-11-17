@@ -778,6 +778,9 @@ class Model[T: Array]:
     def export(self):
         data = {}
 
+        if self.model_name is not None:
+            data["model_name"] = self.model_name
+
         data["layers"] = [
             layer.export()
             for layer in self.layers
@@ -788,6 +791,10 @@ class Model[T: Array]:
     def import_(self, data: "dict[str, Any] | Model") -> None:
         if isinstance(data, Model):
             data = data.export()
+
+        model_name = str(data.get("model_name"))
+        if model_name != self.model_name:
+            warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})")
 
         for layer, data in zip(self.layers, data["layers"]):
             layer.import_(data)

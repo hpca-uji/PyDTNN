@@ -128,7 +128,7 @@ class Tracer(metaclass=PostInitCaller):
                 mdl_event[layer.id * PYDTNN_MDL_EVENTS + val] = f"{layer.canonical_name_with_id}_{name[11:].lower()}"
             for (name, val) in ops_constants:
                 ops_event[
-                    layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.canonical_name}_{name[11:].lower()}"
+                    layer.id * PYDTNN_OPS_EVENTS + val] = f"{layer.id:03}_{layer.name}_{name[11:].lower()}"
 
     @abc.abstractmethod
     def _emit_event(self, evt_type: int, evt_val: int, stream=None):

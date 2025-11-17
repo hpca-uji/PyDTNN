@@ -17,10 +17,7 @@ class ParameterException(LayerError):
 
 
 class Layer[T: Array](LayerAndActivationBase[T]):
-
-    @property
-    def canonical_name_with_id(self) -> str:
-        return f"{self._id_prefix}{self.canonical_name}"
+    pass
 
 
 def select(name: str) -> type[Layer]:

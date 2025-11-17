@@ -24,6 +24,24 @@ class LayerCPU(Layer[np.ndarray]):
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
 
+    @property
+    def _ary_prop(self) -> set[str]:
+        return {"weights", "biases", *self.grad_vars.keys(), *self.grad_vars.values()}
+
+    def _export_prop(self, key: str):
+        if key not in self._ary_prop:
+            return super()._export_prop(key)
+
+        ary = getattr(self, key)
+        return np.asarray(ary, dtype=np.float64, order="C", copy=True)
+
+    def _import_prop(self, key: str, value) -> None:
+        if key not in self._ary_prop:
+            return super()._import_prop(key, value)
+
+        ary = getattr(self, key)
+        ary[:] = np.asarray(value, dtype=self.model.dtype, order="C", copy=True)
+
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
             return

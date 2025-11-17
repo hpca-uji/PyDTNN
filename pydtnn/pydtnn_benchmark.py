@@ -92,6 +92,7 @@ def main():
     # or alternatively, define any custom data
     # mode.dataset = CustomDataset(model, x, y)
     history = model.train_dataset()
+    breakpoint()
     # Barrier
     if model.parallel == "data":
         model.comm.Barrier()

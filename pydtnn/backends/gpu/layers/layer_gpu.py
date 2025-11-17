@@ -1,5 +1,7 @@
 from collections import abc
 
+import numpy as np
+
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -40,25 +42,25 @@ class LayerGPU(Layer[TensorGPU]):
         self.one_vec_cpu: ndarray = None  #type: ignore
         self.one_vec_gpu: gpuarray.GPUArray = None  #type: ignore
 
-    def _export(self) -> dict:
-        data = super()._export()
+    @property
+    def _ary_prop(self) -> set[str]:
+        return {"weights", "biases", *self.grad_vars.keys(), *self.grad_vars.values()}
 
-        for key, value in data.items():
-            if isinstance(value, TensorGPU):
-                data[key] = value.ary.get()
+    def _export_prop(self, key: str):
+        if key not in self._ary_prop:
+            return super()._export_prop(key)
 
-        return data
+        gpu_ary = getattr(self, key).ary
+        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C", copy=True)
+        return cpu_ary
 
-    def _import(self, data) -> None:
-        ref = super()._export()
+    def _import_prop(self, key: str, value) -> None:
+        if key not in self._ary_prop:
+            return super()._import_prop(key, value)
 
-        for key, value in ref.items():
-            if isinstance(value, TensorGPU):
-                ary = value.ary
-                ary.set(data[key].reshape(ary.shape))
-                data[key] = ary
-
-        return super()._import(data)
+        gpu_ary = getattr(self, key).ary
+        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C", copy=True)
+        gpu_ary.set(cpu_ary)
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

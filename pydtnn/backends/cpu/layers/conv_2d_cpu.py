@@ -34,8 +34,9 @@ class Conv2DCPU(LayerCPU,
         self.fwd_time = None  # type: ignore
         self.bwd_time = None  # type: ignore
 
-    def _export(self) -> dict:
-        data = super()._export()
+    def _export_prop(self, key: str):
+        if key != "weights":
+            return super()._export_prop(key)
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
@@ -43,28 +44,31 @@ class Conv2DCPU(LayerCPU,
                     case Conv2D.Grouping.POINTWISE:
                         # NHWC's src: ci, co
                         # NCHW's dst: co, ci
-                        data["weights"] = format_transpose(data["weights"], "IO", "OI")
+                        return np.asarray(format_transpose(self.weights, "IO", "OI"), dtype=np.float64, order="C", copy=True)
                     case Conv2D.Grouping.STANDARD:
                         # NHWC's src: ci, kh, kw, co
                         # NCHW's dst: co, ci, kh, kw
-                        data["weights"] = format_transpose(data["weights"], "IHWO", "OIHW")
+                        return np.asarray(format_transpose(self.weights, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+        return super()._export_prop(key)
 
-        return data
+    def _import_prop(self, key: str, value) -> None:
+        if key != "weights":
+            return super()._import_prop(key, value)
 
-    def _import(self, data) -> None:
         match self.model.tensor_format:
             case TensorFormat.NHWC:
                 match self.grouping:
                     case Conv2D.Grouping.POINTWISE:
                         # NCHW's src: co, ci
                         # NHWC's dst: ci, co
-                        data["weights"] = format_transpose(data["weights"], "OI", "IO")
+                        self.weights = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=True)
+                        return
                     case Conv2D.Grouping.STANDARD:
                         # NCHW's src: co, ci, kh, kw
                         # NHWC's dst: ci, kh, kw, co
-                        data["weights"] = format_transpose(data["weights"], "OIHW", "IHWO")
-
-        super()._import(data)
+                        self.weights = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=True)
+                        return
+        return super()._import_prop(key, value)
 
     def initialize_i2c(self) -> None:
         # self.dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
@@ -205,5 +209,5 @@ class Conv2DCPU(LayerCPU,
                 getattr(self, f'_backward_{variant}_{tensor_format}'))
 
     @property
-    def canonical_name(self) -> str:
-        return f"{super().canonical_name}_{self.variant}"
+    def name(self) -> str:
+        return f"{super().name}_{self.variant}"
