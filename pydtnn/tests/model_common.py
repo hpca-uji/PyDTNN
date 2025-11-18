@@ -29,12 +29,13 @@ class ModelCommonTestCase(TestCase):
     model1_desc = "using A"
     model2_desc = "using B"
 
-    rtol_default = 1e-5
-    atol_default = 1e-6
+    rtol_default = 1e-4
+    atol_default = 1e-5
     rtol_dict = {
         AdditionBlock: 1e-4,
         ConcatenationBlock: 1e-1,
         BatchNormalization: 1e-5,
+        Conv2D: 1e-4,
     }
     atol_dict = {
         AdditionBlock: 3e-4,

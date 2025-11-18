@@ -9,7 +9,6 @@ import itertools
 from math import ceil
 import operator
 import os
-import sys
 import time
 from functools import cached_property, reduce
 from timeit import default_timer as timer

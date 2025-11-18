@@ -29,6 +29,9 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
         self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
+        # self.inv_std = 1.0 / np.sqrt(self.running_var + self.epsilon)
+        self.inv_std = np.sqrt(self.running_var + self.epsilon, dtype=self.model.dtype, order="C")
+        np.reciprocal(self.inv_std, out=self.inv_std, dtype=self.model.dtype)
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".

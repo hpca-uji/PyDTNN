@@ -8,7 +8,6 @@ import csv
 from itertools import chain
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
-from pydtnn.utils.tensor import TensorFormat
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
