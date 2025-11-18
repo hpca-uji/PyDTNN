@@ -110,7 +110,6 @@ class ModelTensorTestCase(ModelCommonTestCase):
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
                     # layer.dw:np.ndarray
-                    print(f"{layer} {layer.dw.shape=} {layer.dw.transpose(1, 2, 3, 0).shape=} {layer.model.tensor_format=}")
                     if layer.dw.transpose(1, 2, 3, 0).shape == model1.layers[i].dw.shape:
                         allclose = np.allclose(layer.dw.transpose(1, 2, 3, 0), model1.layers[i].dw, rtol=rtol,
                                                atol=atol)
