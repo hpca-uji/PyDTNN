@@ -21,27 +21,29 @@ def verbose_test():
 
 class Params:
     def __init__(self) -> None:
-        self.dtype: np.dtype = np.dtype(np.float32)
         self.parallel = "sequential"
+        self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC.upper()
 
-        model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
-        self.model_name = model_name
+        # model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
+        # self.model_name = model_name
 
-        dataset_name = os.environ.get("PYDTNN_TEST_DATASET", "cifar10")
-        self.dataset_name = dataset_name
-        self.dataset_path = f"datasets/{dataset_name}"
+        self.dataset_name = "synthetic"
+        self.synthetic_train_samples = "50000"
+        self.synthetic_test_samples = "10000"
+        self.synthetic_input_shape = "3,32,32"
+        self.synthetic_output_shape = "10"
 
 
 class TestCase(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         random.seed(0)
-    #    warnings.simplefilter("error")
-#
-    #def tearDown(self) -> None:
-    #    warnings.resetwarnings()
-    #    super().tearDown()
+        warnings.simplefilter("error")
+
+    def tearDown(self) -> None:
+        warnings.resetwarnings()
+        super().tearDown()
 
 
 class D:
