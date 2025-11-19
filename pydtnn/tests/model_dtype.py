@@ -4,8 +4,8 @@ import numpy as np
 
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests.common import Params
-from pydtnn.tests.model_common import ModelCommonTestCase
+from pydtnn.tests.abstract.common import Params
+from pydtnn.tests.abstract.model_common import ModelCommonTestCase
 
 
 class ModelDTypeTestCase(ModelCommonTestCase):

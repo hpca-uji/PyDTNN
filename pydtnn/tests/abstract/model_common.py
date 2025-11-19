@@ -12,10 +12,10 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.losses.loss import Loss, select as select_loss
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
-from pydtnn.tests.common import verbose_test
+from pydtnn.tests.abstract.common import verbose_test
 
 from pydtnn.layers.layer import LayerAndActivationBase
-from pydtnn.tests.common import Params, TestCase
+from pydtnn.tests.abstract.common import Params, TestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils import print_with_header, random
 

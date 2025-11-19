@@ -26,7 +26,7 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.utils import random
 from pydtnn.utils.tensor import format_reshape
-from pydtnn.tests.common import Params, TestCase, verbose_test
+from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils.constants import Parameters
 
 

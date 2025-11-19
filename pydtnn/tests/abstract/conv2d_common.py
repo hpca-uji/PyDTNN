@@ -3,8 +3,8 @@ import inspect
 import numpy as np
 
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.tests.common import verbose_test, D
-from pydtnn.tests.common import TestCase
+from pydtnn.tests.abstract.common import verbose_test, D
+from pydtnn.tests.abstract.common import TestCase
 from pydtnn.utils import print_with_header, random
 
 

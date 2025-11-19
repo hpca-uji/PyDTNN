@@ -1,0 +1,6 @@
+"""Fused layers test group"""
+
+from pydtnn.tests.conv2d_relu import Conv2DReluTestCase
+from pydtnn.tests.conv2d_batch_normalization import Conv2DBatchNormalizationTestCase
+from pydtnn.tests.conv2d_batch_normalization_relu import Conv2DBatchNormalizationReluTestCase
+from pydtnn.tests.batch_normalization_relu import BatchNormalizationReluTestCase

@@ -1,12 +1,12 @@
 from warnings import warn
 
-# Implementation
+# Layers
 try:
     from pydtnn.tests.layer_pytorch import LayerPyTorchTestCase
 except Exception:
     warn("PyTorch not available, skiping tests!")
 
-# Convolutions
+# Fused
 from pydtnn.tests.conv2d_group import Conv2DGroupTestCase
 from pydtnn.tests.conv2d_relu import Conv2DReluTestCase
 from pydtnn.tests.conv2d_batch_normalization import Conv2DBatchNormalizationTestCase

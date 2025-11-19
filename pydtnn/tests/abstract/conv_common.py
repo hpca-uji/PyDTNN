@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.tests.common import verbose_test, D, alexnet_layers, TestCase
+from pydtnn.tests.abstract.common import verbose_test, D, alexnet_layers, TestCase
 from pydtnn.utils import print_with_header, random
 
 

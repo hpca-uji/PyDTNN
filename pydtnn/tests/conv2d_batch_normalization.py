@@ -6,9 +6,9 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
-from pydtnn.tests.common import D
-from pydtnn.tests.common import Params
-from pydtnn.tests.conv2d_common import Conv2DCommonTestCase
+from pydtnn.tests.abstract.common import D
+from pydtnn.tests.abstract.common import Params
+from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.initializers import glorot_uniform, zeros
 

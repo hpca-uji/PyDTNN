@@ -2,7 +2,7 @@
 
 ## Main
 ```sh
-python -m unittest -v pydtnn.tests
+python -m unittest -v pydtnn.tests.groups.all
 ```
 _Note: exhaustive tests are skipped_
 
