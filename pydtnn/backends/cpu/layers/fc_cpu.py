@@ -47,8 +47,7 @@ class FCCPU(LayerCPU, FC[np.ndarray]):
     # ----
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        if self.model.mode is Model.Mode.TRAIN:
-            self.x = x
+        self.x = x
         dy = self.dy[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)

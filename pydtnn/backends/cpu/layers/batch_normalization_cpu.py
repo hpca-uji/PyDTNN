@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.cython.bn_training_cython import bn_training_bwd_cython
+from pydtnn.cython.bn_training_cython import bn_training_bwd_cython  #, bn_training_fwd_cython
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
@@ -34,11 +34,10 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.mu: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.mu_var_momentum: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.var_eps: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self._mean_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self._var_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.std: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        
         if self.spatial:
             self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
             self.y = np.zeros((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
@@ -62,45 +61,45 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         # else: x = x (no reshape needed)
 
         y: np.ndarray = self.y[:x.shape[0], :]
-
         self.xn = x
-        _mean: np.ndarray = None  # type: ignore (They will be asigned later)
-        _var: np.ndarray = None  # type: ignore (They will be asigned later)
 
         if self.model.mode is Model.Mode.EVALUATE:
             _mean = self.running_mean
             _var = self.running_var
         else:  # ModelModeEnum.TRAIN:
-            _mean = np.mean(self.xn, axis=None, dtype=self.model.dtype)
-            _var = np.var(self.xn, axis=None, dtype=self.model.dtype)
+            _mean = np.mean(self.xn, axis=0, dtype=self.model.dtype)
+            _var = np.var(self.xn, axis=0, dtype=self.model.dtype)
 
             inv_momentum = (1.0 - self.momentum)
             #self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
             np.multiply(self.momentum, self.running_mean, out=self.running_mean,
                         dtype=self.model.dtype)
-            _mean_inv = np.multiply(inv_momentum, _mean, dtype=self.model.dtype, order="C")
-            np.add(self.running_mean, _mean_inv, out=self.running_mean, 
+            np.multiply(inv_momentum, _mean, out=self._mean_inv,
+                         dtype=self.model.dtype, order="C")
+            np.add(self.running_mean, self._mean_inv, out=self.running_mean, 
                    dtype=self.model.dtype)
             
             #self.running_var = self.momentum * self.running_var + inv_momentum * _var
             np.multiply(self.momentum, self.running_var, out=self.running_var,
                         dtype=self.model.dtype)
-            _var_inv = np.multiply(inv_momentum, _var, dtype=self.model.dtype, order="C")
-            np.add(self.running_var, _var_inv, out=self.running_var,
+            np.multiply(inv_momentum, _var, out=self._var_inv,
+                        dtype=self.model.dtype, order="C")
+            np.add(self.running_var, self._var_inv, out=self.running_var,
                    dtype=self.model.dtype)
         # anyways:
 
-        # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
+        #bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
+        #y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
         np.subtract(self.xn, _mean, out=self.xn,
             dtype=self.model.dtype)
-        
+
         np.add(_var, self.epsilon, out=self.std, 
-               dtype=self.model.dtype, order="C")
+                dtype=self.model.dtype, order="C")
         np.sqrt(self.std, out=self.std,
                 dtype=self.model.dtype)
+
         np.divide(self.xn, self.std, out=self.xn, 
-                  dtype=self.model.dtype)
-        
+                    dtype=self.model.dtype)
         np.multiply(self.gamma, self.xn, out=y,
                     dtype=self.model.dtype)
         np.add(y, self.beta, out=y,

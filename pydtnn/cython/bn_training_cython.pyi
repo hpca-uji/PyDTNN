@@ -7,25 +7,28 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 
 def bn_training_fwd_cython[T: _npDT](x: _npDT_2Dims[T],
+                                     y: _npDT_2Dims[T],
+                                     xn: _npDT_2Dims[T],
+                                     std: _npDT_1Dims[T],
                                      gamma: _npDT_1Dims[T],
                                      beta: _npDT_1Dims[T],
-                                     running_mean: _npDT_1Dims[T],
-                                     running_var: _npDT_1Dims[T],
-                                     momentum: float,
-                                     eps: float) -> tuple[_npDT_2Dims[T], _npDT_1Dims[T], _npDT_2Dims[T]]:
+                                     mean: _npDT_1Dims[T],
+                                     var: _npDT_1Dims[T],
+                                     eps: float) -> None:
     """
     Args:
-        x (np.ndarray[npDT, ndim=2]): The 4 dimensional input's ndarray.
-        running_mean (npDT_1Dims): The 1 dimensions ndarray that stores the running mean.
-        inv_std (npDT_1Dims): The input's 1 dimensions thtat stores the inverse standard deviation
-        gamma (npDT_1Dims): The input's 1 dimensions ndarray the gamma's values
-        beta (npDT_1Dims): The input's 1 dimensions ndarray the beta's values
+        x (npDT_2Dims): The input.
+        y (npDT_2Dims): 2-dimensional ndarray where the output is stored.
+        xn (npDT_2Dims): 2-dimensional ndarray where the mean of x is stored.
+        std (npDT_1Dims): 2-dimensional ndarray where the standard deviation of x is stored.
+        gamma (npDT_1Dims): batch normalization gamma.
+        beta (npDT_1Dims): batch normalization beta.
+        mean (npDT_1Dims): input means.
+        var (npDT_1Dims): input variances.
+        eps (float): epsilon.
 
     Returns:
-        out: A tuple where:
-            - y (np.ndarray): A 2 dimensional ndarray that stores the output.
-            - std (np.ndarray): A 1 dimensional ndarray that stores the standard deviation.
-            - xn (np.ndarray): A 2 dimensional ndarray that stores the input normalized.
+        out: Nothing. The output is stored in \"y\", \"xn\" and \"std\".
 
     Note:
         It's never used.

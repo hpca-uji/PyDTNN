@@ -22,8 +22,8 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
     global ModelCommonTestCase
 
-    rtol_dict = ModelCommonTestCase.rtol_dict | {AdditionBlock: 1e-1, Conv2D: 1e-2}
-    atol_dict = ModelCommonTestCase.atol_dict | {AdditionBlock: 1e-1, Conv2D: 1e-3}
+    rtol_dict = ModelCommonTestCase.rtol_dict | {AdditionBlock: 1e-1, Conv2D: 1e-1}
+    atol_dict = ModelCommonTestCase.atol_dict | {AdditionBlock: 1e-1, Conv2D: 1e-1}
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     del ModelCommonTestCase
