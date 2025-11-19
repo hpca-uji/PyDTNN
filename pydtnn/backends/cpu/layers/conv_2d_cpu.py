@@ -62,12 +62,14 @@ class Conv2DCPU(LayerCPU,
                     case Conv2D.Grouping.POINTWISE:
                         # NCHW's src: co, ci
                         # NHWC's dst: ci, co
-                        value = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=True)
+                        ary = getattr(self, key)
+                        ary[:] = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=None)
                         return
                     case Conv2D.Grouping.STANDARD:
                         # NCHW's src: co, ci, kh, kw
                         # NHWC's dst: ci, kh, kw, co
-                        value = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=True)
+                        ary = getattr(self, key)
+                        ary[:] = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
                         return
         return super()._import_prop(key, value)
 
