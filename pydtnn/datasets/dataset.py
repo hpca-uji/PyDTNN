@@ -96,7 +96,7 @@ class Dataset(ABC):
         self._data_generator = self._actual_data_generator
         self._init_actual_data()
 
-        self.x_empty_batch = np.zeros(shape=(0, *self.input_shape), dtype=self.model.dtype)
+        self.x_empty_batch = np.zeros(shape=self.model.encode_shape(0, *self.input_shape), dtype=self.model.dtype)
         self.y_empty_batch = np.zeros(shape=(0, *self.output_shape), dtype=self.model.dtype)
 
         if self.debug:
