@@ -4,7 +4,7 @@ from pydtnn.layers.layer import Layer
 
 from typing import Any, Callable
 
-from pydtnn.utils.initializers import zeros
+from pydtnn.utils.initializers import zeros, ones
 
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
@@ -13,7 +13,7 @@ class BatchNormalization[T: Array](Layer[T]):
 
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5,
                  moving_mean_initializer: Callable = zeros,
-                 moving_variance_initializer: Callable = zeros,
+                 moving_variance_initializer: Callable = ones,
                  sync_stats=False):
         super().__init__()
         self.gamma_init_val = gamma

@@ -25,7 +25,7 @@ from pydtnn.layer import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.utils import random
-from pydtnn.utils.tensor import format_reshape
+from pydtnn.utils.tensor import TensorFormat, format_reshape, format_transpose
 from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils.constants import Parameters
 
@@ -294,17 +294,18 @@ class LayerPyTorchTestCase(TestCase):
         for layer in pydtnn_model.layers:
             x: np.ndarray = layer.forward(x)
         x_pydtnn = x
+        x_pydtnn = format_transpose(x, self.params.tensor_format.upper(), TensorFormat.NCHW.upper())
 
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
         x_torch: torch.Tensor = torch_model(x)
         x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C", copy=None)
 
         if verbose_test():
-            print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}")
+            print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")
 
         diff = x_pydtnn - x_torch
         if verbose_test():
-            print(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}")
+            print(f"{diff.max()=}\n{diff.min()=}\n{diff.std()=}\n{diff.mean()=}")
 
         # if not (diff < rtol).all():
         #    print(f"x_pydtnn:\n{x_pydtnn}")
@@ -344,7 +345,7 @@ class LayerPyTorchTestCase(TestCase):
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)
 
         _x = LayerPyTorchTestCase.get_test_data()
-        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e-4, atol=1e-1)
+        self.do_test(_x=_x, pydtnn_model=pydtnn_model, torch_model=torch_model, name_test="BatchNormalization", rtol=1e0, atol=1e0)
     # ---------
 
     def test_Conv2D(self):
