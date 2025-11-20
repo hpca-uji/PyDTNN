@@ -2,7 +2,6 @@
 
 from warnings import warn
 
-# Models
 from pydtnn.tests.model_dtype import ModelDTypeTestCase
 from pydtnn.tests.model_tensor import ModelTensorTestCase
 try:
