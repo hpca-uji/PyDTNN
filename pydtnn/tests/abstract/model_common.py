@@ -106,7 +106,6 @@ class ModelCommonTestCase(TestCase):
         return dx
 
     def print_stats(self, x1: np.ndarray, x2: np.ndarray, rtol: float, atol: float) -> str:
-        
         diff = x1 - x2
         return '\n' \
                f"\t{rtol=}\n"\
@@ -120,7 +119,11 @@ class ModelCommonTestCase(TestCase):
                f"\t{diff.min()=}\n" \
                f"\t{x1.std()=}\n" \
                f"\t{x2.std()=}\n" \
-               f"\t{diff.std()=}\n"
+               f"\t{diff.std()=}\n" \
+               f"\t{x1.mean()=}\n" \
+               f"\t{x2.mean()=}\n" \
+               f"\t{diff.mean()=}\n"
+    # ---
 
     def do_model1_forward_pass(self, model1: Model, x0: list[np.ndarray]) -> list[np.ndarray]:
         """
@@ -185,7 +188,7 @@ class ModelCommonTestCase(TestCase):
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")
-        for i, layer in reversed(list(enumerate(model2.layers))):
+        for i, layer in enumerate(model2.layers, 0):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)

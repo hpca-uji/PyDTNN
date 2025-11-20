@@ -71,21 +71,22 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             print()
             print(f"Comparing outputs of both models...")
-        for i, layer in enumerate(model1.layers):
+        for i, layer in enumerate(model1.layers, 1):
             # Skip test on layers that behave randomly
             # NOTE: Dropout uses random data and Flatten just reshape the input (it make no sense to undo its work, change the format and flatten again only to compare both formats)
             if not isinstance(layer, (Dropout, Flatten)):
+                x1_i = self.nhwc2nchw(x1[i])
                 rtol, atol = self.get_tolerance(layer)
-                self.assertTrue(np.allclose(self.nhwc2nchw(x1[i]), x2[i], rtol=rtol, atol=atol),
+                self.assertTrue(np.allclose(x1_i, x2[i], rtol=rtol, atol=atol),
                                 f"Forward result from layers {layer.name_with_id} differ"
-                                f" ({self.print_stats(self.nhwc2nchw(x1[i]), x2[i], rtol, atol)})")
+                                f" ({self.print_stats(x1_i, x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1, model2: Model, dx2):
         assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
         if verbose_test():
             print()
             print(f"Comparing dw of both models...")
-        for i, layer in reversed(list(enumerate(model2.layers))):
+        for i, layer in enumerate(model2.layers, 0):
             if isinstance(layer, (Conv2D, FC)):
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
@@ -106,7 +107,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             print()
             print(f"Comparing db of both models...")
-        for i, layer in reversed(list(enumerate(model2.layers))):
+        for i, layer in enumerate(model2.layers, 0):
             if isinstance(layer, (Conv2D, FC)) and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
                 # layer.db:np.ndarray
@@ -117,17 +118,18 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")
-        for i, layer in reversed(list(enumerate(model2.layers))):
+        for i, layer in enumerate(model2.layers, 0):
             # Skip test on layers that behave randomly and Flatten
             if not isinstance(layer, (Dropout, Flatten)):
                 rtol, atol = self.get_tolerance(layer)
-                if self.nhwc2nchw(dx1[i]).shape == dx2[i].shape:
-                    allclose = np.allclose(self.nhwc2nchw(dx1[i]), dx2[i], rtol=rtol, atol=atol)
+                dx1_i=self.nhwc2nchw(dx1[i])
+                if dx1_i.shape == dx2[i].shape:
+                    allclose = np.allclose(dx1_i, dx2[i], rtol=rtol, atol=atol)
                 else:
                     warnings.warn(f"dx shape on both models for {layer.name_with_id} differ:"
                                   f" [dx1.shape: {dx1[i].shape}, dx2.shape: {dx2[i].shape}]")
                     # Try flattening both
-                    allclose = np.allclose(self.nhwc2nchw(dx1[i]).flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
+                    allclose = np.allclose(dx1_i.flatten(), dx2[i].flatten(), rtol=rtol, atol=atol)
                 self.assertTrue(allclose,
                                 f"Backward result from layer {layer.name_with_id} differ"
-                                f" ({self.print_stats(self.nhwc2nchw(dx1[i]), dx2[i], rtol, atol)})")
+                                f" ({self.print_stats(dx1_i, dx2[i], rtol, atol)})")
