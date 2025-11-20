@@ -14,6 +14,15 @@ class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
         return {Parameters.RUNNING_MEAN, 
                 Parameters.RUNNING_VAR, 
                 *super()._ary_prop}
+    
+    @staticmethod
+    def get_inv_std(running_var: np.ndarray, epsilon: float, dtype: np.dtype) -> np.ndarray:
+        inv_std = np.add(running_var, epsilon, dtype=dtype, order="C")
+        np.sqrt(inv_std, out=inv_std,
+                dtype=dtype)
+        np.reciprocal(inv_std, out=inv_std,
+                      dtype=dtype)
+        return inv_std
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)

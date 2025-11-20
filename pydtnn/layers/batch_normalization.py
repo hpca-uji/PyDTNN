@@ -35,7 +35,6 @@ class BatchNormalization[T: Array](Layer[T]):
         self.xn: np.ndarray = None  # type: ignore
         self.dgamma: T = None  # type: ignore
         self.dbeta: T = None  # type: ignore
-        self.inv_std: np.ndarray = None  # type: ignore
 
     def export(self) -> dict[str, Any]:
         data = super().export()

@@ -1,3 +1,4 @@
+from pydtnn.backends.cpu.layers.batch_normalization_cpu import BatchNormalizationCPU
 from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -17,6 +18,9 @@ class Conv2DBatchNormalizationReluCPU(Conv2DCPU, Conv2DBatchNormalizationRelu[np
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
+
+        self.inv_std = BatchNormalizationCPU.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
+
         self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,
                         "_forward_cg_nchw": self._forward_nchw_cg,
                         "_forward_cg_nhwc": self._forward_nhwc_cg}[self.forward.__name__]

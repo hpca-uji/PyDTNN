@@ -12,6 +12,9 @@ class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
+
+        self.inv_std = BatchNormalizationCPU.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
+
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y: np.ndarray = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
         self.forward = self._forward
