@@ -8,5 +8,5 @@ class Input[T: Array](Layer[T]):
     def __init__(self, shape: tuple = (1,)):
         super().__init__(shape)
 
-    def initialize(self, prev_shape: tuple, x: T | None = None):
+    def initialize(self, prev_shape: tuple, x: T | None):
         super().initialize(prev_shape, x)

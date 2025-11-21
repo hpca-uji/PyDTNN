@@ -73,7 +73,7 @@ class Conv2D[T: Array](Layer[T]):
         self.weights_shape: ArrayShape = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
 
-    def initialize(self, prev_shape: ArrayShape, x: T | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: T | None):
         super().initialize(prev_shape, x)
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape

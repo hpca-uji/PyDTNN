@@ -1,5 +1,3 @@
-from copy import deepcopy
-from typing import Self
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array
 
@@ -13,7 +11,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
         self.is_block_layer = True
         self.out_shapes: list[tuple[int, ...]] = []
 
-    def initialize(self, prev_shape, x=None):
+    def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
         self.initialize_block_layer()
 

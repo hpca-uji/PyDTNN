@@ -8,7 +8,6 @@ import numpy as np
 CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1
 
-
 class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
     def show(self, attrs="") -> None:
         print(

@@ -1,8 +1,5 @@
 from typing import Any
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.backends.gpu.layers.conv_2d_variants.depthwise_variant import Conv2DDepthwiseGPU
-from pydtnn.backends.gpu.layers.conv_2d_variants.pointwise_variant import Conv2DPointwiseGPU
-from pydtnn.backends.gpu.layers.conv_2d_variants.standard_variant import Conv2DStandardGPU
 
 import pycuda.driver as drv  #type: ignore
 import pycuda.gpuarray as gpuarray  #type: ignore
@@ -22,16 +19,6 @@ class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        match self.grouping:
-            case Conv2D.Grouping.STANDARD:
-                self._set_cls_backend(Conv2DStandardGPU)
-            case Conv2D.Grouping.DEPTHWISE:
-                self._set_cls_backend(Conv2DDepthwiseGPU)
-            case Conv2D.Grouping.POINTWISE:
-                self._set_cls_backend(Conv2DPointwiseGPU)
-            case _:
-                raise 
 
         # The following attributes will be initalized later.
         self.fwd_algo: int = None  #type: ignore
