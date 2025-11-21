@@ -7,7 +7,7 @@ from pydtnn.utils.best_transpose_0312 import best_transpose_0312
 from pydtnn.model import Model
 
 
-class PointwiseVariant[T: np.ndarray](Conv2D[np.ndarray]):
+class Conv2DPointwiseCPU[T: np.ndarray](Conv2D[np.ndarray]):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     y: np.ndarray

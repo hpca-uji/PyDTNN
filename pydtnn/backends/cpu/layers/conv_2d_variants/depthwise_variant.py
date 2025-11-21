@@ -6,7 +6,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 import numpy as np
 
 
-class DepthwiseVariant[T: np.ndarray](Conv2D[np.ndarray]):
+class Conv2DDepthwiseCPU[T: np.ndarray](Conv2D[np.ndarray]):
     # NOTE: Attributes defined in conv_2d_cpu.
     dw: np.ndarray
     db: np.ndarray

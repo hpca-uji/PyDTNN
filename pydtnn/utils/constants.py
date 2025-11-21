@@ -3,6 +3,8 @@ from enum import auto, StrEnum
 
 import numpy as np
 
+CONV_2D_VARIANT = "conv_2d_variants"
+
 
 type ArrayShape = tuple[int, ...]
 DTYPE2CTYPE: dict[np.dtype, str] = {
@@ -14,7 +16,6 @@ DTYPE2CTYPE: dict[np.dtype, str] = {
 class NetworkAlgEnum(StrEnum):
     BTA = auto()
     VDG = auto()
-
 
 class Components(StrEnum):
     DATASETS = auto()

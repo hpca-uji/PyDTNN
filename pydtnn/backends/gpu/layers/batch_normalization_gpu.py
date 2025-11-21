@@ -68,26 +68,16 @@ class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
         beta_gpu = gpuarray.to_gpu(self.beta_cpu)
         self.beta = TensorGPU(beta_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        if self.model.gpudirect:
-            self.dgamma_cpu, self.dgamma = TensorGPU.initialize_gpu_direct(drv, self.gamma.ary.shape, self.model.dtype,
-                                                                           tensor_format=self.model.tensor_format,
-                                                                           cudnn_dtype=self.model.cudnn_dtype,
-                                                                           gpudirect=self.model.gpudirect)
-
-            self.dbeta_cpu, self.dbeta = TensorGPU.initialize_gpu_direct(drv, self.beta.ary.shape, self.model.dtype,
-                                                                         tensor_format=self.model.tensor_format,
-                                                                         cudnn_dtype=self.model.cudnn_dtype,
-                                                                         gpudirect=self.model.gpudirect)
-        else:
-            self.dgamma_cpu, self.dgamma = TensorGPU.initialize_not_gpu_direct(self.gamma.ary.shape, self.model.dtype,
-                                                                               tensor_format=self.model.tensor_format,
-                                                                               cudnn_dtype=self.model.cudnn_dtype,
-                                                                               gpudirect=self.model.gpudirect)
-
-            self.dbeta_cpu, self.dbeta = TensorGPU.initialize_not_gpu_direct(self.beta.ary.shape, self.model.dtype,
-                                                                             tensor_format=self.model.tensor_format,
-                                                                             cudnn_dtype=self.model.cudnn_dtype,
-                                                                             gpudirect=self.model.gpudirect)
+        self.dgamma_cpu, self.dgamma = TensorGPU.initialize(self.gamma.ary.shape, self.model.dtype,
+                                                            tensor_format=self.model.tensor_format,
+                                                            cudnn_dtype=self.model.cudnn_dtype,
+                                                            gpudirect=self.model.gpudirect, 
+                                                            drv=(drv if self.model.gpudirect else None))
+        self.dbeta_cpu, self.dbeta = TensorGPU.initialize(self.beta.ary.shape, self.model.dtype,
+                                                          tensor_format=self.model.tensor_format,
+                                                          cudnn_dtype=self.model.cudnn_dtype,
+                                                          gpudirect=self.model.gpudirect, 
+                                                          drv=(drv if self.model.gpudirect else None))
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
         self.running_mean = TensorGPU(running_mean_gpu, self.model.tensor_format, self.model.cudnn_dtype)

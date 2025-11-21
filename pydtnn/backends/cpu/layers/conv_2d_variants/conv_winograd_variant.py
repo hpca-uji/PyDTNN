@@ -1,6 +1,6 @@
 from pydtnn.cython.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.backends.cpu.layers.conv_2d_variants.i2c_variant import I2CVariant
+from pydtnn.backends.cpu.layers.conv_2d_variants.standard_variant import Conv2DStandardCPU
 from pydtnn.backends.cpu.libs.conv_winograd import ConvWinograd
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -9,7 +9,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 import numpy as np
 
 
-class ConvWinogradVariant[T: np.ndarray](I2CVariant[T]):
+class ConvWinogradVariant[T: np.ndarray](Conv2DStandardCPU[T]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

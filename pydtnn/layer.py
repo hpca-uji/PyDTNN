@@ -27,8 +27,8 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         self.biases: T | None = None
         self.act: type[Activation] | None = None
         self.grad_vars: dict[str, str] = {}
-        self.fwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
-        self.bwd_time: np.ndarray = np.zeros((4,), dtype=np.float32)
+        self.fwd_time: np.ndarray = None # type: ignore
+        self.bwd_time: np.ndarray = None # type: ignore
         self.paths: list[list[LayerAndActivationBase[T]]] = []
         self.reqs_allred = {}
 
@@ -78,6 +78,8 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         self.prev_shape = prev_shape
         self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
+        self.fwd_time = np.zeros((4,), dtype=np.float32)
+        self.bwd_time = np.zeros((4,), dtype=np.float32)
 
     def forward(self, x: T) -> T:
         return x

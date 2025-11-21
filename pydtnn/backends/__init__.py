@@ -35,6 +35,15 @@ class PromoteToBackend:
         else:
             return getattr(backend, name)
 
+    def _get_backend_cls(self, backend: BackendType) -> typing.Any:
+        cls = self.__class__
+        module_name = cls.__module__.split(".", 1)[1]
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_{backend}"
+        backend_module = importlib.import_module(backend_module_name)
+        cls_name = f"{cls.__name__}{backend.upper()}"
+        cls = getattr(backend_module, cls_name)
+        return cls
+
     def set_backend(self, backend: BackendType) -> None:
         """
         Change the backend implementation used
@@ -48,15 +57,8 @@ class PromoteToBackend:
         except AttributeError:
             pass
 
-        # Get backend class
-        cls = self.__class__
-        module_name = cls.__module__.split(".", 1)[1]
-        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_{backend}"
-        backend_module = importlib.import_module(backend_module_name)
-        cls_name = f"{cls.__name__}{backend.upper()}"
-        cls = getattr(backend_module, cls_name)
-
         # Create backend instance
+        cls = self._get_backend_cls(backend)
         args, kwds = self._new_backend
         self._backend = cls(*args, **kwds)
         # self._frontend: instance of the original

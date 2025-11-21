@@ -1,13 +1,15 @@
 from copy import deepcopy
+import importlib
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
+from pydtnn.backends import BackendType
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 from pydtnn.utils.tensor import TensorFormat
 import numpy as np
 from enum import StrEnum, auto
-from pydtnn.utils.constants import Array, ArrayShape, Parameters
+from pydtnn.utils.constants import Array, ArrayShape, Parameters, CONV_2D_VARIANT
 
 
 class Conv2D[T: Array](Layer[T]):
@@ -28,6 +30,15 @@ class Conv2D[T: Array](Layer[T]):
         WINOGRAD = "cw"
         DIRECT = "cd0"
     # -----
+
+    def _get_backend_cls(self, backend: BackendType) -> None:
+        cls = self.__class__
+        module_name = cls.__module__.split(".", 1)[1]
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}.{CONV_2D_VARIANT}_{self.grouping.lower()}_variant"
+        backend_module = importlib.import_module(backend_module_name)
+        cls_name = f"{cls.__name__}{backend.upper()}"
+        cls = getattr(backend_module, cls_name)
+        return cls
 
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),

@@ -9,7 +9,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 
 
-class I2CVariant[T: np.ndarray](Conv2D[np.ndarray]):
+class Conv2DStandardCPU[T: np.ndarray](Conv2D[np.ndarray]):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray
