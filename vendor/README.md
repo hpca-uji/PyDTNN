@@ -76,7 +76,6 @@ Dependencies: `gcc cmake` and `blis`
 # Configuration
 BLIS_PREFIX="$PREFIX/blis"
 GEMM_SRC="$SRC/convGemm"
-GEMM_PATCH="$SRC/convGemm.patch"
 GEMM_PREFIX="$PREFIX/convGemm"
 
 # Source
@@ -84,7 +83,6 @@ GEMM_PREFIX="$PREFIX/convGemm"
 git submodule update --init "$GEMM_SRC"
 cd "$GEMM_SRC"
 git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
-git apply "$GEMM_PATCH"
 
 # Compile
 cd ./build
@@ -106,7 +104,6 @@ Dependencies: `gcc cmake` and `blis`
 # Configuration
 BLIS_PREFIX="$PREFIX/blis"
 WINOGRAD_SRC="$SRC/convWinograd"
-WINOGRAD_PATCH="$SRC/convWinograd.patch"
 WINOGRAD_PREFIX="$PREFIX/convWinograd"
 
 # Source
@@ -114,7 +111,6 @@ WINOGRAD_PREFIX="$PREFIX/convWinograd"
 git submodule update --init "$WINOGRAD_SRC"
 cd "$WINOGRAD_SRC"
 git checkout 0a1ca8b22f9ee12d4006f28c16c0e6f6e88ad939
-git apply "$WINOGRAD_PATCH"
 
 # Compile
 cd ./build
@@ -136,9 +132,7 @@ Dependencies: `gcc cmake` and `blis tvm convGemm`
 # Configuration
 BLIS_PREFIX="$PREFIX/blis"
 TVM_PREFIX="$PREFIX/tvm"
-GEMM_SRC="$SRC/convGemm"
 DIRECT_SRC="$SRC/convDirect"
-DIRECT_PATCH="$SRC/convDirect.patch"
 DIRECT_PREFIX="$PREFIX/convDirect"
 
 # Source
@@ -146,9 +140,6 @@ DIRECT_PREFIX="$PREFIX/convDirect"
 git submodule update --init --recursive "$DIRECT_SRC"
 cd "$DIRECT_SRC"
 git checkout 352dadb1990fd882b16f10b22fcb842d3856be57
-git apply "$DIRECT_PATCH"
-rm -r ./src/convGemm
-ln -s "$GEMM_SRC" ./src/convGemm
 
 # Compile
 cd ./build
