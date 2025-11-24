@@ -45,7 +45,7 @@ class PromoteToBackend:
         if backend is None or name.endswith(ref):
             super().__setattr__(name, value)
         else:
-            setattr(ref, name, value)
+            setattr(backend, name, value)
 
     def __delattr__(self, name: str) -> None:
         ref = "_backend"
@@ -57,7 +57,7 @@ class PromoteToBackend:
         if backend is None or name.endswith(ref):
             super().__delattr__(name)
         else:
-            delattr(ref, name)
+            delattr(backend, name)
 
     def set_backend(self, backend: BackendType) -> None:
         """
