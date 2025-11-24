@@ -1,3 +1,4 @@
+from functools import cached_property
 import importlib
 from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
@@ -5,7 +6,6 @@ if TYPE_CHECKING:
 from pydtnn.backends import BackendType
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.tensor import TensorFormat
 import numpy as np
 from enum import StrEnum, auto
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
@@ -22,9 +22,7 @@ class Conv2D[T: Array](Layer[T]):
     class Variant(StrEnum):
         BEST_OF = auto()
         I2C = auto()
-        POINTWISE = auto()
-        DEPTHWISE = auto()
-        # The following values are not set by auto due it's necessary that have that value.
+        #NOTE: The following values are not set by auto due it's necessary that have that value.
         GEMM = "cg"
         WINOGRAD = "cw"
         DIRECT = "cd0"
@@ -78,37 +76,27 @@ class Conv2D[T: Array](Layer[T]):
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape
 
-        match self.grouping:
-            case Conv2D.Grouping.DEPTHWISE:
-                self.co = self.ci
-                self.weights_shape = (self.ci, *self.filter_shape)
-            case Conv2D.Grouping.POINTWISE:
-                self.kh = self.kw = 1
-                match self.model.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.weights_shape = (self.co, self.ci)
-                    case TensorFormat.NHWC:
-                        self.weights_shape = (self.ci, self.co)
-                    case tensor_format:
-                        raise NotImplementedError(f"\"Conv2D\" is not implemented for \"{tensor_format}\" format.")
-            case _:
-                match self.model.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.weights_shape = (self.co, self.ci, *self.filter_shape)
-                    case TensorFormat.NHWC:
-                        self.weights_shape = (self.ci, *self.filter_shape, self.co)
-                    case tensor_format:
-                        raise NotImplementedError(f"\"Conv2D\" is not implemented for \"{tensor_format}\" format.")
-
-        self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
-        self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
-        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
-        self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
+    @cached_property
+    def ho(self) -> int:
+        return (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
+    
+    @cached_property
+    def wo(self) -> int:
+        return (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
+    
+    @cached_property
+    def shape(self) -> ArrayShape:
+        return self.model.encode_shape((self.co, self.ho, self.wo))
+    
+    @cached_property
+    def nparams(self) -> int:
+        return int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
 
     def show(self, attrs: str = "") -> None:
         self.weights: T
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
-                                                f"dilat=({self.vdilation},{self.hdilation})"
+                                                f"dilat=({self.vdilation},{self.hdilation}), "
+                                                f"grouping=({self.grouping})"
                                                 ))

@@ -1,16 +1,36 @@
+from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.cython.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
 from pydtnn.cython.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
-from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 import numpy as np
 
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat
 
-class Conv2DDepthwiseCPU[T: np.ndarray](Conv2D[np.ndarray]):
+
+class Conv2DDepthwiseCPU(Conv2DCPU):
     # NOTE: Attributes defined in conv_2d_cpu.
     dw: np.ndarray
     db: np.ndarray
     biases: np.ndarray
+    # ---
+
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None):
+        super().initialize(prev_shape, x)
+        self.co = self.ci
+        self.weights_shape = (self.ci, *self.filter_shape)
+
+        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
+        self.dw = np.zeros(self.weights_shape, dtype=self.model.dtype, order="C")
+
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.forward = self._forward_depthwise_nchw
+                self.backward = self._backward_nchw
+            case TensorFormat.NHWC:
+                self.forward = self._forward_depthwise_nhwc
+                self.backward = self._backward_nhwc
     # ---
 
     def _forward_depthwise_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -64,7 +84,7 @@ class Conv2DDepthwiseCPU[T: np.ndarray](Conv2D[np.ndarray]):
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     
-    def _backward_depthwise_nhwc(self, dy: np.ndarray) -> np.ndarray:
+    def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
         dx = np.zeros(shape=(dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
@@ -81,7 +101,7 @@ class Conv2DDepthwiseCPU[T: np.ndarray](Conv2D[np.ndarray]):
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
     
-    def _backward_depthwise_nchw(self, dy: np.ndarray) -> np.ndarray:
+    def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
 
         dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
 

@@ -189,6 +189,8 @@ class Model[T: Array]:
         ALL = enum.auto()
         AVAIL2ALL = enum.auto()
 
+# Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
+#   NOTE: The following parameters come from "Parser"
     steps_per_epoch: int
     cpu_speed: float
     memory_bw: float
@@ -234,6 +236,7 @@ class Model[T: Array]:
     weights_and_bias_filename: str
     learning_rate_scaling: bool
     metrics: str
+# ------------
 
     rank_weight: float
     comm_rank: int
@@ -287,9 +290,8 @@ class Model[T: Array]:
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
 
-        # Explicit declaration of those model attributes that are referenced by other parts of PyDTNN
-        #   NOTE: The following parameters come from "Parser"
-        # ---
+        # NOTE: self.conv_variant comes from Parser
+        self.conv_variant = Conv2D.Variant[self.conv_variant.upper()]
 
         # Set MPI and comm
         self._init_comms()

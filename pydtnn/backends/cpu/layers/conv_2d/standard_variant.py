@@ -1,15 +1,16 @@
 import numpy as np
+from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
 from pydtnn.cython.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
-
-from pydtnn.layers.conv_2d import Conv2D
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
+from pydtnn.utils.constants import ArrayShape, Parameters
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
-class Conv2DStandardCPU[T: np.ndarray](Conv2D[np.ndarray]):
+class Conv2DStandardCPU(Conv2DCPU):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray
@@ -24,6 +25,45 @@ class Conv2DStandardCPU[T: np.ndarray](Conv2D[np.ndarray]):
     res_bw: np.ndarray
     biases: np.ndarray
     # ----
+
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
+        super().initialize(prev_shape, x)
+
+        # self.dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
+        # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
+        self.dim_n = self.model.batch_size * self.ho * self.wo
+        self.dim_c = self.ci * self.kh * self.kw
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+                res_shape = (self.co, self.dim_n)
+                _dw_shape = (self.co, self.dim_c)
+                res_bw_shape = (self.dim_c, self.dim_n)
+
+                self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
+            case TensorFormat.NHWC:
+                self.weights_shape = (self.ci, *self.filter_shape, self.co)
+
+                res_shape = (self.dim_n, self.co)
+                _dw_shape = (self.dim_c, self.co)
+                res_bw_shape = (self.dim_n, self.dim_c)
+
+                self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+            case _:
+                res_shape = (None, )
+                _dw_shape = (None, )
+                res_bw_shape = (None, )
+                
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+
+        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
+
+        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        self.res = np.zeros(shape = res_shape, dtype=self.model.dtype, order="C")
+        self._dw = np.zeros(shape = _dw_shape, dtype=self.model.dtype, order="C")
+        self.res_bw = np.zeros(shape = res_bw_shape, dtype=self.model.dtype, order="C")
+        self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
+    # ---
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
@@ -198,3 +238,31 @@ class Conv2DStandardCPU[T: np.ndarray](Conv2D[np.ndarray]):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+######################
+
+    def _export_prop(self, key: str):
+        if key not in {Parameters.WEIGHTS, Parameters.DW}:
+            return super()._export_prop(key)
+        value = getattr(self, key)
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                # NHWC's src: ci, kh, kw, co
+                # NCHW's dst: co, ci, kh, kw
+                return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+        return super()._export_prop(key)
+    # -----
+
+    def _import_prop(self, key: str, value) -> None:
+        if key not in {Parameters.WEIGHTS, Parameters.DW}:
+            return super()._import_prop(key, value)
+
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                # NCHW's src: co, ci, kh, kw
+                # NHWC's dst: ci, kh, kw, co
+                ary = getattr(self, key)
+                ary[:] = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
+                return
+        return super()._import_prop(key, value)
+    # -----

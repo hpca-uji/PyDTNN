@@ -1,7 +1,7 @@
-from typing import Optional, Callable, List
+from typing import Callable, List
 
-from pydtnn.backends.cpu.layers.conv_2d_variants.conv_direct_variant import ConvDirectVariant
-from pydtnn.backends.cpu.layers.conv_2d_variants.conv_winograd_variant import ConvWinogradVariant
+from pydtnn.backends.cpu.layers.conv_2d.conv_direct_variant import ConvDirectVariant
+from pydtnn.backends.cpu.layers.conv_2d.conv_winograd_variant import ConvWinogradVariant
 from pydtnn.model import Model
 from pydtnn.utils.best_of import BestOf
 
