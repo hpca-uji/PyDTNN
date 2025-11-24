@@ -24,7 +24,7 @@ class CIFAR10(Dataset):
     """
     CIFAR10 Dataset
 
-    Source (SHA1):
+    Source (SHA1): https://www.cs.toronto.edu/~kriz/cifar.html
     e8aa088b9774a44ad217101d2e2569f823d2d491 cifar-10-binary.tar.gz https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
 
     Normalize (z-score):
