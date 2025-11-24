@@ -1,35 +1,26 @@
+from pydtnn.backends.cpu.layers.abstract.conv_2d_standard_cpu import Conv2DStandardCPU
 from pydtnn.cython.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.backends.cpu.layers.conv_2d_variants.standard_variant import Conv2DStandardCPU
 from pydtnn.backends.cpu.libs.conv_winograd import ConvWinograd
-from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-#from pydtnn.utils.types import Array
 
 import numpy as np
 
 
-class ConvWinogradVariant[T: np.ndarray](Conv2DStandardCPU[T]):
+class Conv2DWinogradCPU(Conv2DStandardCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convWinograd related attributes (will be initialized in initialize())
         self.cw: ConvWinograd = None  # type: ignore
-        self.cw_constraints_fulfilled: bool = None  # type: ignore
 
-    def initialize(self, prev_shape, x: T | None = None):
+    def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         # ConvWinograd parameters
-        if self.model.enable_conv_winograd:
-            try:
-                self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
-                                       self.vdilation, self.hdilation,
-                                       dtype=self.model.dtype, tensor_format=self.model.tensor_format,
-                                       debug=self.debug, parent_layer=self)
-            except NotImplementedError:
-                self.cw_constraints_fulfilled = False
-            else:
-                self.cw_constraints_fulfilled = True
+        self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
+                                self.vdilation, self.hdilation,
+                                dtype=self.model.dtype, tensor_format=self.model.tensor_format,
+                                debug=self.debug, parent_layer=self)
 
     def _forward_cw_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd library"""

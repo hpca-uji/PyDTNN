@@ -1,5 +1,3 @@
-from warnings import warn
-
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.backends.cpu.layers.layer_cpu import LayerCPU
 from pydtnn.utils.performance_models import im2col_time, matmul_time

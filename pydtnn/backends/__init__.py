@@ -86,7 +86,7 @@ class PromoteToBackend:
         args, kwds = self._new_backend
         self._backend = cls(*args, **kwds)
         # self._frontend: instance of the original
-        self._backend._frontend = self
+        self._frontend = self
 
     # Base class
     model: "model_module.Model"
@@ -94,6 +94,16 @@ class PromoteToBackend:
     def set_model(self, model: "model_module.Model") -> None:
         """Link a to a new model instance"""
         self.model = model
+
+    def set_model_and_backend(self, model: "model_module.Model") -> None:
+        """Link a to a new model instance"""
+        #  NOTE: This one is to have access to "model" in the "get_backend_class"
+        self.model = model
+        #  NOTE: This function erase all previous attribute data.
+        self.set_backend(model._backend)
+        #  NOTE: This one is to set model in the backend class (also this set implictly the layer id).
+        self.set_model(model)
+    # ---
 
     @classmethod
     def from_model[C](cls: type[C], model: "model_module.Model") -> C:

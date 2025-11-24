@@ -31,7 +31,15 @@ class Conv2D[T: Array](Layer[T]):
     def _get_backend_cls(self, backend: BackendType) -> None:
         cls = self.__class__
         module_name = cls.__module__.split(".", 1)[1]
-        backend_module_name = f"pydtnn.backends.{backend}.{module_name}.{self.grouping.lower()}_variant"
+        
+
+        if backend is BackendType.CPU and self.grouping is self.Grouping.STANDARD:
+            variant = self.variant.lower()
+
+        else: 
+            variant = self.grouping.lower()
+
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}.{variant}_{backend}"
         backend_module = importlib.import_module(backend_module_name)
         cls_name = f"{cls.__name__}{backend.upper()}"
         cls = getattr(backend_module, cls_name)

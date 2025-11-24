@@ -1,24 +1,22 @@
 import numpy as np
 
+from pydtnn.backends.cpu.layers.abstract.conv_2d_standard_cpu import Conv2DStandardCPU
 from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape, Array
+from pydtnn.utils.constants import ArrayShape
 
 
-class ConvGemmVariant[T: Array](Conv2D[T]):
+class Conv2DGemmCPU(Conv2DStandardCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convGemm related attributes (will be initialized in initialize())
         self.cg = None # type: ignore
 
-    def initialize(self, prev_shape: ArrayShape, x: T | None = None):
+    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         # ConvGemm parameters
-        if self.model.enable_conv_gemm:
-            self.cg: ConvGemm = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
+        self.cg: ConvGemm = ConvGemm(dtype=self.model.dtype, debug=self.debug, parent_layer=self)
 
     def _forward_cg_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm library"""

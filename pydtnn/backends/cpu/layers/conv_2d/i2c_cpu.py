@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d_standard_cpu import Conv2DStandardCPU
 from pydtnn.cython.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
 
@@ -10,7 +10,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
-class Conv2DStandardCPU(Conv2DCPU):
+class Conv2DI2CCPU(Conv2DStandardCPU):
 
     # NOTE: Attributes defined in conv_2d_cpu.
     res: np.ndarray

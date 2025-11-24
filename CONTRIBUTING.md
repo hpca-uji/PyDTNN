@@ -25,7 +25,9 @@
 - Change `layer.show` to return sequence, so `model.show` can do the formatting.
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
-- Rework `BestOf` to not use globals.
+- Rework `BestOf` to not use globals 
+- Rework `BestOf` eliminate them and move it to test scripts.
+- Rework `BestOfVariant` to make it work.
 - Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
 - Rework the `Conv2D` variant implementation.
