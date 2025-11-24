@@ -44,6 +44,30 @@ class PromoteToBackend:
         cls = getattr(backend_module, cls_name)
         return cls
 
+    def __setattr__(self, name: str, value) -> None:
+        ref = "_backend"
+
+        # Get backend
+        backend = getattr(self, ref, None)
+
+        # Skip backend if internal
+        if backend is None or name.endswith(ref):
+            super().__setattr__(name, value)
+        else:
+            setattr(backend, name, value)
+
+    def __delattr__(self, name: str) -> None:
+        ref = "_backend"
+
+        # Get backend
+        backend = getattr(self, ref, None)
+
+        # Skip backend if internal
+        if backend is None or name.endswith(ref):
+            super().__delattr__(name)
+        else:
+            delattr(backend, name)
+
     def set_backend(self, backend: BackendType) -> None:
         """
         Change the backend implementation used
