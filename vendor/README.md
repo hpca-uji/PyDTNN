@@ -82,7 +82,7 @@ GEMM_PREFIX="$PREFIX/convGemm"
 # git clone https://github.com/hpca-uji/convGemm.git "$GEMM_SRC"
 git submodule update --init "$GEMM_SRC"
 cd "$GEMM_SRC"
-git checkout cd1f2e8d7e5079aa23f6482b115377d40fe6b7bc
+git checkout 1ebea3c77cd961cb207f5964025733913765b0e6
 
 # Compile
 cd ./build
@@ -110,7 +110,7 @@ WINOGRAD_PREFIX="$PREFIX/convWinograd"
 # git clone https://github.com/hpca-uji/convWinograd.git "$WINOGRAD_SRC"
 git submodule update --init "$WINOGRAD_SRC"
 cd "$WINOGRAD_SRC"
-git checkout 0a1ca8b22f9ee12d4006f28c16c0e6f6e88ad939
+git checkout fc2d5af8d0ee551e508b97082ee7aab3bbff0244
 
 # Compile
 cd ./build
@@ -139,7 +139,7 @@ DIRECT_PREFIX="$PREFIX/convDirect"
 # git clone --recursive https://github.com/hpca-uji/convDirect.git "$DIRECT_SRC"
 git submodule update --init --recursive "$DIRECT_SRC"
 cd "$DIRECT_SRC"
-git checkout 352dadb1990fd882b16f10b22fcb842d3856be57
+git checkout 888402fc45df89f8a055dc4575ef53a6b35ea502
 
 # Compile
 cd ./build
