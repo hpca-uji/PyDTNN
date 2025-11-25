@@ -30,7 +30,6 @@
 - Rework `BestOfVariant` to make it work.
 - Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
-- Rework the `Conv2D` variant implementation.
 - Replace `print` statments with `logger` calls.
 - Explore `TenSEAL`'s serialization preformance.
 - Explore `net-queue`'s `TCP+TLS` preformance.
