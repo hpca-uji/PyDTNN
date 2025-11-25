@@ -35,14 +35,17 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.dim_c = self.ci * self.kh * self.kw
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+                self.forward = self._forward_i2c_nchw
+                self.backward = self._backward_i2c_nchw
+
                 res_shape = (self.co, self.dim_n)
                 _dw_shape = (self.co, self.dim_c)
                 res_bw_shape = (self.dim_c, self.dim_n)
 
                 self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
             case TensorFormat.NHWC:
-                self.weights_shape = (self.ci, *self.filter_shape, self.co)
+                self.forward = self._forward_i2c_nhwc
+                self.backward = self._backward_i2c_nhwc
 
                 res_shape = (self.dim_n, self.co)
                 _dw_shape = (self.dim_c, self.co)
@@ -55,8 +58,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 res_bw_shape = (None, )
                 
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
-
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
+        # -
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.res = np.zeros(shape = res_shape, dtype=self.model.dtype, order="C")

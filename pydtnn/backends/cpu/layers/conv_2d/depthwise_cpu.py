@@ -16,6 +16,14 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
     biases: np.ndarray
     # ---
 
+    def _initializing_special_parameters(self):
+        super()._initializing_special_parameters()
+        # Setting other parameters
+        self.co = self.ci
+        # Setting weights
+        self.weights_shape = (self.ci, *self.filter_shape)
+    # ---
+
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None):
         super().initialize(prev_shape, x)
         self.co = self.ci

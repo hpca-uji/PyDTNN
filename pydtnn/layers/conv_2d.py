@@ -23,6 +23,7 @@ class Conv2D[T: Array](Layer[T]):
         BEST_OF = auto()
         I2C = auto()
         #NOTE: The following values are not set by auto due it's necessary that have that value.
+        #TODO: Check how to change this (BestOf and Fusion layers)
         GEMM = "cg"
         WINOGRAD = "cw"
         DIRECT = "cd0"
@@ -31,17 +32,15 @@ class Conv2D[T: Array](Layer[T]):
     def _get_backend_cls(self, backend: BackendType) -> None:
         cls = self.__class__
         module_name = cls.__module__.split(".", 1)[1]
-        
 
         if backend is BackendType.CPU and self.grouping is self.Grouping.STANDARD:
-            variant = self.variant.lower()
-
+            variant = self.model.conv_variant._name_.lower()
         else: 
             variant = self.grouping.lower()
 
         backend_module_name = f"pydtnn.backends.{backend}.{module_name}.{variant}_{backend}"
         backend_module = importlib.import_module(backend_module_name)
-        cls_name = f"{cls.__name__}{backend.upper()}"
+        cls_name = f"{cls.__name__}{variant.title()}{backend.upper()}"
         cls = getattr(backend_module, cls_name)
         return cls
 
@@ -78,27 +77,27 @@ class Conv2D[T: Array](Layer[T]):
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
         self.weights_shape: ArrayShape = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
+    # --- 
+
+    def _initializing_special_parameters(self):
+        # NOTE: This method's objective is to change the value of some parameters defined before that are needed later in the initialization process.
+        pass
+    # ---
 
     def initialize(self, prev_shape: ArrayShape, x: T | None):
         super().initialize(prev_shape, x)
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape
+        self._initializing_special_parameters()
 
-    @cached_property
-    def ho(self) -> int:
-        return (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
-    
-    @cached_property
-    def wo(self) -> int:
-        return (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
-    
-    @cached_property
-    def shape(self) -> ArrayShape:
-        return self.model.encode_shape((self.co, self.ho, self.wo))
-    
-    @cached_property
-    def nparams(self) -> int:
-        return int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
+        self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
+        self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
+        self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
+
+        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype) # type: ignore (it's ok)
+        self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
+    # --
+
 
     def show(self, attrs: str = "") -> None:
         self.weights: T

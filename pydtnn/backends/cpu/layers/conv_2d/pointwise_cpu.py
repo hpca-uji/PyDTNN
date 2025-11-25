@@ -47,22 +47,31 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         return super()._import_prop(key, value)
     # ------
 
+    def _initializing_special_parameters(self):
+        super()._initializing_special_parameters()
+        # Setting other parameters
+        self.kh = self.kw = 1
+        # Setting weights
+        match self.model.tensor_format:
+                case TensorFormat.NCHW:
+                    self.weights_shape = (self.co, self.ci)
+                case TensorFormat.NHWC:
+                    self.weights_shape = (self.co, self.ci)
+                case _:
+                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        #--
+    # ---
+
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
-
-        self.kh = self.kw = 1
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.weights_shape = (self.co, self.ci)
                 self.forward = self._forward_pointwise_nchw
                 self.backward = self._backward_nchw
             case TensorFormat.NHWC:
-                self.weights_shape = (self.co, self.ci)
                 self.forward = self._forward_pointwise_nhwc
                 self.backward = self._backward_nhwc
         # --
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
-
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(shape=y_shape, dtype=self.model.dtype, order="C")
