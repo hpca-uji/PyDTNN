@@ -3,7 +3,7 @@ PyDTNN Layer base class
 """
 
 
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 

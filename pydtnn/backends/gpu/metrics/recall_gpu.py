@@ -1,7 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
-from pydtnn.backends.gpu.metrics.binary_confusion_matrix_gpu import BinaryConfusionMatrixGPU
+from pydtnn.backends.gpu.metrics.metric import MetricGPU
+from pydtnn.backends.gpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixGPU
 from pydtnn.metrics.recall import Recall
 from pydtnn.utils.constants import DTYPE2CTYPE
 from pycuda.compiler import SourceModule  # type: ignore

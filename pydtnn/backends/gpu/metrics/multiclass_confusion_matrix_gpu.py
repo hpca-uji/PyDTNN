@@ -1,4 +1,4 @@
-from pydtnn.backends.gpu.metrics.metric_gpu import MetricGPU
+from pydtnn.backends.gpu.metrics.metric import MetricGPU
 from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU

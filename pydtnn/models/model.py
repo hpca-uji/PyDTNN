@@ -1,7 +1,7 @@
 
 
 from collections.abc import Callable, Sequence
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils import find_component
 
 

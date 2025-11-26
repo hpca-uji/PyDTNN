@@ -1,6 +1,7 @@
 from functools import cached_property
 import importlib
 from typing import TYPE_CHECKING, Optional
+from warnings import warn
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.backends import BackendType
@@ -38,8 +39,11 @@ class Conv2D[T: Array](Layer[T]):
         else: 
             variant = self.grouping.lower()
 
-        backend_module_name = f"pydtnn.backends.{backend}.{module_name}.{variant}_{backend}"
-        backend_module = importlib.import_module(backend_module_name)
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_variants.{variant}"
+        try:
+            backend_module = importlib.import_module(backend_module_name)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError("Check the package were the variants are located; it must have the same name as \"{module_name}_variants\" above.") from e
         cls_name = f"{cls.__name__}{variant.title()}{backend.upper()}"
         cls = getattr(backend_module, cls_name)
         return cls

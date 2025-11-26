@@ -5,7 +5,7 @@
 # Typing related (or non important) imports
 from typing import Dict, Any, Tuple, List
 from pydtnn import activations
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
 from pydtnn.layers.average_pool_2d import AveragePool2D

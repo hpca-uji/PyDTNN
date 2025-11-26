@@ -7,7 +7,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow uses BatchNormalization with 1.001e-5 epsilon and 0.99 momentum

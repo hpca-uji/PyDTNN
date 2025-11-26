@@ -21,7 +21,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.utils import random
@@ -273,6 +273,12 @@ class LayerPyTorchTestCase(TestCase):
                         for grad_var in layer.grad_vars.keys():
                             grad: np.ndarray = getattr(layer, grad_var)
                             grad = grad if grad_var != Parameters.WEIGHTS else grad.T
+                            self._copy_grad_vars(grad, grad_var, torch_layer)
+                    case Conv2D():
+                        for grad_var in layer.grad_vars.keys():
+                            grad: np.ndarray = getattr(layer, grad_var)
+                            if grad_var == "weights" and grad is not None:
+                                grad = format_transpose(grad, {TensorFormat.NHWC: "ihwo", TensorFormat.NCHW: "oihw"}[pydtnn_model.tensor_format] , "oihw")
                             self._copy_grad_vars(grad, grad_var, torch_layer)
                     case _:
                         for grad_var in layer.grad_vars.keys():

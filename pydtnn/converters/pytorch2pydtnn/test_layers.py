@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 from pydtnn.utils.best_of import BestOf
 
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU

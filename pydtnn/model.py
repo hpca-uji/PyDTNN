@@ -24,10 +24,10 @@ from pydtnn import crypt, utils
 from pydtnn.activations.relu import Relu
 from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.backends.gpu.optimizers.optimizer_gpu import OptimizerGPU
+from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.layer import LayerAndActivationBase, FusedLayerMixIn
+from pydtnn.layer_and_activation_base import LayerAndActivationBase, FusedLayerMixIn
 from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D

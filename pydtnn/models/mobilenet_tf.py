@@ -9,7 +9,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 
