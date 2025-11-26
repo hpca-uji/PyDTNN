@@ -10,11 +10,6 @@ from pydtnn.utils.tensor import TensorFormat
 
 
 class Conv2DDepthwiseCPU(Conv2DCPU):
-    # NOTE: Attributes defined in conv_2d_cpu.
-    dw: np.ndarray
-    db: np.ndarray
-    biases: np.ndarray
-    # ---
 
     def _initializing_special_parameters(self):
         super()._initializing_special_parameters()
@@ -26,11 +21,6 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None):
         super().initialize(prev_shape, x)
-        self.co = self.ci
-        self.weights_shape = (self.ci, *self.filter_shape)
-
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
-        self.dw = np.zeros(self.weights_shape, dtype=self.model.dtype, order="C")
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:

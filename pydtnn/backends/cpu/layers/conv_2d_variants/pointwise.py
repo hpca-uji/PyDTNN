@@ -11,15 +11,6 @@ from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 class Conv2DPointwiseCPU(Conv2DCPU):
 
-    # NOTE: Attributes defined in conv_2d_cpu.
-    y: np.ndarray
-    dy: np.ndarray
-    dw: np.ndarray
-    dx: np.ndarray
-    db: np.ndarray
-    biases: np.ndarray
-    # ----
-
     def _export_prop(self, key: str):
         if key not in {Parameters.WEIGHTS, Parameters.DW}:
             return super()._export_prop(key)
@@ -74,10 +65,9 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         # --
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        # self.dw (this one too, but it's initalized in Conv2DCPU)
         self.y = np.zeros(shape=y_shape, dtype=self.model.dtype, order="C")
-        self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype, order="C")
         self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
-
     # ------
 
     def _forward_pointwise_nhwc(self, x: np.ndarray) -> np.ndarray:

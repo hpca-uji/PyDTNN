@@ -6,8 +6,8 @@ from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cyt
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
-from pydtnn.utils.constants import ArrayShape, Parameters
-from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat
 
 
 class Conv2DI2CCPU(Conv2DStandardCPU):
@@ -64,7 +64,6 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.res = np.zeros(shape = res_shape, dtype=self.model.dtype, order="C")
         self._dw = np.zeros(shape = _dw_shape, dtype=self.model.dtype, order="C")
         self.res_bw = np.zeros(shape = res_bw_shape, dtype=self.model.dtype, order="C")
-        self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
     # ---
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -240,31 +239,3 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
-######################
-
-    def _export_prop(self, key: str):
-        if key not in {Parameters.WEIGHTS, Parameters.DW}:
-            return super()._export_prop(key)
-        value = getattr(self, key)
-
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                # NHWC's src: ci, kh, kw, co
-                # NCHW's dst: co, ci, kh, kw
-                return np.asarray(format_transpose(value, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
-        return super()._export_prop(key)
-    # -----
-
-    def _import_prop(self, key: str, value) -> None:
-        if key not in {Parameters.WEIGHTS, Parameters.DW}:
-            return super()._import_prop(key, value)
-
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                # NCHW's src: co, ci, kh, kw
-                # NHWC's dst: ci, kh, kw, co
-                ary = getattr(self, key)
-                ary[:] = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
-                return
-        return super()._import_prop(key, value)
-    # -----

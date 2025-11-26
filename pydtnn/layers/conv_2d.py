@@ -1,7 +1,5 @@
-from functools import cached_property
 import importlib
 from typing import TYPE_CHECKING, Optional
-from warnings import warn
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.backends import BackendType
@@ -84,7 +82,8 @@ class Conv2D[T: Array](Layer[T]):
     # --- 
 
     def _initializing_special_parameters(self):
-        # NOTE: This method's objective is to change the value of some parameters defined before that are needed later in the initialization process.
+        # NOTE: This method's objective is to define and change the value of some parameters defined before that are needed later in the initialization process,
+        #   for example: "self.weights_shape" and "self.co".
         pass
     # ---
 
@@ -98,7 +97,7 @@ class Conv2D[T: Array](Layer[T]):
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype) # type: ignore (it's ok)
+        # NOTE: self.weights_shape and self.co must be defined in "self._initializing_special_parameters"
         self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
     # --
 

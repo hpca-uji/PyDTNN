@@ -24,6 +24,9 @@ class Conv2DCPU(LayerCPU, Conv2D[np.ndarray]):
             self.biases = self.biases_initializer(bias_shape, self.model.dtype)
             self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype, order="C")
 
+        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype) # type: ignore (it's ok)
+        self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
+
         # Performance models
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
