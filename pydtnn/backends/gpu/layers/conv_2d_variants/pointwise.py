@@ -152,7 +152,7 @@ class Conv2DPointwiseGPU(Conv2DGPU):
     def cuda_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-            """
+"""
 {macros}
 
 __global__ void {func_name}({T}* x, {T}* k, {T}* y,
@@ -199,7 +199,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* y,
     def cuda_pointwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-            """
+"""
 {macros}
 
 __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
@@ -250,7 +250,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     def cuda_bias_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-            """
+"""
 {macros}
 
 __global__ void {func_name}({T}* y, {T}* b,

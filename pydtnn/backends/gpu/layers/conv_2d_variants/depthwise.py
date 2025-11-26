@@ -222,7 +222,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
     def cuda_depthwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-            """
+"""
 {macros}
 __global__ void {func_name}({T}* x, {T}* k, {T}* res,
                             int vpadding, int hpadding,
@@ -273,7 +273,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
     def cuda_depthwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-            """
+"""
 {macros}
 __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
                             {T}* dx, {T}* dw,
@@ -327,7 +327,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = \
-            """
+"""
 __global__ void {func_name}({T}* x, {T}* bias,
                             int co, int N,
                             int num_workers)
