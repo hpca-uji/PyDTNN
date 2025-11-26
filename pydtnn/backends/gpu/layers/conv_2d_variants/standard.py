@@ -15,9 +15,16 @@ import pycuda.gpuarray as gpuarray  #type: ignore
 
 class Conv2DStandardGPU(Conv2DGPU):
 
-
     def _initializing_special_parameters(self):
-        self.weights_shape = (self.co, *self.filter_shape, self.ci)
+         match self.model.tensor_format:
+                case TensorFormat.NCHW:
+                    self.weights_shape = (self.co, self.ci, *self.filter_shape)
+                case TensorFormat.NHWC:
+                    # NOTE: It is this shape, even if in the CPU version is different.
+                    self.weights_shape = (self.co, *self.filter_shape, self.ci)
+                case _:
+                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+    # ---
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

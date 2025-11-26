@@ -27,7 +27,6 @@ class LayerGPU(Layer[TensorGPU]):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """
-    y: TensorGPU
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes

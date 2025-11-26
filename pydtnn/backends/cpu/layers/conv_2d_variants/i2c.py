@@ -12,20 +12,6 @@ from pydtnn.utils.tensor import TensorFormat
 
 class Conv2DI2CCPU(Conv2DStandardCPU):
 
-    # NOTE: Attributes defined in conv_2d_cpu.
-    res: np.ndarray
-    dim_c: int
-    x_rows: np.ndarray
-    x_cols: np.ndarray
-    _x_rows: np.ndarray
-    _x_cols: np.ndarray
-    dw: np.ndarray
-    _dw: np.ndarray
-    db: np.ndarray
-    res_bw: np.ndarray
-    biases: np.ndarray
-    # ----
-
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
 

@@ -102,7 +102,7 @@ class Conv2D[T: Array](Layer[T]):
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
-        # NOTE: self.weights_shape and self.co must be defined in "self._initializing_special_parameters"
+        # NOTE: self.weights_shape must be defined in "self._initializing_special_parameters"
         self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
     # --
 
