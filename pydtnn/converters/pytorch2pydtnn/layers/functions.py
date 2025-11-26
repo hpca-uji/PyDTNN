@@ -4,7 +4,6 @@
 
 # Typing related (or non important) imports
 from typing import Dict, Any, Tuple, List
-from pydtnn import activations
 from pydtnn.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
@@ -20,8 +19,6 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.activations.tanh import Tanh
 import pydtnn.converters.pytorch2pydtnn.common as cm
 from pydtnn.converters.pytorch2pydtnn.layers import activation
-from pydtnn.converters.pytorch2pydtnn.layers import pooling
-from pydtnn.converters.pytorch2pydtnn.layers import utility
 
 # ------------------ #
 # - Torch Functions  #
