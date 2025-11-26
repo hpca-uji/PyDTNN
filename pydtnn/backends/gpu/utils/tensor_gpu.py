@@ -158,7 +158,8 @@ class TensorGPU:
     # ---
 
     def free_gpu_arr(self) -> None:
-        del self.ary
+        if self.ary is not None:
+            del self.ary
         self.size = -1
         self.desc = -1
     # ---
@@ -199,4 +200,21 @@ class TensorGPU:
                           desc=desc, gpudirect=gpudirect, cublas=cublas)
 
         return (x_cpu, x_gpu)
+    
+    @staticmethod
+    def initialize(shape: ArrayShape, dtype: np.dtype,
+                   tensor_format: TensorFormat, cudnn_dtype: int,
+                   tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                   desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
+                   drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorGPU"]:
+        if drv is not None:
+            return TensorGPU.initialize_gpu_direct(drv=drv, shape=shape,
+                                                   dtype=dtype, tensor_format=tensor_format,
+                                                   cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                                   desc=desc, gpudirect=gpudirect, cublas=cublas)
+        else:
+            return TensorGPU.initialize_not_gpu_direct(shape=shape, dtype=dtype, tensor_format=tensor_format,
+                                                       cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                                       desc=desc, gpudirect=gpudirect, cublas=cublas)
+
     # ---

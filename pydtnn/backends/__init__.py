@@ -35,6 +35,15 @@ class PromoteToBackend:
         else:
             return getattr(backend, name)
 
+    def _get_backend_cls(self, backend: BackendType) -> typing.Any:
+        cls = self.__class__
+        module_name = cls.__module__.split(".", 1)[1]
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}"
+        backend_module = importlib.import_module(backend_module_name)
+        cls_name = f"{cls.__name__}{backend.upper()}"
+        cls = getattr(backend_module, cls_name)
+        return cls
+
     def __setattr__(self, name: str, value) -> None:
         ref = "_backend"
 
@@ -72,19 +81,12 @@ class PromoteToBackend:
         except AttributeError:
             pass
 
-        # Get backend class
-        cls = self.__class__
-        module_name = cls.__module__.split(".", 1)[1]
-        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_{backend}"
-        backend_module = importlib.import_module(backend_module_name)
-        cls_name = f"{cls.__name__}{backend.upper()}"
-        cls = getattr(backend_module, cls_name)
-
         # Create backend instance
+        cls = self._get_backend_cls(backend)
         args, kwds = self._new_backend
         self._backend = cls(*args, **kwds)
         # self._frontend: instance of the original
-        self._backend._frontend = self
+        self._frontend = self
 
     # Base class
     model: "model_module.Model"
@@ -92,6 +94,16 @@ class PromoteToBackend:
     def set_model(self, model: "model_module.Model") -> None:
         """Link a to a new model instance"""
         self.model = model
+
+    def set_model_and_backend(self, model: "model_module.Model") -> None:
+        """Link a to a new model instance"""
+        #  NOTE: This one is to have access to "model" in the "get_backend_class"
+        self.model = model
+        #  NOTE: This function erase all previous attribute data.
+        self.set_backend(model._backend)
+        #  NOTE: This one is to set model in the backend class (also this set implictly the layer id).
+        self.set_model(model)
+    # ---
 
     @classmethod
     def from_model[C](cls: type[C], model: "model_module.Model") -> C:

@@ -1,10 +1,12 @@
-from copy import deepcopy
+from functools import cached_property
+import importlib
 from typing import TYPE_CHECKING, Optional
+from warnings import warn
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
+from pydtnn.backends import BackendType
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
-from pydtnn.utils.tensor import TensorFormat
 import numpy as np
 from enum import StrEnum, auto
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
@@ -21,13 +23,30 @@ class Conv2D[T: Array](Layer[T]):
     class Variant(StrEnum):
         BEST_OF = auto()
         I2C = auto()
-        POINTWISE = auto()
-        DEPTHWISE = auto()
-        # The following values are not set by auto due it's necessary that have that value.
+        #NOTE: The following values are not set by auto due it's necessary that have that value.
+        #TODO: Check how to change this (BestOf and Fusion layers)
         GEMM = "cg"
         WINOGRAD = "cw"
         DIRECT = "cd0"
     # -----
+
+    def _get_backend_cls(self, backend: BackendType) -> None:
+        cls = self.__class__
+        module_name = cls.__module__.split(".", 1)[1]
+
+        if backend is BackendType.CPU and self.grouping is self.Grouping.STANDARD:
+            variant = self.model.conv_variant._name_.lower()
+        else: 
+            variant = self.grouping.lower()
+
+        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_variants.{variant}"
+        try:
+            backend_module = importlib.import_module(backend_module_name)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError("Check the package were the variants are located; it must have the same name as \"{module_name}_variants\" above.") from e
+        cls_name = f"{cls.__name__}{variant.title()}{backend.upper()}"
+        cls = getattr(backend_module, cls_name)
+        return cls
 
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),
@@ -62,43 +81,33 @@ class Conv2D[T: Array](Layer[T]):
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
         self.weights_shape: ArrayShape = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
+    # --- 
 
-    def initialize(self, prev_shape: ArrayShape, x: T | None = None):
+    def _initializing_special_parameters(self):
+        # NOTE: This method's objective is to change the value of some parameters defined before that are needed later in the initialization process.
+        pass
+    # ---
+
+    def initialize(self, prev_shape: ArrayShape, x: T | None):
         super().initialize(prev_shape, x)
         self.ci, self.hi, self.wi = self.model.decode_shape(prev_shape)
         self.kh, self.kw = self.filter_shape
-
-        match self.grouping:
-            case Conv2D.Grouping.DEPTHWISE:
-                self.co = self.ci
-                self.weights_shape = (self.ci, *self.filter_shape)
-            case Conv2D.Grouping.POINTWISE:
-                self.kh = self.kw = 1
-                match self.model.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.weights_shape = (self.co, self.ci)
-                    case TensorFormat.NHWC:
-                        self.weights_shape = (self.ci, self.co)
-                    case tensor_format:
-                        raise NotImplementedError(f"\"Conv2D\" is not implemented for \"{tensor_format}\" format.")
-            case _:
-                match self.model.tensor_format:
-                    case TensorFormat.NCHW:
-                        self.weights_shape = (self.co, self.ci, *self.filter_shape)
-                    case TensorFormat.NHWC:
-                        self.weights_shape = (self.ci, *self.filter_shape, self.co)
-                    case tensor_format:
-                        raise NotImplementedError(f"\"Conv2D\" is not implemented for \"{tensor_format}\" format.")
+        self._initializing_special_parameters()
 
         self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
         self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
+
+        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype) # type: ignore (it's ok)
         self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
+    # --
+
 
     def show(self, attrs: str = "") -> None:
         self.weights: T
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
-                                                f"dilat=({self.vdilation},{self.hdilation})"
+                                                f"dilat=({self.vdilation},{self.hdilation}), "
+                                                f"grouping=({self.grouping})"
                                                 ))

@@ -220,14 +220,13 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Convolution methods
         _cm_group = self.add_argument_group("Convolution options")
-        _cm_group.add_argument('--enable-conv-i2c', type=bool_lambda, default=True,
-                               help="Use ConvI2C module to realize convolutions in Conv2D layers. True if specified.")
-        _cm_group.add_argument('--enable-conv-gemm', type=bool_lambda, default=False,
-                               help="Use ConvGemm (implicit gemm) module to realize convolutions in Conv2D layers. True if specified.")
-        _cm_group.add_argument('--enable-conv-winograd', type=bool_lambda, default=False,
-                               help="Use the Winograd algorithm to realize convolutions in Conv2D layers. True if specified.")
-        _cm_group.add_argument('--enable-conv-direct', type=bool_lambda, default=False,
-                               help="The ConvDirect module to realize convolutions in Conv2D layers.")
+        _cm_group.add_argument('--conv-variant', type=str, default="i2c", choices=["i2c", "gemm", "winograd", "direct"],
+                               help="Select the standard 2D Convolutional module. Options: \n" \
+                                    "* \'i2c\': Use the ConvI2C algorithm. \n" \
+                                    "* \'gemm\': Use the ConvGemm algorithm. \n" \
+                                    "* \'winograd\': Use the CondWinograd algorithm. \n" \
+                                    "* \'direct\': Use the ConvDirect algorithm. \n" \
+                                    "Default: \"i2x\".")
         _cm_group.add_argument('--conv-direct-method', type=str, default="",
                                help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
         _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",

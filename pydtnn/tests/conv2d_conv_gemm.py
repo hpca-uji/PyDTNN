@@ -1,7 +1,7 @@
 from copy import deepcopy
 
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
+from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
@@ -35,13 +35,13 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
                                stride=(d.vstride, d.hstride),
                                dilation=(d.vdilation, d.hdilation),
                                use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-        conv2d_i2c.set_model(model_i2c)
+        conv2d_i2c.set_model_and_backend(model_i2c)
         conv2d_cg = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                               padding=(d.vpadding, d.hpadding),
                               stride=(d.vstride, d.hstride),
                               dilation=(d.vdilation, d.hdilation),
                               use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-        conv2d_cg.set_model(model_cg)
+        conv2d_cg.set_model_and_backend(model_cg)
         for layer in (conv2d_i2c, conv2d_cg):
             layer.initialize(prev_shape=(d.c, d.h, d.w))
         # Set the same initial weights and biases to both layers

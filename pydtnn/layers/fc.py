@@ -22,7 +22,7 @@ class FC[T: Array](Layer[T]):
         if self.use_bias:
             self.grad_vars[Parameters.BIASES] = Parameters.DB
 
-    def initialize(self, prev_shape: ArrayShape, x: T) -> None:
+    def initialize(self, prev_shape: ArrayShape, x: T | None) -> None:
         super().initialize(prev_shape, x)
         self.weights_shape = (*prev_shape, *self.shape)
 

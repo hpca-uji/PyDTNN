@@ -10,6 +10,7 @@
 - If a test to compare some layers' outputs of different models is being implemented, it is necessary to ensure the copy of those outputs before executing the following layer, due there are some layers that operate with their input inplace.
 - Don't use `np.ndarray()` to create numpy's array, use a explicit initializer (like `np.zeros()`, `np.ones()`, `np.arange()` or `np.empty()`).
 - Don't use `np.transpose(ary, format)` with a magic number, use `format_tranpose(ary, src, dst)` to provide an explicit format.
+- The variants of the 2D convolutional layer must be in `conv_2d_variants`. If that is changed, it is necessary to reflect this changes in the Conv2D's variable `backend_module_name` and in every backend' variant folder.
 
 # Knowledge
 - `enable_gpu` changes the backed from CPU to GPU.
@@ -25,10 +26,11 @@
 - Change `layer.show` to return sequence, so `model.show` can do the formatting.
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
-- Rework `BestOf` to not use globals.
+- Rework `BestOf` to not use globals 
+- Rework `BestOf` eliminate them and move it to test scripts.
+- Rework `BestOfVariant` to make it work.
 - Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
-- Rework the `Conv2D` variant implementation.
 - Replace `print` statments with `logger` calls.
 - Explore `TenSEAL`'s serialization preformance.
 - Explore `net-queue`'s `TCP+TLS` preformance.

@@ -5,7 +5,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
+from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
@@ -43,14 +43,12 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
             relu
         ])
         shape = (d.c, d.h, d.w)
-        chain.set_backend(model._backend)
-        chain.set_model(model)
+        chain.set_model_and_backend(model)
         chain.initialize(prev_shape=shape)
 
         from_parent = (relu.__dict__ | conv2d.__dict__)
         fuse = Conv2DRelu(from_parent=from_parent)
-        fuse.set_backend(model._backend)
-        fuse.set_model(model)
+        fuse.set_model_and_backend(model)
         fuse.__dict__.update(from_parent)
         fuse.initialize(prev_shape=shape)
 

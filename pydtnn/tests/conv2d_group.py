@@ -1,7 +1,7 @@
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.conv_2d_cpu import Conv2DCPU
+from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
@@ -41,8 +41,7 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
             conv2d_depth,
             conv2d_pair
         ])
-        chain.set_backend(model._backend)
-        chain.set_model(model)
+        chain.set_model_and_backend(model)
         chain.initialize(prev_shape=(d.c, d.h, d.w))
 
         conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
@@ -51,8 +50,7 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
                         stride=(d.vstride, d.hstride),
                         dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-        conv2d.set_backend(model._backend)
-        conv2d.set_model(model)
+        conv2d.set_model_and_backend(model)
         conv2d.initialize(prev_shape=(d.c, d.h, d.w))
 
         # Set the same initial weights and biases to both layers

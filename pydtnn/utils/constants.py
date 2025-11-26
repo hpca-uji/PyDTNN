@@ -3,7 +3,6 @@ from enum import auto, StrEnum
 
 import numpy as np
 
-
 type ArrayShape = tuple[int, ...]
 DTYPE2CTYPE: dict[np.dtype, str] = {
     np.dtype(np.float32): "float",
@@ -14,7 +13,6 @@ DTYPE2CTYPE: dict[np.dtype, str] = {
 class NetworkAlgEnum(StrEnum):
     BTA = auto()
     VDG = auto()
-
 
 class Components(StrEnum):
     DATASETS = auto()

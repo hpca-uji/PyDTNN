@@ -241,6 +241,21 @@ function run_benchmark() {
     fi
   fi
 
+  # 2.5) Select Conv2D variant:
+  if [ "$ENABLE_BEST_OF" ]; then
+    CONV_VARIANT="best_of"
+  elif [ "$ENABLE_CONV_I2C" ]; then
+    CONV_VARIANT="i2c"
+  elif [ "$ENABLE_CONV_GEMM" ]; then
+    CONV_VARIANT="gemm"
+  elif [ "$ENABLE_CONV_WINOGRAD" ]; then
+    CONV_VARIANT="winograd"
+  elif [ "$ENABLE_CONV_DIRECT" ]; then
+    CONV_VARIANT="direct"
+  else
+    CONV_VARIANT="i2c"
+  fi
+
   # 3) Launch pydtnn-benchmark
   export PYTHONOPTIMIZE=2
   export PYTHONUNBUFFERED="True"
@@ -256,11 +271,7 @@ function run_benchmark() {
     --evaluate="${EVALUATE}" \
     --evaluate-only="${EVALUATE_ONLY}" \
     --test-as-validation="${TEST_AS_VALIDATION}" \
-    --enable-best-of="${ENABLE_BEST_OF}" \
-    --enable-conv-i2c="${ENABLE_CONV_I2C:-"True"}" \
-    --enable-conv-gemm="${ENABLE_CONV_GEMM}" \
-    --enable-conv-winograd="${ENABLE_CONV_WINOGRAD}" \
-    --enable-conv-direct="${ENABLE_CONV_DIRECT}" \
+    --conv-variant="${CONV_VARIANT}" \
     --conv-direct-method="${CONV_DIRECT_METHOD:-""}" \
     --conv-direct-methods-for-best-of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
     --enable-memory-cache="${ENABLE_MEMORY_CACHE}" \

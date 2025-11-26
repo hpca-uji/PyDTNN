@@ -207,12 +207,12 @@ The PyDTNN framework comes with a utility launcher called
 
 -  Convolution operation parameters:
 
-   -  ``--enable-conv-i2c``: Use ``ConvI2C`` module to
-      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
-   -  ``--enable-conv-gemm``: Use ConvGemm (implicit gemm) module to
-      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
-   -  ``--enable-conv-winograd``: Use the Winograd algorithm to
-      realize convolutions in ``Conv2D`` layers. ``True`` if specified.
+   -  ``--conv-variant``:Select the standard 2D Convolutional module. Options:
+      * ``i2c`` (default): Use the ConvI2C algorithm.
+      * ``gemm``: Use the ConvGemm algorithm.
+      * ``winograd``: Use the CondWinograd algorithm.
+      * ``direct``: Use the ConvDirect algorithm.
+
    -  ``--conv-direct-method``: The ``ConvDirect`` module to
       realize convolutions in ``Conv2D`` layers.
    -  ``--conv-direct-method``: Use ``ConvDirect`` module to

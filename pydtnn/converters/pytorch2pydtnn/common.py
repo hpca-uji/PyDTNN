@@ -8,7 +8,7 @@ from pydtnn.converters.pytorch2pydtnn.layers.linear import Linear
 from pydtnn.converters.pytorch2pydtnn.layers.normalization import BatchNorm2d
 from pydtnn.converters.pytorch2pydtnn.layers.pooling import AdaptiveAvgPool2d, AvgPool2d, MaxPool2d
 from pydtnn.converters.pytorch2pydtnn.layers.utility import Flatten
-from pydtnn.layer import LayerAndActivationBase
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
 
 # Functionality imports
 
