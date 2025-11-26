@@ -10,7 +10,7 @@ from pydtnn.utils.constants import ArrayShape
 import ctypes
 
 
-class DropoutGPU(LayerGPU, Dropout[TensorGPU]):
+class DropoutGPU(Dropout[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

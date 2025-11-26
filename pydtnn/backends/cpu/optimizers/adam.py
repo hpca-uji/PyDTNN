@@ -5,7 +5,7 @@ from pydtnn.optimizers.adam import Adam
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 
 
-class AdamCPU(OptimizerCPU, Adam[np.ndarray]):
+class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 

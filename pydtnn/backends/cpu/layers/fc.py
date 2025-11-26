@@ -7,7 +7,7 @@ from pydtnn.utils.performance_models import matmul_time
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
-class FCCPU(LayerCPU, FC[np.ndarray]):
+class FCCPU(FC[np.ndarray], LayerCPU):
 
     biases: np.ndarray
 

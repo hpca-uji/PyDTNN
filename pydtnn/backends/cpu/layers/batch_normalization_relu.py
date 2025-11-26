@@ -6,7 +6,7 @@ from pydtnn.utils.constants import ArrayShape
 import numpy as np
 
 
-class BatchNormalizationReluCPU(BatchNormalizationCPU, BatchNormalizationRelu[np.ndarray]):
+class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 

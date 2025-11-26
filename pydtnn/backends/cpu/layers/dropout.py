@@ -6,7 +6,7 @@ from pydtnn.model import Model
 from pydtnn.utils import random
 
 
-class DropoutCPU(LayerCPU, Dropout[np.ndarray]):
+class DropoutCPU(Dropout[np.ndarray], LayerCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

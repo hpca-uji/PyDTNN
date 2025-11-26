@@ -5,7 +5,7 @@ from pydtnn.activations.log import Log
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
 
-class LogCPU(ActivationCPU, Log[np.ndarray]):
+class LogCPU(Log[np.ndarray], ActivationCPU):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)

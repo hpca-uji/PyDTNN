@@ -6,7 +6,7 @@ from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 
 
-class RMSPropCPU(OptimizerCPU, RMSProp):
+class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 

@@ -6,7 +6,7 @@ from pydtnn.optimizers.sgd import SGD
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 
 
-class SGDCPU(OptimizerCPU, SGD):
+class SGDCPU(SGD[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 

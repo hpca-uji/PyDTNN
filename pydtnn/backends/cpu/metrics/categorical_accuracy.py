@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 
 
-class CategoricalAccuracyCPU(MetricCPU, CategoricalAccuracy[np.ndarray]):
+class CategoricalAccuracyCPU(CategoricalAccuracy[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         b = y_targ.shape[0]

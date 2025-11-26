@@ -14,6 +14,18 @@ from pycuda.driver import Function  #type: ignore
 
 class Conv2DPointwiseGPU(Conv2DGPU):
 
+    def _initializing_special_parameters(self):
+        self.kh = self.kw = 1
+        # Setting weights
+        match self.model.tensor_format:
+                case TensorFormat.NCHW:
+                    self.weights_shape = (self.co, self.ci)
+                case TensorFormat.NHWC:
+                    self.weights_shape = (self.co, self.ci)
+                case _:
+                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        #--
+
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 

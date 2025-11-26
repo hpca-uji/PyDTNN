@@ -7,7 +7,7 @@ from pydtnn.backends.gpu.libs import libcudnn as cudnn
 import pycuda.gpuarray as gpuarray  # type: ignore
 
 
-class TanhGPU(ActivationGPU, Tanh[TensorGPU]):
+class TanhGPU(Tanh[TensorGPU], ActivationGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -10,7 +10,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class RMSPropGPU(OptimizerGPU, RMSProp[TensorGPU]):
+class RMSPropGPU(RMSProp[TensorGPU], OptimizerGPU):
     """
     RMSPropGPU Optimizer
     """

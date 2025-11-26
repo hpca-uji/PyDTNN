@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
 
-class CategoricalHingeCPU(MetricCPU, CategoricalHinge[np.ndarray]):
+class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         # pos = np.sum(y_targ * y_pred, axis=-1)

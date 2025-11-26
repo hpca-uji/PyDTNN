@@ -10,7 +10,7 @@ from pycuda.driver import Function  # type: ignore
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 
-class F1ScoreGPU(MetricGPU, F1Score[TensorGPU]):
+class F1ScoreGPU(F1Score[TensorGPU], MetricGPU):
 
     conf_matrix_metric: BinaryConfusionMatrixGPU
 

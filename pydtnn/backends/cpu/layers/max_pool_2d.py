@@ -9,11 +9,10 @@ from pydtnn.backends.cpu.layers.abstract.pool_2d_layer import AbstractPool2DLaye
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import ArrayShape
 
 
-class MaxPool2DCPU(AbstractPool2DLayerCPU, MaxPool2D[np.ndarray]):
+class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -3,14 +3,13 @@ import numpy as np
 from pydtnn.metrics.categorical_mse import CategoricalMSE
 from pydtnn.backends.gpu.metrics.metric import MetricGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class CategoricalMSEGPU(MetricGPU, CategoricalMSE[TensorGPU]):
+class CategoricalMSEGPU(CategoricalMSE[TensorGPU], MetricGPU):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_mse"

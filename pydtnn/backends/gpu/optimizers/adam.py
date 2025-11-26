@@ -11,7 +11,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class AdamGPU(OptimizerGPU, Adam[TensorGPU]):
+class AdamGPU(Adam[TensorGPU], OptimizerGPU):
     """
     AdamGPU optimizer
     """

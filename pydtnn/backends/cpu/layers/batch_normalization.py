@@ -7,7 +7,7 @@ from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from pydtnn.utils.constants import ArrayShape, Parameters
 
-class BatchNormalizationCPU(LayerCPU, BatchNormalization[np.ndarray]):
+class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
     @property
     def _ary_prop(self) -> set[str]:

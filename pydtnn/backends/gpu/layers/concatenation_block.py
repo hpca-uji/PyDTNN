@@ -13,7 +13,7 @@ from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 
-class ConcatenationBlockGPU(LayerGPU, ConcatenationBlock[TensorGPU]):
+class ConcatenationBlockGPU(ConcatenationBlock[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

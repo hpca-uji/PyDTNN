@@ -7,7 +7,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-class MulticlassConfusionMatrixGPU(MetricGPU, MulticlassConfusionMatrix[TensorGPU]):
+class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricGPU):
 
     def __init_gpu_kernel__(self) -> Function:
         

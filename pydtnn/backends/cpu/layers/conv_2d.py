@@ -6,7 +6,7 @@ from pydtnn.utils.constants import ArrayShape
 import numpy as np
 
 
-class Conv2DCPU(LayerCPU, Conv2D[np.ndarray]):
+class Conv2DCPU(Conv2D[np.ndarray], LayerCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

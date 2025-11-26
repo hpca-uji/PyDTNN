@@ -45,13 +45,13 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
         ])
         shape = (d.c, d.h, d.w)
         chain.set_model_and_backend(model)
-        chain.initialize(prev_shape=shape)
+        chain.initialize(prev_shape=shape, x=None)
 
         from_parent = relu.__dict__ | bn.__dict__ | conv2d.__dict__
         fuse = Conv2DBatchNormalizationRelu(from_parent=from_parent)
         fuse.set_model_and_backend(model)
         fuse.__dict__.update(from_parent)
-        fuse.initialize(prev_shape=shape)
+        fuse.initialize(prev_shape=shape, x=None)
 
         # Set the same initial weights and biases to both layers
         fuse.weights = conv2d.weights.copy()

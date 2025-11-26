@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.losses.loss import LossCPU
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 
 
-class CategoricalCrossEntropyCPU(LossCPU, CategoricalCrossEntropy[np.ndarray]):
+class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
 
     def compute(self, _y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         # Common

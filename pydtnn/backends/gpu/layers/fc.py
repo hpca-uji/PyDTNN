@@ -13,7 +13,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.utils import matmul_gpu, matvec_gpu
 from pydtnn.utils.constants import ArrayShape, Parameters
 
-class FCGPU(LayerGPU, FC[TensorGPU]):
+class FCGPU(FC[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

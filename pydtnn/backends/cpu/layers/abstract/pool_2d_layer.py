@@ -7,7 +7,7 @@ from pydtnn.utils.constants import ArrayShape
 import numpy as np
 
 
-class AbstractPool2DLayerCPU(LayerCPU, AbstractPool2DLayer[np.ndarray]):
+class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 

@@ -9,7 +9,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
+class CategoricalAccuracyGPU(CategoricalAccuracy[TensorGPU], MetricGPU):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_accuracy"
@@ -19,7 +19,7 @@ class CategoricalAccuracyGPU(MetricGPU, CategoricalAccuracy[TensorGPU]):
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
             const int workers = blockDim.x * gridDim.x;
 
-            for(idx; idx < b; idx += workers)
+            for(; idx < b; idx += workers)
             {{
                 int i = 0, max = 0;
                 {T} max_value = y_pred[idx * n];

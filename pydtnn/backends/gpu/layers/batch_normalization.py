@@ -12,7 +12,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape, Parameters
 
 
-class BatchNormalizationGPU(LayerGPU, BatchNormalization[TensorGPU]):
+class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
 
     @property
     def _ary_prop(self) -> set[str]:

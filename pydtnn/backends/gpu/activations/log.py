@@ -10,7 +10,7 @@ import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 
-class LogGPU(ActivationGPU, Log[TensorGPU]):
+class LogGPU(Log[TensorGPU], ActivationGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

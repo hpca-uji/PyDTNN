@@ -5,7 +5,7 @@ from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionM
 from pydtnn.metrics.f1_score import F1Score
 from pydtnn.cython.div_arrays_set_if_zero import div_arrays_set_if_zero
 
-class F1ScoreCPU(MetricCPU, F1Score[np.ndarray]):
+class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
     conf_matrix_metric: BinaryConfusionMatrixCPU
 

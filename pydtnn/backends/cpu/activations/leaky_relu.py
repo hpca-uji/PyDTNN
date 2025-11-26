@@ -5,7 +5,7 @@ from pydtnn.backends.cpu.activations.activation import ActivationCPU
 import numpy as np
 
 
-class LeakyReluCPU(ActivationCPU, LeakyRelu[np.ndarray]):
+class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

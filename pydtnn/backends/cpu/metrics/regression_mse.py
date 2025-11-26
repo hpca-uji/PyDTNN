@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.regression_mse import RegressionMSE
 
 
-class RegressionMSECPU(MetricCPU, RegressionMSE[np.ndarray]):
+class RegressionMSECPU(RegressionMSE[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         # return np.square(y_targ - y_pred).mean()

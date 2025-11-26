@@ -6,7 +6,7 @@ from pydtnn.backends.cpu.activations.activation import ActivationCPU
 from pydtnn.utils.constants import ArrayShape
 
 
-class ReluCPU(ActivationCPU, Relu[np.ndarray]):
+class ReluCPU(Relu[np.ndarray], ActivationCPU):
 
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)

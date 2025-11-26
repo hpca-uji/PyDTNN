@@ -11,7 +11,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class NadamGPU(OptimizerGPU, Nadam[TensorGPU]):
+class NadamGPU(Nadam[TensorGPU], OptimizerGPU):
     """
     NadamGPU optimizer
     """

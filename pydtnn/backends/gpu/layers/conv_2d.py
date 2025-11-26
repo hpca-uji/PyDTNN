@@ -15,7 +15,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
 
-class Conv2DGPU(LayerGPU, Conv2D[TensorGPU]):
+class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

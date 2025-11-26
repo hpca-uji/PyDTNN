@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_mae import CategoricalMAE
 
 
-class CategoricalMAECPU(MetricCPU, CategoricalMAE[np.ndarray]):
+class CategoricalMAECPU(CategoricalMAE[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))

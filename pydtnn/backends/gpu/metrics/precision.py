@@ -10,7 +10,7 @@ from pycuda.driver import Function  # type: ignore
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 
-class PrecisionGPU(MetricGPU, Precision[TensorGPU]):
+class PrecisionGPU(Precision[TensorGPU], MetricGPU):
 
     conf_matrix_metric: BinaryConfusionMatrixGPU
 

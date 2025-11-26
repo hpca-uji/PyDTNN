@@ -45,7 +45,7 @@ ci = {macro_index_c}(idx, c);
 """
 
 
-class AdaptiveAveragePool2DGPU(LayerGPU, AdaptiveAveragePool2D[TensorGPU]):
+class AdaptiveAveragePool2DGPU(AdaptiveAveragePool2D[TensorGPU], LayerGPU):
 
     def initialize(self, prev_shape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

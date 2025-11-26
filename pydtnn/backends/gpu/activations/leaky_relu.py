@@ -11,7 +11,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 
-class LeakyReluGPU(ActivationGPU, LeakyRelu):
+class LeakyReluGPU(LeakyRelu[TensorGPU], ActivationGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

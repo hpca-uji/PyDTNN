@@ -5,7 +5,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 import numpy as np
 
 
-class FlattenCPU(LayerCPU, Flatten[np.ndarray]):
+class FlattenCPU(Flatten[np.ndarray], LayerCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)

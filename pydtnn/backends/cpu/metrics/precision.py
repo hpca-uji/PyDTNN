@@ -6,7 +6,7 @@ from pydtnn.metrics.precision import Precision
 from pydtnn.cython.div_arrays_set_if_zero import div_arrays_set_if_zero
 
 
-class PrecisionCPU(MetricCPU, Precision[np.ndarray]):
+class PrecisionCPU(Precision[np.ndarray], MetricCPU):
 
     conf_matrix_metric: BinaryConfusionMatrixCPU
 

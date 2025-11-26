@@ -6,7 +6,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 
 
-class InputGPU(LayerGPU, Input[TensorGPU]):
+class InputGPU(Input[TensorGPU], LayerGPU):
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)

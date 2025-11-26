@@ -3,7 +3,7 @@ from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
 import numpy as np
 
-class MulticlassConfusionMatrixCPU(MetricCPU, MulticlassConfusionMatrix[np.ndarray]):
+class MulticlassConfusionMatrixCPU(MulticlassConfusionMatrix[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
         """

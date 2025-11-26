@@ -5,7 +5,7 @@ from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
 
-class SigmoidCPU(ActivationCPU, Sigmoid[np.ndarray]):
+class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)

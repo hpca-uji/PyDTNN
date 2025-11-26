@@ -10,7 +10,7 @@ from pydtnn.layers.layer import ParameterException
 from pydtnn.utils.constants import ArrayShape
 
 
-class AbstractPool2DLayerGPU(LayerGPU, AbstractPool2DLayer[TensorGPU]):
+class AbstractPool2DLayerGPU(AbstractPool2DLayer[TensorGPU], LayerGPU):
     """
     Provides common methods to Pool2DGPU classes.
     """

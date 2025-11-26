@@ -11,7 +11,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 
-class Relu6GPU(ActivationGPU, Relu6[TensorGPU]):
+class Relu6GPU(Relu6[TensorGPU], ActivationGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

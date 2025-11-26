@@ -9,7 +9,7 @@ import numpy as np
 # noinspection PyAbstractClass
 
 
-class Conv2DReluCPU(Conv2DStandardCPU, Conv2DRelu[np.ndarray]):
+class Conv2DReluCPU(Conv2DRelu[np.ndarray], Conv2DStandardCPU):
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 

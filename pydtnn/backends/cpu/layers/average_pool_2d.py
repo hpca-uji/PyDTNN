@@ -5,12 +5,11 @@ from pydtnn.cython.im2col_1ch_nchw_cython import col2im_1ch_nchw_cython, im2col_
 from pydtnn.cython.im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
 from pydtnn.backends.cpu.layers.abstract.pool_2d_layer import AbstractPool2DLayerCPU
 from pydtnn.layers.average_pool_2d import AveragePool2D
-from pydtnn.utils.tensor import TensorFormat
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
-class AveragePool2DCPU(AbstractPool2DLayerCPU, AveragePool2D[np.ndarray]):
+class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

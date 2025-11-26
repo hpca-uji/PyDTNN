@@ -3,7 +3,7 @@ from pydtnn.layers.input import Input
 import numpy as np
 
 
-class InputCPU(LayerCPU, Input[np.ndarray]):
+class InputCPU(Input[np.ndarray], LayerCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         return np.asarray(x, dtype=self.model.dtype, order="C", copy=None)

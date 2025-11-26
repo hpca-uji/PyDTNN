@@ -14,8 +14,13 @@ from pycuda.driver import Function  #type: ignore
 
 class Conv2DDepthwiseGPU(Conv2DGPU):
 
+    def _initializing_special_parameters(self):
+        # Setting other parameters
+        self.co = self.ci
+        # Setting weights
+        self.weights_shape = (1, self.ci, *self.filter_shape)
+
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        self.weights_shape = (1, *self.weights_shape)
         super().initialize(prev_shape, x)
     
         # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.

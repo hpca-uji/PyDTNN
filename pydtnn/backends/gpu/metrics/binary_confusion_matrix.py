@@ -7,7 +7,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-class BinaryConfusionMatrixGPU(MetricGPU, BinaryConfusionMatrix[TensorGPU]):
+class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"

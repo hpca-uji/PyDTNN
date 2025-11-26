@@ -9,7 +9,7 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.utils.constants import DTYPE2CTYPE
 
-class RegressionMAEGPU(MetricGPU, RegressionMAE[TensorGPU]):
+class RegressionMAEGPU(RegressionMAE[TensorGPU], MetricGPU):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "regression_mae"

@@ -7,7 +7,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 import numpy as np
 
 
-class Conv2DBatchNormalizationCPU(Conv2DStandardCPU, Conv2DBatchNormalization[np.ndarray]):
+class Conv2DBatchNormalizationCPU(Conv2DBatchNormalization[np.ndarray], Conv2DStandardCPU):
 
     @property
     def _ary_prop(self) -> set[str]:

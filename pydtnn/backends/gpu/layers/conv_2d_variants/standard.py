@@ -15,9 +15,11 @@ import pycuda.gpuarray as gpuarray  #type: ignore
 
 class Conv2DStandardGPU(Conv2DGPU):
 
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        # This weight shape is required for cuDNN when NHWC is seleted!
+
+    def _initializing_special_parameters(self):
         self.weights_shape = (self.co, *self.filter_shape, self.ci)
+
+    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
         # Activations y

@@ -6,7 +6,7 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 
-class ConcatenationBlockCPU(AbstractBlockLayerCPU, ConcatenationBlock):
+class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

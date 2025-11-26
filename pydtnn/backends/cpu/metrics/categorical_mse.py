@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_mse import CategoricalMSE
 
 
-class CategoricalMSECPU(MetricCPU, CategoricalMSE[np.ndarray]):
+class CategoricalMSECPU(CategoricalMSE[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         # return np.square(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]).mean()

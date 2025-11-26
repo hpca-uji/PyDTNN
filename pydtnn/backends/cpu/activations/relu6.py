@@ -4,7 +4,7 @@ from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
 
-class Relu6CPU(ActivationCPU, Relu6[np.ndarray]):
+class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

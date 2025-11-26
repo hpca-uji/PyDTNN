@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.losses.loss import LossCPU
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 
 
-class BinaryCrossEntropyCPU(LossCPU, BinaryCrossEntropy[np.ndarray]):
+class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
     def compute(self, _y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         assert len(y_targ.shape) == 2
         # Loss

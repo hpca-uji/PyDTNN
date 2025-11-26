@@ -10,7 +10,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class SGDGPU(OptimizerGPU, SGD[TensorGPU]):
+class SGDGPU(SGD[TensorGPU], OptimizerGPU):
     """
     SGDGPU optimizer
     """

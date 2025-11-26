@@ -5,7 +5,7 @@ from pydtnn.optimizers.nadam import Nadam
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 
 
-class NadamCPU(OptimizerCPU, Nadam):
+class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 

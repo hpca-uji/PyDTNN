@@ -11,7 +11,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 import numpy as np
 
 
-class AdaptiveAveragePool2DCPU(LayerCPU, AdaptiveAveragePool2D[np.ndarray]):
+class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
     # The backend is almost the same as a AveragePool2D layer.
 
     def __init__(self, *args, **kwargs):

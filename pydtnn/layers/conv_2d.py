@@ -88,7 +88,7 @@ class Conv2D[T: Array](Layer[T]):
 
     def _initializing_special_parameters(self):
         # NOTE: This method's objective is to define and change the value of some parameters defined before that are needed later in the initialization process,
-        #   for example: "self.weights_shape" and "self.co".
+        #   for example: "self.weights_shape" and, in non-standard cases, "self.co".
         pass
     # ---
 
@@ -108,10 +108,8 @@ class Conv2D[T: Array](Layer[T]):
 
 
     def show(self, attrs: str = "") -> None:
-        self.weights: T
         super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
-                                                f"dilat=({self.vdilation},{self.hdilation}), "
-                                                f"grouping=({self.grouping})"
+                                                f"dilat=({self.vdilation},{self.hdilation})"
                                                 ))

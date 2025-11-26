@@ -24,7 +24,7 @@ _dict_indexes = {
     }
 }
 
-class BinaryConfusionMatrixCPU(MetricCPU, BinaryConfusionMatrix[np.ndarray]):
+class BinaryConfusionMatrixCPU(BinaryConfusionMatrix[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
         super().initialize()

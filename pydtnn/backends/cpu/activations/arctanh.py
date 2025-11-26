@@ -4,7 +4,7 @@ from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
 
-class ArctanhCPU(ActivationCPU, Arctanh[np.ndarray]):
+class ArctanhCPU(Arctanh[np.ndarray], ActivationCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

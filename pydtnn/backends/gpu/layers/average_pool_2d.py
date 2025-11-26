@@ -5,7 +5,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 
 
-class AveragePool2DGPU(AbstractPool2DLayerGPU, AveragePool2D[TensorGPU]):
+class AveragePool2DGPU(AveragePool2D[TensorGPU], AbstractPool2DLayerGPU):
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

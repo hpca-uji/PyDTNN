@@ -9,7 +9,7 @@ from pycuda.elementwise import ElementwiseKernel # type: ignore
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 
-class ArctanhGPU(ActivationGPU, Arctanh[TensorGPU]):
+class ArctanhGPU(Arctanh[TensorGPU], ActivationGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.regression_mae import RegressionMAE
 
 
-class RegressionMAECPU(MetricCPU, RegressionMAE[np.ndarray]):
+class RegressionMAECPU(RegressionMAE[np.ndarray], MetricCPU):
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         # return np.sum(np.absolute(y_targ - y_pred))
