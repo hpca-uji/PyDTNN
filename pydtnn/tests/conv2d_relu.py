@@ -9,7 +9,6 @@ from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
-from pydtnn.tests.conv2d_conv_gemm import Conv2DConvGemmTestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
@@ -19,15 +18,15 @@ class Conv2DReluTestCase(Conv2DCommonTestCase):
     Tests that Conv2D+Relu leads to the same results than Conv2DRelu
     """
     # NOTE: Delete parent test to prevent re-export and re-testing
-    global Conv2DConvGemmTestCase
-    del Conv2DConvGemmTestCase
+    global Conv2DCommonTestCase
+    del Conv2DCommonTestCase
 
     @staticmethod
     def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
-        params.enable_conv_gemm = True
+        params.conv_variant = "gemm"
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 

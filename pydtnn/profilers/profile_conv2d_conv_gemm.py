@@ -75,10 +75,10 @@ class Params:
 def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     params = Params()
     params.batch_size = d.b
-    params.enable_conv_gemm = False
+    params.conv_variant = "i2c"
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
-    params_gc.enable_conv_gemm = True
+    params_gc.conv_variant = "gemm"
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding),

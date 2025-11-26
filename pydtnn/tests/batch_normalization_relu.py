@@ -5,7 +5,6 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
 from pydtnn.tests.abstract.common import D, Params
 from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
@@ -24,7 +23,7 @@ class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
-        params.enable_conv_gemm = True
+        params.conv_variant = "gemm"
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 

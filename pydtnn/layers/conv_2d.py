@@ -1,5 +1,7 @@
 import importlib
 from typing import TYPE_CHECKING, Optional
+
+from pydtnn.layer_and_activation_base import FusedLayerMixIn
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.backends import BackendType
@@ -29,6 +31,9 @@ class Conv2D[T: Array](Layer[T]):
     # -----
 
     def _get_backend_cls(self, backend: BackendType) -> None:
+        if isinstance(self, FusedLayerMixIn):
+            return super()._get_backend_cls(backend)
+
         cls = self.__class__
         module_name = cls.__module__.split(".", 1)[1]
 

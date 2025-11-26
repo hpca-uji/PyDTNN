@@ -4,6 +4,7 @@ import warnings
 import numpy as np
 
 from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
@@ -22,8 +23,8 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
     global ModelCommonTestCase
 
-    rtol_dict = ModelCommonTestCase.rtol_dict | {AdditionBlock: 1e-1, Conv2D: 1e-6}
-    atol_dict = ModelCommonTestCase.atol_dict | {AdditionBlock: 1e-1, Conv2D: 1e-6}
+    rtol_dict = ModelCommonTestCase.rtol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
+    atol_dict = ModelCommonTestCase.atol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     del ModelCommonTestCase

@@ -27,7 +27,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
-        params.enable_conv_gemm = True
+        params.conv_variant = "gemm"
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 

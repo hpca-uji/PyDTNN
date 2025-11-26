@@ -1,4 +1,4 @@
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import Conv2DStandardCPU
 from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -7,7 +7,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 import numpy as np
 
 
-class Conv2DBatchNormalizationCPU(Conv2DCPU, Conv2DBatchNormalization[np.ndarray]):
+class Conv2DBatchNormalizationCPU(Conv2DStandardCPU, Conv2DBatchNormalization[np.ndarray]):
 
     @property
     def _ary_prop(self) -> set[str]:

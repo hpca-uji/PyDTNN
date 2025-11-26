@@ -22,12 +22,11 @@ class Conv2DConvGemmTestCase(Conv2DCommonTestCase):
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
-        params.enable_conv_gemm = False
-        params.enable_best_of = False
+        params.conv_variant = "i2c"
         model_i2c = Model(**vars(params))
         model_i2c.mode = Model.Mode.TRAIN
         params_gc = deepcopy(params)
-        params_gc.enable_conv_gemm = True
+        params_gc.conv_variant = "gemm"
         model_cg = Model(**vars(params_gc))
         model_cg.mode = Model.Mode.TRAIN
         conv2d_i2c = Conv2DCPU(nfilters=d.kn, filter_shape=(d.kh, d.kw),

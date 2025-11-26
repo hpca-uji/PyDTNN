@@ -206,11 +206,6 @@ class Model[T: Array]:
     use_synthetic_data: bool
     dataset_train_path: str
     dataset_test_path: str
-    enable_best_of: bool
-    enable_conv_i2c: bool
-    enable_conv_winograd: bool
-    enable_conv_gemm: bool
-    enable_conv_direct: bool
     evaluate_only: bool
     evaluate_on_train: bool
     profile: bool

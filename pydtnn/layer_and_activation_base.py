@@ -168,5 +168,4 @@ class FusedLayerMixIn[T: Array]():
         if from_parent is None:
             super().__init__(*args, **kwargs)
         else:
-            from_parent.pop("forward", None)
             self.__dict__.update(from_parent)

@@ -24,6 +24,7 @@ class Params:
         self.parallel = "sequential"
         self.dtype: np.dtype = np.dtype(np.float32)
         self.tensor_format = TensorFormat.NHWC.upper()
+        self.conv_variant = "i2c"
 
         # model_name = os.environ.get("PYDTNN_TEST_MODEL", "simplecnn")
         # self.model_name = model_name
