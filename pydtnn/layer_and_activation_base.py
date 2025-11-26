@@ -69,7 +69,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         return prefix
 
     def __repr__(self) -> str:
-        return f"{self._id_prefix}{type(self).__name__}"
+        return f"<{self.name}>"
 
     def set_model(self, parent_model: Model) -> None:
         super().set_model(parent_model)
