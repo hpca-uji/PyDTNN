@@ -19,12 +19,13 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
         self.dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
+        res_shape = (self.dim_n, self.co)
+
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 self.forward = self._forward_i2c_nchw
                 self.backward = self._backward_i2c_nchw
 
-                res_shape = (self.co, self.dim_n)
                 _dw_shape = (self.co, self.dim_c)
                 res_bw_shape = (self.dim_c, self.dim_n)
 
@@ -33,13 +34,11 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 self.forward = self._forward_i2c_nhwc
                 self.backward = self._backward_i2c_nhwc
 
-                res_shape = (self.dim_n, self.co)
                 _dw_shape = (self.dim_c, self.co)
                 res_bw_shape = (self.dim_n, self.dim_c)
 
                 self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
             case _:
-                res_shape = (None, )
                 _dw_shape = (None, )
                 res_bw_shape = (None, )
                 
@@ -80,9 +79,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            res: np.ndarray = res.reshape((self.co, -1), copy=False)
-            for i in range(self.co):
-                np.add(res[i], self.biases[i], out=res[i], 
+            np.add(res, self.biases.reshape((-1, self.co), copy=False), out=res, 
                        dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -98,7 +95,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         dim_n = x.shape[0] * self.ho * self.wo
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
         x_cols = np.asarray(self._x_cols[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)
-        res = np.asarray(self.res[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)
+        res = self.res[:dim_n, : ]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_nchw_cython(x, x_cols,
@@ -114,16 +111,15 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(w_cols, x_cols, out=res, 
+        np.matmul(w_cols, x_cols, out=res.T, 
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            for i in range(self.co):
-                res: np.ndarray = res.reshape((self.co, -1), copy=False)
-                np.add(res[i], self.biases[i], out=res[i], 
-                       dtype=self.model.dtype)
+            np.add(res, self.biases, out=res, 
+                    dtype=self.model.dtype)
+
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)

@@ -24,7 +24,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         self.x: T = None  # type: ignore
         self.y: T = None  # type: ignore
         self.weights: T = None  # type: ignore
-        self.biases: T | None = None
+        self.biases: T = None  # type: ignore
         self.act: type[Activation] | None = None
         self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = None # type: ignore
