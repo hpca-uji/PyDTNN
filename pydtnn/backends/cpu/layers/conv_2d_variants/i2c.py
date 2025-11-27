@@ -41,14 +41,14 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
             case _:
                 _dw_shape = (None, )
                 res_bw_shape = (None, )
-                
+
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         # -
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.res = np.zeros(shape = res_shape, dtype=self.model.dtype, order="C")
-        self._dw = np.zeros(shape = _dw_shape, dtype=self.model.dtype, order="C")
-        self.res_bw = np.zeros(shape = res_bw_shape, dtype=self.model.dtype, order="C")
+        self.res = np.zeros(shape=res_shape, dtype=self.model.dtype, order="C")
+        self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
+        self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
     # ---
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -73,14 +73,14 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x_rows, w_cols, out=res, 
+        np.matmul(x_rows, w_cols, out=res,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(res, self.biases.reshape((-1, self.co), copy=False), out=res, 
-                       dtype=self.model.dtype)
+            np.add(res, self.biases.reshape((-1, self.co), copy=False), out=res,
+                   dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
@@ -95,7 +95,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         dim_n = x.shape[0] * self.ho * self.wo
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
         x_cols = np.asarray(self._x_cols[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)
-        res = self.res[:dim_n, : ]
+        res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_nchw_cython(x, x_cols,
@@ -111,14 +111,14 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(w_cols, x_cols, out=res.T, 
+        np.matmul(w_cols, x_cols, out=res.T,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(res, self.biases, out=res, 
-                    dtype=self.model.dtype)
+            np.add(res, self.biases, out=res,
+                   dtype=self.model.dtype)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -140,7 +140,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x_rows.T, dy_rows, out=self._dw, 
+        np.matmul(self.x_rows.T, dy_rows, out=self._dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -151,8 +151,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # Biases gradient
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
-            # np.sum(dy, axis=(0, 1, 2), out=self.db)
-            np.sum(dy.reshape((self.co, -1), copy=None), axis=1, out=self.db)
+            np.sum(dy, axis=(0, 1, 2), out=self.db)
+            # np.sum(dy.reshape((self.co, -1), copy=None), axis=1, out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Data gradient
@@ -187,7 +187,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(dy_cols, self.x_cols.T, out=self._dw, 
+        np.matmul(dy_cols, self.x_cols.T, out=self._dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -198,18 +198,18 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # Biases gradient
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
-            # np.sum(dy, axis=(0, 2, 3), out=self.db)
-            np.sum(dy.reshape((self.co, -1), copy=False), axis=1, out=self.db)
+            np.sum(dy, axis=(0, 2, 3), out=self.db)
+            # np.sum(dy.reshape((self.co, -1), copy=False), axis=1, out=self.db)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Data gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
-        w_cols = self.weights.reshape((-1, self.co), copy=False)
+        w_cols = self.weights.reshape((self.co, -1), copy=False).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w_cols, dy_cols, out=res, 
-                  dtype=self.model.dtype)
+        np.matmul(w_cols, dy_cols, out=res,
+                  dtype=self.model.dtype, order='C')
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
