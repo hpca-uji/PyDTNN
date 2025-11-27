@@ -74,7 +74,7 @@ class ConvGemmTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
-        return ConvGemm(debug=False).conv_gemm_nhwc(weights, x, biases, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+        return ConvGemm(debug=False).conv_gemm_nhwc(weights, x, None, vpadding, hpadding, vstride, hstride, vdilation, hdilation, biases)
 
     def test_raise_on_different_strides(self):
         d = self._get_config()
