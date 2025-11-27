@@ -71,11 +71,8 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def __repr__(self) -> str:
         return f"<{self.name}>"
 
-    def set_model(self, parent_model: Model) -> None:
-        super().set_model(parent_model)
-        self.id = next(self.model.layer_id_generator)
-
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
+        self.id = next(self.model.layer_id_generator)
         self.prev_shape = prev_shape
         self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
         self.fwd_time = np.zeros((4,), dtype=np.float32)

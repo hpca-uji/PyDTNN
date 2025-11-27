@@ -361,7 +361,7 @@ class Model[T: Array]:
             self.learning_rate = self.learning_rate / self.comm_size
 
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
-        self.optimizer.set_model_and_backend(self)
+        self.optimizer.init_backend_from_model(self)
 
         self.schedulers = [
             select_scheduler(scheduler_name).from_model(self)
@@ -615,9 +615,9 @@ class Model[T: Array]:
             layer.print_in_convdirect_format()
 
     def add(self, layer: LayerAndActivationBase[T]) -> None:
-        layer.set_model_and_backend(self)
+        layer.init_backend_from_model(self)
 
-        if layer.id > 0:
+        if self.layers:
             prev_shape = self.layers[-1].shape
             y = self.layers[-1].y
         else:
@@ -655,12 +655,12 @@ class Model[T: Array]:
         layer_name = None
 
         match (layer0, layer1, layer2):
-            case (_, FusedLayerMixIn(), _): pass # else: layer_name = None
+            case (_, FusedLayerMixIn(), _): pass  # else: layer_name = None
             case (Conv2D(), BatchNormalization(), Relu()):
                 if self.enable_fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
                 # else: layer_name = None
-            case default: pass # else: layer_name = None
+            case default: pass  # else: layer_name = None
 
         return layer_name, [layer0, layer1, layer2]
     # ----
@@ -673,8 +673,8 @@ class Model[T: Array]:
         layer_name = None
 
         match (layer1, layer2):
-            case (FusedLayerMixIn(), _): pass # else: layer_name = None
-                # else: layer_name = None
+            case (FusedLayerMixIn(), _): pass  # else: layer_name = None
+            # else: layer_name = None
             case (Conv2D(), BatchNormalization()):
                 if self.enable_fused_conv_bn:
                     layer_name = "conv_2d_batch_normalization"
@@ -687,11 +687,10 @@ class Model[T: Array]:
                 if self.enable_fused_bn_relu:
                     layer_name = "batch_normalization_relu"
                 # else: layer_name = None
-            case default: pass # else: layer_name = None
+            case default: pass  # else: layer_name = None
 
         return layer_name, [layer1, layer2]
     # ----
-
 
     def __layer_fusion(self, layers: list[LayerAndActivationBase], switch_fusion: abc.Callable) -> None:
         i = 0
@@ -702,25 +701,25 @@ class Model[T: Array]:
             if curr_layer.is_block_layer:
                 for j, p in enumerate(curr_layer.paths):
                     self.__layer_fusion(curr_layer.paths[j], switch_fusion)
-            #else: Nothing special
+            # else: Nothing special
 
             layer_name, layers_to_fuse = switch_fusion(layers[:i])
-            
+
             if layer_name:
-                dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)) )
+                dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
                 print(f"Fusing {' + '.join(map(str, layers_to_fuse))}")
                 fused_layer = select_layer(layer_name)
-                
+
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
-                new_curr_layer.set_model_and_backend(self)
+                new_curr_layer.init_backend_from_model(self)
                 new_curr_layer.__dict__.update(dict_params)
                 try:
                     new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
                 except Exception as e:
                     warn(f"Aborted fusion, {e}")
                 else:
-                    start = i -len(layers_to_fuse)
-                    del layers[start : i]
+                    start = i - len(layers_to_fuse)
+                    del layers[start: i]
                     layers.insert(start, new_curr_layer)
 
                 i -= len(layers_to_fuse)
@@ -744,14 +743,14 @@ class Model[T: Array]:
         self._apply_layer_fusion()
         loss_cls = select_loss(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
-        self.loss_func.set_model_and_backend(self)
+        self.loss_func.init_backend_from_model(self)
         self.loss_func.initialize()
         self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
 
         for metric in self.metrics_funcs:
-            metric.set_model_and_backend(self)
+            metric.init_backend_from_model(self)
             metric.initialize()
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
@@ -759,7 +758,6 @@ class Model[T: Array]:
         self.tracer.define_event_types(self)
         self._initialized = True
 
-        self.optimizer.set_model_and_backend(self)
         if self.enable_cudnn:
             assert isinstance(self.optimizer, OptimizerGPU), f"CUDA is enable but the optimizer's backend is not a GPU one ({type(self.optimizer)=})"
             self.optimizer.set_gpudirect(self.gpudirect)

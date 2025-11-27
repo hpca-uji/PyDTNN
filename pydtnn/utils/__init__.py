@@ -258,13 +258,13 @@ def debug_line(*args):
     log(f"{context} from {os.getpid()}:{threading.get_native_id()}", *args)
 
 
-def debug_stack(*args):
+def debug_stack(*args, sep="|"):
     """Get stack trace"""
     log = print
 
     stack = inspect.stack()[1:]
     try:
-        context = "|".join(
+        context = sep.join(
             f"{frame_info.frame.f_globals["__name__"]}.{frame_info.function}:{frame_info.lineno}"
             for frame_info in stack
         )

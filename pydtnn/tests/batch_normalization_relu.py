@@ -34,12 +34,12 @@ class BatchNormalizationReluTestCase(Conv2DCommonTestCase):
             relu
         ])
         shape = (d.c, d.h, d.w)
-        chain.set_model_and_backend(model)
+        chain.init_backend_from_model(model)
         chain.initialize(prev_shape=shape, x=None)
 
         from_parent = relu.__dict__ | bn.__dict__
         fuse = BatchNormalizationRelu(from_parent=from_parent)
-        fuse.set_model_and_backend(model)
+        fuse.init_backend_from_model(model)
         fuse.__dict__.update(from_parent)
         fuse.initialize(prev_shape=shape, x=None)
 

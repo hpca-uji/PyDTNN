@@ -169,6 +169,7 @@ class ParamsLayerPytorch(Params):
     def __init__(self, d = D()) -> None:
         super().__init__()
         self.batch_size = d.b
+        self.conv_variant = "i2c"
         self.tensor_format = TensorFormat.NCHW.upper()
         self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
         self.model_name = None
@@ -278,7 +279,7 @@ class LayerPyTorchTestCase(TestCase):
                         for grad_var in layer.grad_vars.keys():
                             grad: np.ndarray = getattr(layer, grad_var)
                             if grad_var == "weights" and grad is not None:
-                                grad = format_transpose(grad, {TensorFormat.NHWC: "ihwo", TensorFormat.NCHW: "oihw"}[pydtnn_model.tensor_format] , "oihw")
+                                grad = format_transpose(grad, {TensorFormat.NHWC: "ihwo", TensorFormat.NCHW: "oihw"}[pydtnn_model.tensor_format], "oihw")
                             self._copy_grad_vars(grad, grad_var, torch_layer)
                     case _:
                         for grad_var in layer.grad_vars.keys():

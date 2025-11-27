@@ -20,7 +20,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
             prev_shape = self.prev_shape
             x = self.x
             for i, layer in enumerate(p):
-                layer.set_model_and_backend(self.model)
+                layer.init_backend_from_model(self.model)
                 layer.initialize(prev_shape, x)
                 x = layer.y
                 if p_i == 0 and (len(p) - 1) == i:

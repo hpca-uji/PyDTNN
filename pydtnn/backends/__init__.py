@@ -35,8 +35,9 @@ class PromoteToBackend:
         else:
             return getattr(backend, name)
 
-    def _get_backend_cls(self, backend: BackendType) -> typing.Any:
+    def _get_backend_cls(self) -> typing.Any:
         cls = self.__class__
+        backend = self.model._backend
         module_name = cls.__module__.split(".", 1)[1]
         backend_module_name = f"pydtnn.backends.{backend}.{module_name}"
         backend_module = importlib.import_module(backend_module_name)
@@ -68,9 +69,9 @@ class PromoteToBackend:
         else:
             delattr(backend, name)
 
-    def set_backend(self, backend: BackendType) -> None:
+    def init_backend(self) -> None:
         """
-        Change the backend implementation used
+        Initialize the backend implementation used
 
         **Notice**: All object attributes are cleared when called.
         So, if used, this method should be the first called.
@@ -81,11 +82,14 @@ class PromoteToBackend:
         except AttributeError:
             pass
 
+        # Get backend class
+        cls = self._get_backend_cls()
+        if cls is None:
+            return
+
         # Create backend instance
-        cls = self._get_backend_cls(backend)
         args, kwds = self._new_backend
         self._backend = cls(*args, **kwds)
-        # self._frontend: instance of the original
         self._frontend = self
 
     # Base class
@@ -95,13 +99,13 @@ class PromoteToBackend:
         """Link a to a new model instance"""
         self.model = model
 
-    def set_model_and_backend(self, model: "model_module.Model") -> None:
-        """Link a to a new model instance"""
-        #  NOTE: This one is to have access to "model" in the "get_backend_class"
-        self.model = model
-        #  NOTE: This function erase all previous attribute data.
-        self.set_backend(model._backend)
-        #  NOTE: This one is to set model in the backend class (also this set implictly the layer id).
+    def init_backend_from_model(self, model: "model_module.Model") -> None:
+        """Initialize backend and link a new model instance"""
+        #  NOTE: This one is to have access to "model" in the "get_backend_cls"
+        self.set_model(model)
+        #  NOTE: This function masks all previous attribute data.
+        self.init_backend()
+        #  NOTE: This one is to set model in the backend class.
         self.set_model(model)
     # ---
 
