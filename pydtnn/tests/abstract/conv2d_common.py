@@ -83,36 +83,16 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
             print("y_ref:\n", y_ref)
             print("y_test:\n", y_test)
             print()
-            print("---=[ dy_cols * ref.T ]=---")
-            print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
-            print("x_cols.T:\n", conv2d_ref.x_cols.T)
-            print("dw:\n", conv2d_ref.dw)
-            print()
-            print("---=[ conv_test(dy * x indexed) ]=---")
-            print("dy:\n", dy.transpose((1, 0, 2, 3)))
-            try:
-                print("x:\n", conv2d_test.cg_x.transpose((1, 0, 2, 3)))
-            except AttributeError:
-                pass
-            try:
-                print("x indexed:\n", conv2d_test.cg_x_indexed)
-            except AttributeError:
-                pass
+            print("---=[ Backward results ]=---")
+            print("dx_ref:\n", dx_ref)
+            print("dx_test:\n", dx_test)
             print("dw:\n", conv2d_test.dw)
+            print("dx allclose: ", dx_allclose)
             print()
             print("---[ dw comparison ]---")
             print("dw_ref.shape:", conv2d_ref.dw.shape)
             print("dw_test.shape: ", conv2d_test.dw.shape)
             print("dw allclose: ", dw_allclose)
-            print()
-            print("---[ dx comparison ]---")
-            print("dx_ref.shape:", dx_ref.shape)
-            if dx_ref.size < 30:
-                print(dx_ref)
-            print("dx_test.shape: ", dx_test.shape)
-            if dx_test.size < 30:
-                print(dx_test)
-            print("dx allclose: ", dx_allclose)
             if print_times:
                 forward_ref_t = timeit(lambda: conv2d_ref.forward(x), number=10) / 10
                 forward_test_t = timeit(lambda: conv2d_test.forward(x), number=10) / 10
