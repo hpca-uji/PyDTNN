@@ -30,16 +30,17 @@ class Conv2D[T: Array](Layer[T]):
         DIRECT = "cd0"
     # -----
 
-    def _get_backend_cls(self, backend: BackendType) -> None:
+    def _get_backend_cls(self) -> None:
         if isinstance(self, FusedLayerMixIn):
-            return super()._get_backend_cls(backend)
+            return super()._get_backend_cls()
 
         cls = self.__class__
+        backend = self.model._backend
         module_name = cls.__module__.split(".", 1)[1]
 
         if backend is BackendType.CPU and self.grouping is self.Grouping.STANDARD:
             variant = self.model.conv_variant._name_.lower()
-        else: 
+        else:
             variant = self.grouping.lower()
 
         backend_module_name = f"pydtnn.backends.{backend}.{module_name}_variants.{variant}"

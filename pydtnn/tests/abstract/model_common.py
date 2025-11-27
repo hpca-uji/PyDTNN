@@ -83,7 +83,7 @@ class ModelCommonTestCase(TestCase):
         local_batch_size = model1.batch_size
         loss_cls = select_loss(loss_func_name)
         loss_func = loss_cls(shape=(local_batch_size, *model1.layers[-1].shape))
-        loss_func.set_model_and_backend(model1)
+        loss_func.init_backend_from_model(model1)
         loss_func.initialize()
         return model1, loss_func
 
