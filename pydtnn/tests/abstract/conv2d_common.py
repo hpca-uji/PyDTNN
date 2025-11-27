@@ -6,6 +6,7 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tests.abstract.common import verbose_test, D
 from pydtnn.tests.abstract.common import TestCase
 from pydtnn.utils import print_with_header, random
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class Conv2DCommonTestCase[T: Conv2D](TestCase):
@@ -56,74 +57,79 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
 
     def _test_forward_backward(self, d: D, x: np.ndarray, weights: np.ndarray, print_times=False):
         from timeit import timeit
-        conv2d_i2c, conv2d_cg = self._get_layers(d)
-        self._set_state(conv2d_i2c, weights)
-        self._set_state(conv2d_cg, weights)
+        conv2d_ref, conv2d_test = self._get_layers(d)
+        x = conv2d_ref.model.encode_tensor(x).copy()
+        if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
+            weights = format_transpose(weights, "OIHW", "IHWO").copy()
+        self._set_state(conv2d_ref, weights)
+        self._set_state(conv2d_test, weights)
         # Forward pass
-        y_i2c = conv2d_i2c.forward(x)
-        y_cg = conv2d_cg.forward(x)
+        y_ref = conv2d_ref.forward(x)
+        y_test = conv2d_test.forward(x)
         dy = random.random((d.b, d.kn, d.ho, d.wo)).astype(np.float32, order='C')
+        if conv2d_ref.model.tensor_format is TensorFormat.NHWC:
+            dy = format_transpose(dy, "NCHW", "NHWC").copy()
         # Backward pass
-        dx_i2c = conv2d_i2c.backward(dy)
-        dx_cg = conv2d_cg.backward(dy)
+        dx_ref = conv2d_ref.backward(dy)
+        dx_test = conv2d_test.backward(dy)
         # All close?
-        dw_allclose = np.allclose(conv2d_i2c.dw, conv2d_cg.dw)
-        dx_allclose = np.allclose(dx_i2c, dx_cg)
+        dw_allclose = np.allclose(conv2d_ref.dw, conv2d_test.dw)
+        dx_allclose = np.allclose(dx_ref, dx_test)
         if verbose_test():
             print_with_header(inspect.stack()[1][3])
             # np.set_printoptions(threshold=50)  # default is 1000
             print(d)
             print("---=[ Forward results ]=---")
-            print("y_i2c:\n", y_i2c)
-            print("y_cg:\n", y_cg)
+            print("y_ref:\n", y_ref)
+            print("y_test:\n", y_test)
             print()
-            print("---=[ dy_cols * i2c.T ]=---")
+            print("---=[ dy_cols * ref.T ]=---")
             print("dy_cols:\n", dy.transpose((1, 0, 2, 3)).reshape(d.kn, -1))
-            print("x_cols.T:\n", conv2d_i2c.x_cols.T)
-            print("dw:\n", conv2d_i2c.dw)
+            print("x_cols.T:\n", conv2d_ref.x_cols.T)
+            print("dw:\n", conv2d_ref.dw)
             print()
-            print("---=[ conv_gemm(dy * x indexed) ]=---")
+            print("---=[ conv_test(dy * x indexed) ]=---")
             print("dy:\n", dy.transpose((1, 0, 2, 3)))
             try:
-                print("x:\n", conv2d_cg.cg_x.transpose((1, 0, 2, 3)))
+                print("x:\n", conv2d_test.cg_x.transpose((1, 0, 2, 3)))
             except AttributeError:
                 pass
             try:
-                print("x indexed:\n", conv2d_cg.cg_x_indexed)
+                print("x indexed:\n", conv2d_test.cg_x_indexed)
             except AttributeError:
                 pass
-            print("dw:\n", conv2d_cg.dw)
+            print("dw:\n", conv2d_test.dw)
             print()
             print("---[ dw comparison ]---")
-            print("dw_i2c.shape:", conv2d_i2c.dw.shape)
-            print("dw_cg.shape: ", conv2d_cg.dw.shape)
+            print("dw_ref.shape:", conv2d_ref.dw.shape)
+            print("dw_test.shape: ", conv2d_test.dw.shape)
             print("dw allclose: ", dw_allclose)
             print()
             print("---[ dx comparison ]---")
-            print("dx_i2c.shape:", dx_i2c.shape)
-            if dx_i2c.size < 30:
-                print(dx_i2c)
-            print("dx_cg.shape: ", dx_cg.shape)
-            if dx_cg.size < 30:
-                print(dx_cg)
+            print("dx_ref.shape:", dx_ref.shape)
+            if dx_ref.size < 30:
+                print(dx_ref)
+            print("dx_test.shape: ", dx_test.shape)
+            if dx_test.size < 30:
+                print(dx_test)
             print("dx allclose: ", dx_allclose)
             if print_times:
-                forward_i2c_t = timeit(lambda: conv2d_i2c.forward(x), number=10) / 10
-                forward_cg_t = timeit(lambda: conv2d_cg.forward(x), number=10) / 10
-                backward_i2c_t = timeit(lambda: conv2d_i2c.backward(dy), number=10) / 10
-                backward_cg_t = timeit(lambda: conv2d_cg.backward(dy), number=10) / 10
+                forward_ref_t = timeit(lambda: conv2d_ref.forward(x), number=10) / 10
+                forward_test_t = timeit(lambda: conv2d_test.forward(x), number=10) / 10
+                backward_ref_t = timeit(lambda: conv2d_ref.backward(dy), number=10) / 10
+                backward_test_t = timeit(lambda: conv2d_test.backward(dy), number=10) / 10
                 print()
                 print("---[ times comparison ]---")
-                print("            i2c     cg")
+                print("            ref     test")
                 print("         +-------+--------+")
-                print(" forward | {:.3f} | {:.3f} |".format(forward_i2c_t, forward_cg_t))
+                print(" forward | {:.3f} | {:.3f} |".format(forward_ref_t, forward_test_t))
                 print("         +-------+--------+")
-                print("backward | {:.3f} | {:.3f} |".format(backward_i2c_t, backward_cg_t))
+                print("backward | {:.3f} | {:.3f} |".format(backward_ref_t, backward_test_t))
                 print("         +-------+--------+")
-                print("           {:.3f}   {:.3f}  ".format(forward_i2c_t + backward_i2c_t,
-                                                            forward_cg_t + backward_cg_t))
-        # self.assertTrue(np.allclose(y_i2c, y_cg, rtol=1e-5, atol=1e-6), f"y matrices differ")
-        self.assertTrue(np.allclose(y_i2c, y_cg), "y matrices differ")
+                print("           {:.3f}   {:.3f}  ".format(forward_ref_t + backward_ref_t,
+                                                            forward_test_t + backward_test_t))
+        # self.assertTrue(np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6), f"y matrices differ")
+        self.assertTrue(np.allclose(y_ref, y_test), "y matrices differ")
         self.assertTrue(dw_allclose, "dw matrices differ")
         self.assertTrue(dx_allclose, "dx return matrices differ")
 
@@ -132,17 +138,18 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
         Test that the default parameters lead to the same solution on the forward step
         """
         d = D()
-        conv2d_i2c, conv2d_cg = self._get_layers(d)
+        conv2d_ref, conv2d_test = self._get_layers(d)
         x = random.random((d.b, d.c, d.h, d.w)).astype(np.float32, order='C')
-        y_i2c = conv2d_i2c.forward(x)
-        y_cg = conv2d_cg.forward(x)
+        x = conv2d_ref.model.encode_tensor(x).copy()
+        y_ref = conv2d_ref.forward(x)
+        y_test = conv2d_test.forward(x)
         if verbose_test():
             print_with_header("test forward defaults")
-            print(y_i2c)
-            print(y_cg)
-            print("y_i2c.shape:", y_i2c.shape)
-            print("y_cg.shape: ", y_cg.shape)
-        self.assertTrue(np.allclose(y_i2c, y_cg, rtol=1e-5, atol=1e-6))
+            print(y_ref)
+            print(y_test)
+            print("y_ref.shape:", y_ref.shape)
+            print("y_test.shape: ", y_test.shape)
+        self.assertTrue(np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6))
 
     def test_forward_backward_defaults(self):
         """
