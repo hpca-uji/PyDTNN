@@ -7,7 +7,7 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 
 from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
 class Conv2DI2CCPU(Conv2DStandardCPU):
@@ -56,7 +56,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        x_rows = self._x_rows[:dim_n, :]
+        x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C", copy=None)
         res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -94,7 +94,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
-        x_cols = np.asarray(self._x_cols[:, : dim_n], dtype=self.model.dtype, order="C", copy=None)
+        x_cols = np.asarray(self._x_cols[:, :dim_n], dtype=self.model.dtype, order="C", copy=None)
         res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -107,23 +107,23 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.x_cols = x_cols
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
-        w_cols = self.weights.reshape((self.co, -1), copy=False)
+        w_rows = self.weights.reshape((self.co, -1), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(w_cols, x_cols, out=res.T,
+        np.matmul(w_rows, x_cols, out=res.T,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(res, self.biases, out=res,
+            np.add(res, self.biases.reshape((-1, self.co), copy=False), out=res,
                    dtype=self.model.dtype)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y: np.ndarray = best_transpose_1023(res.reshape((self.co, -1, self.ho, self.wo), copy=False))
+        y: np.ndarray = format_transpose(res.reshape((-1, self.ho, self.wo, self.co), copy=False), "NHWC", "NCHW")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
