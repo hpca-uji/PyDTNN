@@ -52,21 +52,21 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (It is correct.)
 
         if self.model.gpudirect:
-            tensor_type = TensorGPU.TensorTypeEnum.FILTER
+            bias_tensor_type = TensorGPU.TensorTypeEnum.FILTER
             _drv = drv
         else:
-            tensor_type = TensorGPU.TensorTypeEnum.TENSOR
+            bias_tensor_type = TensorGPU.TensorTypeEnum.TENSOR
             _drv = None
 
         # Derivative dw and derivative db
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, 
-                                                    tensor_type=tensor_type, drv=_drv)
+                                                    tensor_type=TensorGPU.TensorTypeEnum.FILTER, drv=_drv)
         if self.use_bias:
             self.biases: TensorGPU
             self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
                                                         cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, 
-                                                        tensor_type=tensor_type, drv=_drv)
+                                                        tensor_type=bias_tensor_type, drv=_drv)
     # ----
 
     def _export_weights_dw(self, key: str) -> Any:
