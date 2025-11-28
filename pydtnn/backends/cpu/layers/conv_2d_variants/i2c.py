@@ -157,7 +157,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         # Data gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
-        w_rows = self.weights.reshape((self.co, -1), copy=False)
+        w_rows = self.weights.reshape((-1, self.co), copy=False).T
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
