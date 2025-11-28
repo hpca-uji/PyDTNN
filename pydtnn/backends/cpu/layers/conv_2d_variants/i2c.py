@@ -164,7 +164,6 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         np.matmul(dy_cols, w_rows, out=res,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        breakpoint()
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         row2im_nhwc_cython(res, dx,
@@ -212,7 +211,6 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         np.matmul(w_cols, dy_rows, out=res,
                   dtype=self.model.dtype, order='C')
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        breakpoint()
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         col2im_nchw_cython(res, dx,
