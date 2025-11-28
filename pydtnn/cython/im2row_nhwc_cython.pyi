@@ -31,7 +31,7 @@ def im2row_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
     """
 
 
-def row2im_nhwc_cython[T: _npDT](cols: _npDT_2Dims[T],
+def row2im_nhwc_cython[T: _npDT](rows: _npDT_2Dims[T],
                                  x: _npDT_4Dims[T],
                                  n: int, h: int, w: int, c: int,
                                  kh: int, kw: int, ho: int, wo: int,
