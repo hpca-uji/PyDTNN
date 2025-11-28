@@ -33,7 +33,7 @@ def im2col_nchw_cython[T: _npDT](x: _npDT_4Dims[T],
 
 def col2im_nchw_cython[T: _npDT](cols: _npDT_2Dims[T],
                                  dx: _npDT_4Dims[T],
-                                 n: int, h: int, w: int, c: int,
+                                 n: int, c: int, h: int, w: int,
                                  kh: int, kw: int, ho: int, wo: int,
                                  vpadding: int, hpadding: int,
                                  vstride: int, hstride: int,
@@ -42,6 +42,10 @@ def col2im_nchw_cython[T: _npDT](cols: _npDT_2Dims[T],
     Args:
         cols (npDT_2Dims): The 2 dimensional array (the image as columns).
         dx (npDT_4Dims): The 4 dimensional array wher the image will be stored (it should be initialized as zeros).
+        n (int): number of samples.
+        c (int): number of channels.
+        h (int): image's height.
+        w (int): image's width.
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         ho (int): Output's heigth.
