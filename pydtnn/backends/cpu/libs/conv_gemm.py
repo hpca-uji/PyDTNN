@@ -90,14 +90,14 @@ class ConvGemm:
         except AttributeError:
             pass
 
-    def conv_gemm_nchw(self, weights: np.ndarray, x:np.ndarray, 
+    def conv_gemm_nchw(self, weights: np.ndarray, x: np.ndarray,
                        # res originaly was called "biases"
                        out: np.ndarray | None = None,  # type: ignore
                        vpadding=0, hpadding=0, vstride=1, hstride=1,
-                       vdilation=1, hdilation=1, 
+                       vdilation=1, hdilation=1,
                        # biases originaly was called "biases_vector"
-                       biases:np.ndarray | None = None,   # type: ignore
-                       trans=False, 
+                       biases: np.ndarray | None = None,   # type: ignore
+                       trans=False,
                        bn_running_mean: np.ndarray | None = None,  # type: ignore
                        bn_inv_std: np.ndarray | None = None,  # type: ignore
                        bn_gamma: np.ndarray | None = None,   # type: ignore
@@ -203,12 +203,12 @@ class ConvGemm:
         return out
 
     # TODO: Check for what is out used inside "x_conv_gemm_nhwc" (and set better varible names).
-    def conv_gemm_nhwc(self, weights: np.ndarray, x:np.ndarray, 
+    def conv_gemm_nhwc(self, weights: np.ndarray, x: np.ndarray,
                        out: np.ndarray | None = None,  # type: ignore
                        vpadding=0, hpadding=0, vstride=1, hstride=1,
-                       vdilation=1, hdilation=1, 
-                       biases:np.ndarray | None = None,   # type: ignore
-                       trans=False, 
+                       vdilation=1, hdilation=1,
+                       biases: np.ndarray | None = None,   # type: ignore
+                       trans=False,
                        bn_running_mean: np.ndarray | None = None,  # type: ignore
                        bn_inv_std: np.ndarray | None = None,  # type: ignore
                        bn_gamma: np.ndarray | None = None,   # type: ignore
@@ -271,11 +271,11 @@ class ConvGemm:
 
         return out
 
-    def deconv_gemm_nchw(self, weights: np.ndarray, 
-                         dy: np.ndarray, 
-                         dx: np.ndarray, 
-                         vpadding=0, hpadding=0, 
-                         vstride=1, hstride=1, 
+    def deconv_gemm_nchw(self, weights: np.ndarray,
+                         dy: np.ndarray,
+                         dx: np.ndarray,
+                         vpadding=0, hpadding=0,
+                         vstride=1, hstride=1,
                          vdilation=1, hdilation=1):
         """
         Calls the appropriate deconv_gemm function from libconvGemm.so to perform
@@ -334,11 +334,11 @@ class ConvGemm:
 
         return dx
 
-    def deconv_gemm_nhwc(self, weights: np.ndarray, 
-                         dy: np.ndarray, 
-                         dx: np.ndarray, 
-                         vpadding=0, hpadding=0, 
-                         vstride=1, hstride=1, 
+    def deconv_gemm_nhwc(self, weights: np.ndarray,
+                         dy: np.ndarray,
+                         dx: np.ndarray,
+                         vpadding=0, hpadding=0,
+                         vstride=1, hstride=1,
                          vdilation=1, hdilation=1):
 
         ck, kh, kw, kn = weights.shape
