@@ -54,10 +54,9 @@ class ConvWinogradTestCase(ConvCommonTestCase):
                            vstride, hstride,
                            vdilation, hdilation)
         w_c = weights.reshape((-1, kn), copy=False)
-        if biases is None:
-            im2row_mm_result: np.ndarray = x_c @ w_c
-        else:
-            im2row_mm_result: np.ndarray = x_c @ w_c + biases.reshape((-1, kn), copy=False)
+        im2row_mm_result: np.ndarray = np.matmul(x_c, w_c)
+        if biases is not None:
+            np.add(im2row_mm_result, biases.reshape((-1, kn), copy=False), out=im2row_mm_result, dtype=im2row_mm_result.dtype)
         if verbose_test():
             print_with_header("{} conv_winograd_result".format(inspect.stack()[1][3]), conv_winograd_result)
             print("Shape: ", conv_winograd_result.shape,
