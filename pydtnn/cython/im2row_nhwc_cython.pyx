@@ -38,34 +38,35 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
     #rows = np.zeros((n * ho * wo, c * kh * kw), dtype=x.dtype)
 
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
-    if n >= ho:
-        for nn in prange(n, nogil=True):
-            for xx in range(ho):
-                for yy in range(wo):
-                    row = nn * ho * wo + xx * wo + yy
-                    for cc in range(c):
-                        for ii in range(kh):
-                            x_x = vstride * xx + vdilation * ii - vpadding
-                            if 0 <= x_x < h:
-                                for jj in range(kw):
-                                    x_y = hstride * yy + hdilation * jj - hpadding
-                                    if 0 <= x_y < w:
-                                        col = cc * kh * kw + ii * kw + jj
-                                        rows[row, col] = x[nn, x_x, x_y, cc]
-    else:
-        for xx in prange(ho, nogil=True):
-            for nn in prange(n):
-                for yy in range(wo):
-                    row = nn * ho * wo + xx * wo + yy
-                    for cc in range(c):
-                        for ii in range(kh):
-                            x_x = vstride * xx + vdilation * ii - vpadding
-                            if 0 <= x_x < h:
-                                for jj in range(kw):
-                                    x_y = hstride * yy + hdilation * jj - hpadding
-                                    if 0 <= x_y < w:
-                                        col = cc * kh * kw + ii * kw + jj
-                                        rows[row, col] = x[nn, x_x, x_y, cc]
+    # if n >= ho:
+    for nn in prange(n, nogil=True):
+        for xx in range(ho):
+            for yy in range(wo):
+                row = nn * ho * wo + xx * wo + yy
+                for cc in range(c):
+                    for ii in range(kh):
+                        x_x = vstride * xx + vdilation * ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + hdilation * jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    rows[row, col] = x[nn, x_x, x_y, cc]
+    # FIXME: Optimization broken (maybe)
+    # else:
+    #     for xx in prange(ho, nogil=True):
+    #         for nn in prange(n):
+    #             for yy in range(wo):
+    #                 row = nn * ho * wo + xx * wo + yy
+    #                 for cc in range(c):
+    #                     for ii in range(kh):
+    #                         x_x = vstride * xx + vdilation * ii - vpadding
+    #                         if 0 <= x_x < h:
+    #                             for jj in range(kw):
+    #                                 x_y = hstride * yy + hdilation * jj - hpadding
+    #                                 if 0 <= x_y < w:
+    #                                     col = cc * kh * kw + ii * kw + jj
+    #                                     rows[row, col] = x[nn, x_x, x_y, cc]
                                 
 
 
@@ -88,33 +89,34 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
                        int vdilation, int hdilation) -> None: 
     cdef int nn, xx, yy, row, cc, ii, jj, col, x_x, x_y
 
-    if n >= ho:
-        for nn in prange(n, nogil=True):
-            for xx in range(ho):
-                for yy in range(wo):
-                    row = nn * ho * wo + xx * wo + yy
-                    for cc in range(c):
-                        for ii in range(kh):
-                            x_x = vstride * xx + vdilation * ii - vpadding
-                            if 0 <= x_x < h:
-                                for jj in range(kw):
-                                    x_y = hstride * yy + hdilation * jj - hpadding
-                                    if 0 <= x_y < w:
-                                        col = cc * kh * kw + ii * kw + jj
-                                        x[nn, x_x, x_y, cc] += rows[row, col]
-    else:
-        for xx in prange(ho, nogil=True):
-            for nn in range(n):
-                for yy in range(wo):
-                    row = nn * ho * wo + xx * wo + yy
-                    for cc in range(c):
-                        for ii in range(kh):
-                            x_x = vstride * xx + vdilation * ii - vpadding
-                            if 0 <= x_x < h:
-                                for jj in range(kw):
-                                    x_y = hstride * yy + hdilation * jj - hpadding
-                                    if 0 <= x_y < w:
-                                        col = cc * kh * kw + ii * kw + jj
-                                        x[nn, x_x, x_y, cc] += rows[row, col]
+    # if n >= ho:
+    for nn in prange(n, nogil=True):
+        for xx in range(ho):
+            for yy in range(wo):
+                row = nn * ho * wo + xx * wo + yy
+                for cc in range(c):
+                    for ii in range(kh):
+                        x_x = vstride * xx + vdilation * ii - vpadding
+                        if 0 <= x_x < h:
+                            for jj in range(kw):
+                                x_y = hstride * yy + hdilation * jj - hpadding
+                                if 0 <= x_y < w:
+                                    col = cc * kh * kw + ii * kw + jj
+                                    x[nn, x_x, x_y, cc] += rows[row, col]
+    # FIXME: Optimization broken
+    # else:
+    #     for xx in prange(ho, nogil=True):
+    #         for nn in range(n):
+    #             for yy in range(wo):
+    #                 row = nn * ho * wo + xx * wo + yy
+    #                 for cc in range(c):
+    #                     for ii in range(kh):
+    #                         x_x = vstride * xx + vdilation * ii - vpadding
+    #                         if 0 <= x_x < h:
+    #                             for jj in range(kw):
+    #                                 x_y = hstride * yy + hdilation * jj - hpadding
+    #                                 if 0 <= x_y < w:
+    #                                     col = cc * kh * kw + ii * kw + jj
+    #                                     x[nn, x_x, x_y, cc] += rows[row, col]
 
 # ========================================== #
