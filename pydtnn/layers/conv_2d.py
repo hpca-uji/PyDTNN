@@ -85,7 +85,7 @@ class Conv2D[T: Array](Layer[T]):
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = 0
         self.weights_shape: ArrayShape = None  # type: ignore
         # @warning: do not do this (affects the gpu version) self.forward = self.backward = None
-    # --- 
+    # ---
 
     def _initializing_special_parameters(self):
         # NOTE: This method's objective is to define and change the value of some parameters defined before that are needed later in the initialization process,
