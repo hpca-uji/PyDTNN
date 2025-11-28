@@ -176,22 +176,6 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
 
