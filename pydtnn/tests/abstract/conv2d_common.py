@@ -129,7 +129,8 @@ class Conv2DCommonTestCase[T: Conv2D](TestCase):
             print(y_test)
             print("y_ref.shape:", y_ref.shape)
             print("y_test.shape: ", y_test.shape)
-        self.assertTrue(np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6))
+        allclose = np.allclose(y_ref, y_test, rtol=1e-5, atol=1e-6)
+        self.assertTrue(allclose)
 
     def test_forward_backward_defaults(self):
         """

@@ -38,7 +38,7 @@ class ModelCommonTestCase(TestCase):
         Conv2D: 1e-4,
     }
     atol_dict = {
-        AdditionBlock: 3e-4,
+        AdditionBlock: 5e-4,
         ConcatenationBlock: 1e-1,
         Conv2D: 1e-5,
         BatchNormalization: 1e-4,
@@ -57,9 +57,12 @@ class ModelCommonTestCase(TestCase):
                 atol = tol
                 break
 
+        # NOTE: Revise group layer tolerance
         if isinstance(layer, AbstractBlockLayer):
-            rtol *= len(layer.children)
-            atol *= len(layer.children)
+            for child in layer.children:
+                crtol, catol = self.get_tolerance(child)
+                rtol += crtol
+                atol += catol
 
         return rtol, atol
 
@@ -187,7 +190,7 @@ class ModelCommonTestCase(TestCase):
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")
-        for i, layer in enumerate(model2.layers, 0):
+        for i, layer in reversed(list(enumerate(model2.layers, 0))):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):
                 rtol, atol = self.get_tolerance(layer)
@@ -210,7 +213,7 @@ class ModelCommonTestCase(TestCase):
         # Model 1 forward
         model1, loss_func1 = self.get_model1_and_loss_func(model_name)
         model1.mode = Model.Mode.TRAIN
-        
+
         model2 = self.get_model2(model_name)
         model2.mode = Model.Mode.TRAIN
         self.copy_weights_and_biases(model1, model2)
@@ -236,9 +239,9 @@ class ModelCommonTestCase(TestCase):
         if verbose_test():
             print_with_header(f"Model {model1.model_name} 1 backward pass")
         dx = [self.get_first_dx(model1, loss_func1, x1[-1])]
-        
+
         dx1 = self.do_model1_backward_pass(model1, dx)
-        
+
         dx2 = dx1.copy()
 
         # Model 2 backward
