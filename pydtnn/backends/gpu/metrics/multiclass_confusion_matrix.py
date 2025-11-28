@@ -16,7 +16,7 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
         
         #define INDEX_FIRST_ONE_ON(y, var_class) for(i = 0; (i < num_classes) && !(y[i]); i++); var_class = i;
         #define SHIFT_POINTER_CM(p, i, j, num_classes) p + (i * num_classes + j)
-        #define SHIFT_POINTER_LOCAL_CM(p, idx, i, j, num_n, n_clss) p + ((idx * num_n + i) * n_clss + j)
+        #define SHIFT_POINTER_LOCAL_CM(p, idx, i, j, num_i, num_j) p + ((idx * num_i + i) * num_j + j)
         
         __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int *local_cm, const int num_classes, const int n)
         {{
@@ -30,7 +30,7 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
                 INDEX_FIRST_ONE_ON(y_targ, target_class)
                 INDEX_FIRST_ONE_ON(y_pred, predicted_class)
 
-                (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx, target_class, predicted_class, n, num_classes))) += 1;
+                (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx, target_class, predicted_class, num_classes, num_classes))) += 1;
             }}
             
             // Accumulating the local values
@@ -42,7 +42,7 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
                     {{
                         for(i = 0; i < num_classes; i++) for(j = 0; j < num_classes; j++)
                         {{
-                            (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx, i, j, n, num_classes))) += (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx + idx_i, i, j, n, num_classes)));
+                            (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx, i, j, num_classes, num_classes))) += (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx + idx_i, i, j, num_classes, num_classes)));
                         }}
                     }}
                     __syncthreads();
@@ -54,7 +54,7 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
             {{
                 for(i = 0; i < num_classes; i++) for(j = 0; j < num_classes; j++)
                 {{
-                    (*(SHIFT_POINTER_CM(cm, i, j, num_classes))) = (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx, i, j, n, num_classes)));
+                    (*(SHIFT_POINTER_CM(cm, i, j, num_classes))) = (*(SHIFT_POINTER_LOCAL_CM(local_cm, base_idx, i, j, num_classes, num_classes)));
                 }}
             }}
         }}
@@ -80,14 +80,16 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
               |2| F0 | F1 | T2 |
         """
 
+        n = y_pred.shape[0]
         target_classes = self.model.output_shape[0]
-        conf_matrix = TensorGPU.create_zeros_tensor(shape=(target_classes, target_classes), dtype=np.dtype(np.int32), 
+
+        conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, 1, target_classes, target_classes), dtype=np.dtype(np.int32), 
                                                     tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        
-        num_classes = np.int32(target_classes)
-        n = np.int32(y_pred.size)
-        local_cm = TensorGPU.create_zeros_tensor(shape=(1, y_pred.shape[0], target_classes, target_classes), dtype=np.dtype(np.int32), 
+        local_cm = TensorGPU.create_zeros_tensor(shape=(1, n, target_classes, target_classes), dtype=np.dtype(np.int32), 
                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+
+        n = np.int32(n)
+        num_classes = np.int32(target_classes)
 
         self.kernel(y_targ.ary, y_pred.ary, 
                     conf_matrix.ary, local_cm.ary,

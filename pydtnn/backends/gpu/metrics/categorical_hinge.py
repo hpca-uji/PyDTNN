@@ -15,7 +15,7 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
         _name = "categorical_hinge"
         code = """
 
-        #define SHIFT_2D_AR(p, i, j, dim_i) (p + ((i * dim_i) + j))
+        #define SHIFT_2D_AR(p, i, j, dim_j) (p + ((i * dim_j) + j))
 
         __global__ void {name} ({T} *y_targ, {T} *y_pred, {T} *res, {T} *local_res, int n, int labels)
         {{
@@ -30,10 +30,10 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
                 for(i = 0, max_v = ({T}) 0.0; i < labels; i++)
                 {{
                     // val_targ = y_targ[idx][i];
-                    val_targ = (*SHIFT_2D_AR(y_targ, idx, i, n));
+                    val_targ = (*SHIFT_2D_AR(y_targ, idx, i, labels));
 
                     // val_pred = y_pred[idx][i];
-                    val_pred = (*SHIFT_2D_AR(y_pred, idx, i, n));
+                    val_pred = (*SHIFT_2D_AR(y_pred, idx, i, labels));
                     
                     pos += ({T}) (val_targ * val_pred);
                     neg = ({T}) (-1 * val_targ) + 1;
@@ -60,13 +60,15 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
         return module
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
-        n = np.int32(y_pred.shape[0])
-        num_classes = np.int32(y_pred.shape[1])
+        n = y_pred.shape[0]
 
-        res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
+        res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
                                             tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_res = TensorGPU.create_zeros_tensor(shape=(y_pred.shape[0], ), dtype=np.dtype(self.model.dtype), 
+        local_res = TensorGPU.create_zeros_tensor(shape=(n, ), dtype=np.dtype(self.model.dtype),
                                                   tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+
+        n = np.int32(n)
+        num_classes = np.int32(y_pred.shape[1])
 
         self.kernel(y_targ.ary, y_pred.ary, 
                     res.ary, local_res.ary,

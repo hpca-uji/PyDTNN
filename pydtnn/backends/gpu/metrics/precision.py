@@ -1,7 +1,6 @@
 import numpy as np
 
 from pydtnn.backends.gpu.metrics.metric import MetricGPU
-from pydtnn.backends.gpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixGPU
 from pydtnn.metrics.precision import Precision
 from pydtnn.utils.constants import DTYPE2CTYPE
 from pycuda.compiler import SourceModule  # type: ignore
@@ -11,8 +10,6 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 
 class PrecisionGPU(Precision[TensorGPU], MetricGPU):
-
-    conf_matrix_metric: BinaryConfusionMatrixGPU
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
@@ -25,7 +22,7 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
         #define FALSE_POSITIVE_0 1
         #define FALSE_POSITIVE_1 0
 
-        #define SHIFT_POINTER_CM(p, label, i, j, n_clss) p + (label * n_clss + i) * 2 + j
+        #define SHIFT_POINTER_CM(p, label, i, j, num_i, num_j) p + (((label * num_i + i) * num_j) + j)
         
         __global__ void {name}({T} *precision, int *cm, {T} *local_precision, const int num_classes)
         {{
@@ -34,10 +31,11 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             const int workers = blockDim.x * gridDim.x;
 
-            for(idx = base_idx, local_precision[idx] = 0; idx < num_classes; idx += workers)
+            for(idx = base_idx; idx < num_classes; idx += workers)
             {{
-                true_positive = (*(SHIFT_POINTER_CM(cm, label, (TRUE_POSITIVE_0), (TRUE_POSITIVE_1), num_classes)));
-                false_positive = (*(SHIFT_POINTER_CM(cm, label, (FALSE_POSITIVE_0), (FALSE_POSITIVE_1), num_classes)));
+                *(local_precision + idx) = 0;
+                true_positive = (*(SHIFT_POINTER_CM(cm, label, TRUE_POSITIVE_0, TRUE_POSITIVE_1, 2, 2)));
+                false_positive = (*(SHIFT_POINTER_CM(cm, label, FALSE_POSITIVE_0, FALSE_POSITIVE_1, 2, 2)));
 
                 div = true_positive + false_positive;
 
@@ -48,7 +46,7 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
             if (base_idx == 0)
             {{
                 for(idx = 0; label < num_classes; label++)
-                    (*local_precision) += local_precision[idx];
+                    (*local_precision) += *(local_precision + idx);
 
                 (*precision) = ({T}) ((*local_precision) / num_classes);
             }}
@@ -66,15 +64,16 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
 
         target_classes = self.model.output_shape[0]
 
-        num_classes = np.int32(target_classes)
         precision = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_precision = TensorGPU.create_zeros_tensor(shape=(int(num_classes), ), dtype=np.dtype(np.int32), 
+        local_precision = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32), 
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
+        target_classes = np.int32(target_classes)
+
         self.kernel(precision.ary, self.conf_matrix_metric.conf_matrix.ary, 
-                    local_precision.ary, num_classes,
+                    local_precision.ary, target_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        
+
         return precision.ary.get()[0]
