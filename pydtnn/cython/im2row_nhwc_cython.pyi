@@ -42,6 +42,10 @@ def row2im_nhwc_cython[T: _npDT](cols: _npDT_2Dims[T],
     Args:
         cols (npDT_2Dims): The 2 dimensional array (the image).
         x (npDT_4Dims): The 4 dimensional array where the image will be stored (it should be initalized with 0s).
+        n (int): number of samples.
+        h (int): image's height.
+        w (int): image's width.
+        c (int): number of channels.
         kh (int): Kernel's heigth.
         kw (int): Kernel's width.
         ho (int): Output's heigth.

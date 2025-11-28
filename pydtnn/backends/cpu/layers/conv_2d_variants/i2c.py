@@ -132,15 +132,15 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         """Version of the backward function that uses im2col and matmul"""
 
         dx = np.zeros(shape=(dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
-        res = self.res_bw[:(dy.shape[0] * self.ho * self.wo), :]
+        res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
-        dy_rows = dy.reshape((-1, self.co), copy=False)
+        dy_cols: np.ndarray = dy.reshape((-1, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x_rows.T, dy_rows, out=self._dw,
+        np.matmul(self.x_rows.T, dy_cols, out=self._dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -161,7 +161,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(dy_rows, w_rows, out=res,
+        np.matmul(dy_cols, w_rows, out=res,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -175,6 +175,22 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
 
@@ -182,12 +198,12 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         res = np.asarray(self.res_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
-        dy_cols: np.ndarray = best_transpose_1023(dy).reshape((self.co, -1), copy=False)
+        dy_rows: np.ndarray = best_transpose_1023(dy).reshape((self.co, -1), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(dy_cols, self.x_cols.T, out=self._dw,
+        np.matmul(dy_rows, self.x_cols.T, out=self._dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -208,7 +224,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w_cols, dy_cols, out=res,
+        np.matmul(w_cols, dy_rows, out=res,
                   dtype=self.model.dtype, order='C')
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
