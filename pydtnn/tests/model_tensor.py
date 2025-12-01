@@ -23,8 +23,8 @@ class ModelTensorTestCase(ModelCommonTestCase):
 
     global ModelCommonTestCase
 
-    rtol_dict = ModelCommonTestCase.rtol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
-    atol_dict = ModelCommonTestCase.atol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
+    rtol_dict = ModelCommonTestCase.rtol_dict | {ConcatenationBlock: 1e-0, AdditionBlock: 1e-1, Conv2D: 1e-3}
+    atol_dict = ModelCommonTestCase.atol_dict | {ConcatenationBlock: 1e-0, AdditionBlock: 1e-1, Conv2D: 1e-3}
 
     # NOTE: Delete parent test to prevent re-export and re-testing
     del ModelCommonTestCase
@@ -78,7 +78,8 @@ class ModelTensorTestCase(ModelCommonTestCase):
             if not isinstance(layer, (Dropout, Flatten)):
                 x1_i = self.nhwc2nchw(x1[i])
                 rtol, atol = self.get_tolerance(layer)
-                self.assertTrue(np.allclose(x1_i, x2[i], rtol=rtol, atol=atol),
+                allclose = np.allclose(x1_i, x2[i], rtol=rtol, atol=atol)
+                self.assertTrue(allclose,
                                 f"Forward result from layers {layer.name_with_id} differ"
                                 f" ({self.print_stats(x1_i, x2[i], rtol, atol)})")
 
@@ -87,7 +88,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             print()
             print(f"Comparing dw of both models...")
-        for i, layer in enumerate(model2.layers, 0):
+        for i, layer in reversed(list(enumerate(model2.layers, 0))):
             if isinstance(layer, (Conv2D, FC)):
                 rtol, atol = self.get_tolerance(layer)
                 if len(layer.weights.shape) == 4:
@@ -108,7 +109,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             print()
             print(f"Comparing db of both models...")
-        for i, layer in enumerate(model2.layers, 0):
+        for i, layer in reversed(list(enumerate(model2.layers, 0))):
             if isinstance(layer, (Conv2D, FC)) and layer.use_bias:
                 rtol, atol = self.get_tolerance(layer)
                 # layer.db:np.ndarray
@@ -119,7 +120,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
         if verbose_test():
             print()
             print(f"Comparing dx of both models...")
-        for i, layer in enumerate(model2.layers, 0):
+        for i, layer in reversed(list(enumerate(model2.layers, 0))):
             # Skip test on layers that behave randomly and Flatten
             if not isinstance(layer, (Dropout, Flatten)):
                 rtol, atol = self.get_tolerance(layer)

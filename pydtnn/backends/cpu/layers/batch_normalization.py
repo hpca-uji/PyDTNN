@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.cython.bn_training_cython import bn_training_bwd_cython  #, bn_training_fwd_cython
+from pydtnn.cython.bn_training_cython import bn_training_bwd_cython  # , bn_training_fwd_cython
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
@@ -7,14 +7,15 @@ from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from pydtnn.utils.constants import ArrayShape, Parameters
 
+
 class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
     @property
     def _ary_prop(self) -> set[str]:
-        return {Parameters.RUNNING_MEAN, 
-                Parameters.RUNNING_VAR, 
+        return {Parameters.RUNNING_MEAN,
+                Parameters.RUNNING_VAR,
                 *super()._ary_prop}
-    
+
     @staticmethod
     def get_inv_std(running_var: np.ndarray, epsilon: float, dtype: np.dtype) -> np.ndarray:
         inv_std = np.add(running_var, epsilon, dtype=dtype, order="C")
@@ -46,7 +47,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self._mean_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self._var_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.std: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        
+
         if self.spatial:
             self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
             self.y = np.zeros((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
@@ -80,15 +81,15 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             _var = np.var(self.xn, axis=0, dtype=self.model.dtype)
 
             inv_momentum = (1.0 - self.momentum)
-            #self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
+            # self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
             np.multiply(self.momentum, self.running_mean, out=self.running_mean,
                         dtype=self.model.dtype)
             np.multiply(inv_momentum, _mean, out=self._mean_inv,
-                         dtype=self.model.dtype, order="C")
-            np.add(self.running_mean, self._mean_inv, out=self.running_mean, 
+                        dtype=self.model.dtype, order="C")
+            np.add(self.running_mean, self._mean_inv, out=self.running_mean,
                    dtype=self.model.dtype)
-            
-            #self.running_var = self.momentum * self.running_var + inv_momentum * _var
+
+            # self.running_var = self.momentum * self.running_var + inv_momentum * _var
             np.multiply(self.momentum, self.running_var, out=self.running_var,
                         dtype=self.model.dtype)
             np.multiply(inv_momentum, _var, out=self._var_inv,
@@ -97,22 +98,22 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
                    dtype=self.model.dtype)
         # anyways:
 
-        #bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
-        #y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
+        # bn_training_fwd_cython(x, y, self.xn, self.std, self.gamma, self.beta, _mean, _var, self.epsilon)
+        # y = ((x - mean(x)) / sqrt(var(x) + epsilon)) * gamma + beta
         np.subtract(self.xn, _mean, out=self.xn,
-            dtype=self.model.dtype)
+                    dtype=self.model.dtype)
 
-        np.add(_var, self.epsilon, out=self.std, 
-                dtype=self.model.dtype, order="C")
+        np.add(_var, self.epsilon, out=self.std,
+               dtype=self.model.dtype, order="C")
         np.sqrt(self.std, out=self.std,
                 dtype=self.model.dtype)
 
-        np.divide(self.xn, self.std, out=self.xn, 
-                    dtype=self.model.dtype)
+        np.divide(self.xn, self.std, out=self.xn,
+                  dtype=self.model.dtype)
         np.multiply(self.gamma, self.xn, out=y,
                     dtype=self.model.dtype)
         np.add(y, self.beta, out=y,
-                dtype=self.model.dtype)
+               dtype=self.model.dtype)
 
         if self.spatial:
             y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
