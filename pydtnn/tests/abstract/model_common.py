@@ -68,7 +68,7 @@ class ModelCommonTestCase(TestCase):
         # CPU model with no convGemm
         params = Params()
         # Begin of params configuration
-        params.model_name = model_name
+        params.model_name = model_name  # type: ignore
         params.tensor_format = TensorFormat.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)
@@ -183,10 +183,20 @@ class ModelCommonTestCase(TestCase):
                                 f" ({self.print_stats(x1[i], x2[i], rtol, atol)})")
 
     def compare_backward(self, model1: Model, dx1: list[np.ndarray], model2: Model, dx2: list[np.ndarray]):
-        assert len(dx1) == len(dx2), "dx1 and dx2 should have the same length"
+        assert len(dx1) == len(dx2), f"dx1 and dx2 should have the same length {len(dx1)=}, {len(dx2)=}"
         if verbose_test():
-            print()
-            print(f"Comparing dx of both models...")
+            print("\nComparing outputs shapes.")
+            min_dx = min(len(dx1), len(dx2))
+            for i in range(min_dx):
+                print(f"{i} - {dx1[i].shape=} ||\t{dx2[i].shape=}")
+            for i in range(len(dx1) - len(dx2)):
+                i = i + min_dx
+                print(f"{i} - {dx1[i].shape=}")
+            for i in range(len(dx2) - len(dx1)):
+                i = i + min_dx
+                print(f"{i} - {dx2[i].shape=}")
+
+            print(f"\nComparing dx of both models...")
         for i, layer in enumerate(model2.layers, 0):
             # Skip test on layers that behave randomly
             if not isinstance(layer, Dropout):

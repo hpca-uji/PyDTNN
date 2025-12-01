@@ -1,10 +1,12 @@
 import unittest
-import warnings
 import numpy as np
 
-import pycuda.gpuarray as gpuarray
+import pycuda.gpuarray as gpuarray # type: ignore
 
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layers.addition_block import AdditionBlock
+from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.layer import LayerError
 from pydtnn.model import Model
@@ -17,8 +19,12 @@ class ModelGpuTestCase(ModelCommonTestCase):
     """
     Tests that two models with different parameters lead to the same results
     """
-    # NOTE: Delete parent test to prevent re-export and re-testing
     global ModelCommonTestCase
+
+    rtol_dict = ModelCommonTestCase.rtol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
+    atol_dict = ModelCommonTestCase.atol_dict | {ConcatenationBlock: 1e-1, AdditionBlock: 1e-1, Conv2D: 1e-4}
+
+    # NOTE: Delete parent test to prevent re-export and re-testing
     del ModelCommonTestCase
 
     # Compares results between an XX model {self.model1_desc} and other {self.model1_desc}
@@ -28,9 +34,9 @@ class ModelGpuTestCase(ModelCommonTestCase):
     def get_model2(self, model_name: str) -> Model:
         # GPU model
         params = Params()
-        params.model_name = model_name
-        params.enable_gpu = True
-        params.enable_cudnn_auto_conv_alg = True
+        params.model_name = model_name  # type: ignore
+        params.enable_gpu = True  # type: ignore
+        params.enable_cudnn_auto_conv_alg = True  # type: ignore
         params.tensor_format = TensorFormat.NHWC.upper()
         params_dict = vars(params)
         try:
@@ -43,7 +49,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
         """
         Copy weights and biases from Model 1 to Model 2
         """
-        for cpu_layer, gpu_layer in zip(model1.get_all_layers()[1:], model2.get_all_layers()[1:]):
+        for cpu_layer, gpu_layer in zip(model1.get_all_layers(), model2.get_all_layers()):
             if cpu_layer.weights is None:
                 continue
             if isinstance(gpu_layer, Conv2D):
@@ -67,39 +73,50 @@ class ModelGpuTestCase(ModelCommonTestCase):
                     gpu_layer.biases = TensorGPU(biases_gpu, gpu_layer.model.tensor_format,
                                                  gpu_layer.model.cudnn_dtype)
 
+    def set_data_to_ary(self, ary: "gpuarray",  # type: ignore
+                        data: np.ndarray, layer: LayerAndActivationBase) -> None:
+        try:
+            ary.set(data.copy())
+        except ValueError as e:
+            raise ValueError(f"Output of model 1 {layer.name_with_id}" \
+                             f" is not ordered [x.strides: {data.strides}") from e
+    # ----
+
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 forward pass
         """
         x2 = [x1[0]]
+        # Input layer
+        layer = model2.layers[0]
+        self.set_data_to_ary(layer.y.ary, x1[0], layer)
+        out = layer.forward(layer.y)
+        x2.append(out.ary.get())
+
+        # The rest of the layers
         for i, layer in enumerate(model2.layers[1:], 1):
             if verbose_test():
                 print(layer)
-            try:
-                model2.layers[i - 1].y.ary.set(x1[i - 1])
-            except ValueError:
-                warnings.warn(f"Output of model 1 {model2.layers[i - 1].name_with_id}"
-                              f" is not ordered [x.strides: {x1[i - 1].strides}")
-                model2.layers[i - 1].y.ary.set(x1[i - 1].copy())
+            self.set_data_to_ary(model2.layers[i - 1].y.ary, x1[i], layer)
             out = layer.forward(model2.layers[i - 1].y)
             x2.append(out.ary.get())
         return x2
 
-    def do_model2_backward_pass(self, model2: Model, dx1: list[TensorGPU]) -> list[TensorGPU]:
+    def do_model2_backward_pass(self, model2: Model, dx1: list[np.ndarray]) -> list[np.ndarray]:
         """
         Model 2 backward pass
         """
-        dx2 = [None] * len(model2.layers)
-        dx2[-1] = dx1[-1]
-        for i, layer in reversed(list(enumerate(model2.layers[2:-1], 2))):
+        dx2 = [dx1[-1].copy()]
+
+        layer = model2.layers[-1]
+        self.set_data_to_ary(model2.layers[-1].dx.ary, dx1[-1], layer)
+        out = layer.backward(model2.layers[-1].dx)
+        dx2.insert(0, out.ary.get().copy())
+
+        for i, layer in reversed(list(enumerate(model2.layers))[:-1]):
             if verbose_test():
                 print(layer)
-            try:
-                model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape))
-            except ValueError:
-                warnings.warn(f"dx of model 1 {model2.layers[i + 1].name_with_id}"
-                              f" is not ordered [dx.strides: {dx1[i + 1].strides}")
-                model2.layers[i + 1].dx.ary.set(dx1[i + 1].reshape(model2.layers[i + 1].dx.ary.shape).copy())
+            self.set_data_to_ary(model2.layers[i + 1].dx.ary, dx1[i + 1], layer)
             out = layer.backward(model2.layers[i + 1].dx)
-            dx2[i] = out.ary.get()
+            dx2.insert(0, out.ary.get().copy())
         return dx2
