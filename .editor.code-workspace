@@ -11,10 +11,10 @@
 			"pydtnn.egg-info": true,
 			"build": true,
 			"vendor/build": true,
+			"pydtnn/**/*.c": true,
+			"datasets/**/*.idx": true,
 			"**/__pycache__": true,
 			"**/*.so": true,
-			"pydtnn/**/*.c": true,
-			"**/*.idx": true,
 		},
 		"flake8.importStrategy": "fromEnvironment",
 		"flake8.args": [
