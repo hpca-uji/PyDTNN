@@ -18,7 +18,6 @@ except Exception as e:
 
 from numpy import ndarray
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.constants import ArrayShape
 
 import pycuda.gpuarray as gpuarray  # type: ignore
 
@@ -27,19 +26,20 @@ class LayerGPU(Layer[TensorGPU]):
     """
     Extends a Layer class with the attributes and methods required by GPU Layers.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
         # NOTE: All of these values will be initalized in the "initialize" method.
-        self.weights_cpu: ndarray = None  #type: ignore
-        self.biases_cpu: ndarray = None  #type: ignore
-        self.dx: TensorGPU = None  #type: ignore
-        self.dw: TensorGPU = None  #type: ignore
-        self.db: TensorGPU = None  #type: ignore
-        self.dw_cpu: ndarray = None  #type: ignore
-        self.db_cpu: ndarray = None  #type: ignore
-        self.one_vec_cpu: ndarray = None  #type: ignore
-        self.one_vec_gpu: gpuarray.GPUArray = None  #type: ignore
+        self.weights_cpu: ndarray = None  # type: ignore
+        self.biases_cpu: ndarray = None  # type: ignore
+        self.dx: TensorGPU = None  # type: ignore
+        self.dw: TensorGPU = None  # type: ignore
+        self.db: TensorGPU = None  # type: ignore
+        self.dw_cpu: ndarray = None  # type: ignore
+        self.db_cpu: ndarray = None  # type: ignore
+        self.one_vec_cpu: ndarray = None  # type: ignore
+        self.one_vec_gpu: gpuarray.GPUArray = None  # type: ignore
 
     @property
     def _ary_prop(self) -> set[str]:
@@ -60,9 +60,6 @@ class LayerGPU(Layer[TensorGPU]):
         gpu_ary = getattr(self, key).ary
         cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C", copy=None)
         gpu_ary.set(cpu_ary)
-
-    def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
-        super().initialize(prev_shape, x)
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
@@ -134,7 +131,7 @@ class LayerGPU(Layer[TensorGPU]):
         for w_, dw_ in self.grad_vars.items():
             if self.model.enable_nccl:
                 self.model.stream.synchronize()
-                dw:TensorGPU = getattr(self, dw_)
+                dw: TensorGPU = getattr(self, dw_)
                 # TODO: decrypt
                 setattr(self, dw_, dw)
             else:
