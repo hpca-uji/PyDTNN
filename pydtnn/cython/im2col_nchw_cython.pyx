@@ -30,27 +30,29 @@ def im2col_nchw_cython(npDT[:,:,:,::1] x,
                        npDT[:,::1] cols,
                        int kh, int kw, int ho, int wo,
                        int vpadding, int hpadding,
-                       int vstride, int hstride, int vdilation, int hdilation) -> None:
+                       int vstride, int hstride, 
+                       int vdilation, int hdilation) -> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
     cdef int h = x.shape[2]
     cdef int w = x.shape[3]
 
     cdef int cc, ii, jj, row, yy, xx, nn, col, x_x, x_y
-
+    
     for cc in prange(c, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-                row = cc * kh * kw + ii * kw + jj
+                row = (cc * kh + ii) * kw + jj
                 for nn in range(n):
                     for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
-                        if 0 <= x_x < h:
-                            for yy in range(wo):
-                                x_y = hstride * yy + hdilation * jj - hpadding
-                                if 0 <= x_y < w:
-                                    col = nn * ho * wo + xx * wo + yy
-                                    cols[row, col] = x[nn, cc, x_x, x_y]
+                        for yy in range(wo):
+                            x_y = hstride * yy + hdilation * jj - hpadding
+                            col = (nn * ho + xx) * wo + yy
+                            if 0 <= x_x < h and 0 <= x_y < w:
+                                cols[row, col] = x[nn, cc, x_x, x_y]
+                            else:
+                                cols[row, col] = <npDT> 0.0
 # --- im2col_nchw_cython --- #
 
 # ================== #
@@ -74,7 +76,7 @@ def col2im_nchw_cython(npDT[:,::1] cols,
     for cc in prange(c, nogil=True):
         for ii in range(kh):
             for jj in range(kw):
-                row = cc * kh * kw + ii * kw + jj
+                row = (cc * kh + ii) * kw + jj
                 for nn in range(n):
                     for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
@@ -82,7 +84,7 @@ def col2im_nchw_cython(npDT[:,::1] cols,
                             for yy in range(wo):
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
-                                    col = nn * ho * wo + xx * wo + yy
+                                    col = (nn * ho + xx) * wo + yy
                                     dx[nn, cc, x_x, x_y] += cols[row, col]
 
 # ================================== #
@@ -105,13 +107,14 @@ cdef im2col_nchw_3x3_cython_inner(npDT[:,::1] cols,
     for cc in prange(c, nogil=True, schedule='static'):
         for ii in range(kh):
             for jj in range(kw):
-                row = cc * kh * kw + ii * kw + jj
+                row = (cc * kh + ii) * kw + jj
                 for nn in range(n):
                     for xx in range(ho):
                         x_x = vstride * xx + vdilation * ii - vpadding
-                        if 0 <= x_x < h:
-                            for yy in range(wo):
-                                x_y = hstride * yy + hdilation * jj - hpadding
-                                if 0 <= x_y < w:
-                                    col = nn * ho * wo + xx * wo + yy
-                                    cols[row, col] = x[nn, cc, x_x, x_y]
+                        for yy in range(wo):
+                            x_y = hstride * yy + hdilation * jj - hpadding
+                            col = (nn * ho + xx) * wo + yy
+                            if (0 <= x_y < w) and (0 <= x_x < h):
+                                cols[row, col] = x[nn, cc, x_x, x_y]
+                            else:
+                                cols[row, col] = <npDT> 0.0

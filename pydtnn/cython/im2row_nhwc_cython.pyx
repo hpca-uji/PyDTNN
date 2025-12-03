@@ -42,16 +42,18 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
     for nn in prange(n, nogil=True):
         for xx in range(ho):
             for yy in range(wo):
-                row = nn * ho * wo + xx * wo + yy
-                for cc in range(c):
-                    for ii in range(kh):
-                        x_x = vstride * xx + vdilation * ii - vpadding
-                        if 0 <= x_x < h:
-                            for jj in range(kw):
-                                x_y = hstride * yy + hdilation * jj - hpadding
-                                if 0 <= x_y < w:
-                                    col = cc * kh * kw + ii * kw + jj
-                                    rows[row, col] = x[nn, x_x, x_y, cc]
+                row = (nn * ho + xx) * wo + yy
+                for ii in range(kh):
+                    x_x = vstride * xx + vdilation * ii - vpadding
+                    for jj in range(kw):
+                        x_y = hstride * yy + hdilation * jj - hpadding
+                        for cc in range(c):
+                            col = (cc * kh + ii) * kw + jj
+                            if (0 <= x_x < h) and (0 <= x_y < w):
+                                rows[row, col] = x[nn, x_x, x_y, cc]
+                            else:
+                                rows[row, col] = <npDT> 0.0
+
     # FIXME: Optimization broken (maybe)
     # else:
     #     for xx in prange(ho, nogil=True):
@@ -93,7 +95,7 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
     for nn in prange(n, nogil=True):
         for xx in range(ho):
             for yy in range(wo):
-                row = nn * ho * wo + xx * wo + yy
+                row = (nn * ho + xx) * wo + yy
                 for cc in range(c):
                     for ii in range(kh):
                         x_x = vstride * xx + vdilation * ii - vpadding
@@ -101,7 +103,7 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
                             for jj in range(kw):
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
-                                    col = cc * kh * kw + ii * kw + jj
+                                    col = (cc * kh + ii) * kw + jj
                                     x[nn, x_x, x_y, cc] += rows[row, col]
     # FIXME: Optimization broken
     # else:
