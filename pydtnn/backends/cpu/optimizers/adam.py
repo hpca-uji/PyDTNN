@@ -20,7 +20,7 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer.id]["it"] += 1
-        it: int = self.context[layer.id]["it"]  # type: ignore 
+        it: int = self.context[layer.id]["it"]  # type: ignore
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

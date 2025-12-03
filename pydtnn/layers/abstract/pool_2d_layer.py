@@ -34,8 +34,18 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
 
-    def show(self, attrs=""):
-        super().show("|{:^19s}|{:^37s}|".format(str(self.pool_shape),
+    def _show_props(self) -> dict:
+        props = super()._show_props()
+
+        props["pool"] = self.pool_shape
+        props["padding"] = (self.vpadding, self.hpadding)
+        props["stride"] = (self.vstride, self.hstride)
+        props["dilation"] = (self.vdilation, self.hdilation)
+
+        return props
+
+    def _show(self, attrs=""):
+        super()._show("|{:^19s}|{:^37s}|".format(str(self.pool_shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
                                                 f"dilat=({self.vdilation},{self.hdilation})"))

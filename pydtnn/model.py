@@ -7,6 +7,7 @@ import enum
 import importlib
 import itertools
 from math import ceil
+import math
 import operator
 import os
 import time
@@ -592,7 +593,84 @@ class Model[T: Array]:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
         return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
 
+    def _show_props(self) -> dict:
+        props = {}
+
+        if self.model_name:
+            props["name"] = self.model_name
+
+        if self.dataset_name:
+            props["dataset"] = self.dataset_name
+
+        if self.nparams > 0:
+            props["params"] = self.nparams
+            props["memory"] = utils.convert_size_bytes(self.nparams * self.dtype.itemsize)
+
+        if self.layers:
+            props["input"] = self.layers[0].shape
+            props["output"] = self.layers[-1].shape
+            props["batch"] = self.batch_size
+            props["layers"] = len(self.get_all_layers())
+
+        return props
+
+    def __repr__(self) -> str:
+        props = " ".join(
+            f"{key}={value!r}"
+            for key, value in self._show_props().items()
+        )
+
+        return f"<{self.__class__.__name__} {props}>"
+
+    def show_layers(self) -> None:
+        struct: dict[str, int] = {}
+
+        # Calculate headers and sizes
+        for layer in self.get_all_layers():
+            for key, value in layer._show_props().items():
+                struct[key] = max(struct.get(key, len(key)), len(str(value)))
+
+        # Add header padding
+        for header, size in struct.items():
+            struct[header] += 2
+
+        # Generate separator
+        sep = ""
+        for header, size in struct.items():
+            sep += "+" + "-" * size
+        sep += "+"
+
+        # Show header
+        print(sep)
+        for header, size in struct.items():
+            print(f"|{header.title():^{size}s}", end="")
+        print("|")
+
+        # Show layers
+        for layer in self.get_all_layers():
+            props = layer._show_props()
+
+            if layer in self.layers:
+                print(sep)
+            for header, size in struct.items():
+                value = props.get(header, "")
+                print(f"|{str(value):^{size}s}", end="")
+            print("|")
+        print(sep)
+
+    def show_model(self) -> None:
+        key = "Model Summary"
+        print(key + "\n" + "=" * len(key))
+        for key, value in self._show_props().items():
+            print(f"- {key.title()}: {value}")
+
     def show(self) -> None:
+        self.show_model()
+        print()
+        self.show_layers()
+        print()
+
+    def _show(self) -> None:
         bfp = np.dtype(self.dtype).itemsize
         line = "+-------+--------------------------+---------+---------------+-------------------" \
                "+-------------------------------------+"
@@ -602,7 +680,7 @@ class Model[T: Array]:
         print(head)
         for layer in self.layers:
             print(line)
-            layer.show()
+            layer._show()
         print(line)
         print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size_bytes(self.nparams * bfp):^15s} "
               f"{'':19s} {'':37s}|")

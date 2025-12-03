@@ -6,7 +6,7 @@ PyDTNN Benchmark script
 
 import cProfile
 import os
-import pstats
+from pathlib import Path
 import sys
 import time
 from datetime import datetime
@@ -55,8 +55,10 @@ def main():
     model = Model(**vars(config))
     # Print model
     if model.comm_rank == 0:
-        print(f'**** {model.model_name} model...')
-        model.show()
+        model.show_model()
+        print()
+        model.show_layers()
+        print()
     # Print parameters
     if model.comm_rank == 0:
         print('**** Parameters:')
@@ -98,10 +100,9 @@ def main():
     # Print performance results and evaluation history
     if model.comm_rank == 0:
         if model.profile:
-            # noinspection PyUnboundLocalVariable
             pr.disable()
             stamp = datetime.now().isoformat(timespec="seconds").replace(" ", "-").replace(":", "-").replace(".", "-")
-            stats = f"profile-{stamp}.stat"
+            stats = Path(f"profile-{stamp}.stat").resolve()
             pr.dump_stats(stats)
             print(f'Dumped profile stats to: {stats}')
         t2 = time.time()

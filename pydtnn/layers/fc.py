@@ -26,5 +26,5 @@ class FC[T: Array](Layer[T]):
         super().initialize(prev_shape, x)
         self.weights_shape = (*prev_shape, *self.shape)
 
-    def show(self, attrs="") -> None:
-        super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape), ""))
+    def _show(self, attrs="") -> None:
+        super()._show("|{:^19s}|{:^37s}|".format(str(self.weights.shape), ""))

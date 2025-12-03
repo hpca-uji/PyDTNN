@@ -107,9 +107,17 @@ class Conv2D[T: Array](Layer[T]):
         self.nparams = int(np.prod(self.weights_shape) + (self.co if self.use_bias else 0))
     # --
 
+    def _show_props(self) -> dict:
+        props = super()._show_props()
 
-    def show(self, attrs: str = "") -> None:
-        super().show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
+        props["padding"] = (self.vpadding, self.hpadding)
+        props["stride"] = (self.vstride, self.hstride)
+        props["dilation"] = (self.vdilation, self.hdilation)
+
+        return props
+
+    def _show(self, attrs: str = "") -> None:
+        super()._show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
                                                 f"padd=({self.vpadding},{self.hpadding}), "
                                                 f"stride=({self.vstride},{self.hstride}), "
                                                 f"dilat=({self.vdilation},{self.hdilation})"

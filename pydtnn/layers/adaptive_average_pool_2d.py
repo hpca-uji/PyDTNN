@@ -41,7 +41,16 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.n = np.prod(self.shape)
     # - END initialize - #
 
-    def show(self, attrs=""):
-        super().show("|{:^19s}|{:^37s}|".format(f"",
+
+    def _show_props(self) -> dict:
+        props = super()._show_props()
+
+        props["adapt-in-shape"] = (self.hi, self.wi)
+        props["adapt-out-shape"] = (self.ho, self.wo)
+
+        return props
+
+    def _show(self, attrs=""):
+        super()._show("|{:^19s}|{:^37s}|".format(f"",
                                                 f"inp. shape=({self.hi},{self.wi}), "
                                                 f"out. shape=({self.ho},{self.wo})"))

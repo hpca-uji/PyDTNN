@@ -12,5 +12,12 @@ class Dropout[T: Array](Layer[T]):
         super().initialize(prev_shape, x)
         self.shape = prev_shape
 
-    def show(self, attrs=""):
-        super().show("|{:^19s}|{:^37s}|".format("", "rate=%.2f" % self.rate))
+    def _show_props(self) -> dict:
+        props = super()._show_props()
+
+        props["rate"] = self.rate
+
+        return props
+
+    def _show(self, attrs=""):
+        super()._show("|{:^19s}|{:^37s}|".format("", "rate=%.2f" % self.rate))

@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
     from pydtnn.optimizers.optimizer import Optimizer
 
+from pydtnn import utils
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 from pydtnn.backends import PromoteToBackend
 
@@ -68,8 +69,42 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
             prefix = "{:0{width}d}_".format(self.id, width=max_digits)
         return prefix
 
+    def _show_props(self) -> dict:
+        props = {}
+
+        props["id"] = self.id
+        props["name"] = self.name
+
+        if self.nparams > 0:
+            props["params"] = self.nparams
+            props["memory"] = utils.convert_size_bytes(self.nparams * self.model.dtype.itemsize)
+
+        if self.prev_shape:
+            props["input"] = self.prev_shape
+
+        props["output"] = self.shape
+
+        if len(self.paths) > 0:
+            props["paths"] = ", ".join(
+                f"{path[0].id}-{path[-1].id}" if path else "Empty"
+                for path in self.paths
+            )
+
+        if self.weights is not None:
+            props["weights"] = self.weights.shape
+
+        return props
+
     def __repr__(self) -> str:
-        return f"<{self.name}>"
+        props = self._show_props()
+        name = props.pop("name")
+
+        props = " ".join(
+            f"{key}={value!r}"
+            for key, value in props.items()
+        )
+
+        return f"<{name} {props}>"
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         self.id = next(self.model.layer_id_generator)
@@ -93,7 +128,7 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
     def reduce_weights_sync(self, gradient: bool = True):
         pass
 
-    def show(self, attrs: str | None = "") -> None:
+    def _show(self, attrs: str | None = "") -> None:
         if not attrs:
             attrs = "|{:19s}|{:^37s}|".format("", "")
         print(f"|{self.id:^7d}|{self.name:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
