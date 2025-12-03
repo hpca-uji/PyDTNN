@@ -7,7 +7,6 @@ import enum
 import importlib
 import itertools
 from math import ceil
-import math
 import operator
 import os
 import time
@@ -29,11 +28,8 @@ from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.comm import proto as PROTOCOL
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_and_activation_base import LayerAndActivationBase, FusedLayerMixIn
-from pydtnn.layers.abstract.block_layer import AbstractBlockLayer
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
-from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.losses.loss import Loss
 from pydtnn.datasets.dataset import select as select_dataset
 from pydtnn.losses.loss import select as select_loss
@@ -53,7 +49,7 @@ from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.best_of import BestOf
 from pydtnn.utils.memory_cache import MemoryCache
 from pydtnn.utils.performance_counter import PerformanceCounter
-from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, format_transpose, encode_shape, encode_tensor, decode_shape, decode_tensor
+from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
 
@@ -773,6 +769,7 @@ class Model[T: Array]:
     def __layer_fusion(self, layers: list[LayerAndActivationBase], switch_fusion: abc.Callable) -> None:
         i = 0
         while i < len(layers):
+            print(f"start while: {i}")
             curr_layer = layers[i]
 
             # Recurse if layer group
@@ -785,7 +782,7 @@ class Model[T: Array]:
 
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
-                print(f"Fusing {' + '.join(map(str, layers_to_fuse))}")
+                print(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
                 fused_layer = select_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
@@ -799,8 +796,7 @@ class Model[T: Array]:
                     start = i - len(layers_to_fuse)
                     del layers[start: i]
                     layers.insert(start, new_curr_layer)
-
-                i -= len(layers_to_fuse)
+                    i -= len(layers_to_fuse)
             i += 1
 
     def _apply_layer_fusion(self):
