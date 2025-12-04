@@ -620,14 +620,12 @@ class Model[T: Array]:
 
     def show_layers(self) -> None:
         struct: dict[str, int] = {}
-
         all_props = {
             layer.id: layer._show_props()
             for layer in self.get_all_layers()
         }
 
         # Calculate headers and sizes
-        # Sort by most props?
         for props in sorted(all_props.values(), key=lambda props: (-len(props), *props)):
             for key, value in props.items():
                 struct[key] = max(struct.get(key, len(key)), len(str(value)))
