@@ -1,13 +1,14 @@
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.constants import Array
 
+
 class AbstractBlockLayer[T: Array](Layer[T]):
 
     def __init__(self, *args, **kwargs):
         super().__init__(**kwargs)
         self.paths = []
-        for p in args:
-            self.paths.append(p)
+        for path in args:
+            self.paths.append(path)
         self.is_block_layer = True
         self.out_shapes: list[tuple[int, ...]] = []
 
@@ -21,6 +22,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
             x = self.x
             for i, layer in enumerate(p):
                 layer.init_backend_from_model(self.model)
+                layer.parent_layer = self
                 layer.initialize(prev_shape, x)
                 x = layer.y
                 if p_i == 0 and (len(p) - 1) == i:

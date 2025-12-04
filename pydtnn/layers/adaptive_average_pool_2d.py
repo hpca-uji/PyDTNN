@@ -3,6 +3,7 @@ import numpy as np
 from pydtnn.layers.layer import Layer, LayerError
 from pydtnn.utils.constants import Array
 
+
 class AdaptiveAveragePool2D[T: Array](Layer):
 
     # This layer will calculate the pool shape and the stride from the output shape (passed as parameter) and the previous layer shape.
@@ -29,9 +30,9 @@ class AdaptiveAveragePool2D[T: Array](Layer):
             self.ho, self.wo = self.hi, self.wi
         else:
             self.ho, self.wo = (self.output_shape, self.output_shape) if isinstance(self.output_shape, int) else self.output_shape
-        
+
         if not (self.ho > 0 and self.wo > 0):
-            raise LayerError(f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}")        
+            raise LayerError(f"The output height and width should be grater than 0. height: {self.ho} width: {self.wo}")
         self.co = self.ci
 
         # If the output and the input shapes are the same, there is no need of pooling.
@@ -40,17 +41,3 @@ class AdaptiveAveragePool2D[T: Array](Layer):
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
     # - END initialize - #
-
-
-    def _show_props(self) -> dict:
-        props = super()._show_props()
-
-        props["adapt-in-shape"] = (self.hi, self.wi)
-        props["adapt-out-shape"] = (self.ho, self.wo)
-
-        return props
-
-    def _show(self, attrs=""):
-        super()._show("|{:^19s}|{:^37s}|".format(f"",
-                                                f"inp. shape=({self.hi},{self.wi}), "
-                                                f"out. shape=({self.ho},{self.wo})"))

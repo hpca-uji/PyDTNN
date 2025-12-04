@@ -14,7 +14,7 @@ from pydtnn.backends import PromoteToBackend
 
 try:
     from pycuda.driver import Stream  # type: ignore
-except:
+except Exception:
     pass
 
 
@@ -28,10 +28,11 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         self.biases: T = None  # type: ignore
         self.act: type[Activation] | None = None
         self.grad_vars: dict[str, str] = {}
-        self.fwd_time: np.ndarray = None # type: ignore
-        self.bwd_time: np.ndarray = None # type: ignore
+        self.fwd_time: np.ndarray = None  # type: ignore
+        self.bwd_time: np.ndarray = None  # type: ignore
         self.paths: list[list[LayerAndActivationBase[T]]] = []
         self.reqs_allred = {}
+        self.parent_layer: LayerAndActivationBase | None = None
 
         # The following attributes will be initialized later
         self.id: int = None  # type: ignore
@@ -73,6 +74,18 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         props = {}
 
         props["id"] = self.id
+
+        paths = []
+        curr = self
+        while curr.parent_layer is not None:
+            for i, path in enumerate(curr.parent_layer.paths):
+                for layer in path:
+                    if layer.id == curr.id:
+                        paths.insert(0, i)
+            curr = curr.parent_layer
+        if paths:
+            props["path"] = ",".join(map(str, paths))
+
         props["name"] = self.name
 
         if self.nparams > 0:
@@ -127,11 +140,6 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
 
     def reduce_weights_sync(self, gradient: bool = True):
         pass
-
-    def _show(self, attrs: str | None = "") -> None:
-        if not attrs:
-            attrs = "|{:19s}|{:^37s}|".format("", "")
-        print(f"|{self.id:^7d}|{self.name:^26s}|{self.nparams:^9d}|{str(self.shape):^15}" + attrs)
 
     def print_in_convdirect_format(self):
         pass

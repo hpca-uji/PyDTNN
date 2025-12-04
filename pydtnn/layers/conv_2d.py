@@ -115,10 +115,3 @@ class Conv2D[T: Array](Layer[T]):
         props["dilation"] = (self.vdilation, self.hdilation)
 
         return props
-
-    def _show(self, attrs: str = "") -> None:
-        super()._show("|{:^19s}|{:^37s}|".format(str(self.weights.shape),
-                                                f"padd=({self.vpadding},{self.hpadding}), "
-                                                f"stride=({self.vstride},{self.hstride}), "
-                                                f"dilat=({self.vdilation},{self.hdilation})"
-                                                ))

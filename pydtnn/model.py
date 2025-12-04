@@ -621,9 +621,15 @@ class Model[T: Array]:
     def show_layers(self) -> None:
         struct: dict[str, int] = {}
 
+        all_props = {
+            layer.id: layer._show_props()
+            for layer in self.get_all_layers()
+        }
+
         # Calculate headers and sizes
-        for layer in self.get_all_layers():
-            for key, value in layer._show_props().items():
+        # Sort by most props?
+        for props in sorted(all_props.values(), key=lambda props: (-len(props), *props)):
+            for key, value in props.items():
                 struct[key] = max(struct.get(key, len(key)), len(str(value)))
 
         # Add header padding
@@ -643,10 +649,9 @@ class Model[T: Array]:
         print("|")
 
         # Show layers
-        for layer in self.get_all_layers():
-            props = layer._show_props()
-
-            if layer in self.layers:
+        top_layers = {layer.id for layer in self.layers}
+        for layer_id, props in all_props.items():
+            if layer_id in top_layers:
                 print(sep)
             for header, size in struct.items():
                 value = props.get(header, "")
@@ -665,22 +670,6 @@ class Model[T: Array]:
         print()
         self.show_layers()
         print()
-
-    def _show(self) -> None:
-        bfp = np.dtype(self.dtype).itemsize
-        line = "+-------+--------------------------+---------+---------------+-------------------" \
-               "+-------------------------------------+"
-        head = "| Layer |           Type           | #Params | Output shape  |   Weights shape   " \
-               "|             Parameters              |"
-        print(line)
-        print(head)
-        for layer in self.layers:
-            print(line)
-            layer._show()
-        print(line)
-        print(f"|{'':^7s} {'Total parameters':^26s} {self.nparams:^9d} {utils.convert_size_bytes(self.nparams * bfp):^15s} "
-              f"{'':19s} {'':37s}|")
-        print(line)
 
     def print_in_convdirect_format(self) -> None:
         line = "#l\tkn\two\tho\tt\tkh\tkw\tci\twi\thi"
@@ -773,10 +762,8 @@ class Model[T: Array]:
             curr_layer = layers[i]
 
             # Recurse if layer group
-            if curr_layer.is_block_layer:
-                for j, p in enumerate(curr_layer.paths):
-                    self.__layer_fusion(curr_layer.paths[j], switch_fusion)
-            # else: Nothing special
+            for j, p in enumerate(curr_layer.paths):
+                self.__layer_fusion(curr_layer.paths[j], switch_fusion)
 
             layer_name, layers_to_fuse = switch_fusion(layers[:i])
 
