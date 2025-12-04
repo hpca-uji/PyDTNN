@@ -44,10 +44,9 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy[TensorGPU]):
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
         assert len(y_targ.shape) == 2
-        threads, blocks = self.get_threads_and_blocks()
         self.kernel(y_targ, y_pred, self.loss, self.dx.ary,
                     batch_size, self.shape[1], self.eps,
-                    grid=(blocks, 1, 1), block=(threads, 1, 1),
+                    grid=self.grid, block=self.block,
                     stream=self.model.stream)
         loss: float = -gpuarray.sum(self.loss[:batch_size]) / batch_size
         return loss, self.dx

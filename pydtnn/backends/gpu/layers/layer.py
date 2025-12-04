@@ -30,6 +30,9 @@ class LayerGPU(Layer[TensorGPU]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
+        self.grid = self.model.cuda_grid
+        self.block = self.model.cuda_block
+
         # NOTE: All of these values will be initalized in the "initialize" method.
         self.weights_cpu: ndarray = None  #type: ignore
         self.biases_cpu: ndarray = None  #type: ignore

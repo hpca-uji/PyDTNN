@@ -11,10 +11,10 @@ class LossGPU(Loss[TensorGPU]):
     Extends a Loss class with the attributes and methods required by GPU Losses.
     """
 
-    LIMIT_THREADS_AND_BLOCKS = 1024
-
     def __init__(self, shape: ArrayShape, eps=1e-8):
         super().__init__(shape, eps)
+        self.grid = self.model.cuda_grid
+        self.block = self.model.cuda_block
 
     def initialize(self) -> None:
         super().initialize()
@@ -26,8 +26,3 @@ class LossGPU(Loss[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
         raise NotImplementedError()
-
-    def get_threads_and_blocks(self):
-        threads = min(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS)
-        blocks = max(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
-        return threads, blocks

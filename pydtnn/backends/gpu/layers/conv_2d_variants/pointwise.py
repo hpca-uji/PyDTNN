@@ -29,12 +29,6 @@ class Conv2DPointwiseGPU(Conv2DGPU):
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
-        self.threads = min(self.model.batch_size, 1024)
-        self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
-        self.grid = (self.blocks, 1, 1)
-        self.block = (self.threads, 1, 1)
-
         func_name: str = ""
         macros: str = ""
         self.bias_sum_bwd: Function = None

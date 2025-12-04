@@ -263,6 +263,9 @@ class Model[T: Array]:
     loss_and_metrics: list[str]
     total_metrics: np.ndarray
 
+    cuda_grid: tuple[int, int, int]
+    cuda_block: tuple[int, int, int]
+
     def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_gpu: bool = False,
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
@@ -422,6 +425,12 @@ class Model[T: Array]:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
     def _initialize_cuda(self) -> None:
+        LIMIT_THREADS_AND_BLOCKS = 1024
+        self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
+        self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
+        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
+        self.cuda_grid = (self.cuda_blocks, 1, 1)
+        self.cuda_block = (self.cuda_threads, 1, 1)
 
         global supported_cudnn, supported_nccl
         supported_cudnn = True

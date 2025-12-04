@@ -8,7 +8,7 @@ class FlattenGPU(Flatten[TensorGPU], LayerGPU):
 
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
-        self.y = x
+        self.y = x  # type: ignore (it's okay)
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)

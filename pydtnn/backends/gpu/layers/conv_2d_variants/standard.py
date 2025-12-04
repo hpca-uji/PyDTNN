@@ -9,8 +9,6 @@ from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from typing import Any, override
 
-from pydtnn.backends.gpu.libs import libcudnn as cudnn
-from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 import pycuda.gpuarray as gpuarray  #type: ignore
 from pycuda.compiler import SourceModule  #type: ignore
 from pycuda.driver import Function  #type: ignore
@@ -146,7 +144,6 @@ class Conv2DStandardGPU(Conv2DGPU):
         )
 
         # add bias
-
         if self.use_bias:
             self.add_bias(y, self.biases,
                           np.int32(dim_i), np.int32(dim_j),
@@ -167,7 +164,7 @@ class Conv2DStandardGPU(Conv2DGPU):
     def _im2col(self, _func_name: str = "im2col_gpu") -> Function:
         # cols.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
-    """
+"""
 #define GET_CI(row, h, w) row / (w * h)
 #define GET_KI(row, h, w) (row / w) % h
 #define GET_KJ(row, h, w) row % w
@@ -210,7 +207,7 @@ __global__ void {func_name}({T}* x, {T}* cols,
         }}
     }}
 }}
-    """
+"""
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(func_name=_func_name,
@@ -224,7 +221,7 @@ __global__ void {func_name}({T}* x, {T}* cols,
     def _im2row(self, _func_name: str = "im2row_gpu") -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-    """
+"""
 #define GET_NI(cols, h, w) cols / (w * h)
 #define GET_HO(cols, h, w) (cols / w) % h
 #define GET_WO(cols, h, w) cols % w
@@ -271,7 +268,7 @@ __global__ void {func_name}({T}* x, {T}* rows,
         }}
     }}
 }}
-    """
+"""
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
         code = code.format(func_name=_func_name,
                            T=_t
@@ -284,7 +281,7 @@ __global__ void {func_name}({T}* x, {T}* rows,
     def _matmul(self, _func_name: str = "matmul_gpu") -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-    """
+"""
 #define SHIFT(i, j, dim_j) i * dim_j + j
 
 // NOTE: It's assumed C is initialized to 0
@@ -307,7 +304,7 @@ __global__ void {func_name}(const {T} *const A,
         *(C + SHIFT(i, j, dim_j)) += (*(A + SHIFT(i, k, dim_k))) * (*(B + SHIFT(k, j, dim_j)))
     }}
 }}
-    """
+"""
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(func_name=_func_name,
@@ -321,7 +318,7 @@ __global__ void {func_name}(const {T} *const A,
     def _add_bias(self, _func_name: str = "add_bias_gpu") -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-    """
+"""
 #define SHIFT(i, j, dim_j) i * dim_j + j
 
 __global__ void {func_name}({T} *const A,
@@ -340,7 +337,7 @@ __global__ void {func_name}({T} *const A,
         *(A + SHIFT(i, j, dim_j)) += *(bias + j);
     }}
 }}
-    """
+"""
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = code.format(func_name=_func_name,
@@ -354,13 +351,14 @@ __global__ void {func_name}({T} *const A,
     def _gradient_bias(self, is_nchw: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-    """
-#ifdef {IS_NCHW}
+"""
+#if {IS_NCHW}
     //SHIFT_NCHW
     #define SHIFT(ni, ci, hi, wi, c_dim, h_dim, w_dim) (((ni * c_dim + ci) * h_dim + hi) * w_dim + wi)
 #else
     //SHIFT_NHWC
     #define SHIFT(ni, ci, hi, wi, c_dim, h_dim, w_dim) (((ni * h_dim + hi) * w_dim + wi) * c_dim + ci)
+#endif
 
 __global__ void {func_name}({T} *const dbias,
                             const {T} *const dy,
@@ -379,7 +377,7 @@ __global__ void {func_name}({T} *const dbias,
         *(dbias + ci) += *(dy + SHIFT(ni, ci, hi, wi, c, h, w))
     }}
 }}
-    """
+"""
         _func_name = f"gradient_bias_{'nchw' if is_nchw else 'nhwc'}_gpu"
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
