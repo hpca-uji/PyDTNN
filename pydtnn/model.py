@@ -605,7 +605,7 @@ class Model[T: Array]:
         if self.layers:
             props["input"] = self.layers[0].shape
             props["output"] = self.layers[-1].shape
-            props["batch"] = self.batch_size
+            props["batch-size"] = self.batch_size
             props["layers"] = len(self.get_all_layers())
 
         return props
@@ -663,7 +663,7 @@ class Model[T: Array]:
         key = "Model Summary"
         print(key + "\n" + "=" * len(key))
         for key, value in self._show_props().items():
-            print(f"- {key.title()}: {value}")
+            print(f"- {key.replace('-', ' ').capitalize()}: {value}")
 
     def show(self) -> None:
         self.show_model()
@@ -729,7 +729,6 @@ class Model[T: Array]:
     # ----
 
     def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerAndActivationBase]]:
-        print(f"{fused_layers=}")
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
