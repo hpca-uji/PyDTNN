@@ -758,7 +758,6 @@ class Model[T: Array]:
     def __layer_fusion(self, layers: list[LayerAndActivationBase], switch_fusion: abc.Callable) -> None:
         i = 0
         while i < len(layers):
-            print(f"start while: {i}")
             curr_layer = layers[i]
 
             # Recurse if layer group
