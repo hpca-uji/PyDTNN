@@ -1,21 +1,22 @@
 import unittest
 
+from pydtnn.activations.relu import Relu
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
+from pydtnn.layers.conv_2d_batch_normalization_relu import Conv2DBatchNormalizationRelu
 from pydtnn.model import Model
 from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
-from pydtnn.tests.abstract.conv2d_common import Conv2DCommonTestCase
+from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.initializers import glorot_uniform, zeros
 
 
-class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
+class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
     """
-    Tests that Conv2D+BatchNormalization leads to the same results than Conv2DBatchNormalization
+    Tests that Conv2D+BatchNormalization+Relu leads to the same results than Conv2DBatchNormalizationRelu
     """
     # NOTE: Delete parent test to prevent re-export and re-testing
     global Conv2DCommonTestCase
@@ -36,16 +37,18 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
                         dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
         bn = BatchNormalization()
+        relu = Relu()
         chain = ConcatenationBlock([
             conv2d,
-            bn
+            bn,
+            relu
         ])
         shape = (d.c, d.h, d.w)
         chain.init_backend_from_model(model)
         chain.initialize(prev_shape=shape, x=None)
 
-        from_parent = bn.__dict__ | conv2d.__dict__
-        fuse = Conv2DBatchNormalization(from_parent=from_parent)
+        from_parent = relu.__dict__ | bn.__dict__ | conv2d.__dict__
+        fuse = Conv2DBatchNormalizationRelu(from_parent=from_parent)
         fuse.init_backend_from_model(model)
         fuse.__dict__.update(from_parent)
         fuse.initialize(prev_shape=shape, x=None)

@@ -3,7 +3,7 @@ import itertools
 
 import numpy as np
 
-from pydtnn.tests.conv2d_conv_gemm import D, Conv2DConvGemmTestCase
+from pydtnn.tests.conv_2d_conv_gemm import D, Conv2DConvGemmTestCase
 from pydtnn.utils import random
 from pydtnn.comm import MPI
 
