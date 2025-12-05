@@ -116,7 +116,7 @@ class TensorGPU:
                 raise ValueError(f"The expected len shape are 1, 2 or 4. Shape received: {len(gpu_arr.shape)}.")
     # ---
 
-    def _set_prt(self, gpu_arr: "gpuarray.GPUArray") -> None:
+    def _set_ptr(self, gpu_arr: "gpuarray.GPUArray") -> None:
         if self.gpudirect:
             self.ptr_intp = np.intp(self.ary.base.get_device_pointer())
             self.ptr = ctypes.c_void_p(int(self.ary.base.get_device_pointer()))
@@ -143,12 +143,20 @@ class TensorGPU:
                     pass  # do nothing.
     # ---
 
+    def _del_desc(self) -> None:
+        match self.tensor_type:
+            case self.TensorTypeEnum.TENSOR:
+                cudnn.cudnnDestroyTensorDescriptor(self.desc)
+            case self.TensorTypeEnum.FILTER:
+                cudnn.cudnnDestroyFilterDescriptor(self.desc)
+        self.desc = -1
+
     def _initalize(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
         self.ary = gpu_arr
         self._set_shape(gpu_arr)
         self.size = gpu_arr.size
         if self.size != 0:
-            self._set_prt(gpu_arr)
+            self._set_ptr(gpu_arr)
             self._set_desc(desc)
     # ---
 
@@ -159,10 +167,18 @@ class TensorGPU:
 
     def free_gpu_arr(self) -> None:
         if self.ary is not None:
+            self._del_desc()
             del self.ary
         self.size = -1
         self.desc = -1
     # ---
+
+    def __del__(self) -> None:
+        """Best effort finalizer"""
+        try:
+            self.free_gpu_arr()
+        except:  # noqa: E722
+            pass
 
     def set_ary(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
         self.free_gpu_arr()
