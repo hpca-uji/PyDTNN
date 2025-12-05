@@ -1,6 +1,7 @@
 """TenSEAL encryption"""
 
 # NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
+# FIXME: Serialization preformance
 
 from pydtnn import crypt
 from tenseal.enc_context import Context as SealContext

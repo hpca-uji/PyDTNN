@@ -27,16 +27,11 @@
   deactivate all environments and then reactivate only the one you want.
 
 # Planned
-- Change `layer.show` to return sequence, so `model.show` can do the formatting.
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
-- Rework `BestOf` to not use globals 
+- Rework `BestOf` to not use globals.
 - Rework `BestOf` eliminate them and move it to test scripts.
 - Rework `BestOfVariant` to make it work.
 - Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
 - Replace `print` statments with `logger` calls.
-- Explore `net-queue`'s `TCP/GRPC` threading preformance.
-- Explore `TenSEAL`'s serialization preformance.
-- Explore `net-queue`'s `TCP+TLS` preformance.
-- Explore `pympi`'s 1, 2 (slowest) & 3 client preformance.
