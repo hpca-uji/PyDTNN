@@ -5,7 +5,6 @@ from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cyt
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from pydtnn.utils.best_transpose_1023 import best_transpose_1023
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
@@ -19,7 +18,6 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
         self.dim_n = self.model.batch_size * self.ho * self.wo
         self.dim_c = self.ci * self.kh * self.kw
-        res_shape = (self.dim_n, self.co)
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
@@ -46,7 +44,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # -
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.res = np.zeros(shape=res_shape, dtype=self.model.dtype, order="C")
+        self.res = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
         self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
         self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
     # ---

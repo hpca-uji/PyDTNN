@@ -131,7 +131,8 @@ class Conv2DStandardGPU(Conv2DGPU):
         
         # matrix prod
         # NOTE: in this case self.weights' shape considered as "(self.co, int(np.prod((self.ci, *self.filter_shape))))" in NCHW format and "(int(np.prod((self.ci, *self.filter_shape))), self.co)" in NHWC.
-        self.matmul(*self.matmul_matrices, self.y,
+        #self.matmul(*self.matmul_matrices, self.y,
+        self.matmul(self.weights.ary, self.im2_x.ary, self.y,
                     np.int32(self.dim_i_fwd), np.int32(self.dim_k_fwd), np.int32(self.dim_j_fwd),
                     grid = self.grid, block = self.block,
                     stream = self.model.stream
@@ -152,11 +153,26 @@ class Conv2DStandardGPU(Conv2DGPU):
 #########################################################################################################
 ## CUDA CODE ##
 ###############
+    #========================
+    #= FORWARD-related code =
+    #========================
 
-    def _im2col(self, func_name: str = "im2col_gpu") -> Function:
-        # cols.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
+    BIAS= \
+"""
+    for(i = idx; i < dim_n; i += num_workers)
+        for(j = 0; j < co; j++)
+    {{
+        *(im2_var + SHIFT(i, j, co)) += (*(bias + j));
+    }}
+""" 
+    # -- END BIAS --
+
+
+    def fwd(self, use_bias: bool) -> Function:
+        # im2_var.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
 """
+// im2col-related macros
 #define GET_CI(row, h, w) row / (w * h)
 #define GET_KI(row, h, w) (row / w) % h
 #define GET_KJ(row, h, w) row % w
@@ -164,22 +180,34 @@ class Conv2DStandardGPU(Conv2DGPU):
 #define SHIFT_COLS(row, col, dim_cols) row * dim_cols + col
 #define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * c + ci) * h + hi) * w + wi
 
-__global__ void {FUNC_NAME}({T}* x, {T}* cols,
+// matmul-related macros
+#define SHIFT(i, j, dim_j) i * dim_j + j
+
+__global__ void {FUNC_NAME}(const {T} *const x,
+                            const {T} *const weights,
+                            {T}* im2_var, {T}* y,
+                            {T}* bias,
+                            int dim_c, int dim_n,
                             int n, int c, int h, int w,
-                            int kh, int kw, int ho, int wo,
+                            int co, int ho, int wo,
+                            int kh, int kw, 
                             int vpadding, int hpadding,
                             int vstride, int hstride, 
                             int vdilation, int hdilation)
-{{
+{{  
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
+    
+    // im2col vars
     const int N = c * kh * kw;
     const int dim_cols = n * self.ho * self.wo;
-
     int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
+    // matmul vars
+    int i, j, k;
 
+    // Im2Col
     for(row = idx; row < N; row += num_workers)
-    {{  
+    {{
         ci = GET_CI(row, h, w);
         ki = GET_KI(row, h, w);
         kj = GET_KJ(row, h, w);
@@ -190,41 +218,69 @@ __global__ void {FUNC_NAME}({T}* x, {T}* cols,
             {{
                 wi = hstride * woi + hdilation * kj - hpadding;
                 col = (ni * ho + hoi) * wo + woi;
-                //cols[row, col] = ((0 <= hi) && (hi < h) && (0 <= wi) && (wi < w)) ? x[nn, cc, x_x, x_y] : ({T}) 0.0;
+                //im2_var[row, col] = ((0 <= hi) && (hi < h) && (0 <= wi) && (wi < w)) ? x[nn, cc, x_x, x_y] : ({T}) 0.0;
                 if (IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
-                    *(cols + SHIFT_COLS(row, col, dim_cols)) = *(x + SHIFT_X(n, ci, hi, wi, c, h, w));
+                    *(im2_var + SHIFT_COLS(row, col, dim_cols)) = *(x + SHIFT_X(n, ci, hi, wi, c, h, w));
                 else
-                    *(cols + SHIFT_COLS(row, col, dim_cols)) = ({T}) 0.0;
+                    *(im2_var + SHIFT_COLS(row, col, dim_cols)) = ({T}) 0.0;
             }}
         }}
     }}
+    __syncthreads();
+
+    // Matmul - w_rows X x_cols = y.T
+    // weights.shape "=" (co, dim_c); im2_var.shape = (dim_c, dim_n); y.T "="(co, dim_n); y.shape "=" (dim_n, co) || "=": because it's not equal, but "equivalent" in this situation.
+    for(j = idx; j < dim_n; j += num_workers) 
+        for(k = 0; k < dim_c; k++) 
+            for(i = 0; i < co; i++)
+    {{
+        // y[j, i] += weights[i, k] * im2_var[k, j]
+        *(y + SHIFT(j, i, dim_n)) += (*(weights + SHIFT(i, k, dim_c))) * (*(im2_var + SHIFT(k, j, dim_n)));
+    }}
+#if {USE_BIAS}
+
+    __syncthreads();
+    {BIAS}
+#endif
+
 }}
 """
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
+        func_name = "im2col_fwd_gpu"
         code = code.format(FUNC_NAME=func_name,
-                           T=_t
+                           T=_t,
+                           USE_BIAS=use_bias,
+                           BIAS_=self.BIAS
                            )
         module = SourceModule(code).get_function(func_name)
 
         return module
-    # ---
+    # -------------------------
 
-    def _im2row(self, func_name: str = "im2row_gpu") -> Function:
+    def _im2row(self, use_bias:bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
 """
-#define GET_NI(cols, h, w) cols / (w * h)
-#define GET_HO(cols, h, w) (cols / w) % h
-#define GET_WO(cols, h, w) cols % w
+#define GET_NI(row, h, w) row / (w * h)
+#define GET_HO(row, h, w) (row / w) % h
+#define GET_WO(row, h, w) row % w
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT_ROWS(row, col, dim_cols) row * dim_cols + col
 // NOTE: This is NHWC
 #define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
-__global__ void {FUNC_NAME}({T}* x, {T}* rows,
+// matmul-related macros
+#define SHIFT(i, j, dim_j) i * dim_j + j
+
+__global__ void {FUNC_NAME}(const {T} *const x,
+                            const {T} *const weights,
+                            {T}* im2_var, {T}* y,
+                            {T}* bias,
+                            int dim_c, int dim_n,
                             int n, int c, int h, int w,
-                            int kh, int kw, int ho, int wo,
+                            int co, int ho, int wo,
+                            int kh, int kw, 
                             int vpadding, int hpadding,
                             int vstride, int hstride, 
                             int vdilation, int hdilation)
@@ -235,12 +291,13 @@ __global__ void {FUNC_NAME}({T}* x, {T}* rows,
     const int dim_cols = n * self.ho * self.wo;
 
     int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
+    int i, j, k;
 
-    for(row = idx; col < N; col += num_workers)
+    for(row = idx; row < N; row += num_workers)
     {{  
-        ni = GET_NI(col, n, ho, wo);
-        hoi = GET_HO(col, n, ho, wo);
-        woi = GET_WO(col, n, ho, wo);
+        ni = GET_NI(row, n, ho, wo);
+        hoi = GET_HO(row, n, ho, wo);
+        woi = GET_WO(row, n, ho, wo);
         for (ki = 0; ki < kh; ki++)
         {{
             hi = vstride * hoi + vdilation * ki - vpadding;
@@ -250,113 +307,59 @@ __global__ void {FUNC_NAME}({T}* x, {T}* rows,
                 for (ci = 0; ci < c; ci++)
                 {{
                     col = (ni * ho + hoi) * wo + woi;
-                    //rows[row, col] = ((0 <= hi) && (hi < h) && (0 <= wi) && (wi < w)) ? x[nn, cc, x_x, x_y] : ({T}) 0.0;
+                    //im2_var[row, col] = ((0 <= hi) && (hi < h) && (0 <= wi) && (wi < w)) ? x[nn, cc, x_x, x_y] : ({T}) 0.0;
                     if (IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
-                        *(rows + SHIFT_ROWS(row, col, dim_cols)) = *(x + SHIFT_X(n, ci, hi, wi, c, h, w));
+                        *(im2_var + SHIFT_ROWS(row, col, dim_cols)) = *(x + SHIFT_X(n, ci, hi, wi, c, h, w));
                     else
-                        *(rows + SHIFT_ROWS(row, col, dim_cols)) = ({T}) 0.0;
+                        *(im2_var + SHIFT_ROWS(row, col, dim_cols)) = ({T}) 0.0;
                 }}
             }}
         }}
     }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-        code = code.format(FUNC_NAME=func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(func_name)
 
-        return module
-    # ---
+    __syncthreads();
 
-    def _matmul(self, func_name: str = "matmul_gpu") -> Function:
-        # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
-        code = \
-"""
-#define SHIFT(i, j, dim_j) i * dim_j + j
-
-// NOTE: It's assumed C is initialized to 0
-// A=iXk, B=kXj, C=iXj
-__global__ void {FUNC_NAME}(const {T} *const A, 
-                            const {T} *const B, 
-                            {T} * const C, int dim_i, 
-                            int dim_k, int dim_j)
-{{
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x
-    const int num_workers = blockDim.x * gridDim.x;
-
-    int i, j, k;
-
-    for(i = idx; i < dim_i; i += num_workers) 
-        for(k = 0; j < dim_k; k++) 
-            for(j = 0; j < dim_j; j++)
+    // Matmul - im2_var X w_rows = y
+    im_var = (i, k)
+    w_rows = (k, j)
+    y = (i, j)
+    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n, co) || "=": because it's not equal, but "equivalent" in this situation.
+    for(i = idx; i < dim_n; i += num_workers) 
+        for(k = 0; k < dim_c; k++) 
+            for(j = 0; j < co; j++)
     {{
-        // C[i, j] += A[i, k] + B[k, j]
-        *(C + SHIFT(i, j, dim_j)) += (*(A + SHIFT(i, k, dim_k))) * (*(B + SHIFT(k, j, dim_j)))
+        // y[i, j] += im2_var[i, k] * weights[k, j]
+        /////////////////////
+        //
+        // Check this!!!!!
+        //
+        /////////////////////
+        *(y + SHIFT(i, j, co)) += (*(im2_var + SHIFT(i, k, dim_c))) * (*(weights + SHIFT(k, j, co)));
     }}
-}}
-"""
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
+#if {USE_BIAS}
 
-        code = code.format(FUNC_NAME=func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(func_name)
-
-        return module
-    # ---
-
-    def _add_bias(self, is_nchw: bool) -> Function:
-        # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
-        code = \
-"""
-#define SHIFT(i, j, dim_j) i * dim_j + j
-
-#if {IS_NCHW}
-    //SHIFT_NCHW
-    // NCHW: A[i, j] += bias[j];
-    #define SHIFT(i, j, dim_i, dim_j) i * dim_j + j
-    #define OUTER_LOOP for(i = idx; i < dim_i; i += num_workers)
-    #define INNER_LOOP for(j = 0; j < dim_j; j++)
-#else
-    //SHIFT_NHWC
-    // NHWC: A[j, i] += bias[j];
-    #define SHIFT(i, j, dim_i, dim_j) j * dim_i + i
-    #define OUTER_LOOP for(j = idx; j < dim_j; j += num_workers)
-    #define INNER_LOOP for(i = 0; i < dim_i; i++)
+    __syncthreads();
+    {BIAS}
 #endif
 
-#define LOOPS OUTER_LOOP INNER_LOOP
-
-__global__ void {FUNC_NAME}({T} *const A,
-                            const {T} *const bias,
-                            int dim_i, int dim_j)
-{{
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x
-    const int num_workers = blockDim.x * gridDim.x;
-
-    int i, j;
-
-    LOOPS
-    {{
-        // NCHW: A[i, j] += bias[j];
-        // NHWC: A[j, i] += bias[j];
-        *(A + SHIFT(i, j, dim_i, dim_j)) += *(bias + j);
-    }}
 }}
 """
-        func_name: str = f"add_bias_{'nchw' if is_nchw else 'nhwc'}_gpu"
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
+        func_name = "im2row_fwd_gpu"
         code = code.format(FUNC_NAME=func_name,
-                           T=_t, 
-                           IS_NCHW=is_nchw
-                           )
+                            T=_t,
+                            USE_BIAS=use_bias,
+                            BIAS_=self.BIAS
+                            )
         module = SourceModule(code).get_function(func_name)
 
         return module
-    # ---
+    # -------------------------
+    
+    #=========================
+    #= BACKWARD-related code =
+    #=========================
 
     def _gradient_bias(self, is_nchw: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
