@@ -154,6 +154,7 @@ class TensorGPU:
 
     def reshape(self, shape: ArrayShape):
         self.ary = self.ary.reshape(shape, order="C")
+        self.shape = shape
         return self
     # ---
 

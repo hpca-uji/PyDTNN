@@ -9,40 +9,81 @@ from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from typing import Any, override
 
-import pycuda.gpuarray as gpuarray  #type: ignore
 from pycuda.compiler import SourceModule  #type: ignore
 from pycuda.driver import Function  #type: ignore
 
 class Conv2DStandardGPU(Conv2DGPU):
 
     def _initializing_special_parameters(self):
-         match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    self.weights_shape = (self.co, self.ci, *self.filter_shape)
-                    self.im2_func = self._im2col()
-                    self.forward = self._forward_nchw
-                case TensorFormat.NHWC:
-                    # NOTE: It is this shape, even if in the CPU version is different.
-                    self.weights_shape = (self.co, *self.filter_shape, self.ci)
-                    self.forward = self._forward_nhwc
-                case _:
-                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+            case TensorFormat.NHWC:
+                # NOTE: It is this shape, even if in the CPU version is different.
+                self.weights_shape = (self.co, *self.filter_shape, self.ci)
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
-        # Activations y
-        y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        # Derivative dx
-        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        # TODO:
+        # > Hacer que "res" sea "x_cols/x_rows".
+        # > Hacer que el "res" de i2c sea y.
+
+        self.y = TensorGPU.create_zeros_tensor((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorGPU.create_zeros_tensor(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.dim_n = self.model.batch_size * self.ho * self.wo
+        self.dim_c = self.ci * self.kh * self.kw
+
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+                self.weights_im2_shape = (self.co, int(np.prod((self.ci, *self.filter_shape))))
+                self.im2_x_shape = (self.dim_c, self.dim_n)
+                self.res_shape = (self.co, self.dim_n)
+                self._dw_shape = (self.co, self.dim_c)
+                self.y_shape = (self.model.batch_size, self.co, self.ho, self.wo)
+
+                self.dim_i_fwd, self.dim_k_fwd = self.im2_x_shape
+                _, self.dim_j_fwd = self.weights_im2_shape # (dim_k, dim_j)
+
+                self.im2_func = self._im2col()
+                self.backward = self._backward_standard
+            case TensorFormat.NHWC:
+                # NOTE: It is this shape, even if in the CPU version is different.
+                self.weights_shape = (self.co, *self.filter_shape, self.ci)
+                self.weights_im2_shape = (int(np.prod((self.ci, *self.filter_shape))), self.co)
+                self.im2_x_shape = (self.dim_n, self.dim_c)
+                self.res_shape = (self.dim_n, self.co)
+                self._dw_shape = (self.dim_c, self.co)
+                self.y_shape = (self.model.batch_size, self.ho, self.wo, self.co)
+
+                self.dim_i_fwd, self.dim_k_fwd = self.weights_im2_shape
+                _, self.dim_j_fwd = self.im2_x_shape # (dim_k, dim_j)
+                
+                self.im2_func = self._im2row()
+                self.backward = self._backward_standard
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        
+        self.im2_x = TensorGPU.create_zeros_tensor(self.im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.res = TensorGPU.create_zeros_tensor(self.res_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self._dw = TensorGPU.create_zeros_tensor(self._dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.matmul_matrices = (self.weights.ary, self.im2_x.ary)
+            case TensorFormat.NHWC:
+                self.matmul_matrices = (self.im2_x.ary, self.weights.ary)
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+
 
         self.matmul = self._matmul()
-        self.add_bias = self._add_bias()
-
-        self.backward = self._backward_standard
+        self.add_bias = self._add_bias(self.model.tensor_format is TensorFormat.NCHW)
     # -----
 
     @override
@@ -74,11 +115,11 @@ class Conv2DStandardGPU(Conv2DGPU):
                 return super()._import_prop(key, value)
     # ---
 
-    def _forward_nchw(self, x: TensorGPU) -> TensorGPU:
-        n, c, h, w = x.shape
-        # im 2 col
-        self.im2_func(x.ary, self.cols.ary, 
-                      np.int32(n), np.int32(c), np.int32(h), np.int32(w),
+    def forward(self, x: TensorGPU) -> TensorGPU:
+        # im2col / im2row
+        self.im2_func(x.ary, self.im2_x.ary, 
+                      np.int32(self.model.batch_size), np.int32(self.ci), 
+                      np.int32(self.hi), np.int32(self.wi),
                       np.int32(self.kh), np.int32(self.kw), 
                       np.int32(self.ho), np.int32(self.wo),
                       np.int32(self.vpadding), np.int32(self.hpadding),
@@ -87,73 +128,24 @@ class Conv2DStandardGPU(Conv2DGPU):
                       grid = self.grid, block = self.block,
                       stream = self.model.stream
                     )
+        
         # matrix prod
-
-        w_cols = self.weights.reshape((-1, self.co))
-
-        dim_i, dim_k = self.cols
-        _, dim_j = self.w_cols
-        y = self.y.reshape((dim_i, dim_j))
-
-        self.matmul(self.cols.ary, w_cols, y,
-                    np.int32(dim_i), np.int32(dim_k), np.int32(dim_j),
+        # NOTE: in this case self.weights' shape considered as "(self.co, int(np.prod((self.ci, *self.filter_shape))))" in NCHW format and "(int(np.prod((self.ci, *self.filter_shape))), self.co)" in NHWC.
+        self.matmul(*self.matmul_matrices, self.y,
+                    np.int32(self.dim_i_fwd), np.int32(self.dim_k_fwd), np.int32(self.dim_j_fwd),
                     grid = self.grid, block = self.block,
                     stream = self.model.stream
-        )
-
-        # add bias
-
-        if self.use_bias:
-            self.add_bias(y, self.biases,
-                          np.int32(dim_i), np.int32(dim_j),
-                          grid = self.grid, block = self.block,
-                          stream = self.model.stream
-                          )
-
-        # reshape
-        self.y = y.reshape((n, c, self.ho, self.wo))
-
-        return self.y
-    # ---
-
-    def _forward_nhwc(self, x: TensorGPU) -> TensorGPU:
-        n, h, w, c = x.shape
-        # im 2 col
-        self.im2_func(x.ary, self.rows.ary, 
-                      np.int32(n), np.int32(c), np.int32(h), np.int32(w),
-                      np.int32(self.kh), np.int32(self.kw), 
-                      np.int32(self.ho), np.int32(self.wo),
-                      np.int32(self.vpadding), np.int32(self.hpadding),
-                      np.int32(self.vstride), np.int32(self.hstride),
-                      np.int32(self.vdilation), np.int32(self.hdilation),
-                      grid = self.grid, block = self.block,
-                      stream = self.model.stream
-                    )
-        # matrix prod
-
-        w_rows = self.weights.reshape((-1, self.co))
-
-        dim_i, dim_k = self.rows
-        _, dim_j = self.w_rows
-        y = self.y.reshape((dim_i, dim_j))
-
-        self.matmul(self.rows.ary, w_rows, y,
-                    np.int32(dim_i), np.int32(dim_k), np.int32(dim_j),
-                    grid = self.grid, block = self.block,
-                    stream = self.model.stream
-        )
+                )
 
         # add bias
         if self.use_bias:
-            self.add_bias(y, self.biases,
-                          np.int32(dim_i), np.int32(dim_j),
+            self.add_bias(self.y.ary, self.biases.ary,
+                          np.int32(self.dim_i_fwd), 
+                          np.int32(self.dim_j_fwd),
                           grid = self.grid, block = self.block,
                           stream = self.model.stream
                           )
-
-        # reshape
-        self.y = y.reshape((n, c, self.ho, self.wo))
-
+        # --
         return self.y
     # ---
 
@@ -161,7 +153,7 @@ class Conv2DStandardGPU(Conv2DGPU):
 ## CUDA CODE ##
 ###############
 
-    def _im2col(self, _func_name: str = "im2col_gpu") -> Function:
+    def _im2col(self, func_name: str = "im2col_gpu") -> Function:
         # cols.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
 """
@@ -172,7 +164,7 @@ class Conv2DStandardGPU(Conv2DGPU):
 #define SHIFT_COLS(row, col, dim_cols) row * dim_cols + col
 #define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * c + ci) * h + hi) * w + wi
 
-__global__ void {func_name}({T}* x, {T}* cols,
+__global__ void {FUNC_NAME}({T}* x, {T}* cols,
                             int n, int c, int h, int w,
                             int kh, int kw, int ho, int wo,
                             int vpadding, int hpadding,
@@ -210,15 +202,15 @@ __global__ void {func_name}({T}* x, {T}* cols,
 """
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
-        code = code.format(func_name=_func_name,
+        code = code.format(FUNC_NAME=func_name,
                            T=_t
                            )
-        module = SourceModule(code).get_function(_func_name)
+        module = SourceModule(code).get_function(func_name)
 
         return module
     # ---
 
-    def _im2row(self, _func_name: str = "im2row_gpu") -> Function:
+    def _im2row(self, func_name: str = "im2row_gpu") -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
 """
@@ -230,7 +222,7 @@ __global__ void {func_name}({T}* x, {T}* cols,
 // NOTE: This is NHWC
 #define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
-__global__ void {func_name}({T}* x, {T}* rows,
+__global__ void {FUNC_NAME}({T}* x, {T}* rows,
                             int n, int c, int h, int w,
                             int kh, int kw, int ho, int wo,
                             int vpadding, int hpadding,
@@ -270,15 +262,15 @@ __global__ void {func_name}({T}* x, {T}* rows,
 }}
 """
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-        code = code.format(func_name=_func_name,
+        code = code.format(FUNC_NAME=func_name,
                            T=_t
                            )
-        module = SourceModule(code).get_function(_func_name)
+        module = SourceModule(code).get_function(func_name)
 
         return module
     # ---
 
-    def _matmul(self, _func_name: str = "matmul_gpu") -> Function:
+    def _matmul(self, func_name: str = "matmul_gpu") -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
 """
@@ -286,7 +278,7 @@ __global__ void {func_name}({T}* x, {T}* rows,
 
 // NOTE: It's assumed C is initialized to 0
 // A=iXk, B=kXj, C=iXj
-__global__ void {func_name}(const {T} *const A, 
+__global__ void {FUNC_NAME}(const {T} *const A, 
                             const {T} *const B, 
                             {T} * const C, int dim_i, 
                             int dim_k, int dim_j)
@@ -307,21 +299,37 @@ __global__ void {func_name}(const {T} *const A,
 """
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
-        code = code.format(func_name=_func_name,
+        code = code.format(FUNC_NAME=func_name,
                            T=_t
                            )
-        module = SourceModule(code).get_function(_func_name)
+        module = SourceModule(code).get_function(func_name)
 
         return module
     # ---
 
-    def _add_bias(self, _func_name: str = "add_bias_gpu") -> Function:
+    def _add_bias(self, is_nchw: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
 """
 #define SHIFT(i, j, dim_j) i * dim_j + j
 
-__global__ void {func_name}({T} *const A,
+#if {IS_NCHW}
+    //SHIFT_NCHW
+    // NCHW: A[i, j] += bias[j];
+    #define SHIFT(i, j, dim_i, dim_j) i * dim_j + j
+    #define OUTER_LOOP for(i = idx; i < dim_i; i += num_workers)
+    #define INNER_LOOP for(j = 0; j < dim_j; j++)
+#else
+    //SHIFT_NHWC
+    // NHWC: A[j, i] += bias[j];
+    #define SHIFT(i, j, dim_i, dim_j) j * dim_i + i
+    #define OUTER_LOOP for(j = idx; j < dim_j; j += num_workers)
+    #define INNER_LOOP for(i = 0; i < dim_i; i++)
+#endif
+
+#define LOOPS OUTER_LOOP INNER_LOOP
+
+__global__ void {FUNC_NAME}({T} *const A,
                             const {T} *const bias,
                             int dim_i, int dim_j)
 {{
@@ -330,20 +338,22 @@ __global__ void {func_name}({T} *const A,
 
     int i, j;
 
-    for(i = idx; i < dim_i; i += num_workers) 
-        for(j = 0; j < dim_j; j++)
+    LOOPS
     {{
-        // A[i, j] += bias[j];
-        *(A + SHIFT(i, j, dim_j)) += *(bias + j);
+        // NCHW: A[i, j] += bias[j];
+        // NHWC: A[j, i] += bias[j];
+        *(A + SHIFT(i, j, dim_i, dim_j)) += *(bias + j);
     }}
 }}
 """
+        func_name: str = f"add_bias_{'nchw' if is_nchw else 'nhwc'}_gpu"
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
-        code = code.format(func_name=_func_name,
-                           T=_t
+        code = code.format(FUNC_NAME=func_name,
+                           T=_t, 
+                           IS_NCHW=is_nchw
                            )
-        module = SourceModule(code).get_function(_func_name)
+        module = SourceModule(code).get_function(func_name)
 
         return module
     # ---
@@ -360,7 +370,7 @@ __global__ void {func_name}({T} *const A,
     #define SHIFT(ni, ci, hi, wi, c_dim, h_dim, w_dim) (((ni * h_dim + hi) * w_dim + wi) * c_dim + ci)
 #endif
 
-__global__ void {func_name}({T} *const dbias,
+__global__ void {FUNC_NAME}({T} *const dbias,
                             const {T} *const dy,
                             int n, int c, int h, int w)
 {{
@@ -378,14 +388,14 @@ __global__ void {func_name}({T} *const dbias,
     }}
 }}
 """
-        _func_name = f"gradient_bias_{'nchw' if is_nchw else 'nhwc'}_gpu"
+        func_name = f"gradient_bias_{'nchw' if is_nchw else 'nhwc'}_gpu"
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
-        code = code.format(func_name=_func_name,
+        code = code.format(FUNC_NAME=func_name,
                            T=_t,
                            IS_NCHW=is_nchw
                            )
-        module = SourceModule(code).get_function(_func_name)
+        module = SourceModule(code).get_function(func_name)
 
         return module
     # ---
