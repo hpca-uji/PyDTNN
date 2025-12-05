@@ -15,7 +15,7 @@ from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
-from collections import abc
+from collections import abc, defaultdict
 
 import numpy as np
 from tqdm import tqdm
@@ -38,7 +38,7 @@ from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.layers.layer import select as select_layer
-from pydtnn.parser import PydtnnArgumentParser
+from pydtnn.parser import PydtnnArgumentParser, _get_gpus_per_node
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
@@ -53,53 +53,134 @@ from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, enco
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
 
-
-cuda_errors = []
-try:
-    import pycuda.gpuarray as gpuarray  # type: ignore
-    import pydtnn.backends.gpu.utils.tensor_gpu
-except Exception as e:
-    gpuarray = None
-    cuda_errors.append(e)
-
-try:
-    import pycuda.driver as drv  # type: ignore
-    from pydtnn.backends.gpu.libs import libcudnn as cudnn
-except Exception as e:
-    drv = ModuleType | None
-    cuda_errors.append(e)
-
-try:
-    from skcuda import cublas  # type: ignore
-except Exception as e:
-    cublas: ModuleType | None = None
-    cuda_errors.append(e)
-
-
-# --- GLOBAL VARIABLES --- #
-supported_gpu: bool = False
-supported_cudnn: bool = True
-supported_nccl: bool = True
-enable_cudnn: bool = False
-
 type MPI_MODULE = ModuleType
+type Cudnn_Handle_Type = int
+type Cublas_Handle_Type = int
 
+gpu_errors = []
+
+# OPTIONAL IMPORTS
 try:
     from pydtnn.comm import MPI
 except Exception:
     MPI = None
 
+try:
+    import pycuda.driver as drv  # type: ignore
+except Exception as e:
+    drv = None
+    gpu_errors.append(e)
+
+try:
+    import pycuda.gpuarray as gpuarray  # type: ignore
+except Exception as e:
+    gpuarray = None
+    gpu_errors.append(e)
+
+try:
+    from pydtnn.backends.gpu.utils import tensor_gpu  # type: ignore
+except Exception as e:
+    tensor_gpu = None
+    gpu_errors.append(e)
+
+try:
+    from pydtnn.backends.gpu.libs import libnccl as nccl  # type: ignore
+except Exception as e:
+    nccl = None
+    gpu_errors.append(e)
+    supported_nccl = False
+else:
+    supported_nccl = True
+
+try:
+    from pydtnn.backends.gpu.libs import libcudnn as cudnn
+except Exception as e:
+    cudnn = None
+    gpu_errors.append(e)
+    supported_cudnn = False
+else:
+    supported_cudnn = True
+
+try:
+    from skcuda import cublas  # type: ignore
+except Exception as e:
+    cublas = None
+    gpu_errors.append(e)
+
+
+# INIT MPI
+if MPI:
+    rank = MPI.COMM_WORLD.rank
+    nprocs = MPI.COMM_WORLD.size
+    hostname = MPI.Get_processor_name()
+    ranks_per_node = defaultdict(int)
+    for _host, _rank in MPI.COMM_WORLD.allgather([hostname, rank]):
+        ranks_per_node[_host] += 1
+else:
+    rank = 0
+    nprocs = 1
+    hostname = "localhost"
+    ranks_per_node = {hostname: nprocs}
+# ---
+
+# INIT GPU
+num_gpus = _get_gpus_per_node()
+os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""
+supported_gpu = bool(num_gpus)
+# ---
+
+# INIT NCCL
+if nccl and num_gpus:
+    nccl_id = nccl.ncclGetUniqueId()
+    if MPI:
+        nccl_id = MPI.COMM_WORLD.bcast(nccl_id)
+    nccl_comm = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
+    atexit.register(lambda: nccl.ncclCommDestroy(nccl_comm))  # type: ignore
+else:
+    nccl_comm = None  # type: ignore
+# ---
+
+# INIT PYCUDA
+if drv:
+    drv.init()
+    stream: drv.Stream = drv.Stream()  # type: ignore
+    rank = MPI.COMM_WORLD.rank if MPI else 0
+    device = drv.Device(rank % drv.Device.count())
+    context = device.make_context()
+    atexit.register(lambda: context.detach())  # type: ignore
+else:
+    stream = None  # type: ignore
+    device = None  # type: ignore
+    context = None  # type: ignore
+# ---
+
+# INIT CUDNN
+if cudnn:
+    cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
+    atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
+else:
+    cudnn_handle: Cudnn_Handle_Type = None  # type: ignore
+
+if cublas:
+    cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()  # type: ignore
+    atexit.register(lambda: cublas.cublasDestroy(cublas_handle))  # type: ignore
+else:
+    cublas_handle: Cublas_Handle_Type = None  # type: ignore
+# ---
+
+# SYNC PYCUDA+CUDNN
+if stream and cudnn:
+    cudnn.cudnnSetStream(cudnn_handle, stream.handle)
+# ---
+
+# SYNC PYCUDA+CUBLAS
+if stream and cublas:
+    cublas.cublasSetStream(cublas_handle, stream.handle)  # type: ignore
+# ---
+
 # --- CONSTANS --- #
 BAR_WIDTH = 140
 DEFAULT_BACH_SIZE = 64
-
-
-# NOTE: Check "_initialize_cuda" to get the actual types.
-# TODO: set the correct type.
-type Cudnn_Handle_Type = int
-type Cublas_Handle_Type = int
-int = int
-
 
 # NOTE: mpi4py has more functions, but no typing
 if TYPE_CHECKING:
@@ -264,12 +345,11 @@ class Model[T: Array]:
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
                  tracer_pmlib_device: str = "", **kwargs):
-        global enable_cudnn
 
         # Attributes related to the given arguments
         self.parallel: Model.ParallelMode = Model.ParallelMode(parallel)
         self.blocking_mpi: bool = use_blocking_mpi
-        self.enable_gpu = enable_cudnn = self.enable_cudnn = enable_gpu
+        self.enable_gpu = self.enable_cudnn = enable_gpu
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
@@ -312,16 +392,12 @@ class Model[T: Array]:
         else:
             MemoryCache.disable()
 
-        global cuda_errors
-
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
                 self._initialize_cuda()
             else:
-                raise ExceptionGroup("CUDA import error", cuda_errors)
-        else:
-            cuda_errors = None  # If CUDA is not going to be used, then the import errors should be deleted (or mark to be deleted).
+                raise ExceptionGroup("CUDA import error", gpu_errors)
 
         # Data format
         self.tensor_format: TensorFormat = get_tensor_format(tensor_format=self.tensor_format, gpu=self.enable_cudnn)  # type: ignore
@@ -419,32 +495,20 @@ class Model[T: Array]:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
     def _initialize_cuda(self) -> None:
-
         global supported_cudnn, supported_nccl
-        supported_cudnn = True
-        supported_nccl = True
 
         assert drv is not None
-        device_id: int = self.comm_rank % drv.Device.count()  # type: ignore
-        drv.init()  # type: ignore
-        context = drv.Device(device_id).make_context()  # type: ignore
-        # context: int = drv.Device(device_id).retain_primary_context()
-
-        atexit.register(context.pop)
-
-        nccl_type = None
-        nccl_comm = None
+        assert context is not None
+        assert cudnn_handle is not None
+        assert cublas_handle is not None
+        assert stream is not None
 
         if not self.gpudirect and self.enable_nccl:
             raise RuntimeError("It is necessary to have gpudirect active to work with NCCL.")
 
         if self.comm and self.enable_nccl:
-            try:
-                from pydtnn.backends.gpu.libs import libnccl as nccl
-            except Exception as e:
-                supported_nccl = False
-                msg = "Please, install nccl to be able to use NVIDIA NCCL inter-GPU communications!"
-                raise ValueError(msg) from e
+            assert nccl is not None
+            assert nccl_comm is not None
 
             nccl_types = {np.float64: nccl.DataType.Float64,
                           np.float32: nccl.DataType.Float32,
@@ -453,30 +517,12 @@ class Model[T: Array]:
 
             nccl_type = nccl_types.get(self.dtype, nccl.DataType.Float32)
 
-            hostname = MPI.Get_processor_name()  # type: ignore
+            if ranks_per_node[hostname] > num_gpus:
+                raise ValueError("Not able to run more processes than GPUs per node!")
+        else:
+            nccl_type = None
 
-            hosts_data = self.comm.allgather([self.rank, hostname])
-            # Build a dictionary hostname : [ranks_in_host]
-            #   { "host1": [0, 1], "host2": [2, 3] }
-            hosts = {}
-            for r, h in hosts_data:
-                # noinspection PyTypeChecker
-                hosts.setdefault(h, []).append(r)
-            if self.parallel == "data":
-                os.environ["CUDA_VISIBLE_DEVICES"] = str(self.rank % self.gpus_per_node)
-            # Check that no more processes than GPUs per node are used
-            for host, ranks_in_host in hosts.items():
-                if len(ranks_in_host) > self.gpus_per_node:
-                    raise ValueError("Not able to run more processes than GPUs per node!")
-
-            nccl_id = self.comm.bcast(nccl.ncclGetUniqueId() if self.comm_rank == 0 else None)
-            nccl_comm = nccl.ncclCommInitRank(self.nprocs, nccl_id, self.rank)
-
-        cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
-        cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()  # type: ignore
-        stream: drv.Stream = drv.Stream()  # type: ignore
-        cublas.cublasSetStream(cublas_handle, stream.handle)  # type: ignore
-        cudnn.cudnnSetStream(cudnn_handle, stream.handle)
+        self.tracer.set_stream(stream)
 
         cudnn_types = {np.float64: CudnnDataType.FLAOT64,
                        np.float32: CudnnDataType.FLOAT32,
@@ -484,9 +530,7 @@ class Model[T: Array]:
                        np.int32: CudnnDataType.INT32}
 
         cudnn_type: str = cudnn_types.get(self.dtype, CudnnDataType.FLOAT32)
-
         cudnn_dtype: int = cudnn.cudnnDataType[cudnn_type]
-        self.tracer.set_default_stream(stream)
 
         self.nccl_type = nccl_type
         self.nccl_comm = nccl_comm

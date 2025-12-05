@@ -62,5 +62,5 @@ class SimpleTracerGPU(SimpleTracer):
         for evt_type_val, evt_val in zipped_list:
             self.emit_event(evt_type_val, evt_val, stream)
 
-    def set_default_stream(self, stream):
+    def set_stream(self, stream):
         self.stream = stream

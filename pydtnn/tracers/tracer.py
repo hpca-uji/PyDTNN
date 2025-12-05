@@ -148,7 +148,7 @@ class Tracer(metaclass=PostInitCaller):
             text = f" {text}:"
         print(f">>>{text} user time={u[0]:.2f}, sys time={u[1]:.2f}, mem={u[2] / 1024:.2f} MiB")
 
-    def set_default_stream(self, stream):
+    def set_stream(self, stream):
         pass
 
 
