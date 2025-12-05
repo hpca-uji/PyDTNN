@@ -27,6 +27,8 @@
   deactivate all environments and then reactivate only the one you want.
 
 # Planned
+- Move `gpu.utils.memory_allocation` from a global namespace to a model instance.
+- Genearate a shared temporary memory space for layers on the model (for CPU in `ndarray` and for GPU in `GPUArray`).
 - Move common code of `.pyi` and `.pyx` to a shared module.
 - Extract GPU `SourceModule` to `.cu` files.
 - Rework `BestOf` to not use globals.
