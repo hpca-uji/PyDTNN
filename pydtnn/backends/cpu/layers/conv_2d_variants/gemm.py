@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import Conv2DStandardCPU
-from pydtnn.backends.cpu.libs.conv_gemm import ConvGemm
+from pydtnn.libs.libconvgemm import ConvGemm
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat

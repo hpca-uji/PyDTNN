@@ -3,7 +3,7 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-    from pydtnn.comm import MPI
+    from pydtnn.libs.libmpi import MPI
 except Exception:
     pass
 import numpy as np

@@ -3,22 +3,23 @@
 # NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
 # FIXME: Serialization preformance
 
-from pydtnn import crypt
-from tenseal.enc_context import Context as SealContext
-from tenseal.tensors import CKKSVector
-from tenseal import sealapi
-import numpy as np
 import sys
-import enum
 import pickle
 import copyreg
 import dataclasses
 from dataclasses import dataclass
 
+import numpy as np
+
+from pydtnn.libs import libcrypt
+
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
 try:
     import tenseal
+    from tenseal import sealapi
+    from tenseal.tensors import CKKSVector
+    from tenseal.enc_context import Context as SealContext
 finally:
     sys.path.insert(0, _pkg)
 
@@ -37,7 +38,7 @@ SECURITY_LEVEL = {
 
 
 @dataclass(eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](crypt.Ciphertext[CKKSVector, P]):
+class Ciphertext[P: np.number](libcrypt.Ciphertext[CKKSVector, P]):
     """TenSEAL ciphertext"""
     _context: bytes = dataclasses.field(repr=False)
 
@@ -77,7 +78,7 @@ class Ciphertext[P: np.number](crypt.Ciphertext[CKKSVector, P]):
             return None
 
 
-class Context(crypt.Context[CKKSVector]):
+class Context(libcrypt.Context[CKKSVector]):
     """TenSEAL context"""
     _cls = Ciphertext
 
@@ -110,7 +111,7 @@ class Context(crypt.Context[CKKSVector]):
 
         self._context = pickle.dumps(self._public_context)
 
-    def _new(self, /, *args, **kwds) -> crypt.Ciphertext:
+    def _new(self, /, *args, **kwds) -> libcrypt.Ciphertext:
         """Create new operable ciphertext"""
         return super()._new(_context=self._context, *args, **kwds)
 

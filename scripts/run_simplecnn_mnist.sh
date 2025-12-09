@@ -5,7 +5,7 @@ export PYTHONOPTIMIZE=2
 export PYTHONUNBUFFERED="True"
 
 pydtnn-benchmark \
-  --model=simplecnn \
+  --model=resnet \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --test-as-validation=False \

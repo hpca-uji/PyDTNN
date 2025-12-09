@@ -7,12 +7,12 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-    from pydtnn.comm import MPI
+    from pydtnn.libs.libmpi import MPI
 except Exception as e:
     pass
 
 try:
-    import pydtnn.backends.gpu.libs.libnccl as nccl
+    import pydtnn.libs.libnccl as nccl
 except Exception as e:
     pass
 

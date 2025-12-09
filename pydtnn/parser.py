@@ -75,8 +75,8 @@ def _get_gpus_per_node():
 
 def _get_mpi_protocol():
     try:
-        from pydtnn.comm import proto as PROTOCOL
-        from pydtnn.comm import ssl as SSL
+        from pydtnn.libs.libmpi import proto as PROTOCOL
+        from pydtnn.libs.libmpi import ssl as SSL
     except Exception as e:
         PROTOCOL = None
         SSL = None
@@ -88,7 +88,7 @@ def _get_mpi_protocol():
 
 def _get_mpi_server():
     try:
-        from pydtnn.comm import addr
+        from pydtnn.libs.libmpi import addr
     except Exception as e:
         addr = None
     return addr
@@ -96,7 +96,7 @@ def _get_mpi_server():
 
 def _get_mpi_port():
     try:
-        from pydtnn.comm import port
+        from pydtnn.libs.libmpi import port
     except Exception as e:
         port = None
     return port

@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.backends.cpu.libs.conv_winograd import ConvWinograd
+from pydtnn.libs.libconvwinograd import ConvWinograd
 from pydtnn.tests.abstract.common import verbose_test, D
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header

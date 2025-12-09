@@ -1,10 +1,12 @@
 """OpenFHE encryption"""
 
-from pydtnn import crypt
-import numpy as np
 import sys
 import copyreg
 from dataclasses import dataclass
+
+import numpy as np
+
+from pydtnn.libs import libcrypt
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -28,11 +30,11 @@ SECURITY_LEVEL = {
 
 
 @dataclass(repr=False, eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](crypt.Ciphertext[openfhe.Ciphertext, P]):
+class Ciphertext[P: np.number](libcrypt.Ciphertext[openfhe.Ciphertext, P]):
     """OpenFHE ciphertext"""
 
 
-class Context(crypt.Context[openfhe.Ciphertext]):
+class Context(libcrypt.Context[openfhe.Ciphertext]):
     """OpenFHE context"""
     _cls = Ciphertext
 

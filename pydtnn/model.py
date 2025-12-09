@@ -21,12 +21,13 @@ from collections import abc, Counter
 import numpy as np
 from tqdm import tqdm
 
-from pydtnn import crypt, utils
+from pydtnn import utils
 from pydtnn.activations.relu import Relu
 from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
-from pydtnn.comm import proto as PROTOCOL
+from pydtnn.libs.libmpi import proto as PROTOCOL
+from pydtnn.libs import libcrypt
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_and_activation_base import LayerAndActivationBase, FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -62,7 +63,7 @@ gpu_errors = []
 
 # OPTIONAL IMPORTS
 try:
-    from pydtnn.comm import MPI
+    from pydtnn.libs.libmpi import MPI
 except Exception:
     MPI = None
 
@@ -85,7 +86,7 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from pydtnn.backends.gpu.libs import libnccl as nccl  # type: ignore
+    from pydtnn.libs import libnccl as nccl  # type: ignore
 except Exception as e:
     nccl = None
     gpu_errors.append(e)
@@ -94,7 +95,7 @@ else:
     supported_nccl = True
 
 try:
-    from pydtnn.backends.gpu.libs import libcudnn as cudnn  # type: ignore
+    from pydtnn.libs import libcudnn as cudnn  # type: ignore
 except Exception as e:
     cudnn = None
     gpu_errors.append(e)
@@ -569,10 +570,10 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _init_crypt(self, encryption_name: str) -> crypt.Context:
+    def _init_crypt(self, encryption_name: str) -> libcrypt.Context:
         """Inizialize encryption context"""
         try:
-            module = importlib.import_module(f"pydtnn.crypt.{encryption_name}")
+            module = importlib.import_module(f"pydtnn.libs.libcrypt.{encryption_name}")
         except Exception as exc:
             raise ValueError(f"Unsupported encryption module {encryption_name}!") from exc
 

@@ -3,7 +3,7 @@ from unittest import SkipTest
 
 import numpy as np
 
-from pydtnn.backends.cpu.libs.conv_direct import ConvDirect
+from pydtnn.libs.libconvdirect import ConvDirect
 from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.tests.abstract.common import verbose_test
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
