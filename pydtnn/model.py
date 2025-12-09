@@ -8,6 +8,7 @@ import importlib
 import itertools
 from math import ceil
 import operator
+import platform
 import os
 import time
 from functools import cached_property, reduce
@@ -15,7 +16,7 @@ from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
-from collections import abc, defaultdict
+from collections import abc, Counter
 
 import numpy as np
 from tqdm import tqdm
@@ -112,10 +113,8 @@ except Exception as e:
 if MPI:
     rank = MPI.COMM_WORLD.rank
     nprocs = MPI.COMM_WORLD.size
-    hostname = MPI.Get_processor_name()
-    ranks_per_node = defaultdict(int)
-    for _host, _rank in MPI.COMM_WORLD.allgather([hostname, rank]):
-        ranks_per_node[_host] += 1
+    hostname = platform.node()
+    ranks_per_node = dict(Counter(MPI.COMM_WORLD.allgather(hostname)))
 else:
     rank = 0
     nprocs = 1
