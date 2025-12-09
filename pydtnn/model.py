@@ -143,15 +143,15 @@ else:
 # INIT PYCUDA
 if drv:
     drv.init()
-    stream: drv.Stream = drv.Stream()  # type: ignore
     rank = MPI.COMM_WORLD.rank if MPI else 0
     device = drv.Device(rank % drv.Device.count())
     context = device.make_context()
+    stream: drv.Stream = drv.Stream()  # type: ignore
     atexit.register(lambda: context.detach())  # type: ignore
 else:
-    stream = None  # type: ignore
     device = None  # type: ignore
     context = None  # type: ignore
+    stream = None  # type: ignore
 # ---
 
 # INIT CUDNN
