@@ -1051,7 +1051,7 @@ class Model[T: Array]:
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = pydtnn.backends.gpu.utils.tensor_gpu.TensorGPU(
+            tensor_gpu = TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_gpu  # type: ignore
@@ -1341,7 +1341,7 @@ class Model[T: Array]:
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = pydtnn.backends.gpu.utils.tensor_gpu.TensorGPU(
+            tensor_gpu = TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_gpu  # type: ignore
