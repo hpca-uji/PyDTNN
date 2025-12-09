@@ -1,9 +1,7 @@
+# Python Distributed Training of Neural Networks
 ![Logo](pydtnn.svg)
 
-# Python Distributed Training of Neural Networks
-
 ## Introduction
-
 PyDTNN is a light-weight library developed at Universitat Jaume I
 (Spain) for distributed Deep Learning training and inference that offers
 an initial starting point for interaction with distributed training of
@@ -18,7 +16,6 @@ NumPy/Cython for multicore processors and PyCUDA/cuDNN/cuBLAS for NVIDIA
 GPUs.
 
 Supported layers:
-
 - Fully-connected
 - Convolutional 2D
 - Max pooling 2D
@@ -31,7 +28,6 @@ Supported layers:
   Inception, GoogleNet, DenseNet, etc.)
 
 Supported datasets:
-
 - **MNIST**: handwritten digit database. This dataset is included into
   the repository.
 - **CIFAR10**: database of the 80 million tiny images dataset. This
@@ -49,17 +45,14 @@ Supported datasets:
   can be downloaded from: <https://nihcc.app.box.com/v/ChestXray-NIHCC>
 
 ## Installing PyDTNN from source
-
 Download PyDTNN source code from its GitHub repository and enter the
 PyDTNN directory:
-
 ```sh
 git clone https://github.com/hpca-uji/PyDTNN.git
 cd PyDTNN
 ```
 
 Then package itself must be installed:
-
 ```sh
 pip install .
 ```
@@ -67,7 +60,6 @@ pip install .
 If you plan to modify the PyDTNN code, instead of using the previous
 line, you can install PyDTNN in editable mode (see `CONTRIBUTING.md` for
 more details):
-
 ```sh
 pip install --config-settings editable_mode=compat -e .
 ```
@@ -75,7 +67,6 @@ pip install --config-settings editable_mode=compat -e .
 Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
-
 ```sh
 git submodule update --init vendor/net-queue
 pip install ./vendor/net-queue
@@ -89,7 +80,6 @@ pip install .[mpi]
 Optionally, if you are going to use CUDA, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
-
 ```sh
 pip install nvidia-pyindex
 pip install .[cuda]
@@ -98,35 +88,30 @@ pip install .[cuda]
 Optionally, if you are going to use FHE, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
-
 ```sh
 pip install .[fhe]
 ```
 
-Optionally, if you are going to use TCP, you should enable the protocol
+Optionally, if you are going to use MPI/TCP, you should enable the protocol
 with:
-
 ```sh
 export PYMPI_PROTO=tcp
 ```
 
-Optionally, if you are going to use gRPC, you should enable the protocol
+Optionally, if you are going to use MPI/gRPC, you should enable the protocol
 with:
-
 ```sh
 export PYMPI_PROTO=grpc
 ```
 
-Optionally, if you are going to use MQTT, you should have installed a
+Optionally, if you are going to use MPI/MQTT, you should have installed a
 MQTT broker server, you should enable the protocol with:
-
 ```sh
 export PYMPI_PROTO=mqtt
 ```
 
-Optionally, if you are going to use SSL/TLS, you should enable the
+Optionally, if you are going to use MPI/SSL, you should enable the
 transport with:
-
 ```sh
 export PYMPI_SSL=yes
 export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
@@ -137,7 +122,6 @@ For more information on how to manage external dependencies see
 `vendor/README.md`.
 
 ## Launcher options
-
 The PyDTNN framework comes with a utility launcher called
 `pydtnn-benchmark` that supports the following options:
 
@@ -340,10 +324,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--profile`: Obtain cProfile profiles. Default: `False`.
 
 ## Example: distributed training of a CNN for the MNIST dataset
-
 In this example, we train a simple CNN for the MNIST dataset using data
 parallelism and 12 MPI ranks each using 4 OpenMP threads:
-
 ```
 $ export OMP_NUM_THREADS=4
 $ mpirun -np 12 \
@@ -511,10 +493,8 @@ Testing: 100%|███████████████████| 10000/1
 ```
 
 ## Example: inference of the VGG16 CNN for the CIFAR-10 dataset
-
 In this example, we perform inference with the CNN VGG16 for the
 CIFAR-10 dataset using 4 OpenMP threads:
-
 ```
 $ export OMP_NUM_THREADS=4
 $ pydtnn-benchmark \
@@ -695,9 +675,7 @@ Testing: 100%|██████████████████████
 ```
 
 ## Credits
-
 The main contributors, in alphabetically order, to PyDTNN are:
-
 - Adrián Castelló Gimeno \<<adcastel@uji.es>\>
 - Andrés Enrique Tomás Domínguez \<<antodo@upv.es>\>
 - Enrique Salvador Quintana Ortí \<<quintana@uji.es>\>
@@ -709,14 +687,11 @@ The main contributors, in alphabetically order, to PyDTNN are:
 - Sergio Barrachina Mir \<<barrachi@uji.es>\>
 
 If you have questions or comments about PyDTNN, please contact:
-
 - Manuel Francisco Dolz Zaragozá \<<dolzm@uji.es>\>
 
 ## Citing PyDTNN
-
 If you use PyDTNN, and you would like to acknowledge the project in your
 academic publication, we suggest citing the following paper:
-
 - **PyDTNN: A user-friendly and extensible framework for distributed
   deep learning**. Sergio Barrachina, Adrián Castelló, Mar Catalán,
   Manuel F. Dolz, Jose I. Mestre. *Journal of Supercomputing* 77(9), pp.
@@ -724,7 +699,6 @@ academic publication, we suggest citing the following paper:
   [10.1007/s11227-021-03673-z](http://dx.doi.org/10.1007/s11227-021-03673-z).
 
 Other references:
-
 - **A Flexible Research-Oriented Framework for Distributed Training of
   Deep Neural Networks**. Sergio Barrachina, Adrián Castelló, Mar
   Catalán, Manuel F. Dolz and Jose I. Mestre. *2021 IEEE International
@@ -733,9 +707,7 @@ Other references:
   [10.1109/IPDPSW52791.2021.00110](http://dx.doi.org/10.1109/IPDPSW52791.2021.00110).
 
 ## Acknowledgments
-
 The PyDTNN library has been partially supported by:
-
 - Project TIN2017-82972-R **"Algorithmic Techniques for Energy-Aware and
   Error-Resilient High Performance Computing"** funded by the Spanish
   Ministry of Economy and Competitiveness (2018-2020).
