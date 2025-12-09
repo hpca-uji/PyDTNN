@@ -183,6 +183,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         dy_rows: np.ndarray = format_transpose(dy, "NCHW", "CNHW").reshape((self.co, -1), copy=None)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
+        print(f"\n{dy_rows.shape=}\n{self.x_cols.T.shape=}\n{(dy.shape[0] * self.ho * self.wo)=}\n{dy.shape[0]=}\n{self.co=}\n{self.ho=}\n{self.wo=}\n{self.ci=}\n{self.hi=}\n{self.wi=}\n{self.kh=}\n{self.kw=}\n{(self.kh * self.kw)=}")
+
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         np.matmul(dy_rows, self.x_cols.T, out=self._dw,

@@ -168,7 +168,7 @@ class Conv2DStandardGPU(Conv2DGPU):
     # -- END BIAS --
 
 
-    def fwd(self, use_bias: bool) -> Function:
+    def fwd_nchw(self, use_bias: bool) -> Function:
         # im2_var.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
 """
@@ -258,7 +258,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
         return module
     # -------------------------
 
-    def _im2row(self, use_bias:bool) -> Function:
+    def fwd_nhwc(self, use_bias:bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
 """
@@ -293,6 +293,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
     int i, j, k;
 
+    // Im2Row
     for(row = idx; row < N; row += num_workers)
     {{  
         ni = GET_NI(row, n, ho, wo);
@@ -329,11 +330,6 @@ __global__ void {FUNC_NAME}(const {T} *const x,
             for(j = 0; j < co; j++)
     {{
         // y[i, j] += im2_var[i, k] * weights[k, j]
-        /////////////////////
-        //
-        // Check this!!!!!
-        //
-        /////////////////////
         *(y + SHIFT(i, j, co)) += (*(im2_var + SHIFT(i, k, dim_c))) * (*(weights + SHIFT(k, j, co)));
     }}
 #if {USE_BIAS}
@@ -360,6 +356,85 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     #=========================
     #= BACKWARD-related code =
     #=========================
+
+    def _backward_nchw(self, use_bias:bool) -> Function:
+        code = \
+"""
+#define GET_NI(row, h, w) row / (w * h)
+#define GET_HO(row, h, w) (row / w) % h
+#define GET_WO(row, h, w) row % w
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
+#define SHIFT_ROWS(row, col, dim_cols) row * dim_cols + col
+// NOTE: This is NHWC
+#define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
+
+// matmul-related macros
+#define SHIFT(i, j, dim_j) i * dim_j + j
+
+__global__ void {FUNC_NAME}(const {T} *const dy,
+                            const {T} *const im2_var,
+                            const {T} *const weights,
+                            {T}* dw, {T}* db, {T}* dx
+                            {T}* bias,
+                            int dim_c, int dim_n,
+                            int n, int c, int h, int w,
+                            int co, int ho, int wo,
+                            int kh, int kw, 
+                            int vpadding, int hpadding,
+                            int vstride, int hstride, 
+                            int vdilation, int hdilation)
+{{
+    // Transpose dy from NCHW to CNHW
+
+    // Matmul dy transposed and im2_var.T in and save it in dw
+    // NOTA: ¿Podría ser más rápido si se juntan dimensiones y se saca en qué i y en que j se está?
+
+    // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
+    dim_k = n*ho*wo;
+    dim_j = ci*kh*kw;
+
+    for(co_i=idx; co_i < c; co_i++)
+        for(k = 0; k < dim_k; k++)
+            for(j = 0; j < dim_j; j++)
+    {{
+        *(dw + SHIFT(co_i, j, dim_j)) += (*(dy + SHIFT(co_i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
+    }}
+
+    // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
+    dim_k = n*ho*wo;
+    dim_j = ci*kh*kw;
+    N = co*n*ho*wo
+
+    for(co_i=idx; co_i < c; co_i++)
+        for(k = 0; k < dim_k; k++)
+            for(j = 0; j < dim_j; j++)
+    {{
+        *(dw + SHIFT(co_i, j, dim_j)) += (*(dy + SHIFT(co_i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
+    }}
+
+    // np.sum(dy, axis=(0,2,3), out=db)
+
+    //mamtul(weights.reshape(co, -1).T, tranposed dy)
+
+    // Col2Im
+
+}}
+"""
+        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
+
+        func_name = "im2row_fwd_gpu"
+        code = code.format(FUNC_NAME=func_name,
+                            T=_t,
+                            USE_BIAS=use_bias,
+                            BIAS_=self.BIAS
+                            )
+        module = SourceModule(code).get_function(func_name)
+
+        return module
+    # -------------------------
+
+
+    # 
 
     def _gradient_bias(self, is_nchw: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
