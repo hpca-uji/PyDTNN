@@ -1,5 +1,5 @@
 # Python Distributed Training of Neural Networks
-![Logo](pydtnn.svg)
+![Logo](logo.svg)
 
 ## Introduction
 PyDTNN is a light-weight library developed at Universitat Jaume I
