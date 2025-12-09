@@ -94,7 +94,7 @@ else:
     supported_nccl = True
 
 try:
-    from pydtnn.backends.gpu.libs import libcudnn as cudnn
+    from pydtnn.backends.gpu.libs import libcudnn as cudnn  # type: ignore
 except Exception as e:
     cudnn = None
     gpu_errors.append(e)
