@@ -5,7 +5,8 @@ from cython.parallel import prange
 
 __all__ = (
     "im2row_nhwc_cython",
-    "row2im_nhwc_cython"
+    "row2im_nhwc_cython",
+    "alt_row2im_nhwc_cython"
 )
 
 # Declare fused type npDT (to be used with template functions)
@@ -119,4 +120,35 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
     #                                     col = cc * kh * kw + ii * kw + jj
     #                                     x[nn, x_x, x_y, cc] += rows[row, col]
 
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.initializedcheck(False)
+def alt_row2im_nhwc_cython(npDT[:,::1] rows,
+                           npDT[:,:,:,::1] x,
+                           int n, int h, int w, int c,
+                           int kh, int kw, int ho, int wo,
+                           int vpadding, int hpadding,
+                           int vstride, int hstride,
+                           int vdilation, int hdilation) -> None: 
+    cdef int nn, row, cc, ii, jj, col, x_x, x_y, x_o, y_o
+    cdef float xx, yy
+
+    for nn in prange(n, nogil=True):
+        for x_x in range(h):
+            for x_y in range(w):
+                for cc in range(c):
+                    for ii in range(kh):
+                        for jj in range(kw):
+                            # x_x = vstride * xx + vdilation * ii - vpadding
+                            xx = ((x_x + vpadding - vdilation * ii) / vstride)
+                            # x_y = hstride * yy + hdilation * jj - hpadding
+                            yy = ((x_y + hpadding - hdilation * jj) / hstride)
+
+                            x_o = (<int> xx)
+                            y_o = (<int> yy)
+
+                            if (x_o == xx) and (y_o == yy) and ((0 <= xx < ho) and (0 <= yy < wo)):
+                                row = nn * ho * wo + x_o * wo + y_o
+                                col = cc * kh * kw + ii * kw + jj
+                                x[nn, x_x, x_y, cc] += rows[row, col]
 # ========================================== #

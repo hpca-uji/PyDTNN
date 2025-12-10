@@ -1,7 +1,7 @@
 import numpy as np
 from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import Conv2DStandardCPU
-from pydtnn.cython.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython
-from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
+from pydtnn.cython.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython#, alt_col2im_nchw_cython
+from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython#, alt_row2im_nhwc_cython
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
@@ -182,8 +182,6 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         dy_rows: np.ndarray = format_transpose(dy, "NCHW", "CNHW").reshape((self.co, -1), copy=None)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-
-        print(f"\n{dy_rows.shape=}\n{self.x_cols.T.shape=}\n{(dy.shape[0] * self.ho * self.wo)=}\n{dy.shape[0]=}\n{self.co=}\n{self.ho=}\n{self.wo=}\n{self.ci=}\n{self.hi=}\n{self.wi=}\n{self.kh=}\n{self.kw=}\n{(self.kh * self.kw)=}")
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
