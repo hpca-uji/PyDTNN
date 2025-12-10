@@ -23,27 +23,29 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
             case TensorFormat.NCHW:
                 self.forward = self._forward_i2c_nchw
                 self.backward = self._backward_i2c_nchw
+                self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
 
                 _dw_shape = (self.co, self.dim_c)
                 res_bw_shape = (self.dim_c, self.dim_n)
-
-                self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
+                dx_shape = (self.model.batch_size, self.ci, self.hi, self.wi)
             case TensorFormat.NHWC:
                 self.forward = self._forward_i2c_nhwc
                 self.backward = self._backward_i2c_nhwc
+                self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")                
 
                 _dw_shape = (self.dim_c, self.co)
                 res_bw_shape = (self.dim_n, self.dim_c)
-
-                self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")
+                dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
             case _:
                 _dw_shape = (None, )
                 res_bw_shape = (None, )
+                dx_shape = (None,)
 
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         # -
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
         self.res = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
         self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
         self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
@@ -129,8 +131,10 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
 
-        dx = np.zeros(shape=(dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
         res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C", copy=None)
+        
+        dx = self.dx[:dy.shape[0], :]
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         dy_cols: np.ndarray = dy.reshape((-1, self.co), copy=False)
@@ -175,9 +179,10 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
-
-        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
         res = np.asarray(self.res_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
+
+        dx = self.dx[:dy.shape[0], :]
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         dy_rows: np.ndarray = format_transpose(dy, "NCHW", "CNHW").reshape((self.co, -1), copy=None)

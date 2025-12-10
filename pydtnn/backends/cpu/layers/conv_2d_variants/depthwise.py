@@ -26,16 +26,29 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
             case TensorFormat.NCHW:
                 self.forward = self._forward_depthwise_nchw
                 self.backward = self._backward_nchw
+                _y_shape = (self.model.batch_size, self.co, self.ho, self.wo)
+                dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
             case TensorFormat.NHWC:
                 self.forward = self._forward_depthwise_nhwc
                 self.backward = self._backward_nhwc
+                _y_shape = (self.model.batch_size, self.ho, self.wo, self.co)
+                dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
+            case _:
+                _y_shape = None
+                dx_shape = None
+                raise NotImplementedError(f"Format \"{self.model.tensor_format}\" is not supported in \"Conv2DDepthwiseCPU\" layer.")
+        # ---
+
+        self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
+        self._y = np.zeros(shape=_y_shape, dtype=self.model.dtype, order="C")
     # ---
 
     def _forward_depthwise_nhwc(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
 
         self.x = x
-        y = np.zeros(shape=(x.shape[0], self.ho, self.wo, self.co), dtype=self.model.dtype, order="C")
+        y = self._y[:x.shape[0], ]
+        y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         depthwise_conv_nhwc_cython(x, self.weights, y, self.ho, self.wo,
@@ -60,7 +73,8 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
     def _forward_depthwise_nchw(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
         self.x = x
-        y = np.zeros(shape=(x.shape[0], self.co, self.ho, self.wo), dtype=self.model.dtype, order="C")
+        y = self._y[:x.shape[0], ]
+        y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         depthwise_conv_nchw_cython(x, self.weights, y, self.ho, self.wo,
@@ -83,8 +97,9 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
-
-        dx = np.zeros(shape=(dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
+        
+        dx = self.dx[:dy.shape[0], ]
+        dx.fill(0)
 
         depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
                                             dx, self.dw,
@@ -101,7 +116,8 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
     
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
 
-        dx = np.zeros(shape=(dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
+        dx = self.dx[:dy.shape[0], ]
+        dx.fill(0)
 
         depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,
                                             dx, self.dw,

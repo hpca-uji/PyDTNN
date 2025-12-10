@@ -47,6 +47,12 @@ class Conv2DPointwiseGPU(Conv2DGPU):
 
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
+        y_gpu = gpuarray.to_gpu(np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype))
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
         self.forward = self._forward_pointwise
         self.backward = self._backward_pointwise
         self.fwd_func: Function = self.cuda_pointwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
@@ -57,8 +63,8 @@ class Conv2DPointwiseGPU(Conv2DGPU):
     def _forward_pointwise(self, x: TensorGPU) -> TensorGPU:
 
         self.x = x
-        y_gpu = gpuarray.to_gpu(np.zeros(shape=(x.shape[0], *self.shape), dtype=self.model.dtype))
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y.fill(0)
+
         n, c, h, w = self.model.decode_shape(x.shape)  # type: ignore (it's okay)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
@@ -84,9 +90,7 @@ class Conv2DPointwiseGPU(Conv2DGPU):
 
     def _backward_pointwise(self, dy: TensorGPU) -> TensorGPU:
         n, c, h, w = self.model.decode_shape(dy.shape)  # type: ignore (it's okay)
-
-        dx_gpu = gpuarray.zeros((n, *self.shape), self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
