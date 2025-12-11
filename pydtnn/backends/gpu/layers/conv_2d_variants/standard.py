@@ -39,7 +39,6 @@ class Conv2DStandardGPU(Conv2DGPU):
 
                 self.im2_func = self.fwd_nchw(self.use_bias)
                 self._2im_func = self._backward_nchw(self.use_bias)
-                self.backward_initializaton = self.backward_initializaton_nchw
             case TensorFormat.NHWC:
                 im2_x_shape = (self.dim_n, self.dim_c)
                 dw_shape = (self.dim_c, self.co)
@@ -47,7 +46,6 @@ class Conv2DStandardGPU(Conv2DGPU):
 
                 self.im2_func = self.fwd_nhwc(self.use_bias)
                 self._2im_func = self._backward_nhwc(self.use_bias)
-                self.backward_initializaton = self.backward_initializaton_nhwc
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
 
@@ -108,19 +106,8 @@ class Conv2DStandardGPU(Conv2DGPU):
         return self.y
     # ---
 
-    def backward_initializaton(self) -> None:
-        raise NotImplementedError("This is a fake method. The correct one must be setted during the initalization")
-
-    def backward_initializaton_nhwc(self) -> None:
-        pass # Nothing to do
-
-    def backward_initializaton_nchw(self) -> None:
-        # Transpose dy from NCHW to CNHW
-        return
-
     def backward(self, dy: TensorGPU) -> TensorGPU:
         
-        self.backward_initializaton()
         self.dx.fill(0)
 
         # im2col / im2row
@@ -387,7 +374,14 @@ __global__ void {FUNC_NAME}(const {T} *const x,
         code = \
 """
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
-#define SHIFT_DY(ni, ci, hi, wi, c, h, w) ((ni * c + ci) * h + hi) * w + wi
+
+// transpose-related macros (DY=CNHW, BASE_DY=NCHW)
+#define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) ((ci * n + ni) * h + hi) * w + wi
+#define SHIFT_BASE_DY(ni, ci, hi, wi, n, c, h, w) ((ni * c + ci) * h + hi) * w + wi
+#define GET_N_T(idx, n, c, h, w) idx / (w * h * n)
+#define GET_C_T(idx, n, c, h, w) (idx / (w * h)) % n
+#define GET_H_T(idx, n, c, h, w) (idx / w) % h
+#define GET_W_T(idx, n, c, h, w) idx % w
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
@@ -400,10 +394,10 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 #define GET_H(idx, n, c, h, w) (idx / w) % h
 #define GET_W(idx, n, c, h, w) idx % w
 
-__global__ void {FUNC_NAME}(const {T} *const dy,
+__global__ void {FUNC_NAME}(const {T} *const base_dy,
                             const {T} *const im2_var,
                             const {T} *const weights,
-                            {T}* dw, {T}* db, {T}* dx
+                            {T}* dy, {T}* dw, {T}* db, {T}* dx
                             {T}* col_2im_var,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
@@ -414,12 +408,30 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
                             int vdilation, int hdilation)
 {{
     int i, j, k, i_j, dim_j, dim_k, khi, kwi;
+    int ni, ci, hi, wi;
 
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
     const int N_DW = co * ci * kh * kw;
     const int N_COL2IM_VAR = dim_c * dim_n;
     const int N_COL2IM = n * c * h * w;
+    const int N_TRANSPOSE = n * co * ho * wo;
+
+    // Transposing dy from NCHW format to CNHW
+
+    for(i = idx; i < N_TRANSPOSE; i += num_workers)
+    {{
+        // NOTE: we are iterating over the transposed dy (dy).
+
+        // Getting the indexes
+        ni = GET_N_T(idx, n, c, h, w);
+        ci = GET_C_T(idx, n, c, h, w);
+        hi = GET_H_T(idx, n, c, h, w);
+        wi = GET_W_T(idx, n, c, h, w);
+        
+        // Assinging the values -> dy[ci,ni,hi,wi] = base_dy[ni,ci,hi,wi]
+        *(dy + SHIFT_DY(ni, ci, hi, wi, n, c, h, w)) = (*(base_dy + SHIFT_BASE_DY(ni, ci, hi, wi, n, c, h, w)));
+    }}
 
     // Matmul dy transposed and im2_var.T in and save it in dw
     // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
