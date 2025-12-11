@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixCPU
 from pydtnn.metrics.f1_score import F1Score
-from pydtnn.cython.div_arrays_set_if_zero import div_arrays_set_if_zero
+from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
 
 class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 

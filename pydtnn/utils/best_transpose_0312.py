@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.cython.transpose_cython import transpose_0312_ijk_cython, transpose_0312_ikj_cython
+from pydtnn.backends.cpu.utils.transpose_cython import transpose_0312_ijk_cython, transpose_0312_ikj_cython
 
 from pydtnn.utils.best_of import BestOf
 from typing import Callable

@@ -11,8 +11,8 @@ from collections import defaultdict
 from functools import partial
 
 import numpy as np
-from pydtnn.cython.im2col_nchw_cython import im2col_nchw_cython
-from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.backends.cpu.utils.im2col_nchw_cython import im2col_nchw_cython
+from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library

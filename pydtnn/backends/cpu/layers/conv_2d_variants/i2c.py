@@ -1,7 +1,7 @@
 import numpy as np
 from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import Conv2DStandardCPU
-from pydtnn.cython.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython
-from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
+from pydtnn.backends.cpu.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython
+from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 

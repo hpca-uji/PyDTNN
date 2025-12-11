@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from pydtnn.cython.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.libs.libconvwinograd import ConvWinograd
 from pydtnn.tests.abstract.common import verbose_test, D
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase

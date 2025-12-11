@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixCPU
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.recall import Recall
-from pydtnn.cython.div_arrays_set_if_zero import div_arrays_set_if_zero
+from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
 
 class RecallCPU(Recall[np.ndarray], MetricCPU):
 

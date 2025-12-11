@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.cython.log_activation_cython import log_bwd_cython, log_fwd_cython
+from pydtnn.backends.cpu.utils.log_activation_cython import log_bwd_cython, log_fwd_cython
 
 from pydtnn.activations.log import Log
 from pydtnn.backends.cpu.activations.activation import ActivationCPU

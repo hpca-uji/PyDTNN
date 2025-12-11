@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.cython.sigmoid_cython import sigmoid_bwd_cython, sigmoid_fwd_cython
+from pydtnn.backends.cpu.utils.sigmoid_cython import sigmoid_bwd_cython, sigmoid_fwd_cython
 
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.cpu.activations.activation import ActivationCPU

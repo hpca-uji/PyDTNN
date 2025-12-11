@@ -1,4 +1,4 @@
-from pydtnn.cython.relu_cython import leaky_relu_cython
+from pydtnn.backends.cpu.utils.relu_cython import leaky_relu_cython
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
