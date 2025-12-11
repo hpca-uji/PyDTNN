@@ -16,6 +16,8 @@ except (ImportError, ModuleNotFoundError):
 
 class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
     def initialize(self, list_layers: list[LayerBase]) -> None:
+        super().initialize(list_layers)
+
         for layer in list_layers:
             self.iterations[layer.id] = 0
             self.all_local_th[layer.id] = {dw_: None for dw_ in layer.grad_vars.values()}
@@ -125,7 +127,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
 
     def _update_weights(self, layer, w_type, w, coo_u, method="cython"):
         """
-        Update weights: w -= (u / self.nprocs)
+        Update weights: w -= (u / self.model.nprocs)
         and set to weight layer attribute: setattr(layer, w_type, w)
 
         Parameters:
@@ -152,7 +154,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
 
         if method == "cython_with_vel_and_momentum":
             if self.momentum == 0:
-                warnings.warn("If momentum is 0 use 'cython' method, it produces the same output but it is faster")
+                warnings.warn("If momentum is 0 use 'cython' method, it produces the same output but it is faster", RuntimeWarning)
 
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -175,7 +177,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
 
         if method == "numpy_with_vel_and_momentum":
             if self.momentum == 0:
-                warnings.warn("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster")
+                warnings.warn("If momentum is 0 use just 'numpy' method, it produces the same output but it is faster", RuntimeWarning)
 
             if len(self.dw_original_shape) != 2:
                 w = w.reshape(w.shape[0], -1)
@@ -191,7 +193,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
 
         if method == "like_sgd":
             """Use only for debugging purposes"""
-            warnings.warn("This method should be used only in case of debugging for performance reasons.")
+            warnings.warn("This method should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
             dw = coo_u.toarray()
             if len(self.dw_original_shape) != 2:
@@ -311,12 +313,12 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
         self._show_message_only_once(f"In '_space_repartition', balanced = '{balanced}' is being used")
 
         if not balanced:
-            boundaries = np.zeros(self.nprocs, dtype=np.int32)
+            boundaries = np.zeros(self.model.nprocs, dtype=np.int32)
             total_rows = self.dw_original_shape[0]
-            block_size = total_rows // self.nprocs
-            for i in range(0, self.nprocs - 1):
+            block_size = total_rows // self.model.nprocs
+            for i in range(0, self.model.nprocs - 1):
                 boundaries[i] = block_size * (i + 1)
-            boundaries[self.nprocs - 1] = total_rows
+            boundaries[self.model.nprocs - 1] = total_rows
             return boundaries
 
         if balanced:
@@ -327,12 +329,12 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
             rows = coo_topk.row
             topk_in_current_proc = 0
             total_rows = coo_topk.shape[0]
-            boundaries = np.zeros(self.nprocs, dtype=np.int32)
-            topk_per_proc = coo_topk.nnz // self.nprocs
+            boundaries = np.zeros(self.model.nprocs, dtype=np.int32)
+            topk_per_proc = coo_topk.nnz // self.model.nprocs
             topk_per_row = np.zeros(total_rows, dtype=np.int32)
             np.add.at(topk_per_row, rows, 1)
 
-            while current_proc < self.nprocs - 1:
+            while current_proc < self.model.nprocs - 1:
                 if current_row < total_rows:
                     topk_in_current_proc += topk_per_row[current_row]
                     if topk_in_current_proc >= topk_per_proc:
@@ -343,9 +345,9 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
                 else:
                     boundaries[current_proc] = current_row
                     current_proc += 1
-            boundaries[self.nprocs - 1] = total_rows
+            boundaries[self.model.nprocs - 1] = total_rows
 
-            global_boundaries = self.comm.allreduce(boundaries, op=MPI.SUM) // self.nprocs
+            global_boundaries = self.model.comm.allreduce(boundaries, op=MPI.SUM) // self.model.nprocs
 
             return global_boundaries
 
@@ -437,24 +439,24 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
         """
         self._show_message_only_once(f"In '_reduce_topk', the method that it is being used is '{method}'")
 
-        if self.nprocs == 1:
+        if self.model.nprocs == 1:
             return coo_topk
 
         if method == "collective_allreduce_then_slice":
-            warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.")
-            all_reduced_coo = self.comm.allreduce(coo_topk, op=MPI.SUM)
-            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
-            row_end = boundaries[self.rank]
+            warnings.warn("This reduce_topk method ('collective_allreduce_then_slice') should be used only in case of debugging for performance reasons.", RuntimeWarning)
+            all_reduced_coo = self.model.comm.allreduce(coo_topk, op=MPI.SUM)
+            row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
+            row_end = boundaries[self.model.rank]
             return all_reduced_coo.slice(row_start, row_end)
 
         if method == "collective_region_wise_reduce_sync":
             row_start = 0
-            reduced_regions_coo = [None] * self.nprocs
-            for region in range(self.nprocs):
+            reduced_regions_coo = [None] * self.model.nprocs
+            for region in range(self.model.nprocs):
                 row_end = boundaries[region]
-                reduced_regions_coo[region] = self.comm.reduce(coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region)
+                reduced_regions_coo[region] = self.model.comm.reduce(coo_topk.slice(row_start, row_end), op=MPI.SUM, root=region)
                 row_start = row_end
-            return reduced_regions_coo[self.rank]
+            return reduced_regions_coo[self.model.rank]
 
         if method == "collective_region_wise_reduce_async":
             """It is not possible with the current mpi4py version to generate a buffer with indexes and values and operate with them"""
@@ -462,40 +464,40 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
 
         if method == "p2p_region_wise_reduce_static_destination":
             # Prepare a vector region for storing the partial sums
-            coo_region_partial_sum = [None] * self.nprocs
-            for region in range(self.nprocs):
+            coo_region_partial_sum = [None] * self.model.nprocs
+            for region in range(self.model.nprocs):
                 row_start = 0 if region == 0 else boundaries[region - 1]
                 row_end = boundaries[region]
                 coo_region_partial_sum[region] = coo_topk.slice(row_start, row_end)
 
             # Overlaps comm. steps with computation (sparse sum)
             # On comm_step i: P{rank} sends to P{rank + 1} region{rank - i % nprocs}.
-            destination = (self.rank + 1) % self.nprocs
-            receive_from = (self.rank - 1) % self.nprocs
-            for comm_step in range(1, self.nprocs):
-                region_to_send = (self.rank - comm_step) % self.nprocs
-                region_to_recv = (self.rank - comm_step - 1) % self.nprocs
-                # recv_req = self.comm.irecv(source=receive_from)
-                # self.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
+            destination = (self.model.rank + 1) % self.model.nprocs
+            receive_from = (self.model.rank - 1) % self.model.nprocs
+            for comm_step in range(1, self.model.nprocs):
+                region_to_send = (self.model.rank - comm_step) % self.model.nprocs
+                region_to_recv = (self.model.rank - comm_step - 1) % self.model.nprocs
+                # recv_req = self.model.comm.irecv(source=receive_from)
+                # self.model.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
                 # coo_region_partial_sum[region_to_recv] += recv_req.wait()
-                coo_region_partial_sum[region_to_recv] += self.comm.sendrecv(coo_region_partial_sum[region_to_send],
+                coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(coo_region_partial_sum[region_to_send],
                                                                              dest=destination, source=receive_from)
 
-            return coo_region_partial_sum[self.rank]
+            return coo_region_partial_sum[self.model.rank]
 
         if method == "p2p_region_wise_reduce_destination_rotation_and_bucketing":
             # There are (nprocs - 1) messages to send (excluding self)
-            total_sends = self.nprocs - 1
+            total_sends = self.model.nprocs - 1
             requests = [None] * total_sends
 
             # Compute local slice of coo_topk (the "self" region)
-            row_start = 0 if self.rank == 0 else boundaries[self.rank - 1]
-            row_end = boundaries[self.rank]
+            row_start = 0 if self.model.rank == 0 else boundaries[self.model.rank - 1]
+            row_end = boundaries[self.model.rank]
             coo_reduced_region = coo_topk.slice(row_start, row_end)
 
             # Process sends and receives in buckets.
             bucket_size = 2
-            region = (self.rank + 1) % self.nprocs
+            region = (self.model.rank + 1) % self.model.nprocs
             for comm_step in range(0, total_sends, bucket_size):
                 # The current bucket may have fewer messages than bucket_size (i.e. the last bucket)
                 current_bucket_size = min(bucket_size, total_sends - comm_step)
@@ -503,11 +505,11 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
                 for i in range(current_bucket_size):
                     row_start = 0 if region == 0 else boundaries[region - 1]
                     row_end = boundaries[region]
-                    requests[comm_step + i] = self.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
-                    region = (region + 1) % self.nprocs
+                    requests[comm_step + i] = self.model.comm.isend(coo_topk.slice(row_start, row_end), dest=region)
+                    region = (region + 1) % self.model.nprocs
                 # After sending the bucket, perform the receives sequentially for the same bucket.
                 for i in range(current_bucket_size):
-                    coo_reduced_region += self.comm.recv()
+                    coo_reduced_region += self.model.comm.recv()
 
             MPI.Request.Waitall(requests)
             return coo_reduced_region
@@ -525,19 +527,19 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
             gathered_data (np.ndarray or SparseMatrixCOO): The gathered global data in the specified format.
         """
 
-        if self.nprocs == 1:
+        if self.model.nprocs == 1:
             return local_data
 
         if input_format == "SparseMatrixCOO":
-            gathered = self.comm.allgather(local_data.get_triplet())
+            gathered = self.model.comm.allgather(local_data.get_triplet())
             all_val = np.concatenate([t[0] for t in gathered])
             all_row = np.concatenate([t[1] for t in gathered])
             all_col = np.concatenate([t[2] for t in gathered])
             return SparseMatrixCOO(all_val, all_row, all_col, self.dw_2d_shape, has_canonical_format=True)
 
         if input_format == "dense":
-            warnings.warn("Try to avoid dense communications!")
-            return np.concatenate(self.comm.allgather(local_data))
+            warnings.warn("Try to avoid dense communications!", RuntimeWarning)
+            return np.concatenate(self.model.comm.allgather(local_data))
 
         raise NotImplementedError(f"Input format '{input_format}' not implemented")
 
@@ -550,7 +552,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
         Returns:
             void (None):
         """
-        if self.rank == 0:
+        if self.model.rank == 0:
             if message not in self.info_messages:
                 self.info_messages.add(message)
                 print(message)
@@ -570,7 +572,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
             has_canonical_format (bool): True if indexes are in canonical format, False if not.
         """
 
-        warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.")
+        warnings.warn("This function ('has_canonical_format') should be used only in case of debugging for performance reasons.", RuntimeWarning)
 
         row, col = indexes
 
