@@ -272,6 +272,8 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
+#define GET_I(idx, dim_j) * idx / dim_j
+#define GET_J(idx, dim_j) * idx % dim_j
 
 __global__ void {FUNC_NAME}(const {T} *const x,
                             const {T} *const weights,
@@ -285,13 +287,15 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                             int vstride, int hstride, 
                             int vdilation, int hdilation)
 {{
+    int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
+    int i, j, k, i_j;
+
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
     const int N = n * ho * wo;
     const int dim_cols = n * self.ho * self.wo;
 
-    int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
-    int i, j, k;
+    const int N_matmul = dim_n * co;
 
     // Im2Row
     for(row = idx; row < N; row += num_workers)
@@ -321,16 +325,18 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     __syncthreads();
 
     // Matmul - im2_var X w_rows = y
-    im_var = (i, k)
-    w_rows = (k, j)
-    y = (i, j)
-    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n, co) || "=": because it's not equal, but "equivalent" in this situation.
-    for(i = idx; i < dim_n; i += num_workers) 
-        for(k = 0; k < dim_c; k++) 
-            for(j = 0; j < co; j++)
-    {{
+    // im_var = (i, k)
+    // w_rows = (k, j)
+    // y = (i, j)
+
+    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.    
+    for(i_j = idx; i_j < N_matmul; i_j += num_workers)
+        for(k = 0; k < dim_c; k++)
+    {{  
+        i = GET_I(i_j, co);
+        j = GET_J(i_j, co);
         // y[i, j] += im2_var[i, k] * weights[k, j]
-        *(y + SHIFT(i, j, co)) += (*(im2_var + SHIFT(i, k, dim_c))) * (*(weights + SHIFT(k, j, co)));
+        *(y + i_j) += (*(im2_var + SHIFT(i, k, dim_c))) * (*(weights + SHIFT(k, j, co)));
     }}
 #if {USE_BIAS}
 
@@ -367,15 +373,24 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 #define SHIFT_ROWS(row, col, dim_cols) row * dim_cols + col
 // NOTE: This is NHWC
 #define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
+#define SHIFT_DY(ni, ci, hi, wi, c, h, w) ((ni * c + ci) * h + hi) * w + wi
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
+#define GET_I(idx, dim_j) * idx / dim_j
+#define GET_J(idx, dim_j) * idx % dim_j
+
+// im2col-related macros
+#define GET_N(idx, n, c, h, w) idx / (w * h * c)
+#define GET_C(idx, n, c, h, w) (idx / (w * h)) % c
+#define GET_H(idx, n, c, h, w) (idx / w) % h
+#define GET_W(idx, n, c, h, w) idx % w
 
 __global__ void {FUNC_NAME}(const {T} *const dy,
                             const {T} *const im2_var,
                             const {T} *const weights,
                             {T}* dw, {T}* db, {T}* dx
-                            {T}* bias,
+                            {T}* col_2im_var,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
                             int co, int ho, int wo,
@@ -384,39 +399,87 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
                             int vstride, int hstride, 
                             int vdilation, int hdilation)
 {{
+    int i, j, k, i_j, dim_j, dim_k, khi, kwi;
+
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x
+    const int num_workers = blockDim.x * gridDim.x;
+    const int N_DW = co * ci * kh * kw;
+    const int N_COL2IM_VAR = dim_c * dim_n;
+    const int N_COL2IM = n * c * h * w;
+
     // Transpose dy from NCHW to CNHW
+    // TODO: Do it outside
 
     // Matmul dy transposed and im2_var.T in and save it in dw
-    // NOTA: ¿Podría ser más rápido si se juntan dimensiones y se saca en qué i y en que j se está?
-
     // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
-    dim_k = n*ho*wo;
-    dim_j = ci*kh*kw;
-
-    for(co_i=idx; co_i < c; co_i++)
+    dim_k = n * ho * wo;
+    dim_j = N_DW / co;
+    N = co * dim_j;
+    
+    for(i_j = idx; i_j < N_DW; i_j += workers)
         for(k = 0; k < dim_k; k++)
-            for(j = 0; j < dim_j; j++)
     {{
-        *(dw + SHIFT(co_i, j, dim_j)) += (*(dy + SHIFT(co_i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
-    }}
-
-    // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
-    dim_k = n*ho*wo;
-    dim_j = ci*kh*kw;
-    N = co*n*ho*wo
-
-    for(co_i=idx; co_i < c; co_i++)
-        for(k = 0; k < dim_k; k++)
-            for(j = 0; j < dim_j; j++)
-    {{
-        *(dw + SHIFT(co_i, j, dim_j)) += (*(dy + SHIFT(co_i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
+        i = GET_I(i_j, dim_j);
+        j = GET_J(i_j, dim_j);
+        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
     }}
 
     // np.sum(dy, axis=(0,2,3), out=db)
+    for (ci = idx; ci < c; ci += num_workers)
+    {{
+        *(db + ci) = 0;
+        for (ni = 0; ni < n; ni++)
+            for (hi = 0; hi < h; hi++)
+                for (wi = 0; wi < w; wi++)
+        {{
+            *(db + ci) += *(dy + SHIFT_DY(ni, ci, hi, wi, c, h, w));
+        }}
+    }}
 
-    //mamtul(weights.reshape(co, -1).T, tranposed dy)
+    // col_2im_var "=" (dim_c, dim_n)
+    //mamtul(weights.reshape(self.ci * self.kh * self.kw, co), tranposed dy) <== mamtul(weights.reshape(co, -1).T, tranposed dy)
+    // tranposed dy.shape = (co, n*ho*wo)
+    for(i_j = idx; i_j < N_COL2IM_VAR; i_j += num_workers)
+        for(k = 0; k < co; k++)
+    {{
+        i = GET_I(i_j, dim_n);
+        j = GET_J(i_j, dim_n);
+
+        //col_2im_var[i][j] = weights[i][k] * dy[k][j]
+        *(col_2im_var + i_j) =  (*(weights + SHIFT(i, k, co))) * (*(dy + SHIFT(k, j, dim_n)));
+    }}
+
+    __syncthreads();
 
     // Col2Im
+    for (i = idx; i < N_COL2IM; i += num_workers)
+    {{
+        ni = GET_N(i, n, c, h, w);
+        ci = GET_C(i, n, c, h, w);
+        hx = GET_H(i, n, c, h, w);
+        wx = GET_W(i, n, c, h, w);
+
+        for (khi = 0; khi < kh; khi++) 
+            for (kwi = 0; kwi < kw; kwi++)
+        {{
+            // hx = vstride * xx + vdilation * khi - vpadding;
+            xx = (hx + vpadding - vdilation * khi) / vstride;
+            // wx = hstride * yy + hdilation * kwi - hpadding;
+            yy = (wx + hpadding - hdilation * kwi) / hstride;
+
+            x_o = (int) xx;
+            y_o = (int) yy;
+            
+            // if (the variables have no decimals) and (are bewteen 0 and ho/wo):
+            if ((x_o == xx) && (y_o == yy) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
+            {{
+                row = cc * kh * kw + ii * kw + jj;
+                col = nn * ho * wo + x_o * wo + y_o;
+                //dx[nn, cc, x_x, x_y] += cols[row, col]
+                *(dx + i) += (*(cols + SHIFT(row, col, dim_n)));
+            }}
+        }}
+    }}
 
 }}
 """
@@ -433,50 +496,137 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
         return module
     # -------------------------
 
-
-    # 
-
-    def _gradient_bias(self, is_nchw: bool) -> Function:
-        # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
+    def _backward_nhwc(self, use_bias:bool) -> Function:
         code = \
 """
-#if {IS_NCHW}
-    //SHIFT_NCHW
-    #define SHIFT(ni, ci, hi, wi, c_dim, h_dim, w_dim) (((ni * c_dim + ci) * h_dim + hi) * w_dim + wi)
-#else
-    //SHIFT_NHWC
-    #define SHIFT(ni, ci, hi, wi, c_dim, h_dim, w_dim) (((ni * h_dim + hi) * w_dim + wi) * c_dim + ci)
-#endif
+#define GET_NI(row, h, w) row / (w * h)
+#define GET_HO(row, h, w) (row / w) % h
+#define GET_WO(row, h, w) row % w
+#define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
+#define SHIFT_ROWS(row, col, dim_cols) row * dim_cols + col
+// NOTE: This is NHWC
+#define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
+#define SHIFT_DY(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
-__global__ void {FUNC_NAME}({T} *const dbias,
-                            const {T} *const dy,
-                            int n, int c, int h, int w)
+// matmul-related macros
+#define SHIFT(i, j, dim_j) i * dim_j + j
+#define GET_I(idx, dim_j) * idx / dim_j
+#define GET_J(idx, dim_j) * idx % dim_j
+
+// im2col-related macros
+#define GET_N(idx, n, c, h, w) idx / (c * w * h)
+#define GET_H(idx, n, c, h, w) (idx / (c * w)) % h
+#define GET_W(idx, n, c, h, w) (idx / c) % w
+#define GET_C(idx, n, c, h, w) idx % c
+
+__global__ void {FUNC_NAME}(const {T} *const dy,
+                            const {T} *const im2_var,
+                            const {T} *const weights,
+                            {T}* dw, {T}* db, {T}* dx
+                            {T}* row_2im_var,
+                            int dim_c, int dim_n,
+                            int n, int c, int h, int w,
+                            int co, int ho, int wo,
+                            int kh, int kw, 
+                            int vpadding, int hpadding,
+                            int vstride, int hstride, 
+                            int vdilation, int hdilation)
 {{
+    int i, j, k, i_j, dim_j, dim_k, khi, kwi;
+
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
+    const int N_DW = co * ci * kh * kw;
+    const int N_ROW2IM_VAR = dim_c * dim_n;
+    const int N_ROW2IM = n * c * h * w;
 
-    int ni, ci, hi, wi;
+    // Transpose dy from NCHW to CNHW
+    // TODO: Do it outside
 
-    for(ci = idx; ci < c; ci += num_workers)
-        for(ni = 0; ni < n; ni++)
-            for(hi = 0; hi < h; hi++)
-                for(wi = 0; wi < w; wi++)
+    // Matmul dy transposed and im2_var.T in and save it in dw
+    // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
+    dim_k = n * ho * wo;
+    dim_j = N_DW / co;
+    N = co * dim_j;
+    
+    for(i_j = idx; i_j < N_DW; i_j += workers)
+        for(k = 0; k < dim_k; k++)
     {{
-        *(dbias + ci) += *(dy + SHIFT(ni, ci, hi, wi, c, h, w))
+        i = GET_I(i_j, dim_j);
+        j = GET_J(i_j, dim_j);
+        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
     }}
+
+    // np.sum(dy, axis=(0,2,3), out=db)
+    for (ci = idx; ci < c; ci += num_workers)
+    {{
+        *(db + ci) = 0;
+        for (ni = 0; ni < n; ni++)
+            for (hi = 0; hi < h; hi++)
+                for (wi = 0; wi < w; wi++)
+        {{
+            *(db + ci) += *(dy + SHIFT_DY(ni, ci, hi, wi, c, h, w));
+        }}
+    }}
+
+    // row_2im_var "=" (dim_c, dim_n)
+    //mamtul(weights.reshape(self.ci * self.kh * self.kw, co), tranposed dy) <== mamtul(weights.reshape(co, -1).T, tranposed dy)
+    // tranposed dy.shape = (co, n*ho*wo)
+    for(i_j = idx; i_j < N_ROW2IM_VAR; i_j += num_workers)
+        for(k = 0; k < co; k++)
+    {{
+        i = GET_I(i_j, dim_n);
+        j = GET_J(i_j, dim_n);
+
+        //row_2im_var[i][j] = weights[i][k] * dy[k][j]
+        *(row_2im_var + i_j) =  (*(weights + SHIFT(i, k, co))) * (*(dy + SHIFT(k, j, dim_n)));
+    }}
+
+    __syncthreads();
+
+    // Row2Im
+    for (i = idx; i < N_ROW2IM; i += num_workers)
+    {{
+        ni = GET_N(i, n, c, h, w);
+        ci = GET_C(i, n, c, h, w);
+        hx = GET_H(i, n, c, h, w);
+        wx = GET_W(i, n, c, h, w);
+
+        for (khi = 0; khi < kh; khi++) 
+            for (kwi = 0; kwi < kw; kwi++)
+        {{
+            // hx = vstride * xx + vdilation * khi - vpadding;
+            xx = (hx + vpadding - vdilation * khi) / vstride;
+            // wx = hstride * yy + hdilation * kwi - hpadding;
+            yy = (wx + hpadding - hdilation * kwi) / hstride;
+
+            x_o = (int) xx;
+            y_o = (int) yy;
+            
+            // if (the variables have no decimals) and (are bewteen 0 and ho/wo):
+            if ((x_o == xx) && (y_o == yy) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
+            {{
+                row = nn * ho * wo + x_o * wo + y_o;
+                col = cc * kh * kw + ii * kw + jj;
+                //dx[nn, x_x, x_y, cc] += rows[row, col]
+                *(dx + i) += (*(row_2im_var + SHIFT(row, col, dim_c)));
+            }}
+        }}
+    }}
+
 }}
 """
-        func_name = f"gradient_bias_{'nchw' if is_nchw else 'nhwc'}_gpu"
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
+        func_name = "im2row_fwd_gpu"
         code = code.format(FUNC_NAME=func_name,
-                           T=_t,
-                           IS_NCHW=is_nchw
-                           )
+                            T=_t,
+                            USE_BIAS=use_bias,
+                            BIAS_=self.BIAS
+                            )
         module = SourceModule(code).get_function(func_name)
 
         return module
-    # ---
-
+    # -------------------------
 
 #########################################################################################################
