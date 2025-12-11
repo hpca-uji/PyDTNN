@@ -7,7 +7,7 @@ __all__ = (
     "im2col_nchw_cython",
     "col2im_nchw_cython",
     "alt_col2im_nchw_cython",
-    
+
     "im2col_nchw_3x3_cython_inner",
 )
 
@@ -109,13 +109,11 @@ def alt_col2im_nchw_cython(npDT[:,::1] cols,
                     for ii in range(kh):
                         for jj in range(kw):
                             # x_x = vstride * xx + vdilation * ii - vpadding
-                            xx = ((x_x + vpadding - vdilation * ii) / vstride)
+                            xx = (x_x + vpadding - vdilation * ii) / vstride
                             # x_y = hstride * yy + hdilation * jj - hpadding
-                            yy = ((x_y + hpadding - hdilation * jj) / hstride)
-                            
-                            x_o = (<int> xx)
-                            y_o = (<int> yy)
-
+                            yy = (x_y + hpadding - hdilation * jj) / hstride
+                            x_o = <int> xx
+                            y_o = <int> yy
                             if (x_o == xx) and (y_o == yy) and ((0 <= xx < ho) and (0 <= yy < wo)):
                                 row = cc * kh * kw + ii * kw + jj
                                 col = nn * ho * wo + x_o * wo + y_o
