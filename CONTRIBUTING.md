@@ -33,7 +33,6 @@
 - Extract GPU `SourceModule` to `.cu` files.
 - Rework `BestOf` to not use globals.
 - Rework `BestOf` eliminate them and move it to test scripts.
-- Rework `BestOfVariant` to make it work.
 - Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
 - Replace `print` statments with `logger` calls.

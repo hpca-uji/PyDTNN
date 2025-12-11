@@ -10,7 +10,7 @@ from pydtnn.utils.constants import ArrayShape
 
 
 
-# FIXME: See CONTRIBUTING.md
+# FIXME: Broken since Conv2D to backend support
 class BestOfVariant(Conv2DWinogradCPU, Conv2DDirectCPU):
 
     def __init__(self, *args, **kwargs):
