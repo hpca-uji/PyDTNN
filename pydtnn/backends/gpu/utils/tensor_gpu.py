@@ -20,6 +20,7 @@ class TensorGPU:
     class TensorTypeEnum(StrEnum):
         TENSOR = auto()
         FILTER = auto()
+        SEQ = auto()
         OTHER = auto()
     # ---  END EnumTensorType --- #
 
@@ -110,6 +111,12 @@ class TensorGPU:
                         self.shape = (gpu_arr.shape[0], 1, 1, gpu_arr.shape[1])
                     case tensor_format:
                         raise NotImplementedError(f"Unsupported tensor format {tensor_format}!")
+            case 3:
+                match self.tensor_format:
+                    case TensorFormat.NCHW:
+                        self.shape = (gpu_arr.shape[0], 1, gpu_arr.shape[1], gpu_arr.shape[2])
+                    case TensorFormat.NHWC:
+                        raise NotImplementedError("Shape padding not implemented for 3-dim shape on NHWC")
             case 4:
                 self.shape = gpu_arr.shape
             case _:
@@ -139,8 +146,31 @@ class TensorGPU:
                     self.desc = cudnn.cudnnCreateFilterDescriptor()
                     cudnn.cudnnSetFilter4dDescriptor(self.desc, self.cudnn_dtype,
                                                      self.cudnn_tensor_format, n, c, h, w)
-                case _:  # self.TensorTypeEnum.OTHER:
+                case self.TensorTypeEnum.SEQ:
+                    if len(self.shape) == 3:
+                        self.shape = (self.shape[0], 1, self.shape[-2], self.shape[-1])
+                    self.desc = cudnn.cudnnCreateSeqDataDescriptor()
+                    dimA = np.array([0, 0, 0, 0], dtype=np.int32)
+                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]] = self.shape[0]
+                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]] = self.shape[1]
+                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]] = self.shape[2]
+                    dimA[cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]] = self.shape[3]
+                    axes = np.array([0, 0, 0, 0], dtype=np.int32)
+                    axes[0] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BATCH_DIM"]
+                    axes[1] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_BEAM_DIM"]
+                    axes[2] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_TIME_DIM"]
+                    axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
+                    self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
+                    # print(self.shape, dimA, axes, len(seq_length_array))
+                    cudnn.cudnnSetSeqDataDescriptor(self.desc, cudnn_dtype,
+                                                    np.int32(4), dimA, axes,
+                                                    np.int32(len(self.seq_length_array)), self.seq_length_array,
+                                                    None)
+                case self.TensorTypeEnum.OTHER:
                     pass  # do nothing.
+
+                case tensor_type:
+                    raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
     # ---
 
     def _del_desc(self) -> None:
@@ -149,6 +179,12 @@ class TensorGPU:
                 cudnn.cudnnDestroyTensorDescriptor(self.desc)
             case self.TensorTypeEnum.FILTER:
                 cudnn.cudnnDestroyFilterDescriptor(self.desc)
+            case self.TensorTypeEnum.SEQ:
+                pass
+            case self.TensorTypeEnum.OTHER:
+                cudnn.cudnnDestroySeqDataDescriptor(self.desc)
+            case tensor_type:
+                raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
         self.desc = -1
 
     def _initalize(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
@@ -216,7 +252,7 @@ class TensorGPU:
                           desc=desc, gpudirect=gpudirect, cublas=cublas)
 
         return (x_cpu, x_gpu)
-    
+
     @staticmethod
     def initialize(shape: ArrayShape, dtype: np.dtype,
                    tensor_format: TensorFormat, cudnn_dtype: int,
