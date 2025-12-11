@@ -5,15 +5,10 @@ from pydtnn.backends.cpu.activations.activation import ActivationCPU
 from pydtnn.utils.constants import ArrayShape
 
 class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
-
-    def __init__(self, shape: ArrayShape = (1,)):
-        super().__init__(shape)
-
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         self.y: np.ndarray
 
-        self.axis_dim = 1
         shape_intermediate_ops = list(self.shape)
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
