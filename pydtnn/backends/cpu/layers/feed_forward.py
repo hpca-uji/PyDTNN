@@ -24,9 +24,12 @@ class FeedForwardCPU(FeedForward[np.ndarray], AbstractBlockLayerCPU):
             layer.init_backend_from_model(self.model)
 
         self.FC_1.initialize(prev_shape=(self.shape[-1],), x=x)
-        self.relu.initialize(prev_shape=(self.shape[-1],), x=self.FC_1.y)
-        self.dropout.initialize(prev_shape=(*prev_shape[:-1], self.d_ff,), x=self.relu.y)
+        self.relu.initialize(prev_shape=(self.d_ff,), x=self.FC_1.y)
+        self.dropout.initialize(prev_shape=(self.d_ff,), x=self.relu.y)
         self.FC_2.initialize(prev_shape=(self.d_ff,), x=self.dropout.y)
+
+        self.y = self.FC_2.y
+        self.dx = self.FC_1.dx
 
         for layer in self.children:
             self.fwd_time += layer.fwd_time
@@ -48,3 +51,4 @@ class FeedForwardCPU(FeedForward[np.ndarray], AbstractBlockLayerCPU):
         dx = self.dropout.backward(dx)
         dx = self.relu.backward(dx)
         dx = self.FC_1.backward(dx)
+        return dx
