@@ -27,7 +27,6 @@
   deactivate all environments and then reactivate only the one you want.
 
 # Planned
-- Merge branch `tropical_cyclone`.
 - Merge branch `oktopk`.
 - Merge branch `develop-nlp`.
 - Move `gpu.utils.memory_allocation` from a global namespace to a model instance.

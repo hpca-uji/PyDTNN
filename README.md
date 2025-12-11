@@ -161,8 +161,9 @@ The PyDTNN framework comes with a utility launcher called
     Optionally, the `AUTO` value sets `NCHW` when the option
     `--enable-gpu` is set and `NHWC` otherwise. Default: `NHWC`.
 - Dataset parameters:
-  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `imagenet`,
-    `archive`, `folder`, `chestxray` or `synthetic`. Default: `None`.
+  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `cyclone`,
+    `tsunamis`, `imagenet`, `archive`, `folder`, `chestxray` or
+    `synthetic`. Default: `None`.
   - `--dataset-path`: Path to dataset folder.
   - `--synthetic-train-samples`: Number of synthetic train sample.
     Default: `1000`.

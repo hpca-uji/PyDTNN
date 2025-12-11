@@ -159,7 +159,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
         _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder", "chestxray", "synthetic"],
-                               help="Dataset to train: \'mnist\', \'cifar10\', \'imagenet\', \'archive\', \'folder\' \'chestxray\' or \'synthetic\'. Default: \'None\'.")
+                               help="Dataset to train: \'mnist\', \'cifar10\', \'cyclone\', \'tsunamis\', \'imagenet\', \'archive\', \'folder\' \'chestxray\' or \'synthetic\'. Default: \'None\'.")
         _ds_group.add_argument('--dataset-percentage', type=float, default=0.0,
                                help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--dataset-path', type=str, default=_default_dataset_path,
