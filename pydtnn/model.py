@@ -28,7 +28,7 @@ from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.libs.libmpi import proto as PROTOCOL
 from pydtnn.libs import libcrypt
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.layer_and_activation_base import LayerAndActivationBase, FusedLayerMixIn
+from pydtnn.layer_base import LayerBase, FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.losses.loss import Loss
@@ -254,7 +254,7 @@ class Model[T: Array]:
         self.perf_counter = PerformanceCounter()
 
         # Layers' attributes
-        self.layers: list[LayerAndActivationBase] = []
+        self.layers: list[LayerBase] = []
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
         # Matmul
@@ -596,7 +596,7 @@ class Model[T: Array]:
         for layer in self.layers:
             layer.print_in_convdirect_format()
 
-    def add(self, layer: LayerAndActivationBase[T]) -> None:
+    def add(self, layer: LayerBase[T]) -> None:
         layer.init_backend_from_model(self)
 
         if self.layers:
@@ -614,12 +614,12 @@ class Model[T: Array]:
         if layer.act:
             self.add(layer.act())
 
-    def add_layers(self, list_layers: list[LayerAndActivationBase[T]]) -> None:
+    def add_layers(self, list_layers: list[LayerBase[T]]) -> None:
         for layer in list_layers:
             self.add(layer)
     # --- END add_layers ---
 
-    def get_all_layers(self, from_layers: list[LayerAndActivationBase[T]] | None = None) -> list[LayerAndActivationBase[T]]:
+    def get_all_layers(self, from_layers: list[LayerBase[T]] | None = None) -> list[LayerBase[T]]:
         if from_layers is None:
             from_layers = self.layers
         this_recursion_layers = []
@@ -629,7 +629,7 @@ class Model[T: Array]:
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def _select_fusion_3(self, fused_layers: list) -> tuple[str, list[LayerAndActivationBase]]:
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str, list[LayerBase]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
@@ -647,7 +647,7 @@ class Model[T: Array]:
         return layer_name, [layer0, layer1, layer2]
     # ----
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerAndActivationBase]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerBase]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -673,7 +673,7 @@ class Model[T: Array]:
         return layer_name, [layer1, layer2]
     # ----
 
-    def __layer_fusion(self, layers: list[LayerAndActivationBase], switch_fusion: abc.Callable) -> None:
+    def __layer_fusion(self, layers: list[LayerBase], switch_fusion: abc.Callable) -> None:
         i = 0
         while i < len(layers):
             curr_layer = layers[i]

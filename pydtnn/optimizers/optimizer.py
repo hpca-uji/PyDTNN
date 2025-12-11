@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.backends import PromoteToBackend
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
@@ -17,10 +17,10 @@ class Optimizer[T: Array](PromoteToBackend):
         self.dtype: np.dtype = dtype
         self.context = dict[int, dict[str, int | T]]()
 
-    def initialize(self, list_layers: list[LayerAndActivationBase]) -> None:
+    def initialize(self, list_layers: list[LayerBase]) -> None:
         raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
 
-    def update(self, layer: LayerAndActivationBase) -> None:
+    def update(self, layer: LayerBase) -> None:
         raise NotImplementedError("method \"update\" of an Optimizer's child class is not implemented")
 
 

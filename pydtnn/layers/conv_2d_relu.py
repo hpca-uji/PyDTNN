@@ -1,4 +1,4 @@
-from pydtnn.layer_and_activation_base import FusedLayerMixIn
+from pydtnn.layer_base import FusedLayerMixIn
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils.constants import Array
 

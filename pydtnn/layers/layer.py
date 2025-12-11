@@ -3,7 +3,7 @@ PyDTNN Layer base class
 """
 
 
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
 
@@ -16,7 +16,7 @@ class ParameterException(LayerError):
     pass
 
 
-class Layer[T: Array](LayerAndActivationBase[T]):
+class Layer[T: Array](LayerBase[T]):
     pass
 
 

@@ -21,7 +21,7 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.model import Model
 from pydtnn.utils import random
@@ -233,7 +233,7 @@ class LayerPyTorchTestCase(TestCase):
     # ---------
 
     @staticmethod
-    def initialize_pydtnn_model(list_layers: list[LayerAndActivationBase], params=params) -> Model:
+    def initialize_pydtnn_model(list_layers: list[LayerBase], params=params) -> Model:
         model = Model(**params.asdict())
         model.add(Input(params.shape))
         model.add_layers(list_layers)

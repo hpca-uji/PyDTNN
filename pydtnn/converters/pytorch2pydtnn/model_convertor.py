@@ -1,6 +1,6 @@
 # Typing related
 from typing import List, Dict, Tuple
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 from pydtnn.activations.activation import Activation
 import numpy as np
 
@@ -12,7 +12,7 @@ import pydtnn.converters.pytorch2pydtnn.common as cm
 import copy
 
 
-def load_layers(model: PyDTNN_Model, layers: List[LayerAndActivationBase], activation_layer: Activation) -> None:
+def load_layers(model: PyDTNN_Model, layers: List[LayerBase], activation_layer: Activation) -> None:
     for layer in layers:
         model.add(layer)
     if not isinstance(layers[-1], Activation) and activation_layer is not None:
@@ -115,9 +115,9 @@ def extract_layers_relations(model: torch.nn.Module) -> Dict[str, Tuple[str | to
     return relations_dic
 
 
-def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: Dict[str, Tuple[str | torch.nn.Module, str]]) -> List[LayerAndActivationBase]:
+def convert_layers_and_set_weights_and_biases(input_shape: Tuple[int], layers: Dict[str, Tuple[str | torch.nn.Module, str]]) -> List[LayerBase]:
 
-    converted_layers: Dict[str, LayerAndActivationBase] = dict()
+    converted_layers: Dict[str, LayerBase] = dict()
 
     # Constants
     # - state_dicts keys.

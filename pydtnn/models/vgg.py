@@ -5,15 +5,15 @@ from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 from pydtnn.layers.max_pool_2d import MaxPool2D
 
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow does not includes Dropout layers after final ReLUs
 
 
-def vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
-    model = list[LayerAndActivationBase]()
+def vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+    model = list[LayerBase]()
     _ = model.append
     _(Input(shape=input_shape))
 
@@ -31,8 +31,8 @@ def vgg16(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[L
     return model
 
 
-def vgg8(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
-    model = list[LayerAndActivationBase]()
+def vgg8(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+    model = list[LayerBase]()
     _ = model.append
     _(Input(shape=input_shape))
 
@@ -49,8 +49,8 @@ def vgg8(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[La
     return model
 
 
-def vgg6(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
-    model = list[LayerAndActivationBase]()
+def vgg6(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+    model = list[LayerBase]()
     _ = model.append
     _(Input(shape=input_shape))
 

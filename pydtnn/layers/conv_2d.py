@@ -1,7 +1,7 @@
 import importlib
 from typing import TYPE_CHECKING, Optional
 
-from pydtnn.layer_and_activation_base import FusedLayerMixIn
+from pydtnn.layer_base import FusedLayerMixIn
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
 from pydtnn.backends import BackendType

@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch
 
 from pydtnn.model import Model as PyDTNN_Model
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 from pydtnn.utils.best_of import BestOf
 
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
@@ -182,7 +182,7 @@ def forward_pydtnn_model(model: PyDTNN_Model, dataset: np.ndarray | TensorGPU) -
     y: np.ndarray | TensorGPU = dataset
 
     for i in range(1, len(model.layers)):  # NOTE - Remember: Layer 0 is the Input layer and it's ignored
-        layer: LayerAndActivationBase = model.layers[i]
+        layer: LayerBase = model.layers[i]
         y = layer.forward(y)
 
     if y is None:
@@ -238,7 +238,7 @@ def test_layers(name: str, pytorch_model: TEST_PyTorch_Model, kwargs: Dict[str, 
     # print("-----\n")
 
     # Must be only two layers: "Input" layer and the testing one.
-    pydtnn_layer: LayerAndActivationBase = new_model.layers[-1]
+    pydtnn_layer: LayerBase = new_model.layers[-1]
     print("=============================\n== Checking Dataset Values ==\n=============================")
 
     torch_dataset = torch.from_numpy(dataset).to(device)

@@ -4,7 +4,7 @@
 
 # Typing related (or non important) imports
 from typing import Dict, Any, Tuple, List
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 
 # Functionality imports
 from pydtnn.layers.average_pool_2d import AveragePool2D
@@ -61,7 +61,7 @@ def add(args: Dict[str, Any]) -> Tuple[AdditionBlock, str]:
     params = cm.separate_function_params(args[cm.PARAMETERS])
 
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
-    dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cm.LAYERS]
+    dict_layers: Dict[str, Tuple[LayerBase, str]] = args[cm.LAYERS]
 
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
@@ -93,7 +93,7 @@ def concat(args: Dict[str, Any]) -> Tuple[ConcatenationBlock, str]:
     params = cm.separate_function_params(params)
     params = cm.get_equivalent_layer(params, dict_equivalent_layers)
 
-    dict_layers: Dict[str, Tuple[LayerAndActivationBase, str]] = args[cm.LAYERS]
+    dict_layers: Dict[str, Tuple[LayerBase, str]] = args[cm.LAYERS]
     list_layers, to_remove, input_layer_name = cm.get_lists_operations_and_outputs(dict_layers=dict_layers, layer_inputs=params)
 
     to_remove = set(to_remove)  # Remove multiple ocurrences of a layer. Consecuence of "get_equivalent_layer".

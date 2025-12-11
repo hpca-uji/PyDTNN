@@ -18,7 +18,7 @@ except Exception:
     pass
 
 
-class LayerAndActivationBase[T: Array](PromoteToBackend):
+class LayerBase[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape = ()) -> None:
         self.nparams: int = 0
         self.shape: ArrayShape = shape
@@ -30,9 +30,9 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         self.grad_vars: dict[str, str] = {}
         self.fwd_time: np.ndarray = None  # type: ignore
         self.bwd_time: np.ndarray = None  # type: ignore
-        self.paths: list[list[LayerAndActivationBase[T]]] = []
+        self.paths: list[list[LayerBase[T]]] = []
         self.reqs_allred = {}
-        self.parent_layer: LayerAndActivationBase | None = None
+        self.parent_layer: LayerBase | None = None
 
         # The following attributes will be initialized later
         self.id: int = None  # type: ignore
@@ -145,8 +145,8 @@ class LayerAndActivationBase[T: Array](PromoteToBackend):
         pass
 
     @property
-    def children(self) -> list[LayerAndActivationBase[T]]:
-        children: list[LayerAndActivationBase[T]] = []
+    def children(self) -> list[LayerBase[T]]:
+        children: list[LayerBase[T]] = []
         for path in self.paths:
             children += [layer for layer in path]
         return children

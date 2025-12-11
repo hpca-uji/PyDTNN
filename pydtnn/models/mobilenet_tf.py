@@ -9,12 +9,12 @@ from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
-from pydtnn.layer_and_activation_base import LayerAndActivationBase
+from pydtnn.layer_base import LayerBase
 
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 
 
-def mobileNetTF(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerAndActivationBase]:
+def mobileNetTF(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
     """
     Mobilenet v1's TF.Keras-like version.
     """
@@ -24,7 +24,7 @@ def mobileNetTF(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequ
     epsilon = 1e-3
     momentum = 0.99
 
-    model = list[LayerAndActivationBase]()
+    model = list[LayerBase]()
     _ = model.append
     _(Input(shape=input_shape))
     _(Conv2D(nfilters=first_filters, filter_shape=(3, 3), grouping=Conv2D.Grouping.STANDARD, padding=0, stride=2, use_bias=False))
