@@ -1134,7 +1134,7 @@ class Model[T: Array]:
             self.stream.synchronize()  # type: ignore
 
         # Gradient update
-        if sync_model:
+        if self.model_sync_freq >= 0 and sync_model:
             self._weight_update(gradient=True, blocking=self.blocking_mpi)
 
         if has_batch or sync_model:

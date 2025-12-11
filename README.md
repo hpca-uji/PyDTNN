@@ -146,7 +146,8 @@ The PyDTNN framework comes with a utility launcher called
     system. Default: `True`.
   - `--model-sync-freq`: Number of batches between model syncronization.
     The `0` value syncronizes gradients every batch. Positive values
-    syncronizes gradients and weights every N batches. Default: `0`.
+    syncronizes gradients and weights every N batches. Negative values
+    disables syncronization. Default: `0`.
   - `--model-sync-alg`: Aggregation method used to syncronize models:
     `avg`, `wavg` or `invwavg`. Default: `avg`.
   - `--model-sync-participation`: Rank participation to syncronize

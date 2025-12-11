@@ -144,7 +144,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
                                help="If \'True\' ranks assume they share the file system. Default: True.")
         _sy_group.add_argument('--model-sync-freq', type=int, default=0,
-                               help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Default: 0.")
+                               help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Negative values disables syncronization. Default: 0.")
         _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
                                help="Aggregation method used to syncronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
         _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
@@ -234,8 +234,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Optimizer options
         _op_group = self.add_argument_group("Optimizer options")
-        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd", choices=["sgd", "rmsprop", "adam", "nadam"],
-                               help="Optimizers: \'sgd\', \'rmsprop\', \'adam\', \'nadam\'. Default: \'sgd\'. ")
+        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd", choices=["sgd", "rmsprop", "adam", "nadam", "oktopk"],
+                               help="Optimizers: \'sgd\', \'rmsprop\', \'adam\', \'nadam\', \'oktopk\'. Default: \'sgd\'. ")
         _op_group.add_argument('--learning-rate', type=float, default=1e-2,
                                help="Learning rate. Default: 0.01.")
         _op_group.add_argument('--learning-rate-scaling', default=False, type=bool_lambda,
@@ -254,6 +254,12 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Variable for \'rmsprop\', \'adam\', \'nadam\'. Default=1e-7.")
         _op_group.add_argument('--optimizer-rho', type=float, default=0.9,
                                help="Variable for \'rmsprop\' optimizers. Default: 0.99.")
+        _op_group.add_argument('--optimizer-tau', type=int, default=64,
+                               help="Variable for \'oktopk\' optimizers. Default: 64.")
+        _op_group.add_argument('--optimizer-tau-prime', type=int, default=32,
+                               help="Variable for \'oktopk\' optimizers. Default: 32.")
+        _op_group.add_argument('--optimizer-density', type=float, default=0.01,
+                               help="Variable for \'oktopk\' optimizers. Default: 0.01.")
         _op_group.add_argument('--loss-func', dest="loss_func_name", type=str, default="categorical_cross_entropy",
                                choices=["categorical_cross_entropy", "binary_cross_entropy"],
                                help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\'. Default \'categorical_cross_entropy\'.")
