@@ -16,6 +16,15 @@ TENSOR_ASSERT = {
 
 
 class CustomDataset(Dataset):
+    """
+    Custom Dataset
+
+    In-memory dataset.
+    Train and Test must have matching types, shapes and dtypes.
+    Input must be in NCHW format, output in N (or more) format.
+    X must be in a NDArray with `model.tensor_shape` shape and `model.dtype` dtype.
+    Y must be in a NDArray with N (or more) and `model.dtype` dtype.
+    """
 
     def __init__(self, model: "Model", x_train: np.ndarray, y_train: np.ndarray,
                  x_test: np.ndarray | None = None, y_test: np.ndarray | None = None,

@@ -11,6 +11,15 @@ if TYPE_CHECKING:
 
 
 def archive(model: "Model", force_test_as_validation=False, debug=False) -> "CustomDataset":
+    """
+    Archived Dataset
+
+    Load from a NPZ with x_train, y_train, x_test, y_test attributes.
+    Train and Test must have matching types, shapes and dtypes.
+    X must be in a NDArray with NCHW shape and float64 dtype.
+    Y must be in a NDArray with N (or more) and float64 dtype.
+    """
+
     with np.load(model.dataset_path) as data:
         data: dict[str, np.ndarray]
         x_train = data["x_train"]

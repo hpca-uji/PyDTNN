@@ -24,6 +24,8 @@ class CIFAR10(Dataset):
     """
     CIFAR10 Dataset
 
+    Database of the 80 million tiny images dataset.
+
     Source (SHA1): https://www.cs.toronto.edu/~kriz/cifar.html
     e8aa088b9774a44ad217101d2e2569f823d2d491 cifar-10-binary.tar.gz https://www.cs.toronto.edu/~kriz/cifar-10-binary.tar.gz
 

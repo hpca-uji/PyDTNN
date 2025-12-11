@@ -10,6 +10,16 @@ if TYPE_CHECKING:
 
 
 class Synthetic(Dataset):
+    """
+    Synthetic Dataset
+
+    Generates random data from:
+    - `model.synthetic_train_samples`
+    - `model.synthetic_test_samples`
+    - `model.synthetic_input_shape` (coma separated)
+    - `model.synthetic_output_shape` (coma separated)
+    """
+
     def __init__(self, model: "Model", force_test_as_validation=False, debug=False):
         train_nsamples = int(model.synthetic_train_samples)
         test_nsamples = int(model.synthetic_test_samples)

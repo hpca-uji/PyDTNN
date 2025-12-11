@@ -21,6 +21,8 @@ class MNIST(Dataset):
     """
     MNIST Dataset
 
+    Handwritten digit database.
+
     Source (SHA1):
     6c95f4b05d2bf285e1bfb0e7960c31bd3b3f8a7d train-images-idx3-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/train-images-idx3-ubyte.gz
     2a80914081dc54586dbdf242f9805a6b8d2a15fc train-labels-idx1-ubyte.gz https://ossci-datasets.s3.amazonaws.com/mnist/train-labels-idx1-ubyte.gz

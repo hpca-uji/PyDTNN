@@ -40,6 +40,9 @@ class ChestXRay(Dataset):
     """
     ChestXRay Dataset
 
+    The NIH Chest X-ray dataset consists of 100,000 de-identified
+    images of chest x-rays. The images are in PNG format.
+
     Source (SHA1): https://nihcc.app.box.com/v/ChestXray-NIHCC
     48a9f849a8f100a0f1721b33bdbd209767656111 Data_Entry_2017_v2020.csv
     41b85e218abec560a2f5999acbcf333b0f2fa495 test_list.txt
