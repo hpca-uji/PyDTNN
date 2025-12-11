@@ -677,18 +677,19 @@ Testing: 100%|██████████████████████
 
 ## Credits
 The main contributors, in alphabetically order, to PyDTNN are:
-- Adrián Castelló Gimeno \<<adcastel@uji.es>\>
-- Andrés Enrique Tomás Domínguez \<<antodo@upv.es>\>
-- Enrique Salvador Quintana Ortí \<<quintana@uji.es>\>
-- Jose Ignacio Mestre Miravet \<<jmiravet@uji.es>\>
-- Manuel Francisco Dolz Zaragozá \<<dolzm@uji.es>\>
-- Mar Catalán Carbó \<<catalama@uji.es>\>
-- Miguel Ángel Prosper Quirós \<<mprosper@uji.es>\>
-- Paul Ximo Pluijter Izquierdo \<<pluijter@uji.es>\>
-- Sergio Barrachina Mir \<<barrachi@uji.es>\>
+- Adrián Castelló Gimeno <adcastel@uji.es>
+- Andrés Enrique Tomás Domínguez <antodo@upv.es>
+- Enrique Salvador Quintana Ortí <quintana@uji.es>
+- Jose Ignacio Mestre Miravet <jmiravet@uji.es>
+- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
+- Mar Catalán Carbó <catalama@uji.es>
+- Miguel Pardo Navarro <mipardo@uji.es>
+- Miguel Ángel Prosper Quirós <mprosper@uji.es>
+- Paul Ximo Pluijter Izquierdo <pluijter@uji.es>
+- Sergio Barrachina Mir <barrachi@uji.es>
 
 If you have questions or comments about PyDTNN, please contact:
-- Manuel Francisco Dolz Zaragozá \<<dolzm@uji.es>\>
+- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
 
 ## Citing PyDTNN
 If you use PyDTNN, and you would like to acknowledge the project in your
