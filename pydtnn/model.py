@@ -2,24 +2,23 @@
 PyDTNN model
 """
 
-import atexit
 import enum
 import importlib
 import itertools
 from math import ceil
 import operator
-import platform
-import os
 import time
 from functools import cached_property, reduce
 from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
 from warnings import warn
-from collections import abc, Counter
+from collections import abc
 
 import numpy as np
 from tqdm import tqdm
+
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, supported_nccl, cudnn, supported_cudnn, cublas, rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
 from pydtnn import utils
 from pydtnn.activations.relu import Relu
@@ -40,7 +39,7 @@ from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.schedulers.scheduler import select as select_scheduler
 from pydtnn.layers.layer import select as select_layer
-from pydtnn.parser import PydtnnArgumentParser, _get_gpus_per_node
+from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
@@ -55,128 +54,6 @@ from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, enco
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
 
-type MPI_MODULE = ModuleType
-type Cudnn_Handle_Type = int
-type Cublas_Handle_Type = int
-
-gpu_errors = []
-
-# OPTIONAL IMPORTS
-try:
-    from pydtnn.libs.libmpi import MPI
-except Exception:
-    MPI = None
-
-try:
-    import pycuda.driver as drv  # type: ignore
-except Exception as e:
-    drv = None
-    gpu_errors.append(e)
-
-try:
-    import pycuda.gpuarray as gpuarray  # type: ignore
-except Exception as e:
-    gpuarray = None
-    gpu_errors.append(e)
-
-try:
-    from pydtnn.backends.gpu.utils import tensor_gpu  # type: ignore
-except Exception as e:
-    tensor_gpu = None
-    gpu_errors.append(e)
-
-try:
-    from pydtnn.libs import libnccl as nccl  # type: ignore
-except Exception as e:
-    nccl = None
-    gpu_errors.append(e)
-    supported_nccl = False
-else:
-    supported_nccl = True
-
-try:
-    from pydtnn.libs import libcudnn as cudnn  # type: ignore
-except Exception as e:
-    cudnn = None
-    gpu_errors.append(e)
-    supported_cudnn = False
-else:
-    supported_cudnn = True
-
-try:
-    from skcuda import cublas  # type: ignore
-except Exception as e:
-    cublas = None
-    gpu_errors.append(e)
-
-
-# INIT MPI
-if MPI:
-    rank = MPI.COMM_WORLD.rank
-    nprocs = MPI.COMM_WORLD.size
-    hostname = platform.node()
-    ranks_per_node = dict(Counter(MPI.COMM_WORLD.allgather(hostname)))
-else:
-    rank = 0
-    nprocs = 1
-    hostname = "localhost"
-    ranks_per_node = {hostname: nprocs}
-# ---
-
-# INIT GPU
-num_gpus = _get_gpus_per_node()
-os.environ["CUDA_VISIBLE_DEVICES"] = str(rank % num_gpus) if num_gpus else ""
-supported_gpu = bool(num_gpus)
-# ---
-
-# INIT NCCL
-if nccl and num_gpus:
-    nccl_id = nccl.ncclGetUniqueId()
-    if MPI:
-        nccl_id = MPI.COMM_WORLD.bcast(nccl_id)
-    nccl_comm = nccl.ncclCommInitRank(nprocs, nccl_id, rank)
-    atexit.register(lambda: nccl.ncclCommDestroy(nccl_comm))  # type: ignore
-else:
-    nccl_comm = None  # type: ignore
-# ---
-
-# INIT PYCUDA
-if drv:
-    drv.init()
-    rank = MPI.COMM_WORLD.rank if MPI else 0
-    device = drv.Device(rank % drv.Device.count())
-    context = device.make_context()
-    stream: drv.Stream = drv.Stream()  # type: ignore
-    atexit.register(lambda: context.detach())  # type: ignore
-else:
-    device = None  # type: ignore
-    context = None  # type: ignore
-    stream = None  # type: ignore
-# ---
-
-# INIT CUDNN
-if cudnn:
-    cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
-    atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
-else:
-    cudnn_handle: Cudnn_Handle_Type = None  # type: ignore
-
-if cublas:
-    cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()  # type: ignore
-    atexit.register(lambda: cublas.cublasDestroy(cublas_handle))  # type: ignore
-else:
-    cublas_handle: Cublas_Handle_Type = None  # type: ignore
-# ---
-
-# SYNC PYCUDA+CUDNN
-if stream and cudnn:
-    cudnn.cudnnSetStream(cudnn_handle, stream.handle)
-# ---
-
-# SYNC PYCUDA+CUBLAS
-if stream and cublas:
-    cublas.cublasSetStream(cublas_handle, stream.handle)  # type: ignore
-# ---
 
 # --- CONSTANS --- #
 BAR_WIDTH = 140
