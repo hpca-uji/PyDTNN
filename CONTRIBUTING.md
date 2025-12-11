@@ -27,7 +27,6 @@
   deactivate all environments and then reactivate only the one you want.
 
 # Planned
-- Merge branch `converters`.
 - Merge branch `tropical_cyclone`.
 - Merge branch `oktopk`.
 - Merge branch `develop-nlp`.
