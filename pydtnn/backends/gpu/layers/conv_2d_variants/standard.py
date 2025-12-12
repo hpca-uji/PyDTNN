@@ -376,8 +376,9 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 // transpose-related macros (DY=CNHW, BASE_DY=NCHW)
-#define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) ((ci * n + ni) * h + hi) * w + wi
 #define SHIFT_BASE_DY(ni, ci, hi, wi, n, c, h, w) ((ni * c + ci) * h + hi) * w + wi
+
+#define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) ((ci * n + ni) * h + hi) * w + wi
 #define GET_N_T(idx, n, c, h, w) idx / (w * h * n)
 #define GET_C_T(idx, n, c, h, w) (idx / (w * h)) % n
 #define GET_H_T(idx, n, c, h, w) (idx / w) % h
@@ -407,15 +408,25 @@ __global__ void {FUNC_NAME}(const {T} *const base_dy,
                             int vstride, int hstride, 
                             int vdilation, int hdilation)
 {{
-    int i, j, k, i_j, dim_j, dim_k, khi, kwi;
-    int ni, ci, hi, wi;
+    // NOTE: c, h, w are the input ones and co, ho, wo are the output ones (they may differ)
+    // base_dy.shape = (n, co, ho, wo)
+    // im2_var.shape = (dim_n, co) || dim_n = (n * self.ho * self.wo)
+    // weights.shape = (co, c, kh, kw); NHWC: (co, kh, kw, c)
+    // dy.shape = (co, n, ho, wo)
+    // dw.shape = (co, dim_c); NHWC: (dim_c, co) || dim_c = (c, kh, kw)
+    // db.shape = (co, )
+    // dx.shape = (n, c, h, w)
+    // col_2im_var.shape = (dim_c, dim_n); NHWC: (dim_n, dim_c) || dim_n = n * ho * wo; dim_c = c * kh * kw
 
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
-    const int N_DW = co * ci * kh * kw;
+    const int N_DW = co * c * kh * kw;
     const int N_COL2IM_VAR = dim_c * dim_n;
     const int N_COL2IM = n * c * h * w;
     const int N_TRANSPOSE = n * co * ho * wo;
+
+    int i, j, k, i_j, dim_j, khi, kwi;
+    int ni, ci, hi, wi;
 
     // Transposing dy from NCHW format to CNHW
 
@@ -424,27 +435,25 @@ __global__ void {FUNC_NAME}(const {T} *const base_dy,
         // NOTE: we are iterating over the transposed dy (dy).
 
         // Getting the indexes
-        ni = GET_N_T(idx, n, c, h, w);
-        ci = GET_C_T(idx, n, c, h, w);
-        hi = GET_H_T(idx, n, c, h, w);
-        wi = GET_W_T(idx, n, c, h, w);
+        ni = GET_N_T(idx, n, co, ho, wo);
+        ci = GET_C_T(idx, n, co, ho, wo);
+        hi = GET_H_T(idx, n, co, ho, wo);
+        wi = GET_W_T(idx, n, co, ho, wo);
         
         // Assinging the values -> dy[ci,ni,hi,wi] = base_dy[ni,ci,hi,wi]
-        *(dy + SHIFT_DY(ni, ci, hi, wi, n, c, h, w)) = (*(base_dy + SHIFT_BASE_DY(ni, ci, hi, wi, n, c, h, w)));
+        *(dy + SHIFT_DY(ni, ci, hi, wi, n, co, ho, wo)) = (*(base_dy + SHIFT_BASE_DY(ni, ci, hi, wi, n, co, ho, wo)));
     }}
 
     // Matmul dy transposed and im2_var.T in and save it in dw
     // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
-    dim_k = n * ho * wo;
     dim_j = N_DW / co;
-    N = co * dim_j;
 
     for(i_j = idx; i_j < N_DW; i_j += workers)
-        for(k = 0; k < dim_k; k++)
+        for(k = 0; k < dim_n; k++)
     {{
         i = GET_I(i_j, dim_j);
         j = GET_J(i_j, dim_j);
-        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
+        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_n))) * (*(im2_var + SHIFT(k, j, dim_j)));
     }}
 
     // np.sum(dy, axis=(0,2,3), out=db)
@@ -542,29 +551,24 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
                             int vstride, int hstride, 
                             int vdilation, int hdilation)
 {{
-    int i, j, k, i_j, dim_j, dim_k, khi, kwi;
-
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
-    const int N_DW = co * ci * kh * kw;
+    const int N_DW = co * c * kh * kw;
     const int N_ROW2IM_VAR = dim_c * dim_n;
     const int N_ROW2IM = n * c * h * w;
 
-    // Transpose dy from NCHW to CNHW
-    // TODO: Do it outside
+    int i, j, k, i_j, dim_j, dim_k, khi, kwi;
 
     // Matmul dy transposed and im2_var.T in and save it in dw
     // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
-    dim_k = n * ho * wo;
     dim_j = N_DW / co;
-    N = co * dim_j;
     
     for(i_j = idx; i_j < N_DW; i_j += workers)
-        for(k = 0; k < dim_k; k++)
+        for(k = 0; k < dim_n; k++)
     {{
         i = GET_I(i_j, dim_j);
         j = GET_J(i_j, dim_j);
-        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_k))) * (*(im2_var + SHIFT(k, j, dim_j)));
+        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_n))) * (*(im2_var + SHIFT(k, j, dim_j)));
     }}
 
     // np.sum(dy, axis=(0,1,2), out=db)
