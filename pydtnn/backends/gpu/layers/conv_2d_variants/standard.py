@@ -19,8 +19,9 @@ class Conv2DStandardGPU(Conv2DGPU):
             case TensorFormat.NCHW:
                 self.weights_shape = (self.co, self.ci, *self.filter_shape)
             case TensorFormat.NHWC:
+                self.weights_shape = (self.ci, *self.filter_shape, self.co)
                 # NOTE: It is this shape, even if in the CPU version is different.
-                self.weights_shape = (self.co, *self.filter_shape, self.ci)
+                #self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # -----
@@ -375,14 +376,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 """
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
-// transpose-related macros (DY=CNHW, BASE_DY=NCHW)
-#define SHIFT_BASE_DY(ni, ci, hi, wi, n, c, h, w) ((ni * c + ci) * h + hi) * w + wi
-
-#define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) ((ci * n + ni) * h + hi) * w + wi
-#define GET_N_T(idx, n, c, h, w) idx / (w * h * n)
-#define GET_C_T(idx, n, c, h, w) (idx / (w * h)) % n
-#define GET_H_T(idx, n, c, h, w) (idx / w) % h
-#define GET_W_T(idx, n, c, h, w) idx % w
+#define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) (((((ni * c) + ci) * h) + hi) * w + wi)
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
@@ -395,10 +389,10 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 #define GET_H(idx, n, c, h, w) (idx / w) % h
 #define GET_W(idx, n, c, h, w) idx % w
 
-__global__ void {FUNC_NAME}(const {T} *const base_dy,
+__global__ void {FUNC_NAME}(const {T} *const dy,
                             const {T} *const im2_var,
                             const {T} *const weights,
-                            {T}* dy, {T}* dw, {T}* db, {T}* dx
+                            {T}* dw, {T}* db, {T}* dx
                             {T}* col_2im_var,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
@@ -426,34 +420,29 @@ __global__ void {FUNC_NAME}(const {T} *const base_dy,
     const int N_TRANSPOSE = n * co * ho * wo;
 
     int i, j, k, i_j, dim_j, khi, kwi;
-    int ni, ci, hi, wi;
-
-    // Transposing dy from NCHW format to CNHW
-
-    for(i = idx; i < N_TRANSPOSE; i += num_workers)
-    {{
-        // NOTE: we are iterating over the transposed dy (dy).
-
-        // Getting the indexes
-        ni = GET_N_T(idx, n, co, ho, wo);
-        ci = GET_C_T(idx, n, co, ho, wo);
-        hi = GET_H_T(idx, n, co, ho, wo);
-        wi = GET_W_T(idx, n, co, ho, wo);
-        
-        // Assinging the values -> dy[ci,ni,hi,wi] = base_dy[ni,ci,hi,wi]
-        *(dy + SHIFT_DY(ni, ci, hi, wi, n, co, ho, wo)) = (*(base_dy + SHIFT_BASE_DY(ni, ci, hi, wi, n, co, ho, wo)));
-    }}
+    int ni, ci, hi, wi, dy_i;
 
     // Matmul dy transposed and im2_var.T in and save it in dw
     // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
     dim_j = N_DW / co;
+
+    // NOTE: Remember -> dy base: NCHW, the dy needed to work: CNHW
+    //dw.shape - (co, c, kh, kw)
 
     for(i_j = idx; i_j < N_DW; i_j += workers)
         for(k = 0; k < dim_n; k++)
     {{
         i = GET_I(i_j, dim_j);
         j = GET_J(i_j, dim_j);
-        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_n))) * (*(im2_var + SHIFT(k, j, dim_j)));
+
+        // Accessing dy like it was transposed from NCHW to CNHW
+        //dy "=" (co, n, self.ho, self.wo)
+        //i = "co" = GET_N(k, c, n, h, w).
+        ni = GET_C(k, co, n, ho, wo);
+        hi = GET_H(k, co, n, ho, wo);
+        wi = GET_W(k, co, n, ho, wo);
+
+        *(dw + i_j) += (*(dy + SHIFT_DY(ni, i, hi, wi, co, ho, wo))) * (*(im2_var + SHIFT(k, j, dim_j)));
     }}
 
     // np.sum(dy, axis=(0,2,3), out=db)
@@ -461,8 +450,9 @@ __global__ void {FUNC_NAME}(const {T} *const base_dy,
     {DB}
 #endif
 
-    // col_2im_var "=" (dim_c, dim_n)
-    //mamtul(weights.reshape(self.ci * self.kh * self.kw, co), tranposed dy) <== mamtul(weights.reshape(co, -1).T, tranposed dy)
+    // col_2im_var "=" (dim_c, dim_n) = (c * kh * kw, n * ho * wo)
+    // mamtul(weights.reshape(co, -1).T, tranposed dy) ==>
+    // mamtul(weights.reshape(co, c * kh * kw).T, tranposed dy) 
     // tranposed dy.shape = (co, n*ho*wo)
     for(i_j = idx; i_j < N_COL2IM_VAR; i_j += num_workers)
         for(k = 0; k < co; k++)
@@ -470,8 +460,15 @@ __global__ void {FUNC_NAME}(const {T} *const base_dy,
         i = GET_I(i_j, dim_n);
         j = GET_J(i_j, dim_n);
 
+        // Accessing dy like it was transposed from NCHW to CNHW
+        //dy "=" (co, n, self.ho, self.wo)
+        dy_i = SHIFT(k, j, dim_n)
+        ni = GET_C(dy_i, co, n, ho, wo);
+        hi = GET_H(dy_i, co, n, ho, wo);
+        wi = GET_W(dy_i, co, n, ho, wo);
+
         //col_2im_var[i][j] = weights[i][k] * dy[k][j]
-        *(col_2im_var + i_j) =  (*(weights + SHIFT(i, k, co))) * (*(dy + SHIFT(k, j, dim_n)));
+        *(col_2im_var + i_j) =  (*(weights + SHIFT(i, k, co))) * (*(dy + SHIFT_DY(ni, k, hi, wi, co, ho, wo)));
     }}
 
     __syncthreads();
