@@ -405,12 +405,12 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
     // NOTE: c, h, w are the input ones and co, ho, wo are the output ones (they may differ)
     // base_dy.shape = (n, co, ho, wo)
     // im2_var.shape = (dim_n, co) || dim_n = (n * self.ho * self.wo)
-    // weights.shape = (co, c, kh, kw); NHWC: (co, kh, kw, c)
+    // weights.shape = (co, c, kh, kw);
     // dy.shape = (co, n, ho, wo)
-    // dw.shape = (co, dim_c); NHWC: (dim_c, co) || dim_c = (c, kh, kw)
+    // dw.shape = (co, dim_c); dim_c = (c, kh, kw)
     // db.shape = (co, )
     // dx.shape = (n, c, h, w)
-    // col_2im_var.shape = (dim_c, dim_n); NHWC: (dim_n, dim_c) || dim_n = n * ho * wo; dim_c = c * kh * kw
+    // col_2im_var.shape = (dim_c, dim_n); dim_n = n * ho * wo; dim_c = c * kh * kw
 
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
@@ -556,16 +556,23 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
     int i, j, k, i_j, dim_j, dim_k, khi, kwi;
 
-    // Matmul dy transposed and im2_var.T in and save it in dw
-    // NOTE: Here dy is treated as (co, n*ho*wo); im2_var.T.shape = (n*ho*wo, ci*kh*kw)
-    dim_j = N_DW / co;
+    // NOTE: c, h, w are the input ones and co, ho, wo are the output ones (they may differ)
+    // base_dy.shape = (n, co, ho, wo)
+    // im2_var.shape = (dim_n, dim_c) || dim_n = (n * self.ho * self.wo)
+    // weights.shape = (co, kh, kw, c)
+    // dy.shape = (n, ho, wo, co)
+    // dw.shape = (dim_c, co) || dim_c = (c, kh, kw)
+    // db.shape = (co, )
+    // dx.shape = (n, c, h, w)
+    // row_2im_var.shape = (dim_c, dim_n) || dim_n = n * ho * wo; dim_c = c * kh * kw
     
+    // dw = np.matmul(im2_var.T, dy.reshape(n*ho*wo, self.co)); im2_var.T.shape = (ci*kh*kw, n*ho*wo)
     for(i_j = idx; i_j < N_DW; i_j += workers)
         for(k = 0; k < dim_n; k++)
     {{
-        i = GET_I(i_j, dim_j);
-        j = GET_J(i_j, dim_j);
-        *(dw + i_j) += (*(dy + SHIFT(i, k, dim_n))) * (*(im2_var + SHIFT(k, j, dim_j)));
+        i = GET_I(i_j, co);
+        j = GET_J(i_j, co);
+        *(dw + i_j) += (*(im2_var + SHIFT(k, i, dim_c))) * (*(dy + SHIFT(k, j, co)));
     }}
 
     // np.sum(dy, axis=(0,1,2), out=db)
