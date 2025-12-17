@@ -33,6 +33,9 @@ class ActivationGPU(Activation[TensorGPU]):
         self.x: TensorGPU = None  # type: ignore
         self.dx: TensorGPU = None  # type: ignore
 
+        self.grid = self.model.cuda_grid
+        self.block = self.model.cuda_block
+
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
 

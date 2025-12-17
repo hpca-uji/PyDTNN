@@ -22,13 +22,6 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
-    
-        # NOTE: Seems that in PyDTNN, usually the ".x" (blockIdx.x, threadIdx.x, ...) is the only dimension used.
-        # TODO:  move "self.threads" and "self.blocks" to somewhere common
-        self.threads = min(self.model.batch_size, 1024)
-        self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
-        self.grid = (self.blocks, 1, 1)
-        self.block = (self.threads, 1, 1)
 
         func_name: str = ""
         macros: str = ""
@@ -53,6 +46,12 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
 
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 
+        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
         self.fwd_func: Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
         self.bwd_func: Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)
         self.bias_sum_fwd: Function = self.cuda_bias_sum_fwd_depthwise_conv()
@@ -60,8 +59,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
 
     def _forward_depthwise_nchw(self, x: TensorGPU) -> TensorGPU:
         self.x = x
-        y_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y.fill(0)
 
         n, c, h, w = x.shape
 
@@ -94,9 +92,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
     def _forward_depthwise_nhwc(self, x: TensorGPU) -> TensorGPU:
         self.x = x
         n, h, w, c = x.shape
-
-        y_gpu = gpuarray.to_gpu(np.zeros(shape=(n, *self.shape), dtype=self.model.dtype))
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.fwd_func(x.ary, self.weights.ary, self.y.ary,
@@ -127,9 +123,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
     def _backward_depthwise_nchw(self, dy: TensorGPU) -> TensorGPU:
 
         n, c, h, w = dy.shape
-
-        dx_gpu = gpuarray.zeros((n, *self.shape), self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
@@ -157,8 +151,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
 
     def _backward_depthwise_nhwc(self, dy: TensorGPU) -> TensorGPU:
         n, h, w, c = dy.shape
-        dx_gpu = gpuarray.zeros((n, *self.shape), self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,

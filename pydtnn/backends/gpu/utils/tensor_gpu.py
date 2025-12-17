@@ -42,6 +42,51 @@ class TensorGPU:
         gpu_arr = gpuarray.zeros(shape, dtype)
         return TensorGPU(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
                          tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+    
+    @staticmethod
+    def initialize_gpu_direct(drv: "pycuda_driver", shape: ArrayShape, dtype: np.dtype,
+                              tensor_format: TensorFormat, cudnn_dtype: int,
+                              tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                              desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
+        x_cpu = drv.aligned_zeros(shape, dtype)
+        x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
+
+        x_gpu = TensorGPU(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                          desc=desc, gpudirect=gpudirect, cublas=cublas)
+
+        return (x_cpu, x_gpu)
+    # ---
+
+    @staticmethod
+    def initialize_not_gpu_direct(shape: ArrayShape, dtype: np.dtype,
+                                  tensor_format: TensorFormat, cudnn_dtype: int,
+                                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                                  desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
+        x_cpu = np.zeros(shape, dtype)
+        x_gpu = gpuarray.empty(shape, dtype)
+
+        x_gpu = TensorGPU(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                          desc=desc, gpudirect=gpudirect, cublas=cublas)
+
+        return (x_cpu, x_gpu)
+    
+    @staticmethod
+    def initialize(shape: ArrayShape, dtype: np.dtype,
+                   tensor_format: TensorFormat, cudnn_dtype: int,
+                   tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                   desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
+                   drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorGPU"]:
+        if drv is not None:
+            return TensorGPU.initialize_gpu_direct(drv=drv, shape=shape,
+                                                   dtype=dtype, tensor_format=tensor_format,
+                                                   cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                                   desc=desc, gpudirect=gpudirect, cublas=cublas)
+        else:
+            return TensorGPU.initialize_not_gpu_direct(shape=shape, dtype=dtype, tensor_format=tensor_format,
+                                                       cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                                       desc=desc, gpudirect=gpudirect, cublas=cublas)
+
+
     # ---
 
     def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
@@ -198,6 +243,7 @@ class TensorGPU:
 
     def reshape(self, shape: ArrayShape):
         self.ary = self.ary.reshape(shape, order="C")
+        self.shape = shape
         return self
     # ---
 
@@ -226,47 +272,6 @@ class TensorGPU:
         self._initalize(gpuarray.to_gpu(arr), desc)
     # ---
 
-    @staticmethod
-    def initialize_gpu_direct(drv: "pycuda_driver", shape: ArrayShape, dtype: np.dtype,
-                              tensor_format: TensorFormat, cudnn_dtype: int,
-                              tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                              desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
-        x_cpu = drv.aligned_zeros(shape, dtype)
-        x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
-
-        x_gpu = TensorGPU(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                          desc=desc, gpudirect=gpudirect, cublas=cublas)
-
-        return (x_cpu, x_gpu)
-    # ---
-
-    @staticmethod
-    def initialize_not_gpu_direct(shape: ArrayShape, dtype: np.dtype,
-                                  tensor_format: TensorFormat, cudnn_dtype: int,
-                                  tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                                  desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
-        x_cpu = np.zeros(shape, dtype)
-        x_gpu = gpuarray.empty(shape, dtype)
-
-        x_gpu = TensorGPU(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                          desc=desc, gpudirect=gpudirect, cublas=cublas)
-
-        return (x_cpu, x_gpu)
-
-    @staticmethod
-    def initialize(shape: ArrayShape, dtype: np.dtype,
-                   tensor_format: TensorFormat, cudnn_dtype: int,
-                   tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                   desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
-                   drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorGPU"]:
-        if drv is not None:
-            return TensorGPU.initialize_gpu_direct(drv=drv, shape=shape,
-                                                   dtype=dtype, tensor_format=tensor_format,
-                                                   cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                                   desc=desc, gpudirect=gpudirect, cublas=cublas)
-        else:
-            return TensorGPU.initialize_not_gpu_direct(shape=shape, dtype=dtype, tensor_format=tensor_format,
-                                                       cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                                       desc=desc, gpudirect=gpudirect, cublas=cublas)
-
+    def fill(self, scalar: int | float) -> None:
+        self.ary.fill(scalar)
     # ---

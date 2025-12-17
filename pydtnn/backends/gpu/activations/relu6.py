@@ -22,13 +22,8 @@ class Relu6GPU(Relu6[TensorGPU], ActivationGPU):
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
-        self.threads = min(self.model.batch_size, 1024)
-        self.blocks = max(self.model.batch_size, 1024) // self.threads + 1
         self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
-
-        self.grid = (self.blocks, 1, 1)
-        self.block = (self.threads, 1, 1)
 
         self.total_num_threads = np.prod(self.grid, dtype=np.int32) * np.prod(self.block, dtype=np.int32)
 

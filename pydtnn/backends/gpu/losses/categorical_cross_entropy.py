@@ -52,10 +52,9 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy[TensorGPU]):
         return module
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
-        threads, blocks = self.get_threads_and_blocks()
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
                     np.int32(batch_size), np.int32(self.shape[1]), np.float32(self.eps),
-                    grid=(blocks, 1, 1), block=(threads, 1, 1),
+                    grid=self.grid, block=self.block,
                     stream=self.model.stream)
         loss: float = -gpuarray.sum(self.loss[:batch_size]).get() / batch_size
         return loss, self.dx
