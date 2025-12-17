@@ -110,7 +110,7 @@ else:
 # ---
 
 # INIT CUDNN
-if cudnn is not None:
+if cudnn is not None and drv is not None:
     cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
     atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
 else:
