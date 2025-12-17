@@ -589,8 +589,8 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
         i = GET_I(i_j, dim_n);
         j = GET_J(i_j, dim_n);
 
-        //row_2im_var[i][j] = weights[i][k] * dy[k][j]
-        *(row_2im_var + i_j) =  (*(weights + SHIFT(i, k, co))) * (*(dy + SHIFT(k, j, dim_n)));
+        //row_2im_var[i][j] += dy[i][k] * weights[k][j]; (weights= weights.reshape((-1, co)).T)
+        *(row_2im_var + i_j) += (*(dy + SHIFT(i, k, co))) * (*(weights + SHIFT(j, k, co)));
     }}
 
     __syncthreads();
