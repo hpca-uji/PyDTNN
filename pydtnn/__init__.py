@@ -24,6 +24,9 @@ try:
 except Exception as e:
     drv = None
     gpu_errors.append(e)
+    has_drv = False
+else:
+    has_drv = True
 
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
@@ -42,18 +45,12 @@ try:
 except Exception as e:
     nccl = None
     gpu_errors.append(e)
-    supported_nccl = False
-else:
-    supported_nccl = True
 
 try:
     from pydtnn.libs import libcudnn as cudnn  # type: ignore
 except Exception as e:
     cudnn = None
     gpu_errors.append(e)
-    supported_cudnn = False
-else:
-    supported_cudnn = True
 
 try:
     from skcuda import cublas  # type: ignore
@@ -96,7 +93,7 @@ else:
 # ---
 
 # INIT PYCUDA
-if drv is not None:
+if drv is not None:  # equivalent: if has_drv:
     drv.init()
     rank = MPI.COMM_WORLD.rank if MPI else 0
     device = drv.Device(rank % drv.Device.count())
@@ -110,7 +107,8 @@ else:
 # ---
 
 # INIT CUDNN
-if cudnn is not None and drv is not None:
+if cudnn is not None and has_drv:
+    # NOTE: CUDNN initalization must be done after "drv.init()"
     cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
     atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
 else:

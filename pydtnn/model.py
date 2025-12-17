@@ -18,12 +18,12 @@ from collections import abc
 import numpy as np
 from tqdm import tqdm
 
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, supported_nccl, cudnn, supported_cudnn, cublas, rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
+# TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, cudnn, cublas, rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
 from pydtnn import utils
 from pydtnn.activations.relu import Relu
 from pydtnn.backends import BackendType
-from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.libs.libmpi import proto as PROTOCOL
 from pydtnn.libs import libcrypt
@@ -382,8 +382,6 @@ class Model[T: Array]:
         self.cuda_grid = (self.cuda_blocks, 1, 1)
         self.cuda_block = (self.cuda_threads, 1, 1)
 
-        global supported_cudnn, supported_nccl
-
         assert drv is not None
         assert context is not None
         assert cudnn_handle is not None
@@ -436,18 +434,18 @@ class Model[T: Array]:
             raise ValueError("There is no dataset and the model has layers.")
 
     @cached_property
-    def empty_x(self) -> TensorGPU:
+    def empty_x(self) -> tensor_gpu.TensorGPU:
         # NOTE: Can not allocate a zero-size array, so slice one
         assert gpuarray and self.cudnn_dtype
         empty_x = gpuarray.empty((1, *self.dataset.input_shape), self.dtype)[:0]
-        return TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
+        return tensor_gpu.TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
 
     @cached_property
-    def empty_y_tag(self) -> TensorGPU:
+    def empty_y_tag(self) -> tensor_gpu.TensorGPU:
         # NOTE: Can not allocate a zero-size array, so slice one
         assert gpuarray and self.cudnn_dtype
         empty_y_tag = gpuarray.empty((1, *self.dataset.output_shape), self.dtype)[:0]
-        return TensorGPU(empty_y_tag, self.tensor_format, self.cudnn_dtype)
+        return tensor_gpu.TensorGPU(empty_y_tag, self.tensor_format, self.cudnn_dtype)
 
     @property
     def dataset_path(self) -> str:
@@ -514,11 +512,11 @@ class Model[T: Array]:
 
     def encode_tensor(self, data: T) -> T:
         """Transpose elements of data from `NCHW` format to `model.tensor_format` format (supports 4 or 3 dimensions)."""
-        return encode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
+        return encode_tensor(data, self.tensor_format)  # type: ignore (tensor_gpu.TensorGPU does not have transpose yet)
 
     def decode_tensor(self, data: T) -> T:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
-        return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
+        return decode_tensor(data, self.tensor_format)  # type: ignore (tensor_gpu.TensorGPU does not have transpose yet)
 
     def _show_props(self) -> dict:
         props = {}
@@ -882,7 +880,7 @@ class Model[T: Array]:
         return x_batch, y_batch
     # --- _sync_x_y_cpu --- #
 
-    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
+    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[tensor_gpu.TensorGPU, tensor_gpu.TensorGPU]:
 
         # NOTE: in CUDA it's necessary to always have batches of the same size.
         local_batch_size = x_batch.shape[0]
@@ -899,7 +897,7 @@ class Model[T: Array]:
             x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
             y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
 
-            assert isinstance(self.layers[0].y, TensorGPU) and isinstance(self.y_batch, TensorGPU)
+            assert isinstance(self.layers[0].y, tensor_gpu.TensorGPU) and isinstance(self.y_batch, tensor_gpu.TensorGPU)
             self.layers[0].y.ary.set(x_batch)
             self.y_batch.ary.set(y_batch)
             x, y_targ = self.layers[0].y, self.y_batch
@@ -938,7 +936,7 @@ class Model[T: Array]:
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = TensorGPU(
+            tensor_gpu = tensor_gpu.TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_gpu  # type: ignore
@@ -1228,7 +1226,7 @@ class Model[T: Array]:
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = TensorGPU(
+            tensor_gpu = tensor_gpu.TensorGPU(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
             self.y_batch = tensor_gpu  # type: ignore
