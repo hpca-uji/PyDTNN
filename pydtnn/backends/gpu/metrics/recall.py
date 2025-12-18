@@ -11,6 +11,14 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 class RecallGPU(Recall[TensorGPU], MetricGPU):
 
+    def initialize(self) -> None:
+        super().initialize()
+        target_classes = self.model.output_shape[0]
+        self.recall = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
+                                                    tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_recall = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32), 
+                                                          tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
@@ -63,15 +71,13 @@ class RecallGPU(Recall[TensorGPU], MetricGPU):
 
         target_classes = self.model.output_shape[0]
 
-        recall = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_recall = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32), 
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.recall.fill(0)
+        self.local_recall.fill(0)
 
         target_classes = np.int32(target_classes)
-        self.kernel(recall.ary, self.conf_matrix_metric.conf_matrix.ary, 
-                    local_recall.ary, target_classes,
+        self.kernel(self.recall.ary, self.conf_matrix_metric.conf_matrix.ary, 
+                    self.local_recall.ary, target_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
         
-        return recall.ary.get()[0]
+        return self.recall.ary.get()[0]

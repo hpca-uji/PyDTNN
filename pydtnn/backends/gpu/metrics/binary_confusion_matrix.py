@@ -9,6 +9,17 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
 
+    def initialize(self) -> None:
+        super().initialize()
+        n = self.model.batch_size
+        target_classes = self.model.output_shape[0]
+
+        self.conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, target_classes, 2, 2), dtype=np.dtype(np.int32),
+                                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_cm = TensorGPU.create_zeros_tensor(shape=(n, target_classes, 2, 2), dtype=np.dtype(np.int32),
+                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+    # ----
+
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
@@ -90,21 +101,18 @@ class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
               |F| FP | TN |
         """
 
-        n = y_pred.shape[0]
+        n = self.model.batch_size
         target_classes = self.model.output_shape[0]
 
-        conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, target_classes, 2, 2), dtype=np.dtype(np.int32),
-                                                    tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_cm = TensorGPU.create_zeros_tensor(shape=(n, target_classes, 2, 2), dtype=np.dtype(np.int32),
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.conf_matrix.fill(0)
+        self.local_cm.fill(0)
 
         n = np.int32(n)
         num_classes = np.int32(target_classes)
         self.kernel(y_targ.ary, y_pred.ary, 
-                    conf_matrix.ary, local_cm.ary,
+                    self.conf_matrix.ary, self.local_cm.ary,
                     num_classes, n,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        self.conf_matrix = conf_matrix
-        
+
         return self.conf_matrix.ary.get()

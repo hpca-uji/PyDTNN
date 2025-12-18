@@ -19,7 +19,6 @@ class MetricGPU(Metric[TensorGPU]):
     
     def initialize(self) -> None:
         super().initialize()
-        self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         self.kernel = self.__init_gpu_kernel__()
 
         self.grid = self.model.cuda_grid

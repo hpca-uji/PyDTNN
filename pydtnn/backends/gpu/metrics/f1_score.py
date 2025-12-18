@@ -11,6 +11,15 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 class F1ScoreGPU(F1Score[TensorGPU], MetricGPU):
 
+    def initialize(self) -> None:
+        super().initialize()
+        target_classes = self.model.output_shape[0]
+        self.f1 = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
+                                                tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_f1 = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32),
+                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+    # ----
+
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
@@ -68,16 +77,14 @@ class F1ScoreGPU(F1Score[TensorGPU], MetricGPU):
 
         target_classes = self.model.output_shape[0]
 
-        f1 = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
-                                           tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_f1 = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32),
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.f1.fill(0)
+        self.local_f1.fill(0)
 
         target_classes = np.int32(target_classes)
 
-        self.kernel(f1.ary, self.conf_matrix_metric.conf_matrix.ary,
-                    local_f1.ary, target_classes,
+        self.kernel(self.f1.ary, self.conf_matrix_metric.conf_matrix.ary,
+                    self.local_f1.ary, target_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
 
-        return f1.ary.get()[0]
+        return self.f1.ary.get()[0]

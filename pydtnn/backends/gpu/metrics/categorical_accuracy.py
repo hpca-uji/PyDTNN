@@ -11,6 +11,10 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class CategoricalAccuracyGPU(CategoricalAccuracy[TensorGPU], MetricGPU):
 
+    def initialize(self) -> None:
+        super().initialize()
+        self.cost = gpuarray.empty((self.model.batch_size,), self.model.dtype)
+
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_accuracy"
         code = """

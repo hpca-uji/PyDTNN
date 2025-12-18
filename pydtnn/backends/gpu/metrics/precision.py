@@ -11,6 +11,14 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 class PrecisionGPU(Precision[TensorGPU], MetricGPU):
 
+    def initialize(self) -> None:
+        super().initialize()
+        target_classes = self.model.output_shape[0]
+        self.precision = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
+                                                       tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_precision = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32), 
+                                                             tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_confusion_matrix"
         code = """
@@ -64,16 +72,14 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
 
         target_classes = self.model.output_shape[0]
 
-        precision = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        local_precision = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32), 
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-
         target_classes = np.int32(target_classes)
 
-        self.kernel(precision.ary, self.conf_matrix_metric.conf_matrix.ary, 
-                    local_precision.ary, target_classes,
+        self.precision.fill(0)
+        self.local_precision.fill(0)
+
+        self.kernel(self.precision.ary, self.conf_matrix_metric.conf_matrix.ary, 
+                    self.local_precision.ary, target_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
 
-        return precision.ary.get()[0]
+        return self.precision.ary.get()[0]

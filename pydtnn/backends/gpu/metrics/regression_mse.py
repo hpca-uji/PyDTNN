@@ -10,6 +10,19 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 
 class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
 
+    def initialize(self) -> None:
+        super().initialize()
+
+        n = self.model.batch_size
+        num_classes = self.model.output_shape
+
+        self.res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
+                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+
+        self.local_res = TensorGPU.create_zeros_tensor(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype), 
+                                                       tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+    # ----
+
     def __init_gpu_kernel__(self) -> Function:
         _name = "regression_mse"
         code = """
@@ -61,16 +74,14 @@ class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
         n = y_pred.shape[0]
         num_classes = y_pred.shape[1]
 
-        res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.res.fill(0)
+        self.local_res.fill(0)
 
-        local_res = TensorGPU.create_zeros_tensor(shape=(n, num_classes), dtype=np.dtype(self.model.dtype), 
-                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         n = np.int32(n)
         num_classes = np.int32(num_classes) 
         self.kernel(y_targ.ary, y_pred.ary, 
-                    res.ary, local_res.ary,
+                    self.res.ary, self.local_res.ary,
                     n, num_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)
-        return res.ary.get()[0]
+        return self.res.ary.get()[0]
