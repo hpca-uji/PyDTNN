@@ -5,6 +5,7 @@ import numpy as np
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
+from pydtnn.utils.constants import ArrayShape
 
 try:
     from pydtnn.libs.libmpi import MPI
@@ -30,9 +31,6 @@ class LayerGPU(Layer[TensorGPU]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # GPU layer attributes
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
-
         # NOTE: All of these values will be initalized in the "initialize" method.
         self.weights_cpu: ndarray = None  # type: ignore
         self.biases_cpu: ndarray = None  # type: ignore
@@ -43,6 +41,14 @@ class LayerGPU(Layer[TensorGPU]):
         self.db_cpu: ndarray = None  # type: ignore
         self.one_vec_cpu: ndarray = None  # type: ignore
         self.one_vec_gpu: gpuarray.GPUArray = None  # type: ignore
+        self.grid = None
+        self.block = None
+    
+    def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU | None = None) -> None:
+        super().initialize(prev_shape, x)
+        self.grid = self.model.cuda_grid
+        self.block = self.model.cuda_block
+    # ---
 
     @property
     def _ary_prop(self) -> set[str]:

@@ -13,12 +13,15 @@ class LossGPU(Loss[TensorGPU]):
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         super().__init__(shape, eps)
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        # NOTE: The following attributes will be initialized later.
+        self.grid = None
+        self.block = None
 
     def initialize(self) -> None:
         super().initialize()
         # NOTE: the model must be executed before this one.
+        self.grid = self.model.cuda_grid
+        self.block = self.model.cuda_block
         self.loss = gpuarray.empty((self.model.batch_size,), self.model.dtype)
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)

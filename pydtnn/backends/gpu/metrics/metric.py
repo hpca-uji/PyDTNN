@@ -13,6 +13,9 @@ class MetricGPU(Metric[TensorGPU]):
 
     def __init__(self, shape: ArrayShape, eps=1e-8):
         super().__init__(shape, eps)
+        # NOTE: The following attributes will be initializated later.
+        self.grid = None
+        self.block = None
     
     def initialize(self) -> None:
         super().initialize()

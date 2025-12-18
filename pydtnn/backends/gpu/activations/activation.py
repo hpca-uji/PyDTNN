@@ -32,12 +32,13 @@ class ActivationGPU(Activation[TensorGPU]):
         # The following attributes will be initalized later.
         self.x: TensorGPU = None  # type: ignore
         self.dx: TensorGPU = None  # type: ignore
-
-        self.grid = self.model.cuda_grid
-        self.block = self.model.cuda_block
+        self.grid = None
+        self.block = None
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
+        self.grid = self.model.cuda_grid
+        self.block = self.model.cuda_block
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
