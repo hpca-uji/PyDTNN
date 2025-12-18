@@ -180,6 +180,10 @@ class Conv2DStandardGPU(Conv2DGPU):
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
                 return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+            case TensorFormat.NCHW:
+                gpu_ary = value.ary
+                cpu_ary = gpu_ary.get()
+                return cpu_ary
             case default:
                 return super()._export_prop(key)
     # ------
