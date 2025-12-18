@@ -63,18 +63,17 @@ class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
                 }}
             }}
             // Accumulating the local values
-            if (base_idx == 0)
-            {{   
-                for(idx = blockDim.x/2; idx > 0; idx >>= 1)
+            for(idx = blockDim.x/2; idx > 0; idx >>= 1)
+            {{
+                if(threadIdx.x < idx)
                 {{
-                    if(base_idx < idx)
-                        for(label = 0; label < num_classes; label++)
-                            for(i = 0; i < 2; i++) for(j = 0; j < 2; j++)
-                                *(local_cm + SHIFT_POINTER_LOCAL_CM(base_idx, label, i, j, num_classes, 2, 2)) += *(local_cm + SHIFT_POINTER_LOCAL_CM(base_idx + idx, label, i, j, num_classes, 2, 2));
+                    for(label = 0; label < num_classes; label++)
+                        for(i = 0; i < 2; i++) for(j = 0; j < 2; j++)
+                            *(local_cm + SHIFT_POINTER_LOCAL_CM(base_idx, label, i, j, num_classes, 2, 2)) += *(local_cm + SHIFT_POINTER_LOCAL_CM(base_idx + idx, label, i, j, num_classes, 2, 2));
                 }}
+                __syncthreads();
             }}
-            __syncthreads();
-            
+
             // Accumulating the local values into the output's tensor.
             if (base_idx == 0)
             {{
