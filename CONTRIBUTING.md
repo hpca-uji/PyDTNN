@@ -36,3 +36,17 @@
 - Rework `MemoryCache` to not use globals.
 - Rework the fuse layer implementations.
 - Replace `print` statments with `logger` calls.
+
+# Publish
+```sh
+python -m build --outdir ./dist/
+twine upload --repository pypi ./dist/*
+```
+
+## Precompile
+Dependencies: `gcc patchelf`
+
+```sh
+python -m build --outdir ./build/ --wheel
+auditwheel repair --wheel-dir ./dist/ ./build/*.whl
+```

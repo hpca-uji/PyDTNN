@@ -51,7 +51,7 @@ cuda = [
 mpi = [
     "net-queue>=0.1.0",
     "pympi>=0.1.0",
-    "mpi4py>=4.1.0",
+    "mpi4py>=4.1.0"
 ]
 fhe = [
     "openfhe>=1.4.0",
@@ -64,6 +64,11 @@ test = [
 profile = [
     "memray>=1.19.1"
 ]
+pypi = [
+    "build>=1.3.0",
+    "auditwheel>=6.5.1",
+    "twine>=6.2.0"
+]
 dev = [
     "autopep8>=2.3.1",
     "flake8>=7.1.1",
@@ -73,7 +78,7 @@ dev = [
     "pipdeptree>=2.23.1",
     "pycodestyle>=2.12.1",
     "pydocstyle>=6.3.0",
-    "pyflakes>=3.2.0",
+    "pyflakes>=3.2.0"
 ]
 
 [project.scripts]
@@ -94,4 +99,5 @@ include = [
 ]
 
 [[tool.uv.index]]
+name = "nvidia-pyindex"
 url = "https://pypi.ngc.nvidia.com"
