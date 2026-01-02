@@ -21,5 +21,5 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
         dx_amax: np.ndarray = np.argmax(dx, axis=1)
         # NOTE/FIXME: This will raise an error if the model works in int8 due it is trying to store an float64 into a int8.
         dx[b_range, dx_amax] /= (-y_pred[b_range, dx_amax] * batch_size)
-        
+
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C", copy=None)

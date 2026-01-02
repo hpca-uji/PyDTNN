@@ -164,6 +164,10 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--dataset-path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
+        _ds_group.add_argument('--dataset-lang', type=str, default="en",
+                               help="Dataset language.")
+        _ds_group.add_argument('--dataset-lang2', type=str, default="de",
+                               help="Dataset second language.")
         _ds_group.add_argument('--synthetic-train-samples', default=1000, type=int,
                                help="Number of synthetic train sample. Default: 1000.")
         _ds_group.add_argument('--synthetic-test-samples', default=100, type=int,

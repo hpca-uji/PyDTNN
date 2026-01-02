@@ -166,6 +166,8 @@ The PyDTNN framework comes with a utility launcher called
     `tsunamis`, `imagenet`, `archive`, `folder`, `chestxray` or
     `synthetic`. Default: `None`.
   - `--dataset-path`: Path to dataset folder.
+  - `--dataset-lang`: Dataset language. Default: `en`.
+  - `--dataset-lang2`: Dataset second language. Default: `de`.
   - `--synthetic-train-samples`: Number of synthetic train sample.
     Default: `1000`.
   - `--synthetic-test-samples`: Number of synthetic train sample.

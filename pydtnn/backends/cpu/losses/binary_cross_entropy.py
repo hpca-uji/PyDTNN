@@ -13,5 +13,5 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
 
         # Dx
         y_pred: np.ndarray = np.clip(_y_pred, a_min=self.eps, a_max=(1 - self.eps))
-        dx: np.ndarray = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / batch_size        
+        dx: np.ndarray = (-(y_targ / y_pred) + ((1 - y_targ) / (1 - y_pred))) / batch_size
         return loss, np.asarray(dx, dtype=self.model.dtype, order="C", copy=None)

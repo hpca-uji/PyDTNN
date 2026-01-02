@@ -11,3 +11,4 @@ __pycache__/
 
 /datasets/*/
 !/datasets/mnist/*.gz
+!/datasets/iwslt/*.txt
