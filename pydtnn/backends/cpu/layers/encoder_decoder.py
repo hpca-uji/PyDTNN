@@ -15,16 +15,16 @@ class EncoderDecoderCPU(EncoderDecoder[np.ndarray], AbstractBlockLayerCPU):
 
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
-        if len(x) == 2:
-            x_enc, x_dec = x
+        if len(prev_shape) == 2:
+            x_enc, x_dec = x if x else (None, None)
             mask_enc = mask_dec = None
             enc_shape = (prev_shape[0], ())
             dec_shape = (prev_shape[0], prev_shape[1], ())
         else:
-            x_enc, mask_enc, x_dec, mask_dec = x
+            x_enc, mask_enc, x_dec, mask_dec = x if x else (None, None, None, None)
             enc_shape = (prev_shape[0], prev_shape[1])
             dec_shape = (prev_shape[2], prev_shape[0], prev_shape[3])
-        self.embedl = x_enc.shape[-1]
+        self.embedl = enc_shape[0][-1]
 
         # Initialize all sublayers
         for layer in self.children:

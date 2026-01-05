@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 TRAIN_NSAMPLES = 10000
 TEST_NSAMPLES = 2000
-INPUT_SHAPE = (1,)
+INPUT_SHAPE = (1, 1, 1)
 OUTPUT_SHAPE = (1,)
 
 
@@ -40,8 +40,8 @@ class IWSLT(Dataset):
     """
 
     def __init__(self, model: "Model", embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
+        self.model = model
         self.split_token = split_token
         self.max_sentence = max_sentence
         self.embedl = embedl
@@ -52,6 +52,8 @@ class IWSLT(Dataset):
         self.model = model
         self.lang1 = self.model.dataset_lang
         self.lang2 = self.model.dataset_lang2
+
+        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
         # Actual

@@ -162,9 +162,8 @@ The PyDTNN framework comes with a utility launcher called
     Optionally, the `AUTO` value sets `NCHW` when the option
     `--enable-gpu` is set and `NHWC` otherwise. Default: `NHWC`.
 - Dataset parameters:
-  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `cyclone`,
-    `tsunamis`, `imagenet`, `archive`, `folder`, `chestxray` or
-    `synthetic`. Default: `None`.
+  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
+    …. Default: `None`.
   - `--dataset-path`: Path to dataset folder.
   - `--dataset-lang`: Dataset language. Default: `en`.
   - `--dataset-lang2`: Dataset second language. Default: `de`.
@@ -246,7 +245,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--optimizer-rho`: Variable for `rmsprop` optimizers. Default:
     `0.99`.
   - `--loss-func`: Loss functions that is evaluated on each trained
-    batch: `categorical_cross_entropy`, `binary_cross_entropy`. Default
+    batch: `categorical_cross_entropy`, `binary_cross_entropy` or `kl_divergence`. Default
     `categorical_cross_entropy`.
   - `--metrics`: List of comma-separated metrics that are evaluated on
     each trained batch: `categorical_accuracy`, `categorical_hinge`,

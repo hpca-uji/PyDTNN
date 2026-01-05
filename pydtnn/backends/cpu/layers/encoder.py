@@ -26,17 +26,17 @@ class EncoderCPU(Encoder[np.ndarray], AbstractBlockLayerCPU):
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
         self.y = x
-        if type(x) is tuple:
-            x_enc, mask_enc = x
+        if type(prev_shape[-1]) is tuple:
+            x_enc, mask_enc = x if x else (None, None)
             x_enc_shape, mask_enc_shape = prev_shape
         else:
-            x_enc = x
+            x_enc = x if x else None
             x_enc_shape = prev_shape
             mask_enc = None
             mask_enc_shape = ()
 
         self.shape = x_enc_shape
-        self.first_dims = x_enc.ary.shape[:-1]
+        self.first_dims = x_enc_shape[:-1]
 
         # Initialize all sublayers
         for layer in self.children:

@@ -189,13 +189,25 @@ class Dataset(ABC):
     def train_nsamples(self):
         return self._nsamples[Dataset.Part.TRAIN]
 
+    @train_nsamples.setter
+    def train_nsamples(self, value):
+        self._nsamples[Dataset.Part.TRAIN] = value
+
     @property
     def val_nsamples(self):
         return self._nsamples[Dataset.Part.VAL]
 
+    @val_nsamples.setter
+    def val_nsamples(self, value):
+        self._nsamples[Dataset.Part.VAL] = value
+
     @property
     def test_nsamples(self):
         return self._nsamples[Dataset.Part.TEST]
+
+    @test_nsamples.setter
+    def test_nsamples(self, value):
+        self._nsamples[Dataset.Part.TEST] = value
 
     def get_train_val_generator(self) -> tuple[Generator[tuple[np.ndarray, np.ndarray, int]], Generator[tuple[np.ndarray, np.ndarray, int]]]:
         return (self._batch_generator(Dataset.Part.TRAIN),

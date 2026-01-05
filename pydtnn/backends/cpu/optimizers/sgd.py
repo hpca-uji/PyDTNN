@@ -13,7 +13,7 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
             if len(list_grad_vars) != 0:
-                self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore 
+                self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
                     self.context[layer.id]["velocity_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
@@ -21,11 +21,11 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
-            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # type: ignore 
+            velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # type: ignore
             w: np.ndarray
             dw: np.ndarray
 
-            if not (self.are_all_zeros(velocity) and self.are_all_zeros(w) and self.are_all_zeros(dw)):
+            if (w is not None and dw is not None) and not (self.are_all_zeros(velocity) and self.are_all_zeros(w) and self.are_all_zeros(dw)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
                 # velocity = self.momentum * velocity + dw

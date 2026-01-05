@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 TRAIN_NSAMPLES = 10000
 TEST_NSAMPLES = 2000
-INPUT_SHAPE = (1,)
+INPUT_SHAPE = (1, 1, 1)
 OUTPUT_SHAPE = (1,)
 
 
@@ -29,10 +29,10 @@ class MaskLang(Dataset):
     scale:  ???
     """
 
-    def __init__(self, model: "Model", preprocess=True, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
-        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
+    def __init__(self, model: "Model", preprocess=0, embedl=512, max_sentence=512, split_token="<translation>", force_test_as_validation=False, debug=False):
 
-        self.do_preprocess = preprocess
+        self.model = model
+        self.num_preprocess = preprocess
         self.split_token = split_token
         self.max_sentence = max_sentence
         self.embedl = embedl
@@ -40,19 +40,22 @@ class MaskLang(Dataset):
         self.test_path = self.model.dataset_path
         self.test_as_validation = force_test_as_validation
         self.dtype = self.model.dtype
-        self.model = model
         self.lang = self.model.dataset_lang
+
+        if self.num_preprocess > 0:
+            self._actual_data_generator = self._actual_data_generator_preprocess
+        else:
+            self._actual_data_generator = self._actual_data_generator_normal
+
+        super().__init__(model, TRAIN_NSAMPLES, TEST_NSAMPLES, INPUT_SHAPE, OUTPUT_SHAPE, force_test_as_validation=force_test_as_validation, debug=debug)
 
     def _init_actual_data(self):
         # Actual
         self.load_data()
         self.make_train_val_partitions()
-        if not self.do_preprocess:
-            self._actual_data_generator = self._actual_data_generator_normal
-        else:
-            self.preprocess(size=197988)
+        if self.num_preprocess > 0:
+            self.preprocess(size=self.num_preprocess)
             self.make_train_val_partitions()
-            self._actual_data_generator = self._actual_data_generator_preprocess
 
         # Synthetic
         # self.train_val_nsamples = 10000

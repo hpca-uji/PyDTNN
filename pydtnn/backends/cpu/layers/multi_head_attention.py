@@ -35,8 +35,12 @@ class MultiHeadAttentionCPU(MultiHeadAttention[np.ndarray], AbstractBlockLayerCP
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
         self.shape = prev_shape
-        self.embedl = prev_shape[-1]
-        seq = prev_shape[-2]
+        if type(prev_shape[0]) is tuple:
+            enc_shape = prev_shape[0]
+        else:
+            enc_shape = prev_shape
+        self.embedl = enc_shape[-1]
+        seq = enc_shape[-2]
 
         # Initialize all sublayers
         for layer in self.children:
