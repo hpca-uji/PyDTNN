@@ -29,7 +29,7 @@ class DecoderCPU(Decoder[np.ndarray], AbstractBlockLayerCPU):
 
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
-        x_dec, x_enc, mask_dec = x
+        x_dec, x_enc, mask_dec = x if x else (None, None, None)
         x_dec_shape, x_enc_shape, mask_dec_shape = prev_shape
         mha_shape = (x_dec_shape, mask_dec_shape)
 
@@ -47,12 +47,14 @@ class DecoderCPU(Decoder[np.ndarray], AbstractBlockLayerCPU):
         self.layernormalization_enc_y_flatten = None  # x_aux.copy()
 
         self.feedforward.initialize(prev_shape=self.layernormalization_enc.shape, x=self.layernormalization_enc_y_flatten)
+        # x_aux = self.unflatten(self.feedforward.y)
+        self.feedforward_y_unflatten = None  # x_aux.copy()
         # x_aux = self.unflatten(self.feedforward.dx)
         self.feedforward_dx_unflatten = None  # x_aux.copy()
 
         self.dropout_2.initialize(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
 
-        self.layernormalization_2.initialize(prev_shape=prev_shape, x=self.dropout_2.y)
+        self.layernormalization_2.initialize(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
 

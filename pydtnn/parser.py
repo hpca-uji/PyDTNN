@@ -158,12 +158,16 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
-        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None, choices=["mnist", "cifar10", "imagenet", "archive", "folder", "chestxray", "synthetic"],
-                               help="Dataset to train: \'mnist\', \'cifar10\', \'cyclone\', \'tsunamis\', \'imagenet\', \'archive\', \'folder\' \'chestxray\' or \'synthetic\'. Default: \'None\'.")
+        _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None,
+                               help="Dataset to train: \'mnist\', \'cifar10\', \'synthetic\', …. Default: \'None\'.")
         _ds_group.add_argument('--dataset-percentage', type=float, default=0.0,
                                help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--dataset-path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
+        _ds_group.add_argument('--dataset-lang', type=str, default="en",
+                               help="Dataset language.")
+        _ds_group.add_argument('--dataset-lang2', type=str, default="de",
+                               help="Dataset second language.")
         _ds_group.add_argument('--synthetic-train-samples', default=1000, type=int,
                                help="Number of synthetic train sample. Default: 1000.")
         _ds_group.add_argument('--synthetic-test-samples', default=100, type=int,
@@ -261,8 +265,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _op_group.add_argument('--optimizer-density', type=float, default=0.01,
                                help="Variable for \'oktopk\' optimizers. Default: 0.01.")
         _op_group.add_argument('--loss-func', dest="loss_func_name", type=str, default="categorical_cross_entropy",
-                               choices=["categorical_cross_entropy", "binary_cross_entropy"],
-                               help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\'. Default \'categorical_cross_entropy\'.")
+                               choices=["categorical_cross_entropy", "binary_cross_entropy", "kl_divergence"],
+                               help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\' or \'kl_divergence\'. Default \'categorical_cross_entropy\'.")
         _op_group.add_argument(
             '--metrics',
             type=str,

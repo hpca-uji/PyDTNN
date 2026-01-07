@@ -1,5 +1,5 @@
 # Python Distributed Training of Neural Networks
-![Logo](logo.svg)
+![](logo.svg)
 
 ## Introduction
 PyDTNN is a light-weight library developed at Universitat Jaume I
@@ -162,10 +162,11 @@ The PyDTNN framework comes with a utility launcher called
     Optionally, the `AUTO` value sets `NCHW` when the option
     `--enable-gpu` is set and `NHWC` otherwise. Default: `NHWC`.
 - Dataset parameters:
-  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `cyclone`,
-    `tsunamis`, `imagenet`, `archive`, `folder`, `chestxray` or
-    `synthetic`. Default: `None`.
+  - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
+    …. Default: `None`.
   - `--dataset-path`: Path to dataset folder.
+  - `--dataset-lang`: Dataset language. Default: `en`.
+  - `--dataset-lang2`: Dataset second language. Default: `de`.
   - `--synthetic-train-samples`: Number of synthetic train sample.
     Default: `1000`.
   - `--synthetic-test-samples`: Number of synthetic train sample.
@@ -244,7 +245,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--optimizer-rho`: Variable for `rmsprop` optimizers. Default:
     `0.99`.
   - `--loss-func`: Loss functions that is evaluated on each trained
-    batch: `categorical_cross_entropy`, `binary_cross_entropy`. Default
+    batch: `categorical_cross_entropy`, `binary_cross_entropy` or `kl_divergence`. Default
     `categorical_cross_entropy`.
   - `--metrics`: List of comma-separated metrics that are evaluated on
     each trained batch: `categorical_accuracy`, `categorical_hinge`,
@@ -678,19 +679,19 @@ Testing: 100%|██████████████████████
 
 ## Credits
 The main contributors, in alphabetically order, to PyDTNN are:
-- Adrián Castelló Gimeno <adcastel@uji.es>
-- Andrés Enrique Tomás Domínguez <antodo@upv.es>
-- Enrique Salvador Quintana Ortí <quintana@uji.es>
-- Jose Ignacio Mestre Miravet <jmiravet@uji.es>
-- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
-- Mar Catalán Carbó <catalama@uji.es>
-- Miguel Pardo Navarro <mipardo@uji.es>
-- Miguel Ángel Prosper Quirós <mprosper@uji.es>
-- Paul Ximo Pluijter Izquierdo <pluijter@uji.es>
-- Sergio Barrachina Mir <barrachi@uji.es>
+- Adrián Castelló Gimeno ([adcastel@uji.es](mailto:adcastel@uji.es))
+- Andrés Enrique Tomás Domínguez ([antodo@upv.es](mailto:antodo@upv.es))
+- Enrique Salvador Quintana Ortí ([quintana@uji.es](mailto:quintana@uji.es))
+- Jose Ignacio Mestre Miravet ([jmiravet@uji.es](mailto:jmiravet@uji.es))
+- Manuel Francisco Dolz Zaragozá ([dolzm@uji.es](mailto:dolzm@uji.es))
+- Mar Catalán Carbó ([catalama@uji.es](mailto:catalama@uji.es))
+- Miguel Pardo Navarro ([mipardo@uji.es](mailto:mipardo@uji.es))
+- Miguel Ángel Prosper Quirós ([mprosper@uji.es](mailto:mprosper@uji.es))
+- Paul Ximo Pluijter Izquierdo ([pluijter@uji.es](mailto:pluijter@uji.es))
+- Sergio Barrachina Mir ([barrachi@uji.es](mailto:barrachi@uji.es))
 
 If you have questions or comments about PyDTNN, please contact:
-- Manuel Francisco Dolz Zaragozá <dolzm@uji.es>
+- Manuel Francisco Dolz Zaragozá ([dolzm@uji.es](mailto:dolzm@uji.es))
 
 ## Citing PyDTNN
 If you use PyDTNN, and you would like to acknowledge the project in your

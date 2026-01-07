@@ -3,7 +3,7 @@ from pydtnn.utils.constants import Array
 
 
 class EncoderDecoder[T: Array](AbstractBlockLayer[T]):
-    def __init__(self, enc_layers: int = 1, dec_layers: int = 1, embedl: int = 64, d_k: int = 3, heads: int = 10, d_ff: int = 256, dropout_rate: int = 0.5):
+    def __init__(self, enc_layers: int = 1, dec_layers: int = 1, embedl: int = 64, d_k: int = 3, heads: int = 10, d_ff: int = 256, dropout_rate: float = 0.5):
         super().__init__()
         self.embedl = embedl
         self.enc_layers = enc_layers
