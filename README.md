@@ -4,7 +4,7 @@
 ## Introduction
 PyDTNN is a lightweight library developed at Universitat Jaume I (Spain)
 for distributed and federated deep learning training and inference of
-convolutional and transformer-based neural networks. Intended as an initial
+convolutional and transformer-based neural networks, intended as an initial
 starting point for interacting with training and inference processes.
 PyDTNN prioritizes simplicity over peak performance, offering an approachable
 user interface that enables a gentle learning curve. To carry out training
