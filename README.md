@@ -1,19 +1,19 @@
 # Python Distributed Training of Neural Networks
-![](logo.svg)
+![](header.svg)
 
 ## Introduction
-PyDTNN is a light-weight library developed at Universitat Jaume I
-(Spain) for distributed Deep Learning training and inference that offers
-an initial starting point for interaction with distributed training of
-(and inference with) deep neural networks. PyDTNN prioritizes simplicity
-over efficiency, providing an amiable user interface which enables a
-flat accessing curve. To perform the training and inference processes,
-PyDTNN exploits distributed inter-process parallelism (via MPI) for
-clusters and intra-process (via multi-threading) parallelism to leverage
-the presence of multicore processors and GPUs at node level. For that,
-PyDTNN uses mpi4py/pympi/NCCL for message-passing, BLAS calls via
-NumPy/Cython for multicore processors and PyCUDA/cuDNN/cuBLAS for NVIDIA
-GPUs.
+PyDTNN is a lightweight library developed at Universitat Jaume I (Spain)
+for distributed and federated deep learning training and inference of
+convolutional and transformer-based neural networks. Intended as an initial
+starting point for interacting with training and inference processes.
+PyDTNN prioritizes simplicity over peak performance, offering an approachable
+user interface that enables a gentle learning curve. To carry out training
+and inference, PyDTNN exploits inter-process parallelism (via MPI) and
+intra-process parallelism (via multithreading), leveraging the capabilities
+of multicore processors and GPUs at the node level. For this purpose,
+PyDTNN relies on mpi4py/pympi/NCCL for message passing, BLAS routines
+accessed through NumPy/Cython for multicore processors, and PyCUDA/cuDNN/cuBLAS
+for GPU acceleration.
 
 Supported layers:
 - Fully-connected
@@ -22,14 +22,18 @@ Supported layers:
 - Average pooling 2D
 - Dropout
 - Flatten
+- Feed Forward
+- Multi-head attention
 - Batch normalization
+- Encoder & Decorder (for transformer nets, e.g., Bert)
 - Addition block (for residual nets, e.g., ResNet)
 - Concatenation block (for channel concatenation-based nets, e.g.,
   Inception, GoogleNet, DenseNet, etc.)
 
 Supported datasets:
 - **MNIST**: handwritten digit database. This dataset is included into
-  the repository.
+  the repository. Its binary version can be
+  downloaded from: <https://github.com/hpca-uji/PyDTNN>
 - **CIFAR10**: database of the 80 million tiny images dataset. This
   dataset is not included into the repository. Its binary version can be
   downloaded from: <https://www.cs.toronto.edu/~kriz/cifar.html>
@@ -43,6 +47,7 @@ Supported datasets:
 - **ChestXray**: the NIH Chest X-ray dataset consists of 100,000
   de-identified images of chest x-rays. The images are in PNG format. It
   can be downloaded from: <https://nihcc.app.box.com/v/ChestXray-NIHCC>
+- And others via generic data loaders.
 
 ## Installing PyDTNN from source
 Download PyDTNN source code from its GitHub repository and enter the
@@ -734,3 +739,5 @@ The PyDTNN library has been partially supported by:
   Aprendizaje Federado en procesadores de bajo consumo y aceleradores
   (CIBER-CAFE)"** funded by the Spanish National Cybersecurity
   Institute.
+
+![](footer.jpg)
