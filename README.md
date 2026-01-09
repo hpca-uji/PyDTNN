@@ -47,6 +47,14 @@ Supported datasets:
 - **ChestXray**: the NIH Chest X-ray dataset consists of 100,000
   de-identified images of chest x-rays. The images are in PNG format. It
   can be downloaded from: <https://nihcc.app.box.com/v/ChestXray-NIHCC>
+- **IWSLT**: The IWSLT 2017 Multilingual Task addresses text translation,
+  including zero-shot translation, with a single MT system across
+  all directions including English, German, Dutch, Italian and
+  Romanian. As unofficial task, conventional bilingual text
+  translation is offered between English and Arabic, French,
+  Japanese, Chinese, German and Korean. This dataset is included into
+  the repository. Its binary version can be
+  downloaded from: <https://github.com/hpca-uji/PyDTNN>
 - And others via generic data loaders.
 
 ## Installing PyDTNN from source
