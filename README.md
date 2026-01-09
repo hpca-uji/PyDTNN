@@ -25,7 +25,7 @@ Supported layers:
 - Feed Forward
 - Multi-head attention
 - Batch normalization
-- Encoder & Decorder (for transformer nets, e.g., Bert)
+- Encoder & Decoder (for transformer nets, e.g., Bert)
 - Addition block (for residual nets, e.g., ResNet)
 - Concatenation block (for channel concatenation-based nets, e.g.,
   Inception, GoogleNet, DenseNet, etc.)
