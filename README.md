@@ -81,10 +81,10 @@ Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-git submodule update --init vendor/net-queue
+git submodule update --init ./vendor/net-queue
 pip install ./vendor/net-queue
 
-git submodule update --init vendor/pympi
+git submodule update --init ./vendor/pympi
 pip install ./vendor/pympi
 
 pip install .[mpi]
@@ -128,7 +128,7 @@ transport with:
 ```sh
 export PYMPI_SSL=yes
 export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
-export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
+export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server certificate
 ```
 
 For more information on how to manage external dependencies see
@@ -157,19 +157,19 @@ The PyDTNN framework comes with a utility launcher called
   - `--history-file`: Filename to save training loss and metrics.
   - `--shared-storage`: If `True` ranks assume they share the file
     system. Default: `True`.
-  - `--model-sync-freq`: Number of batches between model syncronization.
-    The `0` value syncronizes gradients every batch. Positive values
-    syncronizes gradients and weights every N batches. Negative values
-    disables syncronization. Default: `0`.
-  - `--model-sync-alg`: Aggregation method used to syncronize models:
+  - `--model-sync-freq`: Number of batches between model synchronization.
+    The `0` value synchronizes gradients every batch. Positive values
+    synchronizes gradients and weights every N batches. Negative values
+    disables synchronization. Default: `0`.
+  - `--model-sync-alg`: Aggregation method used to synchronize models:
     `avg`, `wavg` or `invwavg`. Default: `avg`.
-  - `--model-sync-participation`: Rank participation to syncronize
+  - `--model-sync-participation`: Rank participation to synchronize
     models: `all` or `avail2all`. Default: `all`.
-  - `--model-sync-min-avail`: Minumun ranks with data required to
-    syncronize models. Default: `0`.
-  - `--initial-model-sync`: Sincronize models on training start.
+  - `--model-sync-min-avail`: Minimum ranks with data required to
+    synchronize models. Default: `0`.
+  - `--initial-model-sync`: Synchronize models on training start.
     Default: `True`.
-  - `--final-model-sync`: Sincronize models on training end. Default:
+  - `--final-model-sync`: Synchronize models on training end. Default:
     `True`.
   - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
     Optionally, the `AUTO` value sets `NCHW` when the option
@@ -277,7 +277,7 @@ The PyDTNN framework comes with a utility launcher called
     scheduler. Default: `val_categorical_cross_entropy`.
   - `--early-stopping-patience`: Number of epochs with no improvement
     after which training will be stopped. Default: `10`.
-  - `--early-stopping-minimize`: Whether to minize the metric. If False,
+  - `--early-stopping-minimize`: Whether to minimize the metric. If False,
     it will maximize. Default: `True`.
   - `--reduce-lr-on-plateau-metric`: Loss metric monitored by
     `reduce_lr_on_plateau` scheduler. Default:
