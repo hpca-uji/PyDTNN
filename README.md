@@ -184,9 +184,9 @@ The PyDTNN framework comes with a utility launcher called
     Default: `1000`.
   - `--synthetic-test-samples`: Number of synthetic train sample.
     Default: `100`.
-  - `--synthetic-input-shape`: Number of synthetic input shape (coma
+  - `--synthetic-input-shape`: Synthetic input shape (coma
     separated). Default: `3,32,32`.
-  - `--synthetic-output-shape`: Number of synthetic output shape (coma
+  - `--synthetic-output-shape`: Synthetic output shape (coma
     separated). Default: `10`.
   - `--dataset-percentage`: Percentage of dataset that will be used. If
     it is `0`: it is deactivated; if is is a value below `1` (and above
@@ -232,8 +232,6 @@ The PyDTNN framework comes with a utility launcher called
     - `gemm`: Use the ConvGemm algorithm.
     - `winograd`: Use the CondWinograd algorithm.
     - `direct`: Use the ConvDirect algorithm.
-  - `--conv-direct-method`: The `ConvDirect` module to realize
-    convolutions in `Conv2D` layers.
   - `--conv-direct-method`: Use `ConvDirect` module to realize
     convolutions in `Conv2D` layers. `True` if specified.
   - `--conv-direct-methods-for-best-of`: `ConvDirect` modules to compare
