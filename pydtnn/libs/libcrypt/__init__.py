@@ -60,7 +60,7 @@ class Context[C]:
     _cls: type[Ciphertext]
 
     def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
-        """Inizialize context"""
+        """Initialize context"""
         self._poly_degree = poly_degree
         self._global_scale = global_scale
         self._security_level = security_level

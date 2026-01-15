@@ -336,7 +336,7 @@ class Model[T: Array]:
         if self.model_name:
             self._read_model(self.model_name)
 
-        # Syncronization parameters
+        # Synchronization parameters
         # NOTE: This parameter come from Parser.
         self.model_sync_alg = Model.SyncAlg(self.model_sync_alg)
 
@@ -344,7 +344,7 @@ class Model[T: Array]:
         self.model_sync_participation = Model.SyncParticipation(self.kwargs["model_sync_participation"])
 
     def _init_comms(self) -> None:
-        # Comunication type
+        # Communication type
         match self.parallel:
             case "sequential":
                 self.MPI, self.comm = (None, None)
@@ -355,7 +355,7 @@ class Model[T: Array]:
             case _:
                 raise ValueError(f"Parallel option '{self.parallel}' not recognized.")
 
-        # Comunication size
+        # Communication size
         self.rank_weight = 1.0
         self.comm_rank = self.rank = 0
         self.comm_size = self.nprocs = 1
@@ -366,7 +366,7 @@ class Model[T: Array]:
                 self.rank = self.comm_rank
                 self.nprocs = self.comm_size
 
-        # Comunication method
+        # Communication method
         match self.use_mpi_buffers:
             case None:
                 self.use_mpi_buffers = PROTOCOL is None
@@ -457,7 +457,7 @@ class Model[T: Array]:
         return self.kwargs.get(item)
 
     def _init_crypt(self, encryption_name: str) -> libcrypt.Context:
-        """Inizialize encryption context"""
+        """Initialize encryption context"""
         try:
             module = importlib.import_module(f"pydtnn.libs.libcrypt.{encryption_name}")
         except Exception as exc:
@@ -1097,7 +1097,7 @@ class Model[T: Array]:
             if global_terminate:
                 break
 
-        # Syncronize model
+        # Synchronize model
         if self.final_model_sync:
             self._weight_update(gradient=False, blocking=self.blocking_mpi)
 

@@ -144,17 +144,17 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
                                help="If \'True\' ranks assume they share the file system. Default: True.")
         _sy_group.add_argument('--model-sync-freq', type=int, default=0,
-                               help="Number of batches between model syncronization. The \'0\' value syncronizes gradients every batch. Positive values syncronizes gradients and weights every N batches. Negative values disables syncronization. Default: 0.")
+                               help="Number of batches between model synchronization. The \'0\' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
         _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
-                               help="Aggregation method used to syncronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
+                               help="Aggregation method used to synchronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
         _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
-                               help="Rank participation to syncronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
+                               help="Rank participation to synchronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
         _sy_group.add_argument('--model-sync-min-avail', type=int, default=0,
-                               help="Minumun ranks with data required to syncronize models. Default: 0.")
+                               help="Minimum ranks with data required to synchronize models. Default: 0.")
         _sy_group.add_argument('--initial-model-sync', type=bool_lambda, default=True,
-                               help="Sincronize models on training start. Default: True.")
+                               help="Synchronize models on training start. Default: True.")
         _sy_group.add_argument('--final-model-sync', type=bool_lambda, default=True,
-                               help="Sincronize models on training end. Default: True.")
+                               help="Synchronize models on training end. Default: True.")
 
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
@@ -173,9 +173,9 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group.add_argument('--synthetic-test-samples', default=100, type=int,
                                help="Number of synthetic train sample. Default: 100.")
         _ds_group.add_argument('--synthetic-input-shape', default="3,32,32", type=str,
-                               help="Number of synthetic input shape (coma separated). Default: 3,32,32.")
+                               help="Synthetic input shape (coma separated). Default: 3,32,32.")
         _ds_group.add_argument('--synthetic-output-shape', default="10", type=str,
-                               help="Number of synthetic input shape (coma separated). Default: 10.")
+                               help="Synthetic input shape (coma separated). Default: 10.")
         _ds_group.add_argument('--test-as-validation', default=False, type=bool_lambda,
                                help="Prevent making partitions on training data for training+validation data, use test data for validation. True if specified.")
         _ds_group.add_argument('--validation-split', type=factor, default=0.2,
@@ -285,7 +285,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _sh_group.add_argument('--early-stopping-patience', type=int, default=10,
                                help="Number of epochs with no improvement after which training will be stopped. Default: 10.")
         _sh_group.add_argument('--early-stopping-minimize', type=bool_lambda, default=True,
-                               help="Whether to minize the metric. If False, it will maximize. Default: True.")
+                               help="Whether to minimize the metric. If False, it will maximize. Default: True.")
         _sh_group.add_argument('--reduce-lr-on-plateau-metric', type=str, default="val_categorical_cross_entropy",
                                help="Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default: \'val_categorical_cross_entropy\'.")
         _sh_group.add_argument('--reduce-lr-on-plateau-factor', type=float, default=0.1,

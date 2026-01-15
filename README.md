@@ -1,19 +1,19 @@
 # Python Distributed Training of Neural Networks
-![](logo.svg)
+![](header.svg)
 
 ## Introduction
-PyDTNN is a light-weight library developed at Universitat Jaume I
-(Spain) for distributed Deep Learning training and inference that offers
-an initial starting point for interaction with distributed training of
-(and inference with) deep neural networks. PyDTNN prioritizes simplicity
-over efficiency, providing an amiable user interface which enables a
-flat accessing curve. To perform the training and inference processes,
-PyDTNN exploits distributed inter-process parallelism (via MPI) for
-clusters and intra-process (via multi-threading) parallelism to leverage
-the presence of multicore processors and GPUs at node level. For that,
-PyDTNN uses mpi4py/pympi/NCCL for message-passing, BLAS calls via
-NumPy/Cython for multicore processors and PyCUDA/cuDNN/cuBLAS for NVIDIA
-GPUs.
+PyDTNN is a lightweight library developed at Universitat Jaume I (Spain)
+for distributed and federated deep learning training and inference of
+convolutional and transformer-based neural networks, intended as an initial
+starting point for interacting with training and inference processes.
+PyDTNN prioritizes simplicity over peak performance, offering an approachable
+user interface that enables a gentle learning curve. To carry out training
+and inference, PyDTNN exploits inter-process parallelism (via MPI) and
+intra-process parallelism (via multithreading), leveraging the capabilities
+of multicore processors and GPUs at the node level. For this purpose,
+PyDTNN relies on mpi4py/pympi/NCCL for message passing, BLAS routines
+accessed through NumPy/Cython for multicore processors, and PyCUDA/cuDNN/cuBLAS
+for GPU acceleration.
 
 Supported layers:
 - Fully-connected
@@ -22,14 +22,18 @@ Supported layers:
 - Average pooling 2D
 - Dropout
 - Flatten
+- Feed Forward
+- Multi-head attention
 - Batch normalization
+- Encoder & Decoder (for transformer nets, e.g., Bert)
 - Addition block (for residual nets, e.g., ResNet)
 - Concatenation block (for channel concatenation-based nets, e.g.,
   Inception, GoogleNet, DenseNet, etc.)
 
 Supported datasets:
 - **MNIST**: handwritten digit database. This dataset is included into
-  the repository.
+  the repository. Its binary version can be
+  downloaded from: <https://github.com/hpca-uji/PyDTNN>
 - **CIFAR10**: database of the 80 million tiny images dataset. This
   dataset is not included into the repository. Its binary version can be
   downloaded from: <https://www.cs.toronto.edu/~kriz/cifar.html>
@@ -43,6 +47,15 @@ Supported datasets:
 - **ChestXray**: the NIH Chest X-ray dataset consists of 100,000
   de-identified images of chest x-rays. The images are in PNG format. It
   can be downloaded from: <https://nihcc.app.box.com/v/ChestXray-NIHCC>
+- **IWSLT**: the IWSLT 2017 Multilingual Task addresses text translation,
+  including zero-shot translation, with a single MT system across
+  all directions including English, German, Dutch, Italian and
+  Romanian. As unofficial task, conventional bilingual text
+  translation is offered between English and Arabic, French,
+  Japanese, Chinese, German and Korean. This dataset is included into
+  the repository. Its binary version can be
+  downloaded from: <https://github.com/hpca-uji/PyDTNN>
+- And others via generic data loaders.
 
 ## Installing PyDTNN from source
 Download PyDTNN source code from its GitHub repository and enter the
@@ -68,10 +81,10 @@ Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-git submodule update --init vendor/net-queue
+git submodule update --init ./vendor/net-queue
 pip install ./vendor/net-queue
 
-git submodule update --init vendor/pympi
+git submodule update --init ./vendor/pympi
 pip install ./vendor/pympi
 
 pip install .[mpi]
@@ -115,7 +128,7 @@ transport with:
 ```sh
 export PYMPI_SSL=yes
 export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
-export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server ceritficate
+export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server certificate
 ```
 
 For more information on how to manage external dependencies see
@@ -144,19 +157,19 @@ The PyDTNN framework comes with a utility launcher called
   - `--history-file`: Filename to save training loss and metrics.
   - `--shared-storage`: If `True` ranks assume they share the file
     system. Default: `True`.
-  - `--model-sync-freq`: Number of batches between model syncronization.
-    The `0` value syncronizes gradients every batch. Positive values
-    syncronizes gradients and weights every N batches. Negative values
-    disables syncronization. Default: `0`.
-  - `--model-sync-alg`: Aggregation method used to syncronize models:
+  - `--model-sync-freq`: Number of batches between model synchronization.
+    The `0` value synchronizes gradients every batch. Positive values
+    synchronizes gradients and weights every N batches. Negative values
+    disables synchronization. Default: `0`.
+  - `--model-sync-alg`: Aggregation method used to synchronize models:
     `avg`, `wavg` or `invwavg`. Default: `avg`.
-  - `--model-sync-participation`: Rank participation to syncronize
+  - `--model-sync-participation`: Rank participation to synchronize
     models: `all` or `avail2all`. Default: `all`.
-  - `--model-sync-min-avail`: Minumun ranks with data required to
-    syncronize models. Default: `0`.
-  - `--initial-model-sync`: Sincronize models on training start.
+  - `--model-sync-min-avail`: Minimum ranks with data required to
+    synchronize models. Default: `0`.
+  - `--initial-model-sync`: Synchronize models on training start.
     Default: `True`.
-  - `--final-model-sync`: Sincronize models on training end. Default:
+  - `--final-model-sync`: Synchronize models on training end. Default:
     `True`.
   - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
     Optionally, the `AUTO` value sets `NCHW` when the option
@@ -171,9 +184,9 @@ The PyDTNN framework comes with a utility launcher called
     Default: `1000`.
   - `--synthetic-test-samples`: Number of synthetic train sample.
     Default: `100`.
-  - `--synthetic-input-shape`: Number of synthetic input shape (coma
+  - `--synthetic-input-shape`: Synthetic input shape (coma
     separated). Default: `3,32,32`.
-  - `--synthetic-output-shape`: Number of synthetic output shape (coma
+  - `--synthetic-output-shape`: Synthetic output shape (coma
     separated). Default: `10`.
   - `--dataset-percentage`: Percentage of dataset that will be used. If
     it is `0`: it is deactivated; if is is a value below `1` (and above
@@ -219,8 +232,6 @@ The PyDTNN framework comes with a utility launcher called
     - `gemm`: Use the ConvGemm algorithm.
     - `winograd`: Use the CondWinograd algorithm.
     - `direct`: Use the ConvDirect algorithm.
-  - `--conv-direct-method`: The `ConvDirect` module to realize
-    convolutions in `Conv2D` layers.
   - `--conv-direct-method`: Use `ConvDirect` module to realize
     convolutions in `Conv2D` layers. `True` if specified.
   - `--conv-direct-methods-for-best-of`: `ConvDirect` modules to compare
@@ -264,7 +275,7 @@ The PyDTNN framework comes with a utility launcher called
     scheduler. Default: `val_categorical_cross_entropy`.
   - `--early-stopping-patience`: Number of epochs with no improvement
     after which training will be stopped. Default: `10`.
-  - `--early-stopping-minimize`: Whether to minize the metric. If False,
+  - `--early-stopping-minimize`: Whether to minimize the metric. If False,
     it will maximize. Default: `True`.
   - `--reduce-lr-on-plateau-metric`: Loss metric monitored by
     `reduce_lr_on_plateau` scheduler. Default:
@@ -734,3 +745,5 @@ The PyDTNN library has been partially supported by:
   Aprendizaje Federado en procesadores de bajo consumo y aceleradores
   (CIBER-CAFE)"** funded by the Spanish National Cybersecurity
   Institute.
+
+![](footer.jpg)

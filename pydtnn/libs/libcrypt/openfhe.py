@@ -39,7 +39,7 @@ class Context(libcrypt.Context[openfhe.Ciphertext]):
     _cls = Ciphertext
 
     def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
-        """Inizialize context"""
+        """Initialize context"""
         super().__init__(poly_degree, global_scale, security_level)
 
         ring_dim = 2 ** self._poly_degree

@@ -1,7 +1,7 @@
 """TenSEAL encryption"""
 
 # NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
-# FIXME: Serialization preformance
+# FIXME: Serialization performance
 
 import sys
 import pickle
@@ -83,7 +83,7 @@ class Context(libcrypt.Context[CKKSVector]):
     _cls = Ciphertext
 
     def __init__(self, poly_degree: int = 13, global_scale: int = 40, security_level: int = 128) -> None:
-        """Inizialize context"""
+        """Initialize context"""
         super().__init__(poly_degree, global_scale, security_level)
 
         poly_degree = 2 ** self._poly_degree
