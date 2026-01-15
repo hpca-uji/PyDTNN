@@ -32,8 +32,8 @@ class ActivationGPU(Activation[TensorGPU]):
         # The following attributes will be initalized later.
         self.x: TensorGPU = None  # type: ignore
         self.dx: TensorGPU = None  # type: ignore
-        self.grid = None
-        self.block = None
+        self.grid: tuple[int, int, int] = None  # type: ignore
+        self.block: tuple[int, int, int] = None  # type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
