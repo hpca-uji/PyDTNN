@@ -49,8 +49,8 @@ cuda = [
     "nvidia-cudnn>=8.1.1.33"
 ]
 mpi = [
-    "net-queue>=0.1.0",
-    "pympi>=0.1.0",
+    "net-queue>=1.1.0",
+    "pympi>=1.0.0",
     "mpi4py>=4.1.0"
 ]
 fhe = [
