@@ -689,17 +689,18 @@ Testing: 100%|██████████████████████
 ```
 
 ## Credits
-The main contributors, in alphabetically order, to PyDTNN are:
-- Adrián Castelló Gimeno ([adcastel@uji.es](mailto:adcastel@uji.es))
-- Andrés Enrique Tomás Domínguez ([antodo@upv.es](mailto:antodo@upv.es))
-- Enrique Salvador Quintana Ortí ([quintana@uji.es](mailto:quintana@uji.es))
-- Jose Ignacio Mestre Miravet ([jmiravet@uji.es](mailto:jmiravet@uji.es))
-- Manuel Francisco Dolz Zaragozá ([dolzm@uji.es](mailto:dolzm@uji.es))
-- Mar Catalán Carbó ([catalama@uji.es](mailto:catalama@uji.es))
-- Miguel Pardo Navarro ([mipardo@uji.es](mailto:mipardo@uji.es))
+The main contributors to PyDTNN are:
 - Miguel Ángel Prosper Quirós ([mprosper@uji.es](mailto:mprosper@uji.es))
 - Paul Ximo Pluijter Izquierdo ([pluijter@uji.es](mailto:pluijter@uji.es))
+- Manuel Francisco Dolz Zaragozá ([dolzm@uji.es](mailto:dolzm@uji.es))
 - Sergio Barrachina Mir ([barrachi@uji.es](mailto:barrachi@uji.es))
+- Miguel Pardo Navarro ([mipardo@uji.es](mailto:mipardo@uji.es))
+- Andrés Enrique Tomás Domínguez ([antodo@upv.es](mailto:antodo@upv.es))
+- Adrián Castelló Gimeno ([adcastel@uji.es](mailto:adcastel@uji.es))
+- Adrián Bartolomé López ([abartolo@uji.es](mailto:abartolo@uji.es))
+- Mar Catalán Carbó ([catalama@uji.es](mailto:catalama@uji.es))
+- Jose Ignacio Mestre Miravet ([jmiravet@uji.es](mailto:jmiravet@uji.es))
+- Enrique Salvador Quintana Ortí ([quintana@uji.es](mailto:quintana@uji.es))
 
 If you have questions or comments about PyDTNN, please contact:
 - Manuel Francisco Dolz Zaragozá ([dolzm@uji.es](mailto:dolzm@uji.es))
