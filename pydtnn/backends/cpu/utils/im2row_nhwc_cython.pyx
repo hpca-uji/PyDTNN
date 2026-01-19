@@ -28,7 +28,8 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
                        npDT[:,::1] rows,
                        int kh, int kw, int ho, int wo,
                        int vpadding, int hpadding,
-                       int vstride, int hstride, int vdilation, int hdilation) -> None:
+                       int vstride, int hstride, 
+                       int vdilation, int hdilation) -> None:
     # Initialize variables
     cdef:
         int n = x.shape[0]
@@ -146,8 +147,8 @@ def alt_row2im_nhwc_cython(npDT[:,::1] rows,
                             # x_y = hstride * yy + hdilation * jj - hpadding
                             yy = ((x_y + hpadding - hdilation * jj) / hstride)
 
-                            x_o = (<int> xx)
-                            y_o = (<int> yy)
+                            x_o = ((x_x + vpadding - vdilation * ii) % vstride)
+                            y_o = ((x_y + hpadding - hdilation * jj) % hstride)
 
                             if (x_o == xx) and (y_o == yy) and ((0 <= xx < ho) and (0 <= yy < wo)):
                                 row = nn * ho * wo + x_o * wo + y_o

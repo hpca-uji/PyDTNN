@@ -18,7 +18,7 @@ import multiprocessing
 import os
 
 import numpy as np
-from pydtnn.utils import parse_bool as bool_lambda
+from pydtnn.utils import parse_bool as bool_lambda, _get_gpus_per_node
 from functools import cache
 
 from typing import Any
@@ -62,16 +62,6 @@ def _get_threads_per_process():
     #  default value to form a new team for the first encountered parallel construct.
     threads_per_process = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
     return threads_per_process
-
-
-def _get_gpus_per_node():
-    import subprocess
-    try:
-        gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        gpus_per_node = 0
-    return gpus_per_node
-
 
 def _get_mpi_protocol():
     try:

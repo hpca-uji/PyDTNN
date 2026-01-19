@@ -15,6 +15,28 @@ from collections.abc import Iterable
 
 import numpy as np
 
+import subprocess
+import re
+
+def get_gpu_memory_use() -> str:
+    """
+    Note: it's necessary nvidia-smi.
+    
+    :return: The memory use.
+    :rtype: str
+    """
+    pattern = r"Used *: .*"
+    memory = subprocess.check_output(["nvidia-smi", "-q", "-d", "MEMORY"]).decode()
+    memory = re.search(pattern, memory).group().split(":")[-1].strip()
+    return memory
+
+def _get_gpus_per_node() -> int:
+    import subprocess
+    try:
+        gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        gpus_per_node = 0
+    return gpus_per_node
 
 class BackgroundGenerator[T](threading.Thread):
     def __init__(self, generator: Iterable[T], max_prefetch=0):
