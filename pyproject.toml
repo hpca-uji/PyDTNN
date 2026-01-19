@@ -1,21 +1,22 @@
 [project]
 name = "pydtnn"
-version = "2.0.0"
+version = "2.0.1"
 description = "Python Distributed Training of Neural Networks"
 readme = "README.md"
 license = "GPL-3.0-or-later"
 license-files = ["LICENSE"]
 authors = [
-    { name = "Adrián Castelló Gimeno", email = "adcastel@uji.es" },
-    { name = "Andrés Enrique Tomás Domínguez", email = "antodo@upv.es" },
-    { name = "Enrique Salvador Quintana Ortí", email = "quintana@uji.es" },
-    { name = "Jose Ignacio Mestre Miravet", email = "jmiravet@uji.es" },
     { name = "Manuel Francisco Dolz Zaragozá", email = "dolzm@uji.es" },
-    { name = "Mar Catalán Carbó", email = "catalama@uji.es" },
-    { name = "Miguel Pardo Navarro", email = "mipardo@uji.es" },
     { name = "Miguel Ángel Prosper Quirós", email = "mprosper@uji.es" },
     { name = "Paul Ximo Pluijter Izquierdo", email = "pluijter@uji.es" },
-    { name = "Sergio Barrachina Mir", email = "barrachi@uji.es" }
+    { name = "Sergio Barrachina Mir", email = "barrachi@uji.es" },
+    { name = "Miguel Pardo Navarro", email = "mipardo@uji.es" },
+    { name = "Andrés Enrique Tomás Domínguez", email = "antodo@upv.es" },
+    { name = "Adrián Castelló Gimeno", email = "adcastel@uji.es" },
+    { name = "Adrián Bartolomé López", email="abartolo@uji.es" },
+    { name = "Mar Catalán Carbó", email = "catalama@uji.es" },
+    { name = "Jose Ignacio Mestre Miravet", email = "jmiravet@uji.es" },
+    { name = "Enrique Salvador Quintana Ortí", email = "quintana@uji.es" }
 ]
 maintainers = [{ name = "Manuel Francisco Dolz Zaragozá", email = "dolzm@uji.es" }]
 classifiers = [
@@ -49,8 +50,8 @@ cuda = [
     "nvidia-cudnn>=8.1.1.33"
 ]
 mpi = [
-    "net-queue>=0.1.0",
-    "pympi>=0.1.0",
+    "net-queue>=1.1.0",
+    "pympi>=1.0.0",
     "mpi4py>=4.1.0"
 ]
 fhe = [
