@@ -238,6 +238,7 @@ class Model[T: Array]:
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
         self.nparams = 0
+        self.actual_size = 0
 
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
@@ -530,14 +531,16 @@ class Model[T: Array]:
 
         if self.nparams > 0:
             props["params"] = self.nparams
-            props["memory"] = utils.convert_size_bytes(self.nparams * self.dtype.itemsize)
+
+        if self.actual_size > 0:
+            props["memory"] = utils.convert_size_bytes(self.actual_size * self.dtype.itemsize)
 
         if self.layers:
             props["input"] = self.layers[0].shape
             props["output"] = self.layers[-1].shape
             props["batch-size"] = self.batch_size
             props["layers"] = len(self.get_all_layers())
-        
+
         if self.optimizer:
             props["opt_mem"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
 
@@ -621,6 +624,7 @@ class Model[T: Array]:
         layer.initialize(prev_shape, y)
 
         self.nparams += layer.nparams
+        self.actual_size += layer.actual_size
         self.layers.append(layer)
 
         if layer.act:

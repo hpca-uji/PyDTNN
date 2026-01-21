@@ -92,10 +92,9 @@ class LayerBase[T: Array](PromoteToBackend):
 
         if self.nparams > 0:
             props["params"] = self.nparams
-            props["memory"] = utils.convert_size_bytes(self.nparams * self.model.dtype.itemsize)
 
         if self.actual_size > 0:
-            props["actual_size"] = utils.convert_size_bytes(self.actual_size * self.model.dtype.itemsize)
+            props["memory"] = utils.convert_size_bytes(self.actual_size * self.model.dtype.itemsize)
 
         if self.prev_shape:
             props["input"] = self.prev_shape
