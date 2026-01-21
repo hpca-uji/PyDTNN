@@ -542,7 +542,7 @@ class Model[T: Array]:
             props["layers"] = len(self.get_all_layers())
 
         if self.optimizer:
-            props["opt_mem"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
+            props["optimizer-memory"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
 
         return props
 
