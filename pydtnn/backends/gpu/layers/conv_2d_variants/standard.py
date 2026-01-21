@@ -36,6 +36,8 @@ class Conv2DStandardGPU(Conv2DGPU):
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
+        self.actual_size += self.y.size + self.dx.size
+
         # Convolution params
         conv_mode = cudnn.cudnnConvolutionMode['CUDNN_CROSS_CORRELATION']
         self.fwd_algo = cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
@@ -71,6 +73,8 @@ class Conv2DStandardGPU(Conv2DGPU):
             if self.model.enable_cudnn_auto_conv_alg else \
             cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
 
+        base_conv_memory = getConvolutionWorkspaceSize()
+
         local_size = cudnn.cudnnGetConvolutionForwardWorkspaceSize(self.model.cudnn_handle,
                                                                    x.desc, self.weights.desc, self.conv_desc,
                                                                    self.y.desc, self.fwd_algo)
@@ -102,6 +106,8 @@ class Conv2DStandardGPU(Conv2DGPU):
 
         self.forward = self._forward_standard
         self.backward = self._backward_standard
+
+        self.actual_size += self.y.size + self.dx.size + (getConvolutionWorkspaceSize() - base_conv_memory)
     # -----
 
 

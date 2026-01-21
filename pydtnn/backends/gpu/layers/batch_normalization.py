@@ -94,6 +94,8 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
         self.factor = 1.0 - self.momentum
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+
+        self.actual_size += self.y.size + self.dx.size + self.save_inv_var.size + self.save_mean.size + self.running_var.size + self.running_mean.size + self.dbeta.size + self.dgamma.size + self.beta.size + self.gamma.size
     # ---
 
     def forward(self, x: TensorGPU) -> TensorGPU:

@@ -53,6 +53,8 @@ class Conv2DPointwiseGPU(Conv2DGPU):
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
+        self.actual_size += self.y.size + self.dx.size
+
         self.forward = self._forward_pointwise
         self.backward = self._backward_pointwise
         self.fwd_func: Function = self.cuda_pointwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)

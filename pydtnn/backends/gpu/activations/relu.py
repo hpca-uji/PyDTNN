@@ -33,6 +33,8 @@ class ReluGPU(Relu[TensorGPU], ActivationGPU):
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
+        self.actual_size += self.y.size + self.dx.size
+
     def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha,

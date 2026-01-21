@@ -53,6 +53,8 @@ class AbstractPool2DLayerGPU(AbstractPool2DLayer[TensorGPU], LayerGPU):
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
+        self.actual_size += self.y.size + self.dx.size
+
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,

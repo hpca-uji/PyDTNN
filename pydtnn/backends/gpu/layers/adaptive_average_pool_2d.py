@@ -318,11 +318,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
-        self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y: TensorGPU = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.actual_size += self.y.size + self.dx.size
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),

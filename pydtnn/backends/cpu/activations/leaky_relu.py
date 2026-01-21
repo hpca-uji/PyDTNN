@@ -16,8 +16,7 @@ class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         
-        self.actual_size += self._y.size
-        self.actual_size += self._mask.size
+        self.actual_size += self._y.size + self._mask.size
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]

@@ -13,6 +13,8 @@ class InputGPU(Input[TensorGPU], LayerGPU):
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
+        self.actual_size += self.y.size
+
     def forward(self, x: TensorGPU) -> TensorGPU:
         return x
 
