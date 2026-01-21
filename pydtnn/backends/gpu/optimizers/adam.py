@@ -66,6 +66,9 @@ class AdamGPU(Adam[TensorGPU], OptimizerGPU):
                 self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
+                self.actual_size += self.context[layer.id]["m_%s" % w_].size + self.context[layer.id]["v_%s" % w_].size  # type: ignore (They are both "gpuarray" and not "int")
+                
+
     def update(self, layer: LayerGPU):
         self.context[layer.id]["it"] += 1  #type: ignore ("it" is an "int".)
         it:int = self.context[layer.id]["it"]  #type: ignore ("it" is an "int".)

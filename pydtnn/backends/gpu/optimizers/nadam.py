@@ -67,6 +67,8 @@ class NadamGPU(Nadam[TensorGPU], OptimizerGPU):
                 self.context[layer.id]["m_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
+                self.actual_size += self.context[layer.id]["m_%s" % w_].size + self.context[layer.id]["v_%s" % w_].size  # type: ignore (They are both "gpuarray" and not "int")
+
     def update(self, layer: LayerGPU) -> None:
         self.context[layer]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
         it:int = self.context[layer]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)

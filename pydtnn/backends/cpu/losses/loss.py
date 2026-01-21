@@ -5,3 +5,7 @@ class LossCPU(Loss[np.ndarray]):
     """
     Extends a Loss class with the attributes and methods required by CPU Losses.
     """
+
+    def initialize(self) -> None:
+        super().initialize()
+        self.dx = np.ndarray((self.model.batch_size, *self.model.output_shape), dtype=self.model.dtype, order="C")

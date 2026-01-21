@@ -56,6 +56,8 @@ class RMSPropGPU(RMSProp[TensorGPU], OptimizerGPU):
                     w = getattr(layer, w_)
                     self.context[layer.id]["cache_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
+                    self.actual_size += self.context[layer.id]["cache_%s" % w_]  # type: ignore (They are both "gpuarray" and not "int")
+
     def update(self, layer: LayerGPU):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
