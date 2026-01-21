@@ -16,7 +16,11 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
+                    velocity = np.zeros_like(w, dtype=layer.model.dtype, order="C")
                     self.context[layer.id]["velocity_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+
+                    self.actual_size += velocity.size
+                    # TODO: Add the temporal variables size.
 
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():

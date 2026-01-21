@@ -15,6 +15,9 @@ class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
         self._y = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
         self.dx = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
 
+        self.actual_size += self._y.size
+        self.actual_size += self.dx.size
+
     def forward(self, x: np.ndarray) -> np.ndarray:
 
         self.y = self._y[:x.shape[0], :]

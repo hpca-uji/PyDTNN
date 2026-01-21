@@ -23,6 +23,12 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
                               dtype=self.model.dtype, order="C")
         self.sum_dy = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
                                dtype=self.model.dtype, order="C")
+        
+        self.actual_size += self._y.size
+        self.actual_size += self.mul_dy.size
+        self.actual_size += self.max_x.size
+        self.actual_size += self.sum_y.size
+        self.actual_size += self.sum_dy.size
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))

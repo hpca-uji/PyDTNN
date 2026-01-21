@@ -11,6 +11,8 @@ class TanhCPU(Tanh[np.ndarray], ActivationCPU):
         # NOTE: This attribute only stores data, its value before the operation doesn't matters; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
 
+        self.actual_size += self._y.size
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
         np.tanh(x, out=self.y,

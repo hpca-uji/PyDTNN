@@ -42,6 +42,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         if self.pooling_not_needed:
             self._forward = (lambda x: x)
         # else: Nothing special.
+        self.actual_size += self.y.size
 
     # -- END initialize -- #
 

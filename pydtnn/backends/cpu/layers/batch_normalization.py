@@ -31,9 +31,12 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         if self.spatial:
             self.ci, self.hi, self.wi = self.model.decode_shape(self.shape)
             shape_ = (self.ci,)
+            vars_shape = (self.model.batch_size * self.hi * self.wi, self.ci)
         else:
             self.ci = self.shape[0]
             shape_ = (self.ci,)
+            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
+            vars_shape = (self.model.batch_size, self.ci)
 
         self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype, order="C")
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
@@ -47,16 +50,12 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self._mean_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self._var_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.std: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-
-        if self.spatial:
-            self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.zeros((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.zeros((self.model.batch_size * self.hi * self.wi, self.ci), dtype=self.model.dtype, order="C")
-        else:
-            # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
-            self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.y = np.zeros((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
-            self.dy_xn = np.zeros((self.model.batch_size, self.ci), dtype=self.model.dtype, order="C")
+        
+        self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
+        self.y = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
+        self.dy_xn = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
+        
+        self.actual_size += self.nparams + self._mean_inv.size + self._var_inv.size + self.std.size + self.dx.size + self.y.size + self.dy_xn.size
     # --
 
     def forward(self, x: np.ndarray) -> np.ndarray:

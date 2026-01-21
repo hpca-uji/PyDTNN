@@ -16,6 +16,9 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
 
+        self.actual_size += self._y.size
+        self.actual_size += self._mask.size
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]
         self.mask: np.ndarray = self._mask[:x.shape[0], :]

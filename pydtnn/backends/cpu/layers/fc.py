@@ -24,14 +24,17 @@ class FCCPU(FC[np.ndarray], LayerCPU):
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
         # Initialize outputs:
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.db = np.zeros(self.shape, dtype=self.model.dtype, order="C")
         self.dy = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
         self.dw = np.zeros(shape=(*self.prev_shape, *self.shape), dtype=self.model.dtype, order="C")
         self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
 
         if self.use_bias:
             self.biases = self.biases_initializer(self.shape, self.model.dtype)
+            self.db = np.zeros(self.shape, dtype=self.model.dtype, order="C")
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+
+        self.actual_size += self.weights.size + self.dy.size + self.dw.size + self.dx.size + self.biases.size + self.db.size
+        
         # Performance model
         self.fwd_time = \
             matmul_time(m=self.model.batch_size, n=self.weights.shape[1], k=self.weights.shape[0],

@@ -18,9 +18,15 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
     def initialize(self, prev_shape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+        dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
+        self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
 
+        # ..
+        self.actual_size += self.y.size
+        self.actual_size += self.dx.size
+    # ----
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
 
@@ -87,7 +93,8 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
-        dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
+        dx = self.dx[:dy.shape[0], :]
+        dx.fill(0)
         average_pool_2d_bwd_nhwc_cython(dy, dx,
                                         dy.shape[0], self.hi, self.wi, self.ci,
                                         self.kh, self.kw, self.ho, self.wo,
@@ -116,7 +123,8 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
-        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
+        dx = self.dx[:dy.shape[0], :]
+        dx.fill(0)
         average_pool_2d_bwd_nchw_cython(dy, dx,
                                         dy.shape[0], self.hi, self.wi, self.ci,
                                         self.kh, self.kw, self.ho, self.wo,

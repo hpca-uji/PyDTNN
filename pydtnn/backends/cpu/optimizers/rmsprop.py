@@ -17,7 +17,11 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                 self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore 
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
-                    self.context[layer.id]["cache_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    cache = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    self.context[layer.id]["cache_%s" % w_] = cache
+                    
+                    self.actual_size += cache.size
+                    # TODO: Add the temporal variables size.
 
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():

@@ -24,8 +24,13 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
         super().initialize(prev_shape, x)
         self.minval = np.iinfo(self.model.dtype).min if np.issubdtype(self.model.dtype, np.integer) else np.finfo(self.model.dtype).min
         idx_max_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+        dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
+
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self._idx_max = np.zeros(idx_max_shape, dtype=np.int32)
+        self.dx = np.zeros(dx_shape, dtype=self.model.dtype, order="C")
+
+        self.actual_size += self._idx_max.size + self.dx.size
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
         y = np.zeros((x.shape[0],), dtype=self.model.dtype, order="C")
@@ -107,7 +112,8 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
         return dx.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=None)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
+        dx = self.dx[ :dy.shape[0], :]
+        dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         max_pool_2d_bwd_nhwc_cython(dy, self.idx_max, dx,
                                     dy.shape[0], self.hi, self.wi, self.ci,
@@ -134,7 +140,9 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
 
-        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
+        dx = self.dx[ :dy.shape[0], :]
+        dx.fill(0)
+        
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         max_pool_2d_bwd_nchw_cython(dy, self.idx_max, dx,
                                     dy.shape[0], self.hi, self.wi, self.ci,

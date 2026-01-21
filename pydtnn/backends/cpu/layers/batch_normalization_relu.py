@@ -20,6 +20,8 @@ class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormali
         self.forward = self._forward
         self.backward = self._backward
 
+        self.actual_size += self.y.size
+
     def _forward(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the BN + Relu"""
 

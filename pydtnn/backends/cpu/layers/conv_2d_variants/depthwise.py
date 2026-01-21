@@ -41,6 +41,8 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
 
         self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
         self._y = np.zeros(shape=_y_shape, dtype=self.model.dtype, order="C")
+
+        self.actual_size += self.dx.size + self._y.size
     # ---
 
     def _forward_depthwise_nhwc(self, x: np.ndarray) -> np.ndarray:

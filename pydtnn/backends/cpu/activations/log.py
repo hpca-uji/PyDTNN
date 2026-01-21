@@ -13,6 +13,9 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
         self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
         self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
 
+        self.actual_size += self.y.size
+        self.actual_size += self.dx.size
+
     def _forward_numpy(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:
         y = self.y[:x.shape[0], :]

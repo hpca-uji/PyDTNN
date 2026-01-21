@@ -68,6 +68,7 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         # self.dw (this one too, but it's initalized in Conv2DCPU)
         self.y = np.zeros(shape=y_shape, dtype=self.model.dtype, order="C")
         self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
+        self.actual_size += self.y.size + self.dx.size
     # ------
 
     def _forward_pointwise_nhwc(self, x: np.ndarray) -> np.ndarray:

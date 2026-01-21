@@ -15,8 +15,13 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
             for w_ in layer.grad_vars.keys():
                 w: np.ndarray = getattr(layer, w_)
-                self.context[layer.id]["m_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
-                self.context[layer.id]["v_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                momentum = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                velocity = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                self.context[layer.id]["m_%s" % w_] = momentum
+                self.context[layer.id]["v_%s" % w_] = velocity
+                
+                self.actual_size += momentum.size + velocity.size
+                # TODO: Add the temporal variables size.
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer.id]["it"] += 1

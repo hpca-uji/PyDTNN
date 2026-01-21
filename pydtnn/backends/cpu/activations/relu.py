@@ -17,7 +17,9 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
-        self.dx = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
+
+        self.actual_size += self._y.size
+        self.actual_size += self._mask.size
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         n = x.shape[0]
@@ -27,6 +29,5 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dx = self.dx[:dy.shape[0], :]
-        np.multiply(dy, self.mask, out=dx, dtype=self.model.dtype, order="C")
-        return dx
+        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
+        return dy

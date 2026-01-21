@@ -49,6 +49,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.res = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
         self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
         self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
+
+        self.actual_size += self.dx.size + self.res.size + self._dw.size + self.res_bw.size
     # ---
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -56,7 +58,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
-        x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C", copy=None)
+        #x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C", copy=None)
+        x_rows = self._x_rows[:dim_n, :]
         res = self.res[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
@@ -131,7 +134,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
     def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
 
-        res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C", copy=None)
+        #res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C", copy=None)
+        res = self.res_bw[:(dy.shape[0] * self.ho * self.wo), :]
         
         dx = self.dx[:dy.shape[0], :]
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
