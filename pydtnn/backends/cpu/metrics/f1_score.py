@@ -34,8 +34,6 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
         np.copyto(false_positives, self.conf_matrix_metric.get_false_positives())
         np.copyto(false_negatives, self.conf_matrix_metric.get_false_negatives())
 
-        
-
         # f1 =  2 * true_positives / (2 * true_positives + false_positives + false_negatives
         np.multiply(2, true_positives, out=true_positives)
         np.add(true_positives, false_positives, out=aggregation)

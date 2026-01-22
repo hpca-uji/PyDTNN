@@ -9,7 +9,7 @@ class RegressionMAECPU(RegressionMAE[np.ndarray], MetricCPU):
     def initialize(self) -> None:
         super().initialize()
         self.diff = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        
+
         self.actual_size += self.diff.size
     # ----
 

@@ -8,9 +8,8 @@ class MulticlassConfusionMatrixCPU(MulticlassConfusionMatrix[np.ndarray], Metric
     def initialize(self) -> None:
         super().initialize()
         _, target_classes = self.shape
-
         self.conf_matrix:np.ndarray = np.zeros((target_classes, target_classes), dtype=np.int32)
-        
+
         self.actual_size += self.conf_matrix.size
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
@@ -30,8 +29,8 @@ class MulticlassConfusionMatrixCPU(MulticlassConfusionMatrix[np.ndarray], Metric
         self.conf_matrix.fill(0)
 
         for i in range(n):
-            target_class = np.nonzero(y_targ[i]== 1)[0]
-            predicted_class = np.nonzero(y_pred[i]== 1)[0]
+            target_class = int(np.nonzero(y_targ[i] == 1)[0])
+            predicted_class = int(np.nonzero(y_pred[i] == 1)[0])
             self.conf_matrix[target_class, predicted_class] += 1
         
         return self.conf_matrix
