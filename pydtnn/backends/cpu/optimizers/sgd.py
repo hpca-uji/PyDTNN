@@ -17,15 +17,21 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
                     velocity = np.zeros_like(w, dtype=layer.model.dtype, order="C")
-                    self.context[layer.id]["velocity_%s" % w_] = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    temp_w = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    temp_v = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    self.context[layer.id]["velocity_%s" % w_] = velocity
+                    self.context[layer.id]["temp_w_%s" % w_] = temp_w
+                    self.context[layer.id]["temp_w_%s" % w_] = temp_v
 
-                    self.actual_size += velocity.size
-                    # TODO: Add the temporal variables size.
+                    self.actual_size += velocity.size + temp_w.size + temp_v.size
+            # else: continue
 
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # type: ignore
+            temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
+            temp_v: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
             w: np.ndarray
             dw: np.ndarray
 
@@ -44,17 +50,17 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 # else:
                 #    w -= self.learning_rate * (self.decay * w + velocity)
                 if self.nesterov:
-                    v = np.multiply(velocity, self.momentum, dtype=self.dtype, order="C")
-                    np.add(v, dw, out=v, 
+                    np.multiply(velocity, self.momentum, dtype=self.dtype, order="C", out=temp_v)
+                    np.add(temp_v, dw, out=temp_v,
                            dtype=self.dtype)
                 else:
-                    v = velocity
-                temp_w = np.multiply(w, self.decay, dtype=self.dtype, order="C")
-                np.add(temp_w, v, out=temp_w,
+                    #np.copyto(temp_v, velocity)
+                    temp_v[:] = velocity
+                np.multiply(w, self.decay, dtype=self.dtype, order="C", out=temp_w)
+                np.add(temp_w, temp_v, out=temp_w,
                        dtype=self.dtype)
                 np.multiply(temp_w, self.learning_rate, out=temp_w, 
                             dtype=self.dtype)
                 np.subtract(w, temp_w, out=w,
                             dtype=self.dtype)
-                del temp_w
             # else: continue
