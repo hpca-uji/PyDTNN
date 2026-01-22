@@ -8,13 +8,12 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        shape = (self.model.batch_size, *self.shape)
 
-        self.neg_targ = np.zeros(shape, dtype=self.model.dtype, order="C")
-        self.log_maximum = np.zeros(shape, dtype=self.model.dtype, order="C")
-        self._y_pred = np.zeros(shape, dtype=self.model.dtype, order="C")
-        self.div_y = np.zeros(shape, dtype=self.model.dtype, order="C")
-        self.neg_pred = np.zeros(shape, dtype=self.model.dtype, order="C")
+        self.neg_targ = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        self.log_maximum = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        self._y_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        self.div_y = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        self.neg_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
 
         self.actual_size = self.neg_targ.size + self.log_maximum.size + self._y_pred.size + self.div_y.size + self.neg_pred.size
 

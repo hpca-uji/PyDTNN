@@ -8,20 +8,22 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        shape = (self.model.batch_size, *self.shape)
-        self._argmax = np.zeros(shape, dtype=self.model.dtype, order="C")
-        self._y_pred = np.zeros(shape, dtype=self.model.dtype, order="C")
-        self._y_pred_op = np.zeros(shape, dtype=self.model.dtype, order="C")
+
+        self._argmax = np.zeros(self.model.batch_size, dtype=np.int32, order="C")
+        self._y_pred_op = np.zeros(self.model.batch_size, dtype=self.model.dtype, order="C")
+
+        self._y_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        
         _y_pred_sliced_size = self.model.batch_size
 
         self.actual_size += self._argmax.size + self._y_pred.size + self._y_pred_op.size + self.dx.size + _y_pred_sliced_size
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         b = y_pred.shape[0]
-        _y_pred = self._y_pred[:b, :]
-        _argmax = self._argmax[:b, :]
-        _y_pred_op = self._y_pred_op[:b, :]
-        dx = self.dx[:b, :]
+        _argmax = self._argmax[:b]
+        _y_pred = self._y_pred[:b]
+        _y_pred_op = self._y_pred_op[:b]
+        dx = self.dx[:b]
         
         # Common
         b_range: np.ndarray = np.arange(b)
