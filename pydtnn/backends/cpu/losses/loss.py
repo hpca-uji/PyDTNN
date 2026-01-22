@@ -8,4 +8,4 @@ class LossCPU(Loss[np.ndarray]):
 
     def initialize(self) -> None:
         super().initialize()
-        self.dx = np.ndarray((self.model.batch_size, *self.model.output_shape), dtype=self.model.dtype, order="C")
+        self.dx = np.ndarray(self.shape, dtype=self.model.dtype, order="C")

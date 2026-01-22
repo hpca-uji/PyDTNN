@@ -14,9 +14,9 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
 
         self._y_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
         
-        _y_pred_sliced_size = self.model.batch_size
+        #_y_pred_sliced_size = self.model.batch_size
 
-        self.actual_size += self._argmax.size + self._y_pred.size + self._y_pred_op.size + self.dx.size + _y_pred_sliced_size
+        self.actual_size += self._argmax.size + self._y_pred.size + self._y_pred_op.size + self.dx.size #+ _y_pred_sliced_size
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         b = y_pred.shape[0]

@@ -22,12 +22,12 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
         
         b = y_targ.shape[0]
 
-        dx = self.dx[:b, :]
-        neg_targ = self.neg_targ[:b, :]
-        log_maximum = self.log_maximum[:b, :]
-        _y_pred = self._y_pred[:b, :]
-        div_y = self.div_y[:b, :]
-        neg_pred = self.neg_pred[:b, :]
+        dx = self.dx[:b]
+        neg_targ = self.neg_targ[:b]
+        log_maximum = self.log_maximum[:b]
+        _y_pred = self._y_pred[:b]
+        div_y = self.div_y[:b]
+        neg_pred = self.neg_pred[:b]
 
         # Loss
         # loss: float = -np.sum(np.log(np.maximum((1 - y_targ) - _y_pred, eps))) / b
