@@ -9,15 +9,40 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
     conf_matrix_metric: BinaryConfusionMatrixCPU
 
+    def initialize(self) -> None:
+        super().initialize()
+        self.true_positives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
+        self.false_positives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
+        self.false_negatives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
+        self.are_zeros = np.zeros(self.model.batch_size, dtype=np.bool, order="C")
+
+        self.actual_size += self.true_positives.size + self.false_positives.size + self.false_negatives.size + self.are_zeros.size
+    # ----
+
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        true_positives = self.conf_matrix_metric.get_true_positives()
-        false_positives = self.conf_matrix_metric.get_false_positives()
-        false_negatives = self.conf_matrix_metric.get_false_negatives()
+        n = y_pred.shape[0]
+        true_positives = self.true_positives[:n]
+        false_positives = self.false_positives[:n]
+        false_negatives = self.false_negatives[:n]
+        are_zeros = self.are_zeros[:n]
 
-        # 2 * true_positives / (2 * true_positives + false_positives + false_negatives
-        f1 = np.multiply(2, true_positives, dtype=np.dtype(float), order="C")
-        divider = np.add(f1, false_positives,dtype=np.dtype(float), order="C")
-        divider = np.add(divider, false_negatives, dtype=np.dtype(float), order="C")
+        # This variable is not necessary, is to make the code more understandable.
+        aggregation = false_positives
+        f1 = aggregation
 
-        div_arrays_set_if_zero(f1,  divider, default_value=0.0)
+        np.copyto(true_positives, self.conf_matrix_metric.get_true_positives())
+        np.copyto(false_positives, self.conf_matrix_metric.get_false_positives())
+        np.copyto(false_negatives, self.conf_matrix_metric.get_false_negatives())
+
+        
+
+        # f1 =  2 * true_positives / (2 * true_positives + false_positives + false_negatives
+        np.multiply(2, true_positives, out=true_positives)
+        np.add(true_positives, false_positives, out=aggregation)
+        np.add(aggregation, false_negatives, out=aggregation)
+
+        #div_arrays_set_if_zero(true_positives,  aggregation, default_value=0.0)
+        np.not_equal(aggregation, 0, out=are_zeros)
+        np.divide(true_positives, aggregation, out=f1, where=(are_zeros))
+
         return float(np.average(f1))

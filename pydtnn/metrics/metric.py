@@ -12,6 +12,7 @@ class Metric[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape
         self.eps = eps
+        self.actual_size:int = 0
 
     def initialize(self) -> None:
         pass
