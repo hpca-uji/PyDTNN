@@ -8,7 +8,7 @@ class CategoricalAccuracyCPU(CategoricalAccuracy[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        self._argmax = np.zeros(self.model.batch_size, dtype=self.model.dtype, order="C")
+        self._argmax = np.zeros(self.model.batch_size, dtype=np.int32, order="C")
 
         self.actual_size += self._argmax.size # + arange_size = self.model.batch_size
     # ----

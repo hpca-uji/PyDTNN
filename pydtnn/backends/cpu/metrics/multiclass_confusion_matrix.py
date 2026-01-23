@@ -29,8 +29,8 @@ class MulticlassConfusionMatrixCPU(MulticlassConfusionMatrix[np.ndarray], Metric
         self.conf_matrix.fill(0)
 
         for i in range(n):
-            target_class = int(np.nonzero(y_targ[i] == 1)[0])
-            predicted_class = int(np.nonzero(y_pred[i] == 1)[0])
+            target_class = np.nonzero(y_targ[i] == 1)[0]
+            predicted_class = np.nonzero(y_pred[i] == 1)[0]
             self.conf_matrix[target_class, predicted_class] += 1
         
         return self.conf_matrix

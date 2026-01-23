@@ -11,18 +11,18 @@ class RecallCPU(Recall[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        self.true_positives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
-        self.false_negatives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
-        self.are_zeros = np.zeros(self.model.batch_size, dtype=np.bool, order="C")
+        shape = self.shape[1]
+        self.true_positives = np.zeros(shape, dtype=np.float32, order="C")
+        self.false_negatives = np.zeros(shape, dtype=np.float32, order="C")
+        self.are_zeros = np.zeros(shape, dtype=np.bool, order="C")
 
         self.actual_size += self.true_positives.size + self.false_negatives.size + self.are_zeros.size
     # ----
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        n = y_pred.shape[0]
-        true_positives = self.true_positives[:n]
-        false_negatives = self.false_negatives[:n]
-        are_zeros = self.are_zeros[:n]
+        true_positives = self.true_positives
+        false_negatives = self.false_negatives
+        are_zeros = self.are_zeros
         # This two variables are not necessary, are to make the code more understandable.
         real_positives = false_negatives
         recall = false_negatives

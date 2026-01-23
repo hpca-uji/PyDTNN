@@ -13,7 +13,7 @@ class KLDivergenceMetricCPU(KLDivergenceMetric[np.ndarray], MetricCPU):
         self.actual_size += self.loss.size
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        loss = self.loss[:y_pred[0]]
+        loss = self.loss[:y_pred.shape[0]]
         # loss = np.abs(y_pred * np.log(np.abs(y_pred / (y_targ + eps) + eps)))
         np.add(y_targ, self.eps, out=loss)
         np.divide(y_pred, loss, out=loss)

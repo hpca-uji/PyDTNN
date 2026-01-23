@@ -13,7 +13,7 @@ class CategoricalMAECPU(CategoricalMAE[np.ndarray], MetricCPU):
         self.actual_size += self.error.size
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        error = self.error[:y_pred[0]]
+        error = self.error[:y_pred.shape[0]]
         # return np.sum(np.absolute(1 - y_pred[np.arange(b), np.argmax(y_targ, axis=1)]))
         np.subtract(y_pred, y_targ, dtype=self.model.dtype, out=error)
         np.absolute(error, out=error, dtype=self.model.dtype)

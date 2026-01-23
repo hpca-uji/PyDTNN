@@ -10,9 +10,8 @@ class DropoutCPU(Dropout[np.ndarray], LayerCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if not self.model.evaluate_only:
-            self.mask: np.ndarray = None  # type: ignore (It will be initalized later.)
-            self.actual_size += int(np.prod(self.shape))
+        self.mask: np.ndarray = None  # type: ignore (It will be initalized later.)
+        self.actual_size += int(np.prod(self.shape))
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

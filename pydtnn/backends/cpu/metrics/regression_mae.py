@@ -14,7 +14,7 @@ class RegressionMAECPU(RegressionMAE[np.ndarray], MetricCPU):
     # ----
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        diff = self.diff[:y_pred[0]]
+        diff = self.diff[:y_pred.shape[0]]
         # return np.sum(np.absolute(y_targ - y_pred))
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)
         np.absolute(diff, out=diff, dtype=self.model.dtype, casting="unsafe")

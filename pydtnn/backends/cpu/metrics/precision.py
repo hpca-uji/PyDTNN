@@ -12,18 +12,18 @@ class PrecisionCPU(Precision[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        self.true_positives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
-        self.false_positives = np.zeros(self.model.batch_size, dtype=np.float32, order="C")
-        self.are_zeros = np.zeros(self.model.batch_size, dtype=np.bool, order="C")
+        shape = self.shape[1]
+        self.true_positives = np.zeros(shape, dtype=np.float32, order="C")
+        self.false_positives = np.zeros(shape, dtype=np.float32, order="C")
+        self.are_zeros = np.zeros(shape, dtype=np.bool, order="C")
 
         self.actual_size += self.true_positives.size + self.false_positives.size + self.are_zeros.size
     # ----
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        n = y_pred.shape[0]
-        true_positives = self.true_positives[:n]
-        false_positives = self.false_positives[:n]
-        are_zeros = self.are_zeros[:n]
+        true_positives = self.true_positives
+        false_positives = self.false_positives
+        are_zeros = self.are_zeros
         # This two variables are not necessary, are to make the code more understandable.
         positives = false_positives
         precision = false_positives
