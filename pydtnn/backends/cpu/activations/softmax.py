@@ -13,22 +13,18 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y = np.zeros(shape=(self.model.batch_size, *self.shape),
-                           dtype=self.model.dtype, order="C")
-        self.mul_dy = np.zeros(shape=(self.model.batch_size, *self.shape),
-                               dtype=self.model.dtype, order="C")
-        self.max_x = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
-                              dtype=self.model.dtype, order="C")
-        self.sum_y = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
-                              dtype=self.model.dtype, order="C")
-        self.sum_dy = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops),
-                               dtype=self.model.dtype, order="C")
-        
+        self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.max_x = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops), dtype=self.model.dtype, order="C")
+        self.sum_y = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops), dtype=self.model.dtype, order="C")
         self.actual_size += self._y.size
-        self.actual_size += self.mul_dy.size
         self.actual_size += self.max_x.size
         self.actual_size += self.sum_y.size
-        self.actual_size += self.sum_dy.size
+
+        if not self.model.evaluate_only:
+            self.mul_dy = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+            self.sum_dy = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops), dtype=self.model.dtype, order="C")
+            self.actual_size += self.mul_dy.size
+            self.actual_size += self.sum_dy.size
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))

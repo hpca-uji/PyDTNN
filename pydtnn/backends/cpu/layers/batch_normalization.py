@@ -40,22 +40,25 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype, order="C")
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
-        self.dgamma: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.dbeta: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
+
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._mean_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self._var_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.std: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+        self.y: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
         
-        self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
-        self.y = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
-        self.dy_xn = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
-        
-        self.actual_size += self.nparams + self._mean_inv.size + self._var_inv.size + self.std.size + self.dx.size + self.y.size + self.dy_xn.size
+        self.actual_size += self.nparams + self._mean_inv.size + self._var_inv.size + self.std.size + self.y.size
+
+        if not self.model.evaluate_only:
+            self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
+            self.dy_xn = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
+            self.dgamma: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+            self.dbeta: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
+            self.actual_size += self.dx.size + self.dy_xn.size + self.dgamma.size + self.dbeta.size
     # --
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -119,6 +122,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+    # ----
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
 

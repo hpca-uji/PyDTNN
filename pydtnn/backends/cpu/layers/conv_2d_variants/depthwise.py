@@ -39,10 +39,12 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
                 raise NotImplementedError(f"Format \"{self.model.tensor_format}\" is not supported in \"Conv2DDepthwiseCPU\" layer.")
         # ---
 
-        self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
         self._y = np.zeros(shape=_y_shape, dtype=self.model.dtype, order="C")
+        self.actual_size += self._y.size
 
-        self.actual_size += self.dx.size + self._y.size
+        if not self.model.evaluate_only:
+            self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
+            self.actual_size += self.dx.size
     # ---
 
     def _forward_depthwise_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -100,7 +102,7 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
     
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         
-        dx = self.dx[:dy.shape[0], ]
+        dx:np.ndarray = self.dx[:dy.shape[0], ]
         dx.fill(0)
 
         depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
@@ -118,7 +120,7 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
     
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
 
-        dx = self.dx[:dy.shape[0], ]
+        dx:np.ndarray = self.dx[:dy.shape[0], ]
         dx.fill(0)
 
         depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,

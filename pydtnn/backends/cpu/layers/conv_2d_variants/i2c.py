@@ -28,6 +28,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 _dw_shape = (self.co, self.dim_c)
                 res_bw_shape = (self.dim_c, self.dim_n)
                 dx_shape = (self.model.batch_size, self.ci, self.hi, self.wi)
+
+                self.actual_size += self._x_cols.size
             case TensorFormat.NHWC:
                 self.forward = self._forward_i2c_nhwc
                 self.backward = self._backward_i2c_nhwc
@@ -36,6 +38,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 _dw_shape = (self.dim_c, self.co)
                 res_bw_shape = (self.dim_n, self.dim_c)
                 dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
+
+                self.actual_size += self._x_rows.size
             case _:
                 _dw_shape = (None, )
                 res_bw_shape = (None, )
@@ -45,12 +49,16 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # -
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
         self.res = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
-        self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
-        self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
+        self.actual_size += self.res.size
 
-        self.actual_size += self.dx.size + self.res.size + self._dw.size + self.res_bw.size
+        if not self.model.evaluate_only:
+            self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
+            self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
+            self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
+
+            self.actual_size += self.dx.size + self._dw.size + self.res_bw.size
+
     # ---
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:

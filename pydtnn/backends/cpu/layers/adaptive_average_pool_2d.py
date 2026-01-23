@@ -38,12 +38,16 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
+        self.actual_size += self.y.size
+
+        if not self.model.evaluate_only:
+            dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
+            self.dx = np.zeros(dx_shape, dtype=self.model.dtype, order="C")
+            self.actual_size += self.dx.size
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)
         # else: Nothing special.
-        self.actual_size += self.y.size
-
     # -- END initialize -- #
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -67,14 +71,16 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
+        dx:np.ndarray = self.dx[:dy.shape[0]]
+        dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nhwc_cython(dy, dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
+        dx:np.ndarray = self.dx[:dy.shape[0]]
+        dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nchw_cython(dy, dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

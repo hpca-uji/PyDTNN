@@ -22,19 +22,28 @@ class FCCPU(FC[np.ndarray], LayerCPU):
     def initialize(self, prev_shape, x = None):
         super().initialize(prev_shape, x)
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
+        self.nparams += self.weights.size
+        self.actual_size += self.weights.size
+
         # Initialize outputs:
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.dy = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-        self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
-        self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype, order="C")
+        self.y = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.actual_size += self.y.size
+
+        if not self.model.evaluate_only:
+            self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
+            self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype, order="C")
+            self.actual_size += self.dx.size + self.dw.size
 
         if self.use_bias:
             self.biases = self.biases_initializer(self.shape, self.model.dtype)
-            self.db = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+            self.nparams += self.biases.size
+            self.actual_size += self.biases.size
 
-        self.actual_size += self.weights.size + self.dy.size + self.dw.size + self.dx.size + self.biases.size + self.db.size
-        
+            if not self.model.evaluate_only:
+                self.db = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+                self.actual_size += self.db.size
+
         # Performance model
         self.fwd_time = \
             matmul_time(m=self.model.batch_size, n=self.weights.shape[1], k=self.weights.shape[0],
@@ -51,19 +60,19 @@ class FCCPU(FC[np.ndarray], LayerCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.x = x
-        dy = self.dy[: x.shape[0], :]
+        y = self.y[: x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x, self.weights, out=dy, 
+        np.matmul(x, self.weights, out=y, 
                   dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
-            np.add(dy, self.biases, out=dy, 
+            np.add(y, self.biases, out=y, 
                    dtype=self.model.dtype, order="C")
 
-        return np.asarray(dy, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # ---
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
