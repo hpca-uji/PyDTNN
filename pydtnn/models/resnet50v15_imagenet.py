@@ -12,9 +12,9 @@ from pydtnn.layer_base import LayerBase
 from pydtnn.utils.initializers import he_uniform
 from pydtnn.activations.softmax import Softmax
 from pydtnn.layers.max_pool_2d import MaxPool2D
+from pydtnn.utils.constants import ArrayShape
 
-
-def resnet50v15_imagenet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def resnet50v15_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append
 

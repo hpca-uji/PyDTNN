@@ -11,9 +11,9 @@ from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer_base import LayerBase
 from pydtnn.utils.initializers import he_uniform
+from pydtnn.utils.constants import ArrayShape
 
-
-def resnet32(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def resnet32(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append
 

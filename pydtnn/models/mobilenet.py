@@ -8,7 +8,7 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer_base import LayerBase
-
+from pydtnn.utils.constants import ArrayShape
 # NOTE: PyDTNN follows PyTorch's definitions
 # NOTE: TensorFlow uses BatchNormalization with 1.001e-5 epsilon and 0.99 momentum
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
@@ -16,7 +16,7 @@ from pydtnn.layer_base import LayerBase
 # NOTE: TensorFlow uses LeakyReLU
 
 
-def mobileNet(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def mobileNet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     first_filters = 32
 
     model = list[LayerBase]()

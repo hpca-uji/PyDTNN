@@ -8,12 +8,11 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer_base import LayerBase
-
 from pydtnn.utils.initializers import he_uniform
 from pydtnn.layers.max_pool_2d import MaxPool2D
+from pydtnn.utils.constants import ArrayShape
 
-
-def vgg19(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def vgg19(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append
 

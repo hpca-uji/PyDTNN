@@ -9,9 +9,9 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer_base import LayerBase
+from pydtnn.utils.constants import ArrayShape
 
-
-def mobilenetv1(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def mobilenetv1(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append
 

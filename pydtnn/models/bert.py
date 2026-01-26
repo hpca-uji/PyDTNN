@@ -18,9 +18,9 @@ from collections.abc import Sequence
 from pydtnn.layer_base import LayerBase
 from pydtnn.layers.encoder import Encoder
 from pydtnn.layers.input import Input
+from pydtnn.utils.constants import ArrayShape
 
-
-def bert(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def bert(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     """Bert-Medium"""
     model = list[LayerBase]()
     _ = model.append
