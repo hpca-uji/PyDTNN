@@ -9,21 +9,39 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
     def initialize(self) -> None:
         super().initialize()
 
-        self._argmax = np.zeros(self.model.batch_size, dtype=np.int32, order="C")
-        self._y_pred_op = np.zeros(self.model.batch_size, dtype=self.model.dtype, order="C")
+        self._argmax_shape = (self.model.batch_size, )
+        self._y_pred_op_shape = (self.model.batch_size, )
+        self._y_pred_shape = self.shape
 
-        self._y_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        self.temp_size += int(np.prod(self._argmax_shape) + np.prod(self._y_pred_op_shape) + np.prod(self._y_pred_shape))
+
+        if not self.model.use_memory_pool:
+            self._argmax: np.ndarray = np.zeros(self._argmax_shape, dtype=np.int32, order="C")
+            self._y_pred_op: np.ndarray = np.zeros(self._y_pred_op_shape, dtype=self.model.dtype, order="C")
+            self._y_pred: np.ndarray = np.zeros(self._y_pred_shape, dtype=self.model.dtype, order="C")
+        else:
+            self._argmax: np.ndarray = None  # type: ignore (It will be initalized later)
+            self._y_pred_op: np.ndarray = None  # type: ignore (It will be initalized later)
+            self._y_pred: np.ndarray = None  # type: ignore (It will be initalized later)
         
         #_y_pred_sliced_size = self.model.batch_size
+        #+ _y_pred_sliced_size
 
-        self.actual_size += self._argmax.size + self._y_pred.size + self._y_pred_op.size + self.dx.size #+ _y_pred_sliced_size
+        self.actual_size += self.temp_size
+    
+    def post_initialize(self) -> None:
+        super().post_initialize()
+        self._argmax = np.asarray(self.model.memory_pool.get_ndarray(self._argmax_shape), dtype=np.int32, order="C", copy=None)
+        self._y_pred_op = self.model.memory_pool.get_ndarray(self._y_pred_op_shape)
+        self._y_pred = self.model.memory_pool.get_ndarray(self._y_pred_shape)
+        self.model.memory_pool.free_memory(self.temp_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         b = y_pred.shape[0]
-        _argmax = self._argmax[:b]
-        _y_pred = self._y_pred[:b]
-        _y_pred_op = self._y_pred_op[:b]
-        dx = self.dx[:b]
+        _argmax: np.ndarray = self._argmax[:b]
+        _y_pred: np.ndarray = self._y_pred[:b]
+        _y_pred_op: np.ndarray = self._y_pred_op[:b]
+        dx:np.ndarray = self.dx[:b]
         
         # Common
         b_range: np.ndarray = np.arange(b)

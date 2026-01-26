@@ -54,6 +54,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
+from pydtnn.utils.memory_pool import Memory_Pool
 
 
 # --- CONSTANS --- #
@@ -187,6 +188,7 @@ class Model[T: Array]:
     weights_and_bias_filename: str
     learning_rate_scaling: bool
     metrics: str
+    use_memory_pool: bool
 # ------------
 
     rank_weight: float
@@ -234,11 +236,13 @@ class Model[T: Array]:
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
+        self.memory_pool: Memory_Pool = None # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
         self.nparams = 0
         self.actual_size = 0
+        self.temp_size = 0
 
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
@@ -535,6 +539,13 @@ class Model[T: Array]:
         if self.actual_size > 0:
             props["memory"] = utils.convert_size_bytes(self.actual_size * self.dtype.itemsize)
 
+        if self.temp_size > 0:
+            props["temp_memory"] = utils.convert_size_bytes(self.temp_size * self.dtype.itemsize)
+
+        if self.actual_size > 0 and self.temp_size > 0:
+            props["persistent"] = utils.convert_size_bytes((self.actual_size - self.temp_size) * self.dtype.itemsize)
+            props["temp-percentage"] = (self.temp_size / self.actual_size)
+
         if self.layers:
             props["input"] = self.layers[0].shape
             props["output"] = self.layers[-1].shape
@@ -543,6 +554,20 @@ class Model[T: Array]:
 
         if self.optimizer:
             props["optimizer-memory"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
+            props["optimizer-temp"] = utils.convert_size_bytes(self.optimizer.temp_size * self.dtype.itemsize)
+        
+        if self.loss_func:
+            props["loss-memory"] = utils.convert_size_bytes(self.loss_func.actual_size * self.dtype.itemsize)
+            props["loss-temp-memory"] = utils.convert_size_bytes(self.loss_func.temp_size * self.dtype.itemsize)
+
+        if self.metrics_funcs:
+            metrics_size = 0
+            metric_temp_size = 0
+            for metric in self.metrics_funcs:
+                metrics_size += metric.actual_size
+                metric_temp_size += metric.temp_size
+            props["metrics-memory"] = utils.convert_size_bytes(metrics_size * self.dtype.itemsize)
+            props["metrics-temp-memory"] = utils.convert_size_bytes(metric_temp_size * self.dtype.itemsize)
 
         return props
 
@@ -625,6 +650,7 @@ class Model[T: Array]:
 
         self.nparams += layer.nparams
         self.actual_size += layer.actual_size
+        self.temp_size += layer.temp_size
         self.layers.append(layer)
 
         if layer.act:
@@ -746,6 +772,9 @@ class Model[T: Array]:
         for metric in self.metrics_funcs:
             metric.init_backend_from_model(self)
             metric.initialize()
+            self.actual_size += metric.actual_size
+            self.temp_size += metric.temp_size
+
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
@@ -757,6 +786,30 @@ class Model[T: Array]:
             self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer.initialize(self.get_all_layers(self.layers))
+        self.temp_size += self.optimizer.temp_size
+
+        if self.use_memory_pool:
+            sizes = list[int]()
+            for layer in self.get_all_layers():
+                sizes.append(layer.temp_size)
+            for metric in self.metrics_funcs:
+                sizes.append(metric.temp_size)
+            sizes.append(self.optimizer.temp_size)
+            sizes.append(self.loss_func.temp_size)
+
+            size = max(sizes)
+            self.memory_pool = Memory_Pool(size=size, dtype=self.dtype)
+            # Reservar la memoria de los temporales
+            for layer in self.get_all_layers():
+                layer.post_initialize()
+            
+            for metric in self.metrics_funcs:
+                metric.post_initialize()
+
+            self.loss_func.post_initialize()
+            self.optimizer.post_initialize()
+
+        # ----
 
     def export(self):
         data = {}

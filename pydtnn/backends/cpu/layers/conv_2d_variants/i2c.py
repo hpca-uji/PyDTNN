@@ -8,7 +8,6 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-
 class Conv2DI2CCPU(Conv2DStandardCPU):
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
@@ -26,7 +25,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 self._x_cols = np.zeros(shape=(self.dim_c, self.dim_n), dtype=self.model.dtype, order="C")
 
                 _dw_shape = (self.co, self.dim_c)
-                res_bw_shape = (self.dim_c, self.dim_n)
+                self.temp_bw_shape = (self.dim_c, self.dim_n)
                 dx_shape = (self.model.batch_size, self.ci, self.hi, self.wi)
 
                 self.actual_size += self._x_cols.size
@@ -36,30 +35,42 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 self._x_rows = np.zeros(shape=(self.dim_n, self.dim_c), dtype=self.model.dtype, order="C")                
 
                 _dw_shape = (self.dim_c, self.co)
-                res_bw_shape = (self.dim_n, self.dim_c)
+                self.temp_bw_shape = (self.dim_n, self.dim_c)
                 dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
 
                 self.actual_size += self._x_rows.size
             case _:
                 _dw_shape = (None, )
-                res_bw_shape = (None, )
+                self.temp_bw_shape: tuple[int, ...] = (None, )
                 dx_shape = (None,)
 
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         # -
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.res = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
-        self.actual_size += self.res.size
+        self.y = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
+        self.actual_size += self.y.size
 
         if not self.model.evaluate_only:
+            self._dw_shape = _dw_shape  # This shape is only for a intermediate operation.
+
             self.dx = np.zeros(shape=dx_shape, dtype=self.model.dtype, order="C")
-            self._dw = np.zeros(shape=_dw_shape, dtype=self.model.dtype, order="C")
-            self.res_bw = np.zeros(shape=res_bw_shape, dtype=self.model.dtype, order="C")
+            if not self.model.use_memory_pool:
+                self.temp_bw: np.ndarray = np.zeros(shape=self.temp_bw_shape, dtype=self.model.dtype, order="C")
+            else:
+                self.temp_bw: np.ndarray = None  # type: ignore (It will be initialized later)
 
-            self.actual_size += self.dx.size + self._dw.size + self.res_bw.size
-
+            self.temp_size += int(np.prod(self.temp_bw_shape))
+            self.actual_size += self.dx.size
+        self.actual_size += self.temp_size
     # ---
+
+    def post_initialize(self) -> None:
+        super().post_initialize()
+        if not self.model.evaluate_only:
+            self.temp_bw = self.model.memory_pool.get_ndarray(self.temp_bw_shape)
+            self.model.memory_pool.free_memory(self.temp_size)
+
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
@@ -67,8 +78,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         dim_n = x.shape[0] * self.ho * self.wo
         # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
         #x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype, order="C", copy=None)
-        x_rows = self._x_rows[:dim_n, :]
-        res = self.res[:dim_n, :]
+        x_rows: np.ndarray = self._x_rows[:dim_n, :]
+        y: np.ndarray = self.y[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_nhwc_cython(x, x_rows,
@@ -84,18 +95,18 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(x_rows, w_cols, out=res,
+        np.matmul(x_rows, w_cols, out=y,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(res, self.biases.reshape((-1, self.co), copy=False), out=res,
+            np.add(y, self.biases.reshape((-1, self.co), copy=False), out=y,
                    dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y = res.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        y = y.reshape((-1, self.ho, self.wo, self.co), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
@@ -105,8 +116,8 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         dim_n = x.shape[0] * self.ho * self.wo
         # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
-        x_cols = np.asarray(self._x_cols[:, :dim_n], dtype=self.model.dtype, order="C", copy=None)
-        res = self.res[:dim_n, :]
+        x_cols: np.ndarray = np.asarray(self._x_cols[:, :dim_n], dtype=self.model.dtype, order="C", copy=None)
+        y = self.y[:dim_n, :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_nchw_cython(x, x_cols,
@@ -122,19 +133,19 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
-        np.matmul(w_rows, x_cols, out=res.T,
+        np.matmul(w_rows, x_cols, out=y.T,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
-            np.add(res, self.biases.reshape((-1, self.co), copy=False), out=res,
+            np.add(y, self.biases.reshape((-1, self.co), copy=False), out=y,
                    dtype=self.model.dtype)
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
-        y: np.ndarray = format_transpose(res.reshape((-1, self.ho, self.wo, self.co), copy=False), "NHWC", "NCHW")
+        y: np.ndarray = format_transpose(y.reshape((-1, self.ho, self.wo, self.co), copy=False), "NHWC", "NCHW")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
@@ -143,9 +154,10 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         """Version of the backward function that uses im2col and matmul"""
 
         #res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype, order="C", copy=None)
-        res = self.res_bw[:(dy.shape[0] * self.ho * self.wo), :]
+        rows:np.ndarray = self.temp_bw[:(dy.shape[0] * self.ho * self.wo), :]
+        self.dw = self.dw.reshape(self._dw_shape)
         
-        dx = self.dx[:dy.shape[0], :]
+        dx: np.ndarray = self.dx[:dy.shape[0], :]
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
@@ -154,12 +166,12 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(self.x_rows.T, dy_cols, out=self._dw,
+        np.matmul(self.x_rows.T, dy_cols, out=self.dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
-        self.dw = self._dw.reshape(self.weights.shape, copy=False, order="C")
+        self.dw = self.dw.reshape(self.weights.shape, copy=False, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Biases gradient
@@ -175,12 +187,12 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(dy_cols, w_rows, out=res,
+        np.matmul(dy_cols, w_rows, out=rows,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        row2im_nhwc_cython(res, dx,
+        row2im_nhwc_cython(rows, dx,
                            dy.shape[0], self.hi, self.wi, self.ci,
                            self.kh, self.kw, self.ho, self.wo,
                            self.vpadding, self.hpadding,
@@ -191,9 +203,9 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
     def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
         """Version of the backward function that uses im2col and matmul"""
-        res = np.asarray(self.res_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
+        cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype, order="C", copy=None)
 
-        dx = self.dx[:dy.shape[0], :]
+        dx:np.ndarray = self.dx[:dy.shape[0], :]
         dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
@@ -202,12 +214,12 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         # Weigths gradient
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
-        np.matmul(dy_rows, self.x_cols.T, out=self._dw,
+        np.matmul(dy_rows, self.x_cols.T, out=self.dw,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
-        self.dw = self._dw.reshape(self.weights.shape, copy=True, order="C")
+        self.dw = self.dw.reshape(self.weights.shape, copy=True, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Biases gradient
@@ -223,12 +235,12 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
-        np.matmul(w_cols, dy_rows, out=res,
+        np.matmul(w_cols, dy_rows, out=cols,
                   dtype=self.model.dtype, order='C')
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        col2im_nchw_cython(res, dx,
+        col2im_nchw_cython(cols, dx,
                            dy.shape[0], self.ci, self.hi, self.wi,
                            self.kh, self.kw, self.ho, self.wo,
                            self.vpadding, self.hpadding,

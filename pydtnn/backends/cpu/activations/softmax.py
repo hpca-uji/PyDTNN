@@ -14,17 +14,49 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-        self.max_x = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops), dtype=self.model.dtype, order="C")
-        self.sum_y = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops), dtype=self.model.dtype, order="C")
         self.actual_size += self._y.size
-        self.actual_size += self.max_x.size
-        self.actual_size += self.sum_y.size
+
+        # Temp_variables
+        self.max_x:np.ndarray = None  # type: ignore (they will be intialized later)
+        self.sum_y:np.ndarray = None  # type: ignore (they will be intialized later)
+        self.mul_dy:np.ndarray = None  # type: ignore (they will be intialized later)
+        self.sum_dy:np.ndarray = None  # type: ignore (they will be intialized later)
+
+        self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
+        sum_y_shape = max_x_shape = self.temp_shape
+        self.temp_size += int(np.prod(self.temp_shape) + np.prod(sum_y_shape))
+
+        if not self.model.use_memory_pool:
+            self.max_x: np.ndarray = np.zeros(shape=max_x_shape, dtype=self.model.dtype, order="C")
+            self.sum_y: np.ndarray = np.zeros(shape=sum_y_shape, dtype=self.model.dtype, order="C")
+        else:
+            self.max_x: np.ndarray = None  # type: ignore (They will be initialized later)
+            self.sum_y: np.ndarray = None  # type: ignore (They will be initialized later)
 
         if not self.model.evaluate_only:
-            self.mul_dy = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-            self.sum_dy = np.zeros(shape=(self.model.batch_size, *shape_intermediate_ops), dtype=self.model.dtype, order="C")
-            self.actual_size += self.mul_dy.size
-            self.actual_size += self.sum_dy.size
+            # Temp_variables
+            self.mul_dy_shape = (self.model.batch_size, *self.shape)
+            self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
+            self.temp_size += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape))
+
+            if not self.model.use_memory_pool:
+                self.mul_dy: np.ndarray = np.zeros(shape=self.mul_dy_shape, dtype=self.model.dtype, order="C")
+                self.sum_dy: np.ndarray = np.zeros(shape=self.sum_dy_shape, dtype=self.model.dtype, order="C")
+            else:
+                self.mul_dy: np.ndarray = None  # type: ignore (They will be initialized later)
+                self.sum_dy: np.ndarray = None  # type: ignore (They will be initialized later)
+            # else: They will be initialized later.
+        self.actual_size += self.temp_size
+
+    def post_initialize(self):
+        super().post_initialize()
+        self.max_x = self.model.memory_pool.get_ndarray(self.temp_shape)
+        self.sum_y = self.model.memory_pool.get_ndarray(self.temp_shape)
+        if not self.model.evaluate_only:
+            self.mul_dy = self.model.memory_pool.get_ndarray(self.mul_dy_shape)
+            self.sum_dy = self.model.memory_pool.get_ndarray(self.sum_dy_shape)
+        self.model.memory_pool.free_memory(self.temp_size)
+
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))

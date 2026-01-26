@@ -29,9 +29,9 @@ class BinaryConfusionMatrixCPU(BinaryConfusionMatrix[np.ndarray], MetricCPU):
     def initialize(self) -> None:
         super().initialize()
         _, target_classes = self.shape
-        self.conf_matrix_base = np.zeros((target_classes, 2, 2), dtype=np.int32)
+        self.conf_matrix = np.zeros((target_classes, 2, 2), dtype=np.int32)
 
-        self.actual_size += self.conf_matrix_base.size
+        self.actual_size += self.conf_matrix.size
     # ---
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
@@ -46,7 +46,6 @@ class BinaryConfusionMatrixCPU(BinaryConfusionMatrix[np.ndarray], MetricCPU):
         # NOTE: y_pred.shape == y_targ.shape == (n<=self.model.batch_size, self.model.output_shape)
         n, target_classes = y_pred.shape
         #assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes}, and must have the same value."
-        self.conf_matrix = self.conf_matrix_base[:n]
         self.conf_matrix.fill(0)
 
         for i in range(n):

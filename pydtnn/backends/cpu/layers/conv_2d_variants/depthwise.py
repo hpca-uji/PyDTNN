@@ -51,7 +51,7 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
         """ Version of the forward that perform a depthwise convolution"""
 
         self.x = x
-        y = self._y[:x.shape[0], ]
+        y:np.ndarray = self._y[:x.shape[0], ]
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
@@ -77,7 +77,7 @@ class Conv2DDepthwiseCPU(Conv2DCPU):
     def _forward_depthwise_nchw(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
         self.x = x
-        y = self._y[:x.shape[0], ]
+        y:np.ndarray = self._y[:x.shape[0], ]
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)

@@ -18,16 +18,45 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                 shape = w.shape
                 momentum = np.zeros(shape, dtype=layer.model.dtype, order="C")
                 velocity = np.zeros(shape, dtype=layer.model.dtype, order="C")
-                vt_temp_w = np.zeros(shape, dtype=layer.model.dtype, order="C")
-                mt_temp_dw = np.zeros(shape, dtype=layer.model.dtype, order="C")
+                self.actual_size += momentum.size + velocity.size
+
+                if not self.model.use_memory_pool:
+                    vt_temp_w: np.ndarray = np.zeros(shape, dtype=layer.model.dtype, order="C")
+                    mt_temp_dw: np.ndarray = np.zeros(shape, dtype=layer.model.dtype, order="C")
+                else:
+                    vt_temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
+                    mt_temp_dw: np.ndarray = None  # type: ignore (It will be initialized later)
+                self.temp_size += int(2 * np.prod(shape))
 
                 self.context[layer.id]["m_%s" % w_] = momentum
                 self.context[layer.id]["v_%s" % w_] = velocity
                 self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w
                 self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw
                 
-                self.actual_size += momentum.size + velocity.size + vt_temp_w.size + mt_temp_dw.size
+                self.actual_size += self.temp_size
     # ----
+
+    def post_initialize(self) -> None:
+        super().post_initialize()
+
+        for layer_id in self.context.keys():
+            for key in self.context[layer_id].keys():
+                if "temp_w_" in key: 
+                    w_ = key.split("temp_w_")[-1]
+                elif "temp_dw_" in key: 
+                    w_ = key.split("temp_dw_")[-1]
+                else:
+                    w_ = None
+                
+                if w_ is None:
+                    continue
+                # if w_ is not None:
+
+                w_shape = self.context[layer_id]["m_%s" % w_].shape # type: ignore (it is correct)
+                w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape)
+        # - end for
+        self.model.memory_pool.free_memory(self.temp_size)
+    # ---
 
     def update(self, layer: LayerCPU) -> None:
         self.context[layer.id]["it"] += 1

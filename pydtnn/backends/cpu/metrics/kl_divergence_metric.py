@@ -8,9 +8,18 @@ class KLDivergenceMetricCPU(KLDivergenceMetric[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        self.loss = np.ndarray(self.shape, dtype=self.model.dtype, order="C")
 
-        self.actual_size += self.loss.size
+        self.temp_size += int(np.prod(self.shape))
+        if not self.model.use_memory_pool:
+            self.loss: np.ndarray = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        else:
+            self.loss: np.ndarray = None  # type: ignore (It will be initialized later)
+        self.actual_size += self.temp_size
+
+    def post_initialize(self) -> None:
+        super().post_initialize()
+        self.loss = self.model.memory_pool.get_ndarray(self.shape)
+        self.model.memory_pool.free_memory(self.temp_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         loss = self.loss[:y_pred.shape[0]]

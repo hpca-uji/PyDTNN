@@ -97,19 +97,20 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         if self.model.mode is Model.Mode.TRAIN:
             self.x: np.ndarray = x
 
-        y = self.y[:x.shape[0], :]
+        y:np.ndarray = self.y[:x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
-        y = best_transpose_0231(y)
+        y = best_transpose_0231(y)  # type: ignore (It's Okay)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
-        np.matmul(best_transpose_0231(x), self.weights.T, out=y,
+        np.matmul(best_transpose_0231(x),  # type: ignore (It's Okay)
+                  self.weights.T, out=y,
                   dtype=self.model.dtype, order="C")
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
-        y: np.ndarray = best_transpose_0312(y)
+        y: np.ndarray = best_transpose_0312(y)  # type: ignore (It's Okay)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -124,11 +125,11 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
+        dx:np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
-        reshaped_dy = dy.reshape((_dim, _c), copy=False)
-        self.x = self.x.reshape((-1, _dim), copy=False)
+        reshaped_dy: np.ndarray = dy.reshape((_dim, _c), copy=False)
+        self.x: np.ndarray = self.x.reshape((-1, _dim), copy=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)

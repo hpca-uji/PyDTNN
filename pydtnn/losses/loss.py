@@ -11,12 +11,19 @@ class Loss[T: Array](PromoteToBackend):
         self.shape = shape
         self.eps = eps
         self.actual_size: int = 0
+        self.temp_size: int = 0
 
     def initialize(self) -> None:
         pass
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         raise NotImplementedError()
+
+    def post_initialize(self) -> None:
+        """
+        Method were the operations that requiere a initialize are done.
+        """
+        pass
 
 
 def select(name: str) -> type[Loss]:
