@@ -3,25 +3,45 @@ import numpy as np
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
-
 class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        self._pos:np.ndarray = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        self._neg:np.ndarray = np.zeros(self.shape, dtype=self.model.dtype, order="C")
 
-        self.pos_maxm:np.ndarray = np.zeros(self.model.batch_size, dtype=self.model.dtype, order="C")
-        self.neg:np.ndarray = np.zeros(self.model.batch_size, dtype=self.model.dtype, order="C")
+        self._pos_shape = self.shape
+        self._neg_shape = self.shape
+        self.pos_maxm_shape = (self.model.batch_size, )
+        self.neg_shape = (self.model.batch_size, )
+        self.temp_size += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape))
 
-        self.actual_size += self._pos.size + self._neg.size + self.pos_maxm.size + self.neg.size
+        if not self.model.use_memory_pool:
+            self._pos: np.ndarray = np.zeros(self._pos_shape, dtype=self.model.dtype, order="C")
+            self._neg: np.ndarray = np.zeros(self._neg_shape, dtype=self.model.dtype, order="C")
+            self.pos_maxm: np.ndarray = np.zeros(self.pos_maxm_shape, dtype=self.model.dtype, order="C")
+            self.neg: np.ndarray = np.zeros(self.neg_shape, dtype=self.model.dtype, order="C")
+        else:
+            self._pos: np.ndarray = None  # type: ignore (It will be initialized later)
+            self._neg: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.pos_maxm: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.neg: np.ndarray = None  # type: ignore (It will be initialized later)
+
+        self.actual_size += self.temp_size
     # ----
 
+    def post_initialize(self) -> None:
+        super().post_initialize()
+        self._pos = self.model.memory_pool.get_ndarray(self._pos_shape)
+        self._neg = self.model.memory_pool.get_ndarray(self._neg_shape)
+        self.pos_maxm = self.model.memory_pool.get_ndarray(self.pos_maxm_shape)
+        self.neg = self.model.memory_pool.get_ndarray(self.neg_shape)
+
+        self.model.memory_pool.free_memory(self.temp_size)
+
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        _pos = self._pos[: y_pred.shape[0]]
-        _neg = self._neg[: y_pred.shape[0]]
-        pos_maxm = self.pos_maxm[: y_pred.shape[0]]
-        neg = self.neg[: y_pred.shape[0]]
+        _pos: np.ndarray = self._pos[: y_pred.shape[0]]
+        _neg: np.ndarray = self._neg[: y_pred.shape[0]]
+        pos_maxm: np.ndarray = self.pos_maxm[: y_pred.shape[0]]
+        neg: np.ndarray = self.neg[: y_pred.shape[0]]
 
         # pos = np.sum(y_targ * y_pred, axis=-1)
         # neg = np.max((1.0 - y_targ) * y_pred, axis=-1)
@@ -39,6 +59,6 @@ class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
         np.add(neg, 1, out=neg, dtype=self.model.dtype)
         np.maximum(0.0, neg, out=pos_maxm)
 
-        maximum = np.mean(pos_maxm, axis=-1)
+        maximum = float(np.mean(pos_maxm, axis=-1))
 
         return maximum

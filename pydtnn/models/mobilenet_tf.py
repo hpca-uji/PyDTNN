@@ -10,11 +10,11 @@ from pydtnn.layers.fc import FC
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layer_base import LayerBase
-
+from pydtnn.utils.constants import ArrayShape
 # NOTE: TensorFlow uses AveragePool2D with (2, 2) pool shape
 
 
-def mobileNetTF(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def mobileNetTF(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     """
     Mobilenet v1's TF.Keras-like version.
     """

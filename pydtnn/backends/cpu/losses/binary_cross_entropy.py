@@ -9,25 +9,50 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
     def initialize(self) -> None:
         super().initialize()
 
-        self.neg_targ = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        self.log_maximum = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        self._y_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        self.div_y = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        self.neg_pred = np.zeros(self.shape, dtype=self.model.dtype, order="C")
+        neg_targ_size = self.shape
+        log_maximum_size = self.shape
+        _y_pred_size = self.shape
+        div_y_size = self.shape
+        neg_pred_size = self.shape
 
-        self.actual_size = self.neg_targ.size + self.log_maximum.size + self._y_pred.size + self.div_y.size + self.neg_pred.size
+        self.temp_size += int(5 * np.prod(self.shape))
+
+        if not self.model.use_memory_pool:
+            self.neg_targ: np.ndarray = np.zeros(neg_targ_size, dtype=self.model.dtype, order="C")
+            self.log_maximum: np.ndarray = np.zeros(log_maximum_size, dtype=self.model.dtype, order="C")
+            self._y_pred: np.ndarray = np.zeros(_y_pred_size, dtype=self.model.dtype, order="C")
+            self.div_y: np.ndarray = np.zeros(div_y_size, dtype=self.model.dtype, order="C")
+            self.neg_pred: np.ndarray = np.zeros(neg_pred_size, dtype=self.model.dtype, order="C")
+        else:
+            self.neg_targ: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.log_maximum: np.ndarray = None  # type: ignore (It will be initialized later)
+            self._y_pred: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.div_y: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.neg_pred: np.ndarray = None  # type: ignore (It will be initialized later)
+
+        self.actual_size += self.temp_size
+
+    def post_initialize(self) -> None:
+        super().post_initialize()
+        self.neg_targ = self.model.memory_pool.get_ndarray(self.shape)
+        self.log_maximum = self.model.memory_pool.get_ndarray(self.shape)
+        self._y_pred = self.model.memory_pool.get_ndarray(self.shape)
+        self.div_y = self.model.memory_pool.get_ndarray(self.shape)
+        self.neg_pred = self.model.memory_pool.get_ndarray(self.shape)
+        self.model.memory_pool.free_memory(self.temp_size)
+    # ----
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         assert len(y_targ.shape) == 2
         
         b = y_targ.shape[0]
 
-        dx = self.dx[:b]
-        neg_targ = self.neg_targ[:b]
-        log_maximum = self.log_maximum[:b]
-        _y_pred = self._y_pred[:b]
-        div_y = self.div_y[:b]
-        neg_pred = self.neg_pred[:b]
+        dx: np.ndarray = self.dx[:b]
+        neg_targ: np.ndarray = self.neg_targ[:b]
+        log_maximum: np.ndarray = self.log_maximum[:b]
+        _y_pred: np.ndarray = self._y_pred[:b]
+        div_y: np.ndarray = self.div_y[:b]
+        neg_pred: np.ndarray = self.neg_pred[:b]
 
         # Loss
         # loss: float = -np.sum(np.log(np.maximum((1 - y_targ) - _y_pred, eps))) / b

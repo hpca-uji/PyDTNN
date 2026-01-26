@@ -16,22 +16,51 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
-                    velocity = np.zeros_like(w, dtype=layer.model.dtype, order="C")
-                    temp_w = np.zeros_like(w, dtype=layer.model.dtype, order="C")
-                    temp_v = np.zeros_like(w, dtype=layer.model.dtype, order="C")
+                    velocity: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
+                    self.actual_size += velocity.size
+
+                    if not self.model.use_memory_pool:
+                        temp_w: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
+                        temp_v: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
+                    else:
+                        temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
+                        temp_v: np.ndarray = None  # type: ignore (It will be initialized later)
+                    self.temp_size += int(2 * np.prod(w.shape))
+
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
-                    self.context[layer.id]["temp_w_%s" % w_] = temp_v
+                    self.context[layer.id]["temp_v_%s" % w_] = temp_v
 
-                    self.actual_size += velocity.size + temp_w.size + temp_v.size
+                    self.actual_size += self.temp_size
             # else: continue
+    
+    def post_initialize(self) -> None:
+        super().post_initialize()
+
+        for layer_id in self.context.keys():
+            for key in self.context[layer_id].keys():
+                if "temp_w_" in key: 
+                    w_ = key.split("temp_w_")[-1]
+                elif "temp_v_" in key:
+                    w_ = key.split("temp_v_")[-1]
+                else: 
+                    w_ = None
+                
+                if w_ is None: continue
+                # if w_ is not None:
+
+                w_shape = self.context[layer_id]["velocity_%s" % w_].shape # type: ignore (it is correct)
+                w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape)
+        # - end for
+        self.model.memory_pool.free_memory(self.temp_size)
+    # ---
 
     def update(self, layer: LayerCPU) -> None:
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             velocity: np.ndarray = self.context[layer.id]["velocity_%s" % w_]  # type: ignore
             temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
-            temp_v: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type: ignore
+            temp_v: np.ndarray = self.context[layer.id]["temp_v_%s" % w_]  # type: ignore
             w: np.ndarray
             dw: np.ndarray
 

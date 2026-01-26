@@ -13,7 +13,7 @@ def max_pool_2d_fwd_nhwc_cython[T: _npDT](x: _npDT_4Dims[T],
                                           vpadding: int, hpadding: int,
                                           vstride: int, hstride: int,
                                           vdilation: int, hdilation: int,
-                                          minval: _npDT) -> None:
+                                          minval: _npDT | int | float) -> None:
     """
     Args:
         x (npDT_4Dims): 4-dimensinal array where the input data is stored.

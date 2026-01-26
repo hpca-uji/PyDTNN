@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.backends.cpu.utils.bn_training_cython import bn_training_bwd_cython  # , bn_training_fwd_cython
+#from pydtnn.backends.cpu.utils.bn_training_cython import bn_training_bwd_cython  # , bn_training_fwd_cython
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
@@ -46,20 +46,61 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._mean_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self._var_inv: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-        self.std: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
         self.y: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
+        self.actual_size += self.nparams + self.y.size
         
-        self.actual_size += self.nparams + self._mean_inv.size + self._var_inv.size + self.std.size + self.y.size
+        self._mean_inv_shape = (self.ci,)
+        self._var_inv_shape = (self.ci,)
+        self.std_shape = (self.ci,)
+
+        self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype, order="C")
+        self.actual_size += self.std.size
+
+        if not self.model.use_memory_pool:
+            self._mean_inv: np.ndarray = np.zeros(shape=self._mean_inv_shape, dtype=self.model.dtype, order="C")
+            self._var_inv: np.ndarray = np.zeros(shape=self._var_inv_shape, dtype=self.model.dtype, order="C")
+        else:
+            self._mean_inv: np.ndarray = None  # type: ignore (It will be initialized later)
+            self._var_inv: np.ndarray = None  # type: ignore (It will be initialized later)
+
+        self.temp_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape))
 
         if not self.model.evaluate_only:
+
             self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
-            self.dy_xn = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
             self.dgamma: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
             self.dbeta: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-            self.actual_size += self.dx.size + self.dy_xn.size + self.dgamma.size + self.dbeta.size
+            self.actual_size += self.dx.size + self.dgamma.size + self.dbeta.size
+            
+            self._mean_shape = (self.ci, )
+            self._var_shape = (self.ci, )
+            self.dy_xn_shape = vars_shape
+            self.temp_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape))
+            
+            if not self.model.use_memory_pool:
+                self._mean: np.ndarray = np.zeros(self._mean_shape, dtype=self.model.dtype, order="C")
+                self._var: np.ndarray = np.zeros(self._var_shape, dtype=self.model.dtype, order="C")
+                self.dy_xn: np.ndarray = np.zeros(self.dy_xn_shape, dtype=self.model.dtype, order="C")
+            else:
+                self._mean: np.ndarray = None  # type: ignore (It will be initialized later)
+                self._var: np.ndarray = None  # type: ignore (It will be initialized later)
+                self.dy_xn: np.ndarray = None  # type: ignore (It will be initialized later)
+        
+        self.actual_size += self.temp_size
     # --
+
+    def post_initialize(self) -> None:
+        super().post_initialize()
+
+        self._mean_inv = self.model.memory_pool.get_ndarray(self._mean_inv_shape)
+        self._var_inv = self.model.memory_pool.get_ndarray(self._var_inv_shape)
+
+        if not self.model.evaluate_only:
+            self._mean = self.model.memory_pool.get_ndarray(self._mean_shape)
+            self._var = self.model.memory_pool.get_ndarray(self._var_shape)
+            self.dy_xn = self.model.memory_pool.get_ndarray(self.dy_xn_shape)
+
+        self.model.memory_pool.free_memory(self.temp_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 
@@ -79,8 +120,10 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             _mean = self.running_mean
             _var = self.running_var
         else:  # ModelModeEnum.TRAIN:
-            _mean = np.mean(self.xn, axis=0, dtype=self.model.dtype)
-            _var = np.var(self.xn, axis=0, dtype=self.model.dtype)
+            _mean = self._mean
+            _var = self._var
+            np.mean(self.xn, axis=0, dtype=self.model.dtype, out=_mean)
+            np.var(self.xn, axis=0, dtype=self.model.dtype, out=_var)
 
             inv_momentum = (1.0 - self.momentum)
             # self.running_mean = self.momentum * self.running_mean + inv_momentum * _mean
@@ -138,13 +181,21 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         dx: np.ndarray = self.dx[: num_elems, :]
         dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
+        dy_xn.fill(0)
 
         # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
         np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
         np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
 
-        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
+        np.multiply(self.std, n, out=dx)
+        np.divide(self.gamma, dx, out=dx)
+        np.multiply(n, dy, out=dy)
+        np.multiply(self.xn, self.dgamma, out=self.xn)
+        np.subtract(dy, self.xn, out=dy)
+        np.subtract(dy, self.dbeta, out=dy)
+        np.multiply(dx, dy, out=dx)
+        #bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
             dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)

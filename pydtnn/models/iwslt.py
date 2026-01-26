@@ -6,9 +6,9 @@ from collections.abc import Sequence
 from pydtnn.layer_base import LayerBase
 from pydtnn.layers.encoder_decoder import EncoderDecoder
 from pydtnn.layers.input import Input
+from pydtnn.utils.constants import ArrayShape
 
-
-def iwslt(input_shape: Sequence[int], output_shape: Sequence[int]) -> Sequence[LayerBase]:
+def iwslt(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append
 
