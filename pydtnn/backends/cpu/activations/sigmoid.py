@@ -13,11 +13,11 @@ class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
-        self.actual_size += self._y.size
+        self.real_memory_size += self._y.size
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
-            self.actual_size += self.dx.size
+            self.real_memory_size += self.dx.size
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

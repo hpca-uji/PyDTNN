@@ -20,7 +20,7 @@ class Conv2DBatchNormalizationReluCPU(Conv2DBatchNormalizationRelu[np.ndarray], 
         super().initialize(prev_shape, x)
 
         self.inv_std = BatchNormalizationCPU.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
-        self.actual_size += self.inv_std.size
+        self.real_memory_size += self.inv_std.size
 
         self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,
                         "_forward_cg_nchw": self._forward_nchw_cg,

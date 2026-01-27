@@ -25,7 +25,6 @@ class Memory_Pool(object):
             raise RuntimeError(f"Getting too much memory. Memory to get= {size}, Memory occupied= {self.off_set_free}, Memory after the operation= {self.total_memory}")
 
         self.off_set_free = end
-        print(f" {start=}, {end=} [{self.off_set_free}/{self.total_memory}] || {self.off_set_free=} {self.total_memory=}") # TODO: BORRAR
         return self.memory_pool[start:end]
     # -----
 
@@ -39,6 +38,4 @@ class Memory_Pool(object):
         if new_offset < 0:
             raise RuntimeError(f"Removing too much memory. {self.off_set_free=}, memory to erase={size}, {new_offset=}")
         self.off_set_free = new_offset
-
-        print(f" {self.off_set_free}/{self.total_memory} || {self.off_set_free=} {self.total_memory=}") # TODO: BORRAR
     # ---

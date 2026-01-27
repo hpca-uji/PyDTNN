@@ -1,5 +1,5 @@
 import numpy as np
-#from pydtnn.backends.cpu.utils.bn_training_cython import bn_training_bwd_cython  # , bn_training_fwd_cython
+from pydtnn.backends.cpu.utils.bn_training_cython import bn_training_bwd_cython  # , bn_training_fwd_cython
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
@@ -30,13 +30,12 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         if self.spatial:
             self.ci, self.hi, self.wi = self.model.decode_shape(self.shape)
-            shape_ = (self.ci,)
             vars_shape = (self.model.batch_size * self.hi * self.wi, self.ci)
         else:
             self.ci = self.shape[0]
-            shape_ = (self.ci,)
             # NOTE: in this case, self.hi and self.wi are 0 (self.shape should be somethin like: "(512, )"
             vars_shape = (self.model.batch_size, self.ci)
+        shape_ = (self.ci,)
 
         self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype, order="C")
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
@@ -47,14 +46,14 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
-        self.actual_size += self.nparams + self.y.size
+        self.real_memory_size += self.nparams + self.y.size
         
-        self._mean_inv_shape = (self.ci,)
-        self._var_inv_shape = (self.ci,)
-        self.std_shape = (self.ci,)
+        self._mean_inv_shape = shape_
+        self._var_inv_shape = shape_
+        self.std_shape = shape_
 
         self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype, order="C")
-        self.actual_size += self.std.size
+        self.real_memory_size += self.std.size
 
         if not self.model.use_memory_pool:
             self._mean_inv: np.ndarray = np.zeros(shape=self._mean_inv_shape, dtype=self.model.dtype, order="C")
@@ -63,19 +62,19 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             self._mean_inv: np.ndarray = None  # type: ignore (It will be initialized later)
             self._var_inv: np.ndarray = None  # type: ignore (It will be initialized later)
 
-        self.temp_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape))
+        self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape))
 
         if not self.model.evaluate_only:
 
             self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
-            self.dgamma: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-            self.dbeta: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype, order="C")
-            self.actual_size += self.dx.size + self.dgamma.size + self.dbeta.size
+            self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
+            self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
+            self.real_memory_size += self.dx.size + self.dgamma.size + self.dbeta.size
             
             self._mean_shape = (self.ci, )
             self._var_shape = (self.ci, )
             self.dy_xn_shape = vars_shape
-            self.temp_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape))
+            self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape))
             
             if not self.model.use_memory_pool:
                 self._mean: np.ndarray = np.zeros(self._mean_shape, dtype=self.model.dtype, order="C")
@@ -86,7 +85,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
                 self._var: np.ndarray = None  # type: ignore (It will be initialized later)
                 self.dy_xn: np.ndarray = None  # type: ignore (It will be initialized later)
         
-        self.actual_size += self.temp_size
+        self.real_memory_size += self.temp_memory_size
     # --
 
     def post_initialize(self) -> None:
@@ -100,7 +99,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             self._var = self.model.memory_pool.get_ndarray(self._var_shape)
             self.dy_xn = self.model.memory_pool.get_ndarray(self.dy_xn_shape)
 
-        self.model.memory_pool.free_memory(self.temp_size)
+        self.model.memory_pool.free_memory(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 
@@ -119,7 +118,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         if self.model.mode is Model.Mode.EVALUATE:
             _mean = self.running_mean
             _var = self.running_var
-        else:  # ModelModeEnum.TRAIN:
+        else:  # Model.Mode.TRAIN:
             _mean = self._mean
             _var = self._var
             np.mean(self.xn, axis=0, dtype=self.model.dtype, out=_mean)
@@ -183,19 +182,19 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
         dy_xn.fill(0)
 
-        # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
         np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
         np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
 
-        np.multiply(self.std, n, out=dx)
-        np.divide(self.gamma, dx, out=dx)
-        np.multiply(n, dy, out=dy)
-        np.multiply(self.xn, self.dgamma, out=self.xn)
-        np.subtract(dy, self.xn, out=dy)
-        np.subtract(dy, self.dbeta, out=dy)
-        np.multiply(dx, dy, out=dx)
-        #bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
+        # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
+        #np.multiply(self.std, n, out=dx)
+        #np.divide(self.gamma, dx, out=dx)
+        #np.multiply(n, dy, out=dy)
+        #np.multiply(self.xn, self.dgamma, out=self.xn)
+        #np.subtract(dy, self.xn, out=dy)
+        #np.subtract(dy, self.dbeta, out=dy)
+        #np.multiply(dx, dy, out=dx)
+        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
 
         if self.spatial:
             dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)

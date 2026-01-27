@@ -25,14 +25,14 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                     else:
                         temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
                         temp_v: np.ndarray = None  # type: ignore (It will be initialized later)
-                    self.temp_size += int(2 * np.prod(w.shape))
+                    self.temp_memory_size += int(2 * np.prod(w.shape))
 
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
                     self.context[layer.id]["temp_v_%s" % w_] = temp_v
-
-                    self.actual_size += self.temp_size
             # else: continue
+        self.actual_size += self.temp_memory_size
+    # ---
     
     def post_initialize(self) -> None:
         super().post_initialize()
@@ -52,7 +52,7 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 w_shape = self.context[layer_id]["velocity_%s" % w_].shape # type: ignore (it is correct)
                 w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape)
         # - end for
-        self.model.memory_pool.free_memory(self.temp_size)
+        self.model.memory_pool.free_memory(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

@@ -22,19 +22,19 @@ class Conv2DCPU(Conv2D[np.ndarray], LayerCPU):
         if self.use_bias:
             bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
             self.biases = self.biases_initializer(bias_shape, self.model.dtype)
-            self.actual_size += self.biases.size
+            self.real_memory_size += self.biases.size
 
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)  # type: ignore (it's ok)
 
-        self.actual_size += self.weights.size
+        self.real_memory_size += self.weights.size
 
         if not self.model.evaluate_only:
             if self.use_bias:
                 self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype, order="C")
-                self.actual_size += self.db.size
+                self.real_memory_size += self.db.size
 
             self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
-            self.actual_size += self.dw.size
+            self.real_memory_size += self.dw.size
 
 
         # Performance models

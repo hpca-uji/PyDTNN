@@ -86,12 +86,12 @@ class FCGPU(FC[TensorGPU], LayerGPU):
                                                         gpudirect=self.model.gpudirect, 
                                                         drv=(drv if self.model.gpudirect else None))
             
-            self.actual_size +=  self.db.size + self.biases.size
+            self.real_memory_size +=  self.db.size + self.biases.size
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
         self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
 
-        self.actual_size += self.dx.size + self.y.size + self.weights.size
+        self.real_memory_size += self.dx.size + self.y.size + self.weights.size
 
         self.fwd_time = \
             matmul_time(m=self.model.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0],

@@ -18,7 +18,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
         
         for p in self.paths:
             for layer in p:
-                self.actual_size += layer.actual_size
+                self.real_memory_size += layer.real_memory_size
 
     def initialize_block_layer(self):
         for p_i, p in enumerate(self.paths):

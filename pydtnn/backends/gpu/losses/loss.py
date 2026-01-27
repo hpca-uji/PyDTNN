@@ -27,7 +27,7 @@ class LossGPU(Loss[TensorGPU]):
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.kernel = self.__init_gpu_kernel__()
         
-        self.actual_size += self.dx.size + self.loss.size
+        self.real_memory_size += self.dx.size + self.loss.size
 
     def __init_gpu_kernel__(self) -> Function:
         raise NotImplementedError()

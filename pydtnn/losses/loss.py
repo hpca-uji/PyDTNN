@@ -10,8 +10,8 @@ class Loss[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape
         self.eps = eps
-        self.actual_size: int = 0
-        self.temp_size: int = 0
+        self.real_memory_size: int = 0
+        self.temp_memory_size: int = 0
 
     def initialize(self) -> None:
         pass

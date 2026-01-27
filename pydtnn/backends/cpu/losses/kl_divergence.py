@@ -8,7 +8,7 @@ class KLDivergenceCPU(KLDivergence[np.ndarray], LossCPU):
 
     def initialize(self) -> None:
         super().initialize()
-        self.actual_size += self.dx.size
+        self.real_memory_size += self.dx.size
 
     def compute(self, y_pred, y_targ, batch_size):
         # loss = np.abs(y_targ * (np.log(np.abs(y_targ / (y_pred + self.eps)) + 1)))

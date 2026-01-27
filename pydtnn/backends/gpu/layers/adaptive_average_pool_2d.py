@@ -324,7 +324,7 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.actual_size += self.y.size + self.dx.size
+        self.real_memory_size += self.y.size + self.dx.size
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),

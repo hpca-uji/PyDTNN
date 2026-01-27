@@ -34,8 +34,8 @@ class LayerBase[T: Array](PromoteToBackend):
         self.reqs_allred = {}
         self.parent_layer: LayerBase | None = None
         
-        self.temp_size: int = 0
-        self.actual_size: int = 0
+        self.temp_memory_size: int = 0
+        self.real_memory_size: int = 0
 
         # The following attributes will be initialized later
         self.id: int = None  # type: ignore
@@ -94,11 +94,11 @@ class LayerBase[T: Array](PromoteToBackend):
         if self.nparams > 0:
             props["params"] = self.nparams
 
-        if self.actual_size > 0:
-            props["memory"] = utils.convert_size_bytes(self.actual_size * self.model.dtype.itemsize)
+        if self.real_memory_size > 0:
+            props["memory"] = utils.convert_size_bytes(self.real_memory_size * self.model.dtype.itemsize)
         
-        if self.temp_size > 0:
-            props["temp_memory"] = utils.convert_size_bytes(self.temp_size * self.model.dtype.itemsize)
+        if self.temp_memory_size > 0:
+            props["temp_memory"] = utils.convert_size_bytes(self.temp_memory_size * self.model.dtype.itemsize)
 
         if self.prev_shape:
             props["input"] = self.prev_shape

@@ -19,7 +19,7 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
         self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), order="C", dtype=self.model.dtype)
-        self.actual_size += self.y.size
+        self.real_memory_size += self.y.size
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)

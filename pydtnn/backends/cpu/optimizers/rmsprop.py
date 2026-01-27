@@ -24,12 +24,12 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                         temp: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
                     else:
                         temp: np.ndarray = None  # type: ignore (it will be initialized later)
-                    self.temp_size += int(np.prod(w.shape))
+                    self.temp_memory_size += int(np.prod(w.shape))
 
                     self.context[layer.id]["cache_%s" % w_] = cache
                     self.context[layer.id]["temp_%s" % w_] = temp
                     
-                    self.actual_size += self.temp_size
+                    self.actual_size += self.temp_memory_size
             # else: continue
     # ----
 
@@ -43,7 +43,7 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                     w_shape = self.context[layer_id]["cache_%s" % w_].shape # type: ignore (it is correct)
                     w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape)
         # - end for
-        self.model.memory_pool.free_memory(self.temp_size)
+        self.model.memory_pool.free_memory(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

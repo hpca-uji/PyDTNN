@@ -52,7 +52,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.actual_size += self.y.size + self.dx.size
+        self.real_memory_size += self.y.size + self.dx.size
 
         self.fwd_func: Function = self.cuda_depthwise_conv_2d_fwd(func_name.format(fwd_bwd="fwd"), macros)
         self.bwd_func: Function = self.cuda_depthwise_conv_2d_bwd(func_name.format(fwd_bwd="bwd"), macros)

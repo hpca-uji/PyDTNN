@@ -19,7 +19,8 @@ import numpy as np
 from tqdm import tqdm
 
 # TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, cudnn, cublas, rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, cudnn, cublas  # type: ignore (cublas exist)
+from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
 from pydtnn import utils
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
@@ -242,7 +243,7 @@ class Model[T: Array]:
 
         self.nparams = 0
         self.actual_size = 0
-        self.temp_size = 0
+        self.temp_memory_size = 0
 
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
@@ -534,40 +535,36 @@ class Model[T: Array]:
             props["dataset"] = self.dataset_name
 
         if self.nparams > 0:
-            props["params"] = self.nparams
+            props["params"] = f"{self.nparams} ({utils.convert_size_bytes(self.nparams * self.dtype.itemsize)})"
 
         if self.actual_size > 0:
             props["memory"] = utils.convert_size_bytes(self.actual_size * self.dtype.itemsize)
 
-        if self.temp_size > 0:
-            props["temp_memory"] = utils.convert_size_bytes(self.temp_size * self.dtype.itemsize)
+        if self.temp_memory_size > 0:
+            props["temp_memory"] = utils.convert_size_bytes(self.temp_memory_size * self.dtype.itemsize)
 
-        if self.actual_size > 0 and self.temp_size > 0:
-            props["persistent"] = utils.convert_size_bytes((self.actual_size - self.temp_size) * self.dtype.itemsize)
-            props["temp-percentage"] = (self.temp_size / self.actual_size)
+        if self.optimizer:
+            props["optimizer-memory"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
+            props["optimizer-temp"] = utils.convert_size_bytes(self.optimizer.temp_memory_size * self.dtype.itemsize)
+        
+        if self.loss_func:
+            props["loss-memory"] = utils.convert_size_bytes(self.loss_func.real_memory_size * self.dtype.itemsize)
+            props["loss-temp-memory"] = utils.convert_size_bytes(self.loss_func.temp_memory_size * self.dtype.itemsize)
+
+        if self.metrics_funcs:
+            metrics_size = 0
+            metric_temp_size = 0
+            for metric in self.metrics_funcs:
+                metrics_size += metric.real_memory_size
+                metric_temp_size += metric.temp_memory_size
+            props["metrics-memory"] = utils.convert_size_bytes(metrics_size * self.dtype.itemsize)
+            props["metrics-temp-memory"] = utils.convert_size_bytes(metric_temp_size * self.dtype.itemsize)
 
         if self.layers:
             props["input"] = self.layers[0].shape
             props["output"] = self.layers[-1].shape
             props["batch-size"] = self.batch_size
             props["layers"] = len(self.get_all_layers())
-
-        if self.optimizer:
-            props["optimizer-memory"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
-            props["optimizer-temp"] = utils.convert_size_bytes(self.optimizer.temp_size * self.dtype.itemsize)
-        
-        if self.loss_func:
-            props["loss-memory"] = utils.convert_size_bytes(self.loss_func.actual_size * self.dtype.itemsize)
-            props["loss-temp-memory"] = utils.convert_size_bytes(self.loss_func.temp_size * self.dtype.itemsize)
-
-        if self.metrics_funcs:
-            metrics_size = 0
-            metric_temp_size = 0
-            for metric in self.metrics_funcs:
-                metrics_size += metric.actual_size
-                metric_temp_size += metric.temp_size
-            props["metrics-memory"] = utils.convert_size_bytes(metrics_size * self.dtype.itemsize)
-            props["metrics-temp-memory"] = utils.convert_size_bytes(metric_temp_size * self.dtype.itemsize)
 
         return props
 
@@ -649,8 +646,8 @@ class Model[T: Array]:
         layer.initialize(prev_shape, y)
 
         self.nparams += layer.nparams
-        self.actual_size += layer.actual_size
-        self.temp_size += layer.temp_size
+        self.actual_size += layer.real_memory_size
+        self.temp_memory_size += layer.temp_memory_size
         self.layers.append(layer)
 
         if layer.act:
@@ -671,7 +668,7 @@ class Model[T: Array]:
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def _select_fusion_3(self, fused_layers: list) -> tuple[str, list[LayerBase]]:
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
@@ -689,7 +686,7 @@ class Model[T: Array]:
         return layer_name, [layer0, layer1, layer2]
     # ----
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerBase]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None , list[LayerBase | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -772,8 +769,8 @@ class Model[T: Array]:
         for metric in self.metrics_funcs:
             metric.init_backend_from_model(self)
             metric.initialize()
-            self.actual_size += metric.actual_size
-            self.temp_size += metric.temp_size
+            self.actual_size += metric.real_memory_size
+            self.temp_memory_size += metric.temp_memory_size
 
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
@@ -786,16 +783,16 @@ class Model[T: Array]:
             self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer.initialize(self.get_all_layers(self.layers))
-        self.temp_size += self.optimizer.temp_size
+        self.temp_memory_size += self.optimizer.temp_memory_size
 
         if self.use_memory_pool:
             sizes = list[int]()
             for layer in self.get_all_layers():
-                sizes.append(layer.temp_size)
+                sizes.append(layer.temp_memory_size)
             for metric in self.metrics_funcs:
-                sizes.append(metric.temp_size)
-            sizes.append(self.optimizer.temp_size)
-            sizes.append(self.loss_func.temp_size)
+                sizes.append(metric.temp_memory_size)
+            sizes.append(self.optimizer.temp_memory_size)
+            sizes.append(self.loss_func.temp_memory_size)
 
             size = max(sizes)
             self.memory_pool = Memory_Pool(size=size, dtype=self.dtype)
@@ -811,7 +808,7 @@ class Model[T: Array]:
 
         # ----
 
-    def export(self):
+    def export(self) -> dict[str, Any]:
         data = {}
 
         if self.model_name is not None:
@@ -833,7 +830,7 @@ class Model[T: Array]:
             warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})", RuntimeWarning)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
-            layer.import_(data)
+            layer.import_(data)  # type: ignore (It is the right data type.)
 
     def load_weights_and_bias(self, filename: str) -> None:
         """

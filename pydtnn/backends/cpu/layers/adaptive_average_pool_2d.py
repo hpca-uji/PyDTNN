@@ -38,12 +38,12 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
-        self.actual_size += self.y.size
+        self.real_memory_size += self.y.size
 
         if not self.model.evaluate_only:
             dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
             self.dx = np.zeros(dx_shape, dtype=self.model.dtype, order="C")
-            self.actual_size += self.dx.size
+            self.real_memory_size += self.dx.size
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)

@@ -40,7 +40,7 @@ class LogGPU(Log[TensorGPU], ActivationGPU):
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.actual_size += self.y.size + self.dx.size
+        self.real_memory_size += self.y.size + self.dx.size
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.log(x.ary, self.y.ary, stream=self.model.stream)

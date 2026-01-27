@@ -26,14 +26,14 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
                      else:
                             vt_temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
                             mt_temp_dw: np.ndarray = None  # type: ignore (It will be initialized later)
-                     self.temp_size += int(2 * np.prod(shape))
+                     self.temp_memory_size += int(2 * np.prod(shape))
 
                      self.context[layer.id]["m_%s" % w_] = momentum
                      self.context[layer.id]["v_%s" % w_] = velocity
                      self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w
                      self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw
                      
-                     self.actual_size += self.temp_size
+                     self.actual_size += self.temp_memory_size
        # ---
 
        def post_initialize(self) -> None:
@@ -55,7 +55,7 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
                 w_shape = self.context[layer_id]["m_%s" % w_].shape # type: ignore (it is correct)
                 w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape)
         # - end for
-        self.model.memory_pool.free_memory(self.temp_size)
+        self.model.memory_pool.free_memory(self.temp_memory_size)
     # ---
 
        def update(self, layer: LayerCPU) -> None:

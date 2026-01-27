@@ -28,7 +28,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 self.temp_bw_shape = (self.dim_c, self.dim_n)
                 dx_shape = (self.model.batch_size, self.ci, self.hi, self.wi)
 
-                self.actual_size += self._x_cols.size
+                self.real_memory_size += self._x_cols.size
             case TensorFormat.NHWC:
                 self.forward = self._forward_i2c_nhwc
                 self.backward = self._backward_i2c_nhwc
@@ -38,7 +38,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
                 self.temp_bw_shape = (self.dim_n, self.dim_c)
                 dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
 
-                self.actual_size += self._x_rows.size
+                self.real_memory_size += self._x_rows.size
             case _:
                 _dw_shape = (None, )
                 self.temp_bw_shape: tuple[int, ...] = (None, )
@@ -49,7 +49,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
-        self.actual_size += self.y.size
+        self.real_memory_size += self.y.size
 
         if not self.model.evaluate_only:
             self._dw_shape = _dw_shape  # This shape is only for a intermediate operation.
@@ -60,17 +60,17 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
             else:
                 self.temp_bw: np.ndarray = None  # type: ignore (It will be initialized later)
 
-            self.temp_size += int(np.prod(self.temp_bw_shape))
-            self.actual_size += self.dx.size
-        self.actual_size += self.temp_size
+            self.temp_memory_size += int(np.prod(self.temp_bw_shape))
+            self.real_memory_size += self.dx.size
+        self.real_memory_size += self.temp_memory_size
     # ---
 
     def post_initialize(self) -> None:
         super().post_initialize()
         if not self.model.evaluate_only:
             self.temp_bw = self.model.memory_pool.get_ndarray(self.temp_bw_shape)
-            self.model.memory_pool.free_memory(self.temp_size)
-
+            self.model.memory_pool.free_memory(self.temp_memory_size)
+    # ----
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""

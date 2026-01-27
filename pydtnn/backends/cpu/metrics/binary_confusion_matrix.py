@@ -31,7 +31,7 @@ class BinaryConfusionMatrixCPU(BinaryConfusionMatrix[np.ndarray], MetricCPU):
         _, target_classes = self.shape
         self.conf_matrix = np.zeros((target_classes, 2, 2), dtype=np.int32)
 
-        self.actual_size += self.conf_matrix.size
+        self.real_memory_size += self.conf_matrix.size
     # ---
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:

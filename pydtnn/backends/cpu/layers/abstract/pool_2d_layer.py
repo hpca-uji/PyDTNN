@@ -34,7 +34,7 @@ class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
-        self.actual_size += self.y.size
+        self.real_memory_size += self.y.size
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),

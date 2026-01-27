@@ -29,7 +29,7 @@ class Relu6GPU(Relu6[TensorGPU], ActivationGPU):
         mask_gpu = gpuarray.zeros((self.model.batch_size, *self.prev_shape), self.model.dtype)
         self.mask = TensorGPU(mask_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.actual_size += self.y.size + self.mask.size
+        self.real_memory_size += self.y.size + self.mask.size
 
         self.cuda_fwd_func = self.cuda_adaptive_average_pooling_fwd(dtype=self.model.dtype)
         self.cuda_bwd_func = self.cuda_adaptive_average_pooling_bwd(dtype=self.model.dtype)
