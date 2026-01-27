@@ -541,7 +541,7 @@ class Model[T: Array]:
             props["memory"] = utils.convert_size_bytes(self.actual_size * self.dtype.itemsize)
 
         if self.temp_memory_size > 0:
-            props["temp_memory"] = utils.convert_size_bytes(self.temp_memory_size * self.dtype.itemsize)
+            props["temp-memory"] = utils.convert_size_bytes(self.temp_memory_size * self.dtype.itemsize)
 
         if self.optimizer:
             props["optimizer-memory"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
