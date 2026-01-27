@@ -45,8 +45,9 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.y: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
-        self.real_memory_size += self.nparams + self.y.size
+        self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
+        self.real_memory_size += self.nparams + self.y_dx.size
+        # NOTE: This variable stores both y and dx values.
         
         self._mean_inv_shape = shape_
         self._var_inv_shape = shape_
@@ -66,10 +67,12 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         if not self.model.evaluate_only:
 
-            self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
+            #self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
+            #self.real_memory_size += self.dx.size
             self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
+            self.real_memory_size += self.dgamma.size
             self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
-            self.real_memory_size += self.dx.size + self.dgamma.size + self.dbeta.size
+            self.real_memory_size += self.dbeta.size
             
             self._mean_shape = (self.ci, )
             self._var_shape = (self.ci, )
@@ -103,7 +106,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 
-        self.y: np.ndarray
+        self.y_dx: np.ndarray
         n = x.shape[0]
 
         if self.spatial:
@@ -112,7 +115,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             x = x.reshape((-1, self.ci), copy=None, order="C")
         # else: x = x (no reshape needed)
 
-        y: np.ndarray = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y_dx[:x.shape[0], :]
         self.xn = x
 
         if self.model.mode is Model.Mode.EVALUATE:
@@ -162,6 +165,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         if self.spatial:
             y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
+        # else: nothing special (It has the right format)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
     # ----
@@ -178,7 +182,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         else:
             num_elems = n
 
-        dx: np.ndarray = self.dx[: num_elems, :]
+        dx: np.ndarray = self.y_dx[: num_elems, :]
         dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
         dy_xn.fill(0)
 
@@ -199,5 +203,6 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         if self.spatial:
             dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
             dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
+        # else: nothing special (It has the right format)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
