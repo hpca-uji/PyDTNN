@@ -32,3 +32,17 @@ class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
         return dy
+    
+    def forward_numpy(self, x: np.ndarray) -> np.ndarray:
+        self.y = self._y[:x.shape[0], :]
+        self.mask = self._mask[:x.shape[0], :]
+        
+        negatives = (x < 0)
+
+        self.y[~negatives] = x
+        self.y[negatives] = x * self.negative_slope
+        
+        np.greater(x, 0, out=self.mask, dtype=np.int8)
+        self.mask[negatives] = self.negative_slope
+
+        return self.y

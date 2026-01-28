@@ -17,7 +17,6 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
             self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
             self.real_memory_size += self.dx.size
 
-
     def _forward_numpy(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:
         y = self.y[:x.shape[0], :]
@@ -30,18 +29,25 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
                dtype=self.model.dtype)
         np.log(x, out=y,
                dtype=self.model.dtype)
-        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0"
+        # NOTE: Log propierty: "log(a / b) = log(a) - log(b)", and "log(1) = 0 ==>
+        #                       ==> "log(a / b) = - log(b)""
         np.multiply(y, -1, out=y,
                     dtype=self.model.dtype)
         return y
+    
+    def _backward_numpy(self, dy: np.ndarray) -> np.ndarray:
+        # return 1 / (np.exp(dy) + 1)
+        np.exp(dy, out=dy)
+        np.add(dy, 1, out=dy)
+        np.reciprocal(dy, out=dy)
+        return dy
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        y = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y[:x.shape[0], :]
         log_fwd_cython(x.reshape(-1, copy=False, order="C"), y.reshape(-1, copy=False, order="C"))
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        dx = self.dx[:dy.shape[0], :]
+        dx: np.ndarray = self.dx[:dy.shape[0], :]
         log_bwd_cython(dy.reshape(-1, copy=False, order="C"), dx.reshape(-1, copy=False, order="C"))
-
         return dx

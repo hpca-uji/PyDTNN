@@ -31,3 +31,12 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
         return dy
+    
+    def forward_numpy(self, x: np.ndarray) -> np.ndarray:
+        self.y = self._y[:x.shape[0], :]
+        self.mask = self._mask[:x.shape[0], :]
+
+        np.clip(x, 0, None, out=self.y)
+        np.greater(x, 0, out=self.mask, dtype=np.int8)
+
+        return self.y
