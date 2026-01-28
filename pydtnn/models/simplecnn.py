@@ -17,13 +17,12 @@ def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[Lay
     _ = model.append
 
     _(Input(shape=input_shape))
-    #_(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation=Relu, grouping=Conv2D.Grouping.STANDARD))
-    #_(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
-    #_(MaxPool2D(pool_shape=(2, 2), stride=2))
-    _(BatchNormalization())
+    _(Conv2D(nfilters=4, filter_shape=(3, 3), padding=1, stride=1, activation=Relu, grouping=Conv2D.Grouping.STANDARD))
+    _(Conv2D(nfilters=8, filter_shape=(3, 3), padding=1, stride=1, activation=Relu))
+    _(MaxPool2D(pool_shape=(2, 2), stride=2))
     _(Flatten())
-    #_(FC(shape=(128,), activation=Relu))
-    #_(Dropout(rate=0.5))
+    _(FC(shape=(128,), activation=Relu))
+    _(Dropout(rate=0.5))
     _(FC(shape=output_shape, activation=Softmax))
 
     return model

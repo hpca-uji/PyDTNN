@@ -110,17 +110,17 @@ def ciphertext_reducer(ciphertext: openfhe.Ciphertext):
     return (cls, args)
 
 
-def public_key_reducer(ciphertext: openfhe.PublicKey):
+def public_key_reducer(public_key: openfhe.PublicKey):
     """OpenFHE public key pickle reducer"""
     cls = DeserializePublicKey
-    args = (openfhe.Serialize(ciphertext, openfhe.BINARY),)
+    args = (openfhe.Serialize(public_key, openfhe.BINARY),)
     return (cls, args)
 
 
-def private_key_reducer(ciphertext: openfhe.PrivateKey):
+def private_key_reducer(private_key: openfhe.PrivateKey):
     """OpenFHE private key pickle reducer"""
     cls = DeserializePrivateKey
-    args = (openfhe.Serialize(ciphertext, openfhe.BINARY),)
+    args = (openfhe.Serialize(private_key, openfhe.BINARY),)
     return (cls, args)
 
 

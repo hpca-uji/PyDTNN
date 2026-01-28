@@ -1,6 +1,5 @@
 """TenSEAL encryption"""
 
-# NOTE: Dataclasses with slots can not use zero-arg super() (gh-90562)
 # FIXME: Serialization performance
 
 import sys
