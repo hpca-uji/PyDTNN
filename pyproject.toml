@@ -56,7 +56,8 @@ mpi = [
 ]
 fhe = [
     "openfhe>=1.4.0",
-    "tenseal>=0.3.16"
+    "tenseal>=0.3.16",
+    "fhe-py-binding>=0.1.0"
 ]
 test = [
     "torch>=2.6.0",

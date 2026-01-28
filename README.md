@@ -81,12 +81,6 @@ Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-git submodule update --init ./vendor/net-queue
-pip install ./vendor/net-queue
-
-git submodule update --init ./vendor/pympi
-pip install ./vendor/pympi
-
 pip install .[mpi]
 ```
 
@@ -102,33 +96,23 @@ Optionally, if you are going to use FHE, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[fhe]
+pip install .[mpi]
 ```
 
-Optionally, if you are going to use MPI/TCP, you should enable the protocol
+Optionally, if you are going to use PyMPI, you can switch protocols
 with:
 ```sh
 export PYMPI_PROTO=tcp
-```
-
-Optionally, if you are going to use MPI/gRPC, you should enable the protocol
-with:
-```sh
 export PYMPI_PROTO=grpc
-```
-
-Optionally, if you are going to use MPI/MQTT, you should have installed a
-MQTT broker server, you should enable the protocol with:
-```sh
 export PYMPI_PROTO=mqtt
 ```
 
-Optionally, if you are going to use MPI/SSL, you should enable the
-transport with:
+Optionally, if you are going to use PyMPI with SSL, you should enable it
+with:
 ```sh
 export PYMPI_SSL=yes
-export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
-export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server certificate
+export PYMPI_SSL_KEY=key.pem    # server private key
+export PYMPI_SSL_CERT=cert.pem  # server certificate
 ```
 
 For more information on how to manage external dependencies see
