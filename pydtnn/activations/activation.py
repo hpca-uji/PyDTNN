@@ -6,7 +6,6 @@ class Activation[T: Array](LayerBase):
 
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
-        self.y: T = None  #type: ignore (it will be initalized later)
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None):
         super().initialize(prev_shape, x)

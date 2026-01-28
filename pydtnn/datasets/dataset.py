@@ -79,9 +79,9 @@ class Dataset(ABC):
 
         self._initial_nsamples = [self._nsamples[Dataset.Part.TRAIN], self._nsamples[Dataset.Part.VAL], self._nsamples[Dataset.Part.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
-        self._local_offset = [0] * 3
-        self._local_nsamples = [0] * 3
-        self._local_remaining_nsamples = [-1] * 3  # -1 is used to mark each part as not initialized
+        self._local_offset = [0] * len(Dataset.Part)
+        self._local_nsamples = [0] * len(Dataset.Part)
+        self._local_remaining_nsamples = [-1] * len(Dataset.Part)  # -1 is used to mark each part as not initialized
 
         for part in Dataset.Part.TRAIN, Dataset.Part.VAL, Dataset.Part.TEST:
             (self._local_offset[part],
