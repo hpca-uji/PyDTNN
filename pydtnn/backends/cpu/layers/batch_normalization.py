@@ -189,16 +189,44 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
         np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
         np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
+        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
+
+        if self.spatial:
+            dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
+            dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
+        # else: nothing special (It has the right format)
+
+        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+
+
+    def backward_numpy(self, dy: np.ndarray) -> np.ndarray:
+
+        n = dy.shape[0]
+        if self.spatial:
+            num_elems = (n * self.hi * self.wi)
+
+            # NOTE: Executing in this format gives better results.
+            dy = format_transpose(dy, self.model.tensor_format, TensorFormat.NHWC)
+            dy = dy.reshape((num_elems, self.ci), copy=None)
+        else:
+            num_elems = n
+
+        dx: np.ndarray = self.y_dx[: num_elems, :]
+        dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
+        dy_xn.fill(0)
+
+        np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
+        np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
+        np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
 
         # dx = (self.gamma / (self.std * n)) * (n * dy - self.xn * self.dgamma - self.dbeta)
-        #np.multiply(self.std, n, out=dx)
-        #np.divide(self.gamma, dx, out=dx)
-        #np.multiply(n, dy, out=dy)
-        #np.multiply(self.xn, self.dgamma, out=self.xn)
-        #np.subtract(dy, self.xn, out=dy)
-        #np.subtract(dy, self.dbeta, out=dy)
-        #np.multiply(dx, dy, out=dx)
-        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
+        np.multiply(self.std, n, out=dx)
+        np.divide(self.gamma, dx, out=dx)
+        np.multiply(n, dy, out=dy)
+        np.multiply(self.xn, self.dgamma, out=self.xn)
+        np.subtract(dy, self.xn, out=dy)
+        np.subtract(dy, self.dbeta, out=dy)
+        np.multiply(dx, dy, out=dx)
 
         if self.spatial:
             dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
