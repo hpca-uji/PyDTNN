@@ -10,6 +10,7 @@ from collections import abc
 from dataclasses import dataclass
 
 import numpy as np
+
 from pydtnn.utils.constants import ArrayShape
 
 
@@ -40,6 +41,10 @@ class Ciphertext[C, P: np.number]:
         if other.dtype != self.dtype:
             raise TypeError(f"Different underlying types ({other.dtype} != {self.dtype})")
 
+    def _add_chunk(self, a: C, b: C) -> C:
+        """Add two ciphertexts"""
+        return operator.add(a, b)
+
     def __add__(self, other):
         """Add two ciphertexts"""
         self._operable(other)
@@ -47,7 +52,7 @@ class Ciphertext[C, P: np.number]:
         if other.shape != self.shape:
             raise TypeError(f"Different underlying shapes ({other.shape} != {self.shape})")
 
-        chunks = tuple(itertools.starmap(operator.add, zip(self._chunks, other._chunks)))
+        chunks = tuple(itertools.starmap(self._add_chunk, zip(self._chunks, other._chunks)))
 
         return self._new(
             shape=self.shape,
@@ -67,7 +72,7 @@ class Context[C]:
 
     @property
     def _slots(self) -> int:
-        return 2 ** (self._poly_degree // 2)
+        return 2 ** (self._poly_degree - 1)
 
     def _new[P: np.number](self, /, dtype: np.dtype[P], *args, **kwds) -> Ciphertext[C, P]:
         """Create new operable ciphertext"""
