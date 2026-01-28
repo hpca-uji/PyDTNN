@@ -158,7 +158,7 @@ Dependencies: `gcc cmake`
 
 ```sh
 # Configuration
-FHE_PREFIX="$PREFIX/openfhe"
+OFHE_PREFIX="$PREFIX/openfhe"
 FHE_SRC="$SRC/openfhe"
 
 # Source
@@ -170,13 +170,13 @@ git checkout v1.4.2
 # Compile
 mkdir -p ./build
 cd ./build
-cmake -D CMAKE_INSTALL_PREFIX="$FHE_PREFIX" ..
+cmake -D CMAKE_INSTALL_PREFIX="$OFHE_PREFIX" ..
 cmake --build . --parallel "$NPROC"
 
 # Install
-mkdir -p "$FHE_PREFIX"
+mkdir -p "$OFHE_PREFIX"
 cmake --install .
-export LD_LIBRARY_PATH="$FHE_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="$OFHE_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ```
 
 ## OpenFHE-Python
@@ -186,9 +186,9 @@ Dependencies: `gcc cmake python3` and virutal Python environment
 
 ```sh
 # Configuration
-FHE_PREFIX="$PREFIX/openfhe"
+OFHE_PREFIX="$PREFIX/openfhe"
 PYFHE_SRC="$SRC/openfhe-python"
-PYFHE_PREFIX="$PREFIX/openfhe-python"
+OFHEPY_PREFIX="$PREFIX/openfhe-python"
 
 # Source
 # git clone https://github.com/openfheorg/openfhe-python.git "$PYFHE_SRC"
@@ -200,7 +200,7 @@ pip install pybind11[global]
 # Compile
 mkdir -p ./build
 cd ./build
-cmake -D CMAKE_PREFIX_PATH="$FHE_PREFIX" -D CMAKE_INSTALL_PREFIX=openfhe ..
+cmake -D CMAKE_PREFIX_PATH="$OFHE_PREFIX" -D CMAKE_INSTALL_PREFIX=openfhe ..
 cmake --build . --parallel "$NPROC"
 cat <<EOF > pyproject.toml
 [project]
@@ -214,10 +214,34 @@ openfhe = ["*"]
 EOF
 
 # Install
-mkdir -p "$PYFHE_PREFIX"
+mkdir -p "$OFHEPY_PREFIX"
 cmake --install .
-cp -at "$PYFHE_PREFIX" pyproject.toml openfhe
-pip install "$PYFHE_PREFIX"
+cp -at "$OFHEPY_PREFIX" pyproject.toml openfhe
+pip install "$OFHEPY_PREFIX"
+```
+
+## uArchFHE
+Source: <https://github.com/darwinquezada/he_hpc>
+
+Dependencies: `python3 python3-maturin rustup libclang-dev libgmp-dev libntl-dev libbz2-dev` and virutal Python environment
+
+```sh
+# Configuration
+UAFHE_PREFIX="$PREFIX/uarchfhe"
+UAFHE_SRC="$SRC/uarchfhe"
+
+# Source
+# git clone https://github.com/darwinquezada/he_hpc.git "$UAFHE_SRC"
+git submodule update --init "$UAFHE_SRC"
+cd "$UAFHE_SRC"
+git checkout 09c361747117a53fa39f5954bf4e8c9462673434
+
+# Compile
+cd ./crates/fhe_py_binding
+maturin build
+
+# Install
+pip install "$UAFHE_SRC/target/wheels/"*.whl
 ```
 
 ## net-queue
