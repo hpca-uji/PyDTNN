@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 

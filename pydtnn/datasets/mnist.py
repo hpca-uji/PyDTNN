@@ -1,6 +1,6 @@
 import os
 import itertools
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING
 
 import numpy as np
 
@@ -68,8 +68,8 @@ class MNIST(Dataset):
         nbytes = self._local_nsamples[part] * size
         filename = self._x_filename[part]
         with self._gzip_open(filename) as f:
-            x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE) / 255.0
-        x = x.astype(self.model.dtype)
+            x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE)
+        np.divide(x, 255.0, out=x, dtype=self.model.dtype, casting="unsafe")
 
         x = self.model.encode_tensor(x)
 
@@ -84,7 +84,7 @@ class MNIST(Dataset):
 
         yield x, y
 
-    def _read_file(self, f, offset: int, nbytes: int) -> np.ndarray:
+    def _read_file(self, f: IO[bytes], offset: int, nbytes: int) -> np.ndarray:
         # How to read the header:
         #  zero, data_type, dims = struct.unpack('>HBB', f.read(4))
         #  shape = (struct.unpack('>I', f.read(4))[0] for _ in range(dims))

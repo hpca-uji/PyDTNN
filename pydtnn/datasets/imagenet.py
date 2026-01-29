@@ -12,12 +12,10 @@ from scipy.io import loadmat
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
-from pydtnn.utils.tensor import TensorFormat
 
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
-
 
 TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 50000

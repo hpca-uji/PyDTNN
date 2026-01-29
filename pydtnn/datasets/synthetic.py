@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import TensorFormat
 
 if TYPE_CHECKING:
     from pydtnn.model import Model

@@ -3,7 +3,6 @@ import copy
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils import random
 
