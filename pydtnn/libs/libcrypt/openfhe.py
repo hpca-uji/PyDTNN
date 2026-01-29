@@ -75,22 +75,22 @@ class Context(libcrypt.Context[openfhe.Ciphertext]):
 
 
 # Serialization
-def DeserializeCryptoContext(str: bytes) -> openfhe.CryptoContext:
+def deserialize_context(str: bytes) -> openfhe.CryptoContext:
     """OpenFHE context deserializer"""
     return openfhe.DeserializeCryptoContextString(str, openfhe.BINARY)
 
 
-def DeserializeCiphertext(str: bytes) -> openfhe.Ciphertext:
+def deserialize_ciphertext(str: bytes) -> openfhe.Ciphertext:
     """OpenFHE cipher text deserializer"""
     return openfhe.DeserializeCiphertextString(str, openfhe.BINARY)
 
 
-def DeserializePublicKey(str: bytes) -> openfhe.PublicKey:
+def deserialize_publickey(str: bytes) -> openfhe.PublicKey:
     """OpenFHE public key deserializer"""
     return openfhe.DeserializePublicKeyString(str, openfhe.BINARY)
 
 
-def DeserializePrivateKey(str: bytes) -> openfhe.PrivateKey:
+def deserialize_privatekey(str: bytes) -> openfhe.PrivateKey:
     """OpenFHE private key deserializer"""
     return openfhe.DeserializePrivateKeyString(str, openfhe.BINARY)
 
@@ -98,28 +98,28 @@ def DeserializePrivateKey(str: bytes) -> openfhe.PrivateKey:
 # Pickle support
 def context_reducer(context: openfhe.CryptoContext):
     """OpenFHE context pickle reducer"""
-    cls = DeserializeCryptoContext
+    cls = deserialize_context
     args = (openfhe.Serialize(context, openfhe.BINARY),)
     return (cls, args)
 
 
 def ciphertext_reducer(ciphertext: openfhe.Ciphertext):
     """OpenFHE cipher text pickle reducer"""
-    cls = DeserializeCiphertext
+    cls = deserialize_ciphertext
     args = (openfhe.Serialize(ciphertext, openfhe.BINARY),)
     return (cls, args)
 
 
 def public_key_reducer(public_key: openfhe.PublicKey):
     """OpenFHE public key pickle reducer"""
-    cls = DeserializePublicKey
+    cls = deserialize_publickey
     args = (openfhe.Serialize(public_key, openfhe.BINARY),)
     return (cls, args)
 
 
 def private_key_reducer(private_key: openfhe.PrivateKey):
     """OpenFHE private key pickle reducer"""
-    cls = DeserializePrivateKey
+    cls = deserialize_privatekey
     args = (openfhe.Serialize(private_key, openfhe.BINARY),)
     return (cls, args)
 
