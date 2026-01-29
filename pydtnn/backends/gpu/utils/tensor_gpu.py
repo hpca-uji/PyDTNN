@@ -104,7 +104,7 @@ class TensorGPU:
         self.size: int = -1
         self.desc: int = -1
         # ---
-        self._initalize(gpu_arr, desc)
+        self._initialize(gpu_arr, desc)
     # ---
 
     def copy(self):
@@ -207,7 +207,7 @@ class TensorGPU:
                     axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
                     self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
                     # print(self.shape, dimA, axes, len(seq_length_array))
-                    cudnn.cudnnSetSeqDataDescriptor(self.desc, cudnn_dtype,
+                    cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype,
                                                     np.int32(4), dimA, axes,
                                                     np.int32(len(self.seq_length_array)), self.seq_length_array,
                                                     None)
@@ -225,14 +225,14 @@ class TensorGPU:
             case self.TensorTypeEnum.FILTER:
                 cudnn.cudnnDestroyFilterDescriptor(self.desc)
             case self.TensorTypeEnum.SEQ:
-                pass
+                cudnn.cudnnDestroySeqDataDescriptor(self.desc)
             case self.TensorTypeEnum.OTHER:
                 cudnn.cudnnDestroySeqDataDescriptor(self.desc)
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
         self.desc = -1
 
-    def _initalize(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
+    def _initialize(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
         self.ary = gpu_arr
         self._set_shape(gpu_arr)
         self.size = gpu_arr.size
@@ -264,12 +264,12 @@ class TensorGPU:
 
     def set_ary(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
         self.free_gpu_arr()
-        self._initalize(gpu_arr, desc)
+        self._initialize(gpu_arr, desc)
     # ---
 
     def set_ary_from_ndarray(self, arr: np.ndarray, desc: int | None = None) -> None:
         self.free_gpu_arr()
-        self._initalize(gpuarray.to_gpu(arr), desc)
+        self._initialize(gpuarray.to_gpu(arr), desc)
     # ---
 
     def fill(self, scalar: int | float) -> None:
