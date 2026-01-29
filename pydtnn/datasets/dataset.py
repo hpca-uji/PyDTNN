@@ -76,19 +76,19 @@ class Dataset(ABC):
         if self.model.transform_crop:
             crop, size = self._calculate_crop(self.input_shape[1:])  #type: ignore (The cropped input shape will be a tuple[int, int])
             self.input_shape = (self.input_shape[0], *size)
-            transformations_training.append(self._do_crop)
-            transformations_always.append(self._do_crop)
+            transformations_training.append(self.transformation_unifier(self._do_crop))
+            transformations_always.append(self.transformation_unifier(self._do_crop))
 
         if self.model.transform_resize:
             self.input_shape = (self.input_shape[0], self.model.transform_resize_size, self.model.transform_resize_size)
-            transformations_training.append(self._do_resize)
-            transformations_always.append(self._do_resize)
+            transformations_training.append(self.transformation_unifier(self._do_resize))
+            transformations_always.append(self.transformation_unifier(self._do_resize))
 
         if self.model.augment_flip:
-            transformations_training.append(self._do_flip_images)
+            transformations_training.append(self.transformation_unifier(self._do_flip_images))
 
         if self.model.augment_crop:
-            transformations_training.append(self._do_crop_images)
+            transformations_training.append(self.transformation_unifier(self._do_crop_images))
 
         if self.model.augment_shuffle:
             transformations_training.append(self.do_shuffle)
@@ -329,16 +329,17 @@ class Dataset(ABC):
         return
         yield
 
+    def transformation_unifier(self, func:Callable) -> Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]:
+        # NOTE: This is a pseudo-decorator to unify the trasnformation's input and the output.
+        def _func(x: np.ndarray, y:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+            return func(x), y
+        return _func
+
     def _data_transform(self, part: Part, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
         x, y = x.copy(), y.copy()
-
         for trasformation in self.transformations[part]:
-            x = trasformation(x)
-
-        if self.model.augment_shuffle and part is Dataset.Part.TRAIN:
-            x, y = self.do_shuffle(x, y)
-
+            x, y = trasformation(x, y)
         return x, y
 
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
@@ -481,6 +482,7 @@ class Dataset(ABC):
         size = (crop[2] - crop[0], crop[3] - crop[1])
         return (crop, size)
 
+    @transformation_unifier
     def _do_crop(self, data: np.ndarray) -> np.ndarray:
         data = self.model.decode_tensor(data)
 
