@@ -4,9 +4,7 @@
 
 import sys
 import copyreg
-import tempfile
 import dataclasses
-from pathlib import Path
 from dataclasses import dataclass
 
 import numpy as np
@@ -65,21 +63,22 @@ class Ciphertext[P: np.number](libcrypt.Ciphertext[uarchfhe.PyCiphertext, P]):
         """Create new operable ciphertext"""
         return super(Ciphertext, self)._new(_context=self._context, *args, **kwds)
 
+    def _operable(self, other) -> None:
+        """Ensure ciphertext is operable"""
+        super(Ciphertext, self)._operable(other)
+
+        # Synchronize contexts
+        self._link_context(self._context)
+        other._link_context(self._context)
+
+    def _link_context(self, context: uarchfhe.PyContext) -> None:
+        """Link all chunks to context"""
+        for chunk in self._chunks:
+            chunk.link_context(context)
+
     def _add_chunk(self, a: uarchfhe.PyCiphertext, b: uarchfhe.PyCiphertext) -> uarchfhe.PyCiphertext:
         """Add two ciphertexts"""
         return uarchfhe.PyCiphertext.add(a, b)
-
-    @classmethod
-    def _expand(cls, dtype, shape, chunks, context):
-        """Deserialize ciphertext"""
-        chunks = tuple(pyciphertext_load_bytes(chunk, context) for chunk in chunks)
-        return cls(dtype, shape, chunks, context)
-
-    def __reduce__(self) -> tuple:
-        """Serialize ciphertext"""
-        cls = self._expand
-        args = (self.dtype, self.shape, tuple(pyciphertext_save_bytes(chunk) for chunk in self._chunks), self._context)
-        return (cls, args)
 
 
 class Context(libcrypt.Context[uarchfhe.PyCiphertext]):
@@ -116,90 +115,29 @@ class Context(libcrypt.Context[uarchfhe.PyCiphertext]):
         return ckks.decrypt(chunk)
 
 
-# Serialization
-def pycontext_load_bytes(data: bytes) -> uarchfhe.PyContext:
-    """uArchFHE context deserializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        path.write_bytes(data)
-        return uarchfhe.PyContext.load(str(path))
-
-
-def pycontext_save_bytes(context: uarchfhe.PyContext) -> bytes:
-    """uArchFHE context serializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        context.save(str(path))
-        return path.read_bytes()
-
-
-def pykeychain_load_full_bytes(data: bytes, private_key: bytes | None = None) -> uarchfhe.PyKeychain:
-    """uArchFHE key chain deserializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        path.write_bytes(data)
-        if private_key is None:
-            secret_path = None
-        else:
-            secret_path = Path(dir, f"{__name__}.private")
-            secret_path.write_bytes(private_key)
-        return uarchfhe.PyKeychain.load_full(str(path), None if private_key is None else str(secret_path), use_json=False)
-
-
-def pykeychain_save_public_bytes(keychain: uarchfhe.PyKeychain) -> bytes:
-    """uArchFHE key chain serializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        keychain.save_public(str(path), use_json=False)
-        return path.read_bytes()
-
-
-def pysecretkey_load_bytes(data: bytes) -> uarchfhe.PySecretKey:
-    """uArchFHE private key deserializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        path.write_bytes(data)
-        return uarchfhe.PySecretKey.load(str(path))
-
-
-def pysecretkey_save_bytes(private_key: uarchfhe.PySecretKey) -> bytes:
-    """uArchFHE private key serializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        private_key.save(str(path))
-        return path.read_bytes()
-
-
-def pyciphertext_load_bytes(data: bytes, context: uarchfhe.PyContext) -> uarchfhe.PyCiphertext:
-    """uArchFHE cipher text deserializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        path.write_bytes(data)
-        return uarchfhe.PyCiphertext.load(str(path), context)
-
-
-def pyciphertext_save_bytes(ciphertext: uarchfhe.PyCiphertext) -> bytes:
-    """uArchFHE cipher text serializer"""
-    with tempfile.TemporaryDirectory() as dir:
-        path = Path(dir, __name__)
-        ciphertext.save(str(path))
-        return path.read_bytes()
-
-
 # Pickle support
-def context_reducer(context: uarchfhe.PyContext):
+def context_reducer(context: uarchfhe.PyContext) -> tuple:
     """uArchFHE context pickle reducer"""
-    cls = pycontext_load_bytes
-    args = (pycontext_save_bytes(context),)
+    cls = context.load_from_memory
+    args = (context.save_to_memory(),)
     return (cls, args)
 
 
-def keychain_reducer(keychain: uarchfhe.PyKeychain):
+def keychain_reducer(keychain: uarchfhe.PyKeychain) -> tuple:
     """uArchFHE key chain pickle reducer"""
-    cls = pykeychain_load_full_bytes
-    args = (pykeychain_save_public_bytes(keychain), pysecretkey_save_bytes(keychain.secret))
+    cls = keychain.load_full_from_memory
+    args = (keychain.save_public_keys_to_memory(), keychain.save_secret_key_to_memory())
     return (cls, args)
+
+
+def ciphertext_reducer(ciphertext: uarchfhe.PyCiphertext) -> tuple:
+    """uArchFHE ciphertext reducer"""
+    cls = ciphertext.load_from_memory
+    args = (ciphertext.save_to_memory(),)
+    return (cls, args)
+
 
 
 copyreg.pickle(uarchfhe.PyContext, context_reducer)
 copyreg.pickle(uarchfhe.PyKeychain, keychain_reducer)
+copyreg.pickle(uarchfhe.PyCiphertext, ciphertext_reducer)

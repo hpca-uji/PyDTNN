@@ -10,7 +10,7 @@ NPROC=$(nproc)
 ## BLIS
 Source: <https://github.com/flame/blis>
 
-Dependencies: `gcc make`
+Dependencies: `make gcc`
 
 ```sh
 # Configuration
@@ -36,7 +36,7 @@ export LD_LIBRARY_PATH="$BLIS_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ## TVM
 Source: <https://github.com/apache/tvm>
 
-Dependencies: `gcc cmake llvm-dev python3` and virutal Python environment
+Dependencies: `python3 cmake gcc llvm-dev` and virutal Python environment
 
 ```sh
 # Configuration
@@ -69,7 +69,7 @@ pip install ./python
 ## convGemm
 Source: <https://github.com/hpca-uji/convGemm>
 
-Dependencies: `gcc cmake` and `blis`
+Dependencies: `cmake gcc` and `blis`
 
 ```sh
 # Configuration
@@ -97,7 +97,7 @@ export LD_LIBRARY_PATH="$GEMM_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ## convWinograd
 Source: <https://github.com/hpca-uji/convWinograd>
 
-Dependencies: `gcc cmake` and `blis`
+Dependencies: `cmake gcc` and `blis`
 
 ```sh
 # Configuration
@@ -125,7 +125,7 @@ export LD_LIBRARY_PATH="$WINOGRAD_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH
 ## convDirect
 Source: <https://github.com/hpca-uji/convDirect>
 
-Dependencies: `gcc cmake` and `blis tvm convGemm`
+Dependencies: `cmake gcc` and `blis tvm convGemm`
 
 ```sh
 # Configuration
@@ -154,17 +154,17 @@ export LD_LIBRARY_PATH="$DIRECT_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ## OpenFHE
 Source: <https://github.com/openfheorg/openfhe-development>
 
-Dependencies: `gcc cmake`
+Dependencies: `cmake gcc`
 
 ```sh
 # Configuration
 OFHE_PREFIX="$PREFIX/openfhe"
-FHE_SRC="$SRC/openfhe"
+OFHE_SRC="$SRC/openfhe"
 
 # Source
-# git clone https://github.com/openfheorg/openfhe-development.git "$FHE_SRC"
-git submodule update --init "$FHE_SRC"
-cd "$FHE_SRC"
+# git clone https://github.com/openfheorg/openfhe-development.git "$OFHE_SRC"
+git submodule update --init "$OFHE_SRC"
+cd "$OFHE_SRC"
 git checkout v1.4.2
 
 # Compile
@@ -182,48 +182,46 @@ export LD_LIBRARY_PATH="$OFHE_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 ## OpenFHE-Python
 Source: <https://github.com/openfheorg/openfhe-python>
 
-Dependencies: `gcc cmake python3` and virutal Python environment
+Dependencies: `python3 cmake gcc` and virutal Python environment
 
 ```sh
 # Configuration
 OFHE_PREFIX="$PREFIX/openfhe"
-PYFHE_SRC="$SRC/openfhe-python"
-OFHEPY_PREFIX="$PREFIX/openfhe-python"
+OFHEPY_SRC="$SRC/openfhe-python"
 
 # Source
-# git clone https://github.com/openfheorg/openfhe-python.git "$PYFHE_SRC"
-git submodule update --init "$PYFHE_SRC"
-cd "$PYFHE_SRC"
+# git clone https://github.com/openfheorg/openfhe-python.git "$OFHEPY_SRC"
+git submodule update --init "$OFHEPY_SRC"
+cd "$OFHEPY_SRC"
 git checkout v1.4.2.0
 pip install pybind11[global]
 
 # Compile
 mkdir -p ./build
 cd ./build
-cmake -D CMAKE_PREFIX_PATH="$OFHE_PREFIX" -D CMAKE_INSTALL_PREFIX=openfhe ..
+cmake -D CMAKE_PREFIX_PATH="$OFHE_PREFIX" -D CMAKE_INSTALL_PREFIX="$OFHEPY_SRC/openfhe" ..
 cmake --build . --parallel "$NPROC"
-cat <<EOF > pyproject.toml
+cat <<EOF > "$OFHEPY_SRC/pyproject.toml"
 [project]
 name = "openfhe"
 version = "1.4.2"
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
-[tool.setuptools.package-data]
-openfhe = ["*"]
+[tool.setuptools]
+packages.find.include = ["openfhe", "openfhe.*"]
+package-data.openfhe = ["*"]
 EOF
+cmake --install .
 
 # Install
-mkdir -p "$OFHEPY_PREFIX"
-cmake --install .
-cp -at "$OFHEPY_PREFIX" pyproject.toml openfhe
-pip install "$OFHEPY_PREFIX"
+pip install "$OFHEPY_SRC"
 ```
 
 ## uArchFHE
 Source: <https://github.com/darwinquezada/he_hpc>
 
-Dependencies: `python3 python3-maturin rustup libclang-dev libgmp-dev libntl-dev libbz2-dev` and virutal Python environment
+Dependencies: `python3 libgmp-dev libntl-dev libbz2-dev` and virutal Python environment
 
 ```sh
 # Configuration
@@ -234,14 +232,10 @@ UAFHE_SRC="$SRC/uarchfhe"
 # git clone https://github.com/darwinquezada/he_hpc.git "$UAFHE_SRC"
 git submodule update --init "$UAFHE_SRC"
 cd "$UAFHE_SRC"
-git checkout 09c361747117a53fa39f5954bf4e8c9462673434
-
-# Compile
-cd ./crates/fhe_py_binding
-maturin build
+git checkout 15fb06f8fe61f9e733d813c17d6d52672847dc55
 
 # Install
-pip install "$UAFHE_SRC/target/wheels/"*.whl
+pip install "$UAFHE_SRC/crates/fhe_py_binding"
 ```
 
 ## net-queue
@@ -260,7 +254,7 @@ cd "$NQ_SRC"
 git checkout 283540374e5b0cff7758b7549dd0a67eee2d590b
 
 # Install
-pip install .
+pip install "$NQ_SRC"
 ```
 
 ## pympi
@@ -279,5 +273,5 @@ cd "$PYMPI_SRC"
 git checkout f8da55d7d79e0e048ae2fcb8008b9e4e9ad6dc38
 
 # Install
-pip install .
+pip install "$PYMPI_SRC"
 ```

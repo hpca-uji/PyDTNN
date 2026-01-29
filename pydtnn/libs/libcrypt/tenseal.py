@@ -57,7 +57,7 @@ class Ciphertext[P: np.number](libcrypt.Ciphertext[CKKSVector, P]):
         self._link_context(context)
         other._link_context(context)
 
-    def _link_context(self, context: SealContext):
+    def _link_context(self, context: SealContext) -> None:
         """Link all chunks to context"""
         for chunk in self._chunks:
             chunk.link_context(context)
