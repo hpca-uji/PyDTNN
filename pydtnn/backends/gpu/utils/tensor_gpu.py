@@ -101,6 +101,7 @@ class TensorGPU:
         # The following atributes will be initalized in _initalize:
         self.ary: gpuarray.GPUArray = None
         self.size: int = -1
+        self.nbytes: int = -1
         self.desc: int = -1
         # ---
         self._initialize(gpu_arr, desc)
@@ -235,6 +236,7 @@ class TensorGPU:
         self.ary = gpu_arr
         self._set_shape(gpu_arr)
         self.size = gpu_arr.size
+        self.nbytes = gpu_arr.nbytes
         if self.size != 0:
             self._set_ptr(gpu_arr)
             self._set_desc(desc)

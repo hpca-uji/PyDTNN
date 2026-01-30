@@ -19,7 +19,7 @@ class MemoryPool(object):
         return self._buffer[start:end]
     # -----
 
-    def get_ndarray(self, shape: ArrayShape | tuple[int, ...], dtype: np.dtype, order: str = "C") -> np.ndarray:
+    def get_ndarray(self, shape: ArrayShape, dtype: np.dtype, order: str = "C") -> np.ndarray:
         if order != "C":
             raise RuntimeError("MemoryPool only supports C order")
         buffer = self.get_buffer(size=int(np.prod(shape) * np.dtype(dtype).itemsize))
