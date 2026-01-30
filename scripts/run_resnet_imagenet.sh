@@ -45,6 +45,7 @@ mpirun -np 2 \
   --tracing=False \
   --profile=False \
   --enable-cudnn=True \
+  --backend=gpu \
   --enable-gpudirect=False \
   --history-file="results/result_resnet.history" \
   --dtype=float32

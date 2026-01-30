@@ -355,6 +355,7 @@ $ mpirun -np 12 \
       --tracing=False \
       --profile=False \
       --enable-cudnn=True \
+      --backend=gpu \
       --dtype=float32
 
 
@@ -509,6 +510,7 @@ $ pydtnn-benchmark \
     --tracing=False \
     --profile=False \
     --enable-cudnn=True \
+    --backend=gpu \
     --dtype=float32
 
 
