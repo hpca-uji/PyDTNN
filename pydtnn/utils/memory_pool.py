@@ -19,7 +19,7 @@ class PrivateMemory:
         pass
 
 
-class SharedMemory(PrivateMemory):
+class PreallocMemory(PrivateMemory):
     def __init__(self, size: int) -> None:
         super().__init__(size)
         self._buffer = memoryview(bytearray(size))
@@ -37,7 +37,7 @@ class SharedMemory(PrivateMemory):
 
     def get_ndarray(self, shape: ArrayShape, dtype: np.dtype, order: str = "C") -> np.ndarray:
         if order != "C":
-            raise RuntimeError("MemoryPool only supports C order")
+            raise RuntimeError("PreallocMemory only supports C order")
         buffer = self.get_buffer(size=int(np.prod(shape) * np.dtype(dtype).itemsize))
         return np.frombuffer(buffer, dtype=dtype).reshape(shape, copy=False)
     # ---

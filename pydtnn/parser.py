@@ -132,7 +132,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
             help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable-gpu\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
         self.add_argument('--random-seed', type=int, default=57005,
                           help='Initial state of random number generator. Default: \'57005\'.')
-        self.add_argument('--use-memory-pool', type=bool_lambda, default=True,
+        self.add_argument('--shared-memory', type=bool_lambda, default=True,
                           help="Allows to use a common memory pool for all the temporary data structures.")
 
         # Synchronization options

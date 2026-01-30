@@ -55,7 +55,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
-from pydtnn.utils.memory_pool import PrivateMemory, SharedMemory
+from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
 
 # --- CONSTANS --- #
@@ -809,7 +809,7 @@ class Model[T: Array]:
         sizes.append(self.loss_func.temp_memory_size)
 
         size = max(sizes)
-        memory_cls = SharedMemory if self.use_memory_pool else PrivateMemory
+        memory_cls = PreallocMemory if self.shared_memory else PrivateMemory
         self.memory = memory_cls(size=size * self.dtype.itemsize)
         # Reservar la memoria de los temporales
         for layer in self.get_all_layers():
