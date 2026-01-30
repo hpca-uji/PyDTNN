@@ -2,6 +2,7 @@
 
 # FIXME: Serialization performance
 
+from functools import cached_property
 import sys
 import copyreg
 import dataclasses
@@ -74,7 +75,7 @@ class Ciphertext[P: np.number](libcrypt.Ciphertext[uarchfhe.PyCiphertext, P]):
     def _link_context(self, context: uarchfhe.PyContext) -> None:
         """Link all chunks to context"""
         for chunk in self._chunks:
-            chunk.link_context(context)
+            chunk.attach_context(context)
 
     def _add_chunk(self, a: uarchfhe.PyCiphertext, b: uarchfhe.PyCiphertext) -> uarchfhe.PyCiphertext:
         """Add two ciphertexts"""
@@ -94,10 +95,22 @@ class Context(libcrypt.Context[uarchfhe.PyCiphertext]):
         sigma = 3  # Standard deviation for error distribution (security parameter)
         self._modulus = COEFF_MODULUS[self._security_level][self._poly_degree]
         self._context = uarchfhe.PyContext(self._poly_degree, self._modulus[0], self._global_scale, sigma, h)
+        self._workspace = [0] * self._slots
 
         # Keys
         keygen = uarchfhe.PyKeyGen(self._context)
         self._keys = keygen.gen_keys()
+
+    @cached_property
+    def _ckks(self) -> uarchfhe.PyCKKS:
+        """uArchFHE CKKS context"""
+        return uarchfhe.PyCKKS(self._context, self._keys)
+
+    def __getstate__(self) -> object:
+        """Get serializable state"""
+        state = super().__getstate__()
+        state.pop("_ckks", None)
+        return state
 
     def _new(self, /, *args, **kwds) -> libcrypt.Ciphertext:
         """Create new operable ciphertext"""
@@ -105,14 +118,14 @@ class Context(libcrypt.Context[uarchfhe.PyCiphertext]):
 
     def _encrypt_chunk(self, chunk: list) -> uarchfhe.PyCiphertext:
         """Encode list to ciphertext"""
-        ckks = uarchfhe.PyCKKS(self._context, self._keys)
-        chunk = chunk + [chunk[0]] * (self._slots - len(chunk))
-        return ckks.encrypt(chunk, len(chunk), self._global_scale, self._modulus[0])
+        if len(chunk) < self._slots:
+            self._workspace[:len(chunk)] = chunk
+            chunk = self._workspace
+        return self._ckks.encrypt(chunk, len(chunk), self._global_scale, self._modulus[0])
 
     def _decrypt_chunk(self, chunk: uarchfhe.PyCiphertext) -> list:
         """Decode cypertext to list"""
-        ckks = uarchfhe.PyCKKS(self._context, self._keys)
-        return ckks.decrypt(chunk)
+        return self._ckks.decrypt(chunk)
 
 
 # Pickle support
