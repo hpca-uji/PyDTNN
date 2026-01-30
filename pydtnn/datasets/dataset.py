@@ -1,6 +1,7 @@
 from pathlib import Path
 import warnings
 import itertools
+import functools
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Generator, IO, Callable
 from enum import IntEnum
@@ -15,6 +16,9 @@ from pydtnn.utils.constants import ArrayShape
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
+
+
+type TransformFunc = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]
 
 
 class Dataset(ABC):
@@ -56,9 +60,10 @@ class Dataset(ABC):
         self.debug: bool = debug
         self.test_as_validation: bool = self.model.test_as_validation or force_test_as_validation
         self._nsamples: list[int] = [train_nsamples, 0, test_nsamples]
-        self.transformations = dict[Dataset.Part, list[Callable]]()
-        transformations_training = list[Callable]()
-        transformations_always = list[Callable]()
+
+        self._transformations = dict[Dataset.Part, list[TransformFunc]]()
+        transformations_training = list[TransformFunc]()
+        transformations_always = list[TransformFunc]()
 
         # Compute self._nsamples[DatasetEnum.VAL]
         if self.test_as_validation:
@@ -74,32 +79,32 @@ class Dataset(ABC):
         self.output_shape = tuple(output_shape)
 
         if self.model.transform_crop:
-            crop, size = self._calculate_crop(self.input_shape[1:])  #type: ignore (The cropped input shape will be a tuple[int, int])
+            crop, size = self._calculate_crop(self.input_shape[1:])  # type: ignore (The cropped input shape will be a tuple[int, int])
             self.input_shape = (self.input_shape[0], *size)
-            transformations_training.append(self.transformation_unifier(self._do_crop))
-            transformations_always.append(self.transformation_unifier(self._do_crop))
+            transformations_training.append(self._x_transformer_adaptor(self._do_transform_crop))
+            transformations_always.append(self._x_transformer_adaptor(self._do_transform_crop))
 
         if self.model.transform_resize:
             self.input_shape = (self.input_shape[0], self.model.transform_resize_size, self.model.transform_resize_size)
-            transformations_training.append(self.transformation_unifier(self._do_resize))
-            transformations_always.append(self.transformation_unifier(self._do_resize))
+            transformations_training.append(self._x_transformer_adaptor(self._do_transform_resize))
+            transformations_always.append(self._x_transformer_adaptor(self._do_transform_resize))
 
         if self.model.augment_flip:
-            transformations_training.append(self.transformation_unifier(self._do_flip_images))
+            transformations_training.append(self._x_transformer_adaptor(self._do_flip_images))
 
         if self.model.augment_crop:
-            transformations_training.append(self.transformation_unifier(self._do_crop_images))
+            transformations_training.append(self._x_transformer_adaptor(self._do_augment_crop))
 
         if self.model.augment_shuffle:
-            transformations_training.append(self.do_shuffle)
+            transformations_training.append(self._do_augment_shuffle)
 
         if self.model.normalize:
-            transformations_training.append(self._do_normalize)
-            transformations_always.append(self._do_normalize)
+            transformations_training.append(self._x_transformer_adaptor(self._do_normalize))
+            transformations_always.append(self._x_transformer_adaptor(self._do_normalize))
 
-        self.transformations[Dataset.Part.TRAIN] = transformations_training
-        self.transformations[Dataset.Part.TEST] = transformations_always
-        self.transformations[Dataset.Part.VAL] = transformations_always
+        self._transformations[Dataset.Part.TRAIN] = transformations_training
+        self._transformations[Dataset.Part.TEST] = transformations_always
+        self._transformations[Dataset.Part.VAL] = transformations_always
 
         self._initial_nsamples = [self._nsamples[Dataset.Part.TRAIN], self._nsamples[Dataset.Part.VAL], self._nsamples[Dataset.Part.TEST]]
         # Offset (in number of samples) and number of samples for the current job for each dataset part
@@ -127,6 +132,7 @@ class Dataset(ABC):
             self._print_report()
 
     def _gzip_open(self, filename: str) -> IO[bytes]:
+        """Open a gZIP file (creating or loading seek table)"""
         path = Path(filename)
         plain = path.with_suffix("")
         idx = path.with_suffix(f"{path.suffix}.idx")
@@ -329,18 +335,19 @@ class Dataset(ABC):
         return
         yield
 
-    def transformation_unifier(self, func:Callable) -> Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray]]:
-        # NOTE: This is a pseudo-decorator to unify the trasnformation's input and the output.
-        def _func(x: np.ndarray, y:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    @staticmethod
+    def _x_transformer_adaptor(func: Callable[[np.ndarray], np.ndarray]) -> TransformFunc:
+        @functools.wraps(func)
+        def wrapper(x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
             return func(x), y
-        return _func
+        return wrapper
 
-    def _data_transform(self, part: Part, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        # NOTE: Don't modify data for the producer and ensure a mutable copy for transforms
-        x, y = x.copy(), y.copy()
-        for trasformation in self.transformations[part]:
-            x, y = trasformation(x, y)
-        return x, y
+    def _transform_data_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray]]:
+        for x, y in self._data_generator(part):
+            x, y = x.copy(), y.copy()
+            for transformation in self._transformations[part]:
+                x, y = transformation(x, y)
+            yield x, y
 
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
@@ -348,11 +355,7 @@ class Dataset(ABC):
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
 
-        def transform_generator():
-            for x, y in self._data_generator(part):
-                yield self._data_transform(part, x, y)
-
-        generator = transform_generator()
+        generator = self._transform_data_generator(part)
         nsamples = self._nsamples[part]
 
         batch_size = 0
@@ -391,10 +394,10 @@ class Dataset(ABC):
     def _batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         yield from BackgroundGenerator(self._actual_batch_generator(part), max_prefetch=1)
         # NOTE: The following infinite loop provides of empty batches
-        #        if there are asked more batches than actually are.
+        #       if there are asked more batches than actually are.
         while True:
             yield self.x_empty_batch, self.y_empty_batch, 0
-        
+
     def _do_normalize(self, data: np.ndarray) -> np.ndarray:
         np.add(data, self.model.normalize_offset, out=data)
         np.multiply(data, self.model.normalize_scale, out=data)
@@ -417,14 +420,14 @@ class Dataset(ABC):
         data[s, ...] = np.flip(data[s, ...], axis=width_dim)
         return data
 
-    def do_shuffle(self, x:np.ndarray, y:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    def _do_augment_shuffle(self, x: np.ndarray, y: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         idx = np.arange(x.shape[0])
         random.shuffle(idx)
         x[:] = x[idx]
         y[:] = y[idx]
         return x, y
 
-    def _do_crop_images(self, data: np.ndarray) -> np.ndarray:
+    def _do_augment_crop(self, data: np.ndarray) -> np.ndarray:
         n, c, h, w = self.model.decode_shape(data.shape)
         crop_size = min(self.model.augment_crop_size, h, w)
         limit = min(n, int(n * self.model.augment_crop_prob))
@@ -449,7 +452,7 @@ class Dataset(ABC):
             data[ri, ...] = np.roll(data[ri, ...], random.integers(-ll[i], (w - r)), axis=2)
         return data
 
-    def _do_resize(self, data: np.ndarray) -> np.ndarray:
+    def _do_transform_resize(self, data: np.ndarray) -> np.ndarray:
         data = self.model.decode_tensor(data)
 
         size = (self.model.transform_resize_size, self.model.transform_resize_size)
@@ -482,8 +485,7 @@ class Dataset(ABC):
         size = (crop[2] - crop[0], crop[3] - crop[1])
         return (crop, size)
 
-    @transformation_unifier
-    def _do_crop(self, data: np.ndarray) -> np.ndarray:
+    def _do_transform_crop(self, data: np.ndarray) -> np.ndarray:
         data = self.model.decode_tensor(data)
 
         size = data.shape[2:4]
@@ -508,6 +510,7 @@ class Dataset(ABC):
 
         return new_data
     # ---
+
     def _load_rgb_image(self, fp: IO[bytes] | str) -> np.ndarray:
         """Transform a file-like (RGB image) to array (ndarray CHW uint8)"""
         with Image.open(fp=fp) as image:

@@ -58,7 +58,7 @@ class MNIST(Dataset):
         self._images_header_offset = 16  # 4 + 4 * 3
         self._labels_header_offset = 8  # 4 + 4 * 1
 
-        # Pregenerate GZIP indexs
+        # Pregenerate gZIP indexes
         for gz in itertools.chain(self._x_filename, self._y_filename):
             self._gzip_open(gz).close()
 
@@ -69,7 +69,7 @@ class MNIST(Dataset):
         filename = self._x_filename[part]
         with self._gzip_open(filename) as f:
             x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE)
-        np.divide(x, 255.0, out=x, dtype=self.model.dtype, casting="unsafe")
+        x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
         x = self.model.encode_tensor(x)
 
