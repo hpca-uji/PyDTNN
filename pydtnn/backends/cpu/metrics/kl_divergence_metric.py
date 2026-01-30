@@ -31,6 +31,6 @@ class KLDivergenceMetricCPU(KLDivergenceMetric[np.ndarray], MetricCPU):
         np.log(loss, out=loss)
         np.multiply(y_pred, loss, out=loss)
         np.abs(loss, out=loss)
-        
+
         loss = np.sum(loss) / y_pred.shape[0]
         return loss

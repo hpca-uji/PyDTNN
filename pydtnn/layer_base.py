@@ -33,7 +33,7 @@ class LayerBase[T: Array](PromoteToBackend):
         self.paths: list[list[LayerBase[T]]] = []
         self.reqs_allred = {}
         self.parent_layer: LayerBase | None = None
-        
+
         self.temp_memory_size: int = 0
         self.real_memory_size: int = 0
 
@@ -134,7 +134,7 @@ class LayerBase[T: Array](PromoteToBackend):
         self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
-    
+
     def post_initialize(self) -> None:
         """
         Method were the operations that requiere a initialize are done.

@@ -18,7 +18,7 @@ class AbstractPool2DLayerGPU(AbstractPool2DLayer[TensorGPU], LayerGPU):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
-        self.pool_desc = None # TODO: set CDNN descripor type
+        self.pool_desc = None  # TODO: set CDNN descripor type
         self.ci: int = None  # type: ignore
         self.hi: int = None  # type: ignore
         self.wi: int = None  # type: ignore

@@ -9,14 +9,15 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+
 class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
 
     def initialize(self) -> None:
         super().initialize()
         self.res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
-                                            tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
         self.local_res = TensorGPU.create_zeros_tensor(shape=(self.model.batch_size, ), dtype=np.dtype(self.model.dtype),
-                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+                                                       tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_hinge"
@@ -28,7 +29,7 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
         {{
             int i, idx;
             {T} pos, neg, max_v, val_targ, val_pred;
-        
+
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             int workers = blockDim.x * gridDim.x;
 
@@ -41,7 +42,7 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
 
                     // val_pred = y_pred[idx][i];
                     val_pred = (*SHIFT_2D_AR(y_pred, idx, i, labels));
-                    
+
                     pos += ({T}) (val_targ * val_pred);
                     neg = ({T}) (-1 * val_targ) + 1;
                     if ( (i == 0) || (max_v < neg))
@@ -50,8 +51,8 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
                 max_v = ({T}) ((max_v - pos) + 1);
                 *(local_res + idx) = ({T}) (max_v > 0 ? max_v : 0);
             }}
-            
-            
+
+
             if(base_idx == 0)
             {{
                 for(idx = 1; idx < n; idx++)
@@ -62,7 +63,7 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
         }}
         """.format(T=DTYPE2CTYPE[self.model.dtype],
                    name=_name)
-        
+
         module = SourceModule(code).get_function(_name)
         return module
 
@@ -75,7 +76,7 @@ class CategoricalHingeGPU(CategoricalHinge[TensorGPU], MetricGPU):
         n = np.int32(n)
         num_classes = np.int32(y_pred.shape[1])
 
-        self.kernel(y_targ.ary, y_pred.ary, 
+        self.kernel(y_targ.ary, y_pred.ary,
                     self.res.ary, self.local_res.ary,
                     n, num_classes,
                     grid=self.grid, block=self.block,

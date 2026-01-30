@@ -5,8 +5,8 @@ from pydtnn.utils.best_of import BestOf
 from typing import Callable
 
 
-def transpose_1023_numpy(original: np.ndarray, 
-                         transposed: np.ndarray | None = None # type: ignore
+def transpose_1023_numpy(original: np.ndarray,
+                         transposed: np.ndarray | None = None  # type: ignore
                          ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
@@ -15,8 +15,8 @@ def transpose_1023_numpy(original: np.ndarray,
     return transposed
 
 
-def transpose_1023_ijk_cython_wrapper(original: np.ndarray, 
-                                      transposed: np.ndarray | None = None # type: ignore
+def transpose_1023_ijk_cython_wrapper(original: np.ndarray,
+                                      transposed: np.ndarray | None = None  # type: ignore
                                       ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
@@ -25,8 +25,8 @@ def transpose_1023_ijk_cython_wrapper(original: np.ndarray,
     return transposed
 
 
-def transpose_1023_jik_cython_wrapper(original: np.ndarray, 
-                                      transposed: np.ndarray | None = None # type: ignore
+def transpose_1023_jik_cython_wrapper(original: np.ndarray,
+                                      transposed: np.ndarray | None = None  # type: ignore
                                       ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:

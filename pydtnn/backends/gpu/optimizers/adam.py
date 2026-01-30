@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray  #type:ignore
-from pycuda.compiler import SourceModule  #type:ignore
-from pycuda.elementwise import ElementwiseKernel  #type:ignore
+import pycuda.gpuarray as gpuarray  # type:ignore
+from pycuda.compiler import SourceModule  # type:ignore
+from pycuda.elementwise import ElementwiseKernel  # type:ignore
 
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.optimizers.adam import Adam
@@ -25,8 +25,8 @@ class AdamGPU(Adam[TensorGPU], OptimizerGPU):
         parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, " \
                          "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[dtype])
         operations_gpu = """
-            m[i] = beta1 * m[i] + (1 - beta1) * dw[i]; 
-            v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2); 
+            m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
+            v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
             w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
         """.format(func=func_pow[dtype])
 
@@ -38,10 +38,10 @@ class AdamGPU(Adam[TensorGPU], OptimizerGPU):
         code = """
             __global__ void {name}({T} *w, {T} *dw, {T} *m, {T} *v,
                                    float it, float lr, float decay,
-                                   float beta1, float beta2, float epsilon, int N) 
+                                   float beta1, float beta2, float epsilon, int N)
             {{
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N) 
+                if (i < N)
                 {{
                     m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
                     v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
@@ -49,8 +49,8 @@ class AdamGPU(Adam[TensorGPU], OptimizerGPU):
                                               sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
                 }}
             }}"""
-        code = code.format(T=DTYPE2CTYPE[dtype], 
-                           func=func_pow[dtype], 
+        code = code.format(T=DTYPE2CTYPE[dtype],
+                           func=func_pow[dtype],
                            name=_name)
 
         self.update_gpudirect = SourceModule(code).get_function(_name)
@@ -67,11 +67,10 @@ class AdamGPU(Adam[TensorGPU], OptimizerGPU):
                 self.context[layer.id]["v_%s" % w_] = gpuarray.zeros_like(w.ary, dtype=layer.model.dtype)
 
                 self.real_memory_size += self.context[layer.id]["m_%s" % w_].nbytes + self.context[layer.id]["v_%s" % w_].nbytes  # type: ignore (They are both "gpuarray" and not "int")
-                
 
     def update(self, layer: LayerGPU):
-        self.context[layer.id]["it"] += 1  #type: ignore ("it" is an "int".)
-        it:int = self.context[layer.id]["it"]  #type: ignore ("it" is an "int".)
+        self.context[layer.id]["it"] += 1  # type: ignore ("it" is an "int".)
+        it: int = self.context[layer.id]["it"]  # type: ignore ("it" is an "int".)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

@@ -25,10 +25,10 @@ class Conv2DReluCPU(Conv2DRelu[np.ndarray], Conv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res: np.ndarray = self.cg.conv_gemm_nchw(self.weights, x, out=None,
-                                              vpadding=self.vpadding, hpadding=self.hpadding,
-                                              vstride=self.vstride, hstride=self.hstride,
-                                              vdilation=self.vdilation, hdilation=self.hdilation,
-                                              biases=self.biases, relu=True)
+                                                 vpadding=self.vpadding, hpadding=self.hpadding,
+                                                 vstride=self.vstride, hstride=self.hstride,
+                                                 vdilation=self.vdilation, hdilation=self.hdilation,
+                                                 biases=self.biases, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
@@ -37,10 +37,10 @@ class Conv2DReluCPU(Conv2DRelu[np.ndarray], Conv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res: np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x, out=None,
-                                              vpadding=self.vpadding, hpadding=self.hpadding,
-                                              vstride=self.vstride, hstride=self.hstride,
-                                              vdilation=self.vdilation, hdilation=self.hdilation,
-                                              biases=self.biases, relu=True)
+                                                 vpadding=self.vpadding, hpadding=self.hpadding,
+                                                 vstride=self.vstride, hstride=self.hstride,
+                                                 vdilation=self.vdilation, hdilation=self.hdilation,
+                                                 biases=self.biases, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
 
@@ -48,10 +48,10 @@ class Conv2DReluCPU(Conv2DRelu[np.ndarray], Conv2DStandardCPU):
         """Version of the forward function that uses the convWinograd + Relu"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y: np.ndarray = self.cw.conv_winograd_nchw(self.weights, x, self.biases,
-                                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                                vstride=self.vstride, hstride=self.hstride,
-                                                vdilation=self.vdilation, hdilation=self.hdilation,
-                                                relu=True)
+                                                   vpadding=self.vpadding, hpadding=self.hpadding,
+                                                   vstride=self.vstride, hstride=self.hstride,
+                                                   vdilation=self.vdilation, hdilation=self.hdilation,
+                                                   relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)

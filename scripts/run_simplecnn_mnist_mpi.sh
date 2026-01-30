@@ -10,21 +10,21 @@ if $(mpirun --version | grep -q 'Open MPI) [5-9].'); then
   MPI_ARGS+=("--output=:raw")
 fi
 
-mpirun -np 8 "${MPI_ARGS[@]}" \
+mpirun -np 1 "${MPI_ARGS[@]}" \
   pydtnn-benchmark \
   --model=simplecnn \
   --dataset=mnist \
   --dataset-path=datasets/mnist \
   --test-as-validation=False \
   --augment-flip=True \
-  --batch-size=1 \
+  --batch-size=64 \
   --validation-split=0.2 \
-  --encryption=uarchfhe \
+  --encryption= \
   --model-sync-freq=0 \
-  --num-epochs=1 \
+  --num-epochs=50 \
   --final-model-sync=False \
-  --evaluate=False \
-  --steps-per-epoch=5 \
+  --evaluate=True \
+  --steps-per-epoch=0 \
   --optimizer=sgd \
   --learning-rate=0.01 \
   --loss-func=categorical_cross_entropy \

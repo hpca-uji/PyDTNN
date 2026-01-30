@@ -38,7 +38,7 @@ class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
         np.add(1, self.y, out=self.y)
         np.reciprocal(self.y, out=self.y)
         return self.y
-    
+
     def backward_numpy(self, dy: np.ndarray) -> np.ndarray:
         dx: np.ndarray = self.dx[:dy.shape[0], :]
         # dx = dy * (y * (1 - y))

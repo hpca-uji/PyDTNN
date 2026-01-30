@@ -34,7 +34,7 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
         np.multiply(y, -1, out=y,
                     dtype=self.model.dtype)
         return y
-    
+
     def _backward_numpy(self, dy: np.ndarray) -> np.ndarray:
         # return 1 / (np.exp(dy) + 1)
         np.exp(dy, out=dy)

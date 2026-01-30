@@ -8,6 +8,7 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+
 class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
 
     def initialize(self) -> None:
@@ -16,10 +17,10 @@ class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
         n = self.model.batch_size
         num_classes = self.model.output_shape
 
-        self.res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype), 
+        self.res = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-        self.local_res = TensorGPU.create_zeros_tensor(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype), 
+        self.local_res = TensorGPU.create_zeros_tensor(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
                                                        tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
     # ----
 
@@ -33,7 +34,7 @@ class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
         {{
             int i, idx;
             {T} diff, val_targ, val_pred;
-        
+
             int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
             int workers = blockDim.x * gridDim.x;
 
@@ -48,11 +49,11 @@ class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
 
                     // val_pred = y_pred[idx][i];
                     val_pred = (*SHIFT_2D_AR(y_pred, idx, i, labels));
-                    
+
                     diff = val_targ - val_pred;
                     *(local_res + idx) += (diff * diff);
                 }}
-                
+
             }}
 
             if(base_idx == 0)
@@ -66,7 +67,7 @@ class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
         }}
         """.format(T=DTYPE2CTYPE[self.model.dtype],
                    name=_name)
-        
+
         module = SourceModule(code).get_function(_name)
         return module
 
@@ -78,8 +79,8 @@ class RegressionMSEGPU(RegressionMSE[TensorGPU], MetricGPU):
         self.local_res.fill(0)
 
         n = np.int32(n)
-        num_classes = np.int32(num_classes) 
-        self.kernel(y_targ.ary, y_pred.ary, 
+        num_classes = np.int32(num_classes)
+        self.kernel(y_targ.ary, y_pred.ary,
                     self.res.ary, self.local_res.ary,
                     n, num_classes,
                     grid=self.grid, block=self.block,

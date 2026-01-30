@@ -22,7 +22,6 @@ class Relu6GPU(Relu6[TensorGPU], ActivationGPU):
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
-
         y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 

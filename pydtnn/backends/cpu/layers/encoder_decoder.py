@@ -62,9 +62,9 @@ class EncoderDecoderCPU(EncoderDecoder[np.ndarray], AbstractBlockLayerCPU):
         dx_tgt = prev_dx
         dx_enc = 0.
         for i in range(self.dec_layers):  # Decoding layers
-            dx_tgt, dx2 = self.decoder[-1 * (i+1)].backward(dx_tgt)
+            dx_tgt, dx2 = self.decoder[-1 * (i + 1)].backward(dx_tgt)
             dx_enc += dx2
         for i in range(self.enc_layers):  # Enconding layers
-            dx_enc = self.encoder[-1 * (i+1)].backward(dx_enc)
+            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)
         # if self.need_dx:
         return dx_tgt, dx_enc

@@ -23,8 +23,8 @@ class Conv2D[T: Array](Layer[T]):
     class Variant(StrEnum):
         BEST_OF = auto()
         I2C = auto()
-        #NOTE: The following values are not set by auto due it's necessary that have that value.
-        #TODO: Check how to change this (BestOf and Fusion layers)
+        # NOTE: The following values are not set by auto due it's necessary that have that value.
+        # TODO: Check how to change this (BestOf and Fusion layers)
         GEMM = "cg"
         WINOGRAD = "cw"
         DIRECT = "cd0"

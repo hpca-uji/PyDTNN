@@ -3,6 +3,7 @@ import numpy as np
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_hinge import CategoricalHinge
 
+
 class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
 
     def initialize(self) -> None:
@@ -52,7 +53,7 @@ class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
 
         np.multiply(-1, y_targ, dtype=self.model.dtype, out=_neg)
         np.add(_neg, 1, out=_neg, dtype=self.model.dtype)
-        np.multiply(_neg, y_pred, out= _neg, dtype=self.model.dtype)
+        np.multiply(_neg, y_pred, out=_neg, dtype=self.model.dtype)
         np.max(_neg, axis=-1, out=neg)
 
         np.subtract(neg, pos_maxm, out=neg, dtype=self.model.dtype)

@@ -124,12 +124,12 @@ class EncoderGPU(AbstractBlockLayerGPU, Encoder):
         # if self.need_dx:
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
-                                beta, self.dx.desc, self.dx.ptr)
+                             alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
+                             beta, self.dx.desc, self.dx.ptr)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
-                                beta, self.dx.desc, self.dx.ptr)
+                             alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
+                             beta, self.dx.desc, self.dx.ptr)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
-                                beta, self.dx.desc, self.dx.ptr)
+                             alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
+                             beta, self.dx.desc, self.dx.ptr)
         return self.dx

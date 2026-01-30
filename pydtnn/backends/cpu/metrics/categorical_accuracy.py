@@ -15,7 +15,7 @@ class CategoricalAccuracyCPU(CategoricalAccuracy[np.ndarray], MetricCPU):
         else:
             self._argmax: np.ndarray = None  # type: ignore (It will be initalized later)
 
-        self.real_memory_size += self.temp_memory_size # + arange_size = self.model.batch_size
+        self.real_memory_size += self.temp_memory_size  # + arange_size = self.model.batch_size
     # ----
 
     def post_initialize(self) -> None:
@@ -27,7 +27,7 @@ class CategoricalAccuracyCPU(CategoricalAccuracy[np.ndarray], MetricCPU):
         b = y_targ.shape[0]
         _argmax = self._argmax[:b]
         # return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b
-        
+
         np.argmax(y_pred, axis=1, out=_argmax)
         y = y_targ[np.arange(b), _argmax]
         y = np.sum(y, dtype=self.model.dtype)

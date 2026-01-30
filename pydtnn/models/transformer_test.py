@@ -4,6 +4,7 @@ from pydtnn.layers.input import Input
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.utils.constants import ArrayShape
 
+
 def transformer_test(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append

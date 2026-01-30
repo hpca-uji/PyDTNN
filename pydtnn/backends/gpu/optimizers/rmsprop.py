@@ -31,7 +31,7 @@ class RMSPropGPU(RMSProp[TensorGPU], OptimizerGPU):
         _name = "RMSProp_kernel_gpudirect"
         code = """
         __global__ void {name}({T} *w, {T} *dw, {T} *cache,
-                                float lr, float decay, float rho, float epsilon, int N) 
+                                float lr, float decay, float rho, float epsilon, int N)
         {{
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
                 if (i < N) {{
@@ -41,7 +41,7 @@ class RMSPropGPU(RMSProp[TensorGPU], OptimizerGPU):
         }}
         """.format(T=DTYPE2CTYPE[dtype],
                    func=pow_func,
-                   name = _name
+                   name=_name
                    )
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # -------------

@@ -12,7 +12,7 @@ class Conv2DGemmCPU(Conv2DStandardCPU):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convGemm related attributes (will be initialized in initialize())
-        self.cg = None # type: ignore
+        self.cg = None  # type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)

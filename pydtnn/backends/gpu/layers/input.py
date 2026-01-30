@@ -1,4 +1,4 @@
-import pycuda.gpuarray as gpuarray  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
 
 from pydtnn.layers.input import Input
 from pydtnn.backends.gpu.layers.layer import LayerGPU

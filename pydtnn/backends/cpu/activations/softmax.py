@@ -4,6 +4,7 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 from pydtnn.utils.constants import ArrayShape
 
+
 class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
@@ -17,10 +18,10 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         self.real_memory_size += self._y.nbytes
 
         # Temp_variables
-        self.max_x:np.ndarray = None  # type: ignore (they will be intialized later)
-        self.sum_y:np.ndarray = None  # type: ignore (they will be intialized later)
-        self.mul_dy:np.ndarray = None  # type: ignore (they will be intialized later)
-        self.sum_dy:np.ndarray = None  # type: ignore (they will be intialized later)
+        self.max_x: np.ndarray = None  # type: ignore (they will be intialized later)
+        self.sum_y: np.ndarray = None  # type: ignore (they will be intialized later)
+        self.mul_dy: np.ndarray = None  # type: ignore (they will be intialized later)
+        self.sum_dy: np.ndarray = None  # type: ignore (they will be intialized later)
 
         self.temp_shape = (self.model.batch_size, *shape_intermediate_ops)
         sum_y_shape = max_x_shape = self.temp_shape
@@ -56,7 +57,6 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
             self.mul_dy = self.model.memory_pool.get_ndarray(self.mul_dy_shape, dtype=self.model.dtype)
             self.sum_dy = self.model.memory_pool.get_ndarray(self.sum_dy_shape, dtype=self.model.dtype)
         self.model.memory_pool.free_buffer(self.temp_memory_size)
-
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))

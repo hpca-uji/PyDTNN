@@ -13,7 +13,7 @@ class RegressionMSECPU(RegressionMSE[np.ndarray], MetricCPU):
         if not self.model.use_memory_pool:
             self.diff: np.ndarray = np.zeros(self.shape, dtype=self.model.dtype, order="C")
         else:
-            self.diff: np.ndarray = None  #type: ignore (It will be initialized later)
+            self.diff: np.ndarray = None  # type: ignore (It will be initialized later)
 
         self.real_memory_size += self.temp_memory_size
     # ----
@@ -22,7 +22,6 @@ class RegressionMSECPU(RegressionMSE[np.ndarray], MetricCPU):
         super().post_initialize()
         self.diff = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
         self.model.memory_pool.free_buffer(self.temp_memory_size)
-
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         diff = self.diff[:y_pred.shape[0]]

@@ -1,10 +1,11 @@
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.driver import Function  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.driver import Function  # type: ignore
 
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.losses.loss import Loss
 from pydtnn.model import Model
 from pydtnn.utils.constants import ArrayShape
+
 
 class LossGPU(Loss[TensorGPU]):
     """
@@ -26,7 +27,7 @@ class LossGPU(Loss[TensorGPU]):
         dx_gpu = gpuarray.empty(self.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.kernel = self.__init_gpu_kernel__()
-        
+
         self.real_memory_size += self.dx.nbytes + self.loss.nbytes
 
     def __init_gpu_kernel__(self) -> Function:

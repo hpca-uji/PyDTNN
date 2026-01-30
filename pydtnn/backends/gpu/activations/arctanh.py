@@ -4,8 +4,8 @@ from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.gpu.activations.activation import ActivationGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
-import pycuda.gpuarray as gpuarray # type: ignore
-from pycuda.elementwise import ElementwiseKernel # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 

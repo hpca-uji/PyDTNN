@@ -41,9 +41,9 @@ class LayerGPU(Layer[TensorGPU]):
         self.db_cpu: ndarray = None  # type: ignore
         self.one_vec_cpu: ndarray = None  # type: ignore
         self.one_vec_gpu: gpuarray.GPUArray = None  # type: ignore
-        self.grid: tuple[int, int, int] = None # type: ignore
-        self.block: tuple[int, int, int] = None # type: ignore
-    
+        self.grid: tuple[int, int, int] = None  # type: ignore
+        self.block: tuple[int, int, int] = None  # type: ignore
+
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU | None = None) -> None:
         super().initialize(prev_shape, x)
         self.grid = self.model.cuda_grid

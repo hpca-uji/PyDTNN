@@ -48,7 +48,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
         self.real_memory_size += (self.nparams * self.model.dtype.itemsize) + self.y_dx.nbytes
         # NOTE: This variable stores both y and dx values.
-        
+
         self._mean_inv_shape = shape_
         self._var_inv_shape = shape_
         self.std_shape = shape_
@@ -67,18 +67,18 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         if not self.model.evaluate_only:
 
-            #self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
-            #self.real_memory_size += self.dx.nbytes
+            # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
+            # self.real_memory_size += self.dx.nbytes
             self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
             self.real_memory_size += self.dgamma.nbytes
             self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
             self.real_memory_size += self.dbeta.nbytes
-            
+
             self._mean_shape = (self.ci, )
             self._var_shape = (self.ci, )
             self.dy_xn_shape = vars_shape
             self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
-            
+
             if not self.model.use_memory_pool:
                 self._mean: np.ndarray = np.zeros(self._mean_shape, dtype=self.model.dtype, order="C")
                 self._var: np.ndarray = np.zeros(self._var_shape, dtype=self.model.dtype, order="C")
@@ -87,7 +87,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
                 self._mean: np.ndarray = None  # type: ignore (It will be initialized later)
                 self._var: np.ndarray = None  # type: ignore (It will be initialized later)
                 self.dy_xn: np.ndarray = None  # type: ignore (It will be initialized later)
-        
+
         self.real_memory_size += self.temp_memory_size
     # --
 
@@ -197,7 +197,6 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         # else: nothing special (It has the right format)
 
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
-
 
     def backward_numpy(self, dy: np.ndarray) -> np.ndarray:
 

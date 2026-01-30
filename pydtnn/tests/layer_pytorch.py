@@ -30,22 +30,22 @@ from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils.constants import Parameters
 
 
-#from torch.testing._internal.common_utils import numpy_to_torch_dtype_dict
+# from torch.testing._internal.common_utils import numpy_to_torch_dtype_dict
 numpy_to_torch_dtype_dict = {
-    np.bool_      : torch.bool,
-    np.uint8      : torch.uint8,
-    np.uint16     : torch.uint16,
-    np.uint32     : torch.uint32,
-    np.uint64     : torch.uint64,
-    np.int8       : torch.int8,
-    np.int16      : torch.int16,
-    np.int32      : torch.int32,
-    np.int64      : torch.int64,
-    np.float16    : torch.float16,
-    np.float32    : torch.float32,
-    np.float64    : torch.float64,
-    np.complex64  : torch.complex64,
-    np.complex128 : torch.complex128
+    np.bool_: torch.bool,
+    np.uint8: torch.uint8,
+    np.uint16: torch.uint16,
+    np.uint32: torch.uint32,
+    np.uint64: torch.uint64,
+    np.int8: torch.int8,
+    np.int16: torch.int16,
+    np.int32: torch.int32,
+    np.int64: torch.int64,
+    np.float16: torch.float16,
+    np.float32: torch.float32,
+    np.float64: torch.float64,
+    np.complex64: torch.complex64,
+    np.complex128: torch.complex128
 }
 
 # setting random seed
@@ -104,6 +104,7 @@ GRAD_EQUIVALENCES: dict[str, str] = {
 # PyTorch models
 # ==============
 
+
 class TorchArcTanH(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -157,6 +158,7 @@ class TorchConcatenationBlock(torch.nn.Module):
 # -------------
 # ====================
 
+
 class D:
     def __init__(self, b=N, c=C, h=H, w=W):
         self.b = b  # Batch size
@@ -165,8 +167,9 @@ class D:
         self.w = w  # Layers width
 # ---
 
+
 class ParamsLayerPytorch(Params):
-    def __init__(self, d = D()) -> None:
+    def __init__(self, d=D()) -> None:
         super().__init__()
         self.batch_size = d.b
         self.conv_variant = "i2c"
@@ -183,10 +186,11 @@ class ParamsLayerPytorch(Params):
         self.tracer_output = ""
         torch.set_default_dtype(numpy_to_torch_dtype_dict[self.dtype.type])
         self.dtype = np.dtype(self.dtype)
-    
+
     def asdict(self):
         return self.__dict__
 # ----
+
 
 class LayerPyTorchTestCase(TestCase):
 
@@ -202,8 +206,8 @@ class LayerPyTorchTestCase(TestCase):
     # ======================
 
     @staticmethod
-    def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True, 
-                      shape_with_elements = (params.batch_size, *params.shape), dtype = params.dtype) -> np.ndarray:
+    def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True,
+                      shape_with_elements=(params.batch_size, *params.shape), dtype=params.dtype) -> np.ndarray:
         num_elems = np.prod(shape_with_elements) // 4
 
         x_1 = np.arange(num_elems)

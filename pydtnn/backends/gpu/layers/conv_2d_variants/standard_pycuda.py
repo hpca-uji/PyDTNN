@@ -9,8 +9,9 @@ from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from typing import Any, override
 
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.driver import Function  #type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
+
 
 class Conv2DStandardGPU(Conv2DGPU):
 
@@ -21,7 +22,7 @@ class Conv2DStandardGPU(Conv2DGPU):
             case TensorFormat.NHWC:
                 self.weights_shape = (self.ci, *self.filter_shape, self.co)
                 # NOTE: It is this shape, even if in the CPU version is different.
-                #self.weights_shape = (self.co, *self.filter_shape, self.ci)
+                # self.weights_shape = (self.co, *self.filter_shape, self.ci)
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # -----
@@ -52,7 +53,7 @@ class Conv2DStandardGPU(Conv2DGPU):
 
         self.im2_x = TensorGPU.create_zeros_tensor(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.x_2im_var = TensorGPU.create_zeros_tensor(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        
+
         self.y = TensorGPU.create_zeros_tensor((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.dw = TensorGPU.create_zeros_tensor(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
         self.dx = TensorGPU.create_zeros_tensor(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
@@ -90,7 +91,7 @@ class Conv2DStandardGPU(Conv2DGPU):
     def forward(self, x: TensorGPU) -> TensorGPU:
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
-        self.im2_func(x.ary, self.weights.ary, 
+        self.im2_func(x.ary, self.weights.ary,
                       self.im2_x.ary, self.y,
                       self.biases.ary,
                       np.int32(self.dim_c), np.int32(self.dim_n),
@@ -100,15 +101,15 @@ class Conv2DStandardGPU(Conv2DGPU):
                       np.int32(self.vpadding), np.int32(self.hpadding),
                       np.int32(self.vstride), np.int32(self.hstride),
                       np.int32(self.vdilation), np.int32(self.hdilation),
-                      grid = self.grid, block = self.block,
-                      stream = self.model.stream
-                    )
+                      grid=self.grid, block=self.block,
+                      stream=self.model.stream
+                      )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
     # ---
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
-        
+
         self.dx.fill(0)
 
         # im2col / im2row
@@ -127,9 +128,9 @@ class Conv2DStandardGPU(Conv2DGPU):
                        np.int32(self.vpadding), np.int32(self.hpadding),
                        np.int32(self.vstride), np.int32(self.hstride),
                        np.int32(self.vdilation), np.int32(self.hdilation),
-                       grid = self.grid, block = self.block,
-                       stream = self.model.stream
-                    )
+                       grid=self.grid, block=self.block,
+                       stream=self.model.stream
+                       )
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.dx
     # ---
@@ -137,22 +138,22 @@ class Conv2DStandardGPU(Conv2DGPU):
 #########################################################################################################
 ## CUDA CODE ##
 ###############
-    #========================
-    #= FORWARD-related code =
-    #========================
+    # ========================
+    # = FORWARD-related code =
+    # ========================
 
-    BIAS= \
-"""
+    BIAS = \
+        """
     for(i = idx; i < dim_n; i += num_workers)
         for(j = 0; j < co; j++)
     {{
         *(im2_var + SHIFT(i, j, co)) += (*(bias + j));
     }}
-""" 
+"""
     # -- END BIAS --
 
     DB = \
-"""
+        """
     for (ci = idx; ci < c; ci += num_workers)
     {{
         *(db + ci) = 0;
@@ -169,7 +170,7 @@ class Conv2DStandardGPU(Conv2DGPU):
     def fwd_nchw(self, use_bias: bool) -> Function:
         # im2_var.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
-"""
+            """
 // im2col-related macros
 #define GET_CI(row, h, w) row / (w * h)
 #define GET_KI(row, h, w) (row / w) % h
@@ -190,20 +191,20 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
                             int co, int ho, int wo,
-                            int kh, int kw, 
+                            int kh, int kw,
                             int vpadding, int hpadding,
-                            int vstride, int hstride, 
+                            int vstride, int hstride,
                             int vdilation, int hdilation)
-{{  
+{{
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
     const int num_workers = blockDim.x * gridDim.x;
-    
+
     // im2col const
     const int N = c * kh * kw;
     const int dim_cols = n * self.ho * self.wo;
     // matmul const
     const int N_MATMUL = co * dim_n;
-    
+
     // im2col vars
     int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
     // matmul vars
@@ -265,10 +266,10 @@ __global__ void {FUNC_NAME}(const {T} *const x,
         return module
     # -------------------------
 
-    def fwd_nhwc(self, use_bias:bool) -> Function:
+    def fwd_nhwc(self, use_bias: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-"""
+            """
 #define GET_NI(row, h, w) row / (w * h)
 #define GET_HO(row, h, w) (row / w) % h
 #define GET_WO(row, h, w) row % w
@@ -289,9 +290,9 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
                             int co, int ho, int wo,
-                            int kh, int kw, 
+                            int kh, int kw,
                             int vpadding, int hpadding,
-                            int vstride, int hstride, 
+                            int vstride, int hstride,
                             int vdilation, int hdilation)
 {{
     int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
@@ -306,7 +307,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 
     // Im2Row
     for(row = idx; row < N; row += num_workers)
-    {{  
+    {{
         ni = GET_NI(row, n, ho, wo);
         hoi = GET_HO(row, n, ho, wo);
         woi = GET_WO(row, n, ho, wo);
@@ -319,7 +320,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                 {{
                     wi = hstride * woi + hdilation * kj - hpadding;
                     col = (ni * ho + hoi) * wo + woi;
-                    
+
                     //im2_var[row, col] = ((0 <= hi) && (hi < h) && (0 <= wi) && (wi < w)) ? x[nn, cc, x_x, x_y] : ({T}) 0.0;
                     if (IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
                         *(im2_var + SHIFT_ROWS(row, col, dim_cols)) = *(x + SHIFT_X(n, ci, hi, wi, c, h, w));
@@ -337,10 +338,10 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     // w_rows = (k, j)
     // y = (i, j)
 
-    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.    
+    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.
     for(i_j = idx; i_j < N_matmul; i_j += num_workers)
         for(k = 0; k < dim_c; k++)
-    {{  
+    {{
         i = GET_I(i_j, co);
         j = GET_J(i_j, co);
         // y[i, j] += im2_var[i, k] * weights[k, j]
@@ -358,22 +359,22 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 
         func_name = "im2row_fwd_gpu"
         code = code.format(FUNC_NAME=func_name,
-                            T=_t,
-                            USE_BIAS=use_bias,
-                            BIAS=self.BIAS
-                            )
+                           T=_t,
+                           USE_BIAS=use_bias,
+                           BIAS=self.BIAS
+                           )
         module = SourceModule(code).get_function(func_name)
 
         return module
     # -------------------------
-    
-    #=========================
-    #= BACKWARD-related code =
-    #=========================
 
-    def _backward_nchw(self, use_bias:bool) -> Function:
+    # =========================
+    # = BACKWARD-related code =
+    # =========================
+
+    def _backward_nchw(self, use_bias: bool) -> Function:
         code = \
-"""
+            """
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 #define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) (((((ni * c) + ci) * h) + hi) * w + wi)
@@ -397,9 +398,9 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
                             int co, int ho, int wo,
-                            int kh, int kw, 
+                            int kh, int kw,
                             int vpadding, int hpadding,
-                            int vstride, int hstride, 
+                            int vstride, int hstride,
                             int vdilation, int hdilation)
 {{
     // NOTE: c, h, w are the input ones and co, ho, wo are the output ones (they may differ)
@@ -452,7 +453,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
     // col_2im_var "=" (dim_c, dim_n) = (c * kh * kw, n * ho * wo)
     // mamtul(weights.reshape(co, -1).T, tranposed dy) ==>
-    // mamtul(weights.reshape(co, c * kh * kw).T, tranposed dy) 
+    // mamtul(weights.reshape(co, c * kh * kw).T, tranposed dy)
     // tranposed dy.shape = (co, n*ho*wo)
     for(i_j = idx; i_j < N_COL2IM_VAR; i_j += num_workers)
         for(k = 0; k < co; k++)
@@ -481,7 +482,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
         hx = GET_H(i, n, c, h, w);
         wx = GET_W(i, n, c, h, w);
 
-        for (khi = 0; khi < kh; khi++) 
+        for (khi = 0; khi < kh; khi++)
             for (kwi = 0; kwi < kw; kwi++)
         {{
             // hx = vstride * xx + vdilation * khi - vpadding;
@@ -491,7 +492,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
             x_o = (int) xx;
             y_o = (int) yy;
-            
+
             // if (the variables have no decimals) and (are bewteen 0 and ho/wo):
             if ((x_o == xx) && (y_o == yy) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
             {{
@@ -509,18 +510,18 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
         func_name = "col2im_bwd_gpu"
         code = code.format(FUNC_NAME=func_name,
-                            T=_t,
-                            USE_BIAS=use_bias, 
-                            DB = self.DB
-                            )
+                           T=_t,
+                           USE_BIAS=use_bias,
+                           DB=self.DB
+                           )
         module = SourceModule(code).get_function(func_name)
 
         return module
     # -------------------------
 
-    def _backward_nhwc(self, use_bias:bool) -> Function:
+    def _backward_nhwc(self, use_bias: bool) -> Function:
         code = \
-"""
+            """
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT_DY(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
@@ -543,9 +544,9 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
                             int co, int ho, int wo,
-                            int kh, int kw, 
+                            int kh, int kw,
                             int vpadding, int hpadding,
-                            int vstride, int hstride, 
+                            int vstride, int hstride,
                             int vdilation, int hdilation)
 {{
     const int idx = blockIdx.x * blockDim.x + threadIdx.x
@@ -565,7 +566,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
     // db.shape = (co, )
     // dx.shape = (n, c, h, w)
     // row_2im_var.shape = (dim_c, dim_n) || dim_n = n * ho * wo; dim_c = c * kh * kw
-    
+
     // dw = np.matmul(im2_var.T, dy.reshape(n*ho*wo, self.co)); im2_var.T.shape = (ci*kh*kw, n*ho*wo)
     for(i_j = idx; i_j < N_DW; i_j += workers)
         for(k = 0; k < dim_n; k++)
@@ -603,7 +604,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
         hx = GET_H(i, n, c, h, w);
         wx = GET_W(i, n, c, h, w);
 
-        for (khi = 0; khi < kh; khi++) 
+        for (khi = 0; khi < kh; khi++)
             for (kwi = 0; kwi < kw; kwi++)
         {{
             // hx = vstride * xx + vdilation * khi - vpadding;
@@ -613,7 +614,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
             x_o = (int) xx;
             y_o = (int) yy;
-            
+
             // if (the variables have no decimals) and (are bewteen 0 and ho/wo):
             if ((x_o == xx) && (y_o == yy) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
             {{
@@ -631,10 +632,10 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
         func_name = "row2im_fwd_gpu"
         code = code.format(FUNC_NAME=func_name,
-                            T=_t,
-                            USE_BIAS=use_bias,
-                            DB=self.DB
-                            )
+                           T=_t,
+                           USE_BIAS=use_bias,
+                           DB=self.DB
+                           )
         module = SourceModule(code).get_function(func_name)
 
         return module

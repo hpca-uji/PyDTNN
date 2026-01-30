@@ -13,6 +13,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.utils import matmul_gpu, matvec_gpu
 from pydtnn.utils.constants import ArrayShape, Parameters
 
+
 class FCGPU(FC[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
@@ -22,7 +23,7 @@ class FCGPU(FC[TensorGPU], LayerGPU):
 
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        
+
         cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C", copy=None)
         attribute.ary.set(cpu_ary)
         return
@@ -32,7 +33,7 @@ class FCGPU(FC[TensorGPU], LayerGPU):
         match key:
             case Parameters.BIASES | Parameters.DB:
                 return self._import_biases_db(key, value)
-            # 
+            #
             case _:
                 return super()._import_prop(key, value)
     # -----
@@ -76,16 +77,16 @@ class FCGPU(FC[TensorGPU], LayerGPU):
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype,
                                                     tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype,
-                                                    gpudirect=self.model.gpudirect, 
+                                                    gpudirect=self.model.gpudirect,
                                                     drv=(drv if self.model.gpudirect else None))
         if self.use_bias:
             self.biases: TensorGPU
             self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype,
                                                         tensor_format=self.model.tensor_format,
                                                         cudnn_dtype=self.model.cudnn_dtype,
-                                                        gpudirect=self.model.gpudirect, 
+                                                        gpudirect=self.model.gpudirect,
                                                         drv=(drv if self.model.gpudirect else None))
-            
+
             self.real_memory_size += self.db.nbytes + self.biases.nbytes
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))

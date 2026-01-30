@@ -18,10 +18,11 @@ import numpy as np
 import subprocess
 import re
 
+
 def get_gpu_memory_use() -> str:
     """
     Note: it's necessary nvidia-smi.
-    
+
     :return: The memory use.
     :rtype: str
     """
@@ -30,6 +31,7 @@ def get_gpu_memory_use() -> str:
     memory = re.search(pattern, memory).group().split(":")[-1].strip()
     return memory
 
+
 def _get_gpus_per_node() -> int:
     import subprocess
     try:
@@ -37,6 +39,7 @@ def _get_gpus_per_node() -> int:
     except (FileNotFoundError, subprocess.CalledProcessError):
         gpus_per_node = 0
     return gpus_per_node
+
 
 class BackgroundGenerator[T](threading.Thread):
     def __init__(self, generator: Iterable[T], max_prefetch=0):
@@ -123,6 +126,7 @@ def set_attr_default_factory(o, name, factory):
         value = factory()
         setattr(o, name, value)
         return value
+
 
 def load_library(name):
     """

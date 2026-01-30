@@ -1,10 +1,10 @@
 from typing import Any
 from pydtnn.layers.conv_2d import Conv2D
 
-import pycuda.driver as drv  #type: ignore
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.driver import Function  #type: ignore
+import pycuda.driver as drv  # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
 
 import numpy as np
 
@@ -15,15 +15,16 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
 
+
 class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # The following attributes will be initalized later.
-        self.fwd_algo: int = None  #type: ignore
-        self.bwd_dw_algo: int = None  #type: ignore
-        self.bwd_dx_algo: int = None  #type: ignore
+        self.fwd_algo: int = None  # type: ignore
+        self.bwd_dw_algo: int = None  # type: ignore
+        self.bwd_dx_algo: int = None  # type: ignore
         self.conv_desc = None
     # ----
 
@@ -44,7 +45,7 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
         self.fwd_time = \
             matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) 
+                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
         self.bwd_time = \
             matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) + \
@@ -60,21 +61,21 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
         # Derivative dw and derivative db
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
-                                                    cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, 
+                                                    cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                     tensor_type=TensorGPU.TensorTypeEnum.FILTER, drv=_drv)
         if self.use_bias:
             self.biases: TensorGPU
             self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
-                                                        cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, 
+                                                        cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
                                                         tensor_type=bias_tensor_type, drv=_drv)
-            
+
             self.real_memory_size += self.biases.nbytes + self.db.nbytes
         self.real_memory_size += self.weights.nbytes + self.dw.nbytes
     # ----
 
     def _export_weights_dw(self, key: str) -> Any:
         # NOTE: Every variant must implement their version of this method.
-        #super()._export_prop(key)
+        # super()._export_prop(key)
         msg = "This is a \"fake\" function. It must be overrided by the child classes."
         raise NotImplementedError(f"Conv2DGPU forward: {msg}")
     # ----
@@ -105,7 +106,7 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        
+
         match self.model.tensor_format:
             case TensorFormat.NHWC:
                 cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 1, 2)), dtype=self.model.dtype, order="C", copy=None)
@@ -121,7 +122,7 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
     def _import_weights_dw(self, key: str, value: Any) -> None:
         # NOTE: Every variant must implement their version of this method.
-        #super()._export_prop(key)
+        # super()._export_prop(key)
         msg = "This is a \"fake\" function. It must be overrided by the child classes"
         raise NotImplementedError(f"Conv2DGPU forward: {msg}")
     # ----
@@ -132,7 +133,7 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
                 return self._import_weights_dw(key, value)
             case Parameters.BIASES | Parameters.DB:
                 return self._import_biases_db(key, value)
-            # 
+            #
             case _:
                 return super()._import_prop(key, value)
     # ----
@@ -149,6 +150,7 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
 #########################################################################################################
 ## CUDA-RELATED COMMON CODE ##
 ##############################
+
     def cuda_sum_bias_axis_023(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
@@ -205,6 +207,7 @@ __global__ void {func_name}({T}* dy, {T}* db,
     # ----
 
 # CUDA-related constans
+
 
 MACROS_NCHW = \
     """

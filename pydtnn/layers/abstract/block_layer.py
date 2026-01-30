@@ -15,7 +15,7 @@ class AbstractBlockLayer[T: Array](Layer[T]):
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
         self.initialize_block_layer()
-        
+
         for p in self.paths:
             for layer in p:
                 self.real_memory_size += layer.real_memory_size

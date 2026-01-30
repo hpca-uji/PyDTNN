@@ -3,7 +3,8 @@ import numpy as np
 from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixCPU
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.recall import Recall
-#from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
+# from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
+
 
 class RecallCPU(Recall[np.ndarray], MetricCPU):
 
@@ -46,8 +47,8 @@ class RecallCPU(Recall[np.ndarray], MetricCPU):
         np.copyto(true_positives, self.conf_matrix_metric.get_false_negatives())
         # true_positives / (true_positives + false_negatives)
         np.add(true_positives, false_negatives, dtype=np.dtype(float), order="C", out=real_positives)
-        #div_arrays_set_if_zero(recall,  divider, default_value=0.0)
-        
+        # div_arrays_set_if_zero(recall,  divider, default_value=0.0)
+
         np.not_equal(real_positives, 0, out=are_zeros)
         np.divide(true_positives, real_positives, out=recall, where=(are_zeros))
         return float(np.average(recall))

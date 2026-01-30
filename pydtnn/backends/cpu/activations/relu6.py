@@ -8,7 +8,7 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mask: np.ndarray = None # type: ignore (will be initalized in "initialize")
+        self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
@@ -32,7 +32,7 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
         return dy
-    
+
     def forward_numpy(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]
         self.mask: np.ndarray = self._mask[:x.shape[0], :]
@@ -41,4 +41,3 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
         np.greater(x, 0, out=self.mask, dtype=np.int8)
 
         return self.y
-

@@ -5,6 +5,7 @@ from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionM
 from pydtnn.metrics.f1_score import F1Score
 from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
 
+
 class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
     conf_matrix_metric: BinaryConfusionMatrixCPU
@@ -24,10 +25,10 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
             self.false_negatives: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.float32, order="C")
             self.are_zeros: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.bool, order="C")
         else:
-            self.true_positives: np.ndarray = None  #type: ignore (It will be initialized later)
-            self.false_positives: np.ndarray = None  #type: ignore (It will be initialized later)
-            self.false_negatives: np.ndarray = None  #type: ignore (It will be initialized later)
-            self.are_zeros: np.ndarray = None  #type: ignore (It will be initialized later)
+            self.true_positives: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.false_positives: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.false_negatives: np.ndarray = None  # type: ignore (It will be initialized later)
+            self.are_zeros: np.ndarray = None  # type: ignore (It will be initialized later)
 
         self.real_memory_size += self.temp_memory_size
     # ----
@@ -59,7 +60,7 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
         np.add(true_positives, false_positives, out=aggregation)
         np.add(aggregation, false_negatives, out=aggregation)
 
-        #div_arrays_set_if_zero(true_positives,  aggregation, default_value=0.0)
+        # div_arrays_set_if_zero(true_positives,  aggregation, default_value=0.0)
         np.not_equal(aggregation, 0, out=are_zeros)
         np.divide(true_positives, aggregation, out=f1, where=(are_zeros))
 

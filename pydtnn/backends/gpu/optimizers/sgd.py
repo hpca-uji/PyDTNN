@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.elementwise import ElementwiseKernel  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.optimizers.sgd import SGD
@@ -23,33 +23,33 @@ class SGDGPU(SGD[TensorGPU], OptimizerGPU):
         ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
                    False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]
         operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
-        
+
         self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
         # ------------
-    
+
         # GPU Direct -
         _name = "SGD_kernel_gpudirect"
         code = """
         __global__ void {name}({T} *w, {T} *dw, {T} *v,
-                            float lr, float decay, float momentum, int N) 
+                            float lr, float decay, float momentum, int N)
         {{
             int i = blockIdx.x * blockDim.x + threadIdx.x;
-            if (i < N) 
+            if (i < N)
             {{
                 v[i] = momentum * v[i] + dw[i];
                 {nesterov_ops};
             }}
             }}
         """.format(
-            T = DTYPE2CTYPE[dtype],
+            T=DTYPE2CTYPE[dtype],
             nesterov_ops=({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                            False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]),
-            name = _name
+                           False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]),
+            name=_name
         )
-        
+
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # ------------
-    
+
     def initialize(self, list_layers: list[LayerGPU]) -> None:
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())

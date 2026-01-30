@@ -12,6 +12,7 @@ from pydtnn.activations.softmax import Softmax
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.layers.batch_normalization import BatchNormalization
 
+
 def simplecnn(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append

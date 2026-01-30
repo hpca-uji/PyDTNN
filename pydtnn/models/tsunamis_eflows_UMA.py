@@ -13,6 +13,7 @@ from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.utils.initializers import he_uniform
 from pydtnn.utils.constants import ArrayShape
 
+
 def tsunamis_eflows_UMA(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append

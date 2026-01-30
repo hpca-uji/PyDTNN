@@ -481,7 +481,7 @@ class OkTopkCPU(OkTopk[np.ndarray], OptimizerCPU):
                 # self.model.comm.send(coo_region_partial_sum[region_to_send], dest=destination)
                 # coo_region_partial_sum[region_to_recv] += recv_req.wait()
                 coo_region_partial_sum[region_to_recv] += self.model.comm.sendrecv(coo_region_partial_sum[region_to_send],
-                                                                             dest=destination, source=receive_from)
+                                                                                   dest=destination, source=receive_from)
 
             return coo_region_partial_sum[self.model.rank]
 

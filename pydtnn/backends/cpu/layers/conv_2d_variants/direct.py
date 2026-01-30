@@ -11,13 +11,14 @@ import numpy as np
 
 from pydtnn.utils.tensor import TensorFormat
 
+
 class Conv2DDirectCPU(Conv2DStandardCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # convDirect related attributes (will be initialized in initialize())
         self.cd = []
-    
+
     def _add_forward_backward_methods(self):
         """Add the different forward and backward methods to the class"""
 
@@ -34,7 +35,7 @@ class Conv2DDirectCPU(Conv2DStandardCPU):
                 methods = self.model.conv_direct_methods_for_best_of.split(',')
         for n, method in enumerate(methods):
             self.cd.append(ConvDirect(method, dtype=self.model.dtype, tensor_format=self.model.tensor_format,
-                                        debug=self.debug, parent_layer=self))
+                                      debug=self.debug, parent_layer=self))
             try:
                 getattr(self, f"_forward_cd{n}_nhwc")
             except AttributeError:

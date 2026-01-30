@@ -1,5 +1,5 @@
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.driver import Function  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.driver import Function  # type: ignore
 
 from pydtnn.metrics.metric import Metric
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
@@ -16,7 +16,7 @@ class MetricGPU(Metric[TensorGPU]):
         # NOTE: The following attributes will be initializated later.
         self.grid = None
         self.block = None
-    
+
     def initialize(self) -> None:
         super().initialize()
         self.kernel = self.__init_gpu_kernel__()

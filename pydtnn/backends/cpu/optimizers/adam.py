@@ -32,7 +32,7 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                 self.context[layer.id]["v_%s" % w_] = velocity
                 self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w
                 self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw
-                
+
                 self.real_memory_size += self.temp_memory_size
     # ----
 
@@ -41,18 +41,18 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
         for layer_id in self.context.keys():
             for key in self.context[layer_id].keys():
-                if "temp_w_" in key: 
+                if "temp_w_" in key:
                     w_ = key.split("temp_w_")[-1]
-                elif "temp_dw_" in key: 
+                elif "temp_dw_" in key:
                     w_ = key.split("temp_dw_")[-1]
                 else:
                     w_ = None
-                
+
                 if w_ is None:
                     continue
                 # if w_ is not None:
 
-                w_shape = self.context[layer_id]["m_%s" % w_].shape # type: ignore (it is correct)
+                w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
                 w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape, dtype=self.model.dtype)
         # - end for
         self.model.memory_pool.free_buffer(self.temp_memory_size)
@@ -67,13 +67,12 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
             w: np.ndarray
             dw: np.ndarray
             # Momentum of the weight or bias of the given layer
-            m: np.ndarray = self.context[layer.id]["m_%s" % w_]  # type: ignore 
+            m: np.ndarray = self.context[layer.id]["m_%s" % w_]  # type: ignore
             # Velocity of the weight or bias of the given layer
             v: np.ndarray = self.context[layer.id]["v_%s" % w_]  # type: ignore
 
             vt_temp_w: np.ndarray = self.context[layer.id]["temp_w_%s" % w_]  # type:ignore
             mt_temp_dw: np.ndarray = self.context[layer.id]["temp_dw_%s" % w_]  # type:ignore
-
 
             if not (self.are_all_zeros(w) and self.are_all_zeros(dw) and self.are_all_zeros(m) and self.are_all_zeros(v)):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
@@ -83,7 +82,7 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
                 np.multiply(inv_beta1, dw, dtype=self.dtype, order="C", out=mt_temp_dw)
 
-                np.multiply(m, self.beta1, out=m, 
+                np.multiply(m, self.beta1, out=m,
                             dtype=self.dtype)
                 np.add(m, mt_temp_dw, out=m,
                        dtype=self.dtype)
@@ -93,10 +92,10 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
                 np.multiply(v, self.beta2, out=v,
                             dtype=self.dtype)
-                np.multiply(mt_temp_dw, inv_beta2, out=mt_temp_dw, 
+                np.multiply(mt_temp_dw, inv_beta2, out=mt_temp_dw,
                             dtype=self.dtype)
-                np.add(v, mt_temp_dw, out=v, 
-                        dtype=self.dtype)
+                np.add(v, mt_temp_dw, out=v,
+                       dtype=self.dtype)
 
                 np.divide(m, (inv_beta1 ** it), dtype=self.dtype, order="C", out=mt_temp_dw)
                 np.divide(v, (inv_beta2 ** it), dtype=self.dtype, order="C", out=vt_temp_w)
@@ -105,13 +104,13 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
                 np.add(vt_temp_w, self.epsilon, out=vt_temp_w,
                        dtype=self.dtype)
-                np.sqrt(vt_temp_w, out=vt_temp_w, 
+                np.sqrt(vt_temp_w, out=vt_temp_w,
                         dtype=self.dtype)
                 np.divide(mt_temp_dw, vt_temp_w, out=mt_temp_dw,
                           dtype=self.dtype)
 
                 np.multiply(self.decay, w, dtype=self.dtype, order="C", out=vt_temp_w)
-                np.add(vt_temp_w, mt_temp_dw, out=vt_temp_w, 
+                np.add(vt_temp_w, mt_temp_dw, out=vt_temp_w,
                        dtype=self.dtype)
                 np.multiply(vt_temp_w, self.learning_rate, out=vt_temp_w,
                             dtype=self.dtype)

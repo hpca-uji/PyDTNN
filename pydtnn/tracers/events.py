@@ -21,7 +21,6 @@ class PYDTNN_MDL_EVENT_enum(IntEnum):
     UPDATE_DW = auto()  # Originally: 5
 
 
-
 PYDTNN_MDL_EVENT = 60000001
 PYDTNN_MDL_EVENTS = len(PYDTNN_MDL_EVENT_enum)
 # ========================== #

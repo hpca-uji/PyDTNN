@@ -16,8 +16,8 @@ class KLDivergenceCPU(KLDivergence[np.ndarray], LossCPU):
         # dx = - pred / target # Respecto a Target
         # ----
 
-        #dx = np.log(np.abs(y_targ/(y_pred + self.eps)) + 1)  # Respecto a prediction
-        #dx = dx / batch_size
+        # dx = np.log(np.abs(y_targ/(y_pred + self.eps)) + 1)  # Respecto a prediction
+        # dx = dx / batch_size
         dx = self.dx[:y_targ[0]]
 
         np.add(y_pred, self.eps, out=dx)

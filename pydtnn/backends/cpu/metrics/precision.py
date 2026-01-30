@@ -3,7 +3,7 @@ import numpy as np
 from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixCPU
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.precision import Precision
-#from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
+# from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
 
 
 class PrecisionCPU(Precision[np.ndarray], MetricCPU):
@@ -49,7 +49,7 @@ class PrecisionCPU(Precision[np.ndarray], MetricCPU):
 
         np.add(true_positives, false_positives, out=positives)
         # precision = (precision / divider if divider[i] != 0 else default_value)
-        #div_arrays_set_if_zero(precision,  f_positives, default_value=0)
+        # div_arrays_set_if_zero(precision,  f_positives, default_value=0)
         np.not_equal(positives, 0, out=are_zeros)
         np.divide(true_positives, positives, out=precision, where=(are_zeros))
         return float(np.average(precision))

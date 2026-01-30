@@ -8,9 +8,10 @@ from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from typing import Any, override
 
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.driver import Function  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
+
 
 class Conv2DPointwiseGPU(Conv2DGPU):
 
@@ -18,13 +19,13 @@ class Conv2DPointwiseGPU(Conv2DGPU):
         self.kh = self.kw = 1
         # Setting weights
         match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    self.weights_shape = (self.co, self.ci)
-                case TensorFormat.NHWC:
-                    self.weights_shape = (self.co, self.ci)
-                case _:
-                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
-        #--
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci)
+            case TensorFormat.NHWC:
+                self.weights_shape = (self.co, self.ci)
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        # --
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
@@ -153,7 +154,7 @@ class Conv2DPointwiseGPU(Conv2DGPU):
                 gpu_ary = attribute.ary
                 cpu_ary = np.asarray(np.expand_dims(value, axis=(2, 3)), dtype=self.model.dtype, order="C", copy=None)
                 gpu_ary.set(cpu_ary)
-                return 
+                return
             case default:
                 return super()._export_prop(key)
     # ---
@@ -164,7 +165,7 @@ class Conv2DPointwiseGPU(Conv2DGPU):
     def cuda_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-"""
+            """
 {macros}
 
 __global__ void {func_name}({T}* x, {T}* k, {T}* y,
@@ -211,7 +212,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* y,
     def cuda_pointwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-"""
+            """
 {macros}
 
 __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
@@ -262,7 +263,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
     def cuda_bias_pointwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-"""
+            """
 {macros}
 
 __global__ void {func_name}({T}* y, {T}* b,

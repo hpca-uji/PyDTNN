@@ -44,13 +44,13 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         self.kh = self.kw = 1
         # Setting weights
         match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    self.weights_shape = (self.co, self.ci)
-                case TensorFormat.NHWC:
-                    self.weights_shape = (self.co, self.ci)
-                case _:
-                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
-        #--
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci)
+            case TensorFormat.NHWC:
+                self.weights_shape = (self.co, self.ci)
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        # --
     # ---
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
@@ -97,7 +97,7 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         if self.model.mode is Model.Mode.TRAIN:
             self.x: np.ndarray = x
 
-        y:np.ndarray = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y[:x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
         y = best_transpose_0231(y)  # type: ignore (It's Okay)
@@ -125,7 +125,7 @@ class Conv2DPointwiseCPU(Conv2DCPU):
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
-        dx:np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
+        dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy: np.ndarray = dy.reshape((_dim, _c), copy=False)

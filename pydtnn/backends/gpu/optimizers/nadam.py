@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.elementwise import ElementwiseKernel  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.optimizers.nadam import Nadam
@@ -20,7 +20,7 @@ class NadamGPU(Nadam[TensorGPU], OptimizerGPU):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
 
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
-        
+
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, " \
                          "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[dtype])
@@ -32,16 +32,16 @@ class NadamGPU(Nadam[TensorGPU], OptimizerGPU):
 
         self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "Nadam_kernel")
         # -----------
-        
+
         # GPU DIRECT-
         _name = "Nadam_kernel_gpudirect"
         code = """
             __global__ void {name}({T} *w, {T} *dw, {T} *m, {T} *v,
                                    float it, float lr, float decay,
-                                   float beta1, float beta2, float epsilon, int N) 
+                                   float beta1, float beta2, float epsilon, int N)
             {{
                 int i = blockIdx.x * blockDim.x + threadIdx.x;
-                if (i < N) 
+                if (i < N)
                 {{
                     m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
                     v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
@@ -49,10 +49,10 @@ class NadamGPU(Nadam[TensorGPU], OptimizerGPU):
                             sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
                 }}
             }}""".format(
-                T = DTYPE2CTYPE[dtype],
-                func=func_pow[dtype],
-                name=_name
-            )
+            T=DTYPE2CTYPE[dtype],
+            func=func_pow[dtype],
+            name=_name
+        )
 
         self.update_gpudirect = SourceModule(code).get_function(_name)
         # -----------
@@ -71,7 +71,7 @@ class NadamGPU(Nadam[TensorGPU], OptimizerGPU):
 
     def update(self, layer: LayerGPU) -> None:
         self.context[layer]["it"] += 1  # type: ignore (self.context[layer]["it"] is always an integer)
-        it:int = self.context[layer]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
+        it: int = self.context[layer]["it"]  # type: ignore (self.context[layer]["it"] is always an integer)
 
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)

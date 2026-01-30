@@ -118,7 +118,7 @@ cudnnMathType = {
 # cudnnSeqDataAxis_t is an enumerated type used by cudnnSetSeqDataDescriptor()
 # type cudnnSeqDataAxis = dict[str, int]
 cudnnSeqDataAxis = {
-    'CUDNN_SEQDATA_TIME_DIM':  0,  # Identifies the TIME (sequence length) dimension or
+    'CUDNN_SEQDATA_TIME_DIM': 0,  # Identifies the TIME (sequence length) dimension or
     #  specifies the TIME in the data layout.
     'CUDNN_SEQDATA_BATCH_DIM': 1,  # Identifies the BATCH dimension or specifies the BATCH
     # in the data layout.
@@ -143,19 +143,33 @@ cudnnMultiHeadAttnWeightKind = {
 
 # type cudnnAttnMode = dict[str, int]
 cudnnAttnMode = {
-    # Forward declaration of mapping between Q and K , V vectors when the beam size is greater than one in the Q input. Multiple Q vectors from the same beam bundle map to the same K , V vectors. This means that beam sizes in the K , V sets are equal to one.
+    # Forward declaration of mapping between Q and K , V vectors when the beam
+    # size is greater than one in the Q input. Multiple Q vectors from the
+    # same beam bundle map to the same K , V vectors. This means that beam
+    # sizes in the K , V sets are equal to one.
     'CUDNN_ATTN_QUERYMAP_ALL_TO_ONE': 0,
-    # Forward declaration of mapping between Q and K , V vectors when the beam size is greater than one in the Q input. Multiple Q vectors from the same beam bundle map to different K , V vectors. This requires beam sizes in K , V sets to be the same as in the Q input.
+    # Forward declaration of mapping between Q and K , V vectors when the beam
+    # size is greater than one in the Q input. Multiple Q vectors from the
+    # same beam bundle map to different K , V vectors. This requires beam
+    # sizes in K , V sets to be the same as in the Q input.
     'CUDNN_ATTN_QUERYMAP_ONE_TO_ONE': 1,
     'CUDNN_ATTN_DISABLE_PROJ_BIASES': 0,  # Use no biases in the attention input and output projections.
-    # Use extra biases in the attention input and output projections. In this case the projected K ¯ vectors are computed as K i ¯ = W K , i K + b * 1 , 1 , ..., 1 1 × n , where n is the number of columns in the K matrix. In other words, the same column vector b is added to all columns of K after the weight matrix multiplication.
+    # Use extra biases in the attention input and output projections. In this
+    # case the projected K ¯ vectors are computed as K i ¯ = W K , i K + b * 1
+    # , 1 , ..., 1 1 × n , where n is the number of columns in the K matrix.
+    # In other words, the same column vector b is added to all columns of K
+    # after the weight matrix multiplication.
     'CUDNN_ATTN_ENABLE_PROJ_BIASES': 2
 }
 
 
 # type cudnnWgradMode = dict[str, int]
 cudnnWgradMode = {
-    # A weight gradient component corresponding to a new batch of inputs is added to previously evaluated weight gradients. Before using this mode, the buffer holding weight gradients should be initialized to zero. Alternatively, the first API call outputting to an uninitialized buffer should use the CUDNN_WGRAD_MODE_SET option.
+    # A weight gradient component corresponding to a new batch of inputs is
+    # added to previously evaluated weight gradients. Before using this mode,
+    # the buffer holding weight gradients should be initialized to zero.
+    # Alternatively, the first API call outputting to an uninitialized buffer
+    # should use the CUDNN_WGRAD_MODE_SET option.
     'CUDNN_WGRAD_MODE_ADD': 0,
     'CUDNN_WGRAD_MODE_SET': 1  # A weight gradient component, corresponding to a new batch of inputs, overwrites previously stored weight gradients in the output buffer.
 }
@@ -2279,33 +2293,33 @@ _libcudnn.cudnnSetSeqDataDescriptor.argtypes = [ctypes.c_void_p,  # seqDataDesc
 def cudnnSetSeqDataDescriptor(seqDataDesc, dataType, nbDims, dimA, axes, seqLengthArraySize, seqLengthArray, paddingFill):
     """
     Initialize a previously created SeqData object.
-    This function initializes a previously created sequence data descriptor object. In the most 
-    simplified view, this descriptor defines dimensions (dimA) and the data layout (axes) of a 
-    four-dimensional tensor. All four dimensions of the sequence data descriptor have unique 
+    This function initializes a previously created sequence data descriptor object. In the most
+    simplified view, this descriptor defines dimensions (dimA) and the data layout (axes) of a
+    four-dimensional tensor. All four dimensions of the sequence data descriptor have unique
     identifiers that can be used to index the dimA[] array.
     Parameters
     ----------
     seqDataDesc : cudnnSeqDataDescriptor
         Pointer to a previously created sequence data descriptor.
     dataType : cudnnDataType
-        Data type of the sequence data buffer (CUDNN_DATA_HALF, CUDNN_DATA_FLOAT or 
+        Data type of the sequence data buffer (CUDNN_DATA_HALF, CUDNN_DATA_FLOAT or
         CUDNN_DATA_DOUBLE).
     nbDims : int
-        Must be 4. The number of active dimensions in dimA[] and axes[] arrays. Both arrays should 
+        Must be 4. The number of active dimensions in dimA[] and axes[] arrays. Both arrays should
         be declared to contain at least CUDNN_SEQDATA_DIM_COUNT elements.
     dimA : int[]
-        Integer array specifying sequence data dimensions. Use the cudnnSeqDataAxis_t enumerated 
+        Integer array specifying sequence data dimensions. Use the cudnnSeqDataAxis_t enumerated
         type to index all active dimA[] elements.
     axes : cudnnSeqDataAxis[]
-        Array of cudnnSeqDataAxis_t that defines the layout of sequence data in memory. The first 
-        nbDims elements of axes[] should be initialized with the outermost dimension in axes[0] and 
+        Array of cudnnSeqDataAxis_t that defines the layout of sequence data in memory. The first
+        nbDims elements of axes[] should be initialized with the outermost dimension in axes[0] and
         the innermost dimension in axes[nbDims-1].
     seqLengthArraySize : int
         Number of elements in the sequence length array, seqLengthArray[].
     seqLengthArray : int
         An integer array that defines all sequence lengths of the container.
     paddingFill : void
-        Must be NULL. Pointer to a value of dataType that is used to fill up output vectors beyond 
+        Must be NULL. Pointer to a value of dataType that is used to fill up output vectors beyond
         the valid length of each sequence or NULL to ignore this setting.
     """
     dimARef = dimA.ctypes.data_as(ctypes.POINTER(ctypes.c_int32))
@@ -2373,21 +2387,21 @@ def cudnnSetAttnDescriptor(attnDesc, attnMode, nHeads, smScaler, dataType, compu
                            attnDropoutDesc, postDropoutDesc, qSize, kSize, vSize, qProjSize, kProjSize,
                            vProjSize, oProjSize, qoMaxSeqLength, kvMaxSeqLength, maxBatchSize, maxBeamSize):
     """
-    This function configures a multi-head attention descriptor that was previously created using 
-    the cudnnCreateAttnDescriptor() function. The function sets attention parameters that are 
-    necessary to compute internal buffer sizes, dimensions of weight and bias tensors, or to 
+    This function configures a multi-head attention descriptor that was previously created using
+    the cudnnCreateAttnDescriptor() function. The function sets attention parameters that are
+    necessary to compute internal buffer sizes, dimensions of weight and bias tensors, or to
     select optimized code paths.
     Parameters
     ----------
     attnDesc : cudnnAttnDescriptor_t
         Output. Attention descriptor to be configured.
     attnMode : unsigned
-        Input. Enables various attention options that do not require additional numerical values. 
+        Input. Enables various attention options that do not require additional numerical values.
         The user should assign a preferred set of bitwise OR-ed flags to this argument.
     nHeads : int
         Input. Number of attention heads.
     smScaler : double
-        Input. Softmax smoothing (1.0 >= smScaler >= 0.0) or sharpening (smScaler > 1.0) coefficient. 
+        Input. Softmax smoothing (1.0 >= smScaler >= 0.0) or sharpening (smScaler > 1.0) coefficient.
         Negative values are not accepted.
     dataType : cudnnDataType_t
         Input. Data type used to represent attention inputs, attention weights and attention outputs.
@@ -2396,23 +2410,23 @@ def cudnnSetAttnDescriptor(attnDesc, attnMode, nHeads, smScaler, dataType, compu
     mathType : cudnnMathType_t
         Input. NVIDIA Tensor Core settings.
     attnDropoutDesc : cudnnDropoutDescriptor_t
-        Input. Descriptor of the dropout operation applied to the softmax output. See the table below 
+        Input. Descriptor of the dropout operation applied to the softmax output. See the table below
         for a list of unsupported features.
     postDropoutDesc : cudnnDropoutDescriptor_t
-        Input. Descriptor of the dropout operation applied to the multi-head attention output, just 
+        Input. Descriptor of the dropout operation applied to the multi-head attention output, just
         before the point where residual connections are added.
     qSize, kSize, vSize : int
         Input. Q , K , V embedding vector lengths.
     qProjSize, kProjSize, vProjSize : int
-        Input. Q , K , V embedding vector lengths after input projections. Use zero to disable the 
+        Input. Q , K , V embedding vector lengths after input projections. Use zero to disable the
         corresponding projection.
     oProjSize : int
         Input. The h i vector length after the output projection. Use zero to disable this projection.
     qoMaxSeqLength : int
-        Input. Largest sequence length expected in sequence data descriptors related to Q , O , dQ 
+        Input. Largest sequence length expected in sequence data descriptors related to Q , O , dQ
         and dO inputs and outputs.
     kvMaxSeqLength : int
-        Input. Largest sequence length expected in sequence data descriptors related to K , V , dK 
+        Input. Largest sequence length expected in sequence data descriptors related to K , V , dK
         and dV inputs and outputs.
     maxBatchSize : int
         Input. Largest batch size expected in any cudnnSeqDataDescriptor_t container.
@@ -2453,8 +2467,8 @@ _libcudnn.cudnnGetMultiHeadAttnWeights.argtypes = [ctypes.c_void_p, ctypes.c_voi
 
 def cudnnGetMultiHeadAttnWeights(handle, attnDesc, wKind, weightSizeInBytes, weights):
     """"
-    This function obtains the shape of the weight or bias tensor. It also retrieves the start address 
-    of tensor data located in the weight buffer. Use the wKind argument to select a particular tensor. 
+    This function obtains the shape of the weight or bias tensor. It also retrieves the start address
+    of tensor data located in the weight buffer. Use the wKind argument to select a particular tensor.
     For more information, see cudnnMultiHeadAttnWeightKind_t for the description of the enumerant type.
 
     Parameters
@@ -2472,12 +2486,12 @@ def cudnnGetMultiHeadAttnWeights(handle, attnDesc, wKind, weightSizeInBytes, wei
     Returns
     -------
     wDesc : cudnnTensorDescriptor_t
-        The descriptor specifying weight or bias tensor shape. For weights, the wDesc.dimA[] array has 
-        three elements: [nHeads, projected size, original size]. For biases, the wDesc.dimA[] array also 
-        has three elements: [nHeads, projected size, 1]. The wDesc.strideA[] array describes how tensor 
+        The descriptor specifying weight or bias tensor shape. For weights, the wDesc.dimA[] array has
+        three elements: [nHeads, projected size, original size]. For biases, the wDesc.dimA[] array also
+        has three elements: [nHeads, projected size, 1]. The wDesc.strideA[] array describes how tensor
         elements are arranged in memory.
     wAddr : void
-        Pointer to a location where the start address of the requested tensor should be written. When the 
+        Pointer to a location where the start address of the requested tensor should be written. When the
         corresponding projection is disabled, the address written to wAddr is NULL.
     """
     wDesc = ctypes.c_void_p()
@@ -2538,10 +2552,10 @@ def cudnnMultiHeadAttnForward(handle, attnDesc, currIdx, loWinIdx, hiWinIdx, dev
                               weightSizeInBytes, weights, workSpaceSizeInBytes, workSpace, reserveSpaceSizeInBytes,
                               reserveSpace):
     """"
-    The cudnnMultiHeadAttnForward() function computes the forward responses of the multi-head attention layer. 
-    When reserveSpaceSizeInBytes=0 and reserveSpace=NULL, the function operates in the inference mode in which 
-    backward (gradient) functions are not invoked, otherwise, the training mode is assumed. In the training mode, 
-    the reserve space is used to pass intermediate results from cudnnMultiHeadAttnForward() to 
+    The cudnnMultiHeadAttnForward() function computes the forward responses of the multi-head attention layer.
+    When reserveSpaceSizeInBytes=0 and reserveSpace=NULL, the function operates in the inference mode in which
+    backward (gradient) functions are not invoked, otherwise, the training mode is assumed. In the training mode,
+    the reserve space is used to pass intermediate results from cudnnMultiHeadAttnForward() to
     cudnnMultiHeadAttnBackwardData() and from cudnnMultiHeadAttnBackwardData() to cudnnMultiHeadAttnBackwardWeights().
     Parameters
     ----------
@@ -2550,12 +2564,12 @@ def cudnnMultiHeadAttnForward(handle, attnDesc, currIdx, loWinIdx, hiWinIdx, dev
     attnDesc
         Input. A previously initialized attention descriptor.
     currIdx
-        Input. Time-step in queries to process. When the currIdx argument is negative, all Q time-steps are processed. 
-        When currIdx is zero or positive, the forward response is computed for the selected time-step only. The latter 
-        input can be used in inference mode only, to process one time-step while updating the next attention window and 
+        Input. Time-step in queries to process. When the currIdx argument is negative, all Q time-steps are processed.
+        When currIdx is zero or positive, the forward response is computed for the selected time-step only. The latter
+        input can be used in inference mode only, to process one time-step while updating the next attention window and
         Q, R, K, V inputs in-between calls.
     loWinIdx[], hiWinIdx[]
-        Input. Two host integer arrays specifying the start and end indices of the attention window for each Q time-step. 
+        Input. Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
         The start index in K, V sets is inclusive, and the end index is exclusive.
     devSeqLengthsQO[]
         Input. Device array specifying sequence lengths of query, residual, and output sequence data.
@@ -2566,7 +2580,7 @@ def cudnnMultiHeadAttnForward(handle, attnDesc, currIdx, loWinIdx, hiWinIdx, dev
     queries
         Input. Pointer to queries data in the device memory.
     residuals
-        Input. Pointer to residual data in device memory. Set this argument to NULL if no residual connections are 
+        Input. Pointer to residual data in device memory. Set this argument to NULL if no residual connections are
         required.
     kDesc
         Input. Descriptor for the keys sequence data.
@@ -2589,10 +2603,10 @@ def cudnnMultiHeadAttnForward(handle, attnDesc, currIdx, loWinIdx, hiWinIdx, dev
     workSpace
         Input/Output. Pointer to the work-space buffer in device memory.
     reserveSpaceSizeInBytes
-        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient) 
+        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
         API calls. This parameter should be zero in the inference mode and non-zero in the training mode.
     reserveSpace
-        Input/Output. Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode 
+        Input/Output. Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode
         and non-NULL in the training mode.
     """
     status = _libcudnn.cudnnMultiHeadAttnForward(handle, attnDesc, currIdx, loWinIdx.ctypes.data, hiWinIdx.ctypes.data,
@@ -2619,12 +2633,12 @@ def cudnnMultiHeadAttnBackwardData(handle, attnDesc, loWinIdx, hiWinIdx, devSeqL
                                    weightSizeInBytes, weights, workSpaceSizeInBytes, workSpace, reserveSpaceSizeInBytes,
                                    reserveSpace):
     """"
-    This function computes exact, first-order derivatives of the multi-head attention block with respect to its inputs: 
-    Q, K, V. If y=F(x) is a vector-valued function that represents the multi-head attention layer and it takes some vector 
-    x ϵ ℝ n as an input (with all other parameters and inputs constant), and outputs vector y ϵ ℝ m , then 
-    cudnnMultiHeadAttnBackwardData() computes the result of ∂ y i / ∂ x j T δ out where δ out is the m × 1 gradient of the 
-    loss function with respect to multi-head attention outputs. The δ out gradient is back propagated through prior layers 
-    of the deep learning model. ∂ y i / ∂ x j is the m × n Jacobian matrix of F(x). The input is supplied via the dout argument 
+    This function computes exact, first-order derivatives of the multi-head attention block with respect to its inputs:
+    Q, K, V. If y=F(x) is a vector-valued function that represents the multi-head attention layer and it takes some vector
+    x ϵ ℝ n as an input (with all other parameters and inputs constant), and outputs vector y ϵ ℝ m , then
+    cudnnMultiHeadAttnBackwardData() computes the result of ∂ y i / ∂ x j T δ out where δ out is the m × 1 gradient of the
+    loss function with respect to multi-head attention outputs. The δ out gradient is back propagated through prior layers
+    of the deep learning model. ∂ y i / ∂ x j is the m × n Jacobian matrix of F(x). The input is supplied via the dout argument
     and gradient results for Q, K, V are written to the dqueries, dkeys, and dvalues buffers.
     Parameters
     ----------
@@ -2633,12 +2647,12 @@ def cudnnMultiHeadAttnBackwardData(handle, attnDesc, loWinIdx, hiWinIdx, devSeqL
     attnDesc
         Input. A previously initialized attention descriptor.
     currIdx
-        Input. Time-step in queries to process. When the currIdx argument is negative, all Q time-steps are processed. 
-        When currIdx is zero or positive, the forward response is computed for the selected time-step only. The latter 
-        input can be used in inference mode only, to process one time-step while updating the next attention window and 
+        Input. Time-step in queries to process. When the currIdx argument is negative, all Q time-steps are processed.
+        When currIdx is zero or positive, the forward response is computed for the selected time-step only. The latter
+        input can be used in inference mode only, to process one time-step while updating the next attention window and
         Q, R, K, V inputs in-between calls.
     loWinIdx[], hiWinIdx[]
-        Input. Two host integer arrays specifying the start and end indices of the attention window for each Q time-step. 
+        Input. Two host integer arrays specifying the start and end indices of the attention window for each Q time-step.
         The start index in K, V sets is inclusive, and the end index is exclusive.
     devSeqLengthsDQDO[]
         Input. Device array containing a copy of the sequence length array from the dqDesc or doDesc sequence data descriptor.
@@ -2675,10 +2689,10 @@ def cudnnMultiHeadAttnBackwardData(handle, attnDesc, loWinIdx, hiWinIdx, devSeqL
     workSpace
         Input/Output. Pointer to the work-space buffer in device memory.
     reserveSpaceSizeInBytes
-        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient) 
+        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
         API calls. This parameter should be zero in the inference mode and non-zero in the training mode.
     reserveSpace
-        Input/Output. Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode 
+        Input/Output. Pointer to the reserve-space buffer in device memory. This argument should be NULL in inference mode
         and non-NULL in the training mode.
     """
 
@@ -2705,12 +2719,12 @@ def cudnnMultiHeadAttnBackwardWeights(handle, attnDesc, addGrad,
                                       workSpaceSizeInBytes, workSpace,
                                       reserveSpaceSizeInBytes, reserveSpace):
     """"
-    This function computes exact, first-order derivatives of the multi-head attention block with respect to its trainable parameters: 
-    projection weights and projection biases. If y=F(w) is a vector-valued function that represents the multi-head attention layer 
-    and it takes some vector x ϵ ℝ n of flatten weights or biases as an input (with all other parameters and inputs fixed), and 
-    outputs vector y ϵ ℝ m , then cudnnMultiHeadAttnBackwardWeights() computes the result of ∂ y i / ∂ x j T δ out where δ out is the 
-    m × 1 gradient of the loss function with respect to multi-head attention outputs. The δ out gradient is back propagated through 
-    prior layers of the deep learning model. ∂ y i / ∂ x j is the m × n Jacobian matrix of F(w). The δ out input is supplied via the 
+    This function computes exact, first-order derivatives of the multi-head attention block with respect to its trainable parameters:
+    projection weights and projection biases. If y=F(w) is a vector-valued function that represents the multi-head attention layer
+    and it takes some vector x ϵ ℝ n of flatten weights or biases as an input (with all other parameters and inputs fixed), and
+    outputs vector y ϵ ℝ m , then cudnnMultiHeadAttnBackwardWeights() computes the result of ∂ y i / ∂ x j T δ out where δ out is the
+    m × 1 gradient of the loss function with respect to multi-head attention outputs. The δ out gradient is back propagated through
+    prior layers of the deep learning model. ∂ y i / ∂ x j is the m × n Jacobian matrix of F(w). The δ out input is supplied via the
     dout argument.
     Parameters
     ----------
@@ -2747,7 +2761,7 @@ def cudnnMultiHeadAttnBackwardWeights(handle, attnDesc, addGrad,
     workSpace
         Input/Output. Pointer to the work-space buffer in device memory.
     reserveSpaceSizeInBytes
-        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient) 
+        Input. Size of the reserve-space buffer in bytes used for data exchange between forward and backward (gradient)
         API calls.
     reserveSpace
         Input/Output. Pointer to the reserve-space buffer in device memory.
@@ -2800,7 +2814,7 @@ def cudnnNormalizationForwardTraining(handle, mode, normOps, algo, alpha, beta,
                                       reserveSpace, reserveSpaceSizeInBytes,
                                       groupCnt):
     '''
-    This function performs the forward normalization layer computation for the training phase. 
+    This function performs the forward normalization layer computation for the training phase.
     Depending on mode, different normalization operations will be performed.
     Parameters
     ----------

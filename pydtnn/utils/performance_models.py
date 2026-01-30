@@ -46,7 +46,7 @@ def allreduce_time(elems: int, cpu_speed: float, network_bw: float, network_lat:
                 2.0 * ceil(log(nprocs, 2)) * ((elems * bfp * 8.0) / network_bw) + \
                 ceil(log(nprocs, 2)) * (elems / cpu_speed)
             comp_time = ceil(log(nprocs, 2)) * (elems / cpu_speed)
-        case _ :
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
     # print("allreduce_time; s; %8d; t; %8.8f" % (elems, time))
     return np.array([time, 0, 0, time], dtype=np.float32)
@@ -63,7 +63,7 @@ def scatter_time(elems: int, cpu_speed: float, network_bw: float, network_lat: f
         case NetworkAlgEnum.VDG:
             time = log(nprocs, 2) * network_lat + \
                 ((nprocs - 1) / nprocs) * ((elems * bfp * 8.0) / network_bw)
-        case _ :
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
     # print("scatter_time; s; %8d; t; %8.8f" % (elems, time))
     return np.array([time, 0, 0, time], dtype=np.float32)
@@ -83,8 +83,8 @@ def reduce_time(elems: int, cpu_speed: float, network_bw: float, network_lat: fl
             comp_time = ((nprocs - 1.0) / nprocs) * (elems / cpu_speed)
             time = 2.0 * log(nprocs, 2) * network_lat + \
                 2.0 * ((nprocs - 1.0) / nprocs) * ((elems * bfp * 8.0) / network_bw) + \
-                comp_time        
-        case _ :
+                comp_time
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
 
     # print("reduce_time; s; %8d; t; %8.8f" % (elems, time))
@@ -98,12 +98,12 @@ def bcast_time(elems: int, cpu_speed: float, network_bw: float, network_lat: flo
     match network_alg:
         case NetworkAlgEnum.BTA:
             time = ceil(log(nprocs, 2)) * ((3 * network_lat) +
-                                        ((elems * bfp * 8.0) / network_bw))
+                                           ((elems * bfp * 8.0) / network_bw))
         case NetworkAlgEnum.VDG:
             time = (log(nprocs, 2) + nprocs - 1.0) * (network_lat) + \
                 2.0 * ((nprocs - 1.0) / nprocs) * ((elems * bfp * 8.0) / network_bw)
         # print("bcast_time; s; %8d; t; %8.8f" % (elems, time))
-        case _ :
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
 
     return np.array([time, 0, 0, time], dtype=np.float32)
@@ -120,7 +120,7 @@ def scatter_time(elems: int, cpu_speed: float, network_bw: float, network_lat: f
         case NetworkAlgEnum.VDG:
             time = log(nprocs) * (network_lat) + \
                 (((nprocs - 1) / nprocs)) * ((elems * bfp * 8.0) / network_bw)
-        case _ :
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
     # print("scatter_time; s; %8d; t; %8.8f" % (elems, time))
     return time
@@ -144,7 +144,7 @@ def allgather_time(elems: int, cpu_speed: float, network_bw: float, network_lat:
         case NetworkAlgEnum.VDG:
             time = ceil(log(nprocs, 2)) * (4 * network_lat) + \
                 (((nprocs - 1) / nprocs) * ((elems * bfp * 8.0) / network_bw))
-        case _ :
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
     # print("allgather_time; s; %8d; t; %8.8f" % (elems, time))
     return np.array([time, 0, 0, time], dtype=np.float32)
@@ -165,7 +165,7 @@ def reduce_scatter_time(elems: int, cpu_speed: float, network_bw: float, network
             time = (nprocs - 1) * network_lat + \
                 ((nprocs - 1) / nprocs) * ((elems * bfp * 8.0) / network_bw) + \
                 comp_time
-        case _ :
+        case _:
             raise ValueError(f"network_alg ({network_alg}) not in {list(NetworkAlgEnum)}")
         # print("reduce_scatter_time; s; %8d; t; %8.8f" % (elems, time))
     return np.array([time, comp_time, 0, time - comp_time], dtype=np.float32)

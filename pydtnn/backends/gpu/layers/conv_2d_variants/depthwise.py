@@ -8,9 +8,10 @@ from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 from pydtnn.utils.tensor import TensorFormat
 from typing import Any, override
 
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.driver import Function  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
+
 
 class Conv2DDepthwiseGPU(Conv2DGPU):
 
@@ -209,7 +210,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
                 gpu_ary = attribute.ary
                 cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C", copy=None)
                 gpu_ary.set(cpu_ary)
-                return 
+                return
             case default:
                 return super()._import_prop(key, value)
     # ---
@@ -222,7 +223,7 @@ class Conv2DDepthwiseGPU(Conv2DGPU):
     def cuda_depthwise_conv_2d_fwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-"""
+            """
 {macros}
 __global__ void {func_name}({T}* x, {T}* k, {T}* res,
                             int vpadding, int hpadding,
@@ -273,7 +274,7 @@ __global__ void {func_name}({T}* x, {T}* k, {T}* res,
     def cuda_depthwise_conv_2d_bwd(self, _func_name: str, _macros: str) -> Function:
 
         code = \
-"""
+            """
 {macros}
 __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
                             {T}* dx, {T}* dw,
@@ -327,7 +328,7 @@ __global__ void {func_name}({T}* dy, {T}* x, {T}* k,
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
 
         code = \
-"""
+            """
 __global__ void {func_name}({T}* x, {T}* bias,
                             int co, int N,
                             int num_workers)

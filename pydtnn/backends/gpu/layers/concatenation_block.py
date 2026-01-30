@@ -1,7 +1,7 @@
 import numpy as np
 
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.elementwise import ElementwiseKernel  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.gpu.layers.abstract.block_layer import AbstractBlockLayerGPU
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -19,8 +19,8 @@ class ConcatenationBlockGPU(ConcatenationBlock[TensorGPU], AbstractBlockLayerGPU
         super().__init__(*args, **kwargs)
         self.concat: ElementwiseKernel = None
         self.split: ElementwiseKernel = None
-        self.dy: list[TensorGPU] = None  #type: ignore
-        self.idx_co = None  #type: ignore
+        self.dy: list[TensorGPU] = None  # type: ignore
+        self.idx_co = None  # type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)

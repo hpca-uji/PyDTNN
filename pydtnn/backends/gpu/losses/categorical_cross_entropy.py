@@ -1,7 +1,7 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.compiler import SourceModule  #type: ignore
-from pycuda.driver import Function  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.compiler import SourceModule  # type: ignore
+from pycuda.driver import Function  # type: ignore
 
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 from pydtnn.backends.gpu.losses.loss import LossGPU
@@ -13,26 +13,26 @@ class CategoricalCrossEntropyGPU(LossGPU, CategoricalCrossEntropy[TensorGPU]):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_cross_entropy"
-        code ="""
+        code = """
         __global__ void {name}({T} *y_targ, {T} *y_pred, {T} *res,
                                {T} *dx, int b, int n, float eps)
         {{
             int idx = blockIdx.x * blockDim.x + threadIdx.x;
-            if (idx < b) 
+            if (idx < b)
             {{
                 int i = 0, max = 0;
                 {T} max_value = y_targ[idx * n];
                 dx[idx * n] = y_targ[idx * n];
-                for ( i = 1; i < n; i++ ) 
+                for ( i = 1; i < n; i++ )
                 {{
                     dx[idx * n + i] = y_targ[idx * n + i];
-                    if ( y_targ[idx * n + i] > max_value ) 
+                    if ( y_targ[idx * n + i] > max_value )
                     {{
                         max = i;
                         max_value = y_targ[idx * n + i];
                     }}
                 }}
-                
+
                 {T} pred = y_pred[idx * n + max];
                 if ( pred < eps )          pred = eps;
                 else if ( pred > (1-eps) ) pred = (1-eps);

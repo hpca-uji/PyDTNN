@@ -36,7 +36,6 @@ class Conv2DCPU(Conv2D[np.ndarray], LayerCPU):
             self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
             self.real_memory_size += self.dw.nbytes
 
-
         # Performance models
         self.fwd_time = \
             im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),

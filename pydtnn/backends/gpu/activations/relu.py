@@ -1,4 +1,4 @@
-import pycuda.gpuarray as gpuarray # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
 
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.gpu.activations.activation import ActivationGPU

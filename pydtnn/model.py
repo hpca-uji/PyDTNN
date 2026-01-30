@@ -193,8 +193,8 @@ class Model[T: Array]:
     augment_shuffle: bool
     normalize: bool
     transform_resize_size: int
-    normalize_offset:float
-    normalize_scale:float
+    normalize_offset: float
+    normalize_scale: float
 # ------------
 
     rank_weight: float
@@ -242,7 +242,7 @@ class Model[T: Array]:
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
-        self.memory_pool: MemoryPool = None # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.memory_pool: MemoryPool = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
@@ -701,7 +701,7 @@ class Model[T: Array]:
         return layer_name, [layer0, layer1, layer2]
     # ----
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None , list[LayerBase | FusedLayerMixIn | None]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -814,7 +814,7 @@ class Model[T: Array]:
             # Reservar la memoria de los temporales
             for layer in self.get_all_layers():
                 layer.post_initialize()
-            
+
             for metric in self.metrics_funcs:
                 metric.post_initialize()
 

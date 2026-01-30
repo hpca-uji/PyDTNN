@@ -8,6 +8,7 @@ from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 class AdditionBlockGPU(AdditionBlock[TensorGPU], AbstractBlockLayerGPU):
     y: TensorGPU
+
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             y_i = x

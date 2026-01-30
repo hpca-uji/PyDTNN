@@ -10,7 +10,7 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
 
     def __init__(self, shape: ArrayShape = (1,)):
         super().__init__(shape)
-        self.mask: np.ndarray = None # type: ignore (will be initalized in "initialize")
+        self.mask: np.ndarray = None  # type: ignore (will be initalized in "initialize")
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
@@ -31,7 +31,7 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
         return dy
-    
+
     def forward_numpy(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
         self.mask = self._mask[:x.shape[0], :]

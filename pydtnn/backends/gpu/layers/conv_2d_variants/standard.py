@@ -11,19 +11,20 @@ from typing import Any, override
 
 from pydtnn.libs import libcudnn as cudnn
 from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
-import pycuda.gpuarray as gpuarray  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+
 
 class Conv2DStandardGPU(Conv2DGPU):
 
     def _initializing_special_parameters(self):
-         match self.model.tensor_format:
-                case TensorFormat.NCHW:
-                    self.weights_shape = (self.co, self.ci, *self.filter_shape)
-                case TensorFormat.NHWC:
-                    # NOTE: It is this shape, even if in the CPU version is different.
-                    self.weights_shape = (self.co, *self.filter_shape, self.ci)
-                case _:
-                    raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+            case TensorFormat.NHWC:
+                # NOTE: It is this shape, even if in the CPU version is different.
+                self.weights_shape = (self.co, *self.filter_shape, self.ci)
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # ---
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
@@ -50,7 +51,7 @@ class Conv2DStandardGPU(Conv2DGPU):
                                               self.vstride, self.hstride, self.vdilation, self.hdilation,
                                               conv_mode, self.model.cudnn_dtype)
         # Set grouping options
-        #if self.grouping is Conv2D.Grouping.DEPTHWISE:
+        # if self.grouping is Conv2D.Grouping.DEPTHWISE:
         #    cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
 
         # Allow NCHW -> NHWC conversion for the use of Tensor Cores
@@ -109,7 +110,6 @@ class Conv2DStandardGPU(Conv2DGPU):
 
         self.real_memory_size += self.y.nbytes + self.dx.nbytes + (getConvolutionWorkspaceSize() - base_conv_memory)
     # -----
-
 
     def _forward_standard(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0

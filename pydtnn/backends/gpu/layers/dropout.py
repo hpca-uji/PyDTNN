@@ -14,12 +14,12 @@ class DropoutGPU(Dropout[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         # The following values will be initalized later:
-        self.states_size: ctypes.c_size_t = None  #type: ignore
-        self.space_size: ctypes.c_size_t = None  #type: ignore
-        self.space: TensorGPU = None  #type: ignore
-        self.states: TensorGPU = None  #type: ignore
+        self.states_size: ctypes.c_size_t = None  # type: ignore
+        self.space_size: ctypes.c_size_t = None  # type: ignore
+        self.space: TensorGPU = None  # type: ignore
+        self.states: TensorGPU = None  # type: ignore
         self.drop_desc: int | None = None
     # ----
 
@@ -47,7 +47,7 @@ class DropoutGPU(Dropout[TensorGPU], LayerGPU):
 
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
                                         self.states.ptr, self.states_size, seed=0)
-        
+
         self.real_memory_size += self.y.nbytes + self.dx.nbytes + self.space.sinbytesze + self.states.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:

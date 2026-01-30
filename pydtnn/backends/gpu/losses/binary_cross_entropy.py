@@ -21,7 +21,7 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy[TensorGPU]):
                 int i = 0, max = 0;
                 {T} pred;
                 res[idx] = 0;
-                for ( i = 0; i < n; i++ ) 
+                for ( i = 0; i < n; i++ )
                 {{
                     res[idx]+= logf(fmaxf((1 - y_targ[idx * n + i] ) -
                                                y_pred[idx * n + i], eps));
@@ -35,10 +35,10 @@ class BinaryCrossEntropyGPU(LossGPU, BinaryCrossEntropy[TensorGPU]):
             return;
         }}
         """.format(
-            T = DTYPE2CTYPE[self.model.dtype],
-            name = _name
-            )
-        
+            T=DTYPE2CTYPE[self.model.dtype],
+            name=_name
+        )
+
         module = SourceModule(code).get_function(_name)
         return module
 

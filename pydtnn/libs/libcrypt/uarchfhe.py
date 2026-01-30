@@ -150,7 +150,6 @@ def ciphertext_reducer(ciphertext: uarchfhe.PyCiphertext) -> tuple:
     return (cls, args)
 
 
-
 copyreg.pickle(uarchfhe.PyContext, context_reducer)
 copyreg.pickle(uarchfhe.PyKeychain, keychain_reducer)
 copyreg.pickle(uarchfhe.PyCiphertext, ciphertext_reducer)

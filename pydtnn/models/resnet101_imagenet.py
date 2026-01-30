@@ -13,6 +13,7 @@ from pydtnn.utils.initializers import he_uniform
 from pydtnn.activations.softmax import Softmax
 from pydtnn.utils.constants import ArrayShape
 
+
 def resnet101_imagenet(input_shape: ArrayShape, output_shape: ArrayShape) -> Sequence[LayerBase]:
     model = list[LayerBase]()
     _ = model.append

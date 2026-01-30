@@ -27,7 +27,7 @@ class CategoricalAccuracyGPU(CategoricalAccuracy[TensorGPU], MetricGPU):
             {{
                 int i = 0, max = 0;
                 {T} max_value = y_pred[idx * n];
-                for ( i = 1; i < n; i++ ) 
+                for ( i = 1; i < n; i++ )
                 {{
                     if ( y_pred[idx * n + i] > max_value )
                     {{
@@ -41,7 +41,7 @@ class CategoricalAccuracyGPU(CategoricalAccuracy[TensorGPU], MetricGPU):
         }}
         """.format(T=DTYPE2CTYPE[self.model.dtype],
                    name=_name)
-        
+
         module = SourceModule(code).get_function(_name)
         return module
 

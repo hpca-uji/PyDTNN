@@ -30,13 +30,13 @@ class F1ScoreGPU(F1Score[TensorGPU], MetricGPU):
         //#define FALSE_NEGATIVE {{0,1}}
         #define FALSE_NEGATIVE_0 0
         #define FALSE_NEGATIVE_1 1
-        
+
         //#define FALSE_POSITIVE {{1,0}}
         #define FALSE_POSITIVE_0 1
         #define FALSE_POSITIVE_1 0
 
         #define SHIFT_POINTER_CM(p, label, i, j, num_i, num_j) p + (label * num_i + i) * num_j + j
-        
+
         __global__ void {name}({T} *f1, int *cm, {T} *local_f1, const int num_classes)
         {{
             int label, idx, true_positive, false_negative, false_positive, div;
@@ -54,7 +54,7 @@ class F1ScoreGPU(F1Score[TensorGPU], MetricGPU):
 
                 (*(local_f1 + idx)) += ({T}) (div == 0 ? 0 : (2 * true_positive / div));
             }}
-            
+
             // Accumulating the local values into the output's tensor.
             if (base_idx == 0)
             {{

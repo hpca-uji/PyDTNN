@@ -1,5 +1,5 @@
 # ONNX operations:
-from .operations.implemented_operations import *
+from pydtnn.converters.onnx2pydtnn.operations.implemented_operations import *
 
 from typing import Callable
 from pydtnn.layer_base import LayerBase
@@ -27,7 +27,7 @@ def pads_from_onnx_to_pydtnn(pads: list[int]) -> tuple[int, int]:  # -> list[tup
     # ==> PyDTNN only admits a int or a (vpadding, hpadding) ==> It's assumed that is the first tuple.
 
     print(f"pads: {pads}")  # TODO: Borrar
-    num_pads = len(pads)//2
+    num_pads = len(pads) // 2
     _pads = [(0, 0)] * (num_pads)
     for i in range(num_pads):
         _pads[i] = (int(pads[i]), int(pads[i + num_pads]))

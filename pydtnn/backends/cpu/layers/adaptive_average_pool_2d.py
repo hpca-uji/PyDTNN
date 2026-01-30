@@ -22,7 +22,10 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
 
     # Method from AbstractPool2DLayerCPU
     def initialize(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
-        # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
+        # The objective is following lines is to override the
+        # AbstractPool2DLayer's initialize method, that is avoiding call to
+        # "super" since in that case AbstractPool2DLayer will be called
+        # eventually.
         super().initialize(prev_shape, x)
 
         match self.model.tensor_format:
@@ -71,7 +74,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx:np.ndarray = self.dx[:dy.shape[0]]
+        dx: np.ndarray = self.dx[:dy.shape[0]]
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nhwc_cython(dy, dx)
@@ -79,7 +82,7 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx:np.ndarray = self.dx[:dy.shape[0]]
+        dx: np.ndarray = self.dx[:dy.shape[0]]
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nchw_cython(dy, dx)

@@ -18,7 +18,7 @@ class MultiplicationCPU(Multiplication[np.ndarray], LayerCPU):
         self.bwd_time = None
 
     def transpose(self, x):
-        return x.swapaxes(-2,-1)
+        return x.swapaxes(-2, -1)
 
     def forward(self, x1, x2):
         if self.model.mode == Model.Mode.TRAIN:

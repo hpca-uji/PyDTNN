@@ -15,7 +15,7 @@ class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
-        
+
         self.real_memory_size += self._y.nbytes + self._mask.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -32,16 +32,16 @@ class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
         return dy
-    
+
     def forward_numpy(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]
         self.mask = self._mask[:x.shape[0], :]
-        
+
         negatives = (x < 0)
 
         self.y[~negatives] = x
         self.y[negatives] = x * self.negative_slope
-        
+
         np.greater(x, 0, out=self.mask, dtype=np.int8)
         self.mask[negatives] = self.negative_slope
 

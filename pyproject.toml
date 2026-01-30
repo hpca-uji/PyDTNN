@@ -80,7 +80,8 @@ dev = [
     "pipdeptree>=2.23.1",
     "pycodestyle>=2.12.1",
     "pydocstyle>=6.3.0",
-    "pyflakes>=3.2.0"
+    "pyflakes>=3.2.0",
+    "absolufy-imports>=0.3.1"
 ]
 
 [project.scripts]

@@ -9,15 +9,14 @@ import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
 
-
 # FIXME: Broken since Conv2D to backend support
 class BestOfVariant(Conv2DWinogradCPU, Conv2DDirectCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # best_of related attributes (will be initialized in initialize())
-        self._best_fw: BestOf = None # type: ignore
-        self._best_fw_bw_pipeline: BestOf = None # type: ignore
+        self._best_fw: BestOf = None  # type: ignore
+        self._best_fw_bw_pipeline: BestOf = None  # type: ignore
         # Other parameters
         self.variant = None
 

@@ -7,6 +7,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+
 class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
 
     def initialize(self) -> None:
@@ -33,11 +34,11 @@ class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
         #define SHIFT_POINTER_Y(i, j, dim_j) (i * dim_j + j)
 
         __constant__ const short indexes[2][2][2] = {{
-            {{TRUE_POSITIVE, TRUE_NEGATIVE}}, 
+            {{TRUE_POSITIVE, TRUE_NEGATIVE}},
             {{FALSE_NEGATIVE, FALSE_POSITIVE}}
         }};
-        
-        
+
+
         __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int *local_cm, const int num_classes, const int n)
         {{
             int label, i, j, is_pred_correct, idx;
@@ -74,7 +75,7 @@ class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
                 }}
             }}
             __syncthreads();
-            
+
             // Accumulating the local values into the output's tensor.
             if (base_idx == 0)
             {{
@@ -84,13 +85,13 @@ class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
             }}
         }}
         """.format(
-            T = DTYPE2CTYPE[self.model.dtype],
-            name = _name
+            T=DTYPE2CTYPE[self.model.dtype],
+            name=_name
         )
         module = SourceModule(code).get_function(_name)
 
         return module
-    #---
+    # ---
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> np.ndarray:
         """
@@ -109,7 +110,7 @@ class BinaryConfusionMatrixGPU(BinaryConfusionMatrix[TensorGPU], MetricGPU):
 
         n = np.int32(n)
         num_classes = np.int32(target_classes)
-        self.kernel(y_targ.ary, y_pred.ary, 
+        self.kernel(y_targ.ary, y_pred.ary,
                     self.conf_matrix.ary, self.local_cm.ary,
                     num_classes, n,
                     grid=self.grid, block=self.block,

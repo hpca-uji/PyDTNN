@@ -19,7 +19,7 @@ class OptimizerGPU(Optimizer[TensorGPU]):
 
     def get_batch_size(self, w: TensorGPU) -> np.int32:
         return np.int32(w.size)
-        #return np.int32(np.prod(((w.shape))))
+        # return np.int32(np.prod(((w.shape))))
 
     def get_threads_and_blocks(self):
         threads = min(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS)

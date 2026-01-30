@@ -17,7 +17,7 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The following attribute will be intialized later.
-        self.idx_max: np.ndarray = None # type: ignore
+        self.idx_max: np.ndarray = None  # type: ignore
         self.y: np.ndarray  # NOTE: Defined and initalized in AbstractPool2DLayerCPU's init and initialize, respectively
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
@@ -35,9 +35,9 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
     ##############
     def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
 
-        #y:np.ndarray = self.y[:x.shape[0], :]
+        # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
-        self.idx_max:np.ndarray = self._idx_max[:x.shape[0], :]
+        self.idx_max: np.ndarray = self._idx_max[:x.shape[0], :]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         max_pool_2d_fwd_nhwc_cython(x, y, self.idx_max,
@@ -50,7 +50,7 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
         return y
 
     def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
-        #y:np.ndarray = self.y[:x.shape[0], :]
+        # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
         self.idx_max = self._idx_max[:x.shape[0], :]
 
@@ -65,7 +65,7 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
         return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        #dx:np.ndarray = self.dx[ :dy.shape[0], :]
+        # dx:np.ndarray = self.dx[ :dy.shape[0], :]
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -79,7 +79,7 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
 
-        #dx:np.ndarray = self.dx[ :dy.shape[0], :]
+        # dx:np.ndarray = self.dx[ :dy.shape[0], :]
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
@@ -91,15 +91,15 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
 
-
     ###########
     ### I2C ###
     ###########
+
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
-        y:np.ndarray = np.zeros((x.shape[0],), dtype=self.model.dtype, order="C")
-        amax:np.ndarray = np.zeros((x.shape[0],), dtype=np.int32, order="C")
-        rng:np.ndarray = np.zeros((x.shape[0],), dtype=np.int32, order="C")
-        x_rows:np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype, order="C")
+        y: np.ndarray = np.zeros((x.shape[0],), dtype=self.model.dtype, order="C")
+        amax: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32, order="C")
+        rng: np.ndarray = np.zeros((x.shape[0],), dtype=np.int32, order="C")
+        x_rows: np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype, order="C")
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_1ch_nhwc_cython(x, x_rows,

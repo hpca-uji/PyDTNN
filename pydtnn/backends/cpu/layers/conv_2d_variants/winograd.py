@@ -20,10 +20,10 @@ class Conv2DWinogradCPU(Conv2DStandardCPU):
         super().initialize(prev_shape, x)
         # ConvWinograd parameters
         self.cw = ConvWinograd(self.kh, self.kw, self.vstride, self.hstride,
-                                self.vdilation, self.hdilation,
-                                dtype=self.model.dtype, tensor_format=self.model.tensor_format,
-                                debug=self.debug, parent_layer=self)
-        
+                               self.vdilation, self.hdilation,
+                               dtype=self.model.dtype, tensor_format=self.model.tensor_format,
+                               debug=self.debug, parent_layer=self)
+
         match self.model.tensor_format:
             case TensorFormat.NCHW:
                 self.forward = self._forward_cw_nchw
@@ -42,9 +42,9 @@ class Conv2DWinogradCPU(Conv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
         y: np.ndarray = self.cw.conv_winograd_nhwc(self.weights, x, biases=self.biases,
-                                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                                vstride=self.vstride, hstride=self.hstride,
-                                                vdilation=self.vdilation, hdilation=self.hdilation)
+                                                   vpadding=self.vpadding, hpadding=self.hpadding,
+                                                   vstride=self.vstride, hstride=self.hstride,
+                                                   vdilation=self.vdilation, hdilation=self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
@@ -55,9 +55,9 @@ class Conv2DWinogradCPU(Conv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVWINOGRAD)
         y: np.ndarray = self.cw.conv_winograd_nchw(self.weights, x, biases=self.biases,
-                                                vpadding=self.vpadding, hpadding=self.hpadding,
-                                                vstride=self.vstride, hstride=self.hstride,
-                                                vdilation=self.vdilation, hdilation=self.hdilation)
+                                                   vpadding=self.vpadding, hpadding=self.hpadding,
+                                                   vstride=self.vstride, hstride=self.hstride,
+                                                   vdilation=self.vdilation, hdilation=self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 
@@ -82,10 +82,10 @@ class Conv2DWinogradCPU(Conv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_IM2COL)
         im2col_nchw_cython(self.cw_x,
                            self.x_cols,
-                           self.kh, self.kw, 
+                           self.kh, self.kw,
                            self.ho, self.wo,
                            self.vpadding, self.hpadding,
-                           self.vstride, self.hstride, 
+                           self.vstride, self.hstride,
                            self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 

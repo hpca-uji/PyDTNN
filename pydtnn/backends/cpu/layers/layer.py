@@ -17,6 +17,7 @@ class LayerCPU(Layer[np.ndarray]):
     """
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model: Model[np.ndarray]
