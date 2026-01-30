@@ -36,9 +36,9 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                 if "temp_" in key:
                     w_ = key.split("temp_")[-1]
                     w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
-                    w_shape = self.context[layer_id][key] = self.model.memory.get_ndarray(w_shape, dtype=self.model.dtype)
+                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
         # - end for
-        self.model.memory.free_buffer(self.temp_memory_size)
+        self.model.memory.free(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

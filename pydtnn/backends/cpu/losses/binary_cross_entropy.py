@@ -15,12 +15,12 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.neg_targ = self.model.memory.get_ndarray(self.shape, dtype=self.model.dtype)
-        self.log_maximum = self.model.memory.get_ndarray(self.shape, dtype=self.model.dtype)
-        self._y_pred = self.model.memory.get_ndarray(self.shape, dtype=self.model.dtype)
-        self.div_y = self.model.memory.get_ndarray(self.shape, dtype=self.model.dtype)
-        self.neg_pred = self.model.memory.get_ndarray(self.shape, dtype=self.model.dtype)
-        self.model.memory.free_buffer(self.temp_memory_size)
+        self.neg_targ = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
+        self.log_maximum = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
+        self._y_pred = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
+        self.div_y = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
+        self.neg_pred = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
+        self.model.memory.free(self.temp_memory_size)
     # ----
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:

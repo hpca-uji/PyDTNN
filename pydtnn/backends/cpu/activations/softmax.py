@@ -37,12 +37,12 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
 
     def post_initialize(self):
         super().post_initialize()
-        self.max_x = self.model.memory.get_ndarray(self.temp_shape, dtype=self.model.dtype)
-        self.sum_y = self.model.memory.get_ndarray(self.temp_shape, dtype=self.model.dtype)
+        self.max_x = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
+        self.sum_y = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
         if not self.model.evaluate_only:
-            self.mul_dy = self.model.memory.get_ndarray(self.mul_dy_shape, dtype=self.model.dtype)
-            self.sum_dy = self.model.memory.get_ndarray(self.sum_dy_shape, dtype=self.model.dtype)
-        self.model.memory.free_buffer(self.temp_memory_size)
+            self.mul_dy = self.model.memory.ndarray(self.mul_dy_shape, dtype=self.model.dtype)
+            self.sum_dy = self.model.memory.ndarray(self.sum_dy_shape, dtype=self.model.dtype)
+        self.model.memory.free(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))
