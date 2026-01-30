@@ -15,7 +15,7 @@ class ArctanhCPU(Arctanh[np.ndarray], ActivationCPU):
         self._y = np.zeros(shape=(self.model.batch_size, *self.shape),
                            dtype=self.model.dtype, order="C")
         
-        self.real_memory_size += self._y.size
+        self.real_memory_size += self._y.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]

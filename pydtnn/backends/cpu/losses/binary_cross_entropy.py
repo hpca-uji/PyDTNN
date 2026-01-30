@@ -15,7 +15,7 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
         div_y_size = self.shape
         neg_pred_size = self.shape
 
-        self.temp_memory_size += int(5 * np.prod(self.shape))
+        self.temp_memory_size += int(5 * np.prod(self.shape)) * self.model.dtype.itemsize
 
         if not self.model.use_memory_pool:
             self.neg_targ: np.ndarray = np.zeros(neg_targ_size, dtype=self.model.dtype, order="C")
@@ -34,12 +34,12 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.neg_targ = self.model.memory_pool.get_ndarray(self.shape)
-        self.log_maximum = self.model.memory_pool.get_ndarray(self.shape)
-        self._y_pred = self.model.memory_pool.get_ndarray(self.shape)
-        self.div_y = self.model.memory_pool.get_ndarray(self.shape)
-        self.neg_pred = self.model.memory_pool.get_ndarray(self.shape)
-        self.model.memory_pool.free_memory(self.temp_memory_size)
+        self.neg_targ = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
+        self.log_maximum = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
+        self._y_pred = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
+        self.div_y = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
+        self.neg_pred = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
+        self.model.memory_pool.free_buffer(self.temp_memory_size)
     # ----
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:

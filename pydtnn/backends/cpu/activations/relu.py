@@ -18,8 +18,8 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
         self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
         self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
 
-        self.real_memory_size += self._y.size
-        self.real_memory_size += self._mask.size
+        self.real_memory_size += self._y.nbytes
+        self.real_memory_size += self._mask.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         n = x.shape[0]

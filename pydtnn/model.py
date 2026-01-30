@@ -55,7 +55,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
-from pydtnn.utils.memory_pool import Memory_Pool
+from pydtnn.utils.memory_pool import MemoryPool
 
 
 # --- CONSTANS --- #
@@ -242,12 +242,12 @@ class Model[T: Array]:
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
-        self.memory_pool: Memory_Pool = None # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.memory_pool: MemoryPool = None # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
         self.nparams = 0
-        self.actual_size = 0
+        self.real_memory_size = 0
         self.temp_memory_size = 0
 
         # Get default values from parser and update them from the received kwargs
@@ -540,21 +540,28 @@ class Model[T: Array]:
             props["dataset"] = self.dataset_name
 
         if self.nparams > 0:
-            props["params"] = f"{self.nparams} ({utils.convert_size_bytes(self.nparams * self.dtype.itemsize)})"
+            props["params"] = self.nparams
 
-        if self.actual_size > 0:
-            props["memory"] = utils.convert_size_bytes(self.actual_size * self.dtype.itemsize)
-
-        if self.temp_memory_size > 0:
-            props["temp-memory"] = utils.convert_size_bytes(self.temp_memory_size * self.dtype.itemsize)
+        if self.real_memory_size > 0:
+            memory = utils.convert_size_bytes(self.real_memory_size)
+            if self.temp_memory_size > 0:
+                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
+                memory = f"{memory} ({tmp_memory} tmp)"
+            props["memory"] = memory
 
         if self.optimizer:
-            props["optimizer-memory"] = utils.convert_size_bytes(self.optimizer.actual_size * self.dtype.itemsize)
-            props["optimizer-temp"] = utils.convert_size_bytes(self.optimizer.temp_memory_size * self.dtype.itemsize)
-        
+            optimizer_memory = utils.convert_size_bytes(self.optimizer.real_memory_size)
+            if self.optimizer.temp_memory_size > 0:
+                optimizer_tmp_memory = utils.convert_size_bytes(self.optimizer.temp_memory_size)
+                optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory} tmp)"
+            props["optimizer-memory"] = optimizer_memory
+
         if self.loss_func:
-            props["loss-memory"] = utils.convert_size_bytes(self.loss_func.real_memory_size * self.dtype.itemsize)
-            props["loss-temp-memory"] = utils.convert_size_bytes(self.loss_func.temp_memory_size * self.dtype.itemsize)
+            loss_memory = utils.convert_size_bytes(self.loss_func.real_memory_size)
+            if self.loss_func.temp_memory_size > 0:
+                loss_tmp_memory = utils.convert_size_bytes(self.loss_func.temp_memory_size)
+                loss_memory = f"{loss_memory} ({loss_tmp_memory} tmp)"
+            props["loss-memory"] = loss_memory
 
         if self.metrics_funcs:
             metrics_size = 0
@@ -562,8 +569,11 @@ class Model[T: Array]:
             for metric in self.metrics_funcs:
                 metrics_size += metric.real_memory_size
                 metric_temp_size += metric.temp_memory_size
-            props["metrics-memory"] = utils.convert_size_bytes(metrics_size * self.dtype.itemsize)
-            props["metrics-temp-memory"] = utils.convert_size_bytes(metric_temp_size * self.dtype.itemsize)
+            metrics_memory = utils.convert_size_bytes(metrics_size)
+            if metric_temp_size > 0:
+                metrics_tmp_memory = utils.convert_size_bytes(metric_temp_size)
+                metrics_memory = f"{metrics_memory} ({metrics_tmp_memory} tmp)"
+            props["metrics-memory"] = metrics_memory
 
         if self.layers:
             props["input"] = self.layers[0].shape
@@ -606,7 +616,7 @@ class Model[T: Array]:
         # Show header
         print(sep)
         for header, size in struct.items():
-            print(f"|{header.title():^{size}s}", end="")
+            print(f"|{header.replace('-', ' ').capitalize():^{size}s}", end="")
         print("|")
 
         # Show layers
@@ -651,7 +661,7 @@ class Model[T: Array]:
         layer.initialize(prev_shape, y)
 
         self.nparams += layer.nparams
-        self.actual_size += layer.real_memory_size
+        self.real_memory_size += layer.real_memory_size
         self.temp_memory_size += layer.temp_memory_size
         self.layers.append(layer)
 
@@ -774,7 +784,7 @@ class Model[T: Array]:
         for metric in self.metrics_funcs:
             metric.init_backend_from_model(self)
             metric.initialize()
-            self.actual_size += metric.real_memory_size
+            self.real_memory_size += metric.real_memory_size
             self.temp_memory_size += metric.temp_memory_size
 
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
@@ -800,7 +810,7 @@ class Model[T: Array]:
             sizes.append(self.loss_func.temp_memory_size)
 
             size = max(sizes)
-            self.memory_pool = Memory_Pool(size=size, dtype=self.dtype)
+            self.memory_pool = MemoryPool(size=size * self.dtype.itemsize)
             # Reservar la memoria de los temporales
             for layer in self.get_all_layers():
                 layer.post_initialize()

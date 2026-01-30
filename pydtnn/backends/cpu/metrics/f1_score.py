@@ -15,7 +15,8 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
         self.temp_var_shape = (shape, )
 
-        self.temp_memory_size = int(4 * np.prod(self.temp_var_shape))
+        self.temp_memory_size += int(3 * np.prod(self.temp_var_shape)) * np.float32().itemsize
+        self.temp_memory_size += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
 
         if not self.model.use_memory_pool:
             self.true_positives: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.float32, order="C")
@@ -33,11 +34,11 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.true_positives = np.asarray(self.model.memory_pool.get_ndarray(self.temp_var_shape), dtype=np.float32, order="C")
-        self.false_positives = np.asarray(self.model.memory_pool.get_ndarray(self.temp_var_shape), dtype=np.float32, order="C")
-        self.false_negatives = np.asarray(self.model.memory_pool.get_ndarray(self.temp_var_shape), dtype=np.float32, order="C")
-        self.are_zeros = np.asarray(self.model.memory_pool.get_ndarray(self.temp_var_shape), dtype=np.bool, order="C")
-        self.model.memory_pool.free_memory(self.temp_memory_size)
+        self.true_positives = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
+        self.false_positives = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
+        self.false_negatives = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
+        self.are_zeros = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.bool, order="C")
+        self.model.memory_pool.free_buffer(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         true_positives = self.true_positives

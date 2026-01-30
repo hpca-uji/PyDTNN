@@ -23,26 +23,26 @@ class FCCPU(FC[np.ndarray], LayerCPU):
         super().initialize(prev_shape, x)
         self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
         self.nparams += self.weights.size
-        self.real_memory_size += self.weights.size
+        self.real_memory_size += self.weights.nbytes
 
         # Initialize outputs:
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-        self.real_memory_size += self.y.size
+        self.real_memory_size += self.y.nbytes
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
             self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype, order="C")
-            self.real_memory_size += self.dx.size + self.dw.size
+            self.real_memory_size += self.dx.nbytes + self.dw.nbytes
 
         if self.use_bias:
             self.biases = self.biases_initializer(self.shape, self.model.dtype)
             self.nparams += self.biases.size
-            self.real_memory_size += self.biases.size
+            self.real_memory_size += self.biases.nbytes
 
             if not self.model.evaluate_only:
                 self.db = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-                self.real_memory_size += self.db.size
+                self.real_memory_size += self.db.nbytes
 
         # Performance model
         self.fwd_time = \

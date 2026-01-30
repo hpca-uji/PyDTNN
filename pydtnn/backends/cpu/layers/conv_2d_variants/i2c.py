@@ -42,7 +42,7 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         self.y_size = np.prod(y_shape)
 
         #self.y = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype, order="C")
-        #self.real_memory_size += self.y.size
+        #self.real_memory_size += self.y.nbytes
 
         if not self.model.evaluate_only:
             self.dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
@@ -54,11 +54,11 @@ class Conv2DI2CCPU(Conv2DStandardCPU):
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.temp_c_r_dx = np.zeros(shape=(max(np.prod(self._x_cr_shape), self.dx_shape_size), ), dtype=self.model.dtype, order="C")
         # self.temp_c_r_dx: Temporal array where the cols/rows and dx values are stored.
-        self.real_memory_size += self.temp_c_r_dx.size
+        self.real_memory_size += self.temp_c_r_dx.nbytes
 
         self.temp_y_bc_br = np.zeros(shape=(max(self.y_size, self.temp_bw_shape_size), ), dtype=self.model.dtype, order="C") 
         # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
-        self.real_memory_size += self.temp_y_bc_br.size
+        self.real_memory_size += self.temp_y_bc_br.nbytes
 
         self.real_memory_size += self.temp_memory_size
     # ---

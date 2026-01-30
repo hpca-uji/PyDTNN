@@ -82,8 +82,8 @@ class ConcatenationBlockGPU(ConcatenationBlock[TensorGPU], AbstractBlockLayerGPU
             dy_gpu = gpuarray.empty((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
             self.dy.append(TensorGPU(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
 
-            self.real_memory_size += dy_gpu.size
-        self.real_memory_size += self.y.size
+            self.real_memory_size += dy_gpu.nbytes
+        self.real_memory_size += self.y.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):

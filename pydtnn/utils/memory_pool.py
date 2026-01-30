@@ -1,41 +1,34 @@
 import numpy as np
 from pydtnn.utils.constants import ArrayShape
 
-class Memory_Pool(object):
 
-    _instance: "Memory_Pool" = None  #type: ignore (Only is none before it's intialization)
+class MemoryPool(object):
+    def __init__(self, size: int) -> None:
+        self._total: int = size
+        self._offset: int = 0
+        self._buffer = memoryview(bytearray(size))
 
-    @staticmethod
-    def instance(cls: "Memory_Pool"):
-        if cls._instance is None:
-            cls._instance = cls.__new__(cls)
-
-        return cls._instance
-
-    def __init__(self, size: int, dtype: np.dtype) -> None:
-        self.total_memory: int = size
-        self.off_set_free:int = 0
-        self.memory_pool: np.ndarray = np.zeros(self.total_memory, dtype=dtype, order="C")
-
-    def get_memory(self, size:int) -> np.ndarray:
-        start = self.off_set_free
+    def get_buffer(self, size: int) -> memoryview:
+        start = self._offset
         end = start + size
 
-        if end > self.total_memory:
-            raise RuntimeError(f"Getting too much memory. Memory to get= {size}, Memory occupied= {self.off_set_free}, Memory after the operation= {self.total_memory}")
+        if end > self._total:
+            raise RuntimeError(f"Getting too much memory. Memory to get={size}, Memory occupied={self._offset}, Memory after the operation={self._total}")
 
-        self.off_set_free = end
-        return self.memory_pool[start:end]
+        self._offset = end
+        return self._buffer[start:end]
     # -----
 
-    def get_ndarray(self, shape:ArrayShape | tuple[int, ...]) -> np.ndarray:
-        new_array = self.get_memory(size=int(np.prod(shape)))
-        return new_array.reshape(shape, copy=False)
+    def get_ndarray(self, shape: ArrayShape | tuple[int, ...], dtype: np.dtype, order: str = "C") -> np.ndarray:
+        if order != "C":
+            raise RuntimeError("MemoryPool only supports C order")
+        buffer = self.get_buffer(size=int(np.prod(shape) * np.dtype(dtype).itemsize))
+        return np.frombuffer(buffer, dtype=dtype).reshape(shape, copy=False)
     # ---
 
-    def free_memory(self, size:int) -> None:
-        new_offset = self.off_set_free - size
+    def free_buffer(self, size: int) -> None:
+        new_offset = self._offset - size
         if new_offset < 0:
-            raise RuntimeError(f"Removing too much memory. {self.off_set_free=}, memory to erase={size}, {new_offset=}")
-        self.off_set_free = new_offset
+            raise RuntimeError(f"Removing too much memory. {self._offset=}, memory to erase={size}, {new_offset=}")
+        self._offset = new_offset
     # ---

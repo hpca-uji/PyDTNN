@@ -11,7 +11,10 @@ class DropoutCPU(Dropout[np.ndarray], LayerCPU):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mask: np.ndarray = None  # type: ignore (It will be initalized later.)
-        self.real_memory_size += int(np.prod(self.shape))
+
+    def initialize(self, prev_shape, x=None):
+        super().initialize(prev_shape, x)
+        self.real_memory_size += int(np.prod(self.shape)) * self.model.dtype.itemsize
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

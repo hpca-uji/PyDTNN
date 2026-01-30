@@ -12,7 +12,7 @@ class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
         self._neg_shape = self.shape
         self.pos_maxm_shape = (self.model.batch_size, )
         self.neg_shape = (self.model.batch_size, )
-        self.temp_memory_size += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape))
+        self.temp_memory_size += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape)) * self.model.dtype.itemsize
 
         if not self.model.use_memory_pool:
             self._pos: np.ndarray = np.zeros(self._pos_shape, dtype=self.model.dtype, order="C")
@@ -30,12 +30,12 @@ class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._pos = self.model.memory_pool.get_ndarray(self._pos_shape)
-        self._neg = self.model.memory_pool.get_ndarray(self._neg_shape)
-        self.pos_maxm = self.model.memory_pool.get_ndarray(self.pos_maxm_shape)
-        self.neg = self.model.memory_pool.get_ndarray(self.neg_shape)
+        self._pos = self.model.memory_pool.get_ndarray(self._pos_shape, dtype=self.model.dtype)
+        self._neg = self.model.memory_pool.get_ndarray(self._neg_shape, dtype=self.model.dtype)
+        self.pos_maxm = self.model.memory_pool.get_ndarray(self.pos_maxm_shape, dtype=self.model.dtype)
+        self.neg = self.model.memory_pool.get_ndarray(self.neg_shape, dtype=self.model.dtype)
 
-        self.model.memory_pool.free_memory(self.temp_memory_size)
+        self.model.memory_pool.free_buffer(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         _pos: np.ndarray = self._pos[: y_pred.shape[0]]

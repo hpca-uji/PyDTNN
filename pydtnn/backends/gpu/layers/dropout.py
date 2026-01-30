@@ -48,7 +48,7 @@ class DropoutGPU(Dropout[TensorGPU], LayerGPU):
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
                                         self.states.ptr, self.states_size, seed=0)
         
-        self.real_memory_size += self.y.size + self.dx.size + self.space.size + self.states.size
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes + self.space.sinbytesze + self.states.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

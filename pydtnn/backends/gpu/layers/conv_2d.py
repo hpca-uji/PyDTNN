@@ -68,8 +68,8 @@ class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
                                                         cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect, 
                                                         tensor_type=bias_tensor_type, drv=_drv)
             
-            self.real_memory_size += self.biases.size + self.db.size
-        self.real_memory_size += self.weights.size + self.dw.size
+            self.real_memory_size += self.biases.nbytes + self.db.nbytes
+        self.real_memory_size += self.weights.nbytes + self.dw.nbytes
     # ----
 
     def _export_weights_dw(self, key: str) -> Any:

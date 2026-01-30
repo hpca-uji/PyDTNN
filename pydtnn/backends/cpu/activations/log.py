@@ -11,11 +11,11 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
         super().initialize(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-        self.real_memory_size += self.y.size
+        self.real_memory_size += self.y.nbytes
 
         if not self.model.evaluate_only:
             self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
-            self.real_memory_size += self.dx.size
+            self.real_memory_size += self.dx.nbytes
 
     def _forward_numpy(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:

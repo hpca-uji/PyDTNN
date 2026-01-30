@@ -17,42 +17,43 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
                     velocity: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
-                    self.actual_size += velocity.size
+                    self.real_memory_size += velocity.nbytes
 
+                    self.temp_memory_size += int(2 * np.prod(w.shape)) * self.model.dtype.itemsize
                     if not self.model.use_memory_pool:
                         temp_w: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
                         temp_v: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
                     else:
                         temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
                         temp_v: np.ndarray = None  # type: ignore (It will be initialized later)
-                    self.temp_memory_size += int(2 * np.prod(w.shape))
 
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
                     self.context[layer.id]["temp_v_%s" % w_] = temp_v
             # else: continue
-        self.actual_size += self.temp_memory_size
+        self.real_memory_size += self.temp_memory_size
     # ---
-    
+
     def post_initialize(self) -> None:
         super().post_initialize()
 
         for layer_id in self.context.keys():
             for key in self.context[layer_id].keys():
-                if "temp_w_" in key: 
+                if "temp_w_" in key:
                     w_ = key.split("temp_w_")[-1]
                 elif "temp_v_" in key:
                     w_ = key.split("temp_v_")[-1]
-                else: 
+                else:
                     w_ = None
-                
-                if w_ is None: continue
+
+                if w_ is None:
+                    continue
                 # if w_ is not None:
 
-                w_shape = self.context[layer_id]["velocity_%s" % w_].shape # type: ignore (it is correct)
-                w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape)
+                w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
+                w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape, dtype=self.model.dtype)
         # - end for
-        self.model.memory_pool.free_memory(self.temp_memory_size)
+        self.model.memory_pool.free_buffer(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:
@@ -68,10 +69,10 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 # NOTE: The operations are unrolled in order to reduce the memory consumed by intermediate copies of the variables during the operations.
 
                 # velocity = self.momentum * velocity + dw
-                
-                np.multiply(velocity, self.momentum, out=velocity, 
+
+                np.multiply(velocity, self.momentum, out=velocity,
                             dtype=self.dtype)
-                np.add(velocity, dw, out=velocity, 
+                np.add(velocity, dw, out=velocity,
                        dtype=self.dtype)
 
                 # if self.nesterov:
@@ -83,12 +84,12 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                     np.add(temp_v, dw, out=temp_v,
                            dtype=self.dtype)
                 else:
-                    #np.copyto(temp_v, velocity)
+                    # np.copyto(temp_v, velocity)
                     temp_v[:] = velocity
                 np.multiply(w, self.decay, dtype=self.dtype, order="C", out=temp_w)
                 np.add(temp_w, temp_v, out=temp_w,
                        dtype=self.dtype)
-                np.multiply(temp_w, self.learning_rate, out=temp_w, 
+                np.multiply(temp_w, self.learning_rate, out=temp_w,
                             dtype=self.dtype)
                 np.subtract(w, temp_w, out=w,
                             dtype=self.dtype)

@@ -17,7 +17,7 @@ class Optimizer[T: Array](PromoteToBackend):
         self.dtype: np.dtype = dtype
         self.context = dict[int, dict[str, int | T]]()
 
-        self.actual_size: int = 0
+        self.real_memory_size: int = 0
         self.temp_memory_size: int = 0
     
     def post_initialize(self) -> None:

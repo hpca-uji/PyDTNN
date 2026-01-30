@@ -46,7 +46,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
-        self.real_memory_size += self.nparams + self.y_dx.size
+        self.real_memory_size += (self.nparams * self.model.dtype.itemsize) + self.y_dx.nbytes
         # NOTE: This variable stores both y and dx values.
         
         self._mean_inv_shape = shape_
@@ -54,7 +54,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self.std_shape = shape_
 
         self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype, order="C")
-        self.real_memory_size += self.std.size
+        self.real_memory_size += self.std.nbytes
 
         if not self.model.use_memory_pool:
             self._mean_inv: np.ndarray = np.zeros(shape=self._mean_inv_shape, dtype=self.model.dtype, order="C")
@@ -63,21 +63,21 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             self._mean_inv: np.ndarray = None  # type: ignore (It will be initialized later)
             self._var_inv: np.ndarray = None  # type: ignore (It will be initialized later)
 
-        self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape))
+        self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
 
         if not self.model.evaluate_only:
 
             #self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
-            #self.real_memory_size += self.dx.size
+            #self.real_memory_size += self.dx.nbytes
             self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
-            self.real_memory_size += self.dgamma.size
+            self.real_memory_size += self.dgamma.nbytes
             self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
-            self.real_memory_size += self.dbeta.size
+            self.real_memory_size += self.dbeta.nbytes
             
             self._mean_shape = (self.ci, )
             self._var_shape = (self.ci, )
             self.dy_xn_shape = vars_shape
-            self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape))
+            self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
             
             if not self.model.use_memory_pool:
                 self._mean: np.ndarray = np.zeros(self._mean_shape, dtype=self.model.dtype, order="C")
@@ -94,15 +94,15 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
     def post_initialize(self) -> None:
         super().post_initialize()
 
-        self._mean_inv = self.model.memory_pool.get_ndarray(self._mean_inv_shape)
-        self._var_inv = self.model.memory_pool.get_ndarray(self._var_inv_shape)
+        self._mean_inv = self.model.memory_pool.get_ndarray(self._mean_inv_shape, dtype=self.model.dtype)
+        self._var_inv = self.model.memory_pool.get_ndarray(self._var_inv_shape, dtype=self.model.dtype)
 
         if not self.model.evaluate_only:
-            self._mean = self.model.memory_pool.get_ndarray(self._mean_shape)
-            self._var = self.model.memory_pool.get_ndarray(self._var_shape)
-            self.dy_xn = self.model.memory_pool.get_ndarray(self.dy_xn_shape)
+            self._mean = self.model.memory_pool.get_ndarray(self._mean_shape, dtype=self.model.dtype)
+            self._var = self.model.memory_pool.get_ndarray(self._var_shape, dtype=self.model.dtype)
+            self.dy_xn = self.model.memory_pool.get_ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
-        self.model.memory_pool.free_memory(self.temp_memory_size)
+        self.model.memory_pool.free_buffer(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 
