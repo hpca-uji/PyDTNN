@@ -44,7 +44,7 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --use-blocking-mpi=False \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --enable-gpudirect=False \
   --dtype=float32 \
   --transform-resize=True \

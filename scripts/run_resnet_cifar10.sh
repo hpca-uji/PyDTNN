@@ -43,7 +43,7 @@ mpirun -np 2 \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=True \
+  --enable-cudnn=True \
   --enable-gpudirect=False \
   --history-file="results/result_resnet.history" \
   --dtype=float32

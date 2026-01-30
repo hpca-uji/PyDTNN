@@ -55,5 +55,5 @@ mpirun -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE -np $NUMPROCS \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --dtype=float32

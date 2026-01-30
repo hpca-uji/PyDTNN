@@ -47,7 +47,7 @@ pydtnn-benchmark \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --enable-cudnn-auto-conv-alg=False \
   --enable-gpudirect=False \
   --history-file="results/result_vgg3dobn.history" \

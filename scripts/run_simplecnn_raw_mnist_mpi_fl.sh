@@ -38,5 +38,5 @@ mpirun -np 4 "${MPI_ARGS[@]}" \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --dtype=float32

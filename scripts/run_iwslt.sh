@@ -31,6 +31,6 @@ pydtnn-benchmark \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --dtype=float32
 

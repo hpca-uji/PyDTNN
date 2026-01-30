@@ -45,7 +45,7 @@ for procs in 6 4 2 1; do
       --use-blocking-mpi=True \
       --tracing=False \
       --profile=False \
-      --enable-gpu=False \
+      --enable-cudnn=False \
       --history-file="results/result_vgg9_${procs}p_${thrds}t.history" \
       --dtype=float32 | tee results/result_vgg9_${procs}p_${thrds}t.dat
   done

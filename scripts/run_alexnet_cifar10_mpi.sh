@@ -59,5 +59,5 @@ mpirun -genv LD_PRELOAD $EXTRAELIB -iface ib0 -hosts $HOSTS -ppn $PROCS_PER_NODE
   --use-blocking-mpi=True \
   --tracing=True \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --dtype=float32

@@ -179,7 +179,7 @@ class ParamsLayerPytorch(Params):
         self.evaluate_only = True
         self.parallel = "sequential"
         self.loss_func = "categorical_cross_entropy"
-        self.enable_gpu = False
+        self.enable_cudnn = False
         self.omm = None
         self.dtype = np.dtype(np.float32)
         self.tracing = False

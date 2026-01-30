@@ -44,7 +44,7 @@ mpirun -np 1 \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --enable-gpudirect=False \
   --history-file="results/result_googlenet.history" \
   --dtype=float32

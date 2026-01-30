@@ -221,7 +221,7 @@ def check_kwargs_and_set_default(kwargs: dict) -> None:
         "batch_size": 64,
         # Model object parameters:
         "omm": None,
-        "enable_gpu": False,
+        "enable_cudnn": False,
         "enable_gpudirect": False,
         "non_blocking_mpi": False,
         "enable_nccl": False,

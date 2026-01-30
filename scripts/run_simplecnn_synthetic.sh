@@ -36,5 +36,5 @@ pydtnn-benchmark \
   --parallel=sequential \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --enable-cudnn=False \
   --dtype=float32

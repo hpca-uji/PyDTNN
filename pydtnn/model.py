@@ -69,13 +69,13 @@ else:
     MPI_COMM = ModuleType
 
 
-def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_gpu: bool,
+def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_cudnn: bool,
                tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:
 
     if tracer_output == "":
         tracer = ExtraeTracer(tracing)
     else:
-        if enable_gpu:
+        if enable_cudnn:
             tracer = SimpleTracerGPU(tracing, tracer_output, comm)
         else:
             if tracer_pmlib_device != "":
@@ -230,7 +230,7 @@ class Model[T: Array]:
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
 
-    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_gpu: bool = False,
+    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_cudnn: bool = False,
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
                  tracer_pmlib_device: str = "", **kwargs):
@@ -238,13 +238,11 @@ class Model[T: Array]:
         # Attributes related to the given arguments
         self.parallel: Model.ParallelMode = Model.ParallelMode(parallel)
         self.blocking_mpi: bool = use_blocking_mpi
-        self.enable_gpu = self.enable_cudnn = enable_gpu
+        self.enable_cudnn = enable_cudnn
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
         self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
-
-        self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
         self.nparams = 0
         self.real_memory_size = 0
@@ -261,7 +259,7 @@ class Model[T: Array]:
         self._init_comms()
 
         # Set tracer
-        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_gpu=enable_gpu,
+        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=enable_cudnn,
                                  tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
                                  tracer_pmlib_device=tracer_pmlib_device)
 
@@ -444,20 +442,6 @@ class Model[T: Array]:
             warn("The model has no layers in it.", RuntimeWarning)
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
-
-    @cached_property
-    def empty_x(self) -> TensorGPU:
-        # NOTE: Can not allocate a zero-size array, so slice one
-        assert gpuarray and self.cudnn_dtype
-        empty_x = gpuarray.empty((1, *self.dataset.input_shape), self.dtype)[:0]
-        return TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
-
-    @cached_property
-    def empty_y_tag(self) -> TensorGPU:
-        # NOTE: Can not allocate a zero-size array, so slice one
-        assert gpuarray and self.cudnn_dtype
-        empty_y_tag = gpuarray.empty((1, *self.dataset.output_shape), self.dtype)[:0]
-        return TensorGPU(empty_y_tag, self.tensor_format, self.cudnn_dtype)
 
     @property
     def dataset_path(self) -> str:
@@ -767,7 +751,7 @@ class Model[T: Array]:
 
     @property
     def _backend(self) -> BackendType:
-        return BackendType.GPU if self.enable_gpu else BackendType.CPU
+        return BackendType.GPU if self.enable_cudnn else BackendType.CPU
 
     def _initialize(self):
         if self._initialized:
@@ -941,44 +925,6 @@ class Model[T: Array]:
                 string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
-
-    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
-        raise TypeError("Please, use the cpu or gpu version.")
-    # --- _sync_x_y --- #
-
-    def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        self.real_batch_size = x_batch.shape[0]
-        x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
-        y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
-        return x_batch, y_batch
-    # --- _sync_x_y_cpu --- #
-
-    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
-
-        # NOTE: in CUDA it's necessary to always have batches of the same size.
-        local_batch_size = x_batch.shape[0]
-
-        self.real_batch_size = local_batch_size
-        if local_batch_size != 0:
-            if local_batch_size != self.batch_size:
-                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
-                num_repetitions = ceil(self.batch_size / local_batch_size)
-                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
-                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
-            # else: The batch has the right shape ==> Nothing to do.
-
-            x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
-            y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
-
-            assert isinstance(self.layers[0].y, TensorGPU) and isinstance(self.y_batch, TensorGPU)
-            self.layers[0].y.ary.set(x_batch)
-            self.y_batch.ary.set(y_batch)
-            x, y_targ = self.layers[0].y, self.y_batch
-        else:
-            x, y_targ = self.empty_x, self.empty_y_tag
-
-        return x, y_targ
-    # --- _sync_x_y_gpu --- #
 
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
@@ -1183,7 +1129,8 @@ class Model[T: Array]:
         for sched in self.schedulers:
             sched.on_batch_begin()
 
-        x, y_targ = self._sync_x_y(x_batch, y_batch)
+        self.real_batch_size = x_batch.shape[0]
+        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 
@@ -1270,7 +1217,8 @@ class Model[T: Array]:
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.EVALUATE
 
-        x, y_targ = self._sync_x_y(x_batch, y_batch)
+        self.real_batch_size = x_batch.shape[0]
+        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 
