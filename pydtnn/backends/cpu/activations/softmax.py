@@ -27,36 +27,22 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         sum_y_shape = max_x_shape = self.temp_shape
         self.temp_memory_size += int(np.prod(max_x_shape) + np.prod(sum_y_shape)) * self.model.dtype.itemsize
 
-        if not self.model.use_memory_pool:
-            self.max_x: np.ndarray = np.zeros(shape=max_x_shape, dtype=self.model.dtype, order="C")
-            self.sum_y: np.ndarray = np.zeros(shape=sum_y_shape, dtype=self.model.dtype, order="C")
-        else:
-            self.max_x: np.ndarray = None  # type: ignore (They will be initialized later)
-            self.sum_y: np.ndarray = None  # type: ignore (They will be initialized later)
-
         if not self.model.evaluate_only:
             # Temp_variables
             self.mul_dy_shape = (self.model.batch_size, *self.shape)
             self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
             self.temp_memory_size += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
 
-            if not self.model.use_memory_pool:
-                self.mul_dy: np.ndarray = np.zeros(shape=self.mul_dy_shape, dtype=self.model.dtype, order="C")
-                self.sum_dy: np.ndarray = np.zeros(shape=self.sum_dy_shape, dtype=self.model.dtype, order="C")
-            else:
-                self.mul_dy: np.ndarray = None  # type: ignore (They will be initialized later)
-                self.sum_dy: np.ndarray = None  # type: ignore (They will be initialized later)
-            # else: They will be initialized later.
         self.real_memory_size += self.temp_memory_size
 
     def post_initialize(self):
         super().post_initialize()
-        self.max_x = self.model.memory_pool.get_ndarray(self.temp_shape, dtype=self.model.dtype)
-        self.sum_y = self.model.memory_pool.get_ndarray(self.temp_shape, dtype=self.model.dtype)
+        self.max_x = self.model.memory.get_ndarray(self.temp_shape, dtype=self.model.dtype)
+        self.sum_y = self.model.memory.get_ndarray(self.temp_shape, dtype=self.model.dtype)
         if not self.model.evaluate_only:
-            self.mul_dy = self.model.memory_pool.get_ndarray(self.mul_dy_shape, dtype=self.model.dtype)
-            self.sum_dy = self.model.memory_pool.get_ndarray(self.sum_dy_shape, dtype=self.model.dtype)
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+            self.mul_dy = self.model.memory.get_ndarray(self.mul_dy_shape, dtype=self.model.dtype)
+            self.sum_dy = self.model.memory.get_ndarray(self.sum_dy_shape, dtype=self.model.dtype)
+        self.model.memory.free_buffer(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))

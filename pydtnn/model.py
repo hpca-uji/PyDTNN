@@ -55,7 +55,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
-from pydtnn.utils.memory_pool import MemoryPool
+from pydtnn.utils.memory_pool import PrivateMemory, SharedMemory
 
 
 # --- CONSTANS --- #
@@ -242,7 +242,7 @@ class Model[T: Array]:
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
-        self.memory_pool: MemoryPool = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
+        self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
 
@@ -800,26 +800,26 @@ class Model[T: Array]:
         self.optimizer.initialize(self.get_all_layers(self.layers))
         self.temp_memory_size += self.optimizer.temp_memory_size
 
-        if self.use_memory_pool:
-            sizes = list[int]()
-            for layer in self.get_all_layers():
-                sizes.append(layer.temp_memory_size)
-            for metric in self.metrics_funcs:
-                sizes.append(metric.temp_memory_size)
-            sizes.append(self.optimizer.temp_memory_size)
-            sizes.append(self.loss_func.temp_memory_size)
+        sizes = list[int]()
+        for layer in self.get_all_layers():
+            sizes.append(layer.temp_memory_size)
+        for metric in self.metrics_funcs:
+            sizes.append(metric.temp_memory_size)
+        sizes.append(self.optimizer.temp_memory_size)
+        sizes.append(self.loss_func.temp_memory_size)
 
-            size = max(sizes)
-            self.memory_pool = MemoryPool(size=size * self.dtype.itemsize)
-            # Reservar la memoria de los temporales
-            for layer in self.get_all_layers():
-                layer.post_initialize()
+        size = max(sizes)
+        memory_cls = SharedMemory if self.use_memory_pool else PrivateMemory
+        self.memory = memory_cls(size=size * self.dtype.itemsize)
+        # Reservar la memoria de los temporales
+        for layer in self.get_all_layers():
+            layer.post_initialize()
 
-            for metric in self.metrics_funcs:
-                metric.post_initialize()
+        for metric in self.metrics_funcs:
+            metric.post_initialize()
 
-            self.loss_func.post_initialize()
-            self.optimizer.post_initialize()
+        self.loss_func.post_initialize()
+        self.optimizer.post_initialize()
 
         # ----
 

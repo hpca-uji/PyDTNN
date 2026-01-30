@@ -14,29 +14,17 @@ class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
         self.pos_maxm_shape = (self.model.batch_size, )
         self.neg_shape = (self.model.batch_size, )
         self.temp_memory_size += int(np.prod(self._pos_shape) + np.prod(self._neg_shape) + np.prod(self.pos_maxm_shape) + np.prod(self.neg_shape)) * self.model.dtype.itemsize
-
-        if not self.model.use_memory_pool:
-            self._pos: np.ndarray = np.zeros(self._pos_shape, dtype=self.model.dtype, order="C")
-            self._neg: np.ndarray = np.zeros(self._neg_shape, dtype=self.model.dtype, order="C")
-            self.pos_maxm: np.ndarray = np.zeros(self.pos_maxm_shape, dtype=self.model.dtype, order="C")
-            self.neg: np.ndarray = np.zeros(self.neg_shape, dtype=self.model.dtype, order="C")
-        else:
-            self._pos: np.ndarray = None  # type: ignore (It will be initialized later)
-            self._neg: np.ndarray = None  # type: ignore (It will be initialized later)
-            self.pos_maxm: np.ndarray = None  # type: ignore (It will be initialized later)
-            self.neg: np.ndarray = None  # type: ignore (It will be initialized later)
-
         self.real_memory_size += self.temp_memory_size
     # ----
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._pos = self.model.memory_pool.get_ndarray(self._pos_shape, dtype=self.model.dtype)
-        self._neg = self.model.memory_pool.get_ndarray(self._neg_shape, dtype=self.model.dtype)
-        self.pos_maxm = self.model.memory_pool.get_ndarray(self.pos_maxm_shape, dtype=self.model.dtype)
-        self.neg = self.model.memory_pool.get_ndarray(self.neg_shape, dtype=self.model.dtype)
+        self._pos = self.model.memory.get_ndarray(self._pos_shape, dtype=self.model.dtype)
+        self._neg = self.model.memory.get_ndarray(self._neg_shape, dtype=self.model.dtype)
+        self.pos_maxm = self.model.memory.get_ndarray(self.pos_maxm_shape, dtype=self.model.dtype)
+        self.neg = self.model.memory.get_ndarray(self.neg_shape, dtype=self.model.dtype)
 
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+        self.model.memory.free_buffer(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         _pos: np.ndarray = self._pos[: y_pred.shape[0]]

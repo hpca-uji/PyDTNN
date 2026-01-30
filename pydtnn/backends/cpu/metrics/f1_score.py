@@ -18,28 +18,16 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
         self.temp_memory_size += int(3 * np.prod(self.temp_var_shape)) * np.float32().itemsize
         self.temp_memory_size += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
-
-        if not self.model.use_memory_pool:
-            self.true_positives: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.float32, order="C")
-            self.false_positives: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.float32, order="C")
-            self.false_negatives: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.float32, order="C")
-            self.are_zeros: np.ndarray = np.zeros(self.temp_var_shape, dtype=np.bool, order="C")
-        else:
-            self.true_positives: np.ndarray = None  # type: ignore (It will be initialized later)
-            self.false_positives: np.ndarray = None  # type: ignore (It will be initialized later)
-            self.false_negatives: np.ndarray = None  # type: ignore (It will be initialized later)
-            self.are_zeros: np.ndarray = None  # type: ignore (It will be initialized later)
-
         self.real_memory_size += self.temp_memory_size
     # ----
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.true_positives = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.false_positives = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.false_negatives = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.are_zeros = self.model.memory_pool.get_ndarray(self.temp_var_shape, dtype=np.bool, order="C")
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+        self.true_positives = self.model.memory.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
+        self.false_positives = self.model.memory.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
+        self.false_negatives = self.model.memory.get_ndarray(self.temp_var_shape, dtype=np.float32, order="C")
+        self.are_zeros = self.model.memory.get_ndarray(self.temp_var_shape, dtype=np.bool, order="C")
+        self.model.memory.free_buffer(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         true_positives = self.true_positives

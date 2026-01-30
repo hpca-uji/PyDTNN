@@ -16,15 +16,6 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
         self.temp_memory_size += int(np.prod(self._argmax_shape)) * np.int32().itemsize
         self.temp_memory_size += int(np.prod(self._y_pred_op_shape) + np.prod(self._y_pred_shape)) * self.model.dtype.itemsize
 
-        if not self.model.use_memory_pool:
-            self._argmax: np.ndarray = np.zeros(self._argmax_shape, dtype=np.int32, order="C")
-            self._y_pred_op: np.ndarray = np.zeros(self._y_pred_op_shape, dtype=self.model.dtype, order="C")
-            self._y_pred: np.ndarray = np.zeros(self._y_pred_shape, dtype=self.model.dtype, order="C")
-        else:
-            self._argmax: np.ndarray = None  # type: ignore (It will be initalized later)
-            self._y_pred_op: np.ndarray = None  # type: ignore (It will be initalized later)
-            self._y_pred: np.ndarray = None  # type: ignore (It will be initalized later)
-
         # _y_pred_sliced_size = self.model.batch_size
         # + _y_pred_sliced_size
 
@@ -32,10 +23,10 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._argmax = self.model.memory_pool.get_ndarray(self._argmax_shape, dtype=np.int32, order="C")
-        self._y_pred_op = self.model.memory_pool.get_ndarray(self._y_pred_op_shape, dtype=self.model.dtype)
-        self._y_pred = self.model.memory_pool.get_ndarray(self._y_pred_shape, dtype=self.model.dtype)
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+        self._argmax = self.model.memory.get_ndarray(self._argmax_shape, dtype=np.int32, order="C")
+        self._y_pred_op = self.model.memory.get_ndarray(self._y_pred_op_shape, dtype=self.model.dtype)
+        self._y_pred = self.model.memory.get_ndarray(self._y_pred_shape, dtype=self.model.dtype)
+        self.model.memory.free_buffer(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray, batch_size: int) -> tuple[float, np.ndarray]:
         b = y_pred.shape[0]

@@ -20,13 +20,8 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                     self.real_memory_size += velocity.nbytes
 
                     self.temp_memory_size += int(2 * np.prod(w.shape)) * self.model.dtype.itemsize
-                    if not self.model.use_memory_pool:
-                        temp_w: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
-                        temp_v: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
-                    else:
-                        temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
-                        temp_v: np.ndarray = None  # type: ignore (It will be initialized later)
-
+                    temp_w: np.ndarray = None  # type: ignore (It will be initialized later)
+                    temp_v: np.ndarray = None  # type: ignore (It will be initialized later)
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
                     self.context[layer.id]["temp_v_%s" % w_] = temp_v
@@ -51,9 +46,9 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 # if w_ is not None:
 
                 w_shape = self.context[layer_id]["velocity_%s" % w_].shape  # type: ignore (it is correct)
-                w_shape = self.context[layer_id][key] = self.model.memory_pool.get_ndarray(w_shape, dtype=self.model.dtype)
+                w_shape = self.context[layer_id][key] = self.model.memory.get_ndarray(w_shape, dtype=self.model.dtype)
         # - end for
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+        self.model.memory.free_buffer(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

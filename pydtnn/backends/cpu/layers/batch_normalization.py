@@ -56,13 +56,6 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype, order="C")
         self.real_memory_size += self.std.nbytes
 
-        if not self.model.use_memory_pool:
-            self._mean_inv: np.ndarray = np.zeros(shape=self._mean_inv_shape, dtype=self.model.dtype, order="C")
-            self._var_inv: np.ndarray = np.zeros(shape=self._var_inv_shape, dtype=self.model.dtype, order="C")
-        else:
-            self._mean_inv: np.ndarray = None  # type: ignore (It will be initialized later)
-            self._var_inv: np.ndarray = None  # type: ignore (It will be initialized later)
-
         self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
 
         if not self.model.evaluate_only:
@@ -79,30 +72,21 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             self.dy_xn_shape = vars_shape
             self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
 
-            if not self.model.use_memory_pool:
-                self._mean: np.ndarray = np.zeros(self._mean_shape, dtype=self.model.dtype, order="C")
-                self._var: np.ndarray = np.zeros(self._var_shape, dtype=self.model.dtype, order="C")
-                self.dy_xn: np.ndarray = np.zeros(self.dy_xn_shape, dtype=self.model.dtype, order="C")
-            else:
-                self._mean: np.ndarray = None  # type: ignore (It will be initialized later)
-                self._var: np.ndarray = None  # type: ignore (It will be initialized later)
-                self.dy_xn: np.ndarray = None  # type: ignore (It will be initialized later)
-
         self.real_memory_size += self.temp_memory_size
     # --
 
     def post_initialize(self) -> None:
         super().post_initialize()
 
-        self._mean_inv = self.model.memory_pool.get_ndarray(self._mean_inv_shape, dtype=self.model.dtype)
-        self._var_inv = self.model.memory_pool.get_ndarray(self._var_inv_shape, dtype=self.model.dtype)
+        self._mean_inv = self.model.memory.get_ndarray(self._mean_inv_shape, dtype=self.model.dtype)
+        self._var_inv = self.model.memory.get_ndarray(self._var_inv_shape, dtype=self.model.dtype)
 
         if not self.model.evaluate_only:
-            self._mean = self.model.memory_pool.get_ndarray(self._mean_shape, dtype=self.model.dtype)
-            self._var = self.model.memory_pool.get_ndarray(self._var_shape, dtype=self.model.dtype)
-            self.dy_xn = self.model.memory_pool.get_ndarray(self.dy_xn_shape, dtype=self.model.dtype)
+            self._mean = self.model.memory.get_ndarray(self._mean_shape, dtype=self.model.dtype)
+            self._var = self.model.memory.get_ndarray(self._var_shape, dtype=self.model.dtype)
+            self.dy_xn = self.model.memory.get_ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+        self.model.memory.free_buffer(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

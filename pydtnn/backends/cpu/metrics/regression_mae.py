@@ -10,18 +10,13 @@ class RegressionMAECPU(RegressionMAE[np.ndarray], MetricCPU):
         super().initialize()
 
         self.temp_memory_size += int(np.prod(self.shape)) * self.model.dtype.itemsize
-        if not self.model.use_memory_pool:
-            self.diff: np.ndarray = np.zeros(self.shape, dtype=self.model.dtype, order="C")
-        else:
-            self.diff: np.ndarray = None  # type: ignore (It will be initialized later)
-
         self.real_memory_size += self.temp_memory_size
     # ----
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.diff = self.model.memory_pool.get_ndarray(self.shape, dtype=self.model.dtype)
-        self.model.memory_pool.free_buffer(self.temp_memory_size)
+        self.diff = self.model.memory.get_ndarray(self.shape, dtype=self.model.dtype)
+        self.model.memory.free_buffer(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         diff = self.diff[:y_pred.shape[0]]
