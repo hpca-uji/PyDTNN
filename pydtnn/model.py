@@ -696,7 +696,7 @@ class Model[T: Array]:
                 if self.enable_fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
                 # else: layer_name = None
-            case default: pass  # else: layer_name = None
+            case _: pass  # else: layer_name = None
 
         return layer_name, [layer0, layer1, layer2]
     # ----
@@ -722,7 +722,7 @@ class Model[T: Array]:
                 if self.enable_fused_bn_relu:
                     layer_name = "batch_normalization_relu"
                 # else: layer_name = None
-            case default: pass  # else: layer_name = None
+            case _: pass  # else: layer_name = None
 
         return layer_name, [layer1, layer2]
     # ----

@@ -37,13 +37,21 @@ class PromoteToBackend:
 
     def _get_backend_cls(self) -> typing.Any:
         cls = self.__class__
-        backend = self.model._backend
+        backends = self.model.backend.split(",")
         module_name = cls.__module__.split(".", 1)[1]
-        backend_module_name = f"pydtnn.backends.{backend}.{module_name}"
-        backend_module = importlib.import_module(backend_module_name)
-        cls_name = f"{cls.__name__}{backend.upper()}"
-        cls = getattr(backend_module, cls_name)
-        return cls
+        print(f"Source: {module_name}")
+        for backend in backends:
+            try:
+                backend_module_name = f"pydtnn.backends.{backend}.{module_name}"
+                backend_module = importlib.import_module(backend_module_name)
+                cls_name = f"{cls.__name__}{backend.upper()}"
+                cls = getattr(backend_module, cls_name)
+            except (ModuleNotFoundError, AttributeError) as e:
+                print(f"Trying: {backend_module_name}", e)
+            else:
+                print(f"Found:  {backend_module_name}")
+                return cls
+        raise RuntimeError(f"Backend not found for {self}")
 
     def __setattr__(self, name: str, value) -> None:
         ref = "_backend"

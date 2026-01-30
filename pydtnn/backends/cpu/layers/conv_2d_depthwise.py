@@ -1,6 +1,7 @@
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
 from pydtnn.backends.cpu.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
 from pydtnn.backends.cpu.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 import numpy as np
@@ -9,7 +10,7 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat
 
 
-class Conv2DDepthwiseCPU(Conv2DCPU):
+class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
 
     def _initializing_special_parameters(self):
         super()._initializing_special_parameters()

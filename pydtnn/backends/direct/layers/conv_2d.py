@@ -1,7 +1,7 @@
 from functools import partial
 from warnings import warn
 
-from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import Conv2DStandardCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
 from pydtnn.libs.libconvdirect import ConvDirect
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
@@ -12,7 +12,7 @@ import numpy as np
 from pydtnn.utils.tensor import TensorFormat
 
 
-class Conv2DDirectCPU(Conv2DStandardCPU):
+class Conv2DDIRECT(AbstractConv2DStandardCPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -1,10 +1,7 @@
-import importlib
 from typing import TYPE_CHECKING, Optional
 
-from pydtnn.layer_base import FusedLayerMixIn
 if TYPE_CHECKING:
     from pydtnn.activations.activation import Activation
-from pydtnn.backends import BackendType
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 import numpy as np
@@ -13,13 +10,7 @@ from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 
 class Conv2D[T: Array](Layer[T]):
-
-    class Grouping(StrEnum):
-        DEPTHWISE = auto()
-        POINTWISE = auto()
-        STANDARD = auto()
     # -------
-
     class Variant(StrEnum):
         BEST_OF = auto()
         I2C = auto()
@@ -30,31 +21,8 @@ class Conv2D[T: Array](Layer[T]):
         DIRECT = "cd0"
     # -----
 
-    def _get_backend_cls(self) -> None:
-        if isinstance(self, FusedLayerMixIn):
-            return super()._get_backend_cls()
-
-        cls = self.__class__
-        backend = self.model._backend
-        module_name = cls.__module__.split(".", 1)[1]
-
-        if backend is BackendType.CPU and self.grouping is self.Grouping.STANDARD:
-            variant = self.model.conv_variant._name_.lower()
-        else:
-            variant = self.grouping.lower()
-
-        backend_module_name = f"pydtnn.backends.{backend}.{module_name}_variants.{variant}"
-        try:
-            backend_module = importlib.import_module(backend_module_name)
-        except ModuleNotFoundError as e:
-            raise ModuleNotFoundError("Check the package were the variants are located; it must have the same name as \"{module_name}_variants\" above.") from e
-        cls_name = f"{cls.__name__}{variant.title()}{backend.upper()}"
-        cls = getattr(backend_module, cls_name)
-        return cls
-
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),
-                 grouping: Grouping = Grouping.STANDARD,
                  padding: tuple[int, int] | int = 0,
                  stride: tuple[int, int] | int = 1,
                  dilation: tuple[int, int] | int = 1,
@@ -66,7 +34,6 @@ class Conv2D[T: Array](Layer[T]):
         super().__init__()
         self.co = nfilters
         self.filter_shape = (filter_shape, filter_shape) if isinstance(filter_shape, int) else filter_shape
-        self.grouping = Conv2D.Grouping(grouping.lower())
         self.padding = padding
         self.stride = stride
         self.dilation = dilation

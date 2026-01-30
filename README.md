@@ -141,7 +141,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--history-file`: Filename to save training loss and metrics.
   - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`. Optionally, the `AUTO` value sets `NCHW` when the option `--enable-gpu` is set and `NHWC` otherwise. Default: `NHWC`.
   - `--random-seed`: Initial state of random number generator. Default: `57005`.
-  - `--use-memory-pool`: Allows to use a common memory pool for all the temporary data structures.
+  - `--shared-memory`: Allows to use a common memory pool for all the temporary data structures.
   - `--shared-storage`: If `True` ranks assume they share the file
     system. Default: `True`.
   - `--model-sync-freq`: Number of batches between model synchronization.

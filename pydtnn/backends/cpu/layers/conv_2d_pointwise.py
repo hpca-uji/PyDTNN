@@ -1,6 +1,7 @@
 import numpy as np
 
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_OPS_EVENT_enum, PYDTNN_EVENT_FINISHED
 from pydtnn.utils.best_transpose_0231 import best_transpose_0231
 from pydtnn.utils.best_transpose_0312 import best_transpose_0312
@@ -9,7 +10,7 @@ from pydtnn.utils.constants import ArrayShape, Parameters
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 
 
-class Conv2DPointwiseCPU(Conv2DCPU):
+class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
 
     def _export_prop(self, key: str):
         if key not in {Parameters.WEIGHTS, Parameters.DW}:
@@ -47,7 +48,7 @@ class Conv2DPointwiseCPU(Conv2DCPU):
             case TensorFormat.NCHW:
                 self.weights_shape = (self.co, self.ci)
             case TensorFormat.NHWC:
-                self.weights_shape = (self.co, self.ci)
+                self.weights_shape = (self.ci, self.co)
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
         # --

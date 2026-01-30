@@ -1,4 +1,6 @@
 import numpy as np
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.model import Model
 from pydtnn.layers.input import Input
 from pydtnn.layers.layer import Layer
@@ -77,11 +79,11 @@ def main():
     model_RELU._initialize()
 
     model_DEPTH.add(Input(SHAPE, is_shape_in_format=True))
-    model_DEPTH.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=Conv2D.Grouping.DEPTHWISE, use_bias=use_bias))
+    model_DEPTH.add(Conv2DDepthwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
     model_DEPTH._initialize()
 
     model_POINT.add(Input(SHAPE, is_shape_in_format=True))
-    model_POINT.add(Conv2D(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, grouping=Conv2D.Grouping.POINTWISE, use_bias=use_bias))
+    model_POINT.add(Conv2DPointwise(nfilters=CONV_OUT_CHANNELS, filter_shape=CONV_KERNEL_SIZE, use_bias=use_bias))
     model_POINT._initialize()
 
     model_I2C.add(Input(SHAPE, is_shape_in_format=True))

@@ -1,7 +1,7 @@
 import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.backends.gpu.layers.conv_2d import Conv2DGPU
+from pydtnn.backends.gpu.layers.abstract.conv_2d import AbstractConv2DGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
@@ -13,7 +13,7 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 
-class Conv2DStandardGPU(Conv2DGPU):
+class AbstractConv2DStandardGPU(AbstractConv2DGPU):
 
     def _initializing_special_parameters(self):
         match self.model.tensor_format:
@@ -70,7 +70,7 @@ class Conv2DStandardGPU(Conv2DGPU):
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
                 return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
-            case default:
+            case _:
                 return super()._export_prop(key)
     # ------
 
@@ -84,7 +84,7 @@ class Conv2DStandardGPU(Conv2DGPU):
                 cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
                 attribute.ary.set(cpu_ary)
                 return
-            case default:
+            case _:
                 return super()._import_prop(key, value)
     # ---
 

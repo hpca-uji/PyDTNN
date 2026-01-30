@@ -1,233 +1,209 @@
-from typing import Any
-from pydtnn.layers.conv_2d import Conv2D
-
-import pycuda.driver as drv  # type: ignore
-import pycuda.gpuarray as gpuarray  # type: ignore
-from pycuda.compiler import SourceModule  # type: ignore
-from pycuda.driver import Function  # type: ignore
-
 import numpy as np
 
-from pydtnn.utils.performance_models import matmul_time
-from pydtnn.backends.gpu.layers.layer import LayerGPU
-
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+from pydtnn.backends.gpu.layers.abstract.conv_2d import AbstractConv2DGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
-from pydtnn.utils.tensor import TensorFormat
-from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE, Parameters
+from pydtnn.utils.constants import ArrayShape
 
 
-class Conv2DGPU(Conv2D[TensorGPU], LayerGPU):
+from pydtnn.utils.tensor import TensorFormat, format_transpose
+from typing import Any, override
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+from pydtnn.libs import libcudnn as cudnn
+from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
+import pycuda.gpuarray as gpuarray  # type: ignore
 
-        # The following attributes will be initalized later.
-        self.fwd_algo: int = None  # type: ignore
-        self.bwd_dw_algo: int = None  # type: ignore
-        self.bwd_dx_algo: int = None  # type: ignore
-        self.conv_desc = None
-    # ----
+
+class Conv2DGPU(AbstractConv2DGPU):
+
+    def _initializing_special_parameters(self):
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.weights_shape = (self.co, self.ci, *self.filter_shape)
+            case TensorFormat.NHWC:
+                # NOTE: It is this shape, even if in the CPU version is different.
+                self.weights_shape = (self.co, *self.filter_shape, self.ci)
+            case _:
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+    # ---
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
 
-        self.stream_2 = drv.Stream()
+        # Activations y
+        y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
+        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        # Derivative dx
+        dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
+        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
-        weights_gpu = gpuarray.to_gpu(self.weights_cpu)
-        self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.FILTER)
-        # Biases
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+
+        # Convolution params
+        conv_mode = cudnn.cudnnConvolutionMode['CUDNN_CROSS_CORRELATION']
+        self.fwd_algo = cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
+        self.bwd_dw_algo = cudnn.cudnnConvolutionBwdFilterAlgo['CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1']
+        self.bwd_dx_algo = cudnn.cudnnConvolutionBwdDataAlgo['CUDNN_CONVOLUTION_BWD_DATA_ALGO_1']
+
+        # Create convolution descriptor
+        self.conv_desc = cudnn.cudnnCreateConvolutionDescriptor()
+        cudnn.cudnnSetConvolution2dDescriptor(self.conv_desc, self.vpadding, self.hpadding,
+                                              self.vstride, self.hstride, self.vdilation, self.hdilation,
+                                              conv_mode, self.model.cudnn_dtype)
+        # Set grouping options
+        # if self.grouping is Conv2D.Grouping.DEPTHWISE:
+        #    cudnn.cudnnSetConvolutionGroupCount(self.conv_desc, self.ci)
+
+        # Allow NCHW -> NHWC conversion for the use of Tensor Cores
+        math_type = cudnn.cudnnMathType['CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION']
+        # math_type = cudnn.cudnnMathType['CUDNN_DEFAULT_MATH']
+        # math_type = cudnn.cudnnMathType['CUDNN_TENSOR_OP_MATH']
+        cudnn.cudnnSetConvolutionMathType(self.conv_desc, math_type)
+
+        # Get output dimensions
+        _, _, _ho, _wo = cudnn.cudnnGetConvolution2dForwardOutputDim(self.conv_desc,
+                                                                     x.desc, self.weights.desc)
+        assert self.ho == _ho and self.wo == _wo, "cuDNN output sizes differ from expected ones!"
+
+        # Set to 20 the number of requested algorithms for enable_cudnn_auto_conv_alg
+        req_algs = 20
+
+        self.fwd_algo = cudnn.cudnnFindConvolutionForwardAlgorithm(self.model.cudnn_handle,
+                                                                   x.desc, self.weights.desc, self.conv_desc,
+                                                                   self.y.desc, req_algs)[0].algo \
+            if self.model.enable_cudnn_auto_conv_alg else \
+            cudnn.cudnnConvolutionFwdAlgo['CUDNN_CONVOLUTION_FWD_ALGO_IMPLICIT_PRECOMP_GEMM']
+
+        base_conv_memory = getConvolutionWorkspaceSize()
+
+        local_size = cudnn.cudnnGetConvolutionForwardWorkspaceSize(self.model.cudnn_handle,
+                                                                   x.desc, self.weights.desc, self.conv_desc,
+                                                                   self.y.desc, self.fwd_algo)
+        checkConvolutionMemory(local_size)
+
+        self.bwd_dw_algo = cudnn.cudnnFindConvolutionBackwardFilterAlgorithm(self.model.cudnn_handle,
+                                                                             x.desc, self.y.desc, self.conv_desc,
+                                                                             self.weights.desc, req_algs)[0].algo \
+            if self.model.enable_cudnn_auto_conv_alg else \
+            cudnn.cudnnConvolutionBwdFilterAlgo['CUDNN_CONVOLUTION_BWD_FILTER_ALGO_1']
+
+        local_size = cudnn.cudnnGetConvolutionBackwardFilterWorkspaceSize(self.model.cudnn_handle,
+                                                                          x.desc, self.y.desc, self.conv_desc,
+                                                                          self.weights.desc, self.bwd_dw_algo)
+        checkConvolutionMemory(local_size)
+
+        self.bwd_dx_algo = cudnn.cudnnFindConvolutionBackwardDataAlgorithm(self.model.cudnn_handle,
+                                                                           self.weights.desc, self.y.desc,
+                                                                           self.conv_desc, x.desc,
+                                                                           req_algs)[0].algo \
+            if self.model.enable_cudnn_auto_conv_alg else \
+            cudnn.cudnnConvolutionBwdDataAlgo['CUDNN_CONVOLUTION_BWD_DATA_ALGO_1']
+
+        local_size = cudnn.cudnnGetConvolutionBackwardDataWorkspaceSize(self.model.cudnn_handle,
+                                                                        self.weights.desc, self.y.desc,
+                                                                        self.conv_desc,
+                                                                        x.desc, self.bwd_dx_algo)
+        checkConvolutionMemory(local_size)
+
+        self.forward = self._forward_standard
+        self.backward = self._backward_standard
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes + (getConvolutionWorkspaceSize() - base_conv_memory)
+    # -----
+
+    def _forward_standard(self, x: TensorGPU) -> TensorGPU:
+        alpha, beta = 1.0, 0.0
+        # Compute a' = x x weights
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
+        cudnn.cudnnConvolutionForward(self.model.cudnn_handle, alpha,
+                                      x.desc, x.ptr,
+                                      self.weights.desc, self.weights.ptr,
+                                      self.conv_desc, self.fwd_algo,
+                                      getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                      self.y.desc, self.y.ptr)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
         if self.use_bias:
-            biases_shape = self.model.encode_shape((1, self.co, 1, 1))
-            self.biases_cpu = self.biases_initializer(biases_shape, self.model.dtype)
-            biases_gpu = gpuarray.to_gpu(self.biases_cpu)
-            self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+            alpha, beta = 1.0, 1.0
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT,
+                                         self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN_SUM_BIASES)
+            # Compute a = a' + biases
+            cudnn.cudnnAddTensor(self.model.cudnn_handle, alpha, self.biases.desc, self.biases.ptr,
+                                 beta, self.y.desc, self.y.ptr)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.y
+    # -----
 
-        self.fwd_time = \
-            matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)
-        self.bwd_time = \
-            matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype) + \
-            matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo), k=self.co,
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw, dtype=self.model.dtype)  # type: ignore (It is correct.)
+    def _backward_standard(self, dy: TensorGPU) -> TensorGPU:
+        alpha, beta = 1.0, 0.0
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DW)
+        # Compute dw
+        cudnn.cudnnConvolutionBackwardFilter(self.model.cudnn_handle, alpha,
+                                             self.x.desc, self.x.ptr,
+                                             dy.desc, dy.ptr, self.conv_desc, self.bwd_dw_algo,
+                                             getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                             self.dw.desc, self.dw.ptr)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        if self.model.gpudirect:
-            bias_tensor_type = TensorGPU.TensorTypeEnum.FILTER
-            _drv = drv
-        else:
-            bias_tensor_type = TensorGPU.TensorTypeEnum.TENSOR
-            _drv = None
+        # DtoH dw when data parallelism and no GPU direct/NCCL is used
+        if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
+            self.model.stream.synchronize()
+            self.dw.ary.get_async(self.stream_2, self.dw_cpu)
 
-        # Derivative dw and derivative db
-        self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
-                                                    cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
-                                                    tensor_type=TensorGPU.TensorTypeEnum.FILTER, drv=_drv)
         if self.use_bias:
-            self.biases: TensorGPU
-            self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
-                                                        cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
-                                                        tensor_type=bias_tensor_type, drv=_drv)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DB)
+            # Compute db
+            cudnn.cudnnConvolutionBackwardBias(self.model.cudnn_handle, alpha,
+                                               dy.desc, dy.ptr, beta,
+                                               self.db.desc, self.db.ptr)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-            self.real_memory_size += self.biases.nbytes + self.db.nbytes
-        self.real_memory_size += self.weights.nbytes + self.dw.nbytes
+            # DtoH db when data parallelism and no GPU direct/NCCL is used
+            if self.model.comm and not self.model.gpudirect and not self.model.enable_nccl:
+                self.model.stream.synchronize()
+                self.db.ary.get_async(self.stream_2, self.db_cpu)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
+        # Compute dx
+        cudnn.cudnnConvolutionBackwardData(self.model.cudnn_handle, alpha,
+                                           self.weights.desc, self.weights.ptr,
+                                           dy.desc, dy.ptr,
+                                           self.conv_desc, self.bwd_dx_algo,
+                                           getConvolutionWorkspacePtr(), getConvolutionWorkspaceSize(), beta,
+                                           self.dx.desc, self.dx.ptr)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        return self.dx
     # ----
 
+    @override
     def _export_weights_dw(self, key: str) -> Any:
-        # NOTE: Every variant must implement their version of this method.
-        # super()._export_prop(key)
-        msg = "This is a \"fake\" function. It must be overrided by the child classes."
-        raise NotImplementedError(f"Conv2DGPU forward: {msg}")
-    # ----
-
-    def _export_biases_db(self, key: str) -> Any:
         value = getattr(self, key)
-        gpu_ary = value.ary
-        cpu_ary = gpu_ary.get()
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                return np.asarray(np.squeeze(cpu_ary, axis=(0, 1, 2)), dtype=np.float64, order="C", copy=True)
+                # NHWC's src: ci, kh, kw, co
+                # NCHW's dst: co, ci, kh, kw
+                gpu_ary = value.ary
+                cpu_ary = gpu_ary.get()
+                return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
             case TensorFormat.NCHW:
-                return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C", copy=True)
+                gpu_ary = value.ary
+                cpu_ary = gpu_ary.get()
+                return cpu_ary
             case _:
                 return super()._export_prop(key)
-    # ----
+    # ------
 
-    def _export_prop(self, key: str) -> Any:
-        match key:
-            case Parameters.WEIGHTS | Parameters.DW:
-                return self._export_weights_dw(key)
-            case Parameters.BIASES | Parameters.DB:
-                return self._export_biases_db(key)
-            case _:
-                return super()._export_prop(key)
-    # ----
-
-    def _import_biases_db(self, key: str, value: Any) -> None:
-        attribute = getattr(self, key)
-
-        match self.model.tensor_format:
-            case TensorFormat.NHWC:
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 1, 2)), dtype=self.model.dtype, order="C", copy=None)
-                attribute.ary.set(cpu_ary)
-                return
-            case TensorFormat.NCHW:
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C", copy=None)
-                attribute.ary.set(cpu_ary)
-                return
-            # case default: (next return)
-        return super()._import_prop(key, value)
-    # ----
-
+    @override
     def _import_weights_dw(self, key: str, value: Any) -> None:
-        # NOTE: Every variant must implement their version of this method.
-        # super()._export_prop(key)
-        msg = "This is a \"fake\" function. It must be overrided by the child classes"
-        raise NotImplementedError(f"Conv2DGPU forward: {msg}")
-    # ----
-
-    def _import_prop(self, key: str, value) -> None:
-        match key:
-            case Parameters.WEIGHTS | Parameters.DW:
-                return self._import_weights_dw(key, value)
-            case Parameters.BIASES | Parameters.DB:
-                return self._import_biases_db(key, value)
-            #
+        attribute = getattr(self, key)
+        match self.model.tensor_format:
+            case TensorFormat.NHWC:
+                # NCHW's src: co, ci, kh, kw
+                # NHWC's dst: ci, kh, kw, co
+                cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
+                attribute.ary.set(cpu_ary)
+                return
             case _:
                 return super()._import_prop(key, value)
-    # ----
-
-    def forward(self, x: TensorGPU) -> TensorGPU:
-        msg = "This is a fake forward function. It must be masked on initialization by a _forward implementation."
-        raise NotImplementedError(f"Conv2DGPU forward: {msg}")
-
-    def backward(self, dy: TensorGPU) -> TensorGPU:
-        msg = "This is a fake backward function. It must be masked on initialization by a _backward implementation."
-        raise NotImplementedError(f"Conv2DGPU backward: {msg}")
-
-
-#########################################################################################################
-## CUDA-RELATED COMMON CODE ##
-##############################
-
-    def cuda_sum_bias_axis_023(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        # np.sum(dy, axis=(0, 2, 3), out=self.db)
-        code = \
-            """
-__global__ void {func_name}({T}* dy, {T}* db
-                            int c, int h, int w,
-                            int N, int num_workers)
-{{
-    int idx, index_c;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        index_c = (idx / (h*w)) % c;
-        *(db + index_c) += *(dy + idx);
-    }}
-}}
-"""
-
-        code = code.format(func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ----
-
-    def cuda_sum_bias_axis_012(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nhwc") -> Function:
-        _t = DTYPE2CTYPE[self.model.dtype]  # variable Type
-
-        # np.sum(dy, axis=(0, 1, 2), out=self.db)
-        code = \
-            """
-__global__ void {func_name}({T}* dy, {T}* db,
-                            int c, int N,
-                            int num_workers)
-{{
-    int idx;
-
-    for(idx = blockIdx.x * blockDim.x + threadIdx.x; idx < N; idx += num_workers)
-    {{
-        *(db + (idx % c)) += *(dy + idx);
-    }}
-}}
-"""
-
-        code = code.format(func_name=_func_name,
-                           T=_t
-                           )
-        module = SourceModule(code).get_function(_func_name)
-
-        return module
-    # ----
-
-# CUDA-related constans
-
-
-MACROS_NCHW = \
-    """
-#define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * c + ci) * h + hi) * w + wi
-#define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (yci * c + ci)
-#define INDEX_N(idx, N, n) idx * n / N
-#define INDEX_C(idx, c, h, w) (idx / (h * w)) % c
-#define INDEX_H(idx, c, h, w) (idx / w) % h
-#define INDEX_W(idx, c, h, w) idx % w
-"""
-# ---
-
-MACROS_NHWC = \
-    """
-#define SHIFT_POINTER(p, c, h, w, ni, ci, hi, wi) p + ((ni * h + hi) * w + wi) * c + ci
-#define SHIFT_POINTER_K(p, c, yc, ci, yci) p + (ci * yc + yci)
-#define INDEX_N(idx, N, n) idx * n / N
-#define INDEX_H(idx, h, w, c) (idx / (w * c)) % h
-#define INDEX_W(idx, h, w, c) (idx / c) % w
-#define INDEX_C(idx, h, w, c) idx % c
-"""
-# ---
-#########################################################################################################
+    # ---

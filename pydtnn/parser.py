@@ -134,6 +134,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help='Initial state of random number generator. Default: \'57005\'.')
         self.add_argument('--shared-memory', type=bool_lambda, default=True,
                           help="Allows to use a common memory pool for all the temporary data structures.")
+        self.add_argument('--backend', type=str, default="cpu",
+                          help="Backend selection priority list. Coma delimited order, first found, first used.")
 
         # Synchronization options
         _sy_group = self.add_argument_group("Synchronization options")

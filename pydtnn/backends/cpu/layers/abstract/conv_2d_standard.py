@@ -1,10 +1,10 @@
 import numpy as np
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from pydtnn.utils.constants import Parameters
 
 
-class Conv2DStandardCPU(Conv2DCPU):
+class AbstractConv2DStandardCPU(AbstractConv2DCPU):
     # NOTE: This is an abstract class.
 
     def _initializing_special_parameters(self):

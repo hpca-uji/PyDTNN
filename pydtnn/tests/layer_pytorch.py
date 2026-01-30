@@ -360,7 +360,7 @@ class LayerPyTorchTestCase(TestCase):
     # ---------
 
     def test_Conv2D(self):
-        pydtnn_layers = [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
+        pydtnn_layers = [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
         torch_model = torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE,
                                       padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)
@@ -404,12 +404,12 @@ class LayerPyTorchTestCase(TestCase):
     def test_AdditionBlock(self):
         pydtnn_layers = [
             AdditionBlock(
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
                  BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)
                  ],
 
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
                  ]
             )]
@@ -423,12 +423,12 @@ class LayerPyTorchTestCase(TestCase):
     def test_ConcatenationBlock(self):
         pydtnn_layers = [
             ConcatenationBlock(
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
                  BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)
                  ],
 
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
                  ]
             )]
