@@ -19,7 +19,7 @@ class CategoricalMSECPU(CategoricalMSE[np.ndarray], MetricCPU):
     def post_initialize(self) -> None:
         super().post_initialize()
         self.error = self.model.memory.ndarray(self.shape, dtype=self.model.dtype)
-        self.model.memory.free(self.temp_memory_size)
+        self.model.memory._free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype)

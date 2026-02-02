@@ -47,7 +47,7 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
                 w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
                 w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
         # - end for
-        self.model.memory.free(self.temp_memory_size)
+        self.model.memory._free(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

@@ -83,7 +83,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
         self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
-        self.model.memory.free(self.temp_memory_size)
+        self.model.memory._free(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

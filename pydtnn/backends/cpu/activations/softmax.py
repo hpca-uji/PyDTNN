@@ -39,7 +39,7 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         self.sum_y = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
         self.mul_dy = self.model.memory.ndarray(self.mul_dy_shape, dtype=self.model.dtype)
         self.sum_dy = self.model.memory.ndarray(self.sum_dy_shape, dtype=self.model.dtype)
-        self.model.memory.free(self.temp_memory_size)
+        self.model.memory._free(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         # self.y = np.exp(x - np.max(x, axis=1, keepdims=True))

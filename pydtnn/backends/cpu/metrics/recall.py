@@ -23,7 +23,7 @@ class RecallCPU(Recall[np.ndarray], MetricCPU):
         self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
         self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
         self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
-        self.model.memory.free(self.temp_memory_size)
+        self.model.memory._free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype)
