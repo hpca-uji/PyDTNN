@@ -30,6 +30,15 @@ class SafeGenerator:
     def shuffle(self, x, axis=0):
         """Modify an array or sequence in-place by shuffling its contents."""
         # NOTE: CuPy does not provide an implementation
+
+        if isinstance(x, list):
+            if axis != 0:
+                raise ValueError("lists only support shuffle on axis 0!")
+            idx = self.permutation(len(x))
+            tmp = [x[i] for i in idx]
+            x[:] = tmp
+            return
+
         idx = self.permutation(x.shape[axis])
         slc = [slice(None)] * x.ndim
         slc[axis] = idx
