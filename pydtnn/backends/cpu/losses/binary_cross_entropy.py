@@ -10,7 +10,6 @@ class BinaryCrossEntropyCPU(BinaryCrossEntropy[np.ndarray], LossCPU):
         super().initialize()
 
         self.temp_memory_size += int(5 * np.prod(self.shape)) * self.model.dtype.itemsize
-
         self.real_memory_size += self.temp_memory_size
 
     def post_initialize(self) -> None:
