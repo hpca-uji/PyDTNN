@@ -444,7 +444,7 @@ __global__ void {FUNC_NAME}(const {T} *const rows,
             _woi = (wi + hpadding - hdilation * kwi);
             woi = _woi / hstride;
             _woi = _woi % hstride;
-            
+
             if((_hoi == 0) && (_woi == 0) && IS_BETWEEN(0, hoi, ho) && IS_BETWEEN(0, woi, wo))
             {{
                 row = GET_ROW(ni, hoi, woi, ho, wo);

@@ -3,6 +3,7 @@ from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
 import cupy as np
 
+
 class MulticlassConfusionMatrixCUPY(MulticlassConfusionMatrix[np.ndarray], MetricCUPY):
 
     def initialize(self) -> None:
