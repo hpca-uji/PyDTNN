@@ -25,6 +25,7 @@
   Also the MPI library does not support async object reduces, such as `mpi4py`, `use-blocking-mpi` must be specified.
 - If using `conda` and `pip install --config-settings editable_mode=compat -e .` errors with `no such option: --config-settings`,
   deactivate all environments and then reactivate only the one you want.
+- Temporal shared memory on block layers may be overwritten by child layers.
 
 # Planned
 - Move `gpu.utils.memory_allocation` from a global namespace to a model instance.

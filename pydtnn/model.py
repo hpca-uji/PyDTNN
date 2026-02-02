@@ -745,19 +745,22 @@ class Model[T: Array]:
         if self._initialized:
             return
         self._apply_layer_fusion()
+
+        temp_memory_size = []
+
         loss_cls = select_loss(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
         self.loss_func.init_backend_with_model(self)
         self.loss_func.initialize()
-        self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
-                              self.metrics_list]
+
+        self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
 
         for metric in self.metrics_funcs:
             metric.init_backend_with_model(self)
             metric.initialize()
             self.real_memory_size += metric.real_memory_size
-            self.temp_memory_size += metric.temp_memory_size
+            temp_memory_size.append(metric.temp_memory_size)
 
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
@@ -770,20 +773,15 @@ class Model[T: Array]:
             self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer.initialize(self.get_all_layers(self.layers))
-        self.temp_memory_size += self.optimizer.temp_memory_size
+        temp_memory_size.append(self.optimizer.temp_memory_size)
 
-        sizes = list[int]()
         for layer in self.get_all_layers():
-            sizes.append(layer.temp_memory_size)
-        for metric in self.metrics_funcs:
-            sizes.append(metric.temp_memory_size)
-        sizes.append(self.optimizer.temp_memory_size)
-        sizes.append(self.loss_func.temp_memory_size)
+            temp_memory_size.append(layer.temp_memory_size)
 
-        size = max(sizes)
+        self.temp_memory_size = max(temp_memory_size)
         memory_cls = PreallocMemory if self.shared_memory else PrivateMemory
-        self.memory = memory_cls(size=size * self.dtype.itemsize)
-        # Reservar la memoria de los temporales
+        self.memory = memory_cls(size=self.temp_memory_size)
+
         for layer in self.get_all_layers():
             layer.post_initialize()
 
