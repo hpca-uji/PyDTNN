@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pydtnn.libs import libcrypt
+from pydtnn.libs import crypto
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -56,7 +56,7 @@ COEFF_MODULUS = {
 
 
 @dataclass(eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](libcrypt.Ciphertext[uarchfhe.PyCiphertext, P]):
+class Ciphertext[P: np.number](crypto.Ciphertext[uarchfhe.PyCiphertext, P]):
     """uArchFHE ciphertext"""
     _context: uarchfhe.PyContext = dataclasses.field(repr=False)
 
@@ -82,7 +82,7 @@ class Ciphertext[P: np.number](libcrypt.Ciphertext[uarchfhe.PyCiphertext, P]):
         return uarchfhe.PyCiphertext.add(a, b)
 
 
-class Context(libcrypt.Context[uarchfhe.PyCiphertext]):
+class Context(crypto.Context[uarchfhe.PyCiphertext]):
     """uArchFHE context"""
     _cls = Ciphertext
 
@@ -112,7 +112,7 @@ class Context(libcrypt.Context[uarchfhe.PyCiphertext]):
         state.pop("_ckks", None)
         return state
 
-    def _new(self, /, *args, **kwds) -> libcrypt.Ciphertext:
+    def _new(self, /, *args, **kwds) -> crypto.Ciphertext:
         """Create new operable ciphertext"""
         return super()._new(_context=self._context, *args, **kwds)
 

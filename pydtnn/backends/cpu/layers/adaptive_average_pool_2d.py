@@ -8,7 +8,7 @@ from pydtnn.utils.tensor import TensorFormat
 
 # Imports for the methods from AveragePool2DCPU
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):

@@ -1,6 +1,6 @@
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.layers.input import Input
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class InputCPU(Input[np.ndarray], LayerCPU):

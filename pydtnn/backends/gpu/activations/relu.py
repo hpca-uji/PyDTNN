@@ -2,7 +2,7 @@ import pycuda.gpuarray as gpuarray  # type: ignore
 
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.gpu.activations.activation import ActivationGPU
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 

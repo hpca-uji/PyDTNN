@@ -3,7 +3,7 @@ import inspect
 import numpy as np
 
 from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.libconvgemm import ConvGemm
+from pydtnn.libs.convGemm import ConvGemm
 from pydtnn.tests.abstract.common import verbose_test, D, alexnet_layers
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header, random

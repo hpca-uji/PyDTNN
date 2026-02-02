@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.losses.loss import LossCPU
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy

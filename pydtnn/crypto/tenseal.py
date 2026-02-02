@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pydtnn.libs import libcrypt
+from pydtnn.libs import crypto
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
@@ -37,7 +37,7 @@ SECURITY_LEVEL = {
 
 
 @dataclass(eq=False, order=False, slots=True, frozen=True)
-class Ciphertext[P: np.number](libcrypt.Ciphertext[CKKSVector, P]):
+class Ciphertext[P: np.number](crypto.Ciphertext[CKKSVector, P]):
     """TenSEAL ciphertext"""
     _context: bytes = dataclasses.field(repr=False)
 
@@ -77,7 +77,7 @@ class Ciphertext[P: np.number](libcrypt.Ciphertext[CKKSVector, P]):
             return None
 
 
-class Context(libcrypt.Context[CKKSVector]):
+class Context(crypto.Context[CKKSVector]):
     """TenSEAL context"""
     _cls = Ciphertext
 
@@ -110,7 +110,7 @@ class Context(libcrypt.Context[CKKSVector]):
 
         self._context = pickle.dumps(self._public_context)
 
-    def _new(self, /, *args, **kwds) -> libcrypt.Ciphertext:
+    def _new(self, /, *args, **kwds) -> crypto.Ciphertext:
         """Create new operable ciphertext"""
         return super()._new(_context=self._context, *args, **kwds)
 

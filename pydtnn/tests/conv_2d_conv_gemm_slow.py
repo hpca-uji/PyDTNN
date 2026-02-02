@@ -5,7 +5,7 @@ import numpy as np
 
 from pydtnn.tests.conv_2d_conv_gemm import D, Conv2DConvGemmTestCase
 from pydtnn.utils import random
-from pydtnn.libs.libmpi import MPI
+from pydtnn.libs.mpi import MPI
 
 
 class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):

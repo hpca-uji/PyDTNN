@@ -1,7 +1,7 @@
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class MulticlassConfusionMatrixCPU(MulticlassConfusionMatrix[np.ndarray], MetricCPU):

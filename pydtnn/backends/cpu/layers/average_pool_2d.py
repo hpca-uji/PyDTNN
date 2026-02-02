@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cpu.utils.average_pool_2d_nchw_cython import average_pool_2d_bwd_nchw_cython, average_pool_2d_fwd_nchw_cython
 from pydtnn.backends.cpu.utils.average_pool_2d_nhwc_cython import average_pool_2d_bwd_nhwc_cython, average_pool_2d_fwd_nhwc_cython
 from pydtnn.backends.cpu.utils.im2col_1ch_nchw_cython import col2im_1ch_nchw_cython, im2col_1ch_nchw_cython

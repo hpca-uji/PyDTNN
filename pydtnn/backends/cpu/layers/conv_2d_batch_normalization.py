@@ -4,7 +4,7 @@ from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape, Parameters
 
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class Conv2DBatchNormalizationCPU(Conv2DBatchNormalization[np.ndarray], AbstractConv2DStandardCPU):

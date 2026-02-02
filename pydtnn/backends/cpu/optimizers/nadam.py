@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.optimizers.optimizer import OptimizerCPU
 from pydtnn.optimizers.nadam import Nadam

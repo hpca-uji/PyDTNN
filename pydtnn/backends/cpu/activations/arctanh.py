@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.cpu.activations.activation import ActivationCPU

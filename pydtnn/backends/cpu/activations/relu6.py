@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cpu.utils.relu_cython import capped_relu_cython
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.backends.cpu.activations.activation import ActivationCPU

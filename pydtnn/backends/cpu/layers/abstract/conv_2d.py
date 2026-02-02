@@ -3,7 +3,7 @@ from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.utils.performance_models import im2col_time, matmul_time
 from pydtnn.utils.constants import ArrayShape
 
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class AbstractConv2DCPU(Conv2D[np.ndarray], LayerCPU):

@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.block_layer import AbstractBlockLayerCPU
 from pydtnn.layers.fc import FC

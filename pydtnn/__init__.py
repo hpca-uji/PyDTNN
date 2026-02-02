@@ -15,7 +15,7 @@ gpu_errors = []
 
 # OPTIONAL IMPORTS
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception:
     MPI = None
 
@@ -41,13 +41,13 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from pydtnn.libs import libnccl as nccl  # type: ignore
+    from pydtnn.libs import nccl as nccl  # type: ignore
 except Exception as e:
     nccl = None
     gpu_errors.append(e)
 
 try:
-    from pydtnn.libs import libcudnn as cudnn  # type: ignore
+    from pydtnn.libs import cudnn as cudnn  # type: ignore
 except Exception as e:
     cudnn = None
     gpu_errors.append(e)

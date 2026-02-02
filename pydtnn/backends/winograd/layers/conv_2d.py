@@ -1,7 +1,7 @@
 from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
 from pydtnn.backends.cpu.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.libconvwinograd import ConvWinograd
+from pydtnn.libs.convWinograd import ConvWinograd
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 import numpy as np

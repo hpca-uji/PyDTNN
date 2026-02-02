@@ -7,12 +7,12 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception as e:
     pass
 
 try:
-    import pydtnn.libs.libnccl as nccl
+    import pydtnn.libs.nccl as nccl
 except Exception as e:
     pass
 

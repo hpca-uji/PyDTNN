@@ -7,7 +7,7 @@ from pydtnn.backends.gpu.layers.abstract.block_layer import AbstractBlockLayerGP
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape

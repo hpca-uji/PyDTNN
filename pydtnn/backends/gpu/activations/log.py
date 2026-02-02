@@ -5,7 +5,7 @@ from pydtnn.backends.gpu.activations.activation import ActivationGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 import pycuda.gpuarray as gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 

@@ -1,6 +1,6 @@
 import warnings
 
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.optimizers.optimizer import OptimizerCPU
 from pydtnn.backends.cpu.utils.oktopk_utils_cython import compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython
@@ -9,7 +9,7 @@ from pydtnn.optimizers.oktopk import OkTopk
 from pydtnn.utils.sparse import SparseMatrixCOO
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except (ImportError, ModuleNotFoundError):
     pass
 

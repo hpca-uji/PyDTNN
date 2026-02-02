@@ -9,7 +9,7 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, format_transpose
 from typing import Any, override
 
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 import pycuda.gpuarray as gpuarray  # type: ignore
 

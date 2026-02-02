@@ -1,4 +1,4 @@
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 from pydtnn.backends.cpu.utils.sigmoid_cython import sigmoid_bwd_cython, sigmoid_fwd_cython
 
 from pydtnn.activations.sigmoid import Sigmoid

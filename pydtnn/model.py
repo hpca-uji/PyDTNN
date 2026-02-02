@@ -25,8 +25,8 @@ from pydtnn import utils
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
-from pydtnn.libs.libmpi import proto as PROTOCOL
-from pydtnn.libs import libcrypt
+from pydtnn.libs.mpi import proto as PROTOCOL
+from pydtnn import crypto
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_base import LayerBase, FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -443,10 +443,10 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _init_crypt(self, encryption_name: str) -> libcrypt.Context:
+    def _init_crypt(self, encryption_name: str) -> crypto.Context:
         """Initialize encryption context"""
         try:
-            module = importlib.import_module(f"pydtnn.libs.libcrypt.{encryption_name}")
+            module = importlib.import_module(f"pydtnn.crypto.{encryption_name}")
         except Exception as exc:
             raise ValueError(f"Unsupported encryption module {encryption_name}!") from exc
 

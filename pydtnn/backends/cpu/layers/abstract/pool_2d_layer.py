@@ -4,7 +4,7 @@ from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import ArrayShape
 
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):

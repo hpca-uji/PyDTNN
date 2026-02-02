@@ -1,5 +1,5 @@
 from pydtnn.losses.loss import Loss
-from pydtnn.libs import libnumpy as np
+from pydtnn.libs import numpy as np
 
 
 class LossCPU(Loss[np.ndarray]):

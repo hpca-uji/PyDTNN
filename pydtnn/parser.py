@@ -66,8 +66,8 @@ def _get_threads_per_process():
 
 def _get_mpi_protocol():
     try:
-        from pydtnn.libs.libmpi import proto as PROTOCOL
-        from pydtnn.libs.libmpi import ssl as SSL
+        from pydtnn.libs.mpi import proto as PROTOCOL
+        from pydtnn.libs.mpi import ssl as SSL
     except Exception as e:
         PROTOCOL = None
         SSL = None
@@ -79,7 +79,7 @@ def _get_mpi_protocol():
 
 def _get_mpi_server():
     try:
-        from pydtnn.libs.libmpi import addr
+        from pydtnn.libs.mpi import addr
     except Exception as e:
         addr = None
     return addr
@@ -87,7 +87,7 @@ def _get_mpi_server():
 
 def _get_mpi_port():
     try:
-        from pydtnn.libs.libmpi import port
+        from pydtnn.libs.mpi import port
     except Exception as e:
         port = None
     return port

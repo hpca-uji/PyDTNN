@@ -8,12 +8,12 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
 from pydtnn.utils.constants import ArrayShape
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception as e:
     pass
 
 try:
-    import pydtnn.libs.libnccl as nccl
+    import pydtnn.libs.nccl as nccl
 except Exception as e:
     pass
 

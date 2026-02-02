@@ -2,7 +2,7 @@ from functools import partial
 from warnings import warn
 
 from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
-from pydtnn.libs.libconvdirect import ConvDirect
+from pydtnn.libs.convDirect import ConvDirect
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import encode_shape

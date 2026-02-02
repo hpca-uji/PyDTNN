@@ -13,7 +13,7 @@ from pydtnn.utils.best_of import BestOf
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 try:
     import pycuda.gpuarray as gpuarray
-    from pydtnn.libs import libcudnn as cudnn
+    from pydtnn.libs import cudnn as cudnn
 except BaseException:
     pass
 
