@@ -19,12 +19,11 @@ class CategoricalHingeCPU(CategoricalHinge[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._pos = self.model.memory.ndarray(self._pos_shape, dtype=self.model.dtype)
-        self._neg = self.model.memory.ndarray(self._neg_shape, dtype=self.model.dtype)
-        self.pos_maxm = self.model.memory.ndarray(self.pos_maxm_shape, dtype=self.model.dtype)
-        self.neg = self.model.memory.ndarray(self.neg_shape, dtype=self.model.dtype)
-
-        self.model.memory._free(self.temp_memory_size)
+        with self.model.memory:
+            self._pos = self.model.memory.ndarray(self._pos_shape, dtype=self.model.dtype)
+            self._neg = self.model.memory.ndarray(self._neg_shape, dtype=self.model.dtype)
+            self.pos_maxm = self.model.memory.ndarray(self.pos_maxm_shape, dtype=self.model.dtype)
+            self.neg = self.model.memory.ndarray(self.neg_shape, dtype=self.model.dtype)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype)

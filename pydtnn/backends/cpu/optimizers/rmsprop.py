@@ -18,6 +18,7 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
                     cache = np.zeros(w.shape, dtype=layer.model.dtype)
+                    temp = None
                     self.real_memory_size += cache.nbytes
 
                     self.temp_memory_size += int(np.prod(w.shape)) * self.model.dtype.itemsize
@@ -30,15 +31,14 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-
-        for layer_id in self.context.keys():
-            for key in self.context[layer_id].keys():
-                if "temp_" in key:
-                    w_ = key.split("temp_")[-1]
-                    w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
-                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
+        with self.model.memory:
+            for layer_id in self.context.keys():
+                for key in self.context[layer_id].keys():
+                    if "temp_" in key:
+                        w_ = key.split("temp_")[-1]
+                        w_shape = self.context[layer_id]["cache_%s" % w_].shape  # type: ignore (it is correct)
+                        w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
         # - end for
-        self.model.memory._free(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

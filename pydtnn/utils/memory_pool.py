@@ -7,22 +7,21 @@ class PrivateMemory:
         self._total: int = size
         self._used: int = 0
 
-    def _malloc(self, size: int) -> memoryview:
-        return memoryview(np.zeros(size, dtype=np.uint8))
-    # -----
-
     def ndarray(self, shape: ArrayShape, dtype: np.dtype, order: str = "C") -> np.ndarray:
         return np.zeros(shape, dtype, order)  # type: ignore
-    # ---
 
-    def _free(self, size: int) -> None:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, cls, exc, tb):
         pass
 
 
 class PreallocMemory(PrivateMemory):
     def __init__(self, size: int) -> None:
         super().__init__(size)
-        self._buffer = memoryview(np.zeros(size, dtype=np.uint8))
+        self._stack = []
+        self._buffer = np.zeros(size, dtype=np.uint8)
 
     def _malloc(self, size: int) -> memoryview:
         start = self._used
@@ -33,18 +32,24 @@ class PreallocMemory(PrivateMemory):
 
         self._used = end
         return self._buffer[start:end]
-    # -----
+
+    def _free(self, size: int) -> None:
+        new_offset = self._used - size
+
+        if new_offset < 0:
+            raise RuntimeError(f"Removing too much memory. {self._used=}, memory to erase={size}, {new_offset=}")
+
+        self._used = new_offset
+
+    def __enter__(self):
+        self._stack.append(self._used)
+        return self
+
+    def __exit__(self, cls, exc, tb):
+        self._used = self._stack.pop()
 
     def ndarray(self, shape: ArrayShape, dtype: np.dtype, order: str = "C") -> np.ndarray:
         if order != "C":
             raise RuntimeError("PreallocMemory only supports C order")
         buffer = self._malloc(size=int(np.prod(shape) * np.dtype(dtype).itemsize))
         return np.frombuffer(buffer, dtype=dtype).reshape(shape, copy=False)
-    # ---
-
-    def _free(self, size: int) -> None:
-        new_offset = self._used - size
-        if new_offset < 0:
-            raise RuntimeError(f"Removing too much memory. {self._used=}, memory to erase={size}, {new_offset=}")
-        self._used = new_offset
-    # ---

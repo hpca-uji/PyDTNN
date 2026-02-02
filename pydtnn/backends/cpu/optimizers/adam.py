@@ -18,6 +18,8 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                 shape = w.shape
                 momentum = np.zeros(shape, dtype=layer.model.dtype)
                 velocity = np.zeros(shape, dtype=layer.model.dtype)
+                vt_temp_w = None
+                mt_temp_dw = None
                 self.real_memory_size += momentum.nbytes + velocity.nbytes
 
                 self.temp_memory_size += int(2 * np.prod(shape)) * self.model.dtype.itemsize
@@ -31,24 +33,23 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
+        with self.model.memory:
+            for layer_id in self.context.keys():
+                for key in self.context[layer_id].keys():
+                    if "temp_w_" in key:
+                        w_ = key.split("temp_w_")[-1]
+                    elif "temp_dw_" in key:
+                        w_ = key.split("temp_dw_")[-1]
+                    else:
+                        w_ = None
 
-        for layer_id in self.context.keys():
-            for key in self.context[layer_id].keys():
-                if "temp_w_" in key:
-                    w_ = key.split("temp_w_")[-1]
-                elif "temp_dw_" in key:
-                    w_ = key.split("temp_dw_")[-1]
-                else:
-                    w_ = None
+                    if w_ is None:
+                        continue
+                    # if w_ is not None:
 
-                if w_ is None:
-                    continue
-                # if w_ is not None:
-
-                w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
-                w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
+                    w_shape = self.context[layer_id]["m_%s" % w_].shape  # type: ignore (it is correct)
+                    w_shape = self.context[layer_id][key] = self.model.memory.ndarray(w_shape, dtype=self.model.dtype)
         # - end for
-        self.model.memory._free(self.temp_memory_size)
     # ---
 
     def update(self, layer: LayerCPU) -> None:

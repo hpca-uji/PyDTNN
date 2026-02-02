@@ -15,8 +15,8 @@ class CategoricalAccuracyCPU(CategoricalAccuracy[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
-        self.model.memory._free(self.temp_memory_size)
+        with self.model.memory:
+            self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype)

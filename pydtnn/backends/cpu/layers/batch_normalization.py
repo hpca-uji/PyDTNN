@@ -75,15 +75,12 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-
-        self._mean_inv = self.model.memory.ndarray(self._mean_inv_shape, dtype=self.model.dtype)
-        self._var_inv = self.model.memory.ndarray(self._var_inv_shape, dtype=self.model.dtype)
-
-        self._mean = self.model.memory.ndarray(self._mean_shape, dtype=self.model.dtype)
-        self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
-        self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
-
-        self.model.memory._free(self.temp_memory_size)
+        with self.model.memory:
+            self._mean_inv = self.model.memory.ndarray(self._mean_inv_shape, dtype=self.model.dtype)
+            self._var_inv = self.model.memory.ndarray(self._var_inv_shape, dtype=self.model.dtype)
+            self._mean = self.model.memory.ndarray(self._mean_shape, dtype=self.model.dtype)
+            self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
+            self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
 

@@ -23,11 +23,11 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-        self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-        self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
-        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
-        self.model.memory._free(self.temp_memory_size)
+        with self.model.memory:
+            self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+            self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+            self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+            self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
         y_targ = np.asarray(y_targ, dtype=self.model.dtype)
