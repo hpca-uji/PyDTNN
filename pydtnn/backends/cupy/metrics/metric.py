@@ -1,9 +1,5 @@
-from pydtnn.metrics.metric import Metric
-
-from cupy import ndarray
+from pydtnn.backends.cpu.metrics.metric import MetricCPU
 
 
-class MetricCUPY(Metric[ndarray]):
-    """
-    Extends a Metric class with the attributes and methods required by CUPY Metrics.
-    """
+class MetricCUPY(MetricCPU):
+    ...

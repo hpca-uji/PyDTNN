@@ -1,4 +1,3 @@
-from pydtnn.backends.cpu.utils.relu_cython import leaky_relu_cython
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
@@ -22,21 +21,6 @@ class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
         self.y = self._y[:x.shape[0], :]
         self.mask = self._mask[:x.shape[0], :]
 
-        leaky_relu_cython(x.reshape(-1, copy=False),
-                          self.y.reshape(-1, copy=False),
-                          self.mask.reshape(-1, copy=False),
-                          self.negative_slope)
-        return self.y
-
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        # return dy * self.mask
-        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
-        return dy
-
-    def forward_numpy(self, x: np.ndarray) -> np.ndarray:
-        self.y = self._y[:x.shape[0], :]
-        self.mask = self._mask[:x.shape[0], :]
-
         negatives = (x < 0)
 
         self.y[~negatives] = x
@@ -46,3 +30,8 @@ class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):
         self.mask[negatives] = self.negative_slope
 
         return self.y
+
+    def backward(self, dy: np.ndarray) -> np.ndarray:
+        # return dy * self.mask
+        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
+        return dy

@@ -58,19 +58,17 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
 
-        if not self.model.evaluate_only:
+        # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
+        # self.real_memory_size += self.dx.nbytes
+        self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
+        self.real_memory_size += self.dgamma.nbytes
+        self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
+        self.real_memory_size += self.dbeta.nbytes
 
-            # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
-            # self.real_memory_size += self.dx.nbytes
-            self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-            self.real_memory_size += self.dgamma.nbytes
-            self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
-            self.real_memory_size += self.dbeta.nbytes
-
-            self._mean_shape = (self.ci, )
-            self._var_shape = (self.ci, )
-            self.dy_xn_shape = vars_shape
-            self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
+        self._mean_shape = (self.ci, )
+        self._var_shape = (self.ci, )
+        self.dy_xn_shape = vars_shape
+        self.temp_memory_size += int(np.prod(self._mean_shape) + np.prod(self._var_shape) + np.prod(self.dy_xn_shape)) * self.model.dtype.itemsize
 
         self.real_memory_size += self.temp_memory_size
     # --
@@ -81,10 +79,9 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self._mean_inv = self.model.memory.ndarray(self._mean_inv_shape, dtype=self.model.dtype)
         self._var_inv = self.model.memory.ndarray(self._var_inv_shape, dtype=self.model.dtype)
 
-        if not self.model.evaluate_only:
-            self._mean = self.model.memory.ndarray(self._mean_shape, dtype=self.model.dtype)
-            self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
-            self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
+        self._mean = self.model.memory.ndarray(self._mean_shape, dtype=self.model.dtype)
+        self._var = self.model.memory.ndarray(self._var_shape, dtype=self.model.dtype)
+        self.dy_xn = self.model.memory.ndarray(self.dy_xn_shape, dtype=self.model.dtype)
 
         self.model.memory.free(self.temp_memory_size)
 
@@ -147,42 +144,12 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
                dtype=self.model.dtype)
 
         if self.spatial:
-            y = y.reshape((n, self.hi, self.wi, self.ci), copy=False)
+            y = y.reshape((n, self.hi, self.wi, self.ci))
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
-        # else: nothing special (It has the right format)
 
         return np.asarray(y, dtype=self.model.dtype)
-    # ----
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-
-        n = dy.shape[0]
-        if self.spatial:
-            num_elems = (n * self.hi * self.wi)
-
-            # NOTE: Executing in this format gives better results.
-            dy = format_transpose(dy, self.model.tensor_format, TensorFormat.NHWC)
-            dy = dy.reshape((num_elems, self.ci))
-        else:
-            num_elems = n
-
-        dx: np.ndarray = self.y_dx[: num_elems, :]
-        dy_xn: np.ndarray = self.dy_xn[: num_elems, :]
-        dy_xn.fill(0)
-
-        np.multiply(dy, self.xn, out=dy_xn, dtype=self.model.dtype)
-        np.sum(dy_xn, axis=0, out=self.dgamma, dtype=self.model.dtype)
-        np.sum(dy, axis=0, out=self.dbeta, dtype=self.model.dtype)
-        bn_training_bwd_cython(dx, dy, self.xn, self.std, self.gamma, self.dgamma, self.dbeta)
-
-        if self.spatial:
-            dx = dx.reshape((n, self.hi, self.wi, self.ci), copy=False)
-            dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
-        # else: nothing special (It has the right format)
-
-        return np.asarray(dx, dtype=self.model.dtype)
-
-    def backward_numpy(self, dy: np.ndarray) -> np.ndarray:
 
         n = dy.shape[0]
         if self.spatial:

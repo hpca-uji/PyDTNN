@@ -1,5 +1,5 @@
 import numpy as np
-from pydtnn.backends.cpu.utils.transpose_cython import transpose_0312_ijk_cython, transpose_0312_ikj_cython
+from pydtnn.utils.transpose_cython import transpose_0312_ijk_cython, transpose_0312_ikj_cython
 
 from pydtnn.utils.best_of import BestOf
 from typing import Callable
@@ -38,9 +38,9 @@ def transpose_0312_ikj_cython_wrapper(original: np.ndarray,
 best_transpose_0312: Callable[[np.ndarray, np.ndarray | None], np.ndarray] = BestOf(
     name="Transpose 0312 methods",
     alternatives=[
+        ("numpy", transpose_0312_numpy),
         ("ijk_cyt", transpose_0312_ijk_cython_wrapper),
         ("ikj_cyt", transpose_0312_ikj_cython_wrapper),
-        ("numpy", transpose_0312_numpy),
     ],
     get_problem_size=lambda *args: args[0].shape,
 )

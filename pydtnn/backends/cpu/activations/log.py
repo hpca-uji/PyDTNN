@@ -1,5 +1,4 @@
 from pydtnn.libs import numpy as np
-from pydtnn.backends.cpu.utils.log_activation_cython import log_bwd_cython, log_fwd_cython
 
 from pydtnn.activations.log import Log
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
@@ -17,7 +16,7 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
             self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
             self.real_memory_size += self.dx.nbytes
 
-    def _forward_numpy(self, x: np.ndarray) -> np.ndarray:
+    def forward(self, x: np.ndarray) -> np.ndarray:
         # def forward(self, x: np.ndarray) -> np.ndarray:
         y = self.y[:x.shape[0], :]
         # y = np.log(1 / (1 + np.exp(-x)))
@@ -35,19 +34,9 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
                     dtype=self.model.dtype)
         return y
 
-    def _backward_numpy(self, dy: np.ndarray) -> np.ndarray:
+    def backward(self, dy: np.ndarray) -> np.ndarray:
         # return 1 / (np.exp(dy) + 1)
         np.exp(dy, out=dy)
         np.add(dy, 1, out=dy)
         np.reciprocal(dy, out=dy)
         return dy
-
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        y: np.ndarray = self.y[:x.shape[0], :]
-        log_fwd_cython(x.reshape(-1, copy=False), y.reshape(-1, copy=False))
-        return y
-
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        dx: np.ndarray = self.dx[:dy.shape[0], :]
-        log_bwd_cython(dy.reshape(-1, copy=False), dx.reshape(-1, copy=False))
-        return dx

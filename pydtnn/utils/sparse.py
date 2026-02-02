@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 
-from pydtnn.backends.cpu.utils.sparse_cython import \
+from pydtnn.utils.sparse_cython import \
     top_threshold_selection_dense_cython, \
     top_threshold_selection_coo_cython, \
     summ_coo_cython

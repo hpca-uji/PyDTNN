@@ -39,8 +39,8 @@ class BatchNormalizationCUPY(BatchNormalization[np.ndarray], LayerCUPY):
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype)
         self.dgamma: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype)
         self.dbeta: np.ndarray = np.zeros(shape=(self.ci,), dtype=self.model.dtype)
-        self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
-        self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
+        self.running_mean = np.asarray(self.moving_mean_initializer(shape_, self.model.dtype))
+        self.running_var = np.asarray(self.moving_variance_initializer(shape_, self.model.dtype))
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".

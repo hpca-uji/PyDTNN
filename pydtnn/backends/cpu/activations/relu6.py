@@ -22,22 +22,13 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]
         self.mask: np.ndarray = self._mask[:x.shape[0], :]
-        capped_relu_cython(x.reshape(-1, copy=False),
-                           self.y.reshape(-1, copy=False),
-                           self.mask.reshape(-1, copy=False),
-                           self.cap)
+
+        np.clip(x, 0, self.cap, out=self.y)
+        np.greater(x, 0, out=self.mask, dtype=np.int8)
+
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         # return dy * self.mask
         np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
         return dy
-
-    def forward_numpy(self, x: np.ndarray) -> np.ndarray:
-        self.y: np.ndarray = self._y[:x.shape[0], :]
-        self.mask: np.ndarray = self._mask[:x.shape[0], :]
-
-        np.clip(x, 0, self.cap, out=self.y)
-        np.greater(x, 0, out=self.mask, dtype=np.int8)
-
-        return self.y

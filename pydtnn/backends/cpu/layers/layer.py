@@ -94,3 +94,8 @@ class LayerCPU(Layer[np.ndarray]):
                 dw = self.model.crypt.decrypt(dw)  # type: ignore
             setattr(self, dw_, dw)
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
+
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        x_batch = np.asarray(x_batch, dtype=self.model.dtype)
+        y_batch = np.asarray(y_batch, dtype=self.model.dtype)
+        return x_batch, y_batch
