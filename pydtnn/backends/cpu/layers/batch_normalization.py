@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import libnumpy as np
 from pydtnn.backends.cpu.utils.bn_training_cython import bn_training_bwd_cython  # , bn_training_fwd_cython
 
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -39,8 +39,8 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
         self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype)
         self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype)
-        self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
-        self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
+        self.running_mean = np.asarray(self.moving_mean_initializer(shape_, self.model.dtype))
+        self.running_var = np.asarray(self.moving_variance_initializer(shape_, self.model.dtype))
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 

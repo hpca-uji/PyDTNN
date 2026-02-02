@@ -3,7 +3,7 @@ from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.utils.constants import ArrayShape
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 
 class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):

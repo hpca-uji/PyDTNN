@@ -8,7 +8,6 @@ import pycuda
 from pydtnn.backends.gpu.layers.layer import LayerGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
-from pydtnn.utils import initializers
 from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 
 

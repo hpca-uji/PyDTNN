@@ -4,7 +4,7 @@ from pydtnn.backends.cpu.utils.depthwise_conv_nhwc_cython import depthwise_conv_
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat

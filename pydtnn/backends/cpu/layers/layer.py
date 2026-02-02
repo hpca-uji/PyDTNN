@@ -10,7 +10,7 @@ try:
 except Exception:
     pass
 from pydtnn.utils.constants import ArrayShape
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 
 class LayerCPU(Layer[np.ndarray]):

@@ -6,9 +6,9 @@ import sys as _sys
 
 # Select implementation
 if _os.environ.get("PYDTNN_CUPY"):
-    import numpy as _module
-else:
     import cupy as _module
+else:
+    import numpy as _module
 
 # Replace module
 _sys.modules[__name__] = _module

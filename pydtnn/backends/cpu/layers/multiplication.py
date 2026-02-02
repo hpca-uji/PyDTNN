@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.layers.multiplication import Multiplication

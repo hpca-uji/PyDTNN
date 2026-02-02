@@ -2,7 +2,7 @@ from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.layers.flatten import Flatten
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 
 class FlattenCPU(Flatten[np.ndarray], LayerCPU):

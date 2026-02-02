@@ -1,7 +1,7 @@
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 TRUE_POSITIVE = (0, 0)
 TRUE_NEGATIVE = (1, 1)

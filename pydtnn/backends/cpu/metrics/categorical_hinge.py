@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.categorical_hinge import CategoricalHinge

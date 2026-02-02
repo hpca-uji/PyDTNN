@@ -3,7 +3,7 @@ from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.utils.performance_models import im2col_time, matmul_time
 from pydtnn.utils.constants import ArrayShape
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 
 class AbstractConv2DCPU(Conv2D[np.ndarray], LayerCPU):
@@ -21,10 +21,10 @@ class AbstractConv2DCPU(Conv2D[np.ndarray], LayerCPU):
         super().initialize(prev_shape, x)
         if self.use_bias:
             bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
-            self.biases = self.biases_initializer(bias_shape, self.model.dtype)
+            self.biases = np.asarray(self.biases_initializer(bias_shape, self.model.dtype))
             self.real_memory_size += self.biases.nbytes
 
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)  # type: ignore (it's ok)
+        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype))  # type: ignore (it's ok)
 
         self.real_memory_size += self.weights.nbytes
 

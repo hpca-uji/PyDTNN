@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import libnumpy as np
 from pydtnn.backends.cpu.utils.log_activation_cython import log_bwd_cython, log_fwd_cython
 
 from pydtnn.activations.log import Log

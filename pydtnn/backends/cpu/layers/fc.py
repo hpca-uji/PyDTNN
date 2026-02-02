@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.layers.fc import FC
@@ -21,7 +21,7 @@ class FCCPU(FC[np.ndarray], LayerCPU):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)
+        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype))
         self.nparams += self.weights.size
         self.real_memory_size += self.weights.nbytes
 
@@ -35,7 +35,7 @@ class FCCPU(FC[np.ndarray], LayerCPU):
         self.real_memory_size += self.dx.nbytes + self.dw.nbytes
 
         if self.use_bias:
-            self.biases = self.biases_initializer(self.shape, self.model.dtype)
+            self.biases = np.asarray(self.biases_initializer(self.shape, self.model.dtype))
             self.nparams += self.biases.size
             self.real_memory_size += self.biases.nbytes
 

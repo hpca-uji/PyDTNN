@@ -2,7 +2,7 @@ from pydtnn.backends.cpu.utils.relu_cython import leaky_relu_cython
 from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 
 class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):

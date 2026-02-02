@@ -3,7 +3,7 @@ from pydtnn.layers.conv_2d_relu import Conv2DRelu
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.utils.constants import ArrayShape
 
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 # Next no inspection is because Conv2D _backward_depthwise and _backward_pointwise being considered as abstract methods
 # noinspection PyAbstractClass

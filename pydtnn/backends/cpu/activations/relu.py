@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 from pydtnn.backends.cpu.utils.relu_cython import relu_cython
 from pydtnn.activations.relu import Relu

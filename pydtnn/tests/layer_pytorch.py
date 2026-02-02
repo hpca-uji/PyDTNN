@@ -30,7 +30,7 @@ from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils.constants import Parameters
 
 
-# from torch.testing._internal.common_utils import numpy_to_torch_dtype_dict
+# from torch.testing._internal.common_utils import _numpy_to_torch_dtype_dict
 numpy_to_torch_dtype_dict = {
     np.bool_: torch.bool,
     np.uint8: torch.uint8,

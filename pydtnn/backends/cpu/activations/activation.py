@@ -6,7 +6,7 @@ try:
     from pydtnn.libs.libmpi import MPI
 except Exception:
     pass
-import numpy as np
+from pydtnn.libs import libnumpy as np
 
 
 class ActivationCPU(Activation[np.ndarray]):
