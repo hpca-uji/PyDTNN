@@ -15,7 +15,6 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
         shape = self.shape[1]
 
         self.temp_var_shape = (shape, )
-
         self.temp_memory_size += int(3 * np.prod(self.temp_var_shape)) * np.float32().itemsize
         self.temp_memory_size += int(1 * np.prod(self.temp_var_shape)) * np.bool().itemsize
         self.real_memory_size += self.temp_memory_size

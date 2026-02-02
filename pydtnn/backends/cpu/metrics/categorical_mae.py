@@ -9,11 +9,8 @@ class CategoricalMAECPU(CategoricalMAE[np.ndarray], MetricCPU):
     def initialize(self) -> None:
         super().initialize()
 
+        self.error: np.ndarray = None  # type: ignore (It will be initialized later)
         self.temp_memory_size += int(np.prod(self.shape)) * self.model.dtype.itemsize
-        if not self.model.use_memory_pool:
-            self.error: np.ndarray = np.zeros(self.shape, dtype=self.model.dtype)
-        else:
-            self.error: np.ndarray = None  # type: ignore (It will be initialized later)
         self.real_memory_size += self.temp_memory_size
 
     def post_initialize(self) -> None:
