@@ -27,5 +27,5 @@ class KLDivergenceCPU(KLDivergence[np.ndarray], LossCPU):
         np.log(dx, out=dx)
         np.divide(dx, batch_size, out=dx)
 
-        loss = np.sum(dx)
+        loss = float(np.sum(dx))
         return loss, dx

@@ -16,8 +16,8 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
         for w_ in layer.grad_vars.keys():
             w: np.ndarray = getattr(layer, w_)
             shape = w.shape
-            momentum = np.zeros(shape, dtype=layer.model.dtype, order="C")
-            velocity = np.zeros(shape, dtype=layer.model.dtype, order="C")
+            momentum = np.zeros(shape, dtype=layer.model.dtype)
+            velocity = np.zeros(shape, dtype=layer.model.dtype)
             self.real_memory_size += momentum.nbytes + velocity.nbytes
             self.temp_memory_size += int(2 * np.prod(shape)) * self.model.dtype.itemsize
             self.context[layer.id]["m_%s" % w_] = momentum
@@ -72,7 +72,7 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
             inv_beta2 = (1 - self.beta2)
 
             # m = self.beta1 * m + (1 - self.beta1) * dw
-            np.multiply(inv_beta1, dw, dtype=self.dtype, order="C", out=mt_temp_dw)
+            np.multiply(inv_beta1, dw, dtype=self.dtype, out=mt_temp_dw)
 
             np.multiply(m, self.beta1, out=m,
                         dtype=self.dtype)
@@ -80,7 +80,7 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
                    dtype=self.dtype)
 
             # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-            np.pow(dw, 2, dtype=self.dtype, order="C", out=mt_temp_dw)
+            np.pow(dw, 2, dtype=self.dtype, out=mt_temp_dw)
             np.multiply(mt_temp_dw, inv_beta2, out=mt_temp_dw,
                         dtype=self.dtype)
 
@@ -93,14 +93,14 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
             # w -= (self.learning_rate * self.decay * w) + (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
 
             # w -= (self.learning_rate * self.decay * w)
-            np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, order="C", out=mt_temp_dw)
+            np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, out=mt_temp_dw)
 
             np.subtract(w, mt_temp_dw, out=w,
                         dtype=self.dtype)
 
             # (
             # mt = (m + (1 - self.beta1) * dw) / (1 - self.beta1 ** it)
-            np.multiply(inv_beta1, dw, dtype=self.dtype, order="C", out=mt_temp_dw)
+            np.multiply(inv_beta1, dw, dtype=self.dtype, out=mt_temp_dw)
             np.divide(mt_temp_dw, (inv_beta1 ** it), out=mt_temp_dw,
                       dtype=self.dtype)
             np.add(m, mt_temp_dw, out=mt_temp_dw,
@@ -109,7 +109,7 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
 
             # (
             # vt = v / (1 - self.beta2 ** it)
-            np.divide(v, (inv_beta2 ** it), dtype=self.dtype, order="C", out=vt_temp_w)
+            np.divide(v, (inv_beta2 ** it), dtype=self.dtype, out=vt_temp_w)
             # )
 
             # w -= (self.learning_rate * (mt / np.sqrt(vt + epsilon))))
@@ -120,7 +120,7 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
             np.divide(mt_temp_dw, vt_temp_w, out=mt_temp_dw,
                       dtype=self.dtype)
             np.multiply(self.learning_rate, mt_temp_dw, out=mt_temp_dw,
-                        dtype=self.dtype, order="C")
+                        dtype=self.dtype)
             np.subtract(w, mt_temp_dw, out=w,
                         dtype=self.dtype)
         # else: continue

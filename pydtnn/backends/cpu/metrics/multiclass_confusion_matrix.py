@@ -10,10 +10,10 @@ class MulticlassConfusionMatrixCPU(MulticlassConfusionMatrix[np.ndarray], Metric
         super().initialize()
         _, target_classes = self.shape
         self.conf_matrix: np.ndarray = np.zeros((target_classes, target_classes), dtype=np.int32)
-
         self.real_memory_size += self.conf_matrix.nbytes
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> np.ndarray:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         """
         The output will be a confusion matrix like this:
                 |Predicted     |

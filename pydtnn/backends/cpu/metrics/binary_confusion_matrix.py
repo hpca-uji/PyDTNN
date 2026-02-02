@@ -43,7 +43,7 @@ class BinaryConfusionMatrixCPU(BinaryConfusionMatrix[np.ndarray], MetricCPU):
         Target|T| TP | FN |
               |F| FP | TN |
         """
-
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         # NOTE: y_pred.shape == y_targ.shape == (n<=self.model.batch_size, self.model.output_shape)
         n, target_classes = y_pred.shape
         # assert target_classes == pred_classes, f"target_classes ({target_classes}) != pred_classes {pred_classes}, and must have the same value."
@@ -51,7 +51,9 @@ class BinaryConfusionMatrixCPU(BinaryConfusionMatrix[np.ndarray], MetricCPU):
 
         for i in range(n):
             for label in range(target_classes):
-                self.conf_matrix[label, *(_dict_indexes[y_targ[i, label] == y_pred[i, label]][bool(y_targ[i, label])])] += 1
+                expected = bool(np.isclose(y_targ[i, label], y_pred[i, label], rtol=1e-03, atol=1e-3))
+                is_positive = bool(y_targ[i, label])
+                self.conf_matrix[label, *(_dict_indexes[expected][is_positive])] += 1
 
         return self.conf_matrix
 

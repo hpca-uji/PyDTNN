@@ -86,7 +86,7 @@ class Folder(Dataset):
 
     def _prepare_label(self, label: int, num_classes: ArrayShape) -> np.ndarray:
         """Transform class numer into class mask (ndarray 1D unit8)"""
-        np_label = np.zeros(shape=num_classes, dtype=np.uint8, order="C")
+        np_label = np.zeros(shape=num_classes, dtype=np.uint8)
         np_label[label] = 1
         return np_label
 
@@ -119,8 +119,8 @@ class Folder(Dataset):
             x = self.model.encode_tensor(x)
 
             # Set dtype and order
-            x = x.astype(dtype=self.model.dtype, order="C")
-            y = y.astype(dtype=self.model.dtype, order="C")
+            x = x.astype(dtype=self.model.dtype)
+            y = y.astype(dtype=self.model.dtype)
 
             # Inplace normalization
             x /= 255.0

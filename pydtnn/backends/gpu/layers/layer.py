@@ -59,7 +59,7 @@ class LayerGPU(Layer[TensorGPU]):
             return super()._export_prop(key)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C", copy=True)
+        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64).copy()
         return cpu_ary
 
     def _import_prop(self, key: str, value) -> None:
@@ -67,7 +67,7 @@ class LayerGPU(Layer[TensorGPU]):
             return super()._import_prop(key, value)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C", copy=None)
+        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype)
         gpu_ary.set(cpu_ary)
 
     def reduce_weights_async(self, gradient=True):

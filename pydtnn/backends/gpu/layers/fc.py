@@ -24,7 +24,7 @@ class FCGPU(FC[TensorGPU], LayerGPU):
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
 
-        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C", copy=None)
+        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype)
         attribute.ary.set(cpu_ary)
         return
     # ---
@@ -43,7 +43,7 @@ class FCGPU(FC[TensorGPU], LayerGPU):
         gpu_ary = value.ary
         cpu_ary = gpu_ary.get()
 
-        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64, order="C", copy=True)
+        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64).copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:

@@ -23,13 +23,14 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool, order="C")
+        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
         self.model.memory.free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         true_positives = self.true_positives
         false_positives = self.false_positives
         false_negatives = self.false_negatives
@@ -39,9 +40,9 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
         aggregation = false_positives
         f1 = aggregation
 
-        np.copyto(true_positives, self.conf_matrix_metric.get_true_positives())
-        np.copyto(false_positives, self.conf_matrix_metric.get_false_positives())
-        np.copyto(false_negatives, self.conf_matrix_metric.get_false_negatives())
+        true_positives[:] = self.conf_matrix_metric.get_true_positives()
+        false_positives[:] = self.conf_matrix_metric.get_false_positives()
+        false_negatives[:] = self.conf_matrix_metric.get_false_negatives()
 
         # f1 =  2 * true_positives / (2 * true_positives + false_positives + false_negatives
         np.multiply(2, true_positives, out=true_positives)

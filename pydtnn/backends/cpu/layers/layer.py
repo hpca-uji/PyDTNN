@@ -34,14 +34,14 @@ class LayerCPU(Layer[np.ndarray]):
             return super()._export_prop(key)
 
         ary = getattr(self, key)
-        return np.asarray(ary, dtype=np.float64, order="C", copy=True)
+        return np.asarray(ary, dtype=np.float64).copy()
 
     def _import_prop(self, key: str, value) -> None:
         if key not in self._ary_prop:
             return super()._import_prop(key, value)
 
         ary = getattr(self, key)
-        ary[:] = np.asarray(value, dtype=self.model.dtype, order="C", copy=None)
+        ary[:] = np.asarray(value, dtype=self.model.dtype)
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:

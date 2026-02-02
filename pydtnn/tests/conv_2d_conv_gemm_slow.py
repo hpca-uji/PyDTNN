@@ -38,14 +38,14 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
         11,  # c
         11,  # h
         11   # w
-    )).astype(dtype, order="C")
+    )).astype(dtype)
 
     W = random.random((
         4,   # kn
         11,  # c
         11,  # kh
         11,  # kw
-    )).astype(dtype, order="C")
+    )).astype(dtype)
 
     def test_forward_backward_multiple_params(self):
         """Tests that different input matrices, paddings and strides, lead to the same solution"""

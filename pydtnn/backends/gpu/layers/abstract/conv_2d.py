@@ -87,9 +87,9 @@ class AbstractConv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                return np.asarray(np.squeeze(cpu_ary, axis=(0, 1, 2)), dtype=np.float64, order="C", copy=True)
+                return np.asarray(np.squeeze(cpu_ary, axis=(0, 1, 2)), dtype=np.float64).copy()
             case TensorFormat.NCHW:
-                return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C", copy=True)
+                return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64).copy()
             case _:
                 return super()._export_prop(key)
     # ----
@@ -109,11 +109,11 @@ class AbstractConv2DGPU(Conv2D[TensorGPU], LayerGPU):
 
         match self.model.tensor_format:
             case TensorFormat.NHWC:
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 1, 2)), dtype=self.model.dtype, order="C", copy=None)
+                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 1, 2)), dtype=self.model.dtype)
                 attribute.ary.set(cpu_ary)
                 return
             case TensorFormat.NCHW:
-                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C", copy=None)
+                cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype)
                 attribute.ary.set(cpu_ary)
                 return
             # case _: (next return)

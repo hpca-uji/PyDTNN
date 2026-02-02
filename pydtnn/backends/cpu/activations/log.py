@@ -10,11 +10,11 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.real_memory_size += self.y.nbytes
 
         if not self.model.evaluate_only:
-            self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+            self.dx = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
             self.real_memory_size += self.dx.nbytes
 
     def _forward_numpy(self, x: np.ndarray) -> np.ndarray:
@@ -44,10 +44,10 @@ class LogCPU(Log[np.ndarray], ActivationCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = self.y[:x.shape[0], :]
-        log_fwd_cython(x.reshape(-1, copy=False, order="C"), y.reshape(-1, copy=False, order="C"))
+        log_fwd_cython(x.reshape(-1, copy=False), y.reshape(-1, copy=False))
         return y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         dx: np.ndarray = self.dx[:dy.shape[0], :]
-        log_bwd_cython(dy.reshape(-1, copy=False, order="C"), dx.reshape(-1, copy=False, order="C"))
+        log_bwd_cython(dy.reshape(-1, copy=False), dx.reshape(-1, copy=False))
         return dx

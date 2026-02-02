@@ -30,7 +30,7 @@ class Conv2DReluCPU(Conv2DRelu[np.ndarray], AbstractConv2DStandardCPU):
                                                  vdilation=self.vdilation, hdilation=self.hdilation,
                                                  biases=self.biases, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(res, dtype=self.model.dtype)
 
     def _forward_nhwc_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + Relu"""
@@ -42,7 +42,7 @@ class Conv2DReluCPU(Conv2DRelu[np.ndarray], AbstractConv2DStandardCPU):
                                                  vdilation=self.vdilation, hdilation=self.hdilation,
                                                  biases=self.biases, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(res, dtype=self.model.dtype)
 
     def _forward_nchw_cw(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convWinograd + Relu"""
@@ -54,7 +54,7 @@ class Conv2DReluCPU(Conv2DRelu[np.ndarray], AbstractConv2DStandardCPU):
                                                    relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Use a real backwards variant!")

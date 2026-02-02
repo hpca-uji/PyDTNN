@@ -20,12 +20,13 @@ class RecallCPU(Recall[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool, order="C")
+        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.false_negatives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
         self.model.memory.free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         true_positives = self.true_positives
         false_negatives = self.false_negatives
         are_zeros = self.are_zeros
@@ -36,7 +37,7 @@ class RecallCPU(Recall[np.ndarray], MetricCPU):
         np.copyto(true_positives, self.conf_matrix_metric.get_true_positives())
         np.copyto(true_positives, self.conf_matrix_metric.get_false_negatives())
         # true_positives / (true_positives + false_negatives)
-        np.add(true_positives, false_negatives, dtype=np.dtype(float), order="C", out=real_positives)
+        np.add(true_positives, false_negatives, dtype=np.dtype(float), out=real_positives)
         # div_arrays_set_if_zero(recall,  divider, default_value=0.0)
 
         np.not_equal(real_positives, 0, out=are_zeros)

@@ -10,7 +10,7 @@ def transpose_1023_numpy(original: np.ndarray,
                          ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
     transposed[...] = original.transpose((1, 0, 2, 3))
     return transposed
 
@@ -20,7 +20,7 @@ def transpose_1023_ijk_cython_wrapper(original: np.ndarray,
                                       ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
     transpose_1023_ijk_cython(original, transposed)
     return transposed
 
@@ -30,7 +30,7 @@ def transpose_1023_jik_cython_wrapper(original: np.ndarray,
                                       ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d1, d0, d2, d3), original.dtype)
     transpose_1023_jik_cython(original, transposed)
     return transposed
 

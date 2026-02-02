@@ -18,6 +18,7 @@ class KLDivergenceMetricCPU(KLDivergenceMetric[np.ndarray], MetricCPU):
         self.model.memory.free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         loss = self.loss[:y_pred.shape[0]]
         # loss = np.abs(y_pred * np.log(np.abs(y_pred / (y_targ + eps) + eps)))
         np.add(y_targ, self.eps, out=loss)
@@ -28,5 +29,5 @@ class KLDivergenceMetricCPU(KLDivergenceMetric[np.ndarray], MetricCPU):
         np.multiply(y_pred, loss, out=loss)
         np.abs(loss, out=loss)
 
-        loss = np.sum(loss) / y_pred.shape[0]
+        loss = float(np.sum(loss) / y_pred.shape[0])
         return loss

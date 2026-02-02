@@ -26,7 +26,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                         self.vstride, self.hstride,
                                         self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
     # -----
 
     def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
@@ -39,7 +39,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                         self.vstride, self.hstride,
                                         self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
     # -----
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
@@ -55,7 +55,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                         self.vstride, self.hstride,
                                         self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx, dtype=self.model.dtype)
     # -----
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
@@ -71,7 +71,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                         self.vstride, self.hstride,
                                         self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx, dtype=self.model.dtype)
     # -----
 
     #############
@@ -80,7 +80,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
 
     def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
 
-        x_rows: np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype, order="C")
+        x_rows: np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_1ch_nhwc_cython(x, x_rows,
                                self.kh, self.kw, self.ho, self.wo,
@@ -88,11 +88,11 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y: np.ndarray = np.mean(x_rows, axis=1, dtype=self.model.dtype)
-        return y.reshape((-1, self.ho, self.wo, self.co), order="C", copy=None)
+        return y.reshape((-1, self.ho, self.wo, self.co))
 
     def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
         n, c, _, _ = x.shape
-        x_cols: np.ndarray = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype, order="C")
+        x_cols: np.ndarray = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_1ch_nchw_cython(x, x_cols,
@@ -101,7 +101,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         y: np.ndarray = np.mean(x_cols, axis=1, dtype=self.model.dtype)
-        return y.reshape((-1, self.co, self.ho, self.wo), order="C", copy=None)
+        return y.reshape((-1, self.co, self.ho, self.wo))
 
     def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
@@ -115,13 +115,13 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                self.vpadding, self.hpadding,
                                self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.hi, self.wi, self.ci), order="C", copy=None)
+        return dx.reshape((-1, self.hi, self.wi, self.ci))
 
     def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
         pool_size = np.prod(self.pool_shape)
         dy_cols: np.ndarray = np.tile(dy.flatten() / pool_size, (pool_size, 1))  # type: ignore (it is correct.)
-        dy_cols: np.ndarray = np.asarray(dy_cols, dtype=self.model.dtype, order="C", copy=None)
-        dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
+        dy_cols: np.ndarray = np.asarray(dy_cols, dtype=self.model.dtype)
+        dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         col2im_1ch_nchw_cython(dy_cols, dx,
@@ -131,4 +131,4 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                self.vstride, self.hstride,
                                self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.ci, self.hi, self.wi), order="C", copy=None)
+        return dx.reshape((-1, self.ci, self.hi, self.wi))

@@ -23,7 +23,7 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32, order="C")
+        self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
         self._y_pred_op = self.model.memory.ndarray(self._y_pred_op_shape, dtype=self.model.dtype)
         self._y_pred = self.model.memory.ndarray(self._y_pred_shape, dtype=self.model.dtype)
         self.model.memory.free(self.temp_memory_size)
@@ -53,4 +53,4 @@ class CategoricalCrossEntropyCPU(CategoricalCrossEntropy[np.ndarray], LossCPU):
         np.multiply(-1 * batch_size, _y_pred_sliced, out=_y_pred_sliced)
         dx[b_range, _argmax] = y_targ[b_range, _argmax] / _y_pred_sliced
 
-        return loss, np.asarray(dx, dtype=self.model.dtype, order="C", copy=None)
+        return loss, np.asarray(dx, dtype=self.model.dtype)

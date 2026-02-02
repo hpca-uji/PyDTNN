@@ -185,7 +185,7 @@ class Conv2DGPU(AbstractConv2DGPU):
                 # NCHW's dst: co, ci, kh, kw
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
-                return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64, order="C", copy=True)
+                return np.asarray(format_transpose(cpu_ary, "IHWO", "OIHW"), dtype=np.float64).copy()
             case TensorFormat.NCHW:
                 gpu_ary = value.ary
                 cpu_ary = gpu_ary.get()
@@ -201,7 +201,7 @@ class Conv2DGPU(AbstractConv2DGPU):
             case TensorFormat.NHWC:
                 # NCHW's src: co, ci, kh, kw
                 # NHWC's dst: ci, kh, kw, co
-                cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype, order="C", copy=None)
+                cpu_ary = np.asarray(format_transpose(value, "OIHW", "IHWO"), dtype=self.model.dtype)
                 attribute.ary.set(cpu_ary)
                 return
             case _:

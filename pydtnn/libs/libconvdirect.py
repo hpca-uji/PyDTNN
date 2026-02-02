@@ -130,7 +130,7 @@ class ConvDirect:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1
             bias_shape = self.encode_shape((n, co, ho, wo))
-            out = np.zeros(bias_shape, weights.dtype, order="C")
+            out = np.zeros(bias_shape, weights.dtype)
         else:
             out = out[:n, :]
 

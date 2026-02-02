@@ -40,7 +40,7 @@ class Conv2DBatchNormalizationCPU(Conv2DBatchNormalization[np.ndarray], Abstract
                                                    inv_std=self.inv_std, gamma=self.gamma, beta=self.beta)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _forward_nchw_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm"""
@@ -52,7 +52,7 @@ class Conv2DBatchNormalizationCPU(Conv2DBatchNormalization[np.ndarray], Abstract
                                                  biases=self.biases, bn_running_mean=self.running_mean,
                                                  bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(res, dtype=self.model.dtype)
 
     def _forward_nhwc_cg(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the convGemm + BatchNorm"""
@@ -64,7 +64,7 @@ class Conv2DBatchNormalizationCPU(Conv2DBatchNormalization[np.ndarray], Abstract
                                                  biases=self.biases, bn_running_mean=self.running_mean,
                                                  bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=False)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(res, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(res, dtype=self.model.dtype)
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Use a real backward variant!")

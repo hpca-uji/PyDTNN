@@ -11,12 +11,11 @@ class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
         super().initialize(prev_shape, x)
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
+        self._y: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
         self.real_memory_size += self._y.nbytes
 
-        if not self.model.evaluate_only:
-            self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
-            self.real_memory_size += self.dx.nbytes
+        self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
+        self.real_memory_size += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]
@@ -25,9 +24,9 @@ class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         dx: np.ndarray = self.dx[:dy.shape[0], :]
-        sigmoid_bwd_cython(dy.reshape(-1, copy=False, order="C"),
-                           self.y.reshape(-1, copy=False, order="C"),
-                           dx.reshape(-1, copy=False, order="C"))
+        sigmoid_bwd_cython(dy.reshape(-1, copy=False),
+                           self.y.reshape(-1, copy=False),
+                           dx.reshape(-1, copy=False))
         return dx
 
     def forward_numpy(self, x: np.ndarray) -> np.ndarray:

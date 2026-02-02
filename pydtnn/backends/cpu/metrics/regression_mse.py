@@ -19,6 +19,7 @@ class RegressionMSECPU(RegressionMSE[np.ndarray], MetricCPU):
         self.model.memory.free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         diff = self.diff[:y_pred.shape[0]]
         # return np.square(y_targ - y_pred).mean()
         np.subtract(y_targ, y_pred, dtype=self.model.dtype, out=diff)

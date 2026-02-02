@@ -151,16 +151,16 @@ class ConvWinograd:
                                                    [1. / 2., 1. / 2.],
                                                    [1. / 2., -1. / 2.],
                                                    [0, 1]],
-                                                  dtype=self.dtype, order="C"),
+                                                  dtype=self.dtype),
                                        bt=np.array([[1, 0, -1, 0],
                                                     [0, 1, 1, 0],
                                                     [0, -1, 1, 0],
                                                     [0, -1, 0, 1]],
-                                                   dtype=self.dtype, order="C"),
+                                                   dtype=self.dtype),
                                        at=np.array([[1, 1, 1, 0],
                                                     [0, 1, -1, 0],
                                                     [0, 1, 1, 1]],
-                                                   dtype=self.dtype, order="C"))
+                                                   dtype=self.dtype))
 
         if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
             # F(2x2, 3x3)
@@ -170,15 +170,15 @@ class ConvWinograd:
                                                    [1. / 2., 1. / 2., 1. / 2.],
                                                    [1. / 2., -1. / 2., 1. / 2.],
                                                    [0, 0, 1]],
-                                                  dtype=self.dtype, order="C"),
+                                                  dtype=self.dtype),
                                        bt=np.array([[1, 0, -1, 0],
                                                     [0, 1, 1, 0],
                                                     [0, -1, 1, 0],
                                                     [0, 1, 0, -1]],
-                                                   dtype=self.dtype, order="C"),
+                                                   dtype=self.dtype),
                                        at=np.array([[1, 1, 1, 0],
                                                     [0, 1, -1, -1]],
-                                                   dtype=self.dtype, order="C"))
+                                                   dtype=self.dtype))
 
         if (kh, kw) == (3, 3) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
             # F(4x4, 3x3)
@@ -190,19 +190,19 @@ class ConvWinograd:
                                                    [1. / 24., 1. / 12., 1. / 6.],
                                                    [1. / 24., -1. / 12., 1. / 6.],
                                                    [0, 0, 1]],
-                                                  dtype=self.dtype, order="C"),
+                                                  dtype=self.dtype),
                                        bt=np.array([[4, 0, -5, 0, 1, 0],
                                                     [0, -4, -4, 1, 1, 0],
                                                     [0, 4, -4, -1, 1, 0],
                                                     [0, -2, -1, 2, 1, 0],
                                                     [0, 2, -1, -2, 1, 0],
                                                     [0, 4, 0, -5, 0, 1]],
-                                                   dtype=self.dtype, order="C"),
+                                                   dtype=self.dtype),
                                        at=np.array([[1, 1, 1, 1, 1, 0],
                                                     [0, 1, -1, 2, -2, 0],
                                                     [0, 1, 1, 4, 4, 0],
                                                     [0, 1, -1, 8, -8, 1]],
-                                                   dtype=self.dtype, order="C"))
+                                                   dtype=self.dtype))
 
         if (kh, kw) == (5, 5) and (vstride, hstride) == (1, 1) and (vdilation, hdilation) == (1, 1):
             # F(2x2, 5x5)
@@ -214,17 +214,17 @@ class ConvWinograd:
                                                    [1. / 24., 1. / 12., 1. / 6., 1. / 3., 2. / 3.],
                                                    [1. / 24., -1. / 12., 1. / 6., -1. / 3., 2. / 3.],
                                                    [0, 0, 0, 0, 1]],
-                                                  dtype=self.dtype, order="C"),
+                                                  dtype=self.dtype),
                                        bt=np.array([[4, 0, -5, 0, 1, 0],
                                                     [0, -4, -4, 1, 1, 0],
                                                     [0, 4, -4, -1, 1, 0],
                                                     [0, -2, -1, 2, 1, 0],
                                                     [0, 2, -1, -2, 1, 0],
                                                     [0, 4, 0, -5, 0, 1]],
-                                                   dtype=self.dtype, order="C"),
+                                                   dtype=self.dtype),
                                        at=np.array([[1, 1, 1, 1, 1, 0],
                                                     [0, 1, -1, 2, -2, 1]],
-                                                   dtype=self.dtype, order="C"))
+                                                   dtype=self.dtype))
 
         if r not in self.alternatives:
             raise NotImplementedError(f"Winograd not implemented for kernel {kh}x{kw}")
@@ -256,8 +256,8 @@ class ConvWinograd:
 
         self.cw_cache_pre = MemoryCache(lambda args: winograd_workspace_alloc_pre(*args))
         self.cw_cache_kernel = MemoryCache(lambda args: winograd_workspace_alloc_kernel(*args))
-        self.y_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
-        self.d_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype, order="C"))
+        self.y_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype))
+        self.d_cache = MemoryCache(lambda shape: np.zeros(shape, self.dtype))
 
         # Debug
         self.debug = debug
@@ -319,8 +319,8 @@ class ConvWinograd:
 
         y_shape = self.encode_shape((n, co, ho, wo))
         y = self.y_cache[y_shape]
-        u = np.zeros((t, t, co, ci), self.dtype, order="C")                     # FIXME: self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
-        v = np.zeros((t, t, ci, (n * tile_h * tile_w)), self.dtype, order="C")  # FIXME: self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
+        u = np.zeros((t, t, co, ci), self.dtype)                     # FIXME: self.u_cache[(t, t, co, ci)]  # Workspace for G * g * G^T
+        v = np.zeros((t, t, ci, (n * tile_h * tile_w)), self.dtype)  # FIXME: self.v_cache[(t, t, ci, (n * tile_h * tile_w))]
         # m_= self.m_cache[(t, t, co, (n * tile_h * tile_w))]
         d = self.d_cache[(t, t)]
 

@@ -5,10 +5,9 @@ PyDTNN model
 import enum
 import importlib
 import itertools
-from math import ceil
 import operator
 import time
-from functools import cached_property, reduce
+from functools import reduce
 from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
@@ -265,9 +264,6 @@ class Model[T: Array]:
         # Layers' attributes
         self.layers: list[LayerBase] = []
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
-
-        # Matmul
-        self.matmul = utils.matmul
 
         # Set current mode to unspecified
         self.mode: Model.Mode = Model.Mode.UNSPECIFIED

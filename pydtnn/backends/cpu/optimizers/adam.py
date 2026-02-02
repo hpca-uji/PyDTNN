@@ -16,8 +16,8 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
             for w_ in layer.grad_vars.keys():
                 w: np.ndarray = getattr(layer, w_)
                 shape = w.shape
-                momentum = np.zeros(shape, dtype=layer.model.dtype, order="C")
-                velocity = np.zeros(shape, dtype=layer.model.dtype, order="C")
+                momentum = np.zeros(shape, dtype=layer.model.dtype)
+                velocity = np.zeros(shape, dtype=layer.model.dtype)
                 self.real_memory_size += momentum.nbytes + velocity.nbytes
 
                 self.temp_memory_size += int(2 * np.prod(shape)) * self.model.dtype.itemsize
@@ -73,7 +73,7 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                 inv_beta1 = (1 - self.beta1)
                 inv_beta2 = (1 - self.beta2)
 
-                np.multiply(inv_beta1, dw, dtype=self.dtype, order="C", out=mt_temp_dw)
+                np.multiply(inv_beta1, dw, dtype=self.dtype, out=mt_temp_dw)
 
                 np.multiply(m, self.beta1, out=m,
                             dtype=self.dtype)
@@ -81,7 +81,7 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                        dtype=self.dtype)
 
                 # v = self.beta2 * v + (1 - self.beta2) * dw ** 2
-                np.pow(dw, 2, dtype=self.dtype, order="C", out=mt_temp_dw)
+                np.pow(dw, 2, dtype=self.dtype, out=mt_temp_dw)
 
                 np.multiply(v, self.beta2, out=v,
                             dtype=self.dtype)
@@ -90,8 +90,8 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                 np.add(v, mt_temp_dw, out=v,
                        dtype=self.dtype)
 
-                np.divide(m, (inv_beta1 ** it), dtype=self.dtype, order="C", out=mt_temp_dw)
-                np.divide(v, (inv_beta2 ** it), dtype=self.dtype, order="C", out=vt_temp_w)
+                np.divide(m, (inv_beta1 ** it), dtype=self.dtype, out=mt_temp_dw)
+                np.divide(v, (inv_beta2 ** it), dtype=self.dtype, out=vt_temp_w)
 
                 # w -= self.learning_rate * (self.decay * w + (mt / np.sqrt(vt + self.epsilon)))
 
@@ -102,12 +102,12 @@ class AdamCPU(Adam[np.ndarray], OptimizerCPU):
                 np.divide(mt_temp_dw, vt_temp_w, out=mt_temp_dw,
                           dtype=self.dtype)
 
-                np.multiply(self.decay, w, dtype=self.dtype, order="C", out=vt_temp_w)
+                np.multiply(self.decay, w, dtype=self.dtype, out=vt_temp_w)
                 np.add(vt_temp_w, mt_temp_dw, out=vt_temp_w,
                        dtype=self.dtype)
                 np.multiply(vt_temp_w, self.learning_rate, out=vt_temp_w,
                             dtype=self.dtype)
 
                 np.subtract(w, vt_temp_w, out=w,
-                            dtype=self.dtype, order="C")
+                            dtype=self.dtype)
             # else: continue

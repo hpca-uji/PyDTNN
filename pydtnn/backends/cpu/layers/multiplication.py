@@ -24,9 +24,9 @@ class MultiplicationCPU(Multiplication[np.ndarray], LayerCPU):
         if self.model.mode == Model.Mode.TRAIN:
             self.x1 = x1
             self.x2 = x2
-        return self.model.matmul(x1, x2)
+        return np.matmul(x1, x2)
 
     def backward(self, dy):
-        dx1 = self.model.matmul(dy, self.transpose(self.x2))
-        dx2 = self.model.matmul(self.transpose(self.x1), dy)
+        dx1 = np.matmul(dy, self.transpose(self.x2))
+        dx2 = np.matmul(self.transpose(self.x1), dy)
         return dx1, dx2

@@ -57,10 +57,10 @@ def _generate_distribution(shape: ArrayShape, scale: float, mode: DistributionMo
         case ProbabilisticDistribution.NORMAL:
             stddev: float = np.sqrt(scale) / STD_DEV_CONST
             # Truncated normal distribution [-2*stddev, 2*stddev]
-            x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False, order="C")
+            x = stats.truncnorm(-2 * stddev, 2 * stddev, loc=0, scale=stddev).rvs(shape).astype(dtype, copy=False)
         case ProbabilisticDistribution.UNIFORM:
             limit = np.sqrt(3. * scale)
-            x = random.uniform(-limit, limit, shape).astype(dtype, copy=False, order="C")
+            x = random.uniform(-limit, limit, shape).astype(dtype, copy=False)
         case _:
             raise NotImplementedError(f"distribution: \'{distribution}\' not implemented")
     return x
@@ -92,11 +92,11 @@ def lecun_normal(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
 
 
 def ones(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
-    return np.ones(shape, dtype=dtype, order="C")
+    return np.ones(shape, dtype=dtype)
 
 
 def zeros(shape: ArrayShape, dtype: np.dtype) -> np.ndarray:
-    return np.zeros(shape, dtype=dtype, order="C")
+    return np.zeros(shape, dtype=dtype)
 
 
 type InitializerFunc = Callable[[ArrayShape, np.dtype], np.ndarray]

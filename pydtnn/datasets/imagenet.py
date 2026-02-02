@@ -209,8 +209,8 @@ class ImageNet(Dataset):
             x = self.model.encode_tensor(x)
 
             # Set dtype and order
-            x = x.astype(dtype=self.model.dtype, order="C")
-            y = y.astype(dtype=self.model.dtype, order="C")
+            x = x.astype(dtype=self.model.dtype)
+            y = y.astype(dtype=self.model.dtype)
 
             # Inplace normalization
             x /= 255.0

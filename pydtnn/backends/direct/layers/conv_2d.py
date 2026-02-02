@@ -61,7 +61,7 @@ class Conv2DDIRECT(AbstractConv2DStandardCPU):
         # --
 
         out_shape = encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
-        self.out = np.zeros(out_shape, self.weights.dtype, order="C")
+        self.out = np.zeros(out_shape, self.weights.dtype)
 
         self.out = None
 

@@ -21,7 +21,7 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
             case TensorFormat.NHWC:
                 # NHWC's src: ci, co
                 # NCHW's dst: co, ci
-                return np.asarray(format_transpose(value, "IO", "OI"), dtype=np.float64, order="C", copy=True)
+                return np.asarray(format_transpose(value, "IO", "OI"), dtype=np.float64).copy()
         return super()._export_prop(key)
     # -----
 
@@ -34,7 +34,7 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
                 # NCHW's src: co, ci
                 # NHWC's dst: ci, co
                 ary = getattr(self, key)
-                ary[:] = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype, order="C", copy=None)
+                ary[:] = np.asarray(format_transpose(value, "OI", "IO"), dtype=self.model.dtype)
                 return
         return super()._import_prop(key, value)
     # ------
@@ -67,11 +67,11 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
         # self.dw (this one too, but it's initalized in Conv2DCPU)
-        self.y = np.zeros(shape=y_shape, dtype=self.model.dtype, order="C")
+        self.y = np.zeros(shape=y_shape, dtype=self.model.dtype)
         self.real_memory_size += self.y.nbytes
 
         if not self.model.evaluate_only:
-            self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype, order="C")
+            self.dx = np.zeros(shape=(self.ci, self.model.batch_size * self.hi * self.wi), dtype=self.model.dtype)
             self.real_memory_size += self.dx.nbytes
     # ------
 
@@ -82,16 +82,16 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
         y = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
         np.matmul(x, self.weights, out=y,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             np.add(y, self.biases.reshape((1, 1, 1, self.co), copy=False), out=y,
-                   dtype=self.model.dtype, order="C")
+                   dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _forward_pointwise_nchw(self, x: np.ndarray) -> np.ndarray:
 
@@ -107,7 +107,7 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
         np.matmul(best_transpose_0231(x),  # type: ignore (It's Okay)
                   self.weights.T, out=y,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_TRANSPOSE_Y)
@@ -117,16 +117,16 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
             np.add(y, self.biases.reshape((1, self.co, 1, 1), copy=False), out=y,
-                   dtype=self.model.dtype, order="C")
+                   dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
 
         _n, _h, _w, _c = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
-        dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
+        dx: np.ndarray = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy: np.ndarray = dy.reshape((_dim, _c), copy=False)
@@ -135,7 +135,7 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         np.matmul(self.x, reshaped_dy, out=self.dw,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -151,17 +151,17 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         np.matmul(w, reshaped_dy, out=dx,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(dx.reshape(x_shape, copy=False), dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx.reshape(x_shape, copy=False), dtype=self.model.dtype)
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
 
         _n, _c, _h, _w = dy.shape
         _dim = _n * _h * _w
         x_shape = self.x.shape
-        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype, order="C", copy=None)
+        dx = np.asarray(self.dx[:, :_dim], dtype=self.model.dtype)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
         reshaped_dy = dy.reshape((_dim, _c), copy=False)
@@ -170,7 +170,7 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
         np.matmul(self.x, reshaped_dy, out=self.dw.T,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -186,7 +186,7 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
         np.matmul(w, reshaped_dy, out=dx,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(dx.reshape(x_shape, copy=False), dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx.reshape(x_shape, copy=False), dtype=self.model.dtype)

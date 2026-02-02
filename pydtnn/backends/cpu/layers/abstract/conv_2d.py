@@ -30,10 +30,10 @@ class AbstractConv2DCPU(Conv2D[np.ndarray], LayerCPU):
 
         if not self.model.evaluate_only:
             if self.use_bias:
-                self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype, order="C")
+                self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype)
                 self.real_memory_size += self.db.nbytes
 
-            self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
+            self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype)
             self.real_memory_size += self.dw.nbytes
 
         # Performance models

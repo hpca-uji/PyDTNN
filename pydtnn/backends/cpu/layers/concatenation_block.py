@@ -18,7 +18,7 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
 
     def initialize(self, prev_shape, x):
         super().initialize(prev_shape, x)
-        self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), order="C", dtype=self.model.dtype)
+        self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.real_memory_size += self.y.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -38,7 +38,7 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
         np.concatenate(_x, axis=self.concat_dim, out=y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
@@ -62,6 +62,6 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
             np.add(dx[0], dx[i], out=dx[0],
-                   dtype=self.model.dtype, order="C")
+                   dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx[0], dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx[0], dtype=self.model.dtype)

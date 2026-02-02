@@ -13,8 +13,8 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
-        self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
+        self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
+        self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8)
 
         self.real_memory_size += self._y.nbytes
         self.real_memory_size += self._mask.nbytes
@@ -22,15 +22,15 @@ class Relu6CPU(Relu6[np.ndarray], ActivationCPU):
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]
         self.mask: np.ndarray = self._mask[:x.shape[0], :]
-        capped_relu_cython(x.reshape(-1, copy=False, order="C"),
-                           self.y.reshape(-1, copy=False, order="C"),
-                           self.mask.reshape(-1, copy=False, order="C"),
+        capped_relu_cython(x.reshape(-1, copy=False),
+                           self.y.reshape(-1, copy=False),
+                           self.mask.reshape(-1, copy=False),
                            self.cap)
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         # return dy * self.mask
-        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
+        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
         return dy
 
     def forward_numpy(self, x: np.ndarray) -> np.ndarray:

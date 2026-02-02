@@ -14,7 +14,7 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         shape_intermediate_ops[self.axis_dim - 1] = 1
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self._y = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.real_memory_size += self._y.nbytes
 
         # Temp_variables
@@ -27,11 +27,9 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         sum_y_shape = max_x_shape = self.temp_shape
         self.temp_memory_size += int(np.prod(max_x_shape) + np.prod(sum_y_shape)) * self.model.dtype.itemsize
 
-        if not self.model.evaluate_only:
-            # Temp_variables
-            self.mul_dy_shape = (self.model.batch_size, *self.shape)
-            self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
-            self.temp_memory_size += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
+        self.mul_dy_shape = (self.model.batch_size, *self.shape)
+        self.sum_dy_shape = (self.model.batch_size, *shape_intermediate_ops)
+        self.temp_memory_size += int(np.prod(self.mul_dy_shape) + np.prod(self.sum_dy_shape)) * self.model.dtype.itemsize
 
         self.real_memory_size += self.temp_memory_size
 
@@ -39,9 +37,8 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         super().post_initialize()
         self.max_x = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
         self.sum_y = self.model.memory.ndarray(self.temp_shape, dtype=self.model.dtype)
-        if not self.model.evaluate_only:
-            self.mul_dy = self.model.memory.ndarray(self.mul_dy_shape, dtype=self.model.dtype)
-            self.sum_dy = self.model.memory.ndarray(self.sum_dy_shape, dtype=self.model.dtype)
+        self.mul_dy = self.model.memory.ndarray(self.mul_dy_shape, dtype=self.model.dtype)
+        self.sum_dy = self.model.memory.ndarray(self.sum_dy_shape, dtype=self.model.dtype)
         self.model.memory.free(self.temp_memory_size)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -59,7 +56,7 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
                dtype=self.model.dtype)
         np.sum(self.y, axis=self.axis_dim, keepdims=True, out=sum_y)
         np.divide(self.y, sum_y, out=self.y,
-                  dtype=self.model.dtype, order="C")
+                  dtype=self.model.dtype)
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -73,6 +70,6 @@ class SoftmaxCPU(Softmax[np.ndarray], ActivationCPU):
         np.subtract(dy, sum_dy, out=dy,
                     dtype=self.model.dtype)
         np.multiply(self.y, dy, out=dy,
-                    dtype=self.model.dtype, order="C")
+                    dtype=self.model.dtype)
 
         return dy

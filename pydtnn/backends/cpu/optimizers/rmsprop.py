@@ -17,7 +17,7 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                 self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
-                    cache = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
+                    cache = np.zeros(w.shape, dtype=layer.model.dtype)
                     self.real_memory_size += cache.nbytes
 
                     self.temp_memory_size += int(np.prod(w.shape)) * self.model.dtype.itemsize
@@ -55,7 +55,7 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                 # cache = self.rho * cache + (1 - self.rho) * dw ** 2
                 np.multiply(cache, self.rho, out=cache,
                             dtype=self.dtype)
-                np.power(dw, 2, dtype=self.dtype, order="C", out=temp)
+                np.power(dw, 2, dtype=self.dtype, out=temp)
                 np.multiply(temp, (1 - self.rho), out=temp,
                             dtype=self.dtype)
                 np.add(cache, temp, out=cache,
@@ -65,15 +65,15 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                 # w -= (self.learning_rate * self.decay) * w + self.learning_rate * (dw / np.sqrt(cache + self.epsilon)))
 
                 # w -= (self.learning_rate * self.decay) * w
-                np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, order="C", out=temp)
+                np.multiply((self.learning_rate * self.decay), w, dtype=self.dtype, out=temp)
                 np.subtract(w, temp, out=w,
                             dtype=self.dtype)
 
                 # w -= self.learning_rate * (dw / np.sqrt(cache + self.epsilon)))
-                np.add(cache, self.epsilon, dtype=self.dtype, order="C", out=temp)
+                np.add(cache, self.epsilon, dtype=self.dtype, out=temp)
                 np.sqrt(temp, out=temp,
                         dtype=self.dtype)
-                np.divide(dw, temp, dtype=self.dtype, order="C", out=temp)
+                np.divide(dw, temp, dtype=self.dtype, out=temp)
                 np.multiply(temp, self.learning_rate, out=temp,
                             dtype=self.dtype)
                 np.subtract(w, temp, out=w,

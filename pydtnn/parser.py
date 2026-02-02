@@ -18,7 +18,7 @@ import multiprocessing
 import os
 
 import numpy as np
-from pydtnn.utils import parse_bool as bool_lambda, _get_gpus_per_node
+from pydtnn.utils import parse_bool as bool_lambda, get_gpus_per_node
 from functools import cache
 
 from typing import Any
@@ -388,7 +388,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Add runtime data
         result.mpi_processes = _get_mpi_processes()
         result.threads_per_process = _get_threads_per_process()
-        result.gpus_per_node = _get_gpus_per_node()
+        result.gpus_per_node = get_gpus_per_node()
         result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()

@@ -459,17 +459,17 @@ class Dataset(ABC):
         shape = (*data.shape[:2], *size)
         N, C, H, W = shape
 
-        new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
+        new_data = np.empty(shape=shape, dtype=self.model.dtype)
 
         for n in range(N):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32, copy=None)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.resize(size)
                 channel = np.asarray(image, dtype=np.float32)
-                channel = channel.transpose().astype(self.model.dtype, copy=None)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 new_data[n, c] = channel
 
         new_data = self.model.encode_tensor(new_data)
@@ -493,17 +493,17 @@ class Dataset(ABC):
         shape = (*data.shape[:2], *size)
         N, C, H, W = shape
 
-        new_data = np.empty(shape=shape, dtype=self.model.dtype, order="C")
+        new_data = np.empty(shape=shape, dtype=self.model.dtype)
 
         for n in range(N):
             for c in range(C):
                 channel: np.ndarray = data[n, c]
                 # NOTE: PIL mode F is WH in float32
-                channel = channel.transpose().astype(np.float32, copy=None)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(np.float32)  # type: ignore (it's possible to use copy=None)
                 image = Image.fromarray(channel, mode="F")
                 image = image.crop(crop)
                 channel = np.asarray(image, dtype=np.float32)
-                channel = channel.transpose().astype(self.model.dtype, copy=None)  # type: ignore (it's possible to use copy=None)
+                channel = channel.transpose().astype(self.model.dtype)  # type: ignore (it's possible to use copy=None)
                 new_data[n, c] = channel
 
         new_data = self.model.encode_tensor(new_data)

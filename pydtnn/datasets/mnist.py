@@ -79,7 +79,7 @@ class MNIST(Dataset):
         with self._gzip_open(self._y_filename[part]) as f:
             y_classes = self._read_file(f, offset, nbytes)
 
-        y = np.zeros((self._local_nsamples[part], *self.output_shape), dtype=self.model.dtype, order="C")
+        y = np.zeros((self._local_nsamples[part], *self.output_shape), dtype=self.model.dtype)
         self._decode_class(y, y_classes)
 
         yield x, y

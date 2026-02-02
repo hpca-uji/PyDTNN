@@ -15,8 +15,8 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
-        self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8, order="C")
+        self._y = np.zeros((self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
+        self._mask = np.zeros((self.model.batch_size, *self.prev_shape), dtype=np.int8)
 
         self.real_memory_size += self._y.nbytes
         self.real_memory_size += self._mask.nbytes
@@ -25,11 +25,11 @@ class ReluCPU(Relu[np.ndarray], ActivationCPU):
         n = x.shape[0]
         self.y = self._y[:n, :]
         self.mask = self._mask[:n, :]
-        relu_cython(x.reshape(-1, copy=False, order="C"), self.y.reshape(-1, copy=False, order="C"), self.mask.reshape(-1, copy=False, order="C"))
+        relu_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False), self.mask.reshape(-1, copy=False))
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype, order="C")
+        np.multiply(dy, self.mask, out=dy, dtype=self.model.dtype)
         return dy
 
     def forward_numpy(self, x: np.ndarray) -> np.ndarray:

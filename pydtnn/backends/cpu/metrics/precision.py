@@ -20,12 +20,13 @@ class PrecisionCPU(Precision[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32, order="C")
-        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool, order="C")
+        self.true_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.false_positives = self.model.memory.ndarray(self.temp_var_shape, dtype=np.float32)
+        self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
         self.model.memory.free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         true_positives = self.true_positives
         false_positives = self.false_positives
         are_zeros = self.are_zeros

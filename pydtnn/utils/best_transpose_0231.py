@@ -10,7 +10,7 @@ def transpose_0231_numpy(original: np.ndarray,
                          ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
     transposed[...] = original.transpose((0, 2, 3, 1))
     return transposed
 
@@ -20,7 +20,7 @@ def transpose_0231_ijk_cython_wrapper(original: np.ndarray,
                                       ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
     transpose_0231_ijk_cython(original, transposed)
     return transposed
 
@@ -30,7 +30,7 @@ def transpose_0231_ikj_cython_wrapper(original: np.ndarray,
                                       ) -> np.ndarray:
     d0, d1, d2, d3 = original.shape
     if transposed is None:
-        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype, order="C")
+        transposed: np.ndarray = np.empty((d0, d2, d3, d1), original.dtype)
     transpose_0231_ikj_cython(original, transposed)
     return transposed
 

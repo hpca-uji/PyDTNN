@@ -21,8 +21,8 @@ class InputGPU(Input[TensorGPU], LayerGPU):
                 y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.model.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
 
-            x_batch = np.asarray(x_batch, dtype=self.model.dtype, order='C', copy=None)
-            y_batch = np.asarray(y_batch, dtype=self.model.dtype, order='C', copy=None)
+            x_batch = np.asarray(x_batch, dtype=self.model.dtype)
+            y_batch = np.asarray(y_batch, dtype=self.model.dtype)
 
             assert isinstance(self.y, TensorGPU) and isinstance(self.model.y_batch, TensorGPU)
             self.y.ary.set(x_batch)

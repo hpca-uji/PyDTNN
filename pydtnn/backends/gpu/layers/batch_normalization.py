@@ -151,7 +151,7 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
         value = getattr(self, key)
         gpu_ary = value.ary
         cpu_ary = gpu_ary.get()
-        return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C", copy=True)
+        return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64).copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:
@@ -164,7 +164,7 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
 
     def _import_gamma_beta(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C", copy=None)
+        cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype)
         attribute.ary.set(cpu_ary)
         return
     # ---

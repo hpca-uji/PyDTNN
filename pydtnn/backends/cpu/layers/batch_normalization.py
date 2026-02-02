@@ -18,7 +18,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
     @staticmethod
     def get_inv_std(running_var: np.ndarray, epsilon: float, dtype: np.dtype) -> np.ndarray:
-        inv_std = np.add(running_var, epsilon, dtype=dtype, order="C")
+        inv_std = np.add(running_var, epsilon, dtype=dtype)
         np.sqrt(inv_std, out=inv_std,
                 dtype=dtype)
         np.reciprocal(inv_std, out=inv_std,
@@ -37,15 +37,15 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             vars_shape = (self.model.batch_size, self.ci)
         shape_ = (self.ci,)
 
-        self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype, order="C")
-        self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype, order="C")
+        self.gamma = np.full(shape_, self.gamma_init_val, dtype=self.model.dtype)
+        self.beta = np.full(shape_, self.beta_init_val, dtype=self.model.dtype)
         self.running_mean = self.moving_mean_initializer(shape_, self.model.dtype)
         self.running_var = self.moving_variance_initializer(shape_, self.model.dtype)
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
 
         # NOTE: These attributes only store data, their value before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype, order="C")
+        self.y_dx: np.ndarray = np.zeros(vars_shape, dtype=self.model.dtype)
         self.real_memory_size += (self.nparams * self.model.dtype.itemsize) + self.y_dx.nbytes
         # NOTE: This variable stores both y and dx values.
 
@@ -53,18 +53,18 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         self._var_inv_shape = shape_
         self.std_shape = shape_
 
-        self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype, order="C")
+        self.std: np.ndarray = np.zeros(shape=self.std_shape, dtype=self.model.dtype)
         self.real_memory_size += self.std.nbytes
 
         self.temp_memory_size += int(np.prod(self._mean_inv_shape) + np.prod(self._var_inv_shape)) * self.model.dtype.itemsize
 
         if not self.model.evaluate_only:
 
-            # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype, order="C")
+            # self.dx: np.ndarray = np.zeros(shape=vars_shape, dtype=self.model.dtype)
             # self.real_memory_size += self.dx.nbytes
-            self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
+            self.dgamma: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
             self.real_memory_size += self.dgamma.nbytes
-            self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype, order="C")
+            self.dbeta: np.ndarray = np.zeros(shape=shape_, dtype=self.model.dtype)
             self.real_memory_size += self.dbeta.nbytes
 
             self._mean_shape = (self.ci, )
@@ -96,7 +96,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
         if self.spatial:
             # NOTE: Executing in this format gives better results.
             x = format_transpose(x, self.model.tensor_format, TensorFormat.NHWC)
-            x = x.reshape((-1, self.ci), copy=None, order="C")
+            x = x.reshape((-1, self.ci))
         # else: x = x (no reshape needed)
 
         y: np.ndarray = self.y_dx[:x.shape[0], :]
@@ -116,7 +116,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             np.multiply(self.momentum, self.running_mean, out=self.running_mean,
                         dtype=self.model.dtype)
             np.multiply(inv_momentum, _mean, out=self._mean_inv,
-                        dtype=self.model.dtype, order="C")
+                        dtype=self.model.dtype)
             np.add(self.running_mean, self._mean_inv, out=self.running_mean,
                    dtype=self.model.dtype)
 
@@ -124,7 +124,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             np.multiply(self.momentum, self.running_var, out=self.running_var,
                         dtype=self.model.dtype)
             np.multiply(inv_momentum, _var, out=self._var_inv,
-                        dtype=self.model.dtype, order="C")
+                        dtype=self.model.dtype)
             np.add(self.running_var, self._var_inv, out=self.running_var,
                    dtype=self.model.dtype)
         # anyways:
@@ -135,7 +135,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
                     dtype=self.model.dtype)
 
         np.add(_var, self.epsilon, out=self.std,
-               dtype=self.model.dtype, order="C")
+               dtype=self.model.dtype)
         np.sqrt(self.std, out=self.std,
                 dtype=self.model.dtype)
 
@@ -151,7 +151,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
         # else: nothing special (It has the right format)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
     # ----
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -162,7 +162,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
             # NOTE: Executing in this format gives better results.
             dy = format_transpose(dy, self.model.tensor_format, TensorFormat.NHWC)
-            dy = dy.reshape((num_elems, self.ci), copy=None)
+            dy = dy.reshape((num_elems, self.ci))
         else:
             num_elems = n
 
@@ -180,7 +180,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
         # else: nothing special (It has the right format)
 
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx, dtype=self.model.dtype)
 
     def backward_numpy(self, dy: np.ndarray) -> np.ndarray:
 
@@ -190,7 +190,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
 
             # NOTE: Executing in this format gives better results.
             dy = format_transpose(dy, self.model.tensor_format, TensorFormat.NHWC)
-            dy = dy.reshape((num_elems, self.ci), copy=None)
+            dy = dy.reshape((num_elems, self.ci))
         else:
             num_elems = n
 
@@ -216,4 +216,4 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
         # else: nothing special (It has the right format)
 
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx, dtype=self.model.dtype)

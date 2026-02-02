@@ -9,5 +9,5 @@ class LossCPU(Loss[np.ndarray]):
 
     def initialize(self) -> None:
         super().initialize()
-        self.dx = np.ndarray(self.shape, dtype=self.model.dtype, order="C")
+        self.dx = np.ndarray(self.shape, dtype=self.model.dtype)
         self.real_memory_size += self.dx.nbytes

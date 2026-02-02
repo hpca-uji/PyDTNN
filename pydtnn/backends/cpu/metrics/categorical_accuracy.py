@@ -15,10 +15,11 @@ class CategoricalAccuracyCPU(CategoricalAccuracy[np.ndarray], MetricCPU):
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32, order="C")
+        self._argmax = self.model.memory.ndarray(self._argmax_shape, dtype=np.int32)
         self.model.memory.free(self.temp_memory_size)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
+        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         b = y_targ.shape[0]
         _argmax = self._argmax[:b]
         # return np.sum(y_targ[np.arange(b), np.argmax(y_pred, axis=1)]) * 100 / b

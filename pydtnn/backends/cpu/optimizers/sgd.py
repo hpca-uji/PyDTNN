@@ -16,7 +16,7 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 self.context[layer.id] = dict[str, np.ndarray]()  # type: ignore
                 for w_ in list_grad_vars:
                     w: np.ndarray = getattr(layer, w_)
-                    velocity: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype, order="C")
+                    velocity: np.ndarray = np.zeros(w.shape, dtype=layer.model.dtype)
                     self.real_memory_size += velocity.nbytes
 
                     self.temp_memory_size += int(2 * np.prod(w.shape)) * self.model.dtype.itemsize
@@ -75,13 +75,13 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                 # else:
                 #    w -= self.learning_rate * (self.decay * w + velocity)
                 if self.nesterov:
-                    np.multiply(velocity, self.momentum, dtype=self.dtype, order="C", out=temp_v)
+                    np.multiply(velocity, self.momentum, dtype=self.dtype, out=temp_v)
                     np.add(temp_v, dw, out=temp_v,
                            dtype=self.dtype)
                 else:
                     # np.copyto(temp_v, velocity)
                     temp_v[:] = velocity
-                np.multiply(w, self.decay, dtype=self.dtype, order="C", out=temp_w)
+                np.multiply(w, self.decay, dtype=self.dtype, out=temp_w)
                 np.add(temp_w, temp_v, out=temp_w,
                        dtype=self.dtype)
                 np.multiply(temp_w, self.learning_rate, out=temp_w,
