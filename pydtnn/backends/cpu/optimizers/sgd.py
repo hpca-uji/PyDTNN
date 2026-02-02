@@ -10,6 +10,8 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 
+        temp_memory_size = []
+
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
             if len(list_grad_vars) != 0:
@@ -21,18 +23,19 @@ class SGDCPU(SGD[np.ndarray], OptimizerCPU):
                     temp_v = None
                     self.real_memory_size += velocity.nbytes
 
-                    self.temp_memory_size += int(2 * np.prod(w.shape)) * self.model.dtype.itemsize
+                    temp_memory_size.append(int(2 * np.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["velocity_%s" % w_] = velocity
                     self.context[layer.id]["temp_w_%s" % w_] = temp_w
                     self.context[layer.id]["temp_v_%s" % w_] = temp_v
-            # else: continue
+
+        self.temp_memory_size += self.model.memory_cls._total(*temp_memory_size)
         self.real_memory_size += self.temp_memory_size
     # ---
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        with self.model.memory:
-            for layer_id in self.context.keys():
+        for layer_id in self.context.keys():
+            with self.model.memory:
                 for key in self.context[layer_id].keys():
                     if "temp_w_" in key:
                         w_ = key.split("temp_w_")[-1]

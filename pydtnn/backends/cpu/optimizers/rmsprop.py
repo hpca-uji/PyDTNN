@@ -10,6 +10,8 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 
+        temp_memory_size = []
+
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
 
@@ -21,18 +23,18 @@ class RMSPropCPU(RMSProp[np.ndarray], OptimizerCPU):
                     temp = None
                     self.real_memory_size += cache.nbytes
 
-                    self.temp_memory_size += int(np.prod(w.shape)) * self.model.dtype.itemsize
+                    temp_memory_size.append(int(np.prod(w.shape)) * self.model.dtype.itemsize)
                     self.context[layer.id]["cache_%s" % w_] = cache
                     self.context[layer.id]["temp_%s" % w_] = temp
 
-                    self.real_memory_size += self.temp_memory_size
-            # else: continue
+        self.temp_memory_size += self.model.memory_cls._total(*temp_memory_size)
+        self.real_memory_size += self.temp_memory_size
     # ----
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        with self.model.memory:
-            for layer_id in self.context.keys():
+        for layer_id in self.context.keys():
+            with self.model.memory:
                 for key in self.context[layer_id].keys():
                     if "temp_" in key:
                         w_ = key.split("temp_")[-1]

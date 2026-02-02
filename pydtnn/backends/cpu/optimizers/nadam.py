@@ -9,6 +9,8 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
 
     def initialize(self, list_layers: list[LayerCPU]) -> None:
 
+        temp_memory_size = []
+
         for layer in list_layers:
             self.context[layer.id] = dict[str, int | np.ndarray]()
             self.context[layer.id]["it"] = 0
@@ -21,19 +23,20 @@ class NadamCPU(Nadam[np.ndarray], OptimizerCPU):
             vt_temp_w = None
             mt_temp_dw = None
             self.real_memory_size += momentum.nbytes + velocity.nbytes
-            self.temp_memory_size += int(2 * np.prod(shape)) * self.model.dtype.itemsize
+            temp_memory_size.append(int(2 * np.prod(shape)) * self.model.dtype.itemsize)
             self.context[layer.id]["m_%s" % w_] = momentum
             self.context[layer.id]["v_%s" % w_] = velocity
             self.context[layer.id]["temp_w_%s" % w_] = vt_temp_w
             self.context[layer.id]["temp_dw_%s" % w_] = mt_temp_dw
 
-            self.real_memory_size += self.temp_memory_size
+        self.temp_memory_size += self.model.memory_cls._total(*temp_memory_size)
+        self.real_memory_size += self.temp_memory_size
     # ---
 
     def post_initialize(self) -> None:
         super().post_initialize()
-        with self.model.memory:
-            for layer_id in self.context.keys():
+        for layer_id in self.context.keys():
+            with self.model.memory:
                 for key in self.context[layer_id].keys():
                     if "temp_w_" in key:
                         w_ = key.split("temp_w_")[-1]
