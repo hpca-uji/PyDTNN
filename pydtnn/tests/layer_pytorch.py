@@ -172,7 +172,7 @@ class ParamsLayerPytorch(Params):
     def __init__(self, d=D()) -> None:
         super().__init__()
         self.batch_size = d.b
-        self.conv_variant = "i2c"
+        self.backend = "cpu"
         self.tensor_format = TensorFormat.NCHW.upper()
         self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
         self.model_name = None

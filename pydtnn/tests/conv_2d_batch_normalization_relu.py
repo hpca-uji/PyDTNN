@@ -27,7 +27,7 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
-        params.conv_variant = "gemm"
+        params.backend = "cpu;conv_2d:gemm"
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 
@@ -44,12 +44,12 @@ class Conv2DBatchNormalizationReluTestCase(Conv2DCommonTestCase):
             relu
         ])
         shape = (d.c, d.h, d.w)
-        chain.init_backend_from_model(model)
+        chain.init_backend_with_model(model)
         chain.initialize(prev_shape=shape, x=None)
 
         from_parent = relu.__dict__ | bn.__dict__ | conv2d.__dict__
         fuse = Conv2DBatchNormalizationRelu(from_parent=from_parent)
-        fuse.init_backend_from_model(model)
+        fuse.init_backend_with_model(model)
         fuse.__dict__.update(from_parent)
         fuse.initialize(prev_shape=shape, x=None)
 

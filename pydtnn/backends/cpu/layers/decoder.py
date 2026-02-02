@@ -35,7 +35,7 @@ class DecoderCPU(Decoder[np.ndarray], AbstractBlockLayerCPU):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.multiheadattention.initialize(prev_shape=mha_shape, x=(x_dec, x_dec, x_dec, mask_dec))
         self.layernormalization_1.initialize(prev_shape=self.shape, x=self.multiheadattention.y)

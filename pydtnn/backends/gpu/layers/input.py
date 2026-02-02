@@ -27,7 +27,7 @@ class InputGPU(Input[TensorGPU], LayerGPU):
             assert isinstance(self.y, TensorGPU) and isinstance(self.model.y_batch, TensorGPU)
             self.y.ary.set(x_batch)
             self.model.y_batch.ary.set(y_batch)
-            x, y_targ = self.layers[0].y, self.model.y_batch
+            x, y_targ = self.model.layers[0].y, self.model.y_batch
         else:
             empty_x = gpuarray.empty((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
             empty_y_tag = gpuarray.empty((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
@@ -37,6 +37,10 @@ class InputGPU(Input[TensorGPU], LayerGPU):
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU):
         super().initialize(prev_shape, x)
+
+        if not self.model.enable_cudnn:
+            raise RuntimeError("GPU layers requires CUDNN to be enabled!")
+
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 

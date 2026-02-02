@@ -47,6 +47,7 @@ pydtnn-benchmark \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
+  --backend=cpu \
   --enable-cudnn=False \
   --enable-cudnn-auto-conv-alg=False \
   --enable-gpudirect=False \

@@ -25,7 +25,6 @@ from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_g
 from pydtnn import utils
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.activations.relu import Relu
-from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
 from pydtnn.libs.libmpi import proto as PROTOCOL
 from pydtnn.libs import libcrypt
@@ -252,11 +251,8 @@ class Model[T: Array]:
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
 
-        # NOTE: self.conv_variant comes from Parser
-        self.conv_variant = Conv2D.Variant[self.conv_variant.upper()]
-
         # Set MPI and comm
-        self._init_comms()
+        self._initialize_mpi()
 
         # Set tracer
         self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=enable_cudnn,
@@ -285,7 +281,7 @@ class Model[T: Array]:
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
-                self._initialize_cuda()
+                self._initialize_cudnn()
             else:
                 raise ExceptionGroup("CUDA import error", gpu_errors)
 
@@ -324,14 +320,14 @@ class Model[T: Array]:
             self.learning_rate = self.learning_rate / self.comm_size
 
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
-        self.optimizer.init_backend_from_model(self)
+        self.optimizer.init_backend_with_model(self)
 
         self.schedulers = [
             select_scheduler(scheduler_name).from_model(self)
             for scheduler_name in filter(None, self.schedulers_names.split(","))
         ]
         for scheduler in self.schedulers:
-            scheduler.set_model(self)
+            scheduler.model = self
 
         # Metrics list
         self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
@@ -352,7 +348,7 @@ class Model[T: Array]:
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = Model.SyncParticipation(self.kwargs["model_sync_participation"])
 
-    def _init_comms(self) -> None:
+    def _initialize_mpi(self) -> None:
         # Communication type
         match self.parallel:
             case "sequential":
@@ -384,7 +380,7 @@ class Model[T: Array]:
             case _:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
-    def _initialize_cuda(self) -> None:
+    def _initialize_cudnn(self) -> None:
         LIMIT_THREADS_AND_BLOCKS = 1024
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
@@ -633,7 +629,7 @@ class Model[T: Array]:
             layer.print_in_convdirect_format()
 
     def add(self, layer: LayerBase[T]) -> None:
-        layer.init_backend_from_model(self)
+        layer.init_backend_with_model(self)
 
         if self.layers:
             prev_shape = self.layers[-1].shape
@@ -728,7 +724,7 @@ class Model[T: Array]:
                 fused_layer = select_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
-                new_curr_layer.init_backend_from_model(self)
+                new_curr_layer.init_backend_with_model(self)
                 new_curr_layer.__dict__.update(dict_params)
                 try:
                     new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
@@ -749,24 +745,20 @@ class Model[T: Array]:
             self.__layer_fusion(self.layers, self._select_fusion_3)
             self.__layer_fusion(self.layers, self._select_fusion_2)
 
-    @property
-    def _backend(self) -> BackendType:
-        return BackendType.GPU if self.enable_cudnn else BackendType.CPU
-
     def _initialize(self):
         if self._initialized:
             return
         self._apply_layer_fusion()
         loss_cls = select_loss(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
-        self.loss_func.init_backend_from_model(self)
+        self.loss_func.init_backend_with_model(self)
         self.loss_func.initialize()
         self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
                               self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
 
         for metric in self.metrics_funcs:
-            metric.init_backend_from_model(self)
+            metric.init_backend_with_model(self)
             metric.initialize()
             self.real_memory_size += metric.real_memory_size
             self.temp_memory_size += metric.temp_memory_size

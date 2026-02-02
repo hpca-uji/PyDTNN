@@ -25,7 +25,7 @@ class ModelConvGemmTestCase(ModelCommonTestCase):
         params = Params()
         # Begin of params configuration
         params.model_name = model_name
-        params.conv_variant = "gemm"
+        params.backend = "cpu;conv_2d:gemm"
         params.tensor_format = TensorFormat.NHWC.upper()
         # End of params configuration
         params_dict = vars(params)

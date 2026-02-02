@@ -107,6 +107,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Model
         self.add_argument('--model', dest="model_name", type=str, default=None,
                           help="Neural network model: \'simplemlp\', \'simplecnn\', \'alexnet\', \'vgg11\', \'vgg16\', etc. Default: \'None\'.")
+        self.add_argument('--backend', type=str, default="cpu",
+                          help="Backend selection priority. Format: [module:]backend[,backend][;...]. Default: cpu.")
         self.add_argument('--batch-size', type=int, default=None,
                           help="Batch size per MPI rank. Or \'batch_size\' or \'global_batch_size\' must have a value different from \'None\' (but not both). Default: \'None\'.")
         self.add_argument('--global-batch-size', type=int, default=None,
@@ -132,10 +134,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
             help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable-cudnn\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
         self.add_argument('--random-seed', type=int, default=57005,
                           help='Initial state of random number generator. Default: \'57005\'.')
-        self.add_argument('--shared-memory', type=bool_lambda, default=True,
-                          help="Allows to use a common memory pool for all the temporary data structures.")
-        self.add_argument('--backend', type=str, default="cpu",
-                          help="Backend selection priority list. Coma delimited order, first found, first used.")
+        self.add_argument('--shared-memory', type=bool_lambda, default=False,
+                          help="Allows to use a memory pool for all the temporary data structures.")
 
         # Synchronization options
         _sy_group = self.add_argument_group("Synchronization options")
@@ -228,13 +228,6 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Convolution methods
         _cm_group = self.add_argument_group("Convolution options")
-        _cm_group.add_argument('--conv-variant', type=str, default="i2c", choices=["i2c", "gemm", "winograd", "direct"],
-                               help="Select the standard 2D Convolutional module. Options: \n"
-                                    "* \'i2c\': Use the ConvI2C algorithm. \n"
-                                    "* \'gemm\': Use the ConvGemm algorithm. \n"
-                                    "* \'winograd\': Use the CondWinograd algorithm. \n"
-                                    "* \'direct\': Use the ConvDirect algorithm. \n"
-                                    "Default: \"i2x\".")
         _cm_group.add_argument('--conv-direct-method', type=str, default="",
                                help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
         _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",

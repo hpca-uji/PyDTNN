@@ -5,22 +5,10 @@ if TYPE_CHECKING:
 from pydtnn.layers.layer import Layer
 from pydtnn.utils.initializers import InitializerFunc, glorot_uniform, zeros
 import numpy as np
-from enum import StrEnum, auto
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
 
 class Conv2D[T: Array](Layer[T]):
-    # -------
-    class Variant(StrEnum):
-        BEST_OF = auto()
-        I2C = auto()
-        # NOTE: The following values are not set by auto due it's necessary that have that value.
-        # TODO: Check how to change this (BestOf and Fusion layers)
-        GEMM = "cg"
-        WINOGRAD = "cw"
-        DIRECT = "cd0"
-    # -----
-
     def __init__(self, nfilters: int = 1,
                  filter_shape: tuple[int, int] | int = (3, 3),
                  padding: tuple[int, int] | int = 0,

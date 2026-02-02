@@ -125,6 +125,7 @@ The PyDTNN framework comes with a utility launcher called
 - Model parameters:
   - `--model`: Neural network model: `simplemlp`, `simplecnn`,
     `alexnet`, `vgg11`, `vgg16`, etc. Default: `None`.
+  - `--backend`: Backend selection priority. Format: `[module:]backend[,backend][;...]`. Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
   - `--global-batch-size`: Batch size between all MPI ranks. Default:
     `None`.
@@ -139,7 +140,8 @@ The PyDTNN framework comes with a utility launcher called
   - `--weights-and-bias-filename`: Load weights and bias from file.
     Default: `None`.
   - `--history-file`: Filename to save training loss and metrics.
-  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`. Optionally, the `AUTO` value sets `NCHW` when the option `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
+  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`. Optionally,
+    the `AUTO` value sets `NCHW` when the option `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
   - `--random-seed`: Initial state of random number generator. Default: `57005`.
   - `--shared-memory`: Allows to use a common memory pool for all the temporary data structures.
   - `--shared-storage`: If `True` ranks assume they share the file
@@ -213,12 +215,6 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-fused-conv-bn-relu`: Fuse `Conv2D` and
     `BatchNormalization` and `Relu` layers. Default: `False`.
 - Convolution operation parameters:
-  - `--conv-variant`:Select the standard 2D Convolutional module.
-    Options:
-    - `i2c` (default): Use the ConvI2C algorithm.
-    - `gemm`: Use the ConvGemm algorithm.
-    - `winograd`: Use the CondWinograd algorithm.
-    - `direct`: Use the ConvDirect algorithm.
   - `--conv-direct-method`: Use `ConvDirect` module to realize
     convolutions in `Conv2D` layers. `True` if specified.
   - `--conv-direct-methods-for-best-of`: `ConvDirect` modules to compare

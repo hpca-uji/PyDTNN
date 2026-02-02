@@ -31,7 +31,7 @@ class EncoderDecoderGPU(AbstractBlockLayerGPU, EncoderDecoder):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.encoder[0].initialize(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.encoder[1:]:

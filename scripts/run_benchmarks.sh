@@ -243,17 +243,17 @@ function run_benchmark() {
 
   # 2.5) Select Conv2D variant:
   if [ "$ENABLE_BEST_OF" ]; then
-    CONV_VARIANT="best_of"
+    BACKEND="cpu;conv_2d:best_of"
   elif [ "$ENABLE_CONV_I2C" ]; then
-    CONV_VARIANT="i2c"
+    BACKEND="cpu"
   elif [ "$ENABLE_CONV_GEMM" ]; then
-    CONV_VARIANT="gemm"
+    BACKEND="cpu;conv_2d:gemm"
   elif [ "$ENABLE_CONV_WINOGRAD" ]; then
-    CONV_VARIANT="winograd"
+    BACKEND="cpu;conv_2d:winograd"
   elif [ "$ENABLE_CONV_DIRECT" ]; then
-    CONV_VARIANT="direct"
+    BACKEND="cpu;conv_2d:direct"
   else
-    CONV_VARIANT="i2c"
+    BACKEND="cpu"
   fi
 
   # 3) Launch pydtnn-benchmark
@@ -262,6 +262,7 @@ function run_benchmark() {
   # shellcheck disable=SC2086  # To allow MODEL_FLAGS without ""
   LD_PRELOAD="${PRELOAD}" ${CMD} pydtnn-benchmark \
     --model="${MODEL}" \
+    --backend="${BACKEND}" \
     --tensor-format="${TENSOR_FORMAT}" \
     --dataset-train-path="${DATASET_TRAIN_PATH}" \
     --dataset-test-path="${DATASET_TEST_PATH}" \
@@ -271,7 +272,6 @@ function run_benchmark() {
     --evaluate="${EVALUATE}" \
     --evaluate-only="${EVALUATE_ONLY}" \
     --test-as-validation="${TEST_AS_VALIDATION}" \
-    --conv-variant="${CONV_VARIANT}" \
     --conv-direct-method="${CONV_DIRECT_METHOD:-""}" \
     --conv-direct-methods-for-best-of="${CONV_DIRECT_METHODS_FOR_BEST_OF:-""}" \
     --enable-memory-cache="${ENABLE_MEMORY_CACHE}" \

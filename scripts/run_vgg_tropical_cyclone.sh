@@ -51,9 +51,9 @@ pydtnn-benchmark \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
+  --backend="cpu;conv_2d:winograd" \
   --enable-cudnn=False \
   --enable-best-of=False \
-  --enable-conv-winograd=True \
   --enable-cudnn-auto-conv-alg=False \
   --enable-gpudirect=False \
   --history-file="results/result_vgg3dobn.history" \

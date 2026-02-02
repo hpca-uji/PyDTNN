@@ -44,7 +44,7 @@ class MultiHeadAttentionCPU(MultiHeadAttention[np.ndarray], AbstractBlockLayerCP
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.FC_q.initialize(prev_shape=(self.embedl,), x=x)
         self.FC_k.initialize(prev_shape=(self.embedl,), x=self.FC_q.y)

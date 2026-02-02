@@ -6,11 +6,6 @@ if typing.TYPE_CHECKING:
     from pydtnn import model as model_module
 
 
-class BackendType(enum.StrEnum):
-    CPU = enum.auto()
-    GPU = enum.auto()
-
-
 class PromoteToBackend:
     _backend: typing.Self
 
@@ -35,23 +30,49 @@ class PromoteToBackend:
         else:
             return getattr(backend, name)
 
-    def _get_backend_cls(self) -> typing.Any:
-        cls = self.__class__
-        backends = self.model.backend.split(",")
-        module_name = cls.__module__.split(".", 1)[1]
-        print(f"Source: {module_name}")
-        for backend in backends:
+    def _parse_backend(self, spec: str) -> dict[str, list[str]]:
+        """
+        Parse a backend spec string
+        [module:]backend[,backend][;...]
+        """
+        groups = {}
+
+        for group in spec.split(";"):
+            kv = group.split(":", 1)
+            value = kv.pop()
             try:
-                backend_module_name = f"pydtnn.backends.{backend}.{module_name}"
-                backend_module = importlib.import_module(backend_module_name)
-                cls_name = f"{cls.__name__}{backend.upper()}"
-                cls = getattr(backend_module, cls_name)
-            except (ModuleNotFoundError, AttributeError) as e:
-                print(f"Trying: {backend_module_name}", e)
-            else:
-                print(f"Found:  {backend_module_name}")
-                return cls
-        raise RuntimeError(f"Backend not found for {self}")
+                key = kv.pop()
+            except IndexError:
+                key = "pydtnn"
+            groups[key] = value.split(",")[::-1]
+
+        return dict(sorted(
+            groups.items(),
+            key=lambda item: (-item[0].count("."), item[0]),
+        ))
+
+    def _get_backend(self) -> typing.Any:
+        """Get relevant backend class"""
+        cls = self.__class__
+        module_name = cls.__module__
+        submodule_name = module_name.split(".", 1)[1]
+        spec = self._parse_backend(self.model.backend)
+
+        for group, backends in spec.items():
+            if f".{group}." not in f".{module_name}.":
+                continue  # Spec not relevant to class
+            for backend in backends:
+                try:
+                    backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
+                    backend_module = importlib.import_module(backend_module_name)
+                    cls_name = f"{cls.__name__}{backend.upper()}"
+                    cls = getattr(backend_module, cls_name)
+                except (ModuleNotFoundError, AttributeError):
+                    pass  # Spec not found for class
+                else:
+                    return cls
+
+        raise ValueError(f"Backend not found for {self}")
 
     def __setattr__(self, name: str, value) -> None:
         ref = "_backend"
@@ -91,7 +112,7 @@ class PromoteToBackend:
             pass
 
         # Get backend class
-        cls = self._get_backend_cls()
+        cls = self._get_backend()
         if cls is None:
             return
 
@@ -103,18 +124,11 @@ class PromoteToBackend:
     # Base class
     model: "model_module.Model"
 
-    def set_model(self, model: "model_module.Model") -> None:
-        """Link a to a new model instance"""
-        self.model = model
-
-    def init_backend_from_model(self, model: "model_module.Model") -> None:
+    def init_backend_with_model(self, model: "model_module.Model") -> None:
         """Initialize backend and link a new model instance"""
-        #  NOTE: This one is to have access to "model" in the "get_backend_cls"
-        self.set_model(model)
-        #  NOTE: This function masks all previous attribute data.
+        self.model = model  # Set on frontend
         self.init_backend()
-        #  NOTE: This one is to set model in the backend class.
-        self.set_model(model)
+        self.model = model  # Set on backend
     # ---
 
     @classmethod
