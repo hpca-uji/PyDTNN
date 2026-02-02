@@ -274,6 +274,8 @@ class Model[T: Array]:
         else:
             MemoryCache.disable()
 
+        self.memory_cls = PreallocMemory if self.shared_memory else PrivateMemory
+
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
@@ -775,12 +777,11 @@ class Model[T: Array]:
         self.optimizer.initialize(self.get_all_layers(self.layers))
         temp_memory_size.append(self.optimizer.temp_memory_size)
 
-        for layer in self.get_all_layers():
+        for layer in self.layers:
             temp_memory_size.append(layer.temp_memory_size)
 
-        self.temp_memory_size = max(temp_memory_size)
-        memory_cls = PreallocMemory if self.shared_memory else PrivateMemory
-        self.memory = memory_cls(size=self.temp_memory_size)
+        self.temp_memory_size = self.memory_cls._total(*temp_memory_size)
+        self.memory = self.memory_cls(size=self.temp_memory_size)
 
         for layer in self.get_all_layers():
             layer.post_initialize()

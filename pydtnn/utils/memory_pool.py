@@ -4,8 +4,12 @@ from pydtnn.utils.constants import ArrayShape
 
 class PrivateMemory:
     def __init__(self, size: int) -> None:
-        self._total: int = size
+        self._capacity: int = size
         self._used: int = 0
+
+    @staticmethod
+    def _total(*args: int) -> int:
+        return sum(args)
 
     def ndarray(self, shape: ArrayShape, dtype: np.dtype, order: str = "C") -> np.ndarray:
         return np.zeros(shape, dtype, order)  # type: ignore
@@ -23,12 +27,16 @@ class PreallocMemory(PrivateMemory):
         self._stack = []
         self._buffer = np.zeros(size, dtype=np.uint8)
 
+    @staticmethod
+    def _total(*args: int) -> int:
+        return max(args)
+
     def _malloc(self, size: int) -> memoryview:
         start = self._used
         end = start + size
 
-        if end > self._total:
-            raise RuntimeError(f"Getting too much memory. Memory to get={size}, Memory occupied={self._used}, Memory after the operation={self._total}")
+        if end > self._capacity:
+            raise RuntimeError(f"Getting too much memory. Memory to get={size}, Memory occupied={self._used}, Memory after the operation={self._capacity}")
 
         self._used = end
         return self._buffer[start:end]
