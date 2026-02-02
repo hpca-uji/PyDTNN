@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pydtnn.libs import crypto
+from pydtnn import crypto
 
 # Make sure global package is not confused with current package
 _pkg = sys.path.pop(0)
