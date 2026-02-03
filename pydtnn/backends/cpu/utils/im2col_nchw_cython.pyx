@@ -101,8 +101,7 @@ def alt_col2im_nchw_cython(npDT[:,::1] cols,
                            int vstride, int hstride,
                            int vdilation, int hdilation) -> None:
     # NOTE: A different way to do col2im
-    cdef int cc, ii, jj, row, nn, col, x_x, x_y, x_o, y_o
-    cdef float xx, yy
+    cdef int cc, ii, jj, row, nn, col, x_x, x_y, x_o, y_o, xx, yy
 
     for nn in prange(n, nogil=True):
         for cc in range(c):
@@ -111,14 +110,18 @@ def alt_col2im_nchw_cython(npDT[:,::1] cols,
                     for ii in range(kh):
                         for jj in range(kw):
                             # x_x = vstride * xx + vdilation * ii - vpadding
-                            xx = (x_x + vpadding - vdilation * ii) / vstride
+                            x_o = (x_x + vpadding - vdilation * ii)
+                            xx = x_o // vstride
+                            x_o = x_o % vstride
+
                             # x_y = hstride * yy + hdilation * jj - hpadding
-                            yy = (x_y + hpadding - hdilation * jj) / hstride
-                            x_o = <int> xx
-                            y_o = <int> yy
-                            if (x_o == xx) and (y_o == yy) and ((0 <= xx < ho) and (0 <= yy < wo)):
-                                row = cc * kh * kw + ii * kw + jj
-                                col = nn * ho * wo + x_o * wo + y_o
+                            y_o = (x_y + hpadding - hdilation * jj)
+                            yy = y_o // hstride
+                            y_o = y_o % hstride
+                            
+                            if (x_o == 0) and (y_o == 0) and ((0 <= xx < ho) and (0 <= yy < wo)):
+                                row = ((cc * kh) + ii) * kw + jj
+                                col = ((nn * ho) + xx) * wo + yy
                                 dx[nn, cc, x_x, x_y] += cols[row, col]
 
 # ================================== #

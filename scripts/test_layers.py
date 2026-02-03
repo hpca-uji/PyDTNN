@@ -5,6 +5,8 @@ from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.layers.flatten import Flatten
 from pydtnn.layers.input import Input
 from pydtnn.layers.layer import Layer
@@ -42,7 +44,7 @@ KWARGS = {
     "parallel": "data",
     "tensor_format": FORMAT,  # "NCHW" # "NHWC",
     "loss_func": "categorical_cross_entropy",
-    "enable_gpu": False,  # False, #True,
+    "enable_cudnn": False,  # False, #True,
     "omm": None,
     "dtype": np.float32,
     "tracing": False,
@@ -56,9 +58,9 @@ list_layers = [
     # ("AdaptiveAveragePool2D",AdaptiveAveragePool2D(output_shape=(3, 3))), # Not in older versions
     # ("AveragePool2D",AveragePool2D()),
     # ("BatchNormalization",BatchNormalization()),
-    ("Conv2D_STANDARD", Conv2D(grouping=Conv2D.Grouping.STANDARD)),
-    ("Conv2D_DEPTHWISE", Conv2D(grouping=Conv2D.Grouping.DEPTHWISE)),
-    ("Conv2D_POINTWISE", Conv2D(grouping=Conv2D.Grouping.POINTWISE)),
+    ("Conv2D_STANDARD", Conv2D()),
+    ("Conv2D_DEPTHWISE", Conv2DDepthwise()),
+    ("Conv2D_POINTWISE", Conv2DPointwise()),
     # ("Dropout",Dropout()),
     # ("FC",FC()),
     # ("Flatten",Flatten()),
@@ -79,8 +81,8 @@ list_activations = [
 ]
 
 # list_optimizers = [Adam(), Nadam(), RMSProp(), SGD()]
-addition_test_layers = ("AdditionBlock", AdditionBlock([Conv2D(grouping=Conv2D.Grouping.STANDARD), BatchNormalization()], [Conv2D(grouping=Conv2D.Grouping.STANDARD)]))
-concatenation_test_layers = ("ConcatenationBlock", ConcatenationBlock([Conv2D(grouping=Conv2D.Grouping.STANDARD), BatchNormalization()], [Conv2D(grouping=Conv2D.Grouping.STANDARD)]))
+addition_test_layers = ("AdditionBlock", AdditionBlock([Conv2D(), BatchNormalization()], [Conv2D()]))
+concatenation_test_layers = ("ConcatenationBlock", ConcatenationBlock([Conv2D(), BatchNormalization()], [Conv2D()]))
 
 dict_test: dict[str, Activation | tuple[str, Layer]] = {
     "Layers": list_layers,
@@ -92,7 +94,7 @@ def test_keras(_x: np.ndarray):
 
     model = Model(**KWARGS)
     model.add(Input(SHAPE))
-    model.add(Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=3))
+    model.add(Conv2D(nfilters=3))
     model.mode = Model.Mode.TRAIN
     model._initialize()
 
@@ -124,7 +126,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
 
             x = np.copy(_x)
 
-            if KWARGS["enable_gpu"]:
+            if KWARGS["enable_cudnn"]:
                 x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
             t_forward = 0.0
@@ -140,7 +142,7 @@ def test_layers_activations(_x: np.ndarray, opt: Optimizer) -> None:
                         x = layer.forward(x)
                     t_forward += time() - t
 
-                if not KWARGS["enable_gpu"]:
+                if not KWARGS["enable_cudnn"]:
                     x = x.copy()
 
                 if True:
@@ -180,7 +182,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
         t_backward = 0
         t_opt = 0
 
-        if KWARGS["enable_gpu"]:
+        if KWARGS["enable_cudnn"]:
             x = TensorGPU(gpuarray.to_gpu(x), model.tensor_format, model.cudnn_dtype)
 
         for i in range(NUM_REPETITIONS):
@@ -192,7 +194,7 @@ def test_add_concat(_x: np.ndarray, opt: Optimizer) -> None:
                     x = layer.forward(x)
                 t_forward += time() - t
 
-            if not KWARGS["enable_gpu"]:
+            if not KWARGS["enable_cudnn"]:
                 x = x.copy()
 
             if True:

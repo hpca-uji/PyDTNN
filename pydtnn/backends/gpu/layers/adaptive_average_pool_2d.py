@@ -29,7 +29,7 @@ _FULL_MACRO_INDEX_C_NCHW = f"#define {_MACRO_INDEX_C}(idx, c, h, w) (idx / (h * 
 _FULL_MACRO_INDEX_H_NCHW = f"#define {_MACRO_INDEX_H}(idx, h, w) (idx / w) % h"
 _FULL_MACRO_INDEX_W_NCHW = f"#define {_MACRO_INDEX_W}(idx, w) idx % w"
 _DIMENSION_INDEX_CODE_NCHW = \
-"""
+    """
 ci = {macro_index_c}(idx, c, new_h, new_w);
 hi = {macro_index_h}(idx, new_h, new_w);
 wi = {macro_index_w}(idx, new_w);
@@ -38,7 +38,7 @@ _FULL_MACRO_INDEX_H_NHWC = f"#define {_MACRO_INDEX_H}(idx, h, w, c) (idx / (w * 
 _FULL_MACRO_INDEX_W_NHWC = f"#define {_MACRO_INDEX_W}(idx, w, c) (idx / c) % w"
 _FULL_MACRO_INDEX_C_NHWC = f"#define {_MACRO_INDEX_C}(idx, c) idx % c"
 _DIMENSION_INDEX_CODE_NHWC = \
-"""
+    """
 hi = {macro_index_h}(idx, new_h, new_w, c);
 wi = {macro_index_w}(idx, new_w, c);
 ci = {macro_index_c}(idx, c);
@@ -318,11 +318,13 @@ __global__ void {func_name}({T}* dx, {T}* dy,
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         pooling_shape = self.model.encode_shape((self.co, self.ho, self.wo))
         y = gpuarray.empty((self.model.batch_size, *pooling_shape), self.model.dtype)
-        self.y = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y: TensorGPU = TensorGPU(y, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo * self.ci),

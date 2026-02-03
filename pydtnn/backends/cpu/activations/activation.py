@@ -3,10 +3,10 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception:
     pass
-import numpy as np
+from pydtnn.libs import numpy as np
 
 
 class ActivationCPU(Activation[np.ndarray]):
@@ -66,12 +66,12 @@ class ActivationCPU(Activation[np.ndarray]):
             np.multiply(dw, self.model.rank_weight, out=dw,
                         dtype=self.model.dtype)
             if self.model.crypt:
-                dw = self.model.crypt.encrypt(dw)  #type: ignore
+                dw = self.model.crypt.encrypt(dw)  # type: ignore
             if self.model.use_mpi_buffers:
                 self.model.comm.Allreduce(MPI.IN_PLACE, dw, op=MPI.SUM)
             else:
                 dw = self.model.comm.allreduce(dw, op=MPI.SUM)
             if self.model.crypt:
-                dw = self.model.crypt.decrypt(dw)  #type: ignore
+                dw = self.model.crypt.decrypt(dw)  # type: ignore
             setattr(self, dw_, dw)
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])

@@ -75,7 +75,7 @@ def bn_relu_inference_cython(npDT[:, ::1] x,
     #   xn = (x - self.running_mean) * inv_std
     #   y = gamma * xn + beta
     
-    # cdef np.ndarray[npDT, ndim=2] y = np.zeros_like(x, order="C", dtype=x.dtype)
+    # cdef np.ndarray[npDT, ndim=2] y = np.zeros_like(x, dtype=x.dtype)
 
     
     cdef int i, j = 0

@@ -190,14 +190,14 @@ def load_layers(model: PyDTNN_Model, operations: list[LayerBase]) -> None:
 # --- END load_layers --- #
 
 
-def convert_model(onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_gpu=False, enable_gpudirect=False,
+def convert_model(onnx_model: onnx.ModelProto, omm=None, non_blocking_mpi=False, enable_cudnn=False, enable_gpudirect=False,
                   enable_nccl=False, dtype=np.float32, tracing=False, tracer_output="", **kwargs) -> PyDTNN_Model:
 
     if "tensor_format" not in kwargs:
         kwargs["tensor_format"] = TensorFormat.NHWC  # listTensorFormat.NCHW #listTensorFormat.NHWC
     # Output model.
     # NOTE: ¡¡¡¡IMPORTANT!!!!! Be sure that the "parser.model_name" from pydtnn.parser import parser is None!!!!!!!!.
-    model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_gpu=enable_gpu, enable_gpudirect=enable_gpudirect,
+    model = PyDTNN_Model(omm=omm, non_blocking_mpi=non_blocking_mpi, enable_cudnn=enable_cudnn, enable_gpudirect=enable_gpudirect,
                          enable_nccl=enable_nccl, dtype=dtype, tracing=tracing, tracer_output=tracer_output, **kwargs)
 
     print("TEST")

@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.block_layer import AbstractBlockLayerCPU
 from pydtnn.layers.concatenation_block import ConcatenationBlock
@@ -16,10 +16,16 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
         self.concat_dim: int = None  # type: ignore
     # ---
 
+    def initialize(self, prev_shape, x):
+        super().initialize(prev_shape, x)
+        self.y: np.ndarray = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
+        self.real_memory_size += self.y.nbytes
+
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_REPLICATE)
-        _x:list[np.ndarray] = [np.zeros((0,))] * len(self.paths)
+        _x: list[np.ndarray] = [np.zeros((0,))] * len(self.paths)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+        y = self.y[:x.shape[0], :]
 
         for i, p in enumerate(self.paths):
             x_forward = x
@@ -29,10 +35,10 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
                 self.model.tracer.emit_event(PYDTNN_MDL_EVENT, PYDTNN_EVENT_FINISHED)
             _x[i] = x_forward
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONCAT)
-        y = np.concatenate(_x, axis=self.concat_dim)
+        np.concatenate(_x, axis=self.concat_dim, out=y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SPLIT)
@@ -56,6 +62,6 @@ class ConcatenationBlockCPU(ConcatenationBlock, AbstractBlockLayerCPU):
 
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ELTW_SUM)
             np.add(dx[0], dx[i], out=dx[0],
-                   dtype=self.model.dtype, order="C")
+                   dtype=self.model.dtype)
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx[0], dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx[0], dtype=self.model.dtype)

@@ -1,14 +1,13 @@
 # https://github.com/storypku/cuda-support-for-bazel/blob/9a9c90c7d73fdafb3fbc8713232405cae4ae66d8/examples/cudnn-samples/multiHeadAttention/multiHeadAttention.cpp
 import numpy as np
 
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 import pycuda.gpuarray as gpuarray
 import pycuda
 
 from pydtnn.backends.gpu.layers.layer import LayerGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
-from pydtnn.utils import initializers
 from pydtnn.backends.gpu.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
 
 
@@ -33,9 +32,9 @@ class MultiHeadAttentionGPU(MultiHeadAttention[TensorGPU], LayerGPU):
         self.embedl = self.query.shape[-1]
 
         # Weights Initializers
-        weights_shape = (self.embedl, self.heads*self.d_k)
-        biases_shape = (1, self.heads*self.d_k)
-        o_weights_shape = (self.heads*self.d_k, self.embedl)
+        weights_shape = (self.embedl, self.heads * self.d_k)
+        biases_shape = (1, self.heads * self.d_k)
+        o_weights_shape = (self.heads * self.d_k, self.embedl)
         o_biases_shape = (1, self.embedl)
 
         self.q_weights_cpu = self.weights_initializer(weights_shape, self.model.dtype)
@@ -92,11 +91,11 @@ class MultiHeadAttentionGPU(MultiHeadAttention[TensorGPU], LayerGPU):
         # Memory Allocation for Outputs
         self.y = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.y = TensorGPU(self.y, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
-        self.dquery = gpuarray.empty((self.model.batch_size, self.beam,  self.seq, self.embedl), self.model.dtype)
+        self.dquery = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.dquery = TensorGPU(self.dquery, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
-        self.dkey = gpuarray.empty((self.model.batch_size,  self.beam, self.seq, self.embedl), self.model.dtype)
+        self.dkey = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.dkey = TensorGPU(self.dkey, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
-        self.dvalue = gpuarray.empty((self.model.batch_size,  self.beam, self.seq, self.embedl), self.model.dtype)
+        self.dvalue = gpuarray.empty((self.model.batch_size, self.beam, self.seq, self.embedl), self.model.dtype)
         self.dvalue = TensorGPU(self.dvalue, self.model.tensor_fmt, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.SEQ)
 
         self.current_index = -1  # Training

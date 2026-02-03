@@ -7,29 +7,30 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 from pydtnn.utils.constants import DTYPE2CTYPE
 
+
 class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricGPU):
 
     def initialize(self) -> None:
         super().initialize()
         n = self.model.batch_size
         target_classes = self.model.output_shape[0]
-        
-        self.conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, 1, target_classes, target_classes), dtype=np.dtype(np.int32), 
-                                                        tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_cm = TensorGPU.create_zeros_tensor(shape=(1, n, target_classes, target_classes), dtype=np.dtype(np.int32), 
+
+        self.conf_matrix = TensorGPU.create_zeros_tensor(shape=(1, 1, target_classes, target_classes), dtype=np.dtype(np.int32),
+                                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_cm = TensorGPU.create_zeros_tensor(shape=(1, n, target_classes, target_classes), dtype=np.dtype(np.int32),
                                                       tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
     # ----
 
     def __init_gpu_kernel__(self) -> Function:
-        
+
         _name = "multiclass_confusion_matrix"
         code = """
-        
+
         #define SHIFT_Y(p, i, dim_j) p + (i * dim_j)
         #define INDEX_FIRST_ONE_ON(y, var_class) for(i = 0; (i < num_classes) && ((*(y + i)) != 0); i++); var_class = i;
         #define SHIFT_POINTER_CM(p, i, j, num_classes) p + (i * num_classes + j)
         #define SHIFT_POINTER_LOCAL_CM(p, idx, i, j, num_i, num_j) p + ((idx * num_i + i) * num_j + j)
-        
+
         __global__ void {name}({T} *y_targ, {T} *y_pred, int *cm, int *local_cm, const int num_classes, const int n)
         {{
             int idx, idx_i, i, j, target_class, predicted_class;
@@ -44,7 +45,7 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
 
                 (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx, target_class, predicted_class, num_classes, num_classes))) += 1;
             }}
-            
+
             // Accumulating the local values
             //for(idx_i = blockDim.x/2; idx_i > 0; idx_i >>= 1)
             //{{
@@ -59,12 +60,12 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
             //}}
 
             __syncthreads();
-            
+
             // Accumulating the local values into the output's tensor.
             if (base_idx == 0)
             {{
                 for(idx_i = 1; idx < n; idx ++)
-                    for(i = 0; i < num_classes; i++) 
+                    for(i = 0; i < num_classes; i++)
                         for(j = 0; j < num_classes; j++)
                 {{
                     (*(SHIFT_POINTER_CM(cm, i, j, num_classes))) += (*(SHIFT_POINTER_LOCAL_CM(local_cm, idx_i, i, j, num_classes, num_classes)));
@@ -72,16 +73,15 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
             }}
         }}
         """
-        
+
         code = code.format(
-            T = DTYPE2CTYPE[self.model.dtype],
-            name = _name
+            T=DTYPE2CTYPE[self.model.dtype],
+            name=_name
         )
         module = SourceModule(code).get_function(_name)
 
-        return module 
-    #---
-
+        return module
+    # ---
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> np.ndarray:
         """
@@ -102,7 +102,7 @@ class MulticlassConfusionMatrixGPU(MulticlassConfusionMatrix[TensorGPU], MetricG
         n = np.int32(n)
         num_classes = np.int32(target_classes)
 
-        self.kernel(y_targ.ary, y_pred.ary, 
+        self.kernel(y_targ.ary, y_pred.ary,
                     self.conf_matrix.ary, self.local_cm.ary,
                     num_classes, n,
                     grid=self.grid, block=self.block,

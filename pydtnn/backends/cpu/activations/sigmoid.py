@@ -1,6 +1,4 @@
-import numpy as np
-from pydtnn.backends.cpu.utils.sigmoid_cython import sigmoid_bwd_cython, sigmoid_fwd_cython
-
+from pydtnn.libs import numpy as np
 from pydtnn.activations.sigmoid import Sigmoid
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
@@ -9,23 +7,27 @@ class SigmoidCPU(Sigmoid[np.ndarray], ActivationCPU):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self.y: np.ndarray = None  # type: ignore (the value will be set in forward)
 
         # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self._y = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
-        self.dx = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype, order="C")
+        self._y: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
+        self.real_memory_size += self._y.nbytes
+
+        self.dx: np.ndarray = np.zeros(shape=(self.model.batch_size, *prev_shape), dtype=self.model.dtype)
+        self.real_memory_size += self.dx.nbytes
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-
-        self.y = self._y[:x.shape[0], :]
-        sigmoid_fwd_cython(x.reshape(-1, copy=False), self.y.reshape(-1, copy=False))
+        self.y: np.ndarray = self._y[:x.shape[0], :]
+        # y = (1 / ( 1 + exp(-1*x)))
+        np.multiply(-1, x, out=self.y)
+        np.exp(self.y, out=self.y)
+        np.add(1, self.y, out=self.y)
+        np.reciprocal(self.y, out=self.y)
         return self.y
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-
-        dx = self.dx[:dy.shape[0], :]
-        sigmoid_bwd_cython(dy.reshape(-1, copy=False, order="C"),
-                           self.y.reshape(-1, copy=False, order="C"),
-                           dx.reshape(-1, copy=False, order="C"))
-
+        dx: np.ndarray = self.dx[:dy.shape[0], :]
+        # dx = dy * (y * (1 - y))
+        np.subtract(1, self.y, out=dx)
+        np.multiply(self.y, dx, out=dx)
+        np.multiply(dy, dx, out=dx)
         return dx

@@ -1,7 +1,9 @@
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
+from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
+from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -18,39 +20,36 @@ class Conv2DGroupTestCase(Conv2DCommonTestCase):
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DCPU, AbstractConv2DCPU]:
         params = Params()
         params.tensor_format = TensorFormat.NHWC.upper()
         params.batch_size = d.b
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 
-        conv2d_depth = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                              grouping=Conv2D.Grouping.DEPTHWISE,
-                              padding=(d.vpadding, d.hpadding),
-                              stride=(d.vstride, d.hstride),
-                              dilation=(d.vdilation, d.hdilation),
-                              use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-        conv2d_pair = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                             grouping=Conv2D.Grouping.POINTWISE,
-                             padding=(d.vpadding, d.hpadding),
-                             stride=(d.vstride, d.hstride),
-                             dilation=(d.vdilation, d.hdilation),
-                             use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+        conv2d_depth = Conv2DDepthwise(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                                       padding=(d.vpadding, d.hpadding),
+                                       stride=(d.vstride, d.hstride),
+                                       dilation=(d.vdilation, d.hdilation),
+                                       use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
+        conv2d_pair = Conv2DPointwise(nfilters=d.kn, filter_shape=(d.kh, d.kw),
+                                      padding=(d.vpadding, d.hpadding),
+                                      stride=(d.vstride, d.hstride),
+                                      dilation=(d.vdilation, d.hdilation),
+                                      use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
         chain = ConcatenationBlock([
             conv2d_depth,
             conv2d_pair
         ])
-        chain.init_backend_from_model(model)
+        chain.init_backend_with_model(model)
         chain.initialize(prev_shape=(d.c, d.h, d.w), x=None)
 
         conv2d = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
-                        grouping=Conv2D.Grouping.STANDARD,
                         padding=(d.vpadding, d.hpadding),
                         stride=(d.vstride, d.hstride),
                         dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer=glorot_uniform, biases_initializer=zeros)
-        conv2d.init_backend_from_model(model)
+        conv2d.init_backend_with_model(model)
         conv2d.initialize(prev_shape=(d.c, d.h, d.w), x=None)
 
         # Set the same initial weights and biases to both layers

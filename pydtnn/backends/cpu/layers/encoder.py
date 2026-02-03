@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.block_layer import AbstractBlockLayerCPU
 from pydtnn.layers.multi_head_attention import MultiHeadAttention
@@ -40,7 +40,7 @@ class EncoderCPU(Encoder[np.ndarray], AbstractBlockLayerCPU):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.multiheadattention.initialize(prev_shape=prev_shape, x=(x_enc, x_enc, x_enc, mask_enc))
         # self.dropout_1.initialize(prev_shape=self.multiheadattention.shape, x=self.multiheadattention.y)

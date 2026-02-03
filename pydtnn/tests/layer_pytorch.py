@@ -30,22 +30,22 @@ from pydtnn.tests.abstract.common import Params, TestCase, verbose_test
 from pydtnn.utils.constants import Parameters
 
 
-#from torch.testing._internal.common_utils import numpy_to_torch_dtype_dict
+# from torch.testing._internal.common_utils import _numpy_to_torch_dtype_dict
 numpy_to_torch_dtype_dict = {
-    np.bool_      : torch.bool,
-    np.uint8      : torch.uint8,
-    np.uint16     : torch.uint16,
-    np.uint32     : torch.uint32,
-    np.uint64     : torch.uint64,
-    np.int8       : torch.int8,
-    np.int16      : torch.int16,
-    np.int32      : torch.int32,
-    np.int64      : torch.int64,
-    np.float16    : torch.float16,
-    np.float32    : torch.float32,
-    np.float64    : torch.float64,
-    np.complex64  : torch.complex64,
-    np.complex128 : torch.complex128
+    np.bool_: torch.bool,
+    np.uint8: torch.uint8,
+    np.uint16: torch.uint16,
+    np.uint32: torch.uint32,
+    np.uint64: torch.uint64,
+    np.int8: torch.int8,
+    np.int16: torch.int16,
+    np.int32: torch.int32,
+    np.int64: torch.int64,
+    np.float16: torch.float16,
+    np.float32: torch.float32,
+    np.float64: torch.float64,
+    np.complex64: torch.complex64,
+    np.complex128: torch.complex128
 }
 
 # setting random seed
@@ -104,6 +104,7 @@ GRAD_EQUIVALENCES: dict[str, str] = {
 # PyTorch models
 # ==============
 
+
 class TorchArcTanH(torch.nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -157,6 +158,7 @@ class TorchConcatenationBlock(torch.nn.Module):
 # -------------
 # ====================
 
+
 class D:
     def __init__(self, b=N, c=C, h=H, w=W):
         self.b = b  # Batch size
@@ -165,28 +167,30 @@ class D:
         self.w = w  # Layers width
 # ---
 
+
 class ParamsLayerPytorch(Params):
-    def __init__(self, d = D()) -> None:
+    def __init__(self, d=D()) -> None:
         super().__init__()
         self.batch_size = d.b
-        self.conv_variant = "i2c"
+        self.backend = "cpu"
         self.tensor_format = TensorFormat.NCHW.upper()
         self.shape = format_reshape((C, H, W), "CHW", self.tensor_format[1:])
         self.model_name = None
         self.evaluate_only = True
         self.parallel = "sequential"
         self.loss_func = "categorical_cross_entropy"
-        self.enable_gpu = False
+        self.enable_cudnn = False
         self.omm = None
         self.dtype = np.dtype(np.float32)
         self.tracing = False
         self.tracer_output = ""
         torch.set_default_dtype(numpy_to_torch_dtype_dict[self.dtype.type])
         self.dtype = np.dtype(self.dtype)
-    
+
     def asdict(self):
         return self.__dict__
 # ----
+
 
 class LayerPyTorchTestCase(TestCase):
 
@@ -202,8 +206,8 @@ class LayerPyTorchTestCase(TestCase):
     # ======================
 
     @staticmethod
-    def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True, 
-                      shape_with_elements = (params.batch_size, *params.shape), dtype = params.dtype) -> np.ndarray:
+    def get_test_data(no_zeros=False, normalize=True, positives_and_negatives=True,
+                      shape_with_elements=(params.batch_size, *params.shape), dtype=params.dtype) -> np.ndarray:
         num_elems = np.prod(shape_with_elements) // 4
 
         x_1 = np.arange(num_elems)
@@ -229,7 +233,7 @@ class LayerPyTorchTestCase(TestCase):
             if positives_and_negatives:
                 x -= 0.5
 
-        return np.asarray(x, dtype=dtype, order="C", copy=True)
+        return np.asarray(x, dtype=dtype).copy()
     # ---------
 
     @staticmethod
@@ -296,7 +300,7 @@ class LayerPyTorchTestCase(TestCase):
 
         x = np.copy(_x)
 
-        x = x.astype(dtype=self.params.dtype, order="C", copy=None)
+        x = x.astype(dtype=self.params.dtype)
 
         for layer in pydtnn_model.layers:
             x: np.ndarray = layer.forward(x)
@@ -305,7 +309,7 @@ class LayerPyTorchTestCase(TestCase):
 
         x = torch.from_numpy(_x.reshape((N, C, H, W), copy=False)).to(torch.device("cpu")).float()
         x_torch: torch.Tensor = torch_model(x)
-        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype, order="C", copy=None)
+        x_torch = np.asarray(x_torch.cpu().detach().numpy(), dtype=pydtnn_model.dtype)
 
         if verbose_test():
             print(f"[{rtol=}, {atol=}]\n{x_pydtnn.max()=}\n{x_torch.max()=}\n{x_pydtnn.min()=}\n{x_torch.min()=}\n{x_pydtnn.std()=}\n{x_torch.std()=}\n{x_pydtnn.mean()=}\n{x_torch.mean()=}")
@@ -356,7 +360,7 @@ class LayerPyTorchTestCase(TestCase):
     # ---------
 
     def test_Conv2D(self):
-        pydtnn_layers = [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
+        pydtnn_layers = [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE, padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)]
         torch_model = torch.nn.Conv2d(in_channels=CONV2D_IN_C_TORCH, out_channels=CONV2D_N_FILTERS, kernel_size=CONV2D_FILTER_SHAPE,
                                       padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
         pydtnn_model = LayerPyTorchTestCase.initialize_pydtnn_model(pydtnn_layers, params=self.params)
@@ -400,12 +404,12 @@ class LayerPyTorchTestCase(TestCase):
     def test_AdditionBlock(self):
         pydtnn_layers = [
             AdditionBlock(
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
                  BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)
                  ],
 
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
                  ]
             )]
@@ -419,12 +423,12 @@ class LayerPyTorchTestCase(TestCase):
     def test_ConcatenationBlock(self):
         pydtnn_layers = [
             ConcatenationBlock(
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION),
                  BatchNormalization(gamma=BATCH_NORMALIZATION_GAMMA, beta=BATCH_NORMALIZATION_BETA, epsilon=BATCH_NORMALIZATION_EPSILON, momentum=BATCH_NORMALIZATION_MOMENTUM_PYDTNN)
                  ],
 
-                [Conv2D(grouping=Conv2D.Grouping.STANDARD, nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
+                [Conv2D(nfilters=CONV2D_N_FILTERS, filter_shape=CONV2D_FILTER_SHAPE,
                         padding=CONV2D_PADDING, stride=CONV2D_STRIDE, dilation=CONV2D_DILATION)
                  ]
             )]

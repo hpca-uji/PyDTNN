@@ -18,7 +18,7 @@ import multiprocessing
 import os
 
 import numpy as np
-from pydtnn.utils import parse_bool as bool_lambda, _get_gpus_per_node
+from pydtnn.utils import parse_bool as bool_lambda, get_gpus_per_node
 from functools import cache
 
 from typing import Any
@@ -63,10 +63,11 @@ def _get_threads_per_process():
     threads_per_process = os.environ.get("OMP_NUM_THREADS", multiprocessing.cpu_count())
     return threads_per_process
 
+
 def _get_mpi_protocol():
     try:
-        from pydtnn.libs.libmpi import proto as PROTOCOL
-        from pydtnn.libs.libmpi import ssl as SSL
+        from pydtnn.libs.mpi import proto as PROTOCOL
+        from pydtnn.libs.mpi import ssl as SSL
     except Exception as e:
         PROTOCOL = None
         SSL = None
@@ -78,7 +79,7 @@ def _get_mpi_protocol():
 
 def _get_mpi_server():
     try:
-        from pydtnn.libs.libmpi import addr
+        from pydtnn.libs.mpi import addr
     except Exception as e:
         addr = None
     return addr
@@ -86,7 +87,7 @@ def _get_mpi_server():
 
 def _get_mpi_port():
     try:
-        from pydtnn.libs.libmpi import port
+        from pydtnn.libs.mpi import port
     except Exception as e:
         port = None
     return port
@@ -106,6 +107,8 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Model
         self.add_argument('--model', dest="model_name", type=str, default=None,
                           help="Neural network model: \'simplemlp\', \'simplecnn\', \'alexnet\', \'vgg11\', \'vgg16\', etc. Default: \'None\'.")
+        self.add_argument('--backend', type=str, default="cpu",
+                          help="Backend selection priority. Format: [module:]backend[,backend][;...]. Default: cpu.")
         self.add_argument('--batch-size', type=int, default=None,
                           help="Batch size per MPI rank. Or \'batch_size\' or \'global_batch_size\' must have a value different from \'None\' (but not both). Default: \'None\'.")
         self.add_argument('--global-batch-size', type=int, default=None,
@@ -124,17 +127,25 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Load weights and bias from file. Default: None.")
         self.add_argument('--history-file', type=str, default=None,
                           help="Filename to save training loss and metrics.")
-        self.add_argument('--tensor-format', type=lambda s: str(s).upper(), default="NHWC",
-                          help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable-gpu\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
+        self.add_argument(
+            '--tensor-format',
+            type=lambda s: str(s).upper(),
+            default="NHWC",
+            help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable-cudnn\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
         self.add_argument('--random-seed', type=int, default=57005,
-                          help='Initial state of random number generator. Default: 57005.')
+                          help='Initial state of random number generator. Default: \'57005\'.')
+        self.add_argument('--shared-memory', type=bool_lambda, default=False,
+                          help="Allows to use a memory pool for all the temporary data structures.")
 
         # Synchronization options
         _sy_group = self.add_argument_group("Synchronization options")
         _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
                                help="If \'True\' ranks assume they share the file system. Default: True.")
-        _sy_group.add_argument('--model-sync-freq', type=int, default=0,
-                               help="Number of batches between model synchronization. The \'0\' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
+        _sy_group.add_argument(
+            '--model-sync-freq',
+            type=int,
+            default=0,
+            help="Number of batches between model synchronization. The \'0\' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
         _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
                                help="Aggregation method used to synchronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
         _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
@@ -150,8 +161,11 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _ds_group = self.add_argument_group("Dataset options")
         _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None,
                                help="Dataset to train: \'mnist\', \'cifar10\', \'synthetic\', …. Default: \'None\'.")
-        _ds_group.add_argument('--dataset-percentage', type=float, default=0.0,
-                               help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
+        _ds_group.add_argument(
+            '--dataset-percentage',
+            type=float,
+            default=0.0,
+            help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--dataset-path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
         _ds_group.add_argument('--dataset-lang', type=str, default="en",
@@ -214,13 +228,6 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Convolution methods
         _cm_group = self.add_argument_group("Convolution options")
-        _cm_group.add_argument('--conv-variant', type=str, default="i2c", choices=["i2c", "gemm", "winograd", "direct"],
-                               help="Select the standard 2D Convolutional module. Options: \n" \
-                                    "* \'i2c\': Use the ConvI2C algorithm. \n" \
-                                    "* \'gemm\': Use the ConvGemm algorithm. \n" \
-                                    "* \'winograd\': Use the CondWinograd algorithm. \n" \
-                                    "* \'direct\': Use the ConvDirect algorithm. \n" \
-                                    "Default: \"i2x\".")
         _cm_group.add_argument('--conv-direct-method', type=str, default="",
                                help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
         _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",
@@ -254,9 +261,16 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Variable for \'oktopk\' optimizers. Default: 32.")
         _op_group.add_argument('--optimizer-density', type=float, default=0.01,
                                help="Variable for \'oktopk\' optimizers. Default: 0.01.")
-        _op_group.add_argument('--loss-func', dest="loss_func_name", type=str, default="categorical_cross_entropy",
-                               choices=["categorical_cross_entropy", "binary_cross_entropy", "kl_divergence"],
-                               help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\' or \'kl_divergence\'. Default \'categorical_cross_entropy\'.")
+        _op_group.add_argument(
+            '--loss-func',
+            dest="loss_func_name",
+            type=str,
+            default="categorical_cross_entropy",
+            choices=[
+                "categorical_cross_entropy",
+                "binary_cross_entropy",
+                "kl_divergence"],
+            help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\' or \'kl_divergence\'. Default \'categorical_cross_entropy\'.")
         _op_group.add_argument(
             '--metrics',
             type=str,
@@ -265,9 +279,12 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Schedulers options
         _sh_group = self.add_argument_group("Schedulers options")
-        _sh_group.add_argument('--schedulers', dest="schedulers_names", type=str,
-                               default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
-                               help="List of comma-separated LR schedulers: \'warm_up\', \'early_stopping\', \'reduce_lr_on_plateau\', \'reduce_lr_every_nepochs\', \'model_checkpoint\'. Default: \'early_stopping,reduce_lr_on_plateau,model_checkpoint\'.")
+        _sh_group.add_argument(
+            '--schedulers',
+            dest="schedulers_names",
+            type=str,
+            default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
+            help="List of comma-separated LR schedulers: \'warm_up\', \'early_stopping\', \'reduce_lr_on_plateau\', \'reduce_lr_every_nepochs\', \'model_checkpoint\'. Default: \'early_stopping,reduce_lr_on_plateau,model_checkpoint\'.")
         _sh_group.add_argument('--warm-up-epochs', type=int, default=5,
                                help="Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default: 5.")
         _sh_group.add_argument('--early-stopping-metric', type=str, default="val_categorical_cross_entropy",
@@ -305,14 +322,17 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                                help="Data parallelization modes: \'sequential\', \'data\' (MPI). Default: \'sequential\'.")
         _pe_group.add_argument('--use-blocking-mpi', type=bool_lambda, default=True,
                                help="Enable non-blocking MPI primitives. Default: True.")
-        _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda, default=None,
-                               help="Enable the use of MPI buffers. Possible values: \'True\' (MPI operations by buffer), \'False\' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
-        _pe_group.add_argument('--enable-gpu', type=bool_lambda, default=False,
+        _pe_group.add_argument(
+            '--use-mpi-buffers',
+            type=bool_lambda,
+            default=None,
+            help="Enable the use of MPI buffers. Possible values: \'True\' (MPI operations by buffer), \'False\' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
+        _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=False,
                                help="Enable GPU, use cuDNN library. Default: False.")
         _pe_group.add_argument('--enable-gpudirect', type=bool_lambda, default=False,
                                help="Enable GPU pinned memory for gradients when using a CUDA-aware MPI version. Default: False.")
         _pe_group.add_argument('--enable-nccl', type=bool_lambda, default=False,
-                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set  with \'--enable-gpu\'. Default. False.")
+                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set  with \'--enable-cudnn\'. Default. False.")
         _pe_group.add_argument('--enable-cudnn-auto-conv-alg', type=bool_lambda, default=True,
                                help="Let cuDNN to select the best performing convolution algorithm. Default: True.")
 
@@ -368,7 +388,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Add runtime data
         result.mpi_processes = _get_mpi_processes()
         result.threads_per_process = _get_threads_per_process()
-        result.gpus_per_node = _get_gpus_per_node()
+        result.gpus_per_node = get_gpus_per_node()
         result.mpi_protocol = _get_mpi_protocol()
         result.mpi_server = _get_mpi_server()
         result.mpi_port = _get_mpi_port()

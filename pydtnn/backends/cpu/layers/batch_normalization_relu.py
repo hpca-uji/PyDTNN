@@ -3,7 +3,7 @@ from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.utils.constants import ArrayShape
 
-import numpy as np
+from pydtnn.libs import numpy as np
 
 
 class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):
@@ -16,20 +16,22 @@ class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormali
         self.inv_std = BatchNormalizationCPU.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
 
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.y: np.ndarray = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype, order="C")
+        self.y: np.ndarray = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.forward = self._forward
         self.backward = self._backward
+
+        self.real_memory_size += self.y.nbytes + self.inv_std.nbytes
 
     def _forward(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses the BN + Relu"""
 
         n = x.shape[0]
         if self.spatial:
-            x = x.reshape((-1, self.ci), copy=False, order="C")
+            x = x.reshape((-1, self.ci), copy=False)
 
         y: np.ndarray = self.y[:n, :]
         bn_relu_inference_cython(x,
-                                 y.reshape((-1, self.ci), copy=False, order="C"),
+                                 y.reshape((-1, self.ci), copy=False),
                                  self.running_mean,
                                  self.inv_std,
                                  self.gamma,
@@ -39,7 +41,7 @@ class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormali
             y_shape = self.model.encode_shape((n, self.ci, self.hi, self.wi))
             y = y.reshape(y_shape, copy=False)
 
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Use a real backwards variant!")

@@ -34,6 +34,9 @@ class LayerBase[T: Array](PromoteToBackend):
         self.reqs_allred = {}
         self.parent_layer: LayerBase | None = None
 
+        self.temp_memory_size: int = 0
+        self.real_memory_size: int = 0
+
         # The following attributes will be initialized later
         self.id: int = None  # type: ignore
         self.model: Model = None  # type: ignore
@@ -90,7 +93,13 @@ class LayerBase[T: Array](PromoteToBackend):
 
         if self.nparams > 0:
             props["params"] = self.nparams
-            props["memory"] = utils.convert_size_bytes(self.nparams * self.model.dtype.itemsize)
+
+        if self.real_memory_size > 0:
+            memory = utils.convert_size_bytes(self.real_memory_size)
+            if self.temp_memory_size > 0:
+                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
+                memory = f"{memory} ({tmp_memory} tmp)"
+            props["memory"] = memory
 
         if self.prev_shape:
             props["input"] = self.prev_shape
@@ -125,6 +134,12 @@ class LayerBase[T: Array](PromoteToBackend):
         self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
+
+    def post_initialize(self) -> None:
+        """
+        Method were the operations that requiere a initialize are done.
+        """
+        pass
 
     def forward(self, x: T) -> T:
         return x

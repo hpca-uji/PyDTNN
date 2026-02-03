@@ -43,7 +43,7 @@ class EncoderGPU(AbstractBlockLayerGPU, Encoder):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.multiheadattention.initialize(prev_shape=prev_shape, x=(x_enc, x_enc, x_enc, mask_enc))
         # self.dropout_1.initialize(prev_shape=self.multiheadattention.shape, x=self.multiheadattention.y)
@@ -124,12 +124,12 @@ class EncoderGPU(AbstractBlockLayerGPU, Encoder):
         # if self.need_dx:
         # dx = layernorm_1.dx + multihead.dquery + multihead.dkey + multihead.dvalue
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
-                                beta, self.dx.desc, self.dx.ptr)
+                             alpha, self.dx.desc, self.layernormalization_1.dx.ptr,
+                             beta, self.dx.desc, self.dx.ptr)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
-                                beta, self.dx.desc, self.dx.ptr)
+                             alpha, self.dx.desc, self.multiheadattention.dkey.ptr,
+                             beta, self.dx.desc, self.dx.ptr)
         cudnn.cudnnAddTensor(self.model.cudnn_handle,
-                                alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
-                                beta, self.dx.desc, self.dx.ptr)
+                             alpha, self.dx.desc, self.multiheadattention.dvalue.ptr,
+                             beta, self.dx.desc, self.dx.ptr)
         return self.dx

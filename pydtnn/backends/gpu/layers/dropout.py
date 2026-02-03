@@ -4,7 +4,7 @@ import pycuda.gpuarray as gpuarray  # type: ignore
 from pydtnn.layers.dropout import Dropout
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer import LayerGPU
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 import ctypes
@@ -14,12 +14,12 @@ class DropoutGPU(Dropout[TensorGPU], LayerGPU):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         # The following values will be initalized later:
-        self.states_size: ctypes.c_size_t = None  #type: ignore
-        self.space_size: ctypes.c_size_t = None  #type: ignore
-        self.space: TensorGPU = None  #type: ignore
-        self.states: TensorGPU = None  #type: ignore
+        self.states_size: ctypes.c_size_t = None  # type: ignore
+        self.space_size: ctypes.c_size_t = None  # type: ignore
+        self.space: TensorGPU = None  # type: ignore
+        self.states: TensorGPU = None  # type: ignore
         self.drop_desc: int | None = None
     # ----
 
@@ -47,6 +47,8 @@ class DropoutGPU(Dropout[TensorGPU], LayerGPU):
 
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
                                         self.states.ptr, self.states_size, seed=0)
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes + self.space.sinbytesze + self.states.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

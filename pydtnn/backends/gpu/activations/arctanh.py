@@ -4,8 +4,8 @@ from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.gpu.activations.activation import ActivationGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
-import pycuda.gpuarray as gpuarray # type: ignore
-from pycuda.elementwise import ElementwiseKernel # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 
@@ -36,6 +36,8 @@ class ArctanhGPU(Arctanh[TensorGPU], ActivationGPU):
         # Derivative dx
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.atanh(x.ary, self.y.ary, stream=self.model.stream)

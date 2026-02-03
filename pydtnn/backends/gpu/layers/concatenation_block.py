@@ -1,13 +1,13 @@
 import numpy as np
 
-import pycuda.gpuarray as gpuarray  #type: ignore
-from pycuda.elementwise import ElementwiseKernel  #type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.gpu.layers.abstract.block_layer import AbstractBlockLayerGPU
 from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
@@ -19,8 +19,8 @@ class ConcatenationBlockGPU(ConcatenationBlock[TensorGPU], AbstractBlockLayerGPU
         super().__init__(*args, **kwargs)
         self.concat: ElementwiseKernel = None
         self.split: ElementwiseKernel = None
-        self.dy: list[TensorGPU] = None  #type: ignore
-        self.idx_co = None  #type: ignore
+        self.dy: list[TensorGPU] = None  # type: ignore
+        self.idx_co = None  # type: ignore
 
     def initialize(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
         super().initialize(prev_shape, x)
@@ -81,6 +81,9 @@ class ConcatenationBlockGPU(ConcatenationBlock[TensorGPU], AbstractBlockLayerGPU
         for i, p in enumerate(self.paths):
             dy_gpu = gpuarray.empty((self.model.batch_size, *self.out_shapes[i]), self.model.dtype)
             self.dy.append(TensorGPU(dy_gpu, self.model.tensor_format, self.model.cudnn_dtype))
+
+            self.real_memory_size += dy_gpu.nbytes
+        self.real_memory_size += self.y.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):

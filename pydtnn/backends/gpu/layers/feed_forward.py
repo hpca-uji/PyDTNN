@@ -24,7 +24,7 @@ class FeedForwardGPU(FeedForward[TensorGPU], AbstractBlockLayerGPU):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.FC_1.initialize(prev_shape=(self.shape[-1],), x=x)
         self.relu.initialize(prev_shape=(self.d_ff,), x=self.FC_1.y)

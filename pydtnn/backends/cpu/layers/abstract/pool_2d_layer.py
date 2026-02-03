@@ -4,7 +4,7 @@ from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.utils.tensor import TensorFormat
 from pydtnn.utils.constants import ArrayShape
 
-import numpy as np
+from pydtnn.libs import numpy as np
 
 
 class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
@@ -31,9 +31,20 @@ class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
         # setattr(self, "backward", self._backward_nhwc_i2c)
 
         # The following variable is only for NCHW implementation (not for i2c implementation)
-        y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+        # y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
+        # self.y = np.zeros(y_shape, dtype=self.model.dtype)
+        # self.real_memory_size += self.y.nbytes
+        self.y_size = self.model.batch_size * self.co * self.ho * self.wo
+
+        if not self.model.evaluate_only:
+            # dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
+            self.dx_size = np.prod(self.model.batch_size * self.ci * self.hi * self.wi)
+            # self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
+            # self.real_memory_size += self.dx.nbytes
+        self.y_dx = np.zeros(shape=(max(self.y_size, self.dx_size), ), dtype=self.model.dtype)
+        # NOTE: self.y_dx stores both y and dx values.
+        self.real_memory_size += self.y_dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
@@ -43,6 +54,19 @@ class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
             col2im_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
+    # ----
+
+    def get_y(self, batch_size: int) -> np.ndarray:
+        y_shape = self.model.encode_shape((batch_size, self.co, self.ho, self.wo))
+        y_size = np.prod(y_shape)
+        y = self.y_dx[:y_size]
+        return y.reshape(y_shape)
+
+    def get_dx(self, batch_size: int) -> np.ndarray:
+        dx_shape = self.model.encode_shape((batch_size, self.ci, self.hi, self.wi))
+        dx_size = np.prod(dx_shape)
+        dx = self.y_dx[:dx_size]
+        return dx.reshape(dx_shape)
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         msg = """This is a fake forward function. It will be masked on initialization by _forward_i2c or _forward_cg"""

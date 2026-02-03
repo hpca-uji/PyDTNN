@@ -5,6 +5,7 @@ from pydtnn.utils import find_component
 from pydtnn.utils.constants import ArrayShape, Array
 import numpy as np
 
+
 class Metric[T: Array](PromoteToBackend):
     format = ""
     order = 0   # No need of special order.
@@ -12,8 +13,16 @@ class Metric[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape, eps=1e-8):
         self.shape = shape
         self.eps = eps
+        self.real_memory_size: int = 0
+        self.temp_memory_size: int = 0
 
     def initialize(self) -> None:
+        pass
+
+    def post_initialize(self) -> None:
+        """
+        Method were the operations that requiere a initialize are done.
+        """
         pass
 
     @abstractmethod

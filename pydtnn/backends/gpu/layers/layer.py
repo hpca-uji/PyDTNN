@@ -8,12 +8,12 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
 from pydtnn.utils.constants import ArrayShape
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception as e:
     pass
 
 try:
-    import pydtnn.libs.libnccl as nccl
+    import pydtnn.libs.nccl as nccl
 except Exception as e:
     pass
 
@@ -41,11 +41,15 @@ class LayerGPU(Layer[TensorGPU]):
         self.db_cpu: ndarray = None  # type: ignore
         self.one_vec_cpu: ndarray = None  # type: ignore
         self.one_vec_gpu: gpuarray.GPUArray = None  # type: ignore
-        self.grid = None
-        self.block = None
-    
+        self.grid: tuple[int, int, int] = None  # type: ignore
+        self.block: tuple[int, int, int] = None  # type: ignore
+
     def initialize(self, prev_shape: tuple[int, ...], x: TensorGPU | None = None) -> None:
         super().initialize(prev_shape, x)
+
+        if not self.model.enable_cudnn:
+            raise RuntimeError("GPU layers requires CUDNN to be enabled!")
+
         self.grid = self.model.cuda_grid
         self.block = self.model.cuda_block
     # ---
@@ -59,7 +63,7 @@ class LayerGPU(Layer[TensorGPU]):
             return super()._export_prop(key)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64, order="C", copy=True)
+        cpu_ary = np.asarray(gpu_ary.get(), dtype=np.float64).copy()
         return cpu_ary
 
     def _import_prop(self, key: str, value) -> None:
@@ -67,7 +71,7 @@ class LayerGPU(Layer[TensorGPU]):
             return super()._import_prop(key, value)
 
         gpu_ary = getattr(self, key).ary
-        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype, order="C", copy=None)
+        cpu_ary = np.asarray(value.reshape(gpu_ary.shape), dtype=self.model.dtype)
         gpu_ary.set(cpu_ary)
 
     def reduce_weights_async(self, gradient=True):
@@ -251,3 +255,29 @@ class LayerGPU(Layer[TensorGPU]):
                     dw.ary.set_async(dw_cpu, self.stream_2)
 
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
+
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
+        # NOTE: in CUDA it's necessary to always have batches of the same size.
+        local_batch_size = x_batch.shape[0]
+
+        if local_batch_size != 0:
+            if local_batch_size != self.model.batch_size:
+                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
+                num_repetitions = ceil(self.model.batch_size / local_batch_size)
+                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.model.batch_size]
+                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.model.batch_size]
+            # else: The batch has the right shape ==> Nothing to do.
+
+            x_batch = np.asarray(x_batch, dtype=self.model.dtype)
+            y_batch = np.asarray(y_batch, dtype=self.model.dtype)
+
+            assert isinstance(self.y, TensorGPU) and isinstance(self.model.y_batch, TensorGPU)
+            self.y.ary.set(x_batch)
+            self.model.y_batch.ary.set(y_batch)
+            x, y_targ = self.model.layers[0].y, self.model.y_batch
+        else:
+            empty_x = gpuarray.empty((1, *self.model.dataset.input_shape), self.model.dtype)[:0]
+            empty_y_tag = gpuarray.empty((1, *self.model.dataset.output_shape), self.model.dtype)[:0]
+            x = TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
+            y_targ = TensorGPU(empty_y_tag, self.model.tensor_format, self.model.cudnn_dtype)
+        return x, y_targ

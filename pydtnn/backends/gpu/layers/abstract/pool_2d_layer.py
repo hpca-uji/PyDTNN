@@ -1,5 +1,5 @@
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 import pycuda.gpuarray as gpuarray   # type: ignore
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -18,7 +18,7 @@ class AbstractPool2DLayerGPU(AbstractPool2DLayer[TensorGPU], LayerGPU):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # The following attributes will be initalized later.
-        self.pool_desc = None # TODO: set CDNN descripor type
+        self.pool_desc = None  # TODO: set CDNN descripor type
         self.ci: int = None  # type: ignore
         self.hi: int = None  # type: ignore
         self.wi: int = None  # type: ignore
@@ -52,6 +52,8 @@ class AbstractPool2DLayerGPU(AbstractPool2DLayer[TensorGPU], LayerGPU):
         # Derivative dx
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes
 
         self.fwd_time = \
             im2col_time(m=(self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo * self.ci),

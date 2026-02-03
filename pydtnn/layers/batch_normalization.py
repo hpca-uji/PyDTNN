@@ -8,6 +8,7 @@ from pydtnn.utils.initializers import zeros, ones
 
 from pydtnn.utils.constants import Array, ArrayShape, Parameters
 
+
 class BatchNormalization[T: Array](Layer[T]):
 
     def __init__(self, beta=0.0, gamma=1.0, momentum=0.9, epsilon=1e-5,

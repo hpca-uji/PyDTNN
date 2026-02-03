@@ -28,5 +28,6 @@ mpirun -np 4 \
   --use-blocking-mpi=True \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --backend=cpu \
+  --enable-cudnn=False \
   --dtype=float32

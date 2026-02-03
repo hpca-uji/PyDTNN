@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
-from pydtnn.libs.libconvwinograd import ConvWinograd
+from pydtnn.libs.convWinograd import ConvWinograd
 from pydtnn.tests.abstract.common import verbose_test, D
 from pydtnn.tests.abstract.conv_common import ConvCommonTestCase
 from pydtnn.utils import print_with_header
@@ -76,7 +76,24 @@ class ConvWinogradTestCase(ConvCommonTestCase):
 
     @staticmethod
     def _compute(weights: np.ndarray, x: np.ndarray, biases: np.ndarray | None = None, kh=1, kw=1, vpadding=0, hpadding=0, vstride=1, hstride=1, vdilation=1, hdilation=1):
-        return ConvWinograd(kh, kw, vstride, hstride, vdilation, hdilation, debug=verbose_test(), tensor_format=TensorFormat.NHWC).conv_winograd_nhwc(weights, x, biases, vpadding, hpadding, vstride, hstride, vdilation, hdilation)
+        return ConvWinograd(
+            kh,
+            kw,
+            vstride,
+            hstride,
+            vdilation,
+            hdilation,
+            debug=verbose_test(),
+            tensor_format=TensorFormat.NHWC).conv_winograd_nhwc(
+            weights,
+            x,
+            biases,
+            vpadding,
+            hpadding,
+            vstride,
+            hstride,
+            vdilation,
+            hdilation)
 
     @staticmethod
     def _get_config() -> D:

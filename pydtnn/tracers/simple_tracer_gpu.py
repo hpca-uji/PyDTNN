@@ -1,5 +1,5 @@
 try:
-    import pycuda.driver as drv  #type: ignore
+    import pycuda.driver as drv  # type: ignore
 except Exception as e:
     pass
 

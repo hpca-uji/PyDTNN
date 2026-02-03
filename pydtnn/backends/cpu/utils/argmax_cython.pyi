@@ -8,7 +8,7 @@ type _npDT_1Dims[T] = _np.ndarray[tuple[int], T]
 
 def argmax_cython[T: _npDT](x: _npDT_2Dims[T],
                             maxv: _npDT_1Dims[T],
-                            amax: np.ndarray[tuple[int], _np.int32],
+                            amax: _np.ndarray[tuple[int], _np.int32],
                             rng: _np.ndarray[tuple[int], _np.int32],
                             axis: int = 0) -> tuple[_npDT_1Dims[T:_np.int32], _npDT_1Dims[T:_np.int32]]:
     """

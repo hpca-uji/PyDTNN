@@ -34,7 +34,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     model2_desc = "using the CPU backend tensor format NCHW"
 
     def get_model2(self, model_name: str):
-        
+
         # Tensor format NCHW
         params = Params()
         params.model_name = model_name
@@ -50,7 +50,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
     def nhwc2nchw(x: np.ndarray):
         if len(x.shape) == 4:
             x = format_transpose(x, TensorFormat.NHWC, TensorFormat.NCHW)
-        return np.asarray(x, order="C", copy=None)
+        return np.asarray(x)
 
     def do_model2_forward_pass(self, model2: Model, x1: list[np.ndarray]) -> list[np.ndarray]:
         """
@@ -124,7 +124,7 @@ class ModelTensorTestCase(ModelCommonTestCase):
             # Skip test on layers that behave randomly and Flatten
             if not isinstance(layer, (Dropout, Flatten)):
                 rtol, atol = self.get_tolerance(layer)
-                dx1_i=self.nhwc2nchw(dx1[i])
+                dx1_i = self.nhwc2nchw(dx1[i])
                 if dx1_i.shape == dx2[i].shape:
                     allclose = np.allclose(dx1_i, dx2[i], rtol=rtol, atol=atol)
                 else:

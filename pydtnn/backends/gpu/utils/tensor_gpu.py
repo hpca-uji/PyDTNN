@@ -10,7 +10,7 @@ from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 try:
     import pycuda.gpuarray as gpuarray  # type: ignore
     from pycuda import driver as pycuda_driver  # type: ignore
-    from pydtnn.libs import libcudnn as cudnn
+    from pydtnn.libs import cudnn as cudnn
 except Exception:
     pass
 
@@ -42,7 +42,7 @@ class TensorGPU:
         gpu_arr = gpuarray.zeros(shape, dtype)
         return TensorGPU(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
                          tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
-    
+
     @staticmethod
     def initialize_gpu_direct(drv: "pycuda_driver", shape: ArrayShape, dtype: np.dtype,
                               tensor_format: TensorFormat, cudnn_dtype: int,
@@ -69,7 +69,7 @@ class TensorGPU:
                           desc=desc, gpudirect=gpudirect, cublas=cublas)
 
         return (x_cpu, x_gpu)
-    
+
     @staticmethod
     def initialize(shape: ArrayShape, dtype: np.dtype,
                    tensor_format: TensorFormat, cudnn_dtype: int,
@@ -86,7 +86,6 @@ class TensorGPU:
                                                        cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                                                        desc=desc, gpudirect=gpudirect, cublas=cublas)
 
-
     # ---
 
     def __init__(self, gpu_arr: "gpuarray.GPUArray", tensor_format: TensorFormat, cudnn_dtype: int,
@@ -102,9 +101,10 @@ class TensorGPU:
         # The following atributes will be initalized in _initalize:
         self.ary: gpuarray.GPUArray = None
         self.size: int = -1
+        self.nbytes: int = -1
         self.desc: int = -1
         # ---
-        self._initalize(gpu_arr, desc)
+        self._initialize(gpu_arr, desc)
     # ---
 
     def copy(self):
@@ -207,7 +207,7 @@ class TensorGPU:
                     axes[3] = cudnn.cudnnSeqDataAxis["CUDNN_SEQDATA_VECT_DIM"]
                     self.seq_length_array = np.full(shape=(self.shape[0] * self.shape[1]), fill_value=self.shape[-2], dtype=np.int32)
                     # print(self.shape, dimA, axes, len(seq_length_array))
-                    cudnn.cudnnSetSeqDataDescriptor(self.desc, cudnn_dtype,
+                    cudnn.cudnnSetSeqDataDescriptor(self.desc, self.cudnn_dtype,
                                                     np.int32(4), dimA, axes,
                                                     np.int32(len(self.seq_length_array)), self.seq_length_array,
                                                     None)
@@ -225,24 +225,25 @@ class TensorGPU:
             case self.TensorTypeEnum.FILTER:
                 cudnn.cudnnDestroyFilterDescriptor(self.desc)
             case self.TensorTypeEnum.SEQ:
-                pass
+                cudnn.cudnnDestroySeqDataDescriptor(self.desc)
             case self.TensorTypeEnum.OTHER:
                 cudnn.cudnnDestroySeqDataDescriptor(self.desc)
             case tensor_type:
                 raise NotImplementedError(f"Tensor type not implemented! ({tensor_type})")
         self.desc = -1
 
-    def _initalize(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
+    def _initialize(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
         self.ary = gpu_arr
         self._set_shape(gpu_arr)
         self.size = gpu_arr.size
+        self.nbytes = gpu_arr.nbytes
         if self.size != 0:
             self._set_ptr(gpu_arr)
             self._set_desc(desc)
     # ---
 
     def reshape(self, shape: ArrayShape):
-        self.ary = self.ary.reshape(shape, order="C")
+        self.ary = self.ary.reshape(shape)
         self.shape = shape
         return self
     # ---
@@ -264,12 +265,12 @@ class TensorGPU:
 
     def set_ary(self, gpu_arr: "gpuarray.GPUArray", desc: int | None = None) -> None:
         self.free_gpu_arr()
-        self._initalize(gpu_arr, desc)
+        self._initialize(gpu_arr, desc)
     # ---
 
     def set_ary_from_ndarray(self, arr: np.ndarray, desc: int | None = None) -> None:
         self.free_gpu_arr()
-        self._initalize(gpuarray.to_gpu(arr), desc)
+        self._initialize(gpuarray.to_gpu(arr), desc)
     # ---
 
     def fill(self, scalar: int | float) -> None:

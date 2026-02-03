@@ -17,14 +17,15 @@
 
 # Knowledge
 - On components `__init__` is used for configuration, while `initialize` for resource allocations.
-- `enable_gpu` changes the backed from CPU to GPU.
-- `enable_gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable_gpu`.
+- `enable_cudnn` changes the backed from CPU to GPU.
+- `enable_gpudirect` changes where data is stored, from CPU in `ndarray` to GPU in `GPUArray`, and requires `enable_cudnn`.
 - `enable_nccl` changes where reductions are made, from CPU with `MPI` to GPU with `NCCL`, and requries `enable_gpudirect`.
 - `encryption` requies `NCCL` to be off, it it is on, encryption will be skipped.
 - `encryption` normally requires `use-mpi-buffers` to be off, as must crypto does not expose buffer access.
   Also the MPI library does not support async object reduces, such as `mpi4py`, `use-blocking-mpi` must be specified.
 - If using `conda` and `pip install --config-settings editable_mode=compat -e .` errors with `no such option: --config-settings`,
   deactivate all environments and then reactivate only the one you want.
+- Temporal shared memory on block layers may be overwritten by child layers.
 
 # Planned
 - Move `gpu.utils.memory_allocation` from a global namespace to a model instance.

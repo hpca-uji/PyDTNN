@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.block_layer import AbstractBlockLayerCPU
 from pydtnn.backends.cpu.layers.encoder import Encoder
@@ -28,7 +28,7 @@ class EncoderDecoderCPU(EncoderDecoder[np.ndarray], AbstractBlockLayerCPU):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.encoder[0].initialize(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.encoder[1:]:
@@ -62,9 +62,9 @@ class EncoderDecoderCPU(EncoderDecoder[np.ndarray], AbstractBlockLayerCPU):
         dx_tgt = prev_dx
         dx_enc = 0.
         for i in range(self.dec_layers):  # Decoding layers
-            dx_tgt, dx2 = self.decoder[-1 * (i+1)].backward(dx_tgt)
+            dx_tgt, dx2 = self.decoder[-1 * (i + 1)].backward(dx_tgt)
             dx_enc += dx2
         for i in range(self.enc_layers):  # Enconding layers
-            dx_enc = self.encoder[-1 * (i+1)].backward(dx_enc)
+            dx_enc = self.encoder[-1 * (i + 1)].backward(dx_enc)
         # if self.need_dx:
         return dx_tgt, dx_enc

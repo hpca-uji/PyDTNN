@@ -1,5 +1,5 @@
 from pydtnn.optimizers.optimizer import Optimizer
-import numpy as np
+from pydtnn.libs import numpy as np
 
 
 class OptimizerCPU(Optimizer[np.ndarray]):

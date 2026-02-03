@@ -15,4 +15,3 @@ class Precision[T: Array](Metric[T]):
                 self.conf_matrix_metric = metric
                 break
         assert self.conf_matrix_metric is not None, f"Precision requires of {BinaryConfusionMatrix.__name__}"
-

@@ -8,9 +8,10 @@ import numpy as np
 CONCAT_DIM_NCHW = 1
 CONCAT_DIM_NHWC = -1
 
+
 class ConcatenationBlock[T: Array](AbstractBlockLayer[T]):
-    def initialize_block_layer(self):
-        super().initialize_block_layer()
+    def initialize(self, prev_shape, x=None):
+        super().initialize(prev_shape, x)
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:

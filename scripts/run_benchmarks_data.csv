@@ -87,7 +87,7 @@ reduce_lr_on_plateau_min_lr;0;0;0.0001;0;0.00001;0.00001;0.00001;0.00001;0.00001
 non_blocking_mpi;False;False;False;False;False;False;False;False;False;False;False;False;True;True
 tracing;False;False;False;False;False;False;False;False;False;False;False;False;False;False
 profile;False;False;False;False;False;False;False;False;False;False;False;False;False;False
-enable_gpu;False;False;False;False;False;False;False;False;False;False;False;False;False;False
+enable_cudnn;False;False;False;False;False;False;False;False;False;False;False;False;False;False
 dtype;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32;float32
 use_synthetic_data;;True;;True;;True;;True;;True;;True;;True
 augment_flip;False;False;False;False;False;False;False;False;False;False;False;False;False;False

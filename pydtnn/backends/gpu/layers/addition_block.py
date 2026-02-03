@@ -2,12 +2,13 @@ from pydtnn.backends.gpu.layers.abstract.block_layer import AbstractBlockLayerGP
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 
 class AdditionBlockGPU(AdditionBlock[TensorGPU], AbstractBlockLayerGPU):
     y: TensorGPU
+
     def forward(self, x: TensorGPU) -> TensorGPU:
         for i, p in enumerate(self.paths):
             y_i = x

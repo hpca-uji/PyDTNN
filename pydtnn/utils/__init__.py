@@ -7,7 +7,6 @@ import inspect
 import weakref
 import functools
 import threading
-from glob import glob
 from queue import Queue
 from importlib import import_module
 from ctypes.util import find_library
@@ -18,25 +17,25 @@ import numpy as np
 import subprocess
 import re
 
+
 def get_gpu_memory_use() -> str:
-    """
-    Note: it's necessary nvidia-smi.
-    
-    :return: The memory use.
-    :rtype: str
-    """
     pattern = r"Used *: .*"
-    memory = subprocess.check_output(["nvidia-smi", "-q", "-d", "MEMORY"]).decode()
-    memory = re.search(pattern, memory).group().split(":")[-1].strip()
+    try:
+        memory = subprocess.check_output(["nvidia-smi", "-q", "-d", "MEMORY"]).decode()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        memory = str(None)
+    else:
+        memory = re.search(pattern, memory).group().split(":")[-1].strip()
     return memory
 
-def _get_gpus_per_node() -> int:
-    import subprocess
+
+def get_gpus_per_node() -> int:
     try:
         gpus_per_node = subprocess.check_output(["nvidia-smi", "-L"]).count(b'UUID')
     except (FileNotFoundError, subprocess.CalledProcessError):
         gpus_per_node = 0
     return gpus_per_node
+
 
 class BackgroundGenerator[T](threading.Thread):
     def __init__(self, generator: Iterable[T], max_prefetch=0):
@@ -63,31 +62,6 @@ class BackgroundGenerator[T](threading.Thread):
 
     def __iter__(self):
         return self
-
-
-class Random:
-    def __init__(self, seed=0) -> None:
-        self._generators = weakref.WeakKeyDictionary[threading.Thread, np.random.Generator]()
-        self.seed(seed)
-
-    def seed(self, seed) -> None:
-        self._seed = seed
-        self._generators.clear()
-
-    @property
-    def _generator(self) -> np.random.Generator:
-        thread = threading.current_thread()
-
-        if thread not in self._generators:
-            self._generators[thread] = np.random.default_rng(self._seed)
-
-        return self._generators[thread]
-
-    def __getattr__(self, key: str):
-        return getattr(self._generator, key)
-
-
-random: np.random.Generator = Random()  # type: ignore
 
 
 def print_with_header(header, to_be_printed=None):
@@ -123,6 +97,7 @@ def set_attr_default_factory(o, name, factory):
         value = factory()
         setattr(o, name, value)
         return value
+
 
 def load_library(name):
     """
@@ -165,18 +140,6 @@ def load_library(name):
     return ctypes.CDLL(path)
 
 
-def blis():
-    if not hasattr(blis, "lib"):
-        blis.lib = load_library("blis")
-    return blis.lib
-
-
-def mkl():
-    if not hasattr(mkl, "lib"):
-        mkl.lib = load_library("mkl_rt")
-    return mkl.lib
-
-
 def convert_size(units: int, scale: int = 1000):
     size_name = ("", "K", "M", "G", "T", "P", "E", "Z", "Y")
     if units > 0:
@@ -191,75 +154,6 @@ def convert_size(units: int, scale: int = 1000):
 
 def convert_size_bytes(size_bytes):
     return f"{convert_size(size_bytes, scale=1024)}B"
-
-
-# Matmul operation
-# Warning: the output matrix can not be cached, as it will persist outside this method
-def matmul(a: np.ndarray, b: np.ndarray, c: np.ndarray | None = None) -> np.ndarray:
-    # if a.dtype == np.float32:
-    #    c = slb.sgemm(1.0, a, b)
-    # elif a.dtype == np.float64:
-    #    c = slb.dgemm(1.0, a, b)
-    # else:
-    # Native numpy matmul gets more performance than scipy blas!
-    if c is None:
-        return a @ b
-    else:
-        return np.matmul(a, b, c)
-
-
-def _matmul_xgemm(called_from, lib, a, b, c=None):
-    order = 101  # 101 for row-major, 102 for column major data structures
-    m = a.shape[0]
-    n = b.shape[1]
-    k = a.shape[1]
-    if c is None:
-        c = np.ones((m, n), a.dtype, order="C")
-    # trans_{a,b} = 111 for no transpose, 112 for transpose, and 113 for conjugate transpose
-    if a.flags["C_CONTIGUOUS"]:
-        trans_a = 111
-        lda = k
-    elif a.flags["F_CONTIGUOUS"]:
-        trans_a = 112
-        lda = m
-    else:
-        raise ValueError(f"Matrix a data layout not supported by {called_from}().")
-    if b.flags["C_CONTIGUOUS"]:
-        trans_b = 111
-        ldb = n
-    elif b.flags["F_CONTIGUOUS"]:
-        trans_b = 112
-        ldb = k
-    else:
-        raise ValueError(f"Matrix b data layout not supported by {called_from}().")
-    ldc = n
-    alpha = 1.0
-    beta = 0.0
-    if a.dtype == np.float32:
-        lib.cblas_sgemm(ctypes.c_int(order), ctypes.c_int(trans_a), ctypes.c_int(trans_b),
-                        ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k), ctypes.c_float(alpha),
-                        ctypes.c_void_p(a.ctypes.data), ctypes.c_int(lda),
-                        ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
-                        ctypes.c_float(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
-    elif a.dtype == np.float64:
-        lib.cblas_dgemm(ctypes.c_int(order), ctypes.c_int(trans_a), ctypes.c_int(trans_b),
-                        ctypes.c_int(m), ctypes.c_int(n), ctypes.c_int(k), ctypes.c_double(alpha),
-                        ctypes.c_void_p(a.ctypes.data), ctypes.c_int(lda),
-                        ctypes.c_void_p(b.ctypes.data), ctypes.c_int(ldb),
-                        ctypes.c_double(beta), ctypes.c_void_p(c.ctypes.data), ctypes.c_int(ldc))
-    else:
-        raise TypeError(f"Type '{a.dtype}' not supported by {called_from}().")
-    return c
-
-
-def matmul_mkl(a, b, c=None):
-    # os.environ['GOMP_CPU_AFFINITY'] = ""
-    # os.environ['OMP_PLACES'] = ""
-    return _matmul_xgemm("matmul_mkl", mkl(), a, b, c)
-
-
-def matmul_blis(a, b, c=None):
-    return _matmul_xgemm("matmul_blis", blis(), a, b, c)
 
 
 def string_substitute(template, /, **mappings):

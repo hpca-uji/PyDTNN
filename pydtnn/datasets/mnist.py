@@ -1,6 +1,6 @@
 import os
 import itertools
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING
 
 import numpy as np
 
@@ -58,7 +58,7 @@ class MNIST(Dataset):
         self._images_header_offset = 16  # 4 + 4 * 3
         self._labels_header_offset = 8  # 4 + 4 * 1
 
-        # Pregenerate GZIP indexs
+        # Pregenerate gZIP indexes
         for gz in itertools.chain(self._x_filename, self._y_filename):
             self._gzip_open(gz).close()
 
@@ -68,8 +68,8 @@ class MNIST(Dataset):
         nbytes = self._local_nsamples[part] * size
         filename = self._x_filename[part]
         with self._gzip_open(filename) as f:
-            x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE) / 255.0
-        x = x.astype(self.model.dtype)
+            x = self._read_file(f, offset, nbytes).reshape(self._local_nsamples[part], *INPUT_SHAPE)
+        x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
         x = self.model.encode_tensor(x)
 
@@ -79,12 +79,12 @@ class MNIST(Dataset):
         with self._gzip_open(self._y_filename[part]) as f:
             y_classes = self._read_file(f, offset, nbytes)
 
-        y = np.zeros((self._local_nsamples[part], *self.output_shape), dtype=self.model.dtype, order="C")
+        y = np.zeros((self._local_nsamples[part], *self.output_shape), dtype=self.model.dtype)
         self._decode_class(y, y_classes)
 
         yield x, y
 
-    def _read_file(self, f, offset: int, nbytes: int) -> np.ndarray:
+    def _read_file(self, f: IO[bytes], offset: int, nbytes: int) -> np.ndarray:
         # How to read the header:
         #  zero, data_type, dims = struct.unpack('>HBB', f.read(4))
         #  shape = (struct.unpack('>I', f.read(4))[0] for _ in range(dims))

@@ -1,57 +1,269 @@
-from pydtnn.layers.conv_2d import Conv2D
-from pydtnn.backends.cpu.layers.layer import LayerCPU
-from pydtnn.utils.performance_models import im2col_time, matmul_time
+from pydtnn.libs import numpy as np
+from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
+from pydtnn.backends.cpu.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython  # , alt_col2im_nchw_cython
+from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython  # , alt_row2im_nhwc_cython
+
+from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
+
 from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.tensor import TensorFormat, format_transpose
 
-import numpy as np
 
-
-class Conv2DCPU(Conv2D[np.ndarray], LayerCPU):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # More parameters initialized in initialize()
-        self.biases = None  # type: ignore
-        self.weights = None  # type: ignore
-        self.fwd_time = None  # type: ignore
-        self.bwd_time = None  # type: ignore
-    # ----
+class Conv2DCPU(AbstractConv2DStandardCPU):
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
+
+        # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
+        # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
+        dim_n = self.model.batch_size * self.ho * self.wo
+        self.dim_c = self.ci * self.kh * self.kw
+
+        match self.model.tensor_format:
+            case TensorFormat.NCHW:
+                self.forward = self._forward_i2c_nchw
+                self.backward = self._backward_i2c_nchw
+                self._x_cr_shape = (self.dim_c, dim_n)
+                _dw_shape = (self.co, self.dim_c)
+            case TensorFormat.NHWC:
+                self.forward = self._forward_i2c_nhwc
+                self.backward = self._backward_i2c_nhwc
+                self._x_cr_shape = (dim_n, self.dim_c)
+                _dw_shape = (self.dim_c, self.co)
+            case _:
+                self._x_cr_shape = (None, )
+                _dw_shape = (None, )
+                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
+        # -
+
+        self.temp_bw_shape = self._x_cr_shape
+        self.temp_bw_shape_size = np.prod(self.temp_bw_shape)
+
+        y_shape = (dim_n, self.co)
+        self.y_size = np.prod(y_shape)
+
+        # self.y = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype)
+        # self.real_memory_size += self.y.nbytes
+
+        if not self.model.evaluate_only:
+            self.dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
+            self._dw_shape = _dw_shape  # This shape is only for a intermediate operation.
+        else:
+            self.dx_shape = (0,)
+
+        self.dx_shape_size = int(np.prod(self.dx_shape))
+        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
+        self.temp_c_r_dx = np.zeros(shape=(max(np.prod(self._x_cr_shape), self.dx_shape_size), ), dtype=self.model.dtype)
+        # self.temp_c_r_dx: Temporal array where the cols/rows and dx values are stored.
+        self.real_memory_size += self.temp_c_r_dx.nbytes
+
+        self.temp_y_bc_br = np.zeros(shape=(max(self.y_size, self.temp_bw_shape_size), ), dtype=self.model.dtype)
+        # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
+        self.real_memory_size += self.temp_y_bc_br.nbytes
+
+        self.real_memory_size += self.temp_memory_size
+    # ---
+
+    def get_rows(self, batch_size: int) -> np.ndarray:
+        dim_n = batch_size * self.ho * self.wo
+        shape = (dim_n, self.dim_c)
+        x_rows: np.ndarray = self.temp_c_r_dx[:np.prod(shape)]
+        x_rows = x_rows.reshape(shape)
+        return x_rows
+
+    def get_cols(self, batch_size: int) -> np.ndarray:
+        dim_n = batch_size * self.ho * self.wo
+        shape = (self.dim_c, dim_n)
+        x_cols: np.ndarray = self.temp_c_r_dx[:np.prod(shape)]
+        x_cols = x_cols.reshape(shape)
+        return x_cols
+
+    def get_y(self, batch_size: int) -> np.ndarray:
+        dim_n = batch_size * self.ho * self.wo
+        shape = (dim_n, self.co)
+        y: np.ndarray = self.temp_y_bc_br[:np.prod(shape)]
+        y = y.reshape(shape)
+        return y
+
+    def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
+        """Version of the forward function that uses im2col and matmul"""
+
+        # x_rows = np.zeros(shape=(dim_n, self.dim_c), dtype=self.model.dtype)
+        # x_rows = np.asarray(self._x_rows[:dim_n, :], dtype=self.model.dtype)
+        x_rows = self.get_rows(x.shape[0])
+        x_rows.fill(0)
+        # y = self.y[:shape[-1], :]
+        y = self.get_y(x.shape[0])
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
+        im2row_nhwc_cython(x, x_rows,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.x_rows = x_rows
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
+        w_cols = self.weights.reshape((-1, self.co), copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
+        np.matmul(x_rows, w_cols, out=y,
+                  dtype=self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
         if self.use_bias:
-            bias_shape = (self.co,)  # NOTE: Is the same shape in every variant and grouping
-            self.biases = self.biases_initializer(bias_shape, self.model.dtype)
-            self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype, order="C")
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            np.add(y, self.biases.reshape((-1, self.co), copy=False), out=y,
+                   dtype=self.model.dtype)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        self.weights = self.weights_initializer(self.weights_shape, self.model.dtype)  # type: ignore (it's ok)
-        self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype, order="C")
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
+        y = y.reshape((-1, self.ho, self.wo, self.co), copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        # Performance models
-        self.fwd_time = \
-            im2col_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype) + \
-            matmul_time(m=self.co, n=(self.model.batch_size * self.ho * self.wo), k=(self.ci * self.kh * self.kw),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)  # type: ignore (It works well.)
-        self.bwd_time = \
-            matmul_time(m=self.co, n=(self.ci * self.kh * self.kw), k=(self.model.batch_size * self.ho * self.wo),
-                        cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
-                        dtype=self.model.dtype)
-        self.bwd_time += matmul_time(m=(self.ci * self.kh * self.kw), n=(self.model.batch_size * self.ho * self.wo),
-                                     k=self.co, cpu_speed=self.model.cpu_speed,
-                                     memory_bw=self.model.memory_bw, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype)
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        raise NotImplementedError("Use a real forward variant!")
+    def _forward_i2c_nchw(self, x: np.ndarray) -> np.ndarray:
+        """Version of the forward function that uses im2col and matmul"""
 
-    def backward(self, dy: np.ndarray) -> np.ndarray:
-        raise NotImplementedError("Use a real backwards variant!")
+        # x_cols = np.zeros(shape=(self.dim_c, dim_n), dtype=self.model.dtype)
+        # x_cols: np.ndarray = np.asarray(self._x_cr[:, :dim_n], dtype=self.model.dtype)
+        x_cols = self.get_cols(x.shape[0])
+        x_cols.fill(0)
+        # y = self.y[:shape[-1], :]
+        y = self.get_y(x.shape[0])
 
-    def print_in_convdirect_format(self) -> None:
-        if self.hstride != 1 or self.vstride != 1:
-            return
-        # #l kn wo ho t kh kw ci wi hi"
-        ci, hi, wi = self.model.decode_shape(self.prev_shape)
-        print(self.id, self.co, self.wo, self.ho, self.model.batch_size, self.kh, self.kw, ci, wi, hi, sep="\t")
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
+        im2col_nchw_cython(x, x_cols,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.x_cols = x_cols
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_W)
+        w_rows = self.weights.reshape((self.co, -1), copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_MATMUL)
+        np.matmul(w_rows, x_cols, out=y.T,
+                  dtype=self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_SUM_BIASES)
+            np.add(y, self.biases.reshape((-1, self.co), copy=False), out=y,
+                   dtype=self.model.dtype)
+
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_RESHAPE_Y)
+        y: np.ndarray = format_transpose(y.reshape((-1, self.ho, self.wo, self.co), copy=False), "NHWC", "NCHW")
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        return np.asarray(y, dtype=self.model.dtype)
+
+    def _backward_i2c_nhwc(self, dy: np.ndarray) -> np.ndarray:
+        """Version of the backward function that uses im2col and matmul"""
+
+        # res = np.asarray(self.res_bw[:(dy.shape[0] * self.ho * self.wo), :], dtype=self.model.dtype)
+        rows: np.ndarray = self.get_rows(dy.shape[0])
+        self.dw = self.dw.reshape(self._dw_shape)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
+        dy_cols: np.ndarray = dy.reshape((-1, self.co), copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Weigths gradient
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
+        np.matmul(self.x_rows.T, dy_cols, out=self.dw,
+                  dtype=self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
+        self.dw = self.dw.reshape(self.weights.shape, copy=False)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Biases gradient
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            np.sum(dy, axis=(0, 1, 2), out=self.db)
+            # np.sum(dy.reshape((self.co, -1)), axis=1, out=self.db)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Data gradient
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
+        w_rows = self.weights.reshape((-1, self.co), copy=False).T
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
+        np.matmul(dy_cols, w_rows, out=rows,
+                  dtype=self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        row2im_nhwc_cython(rows, dx,
+                           dy.shape[0], self.hi, self.wi, self.ci,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        return np.asarray(dx, dtype=self.model.dtype)
+
+    def _backward_i2c_nchw(self, dy: np.ndarray) -> np.ndarray:
+        """Version of the backward function that uses im2col and matmul"""
+        # cols:np.ndarray = np.asarray(self.temp_bw[:, :(dy.shape[0] * self.ho * self.wo)], dtype=self.model.dtype)
+        cols = self.get_cols(dy.shape[0])
+
+        self.dw = self.dw.reshape(self._dw_shape)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_DY)
+        dy_rows: np.ndarray = format_transpose(dy, "NCHW", "CNHW").reshape((self.co, -1))
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Weigths gradient
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DW_MATMUL)
+        np.matmul(dy_rows, self.x_cols.T, out=self.dw,
+                  dtype=self.model.dtype)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
+        self.dw = self.dw.reshape(self.weights.shape).copy()
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Biases gradient
+        if self.use_bias:
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
+            np.sum(dy, axis=(0, 2, 3), out=self.db)
+            # np.sum(dy.reshape((self.co, -1), copy=False), axis=1, out=self.db)
+            self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        # Data gradient
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_TRANSPOSE_W)
+        w_cols = self.weights.reshape((self.co, -1), copy=False).T
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_MATMUL)
+        np.matmul(w_cols, dy_rows, out=cols,
+                  dtype=self.model.dtype, order='C')
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
+
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
+        col2im_nchw_cython(cols, dx,
+                           dy.shape[0], self.ci, self.hi, self.wi,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
+
+        return np.asarray(dx, dtype=self.model.dtype)

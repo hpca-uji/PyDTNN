@@ -3,7 +3,7 @@ PyDTNN Utilities
 """
 
 try:
-    from skcuda import cublas  #type: ignore
+    from skcuda import cublas  # type: ignore
 except Exception:
     pass
 

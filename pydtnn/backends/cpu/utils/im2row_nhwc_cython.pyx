@@ -133,8 +133,7 @@ def alt_row2im_nhwc_cython(npDT[:,::1] rows,
                            int vpadding, int hpadding,
                            int vstride, int hstride,
                            int vdilation, int hdilation) -> None: 
-    cdef int nn, row, cc, ii, jj, col, x_x, x_y, x_o, y_o
-    cdef float xx, yy
+    cdef int nn, row, cc, ii, jj, col, x_x, x_y, x_o, y_o, xx, yy
 
     for nn in prange(n, nogil=True):
         for x_x in range(h):
@@ -143,15 +142,18 @@ def alt_row2im_nhwc_cython(npDT[:,::1] rows,
                     for ii in range(kh):
                         for jj in range(kw):
                             # x_x = vstride * xx + vdilation * ii - vpadding
-                            xx = ((x_x + vpadding - vdilation * ii) / vstride)
+                            x_o = x_x + vpadding - vdilation * ii
+                            xx = x_o // vstride
+                            x_o = x_o % vstride
+                            
                             # x_y = hstride * yy + hdilation * jj - hpadding
-                            yy = ((x_y + hpadding - hdilation * jj) / hstride)
+                            y_o = x_y + hpadding - hdilation * jj
+                            yy = y_o // hstride
+                            y_o = y_o % hstride
 
-                            x_o = ((x_x + vpadding - vdilation * ii) % vstride)
-                            y_o = ((x_y + hpadding - hdilation * jj) % hstride)
 
-                            if (x_o == xx) and (y_o == yy) and ((0 <= xx < ho) and (0 <= yy < wo)):
-                                row = nn * ho * wo + x_o * wo + y_o
+                            if (x_o == 0) and (y_o == 0) and ((0 <= xx < ho) and (0 <= yy < wo)):
+                                row = nn * ho * wo + xx * wo + yy
                                 col = cc * kh * kw + ii * kw + jj
                                 x[nn, x_x, x_y, cc] += rows[row, col]
 # ========================================== #

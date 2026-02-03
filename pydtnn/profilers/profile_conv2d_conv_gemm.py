@@ -75,22 +75,22 @@ class Params:
 def get_conv2d_layers(d: D) -> tuple[Conv2D, Conv2D]:
     params = Params()
     params.batch_size = d.b
-    params.conv_variant = "i2c"
+    params.backend = "cpu"
     model_i2c = Model(**vars(params))
     params_gc = deepcopy(params)
-    params_gc.conv_variant = "gemm"
+    params_gc.backend = "cpu;conv_2d:gemm"
     model_cg = Model(**vars(params_gc))
     conv2d_i2c = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                         padding=(d.vpadding, d.hpadding),
                         stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
                         use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
-    conv2d_i2c.init_backend_from_model(model_i2c)
+    conv2d_i2c.init_backend_with_model(model_i2c)
     conv2d_i2c.debug = True
     conv2d_cg = Conv2D(nfilters=d.kn, filter_shape=(d.kh, d.kw),
                        padding=(d.vpadding, d.hpadding),
                        stride=(d.vstride, d.hstride), dilation=(d.vdilation, d.hdilation),
                        use_bias=True, weights_initializer="glorot_uniform", biases_initializer="zeros")
-    conv2d_cg.init_backend_from_model(model_cg)
+    conv2d_cg.init_backend_with_model(model_cg)
     conv2d_cg.debug = True
     for layer in (conv2d_i2c, conv2d_cg):
         layer.initialize(prev_shape=(d.c, d.h, d.w))

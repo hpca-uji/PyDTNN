@@ -25,4 +25,4 @@ class SchedulerWithLossOrMetric(Scheduler):
 
     @classmethod
     def from_model(cls, model: "Model") -> "WarmUpLRScheduler":
-        return 
+        return

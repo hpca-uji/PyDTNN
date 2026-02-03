@@ -7,7 +7,7 @@ from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer import LayerGPU
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape, Parameters
 
@@ -16,10 +16,10 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
 
     @property
     def _ary_prop(self) -> set[str]:
-        return {Parameters.RUNNING_MEAN, 
-                Parameters.RUNNING_VAR, 
+        return {Parameters.RUNNING_MEAN,
+                Parameters.RUNNING_VAR,
                 *super()._ary_prop}
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # NOTE: The next attributes will be initialized later
@@ -71,12 +71,12 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
         self.dgamma_cpu, self.dgamma = TensorGPU.initialize(self.gamma.ary.shape, self.model.dtype,
                                                             tensor_format=self.model.tensor_format,
                                                             cudnn_dtype=self.model.cudnn_dtype,
-                                                            gpudirect=self.model.gpudirect, 
+                                                            gpudirect=self.model.gpudirect,
                                                             drv=(drv if self.model.gpudirect else None))
         self.dbeta_cpu, self.dbeta = TensorGPU.initialize(self.beta.ary.shape, self.model.dtype,
                                                           tensor_format=self.model.tensor_format,
                                                           cudnn_dtype=self.model.cudnn_dtype,
-                                                          gpudirect=self.model.gpudirect, 
+                                                          gpudirect=self.model.gpudirect,
                                                           drv=(drv if self.model.gpudirect else None))
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))
@@ -94,6 +94,9 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
         self.factor = 1.0 - self.momentum
 
         self.nparams = self.gamma.size + self.beta.size + self.running_mean.size + self.running_var.size
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes + self.save_inv_var.nbytes + self.save_mean.nbytes + \
+            self.running_var.nbytes + self.running_mean.nbytes + self.dbeta.nbytes + self.dgamma.nbytes + self.beta.nbytes + self.gamma.nbytes
     # ---
 
     def forward(self, x: TensorGPU) -> TensorGPU:
@@ -124,7 +127,7 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
 
     def backward(self, dy: TensorGPU) -> TensorGPU:
         self.x: TensorGPU
-        
+
         alpha_dx, beta_dx, alpha_dgb, beta_dgb = 1.0, 0.0, 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx, dgamma, dbeta
@@ -148,12 +151,12 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
         value = getattr(self, key)
         gpu_ary = value.ary
         cpu_ary = gpu_ary.get()
-        return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64, order="C", copy=True)
+        return np.asarray(np.squeeze(cpu_ary, axis=(0, 2, 3)), dtype=np.float64).copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:
         match key:
-            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA :
+            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:
                 return self._export_gamma_beta(key)
             case _:
                 return super()._export_prop(key)
@@ -161,14 +164,14 @@ class BatchNormalizationGPU(BatchNormalization[TensorGPU], LayerGPU):
 
     def _import_gamma_beta(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype, order="C", copy=None)
+        cpu_ary = np.asarray(np.expand_dims(value, axis=(0, 2, 3)), dtype=self.model.dtype)
         attribute.ary.set(cpu_ary)
         return
     # ---
 
     def _import_prop(self, key: str, value) -> None:
         match key:
-            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA :
+            case Parameters.GAMMA | Parameters.DGAMMA | Parameters.BETA | Parameters.DBETA:
                 return self._import_gamma_beta(key, value)
             case _:
                 return super()._import_prop(key, value)

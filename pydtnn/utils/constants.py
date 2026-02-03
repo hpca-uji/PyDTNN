@@ -14,6 +14,7 @@ class NetworkAlgEnum(StrEnum):
     BTA = auto()
     VDG = auto()
 
+
 class Components(StrEnum):
     DATASETS = auto()
     ACTIVATIONS = auto()
@@ -24,6 +25,7 @@ class Components(StrEnum):
     OPTIMIZERS = auto()
     SCHEDULERS = auto()
     TRACERS = auto()
+
 
 class Parameters(StrEnum):
     PATHS = auto()
@@ -43,7 +45,6 @@ class Parameters(StrEnum):
 
     BIASES = auto()
     DB = auto()
-
 
 
 # NOTE: It is necessary to have "ArrayShape" initialized before TensorGPU

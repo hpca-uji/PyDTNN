@@ -81,12 +81,6 @@ Optionally, if you are going to use MPI, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-git submodule update --init ./vendor/net-queue
-pip install ./vendor/net-queue
-
-git submodule update --init ./vendor/pympi
-pip install ./vendor/pympi
-
 pip install .[mpi]
 ```
 
@@ -102,33 +96,23 @@ Optionally, if you are going to use FHE, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
-pip install .[fhe]
+pip install .[mpi]
 ```
 
-Optionally, if you are going to use MPI/TCP, you should enable the protocol
+Optionally, if you are going to use PyMPI, you can switch protocols
 with:
 ```sh
 export PYMPI_PROTO=tcp
-```
-
-Optionally, if you are going to use MPI/gRPC, you should enable the protocol
-with:
-```sh
 export PYMPI_PROTO=grpc
-```
-
-Optionally, if you are going to use MPI/MQTT, you should have installed a
-MQTT broker server, you should enable the protocol with:
-```sh
 export PYMPI_PROTO=mqtt
 ```
 
-Optionally, if you are going to use MPI/SSL, you should enable the
-transport with:
+Optionally, if you are going to use PyMPI with SSL, you should enable it
+with:
 ```sh
 export PYMPI_SSL=yes
-export PYMPI_SSL_KEY=comms/ssl/key.pem    # server private key
-export PYMPI_SSL_CERT=comms/ssl/cert.pem  # server certificate
+export PYMPI_SSL_KEY=key.pem    # server private key
+export PYMPI_SSL_CERT=cert.pem  # server certificate
 ```
 
 For more information on how to manage external dependencies see
@@ -141,6 +125,7 @@ The PyDTNN framework comes with a utility launcher called
 - Model parameters:
   - `--model`: Neural network model: `simplemlp`, `simplecnn`,
     `alexnet`, `vgg11`, `vgg16`, etc. Default: `None`.
+  - `--backend`: Backend selection priority. Format: `[module:]backend[,backend][;...]`. Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
   - `--global-batch-size`: Batch size between all MPI ranks. Default:
     `None`.
@@ -155,6 +140,10 @@ The PyDTNN framework comes with a utility launcher called
   - `--weights-and-bias-filename`: Load weights and bias from file.
     Default: `None`.
   - `--history-file`: Filename to save training loss and metrics.
+  - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`. Optionally,
+    the `AUTO` value sets `NCHW` when the option `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
+  - `--random-seed`: Initial state of random number generator. Default: `57005`.
+  - `--shared-memory`: Allows to use a common memory pool for all the temporary data structures.
   - `--shared-storage`: If `True` ranks assume they share the file
     system. Default: `True`.
   - `--model-sync-freq`: Number of batches between model synchronization.
@@ -173,7 +162,7 @@ The PyDTNN framework comes with a utility launcher called
     `True`.
   - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`.
     Optionally, the `AUTO` value sets `NCHW` when the option
-    `--enable-gpu` is set and `NHWC` otherwise. Default: `NHWC`.
+    `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
 - Dataset parameters:
   - `--dataset`: Dataset to train: `mnist`, `cifar10`, `synthetic`,
     …. Default: `None`.
@@ -226,12 +215,6 @@ The PyDTNN framework comes with a utility launcher called
   - `--enable-fused-conv-bn-relu`: Fuse `Conv2D` and
     `BatchNormalization` and `Relu` layers. Default: `False`.
 - Convolution operation parameters:
-  - `--conv-variant`:Select the standard 2D Convolutional module.
-    Options:
-    - `i2c` (default): Use the ConvI2C algorithm.
-    - `gemm`: Use the ConvGemm algorithm.
-    - `winograd`: Use the CondWinograd algorithm.
-    - `direct`: Use the ConvDirect algorithm.
   - `--conv-direct-method`: Use `ConvDirect` module to realize
     convolutions in `Conv2D` layers. `True` if specified.
   - `--conv-direct-methods-for-best-of`: `ConvDirect` modules to compare
@@ -310,12 +293,12 @@ The PyDTNN framework comes with a utility launcher called
   - `--use-mpi-buffers`: Enable the use of MPI buffers. Possible values:
     `True` (MPI operations by buffer), `False` (MPI operations by
     object) or `None` (auto-select the better option). Default: `None`.
-  - `--enable-gpu`: Enable GPU, use `cuDNN` library. Default: `False`.
+  - `--enable-cudnn`: Enable GPU, use `cuDNN` library. Default: `False`.
   - `--enable-gpudirect`: Enable GPU pinned memory for gradients when
     using a CUDA-aware MPI version. Default: `False`.
   - `--enable-nccl`: Enable the use of the `NCCL` library for collective
     communications on GPUs. This option can only be set with
-    `--enable-gpu`. Default. `False`.
+    `--enable-cudnn`. Default. `False`.
   - `--enable-cudnn-auto-conv-alg`: Let `cuDNN` to select the best
     performing convolution algorithm. Default: `True`.
 - Encryption parameters:
@@ -367,7 +350,8 @@ $ mpirun -np 12 \
       --parallel=sequential \
       --tracing=False \
       --profile=False \
-      --enable-gpu=True \
+      --enable-cudnn=True \
+      --backend=gpu \
       --dtype=float32
 
 
@@ -453,7 +437,7 @@ $ mpirun -np 12 \
   profile                        : False
   gpus_per_node                  : 0
   enable_conv_gemm               : False
-  enable_gpu                     : False
+  enable_cudnn                     : False
   enable_gpudirect               : False
   enable_nccl                    : False
   dtype                          : float32
@@ -521,7 +505,8 @@ $ pydtnn-benchmark \
     --weights-and-bias-filename=vgg16-weights-nhwc.npz \
     --tracing=False \
     --profile=False \
-    --enable-gpu=True \
+    --enable-cudnn=True \
+    --backend=gpu \
     --dtype=float32
 
 
@@ -677,7 +662,7 @@ $ pydtnn-benchmark \
   parallel                       : sequential
   non_blocking_mpi               : False
   gpus_per_node                  : 2
-  enable_gpu                     : False
+  enable_cudnn                     : False
   enable_gpudirect               : False
   enable_nccl                    : False
   enable_cudnn_auto_conv_alg     : True

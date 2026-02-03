@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from pydtnn.utils.tensor import TensorFormat
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
 
@@ -59,7 +58,7 @@ class Tsunamis(Dataset):
                         x, y_classes = self._read_file(f, offset, nsamples)
                     x /= 255.0
 
-                    y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype, order="C")
+                    y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype)
                     self._decode_class(y, y_classes)
 
                     x = self.model.encode_tensor(x)
@@ -70,5 +69,5 @@ class Tsunamis(Dataset):
         chunk_size = np.prod(INPUT_SHAPE) + 1
         f.seek(offset * chunk_size)
         im = np.frombuffer(f.read(nsamples * chunk_size), dtype=np.uint8).reshape(nsamples, chunk_size)
-        y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE).astype(self.model.dtype, order="C")
+        y_classes, x = im[:, 0].flatten(), im[:, 1:].reshape(nsamples, *INPUT_SHAPE).astype(self.model.dtype)
         return x, y_classes

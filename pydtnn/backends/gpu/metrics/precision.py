@@ -14,9 +14,9 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
     def initialize(self) -> None:
         super().initialize()
         target_classes = self.model.output_shape[0]
-        self.precision = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32), 
+        self.precision = TensorGPU.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
                                                        tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_precision = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32), 
+        self.local_precision = TensorGPU.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32),
                                                              tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def __init_gpu_kernel__(self) -> Function:
@@ -25,13 +25,13 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
         //#define TRUE_POSITIVE  {{0,0}}
         #define TRUE_POSITIVE_0  0
         #define TRUE_POSITIVE_1  0
-        
+
         //#define FALSE_POSITIVE {{1,0}}
         #define FALSE_POSITIVE_0 1
         #define FALSE_POSITIVE_1 0
 
         #define SHIFT_POINTER_CM(p, label, i, j, num_i, num_j) p + (((label * num_i + i) * num_j) + j)
-        
+
         __global__ void {name}({T} *precision, int *cm, {T} *local_precision, const int num_classes)
         {{
             int label, idx, true_positive, false_positive, div;
@@ -49,7 +49,7 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
 
                 (*(local_precision + idx)) += ({T}) (div == 0 ? 0 : (true_positive / div));
             }}
-            
+
             // Accumulating the local values into the output's tensor.
             if (base_idx == 0)
             {{
@@ -60,13 +60,13 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
             }}
         }}
         """.format(
-            T = DTYPE2CTYPE[self.model.dtype],
-            name = _name
+            T=DTYPE2CTYPE[self.model.dtype],
+            name=_name
         )
         module = SourceModule(code).get_function(_name)
 
         return module
-    #---
+    # ---
 
     def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
 
@@ -77,7 +77,7 @@ class PrecisionGPU(Precision[TensorGPU], MetricGPU):
         self.precision.fill(0)
         self.local_precision.fill(0)
 
-        self.kernel(self.precision.ary, self.conf_matrix_metric.conf_matrix.ary, 
+        self.kernel(self.precision.ary, self.conf_matrix_metric.conf_matrix.ary,
                     self.local_precision.ary, target_classes,
                     grid=self.grid, block=self.block,
                     stream=self.model.stream)

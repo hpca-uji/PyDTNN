@@ -5,7 +5,7 @@ import numpy as np
 
 from pydtnn.tests.conv_2d_conv_gemm import D, Conv2DConvGemmTestCase
 from pydtnn.utils import random
-from pydtnn.libs.libmpi import MPI
+from pydtnn.libs.mpi import MPI
 
 
 class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
@@ -38,14 +38,14 @@ class Conv2DConvGemmSlowTestCase(Conv2DConvGemmTestCase):
         11,  # c
         11,  # h
         11   # w
-    )).astype(dtype, order="C")
+    )).astype(dtype)
 
     W = random.random((
         4,   # kn
         11,  # c
         11,  # kh
         11,  # kw
-    )).astype(dtype, order="C")
+    )).astype(dtype)
 
     def test_forward_backward_multiple_params(self):
         """Tests that different input matrices, paddings and strides, lead to the same solution"""

@@ -89,11 +89,11 @@ class MaskLang(Dataset):
 
     def make_train_val_partitions(self):
         val_split = self.model.validation_split
-        if self.train_nsamples == None:
+        if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
             if self.model.augment_shuffle:
                 random.shuffle(s)
-            self.train_nsamples = int(self.train_val_nsamples * (1-val_split) // 1)
+            self.train_nsamples = int(self.train_val_nsamples * (1 - val_split) // 1)
             self.train_indices = s[:self.train_nsamples]
             self.val_indices = s[self.train_nsamples:]
             self.val_nsamples = len(self.val_indices)

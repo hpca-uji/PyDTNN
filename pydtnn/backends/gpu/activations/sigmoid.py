@@ -3,7 +3,7 @@ from pydtnn.backends.gpu.activations.activation import ActivationGPU
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 import pycuda.gpuarray as gpuarray  # type:ignore
 
 
@@ -29,6 +29,8 @@ class SigmoidGPU(Sigmoid[TensorGPU], ActivationGPU):
         # Derivative dx
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+
+        self.real_memory_size += self.y.nbytes + self.dx.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         alpha, beta = 1.0, 0.0

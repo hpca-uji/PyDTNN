@@ -7,12 +7,12 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception as e:
     pass
 
 try:
-    import pydtnn.libs.libnccl as nccl
+    import pydtnn.libs.nccl as nccl
 except Exception as e:
     pass
 
@@ -121,7 +121,7 @@ class ActivationGPU(Activation[TensorGPU]):
                 else:
                     dw = res
                 if self.model.crypt:
-                    dw = self.model.crypt.decrypt(dw)  #type: ignore
+                    dw = self.model.crypt.decrypt(dw)  # type: ignore
                 setattr(self, dw_, dw)
 
                 # # Hierarchical mode NCCL + MPI
@@ -160,7 +160,7 @@ class ActivationGPU(Activation[TensorGPU]):
             dw: TensorGPU = getattr(self, dw_)
 
             if self.model.enable_nccl:
-                dw *= self.model.rank_weight # TODO: Check this!!
+                dw *= self.model.rank_weight  # TODO: Check this!!
                 self.stream_2.synchronize()
                 # TODO: crypt
                 nccl.ncclAllReduce(dw.ptr, dw.ptr, dw.size, self.model.nccl_type,

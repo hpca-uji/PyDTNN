@@ -5,7 +5,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -22,11 +22,11 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv=False, trans=False) -> tuple[Conv2DCPU, Conv2DCPU]:
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DCPU, AbstractConv2DCPU]:
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b
-        params.conv_variant = "gemm"
+        params.backend = "cpu;conv_2d:gemm"
         model = Model(**vars(params))
         model.mode = Model.Mode.TRAIN
 
@@ -41,12 +41,12 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
             bn
         ])
         shape = (d.c, d.h, d.w)
-        chain.init_backend_from_model(model)
+        chain.init_backend_with_model(model)
         chain.initialize(prev_shape=shape, x=None)
 
         from_parent = bn.__dict__ | conv2d.__dict__
         fuse = Conv2DBatchNormalization(from_parent=from_parent)
-        fuse.init_backend_from_model(model)
+        fuse.init_backend_with_model(model)
         fuse.__dict__.update(from_parent)
         fuse.initialize(prev_shape=shape, x=None)
 

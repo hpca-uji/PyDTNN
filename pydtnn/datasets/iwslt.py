@@ -105,11 +105,11 @@ class IWSLT(Dataset):
 
     def make_train_val_partitions(self):
         val_split = self.model.validation_split
-        if self.train_nsamples == None:
+        if self.train_nsamples is None:
             s = np.arange(self.train_val_nsamples)
             if self.model.augment_shuffle:
                 random.shuffle(s)
-            self.train_nsamples = int(self.train_val_nsamples * (1-val_split) // 1)
+            self.train_nsamples = int(self.train_val_nsamples * (1 - val_split) // 1)
             self.train_indices = s[:self.train_nsamples]
             self.val_indices = s[self.train_nsamples:]
             self.val_nsamples = len(self.val_indices)
@@ -142,7 +142,7 @@ class IWSLT(Dataset):
         batch_size = self.model.batch_size
 
         for i in range(self.train_val_nsamples // batch_size):
-            window = (i*batch_size, (i+1)*batch_size)
+            window = (i * batch_size, (i + 1) * batch_size)
             src_embeddings = np.zeros((batch_size, self.max_sentence, self.embedl), dtype=np.float32)
             tgt_embeddings = np.zeros((batch_size, self.max_sentence, self.embedl), dtype=np.float32)
             src_mask = np.zeros((batch_size, 1, self.max_sentence), dtype=bool)
@@ -154,7 +154,7 @@ class IWSLT(Dataset):
             for i, doc in enumerate(self.dictionary2.pipe(lines2[window[0]:window[1]])):
                 for j, word in enumerate(doc):
                     tgt_embeddings[i, j] = word.vector
-                    tgt_mask[i, j, 0:j+1] = [1] * (j+1)
+                    tgt_mask[i, j, 0:j + 1] = [1] * (j + 1)
 
             x = [src_embeddings, src_mask, tgt_embeddings, tgt_mask]
             y = tgt_embeddings
@@ -164,7 +164,7 @@ class IWSLT(Dataset):
         batch_size = self.model.batch_size
         rank = self.model.rank
 
-        for i in range(self.train_nsamples//batch_size):
+        for i in range(self.train_nsamples // batch_size):
             # window = (i * batch_size + rank * batch_size, i * batch_size + (rank + 1) * batch_size)
             window = (0 * batch_size + rank * batch_size, 0 * batch_size + (rank + 1) * batch_size)
             # x = [self.src_embeddings[window[0]:window[1]], self.src_mask[window[0]:window[1]], self.tgt_embeddings[window[0]:window[1]], self.tgt_mask[window[0]:window[1]]]

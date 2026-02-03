@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import pycuda.gpuarray as gpuarray # type: ignore
+import pycuda.gpuarray as gpuarray  # type: ignore
 
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.layer_base import LayerBase
@@ -35,7 +35,8 @@ class ModelGpuTestCase(ModelCommonTestCase):
         # GPU model
         params = Params()
         params.model_name = model_name  # type: ignore
-        params.enable_gpu = True  # type: ignore
+        params.backend = "gpu"
+        params.enable_cudnn = True  # type: ignore
         params.enable_cudnn_auto_conv_alg = True  # type: ignore
         params.tensor_format = TensorFormat.NHWC.upper()
         params_dict = vars(params)
@@ -78,7 +79,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
         try:
             ary.set(data.copy())
         except ValueError as e:
-            raise ValueError(f"Output of model 1 {layer.name_with_id}" \
+            raise ValueError(f"Output of model 1 {layer.name_with_id}"
                              f" is not ordered [x.strides: {data.strides}") from e
     # ----
 

@@ -6,17 +6,18 @@ from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OP
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 
 try:
-    from pydtnn.libs.libmpi import MPI
+    from pydtnn.libs.mpi import MPI
 except Exception:
     pass
 from pydtnn.utils.constants import ArrayShape
-import numpy as np
+from pydtnn.libs import numpy as np
 
 
 class LayerCPU(Layer[np.ndarray]):
     """
     Extends a Layer class with the attributes and methods required by CPU Layers.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.model: Model[np.ndarray]
@@ -33,14 +34,14 @@ class LayerCPU(Layer[np.ndarray]):
             return super()._export_prop(key)
 
         ary = getattr(self, key)
-        return np.asarray(ary, dtype=np.float64, order="C", copy=True)
+        return np.asarray(ary, dtype=np.float64).copy()
 
     def _import_prop(self, key: str, value) -> None:
         if key not in self._ary_prop:
             return super()._import_prop(key, value)
 
         ary = getattr(self, key)
-        ary[:] = np.asarray(value, dtype=self.model.dtype, order="C", copy=None)
+        ary[:] = np.asarray(value, dtype=self.model.dtype)
 
     def reduce_weights_async(self, gradient=True):
         if not self.model.comm:
@@ -93,3 +94,8 @@ class LayerCPU(Layer[np.ndarray]):
                 dw = self.model.crypt.decrypt(dw)  # type: ignore
             setattr(self, dw_, dw)
             self.model.tracer.emit_nevent([PYDTNN_MDL_EVENT, PYDTNN_OPS_EVENT], [PYDTNN_EVENT_FINISHED, PYDTNN_EVENT_FINISHED])
+
+    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        x_batch = np.asarray(x_batch, dtype=self.model.dtype)
+        y_batch = np.asarray(y_batch, dtype=self.model.dtype)
+        return x_batch, y_batch

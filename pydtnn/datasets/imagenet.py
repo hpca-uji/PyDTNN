@@ -12,12 +12,10 @@ from scipy.io import loadmat
 
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.utils import random
-from pydtnn.utils.tensor import TensorFormat
 
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
-
 
 TRAIN_NSAMPLES = 1281167
 TEST_NSAMPLES = 50000
@@ -211,8 +209,8 @@ class ImageNet(Dataset):
             x = self.model.encode_tensor(x)
 
             # Set dtype and order
-            x = x.astype(dtype=self.model.dtype, order="C")
-            y = y.astype(dtype=self.model.dtype, order="C")
+            x = x.astype(dtype=self.model.dtype)
+            y = y.astype(dtype=self.model.dtype)
 
             # Inplace normalization
             x /= 255.0

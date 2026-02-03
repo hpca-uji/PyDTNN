@@ -1,6 +1,6 @@
 from pydtnn.layers.max_pool_2d import MaxPool2D
 from pydtnn.backends.gpu.layers.abstract.pool_2d_layer import AbstractPool2DLayerGPU
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 

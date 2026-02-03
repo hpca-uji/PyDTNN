@@ -36,7 +36,9 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --early-stopping-patience=20 \
   --parallel=data \
   --use-blocking-mpi=True \
+  --use-mpi-buffers=False \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
+  --backend=cpu \
+  --enable-cudnn=False \
   --dtype=float32

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from pydtnn.datasets.dataset import Dataset
-from pydtnn.utils.tensor import TensorFormat
 
 if TYPE_CHECKING:
     from pydtnn.model import Model
@@ -44,8 +43,8 @@ class Synthetic(Dataset):
             x_shape = (nsamples, *self.input_shape)
             x_shape = self.model.encode_shape(x_shape)  # type: ignore
             y_shape = (nsamples, *self.output_shape)
-            self._x[part] = np.zeros(x_shape, dtype=self.model.dtype, order="C")
-            self._y[part] = np.zeros(y_shape, dtype=self.model.dtype, order="C")
+            self._x[part] = np.zeros(x_shape, dtype=self.model.dtype)
+            self._y[part] = np.zeros(y_shape, dtype=self.model.dtype)
 
     def _actual_data_generator(self, part: Dataset.Part):
         """

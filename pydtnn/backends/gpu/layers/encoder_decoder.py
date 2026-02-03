@@ -31,7 +31,7 @@ class EncoderDecoderGPU(AbstractBlockLayerGPU, EncoderDecoder):
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.encoder[0].initialize(prev_shape=enc_shape, x=(x_enc, mask_enc))
         for layer in self.encoder[1:]:
@@ -62,13 +62,13 @@ class EncoderDecoderGPU(AbstractBlockLayerGPU, EncoderDecoder):
 
     def backward(self, prev_dx):
         alpha, beta = 1.0, 1.0
-        dx_tgt, dx_enc = self.decoder[self.dec_layers-1].backward(prev_dx)
-        for i in range(self.dec_layers-1, 0, -1):  # Decoding layers
-            dx_tgt, dx_2 = self.decoder[i-1].backward(dx_tgt)
+        dx_tgt, dx_enc = self.decoder[self.dec_layers - 1].backward(prev_dx)
+        for i in range(self.dec_layers - 1, 0, -1):  # Decoding layers
+            dx_tgt, dx_2 = self.decoder[i - 1].backward(dx_tgt)
             cudnn.cudnnAddTensor(self.model.cudnn_handle,
                                  alpha, dx_2.desc, dx_2.ptr,
                                  beta, dx_enc.desc, dx_enc.ptr)  # dx_enc += dx2
         for i in range(self.enc_layers, 0, -1):  # Enconding layers
-            dx_enc = self.encoder[i-1].backward(dx_enc)
+            dx_enc = self.encoder[i - 1].backward(dx_enc)
         if self.need_dx:
             return dx_tgt, dx_enc

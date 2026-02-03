@@ -1,4 +1,4 @@
-import numpy as np
+from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.block_layer import AbstractBlockLayerCPU
 from pydtnn.layers.fc import FC
@@ -16,12 +16,12 @@ class MultiHeadAttentionCPU(MultiHeadAttention[np.ndarray], AbstractBlockLayerCP
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.FC_q = FC(shape=(self.heads*self.d_k,))  # Dim: embedl x heads*d_k
-        self.FC_k = FC(shape=(self.heads*self.d_k,))  # Dim: embedl x heads*d_k
-        self.FC_v = FC(shape=(self.heads*self.d_k,))  # Dim: embedl x heads*d_k
+        self.FC_q = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
+        self.FC_k = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
+        self.FC_v = FC(shape=(self.heads * self.d_k,))  # Dim: embedl x heads*d_k
         self.FC_o = FC(shape=(self.embedl,))   # Dim: heads*d_k x embedl
         self.mult_qkt = Multiplication()
-        self.scalar_dk = Scalar(1.0/np.sqrt(self.d_k))
+        self.scalar_dk = Scalar(1.0 / np.sqrt(self.d_k))
         self.softmax = Softmax()
         self.dropout = Dropout(rate=self.dropout_rate)
         self.mult_smv = Multiplication()
@@ -44,14 +44,14 @@ class MultiHeadAttentionCPU(MultiHeadAttention[np.ndarray], AbstractBlockLayerCP
 
         # Initialize all sublayers
         for layer in self.children:
-            layer.init_backend_from_model(self.model)
+            layer.init_backend_with_model(self.model)
 
         self.FC_q.initialize(prev_shape=(self.embedl,), x=x)
         self.FC_k.initialize(prev_shape=(self.embedl,), x=self.FC_q.y)
         self.FC_v.initialize(prev_shape=(self.embedl,), x=self.FC_k.y)
         self.mult_qkt.initialize(prev_shape=(1,), x=self.FC_v.y)
         self.scalar_dk.initialize(prev_shape=(1,), x=self.mult_qkt.y)
-        self.FC_o.initialize(prev_shape=(self.heads*self.d_k,), x=self.scalar_dk.y)
+        self.FC_o.initialize(prev_shape=(self.heads * self.d_k,), x=self.scalar_dk.y)
         self.softmax.initialize(prev_shape=(self.heads, seq, seq,), x=self.FC_o.y)
         self.dropout.initialize(prev_shape=(self.heads, seq, seq,), x=self.softmax.y)
         self.mult_smv.initialize(prev_shape=(1,), x=self.dropout.y)
@@ -72,7 +72,7 @@ class MultiHeadAttentionCPU(MultiHeadAttention[np.ndarray], AbstractBlockLayerCP
         return x.reshape((x.shape[:-1] + (self.heads, self.d_k))).swapaxes(-3, -2)
 
     def transformation_removeheads(self, x):
-        return x.swapaxes(-3, -2).reshape((x.shape[:-3] + (x.shape[-2], self.heads*self.d_k)))
+        return x.swapaxes(-3, -2).reshape((x.shape[:-3] + (x.shape[-2], self.heads * self.d_k)))
 
     def mask_apply(self, x, mask):
         if len(mask.shape) == 2:

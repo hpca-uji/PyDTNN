@@ -17,6 +17,15 @@ class Optimizer[T: Array](PromoteToBackend):
         self.dtype: np.dtype = dtype
         self.context = dict[int, dict[str, int | T]]()
 
+        self.real_memory_size: int = 0
+        self.temp_memory_size: int = 0
+
+    def post_initialize(self) -> None:
+        """
+        Method were the operations that requiere a initialize are done.
+        """
+        pass
+
     def initialize(self, list_layers: list[LayerBase]) -> None:
         raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
 

@@ -8,10 +8,11 @@ from pydtnn.layers.fc import FC
 from pydtnn.utils.performance_models import matmul_time
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.gpu.layers.layer import LayerGPU
-from pydtnn.libs import libcudnn as cudnn
+from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.backends.gpu.utils import matmul_gpu, matvec_gpu
 from pydtnn.utils.constants import ArrayShape, Parameters
+
 
 class FCGPU(FC[TensorGPU], LayerGPU):
 
@@ -22,8 +23,8 @@ class FCGPU(FC[TensorGPU], LayerGPU):
 
     def _import_biases_db(self, key: str, value: Any) -> None:
         attribute = getattr(self, key)
-        
-        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype, order="C", copy=None)
+
+        cpu_ary = np.asarray(np.expand_dims(value, axis=0), dtype=self.model.dtype)
         attribute.ary.set(cpu_ary)
         return
     # ---
@@ -32,7 +33,7 @@ class FCGPU(FC[TensorGPU], LayerGPU):
         match key:
             case Parameters.BIASES | Parameters.DB:
                 return self._import_biases_db(key, value)
-            # 
+            #
             case _:
                 return super()._import_prop(key, value)
     # -----
@@ -42,7 +43,7 @@ class FCGPU(FC[TensorGPU], LayerGPU):
         gpu_ary = value.ary
         cpu_ary = gpu_ary.get()
 
-        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64, order="C", copy=True)
+        return np.asarray(np.squeeze(cpu_ary, axis=0), dtype=np.float64).copy()
     # ---
 
     def _export_prop(self, key: str) -> Any:
@@ -70,25 +71,28 @@ class FCGPU(FC[TensorGPU], LayerGPU):
         y_gpu = gpuarray.empty((self.model.batch_size, self.shape[0]), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
+        dx_gpu = gpuarray.empty((self.model.batch_size, *prev_shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dx.reshape((self.model.batch_size, *prev_shape))
 
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype,
                                                     tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype,
-                                                    gpudirect=self.model.gpudirect, 
+                                                    gpudirect=self.model.gpudirect,
                                                     drv=(drv if self.model.gpudirect else None))
         if self.use_bias:
             self.biases: TensorGPU
             self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype,
                                                         tensor_format=self.model.tensor_format,
                                                         cudnn_dtype=self.model.cudnn_dtype,
-                                                        gpudirect=self.model.gpudirect, 
+                                                        gpudirect=self.model.gpudirect,
                                                         drv=(drv if self.model.gpudirect else None))
 
+            self.real_memory_size += self.db.nbytes + self.biases.nbytes
+
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
-        self.nparams = self.weights.size + (self.biases.size if self.use_bias else 0)
+        self.nparams = self.weights.nbytes + (self.biases.nbytes if self.use_bias else 0)
+
+        self.real_memory_size += self.dx.nbytes + self.y.nbytes + self.weights.nbytes
 
         self.fwd_time = \
             matmul_time(m=self.model.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0],

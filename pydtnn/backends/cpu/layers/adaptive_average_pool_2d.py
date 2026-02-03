@@ -8,7 +8,7 @@ from pydtnn.utils.tensor import TensorFormat
 
 # Imports for the methods from AveragePool2DCPU
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-import numpy as np
+from pydtnn.libs import numpy as np
 
 
 class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
@@ -22,7 +22,10 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
 
     # Method from AbstractPool2DLayerCPU
     def initialize(self, prev_shape: tuple[int, int], x: np.ndarray | None = None):
-        # The objective is following lines is to override the AbstractPool2DLayer's initialize method, that is avoiding call to "super" since in that case AbstractPool2DLayer will be called eventually.
+        # The objective is following lines is to override the
+        # AbstractPool2DLayer's initialize method, that is avoiding call to
+        # "super" since in that case AbstractPool2DLayer will be called
+        # eventually.
         super().initialize(prev_shape, x)
 
         match self.model.tensor_format:
@@ -37,12 +40,17 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
 
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.y = np.zeros(y_shape, dtype=self.model.dtype, order="C")
+        self.y = np.zeros(y_shape, dtype=self.model.dtype)
+        self.real_memory_size += self.y.nbytes
+
+        if not self.model.evaluate_only:
+            dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
+            self.dx = np.zeros(dx_shape, dtype=self.model.dtype)
+            self.real_memory_size += self.dx.nbytes
 
         if self.pooling_not_needed:
             self._forward = (lambda x: x)
         # else: Nothing special.
-
     # -- END initialize -- #
 
     def forward(self, x: np.ndarray) -> np.ndarray:
@@ -52,29 +60,31 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
         return self._backward(dy)
 
     def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
-        y = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_fwd_nhwc_cython(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
-        y = self.y[:x.shape[0], :]
+        y: np.ndarray = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_fwd_nchw_cython(x, y)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(y, dtype=self.model.dtype)
 
     def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype, order="C")
+        dx: np.ndarray = self.dx[:dy.shape[0]]
+        dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nhwc_cython(dy, dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx, dtype=self.model.dtype)
 
     def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=self.model.dtype, order="C")
+        dx: np.ndarray = self.dx[:dy.shape[0]]
+        dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
         adaptive_avg_pooling_bwd_nchw_cython(dy, dx)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype, order='C', copy=None)
+        return np.asarray(dx, dtype=self.model.dtype)

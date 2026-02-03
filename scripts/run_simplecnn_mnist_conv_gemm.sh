@@ -25,6 +25,6 @@ pydtnn-benchmark \
   --parallel=sequential \
   --tracing=False \
   --profile=False \
-  --enable-gpu=False \
-  --dtype=float32 \
-  --enable-conv-gemm=True
+  --backend="cpu;conv_2d:gemm" \
+  --enable-cudnn=False \
+  --dtype=float32

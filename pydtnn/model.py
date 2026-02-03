@@ -5,10 +5,9 @@ PyDTNN model
 import enum
 import importlib
 import itertools
-from math import ceil
 import operator
 import time
-from functools import cached_property, reduce
+from functools import reduce
 from timeit import default_timer as timer
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Literal
@@ -19,15 +18,15 @@ import numpy as np
 from tqdm import tqdm
 
 # TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, cudnn, cublas, rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, cudnn, cublas  # type: ignore (cublas exist)
+from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
 from pydtnn import utils
 from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
 from pydtnn.activations.relu import Relu
-from pydtnn.backends import BackendType
 from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
-from pydtnn.libs.libmpi import proto as PROTOCOL
-from pydtnn.libs import libcrypt
+from pydtnn.libs.mpi import proto as PROTOCOL
+from pydtnn import crypto
 from pydtnn.datasets.dataset import Dataset
 from pydtnn.layer_base import LayerBase, FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
@@ -54,6 +53,7 @@ from pydtnn.utils.performance_counter import PerformanceCounter
 from pydtnn.utils.tensor import SampleFormat, TensorFormat, format_reshape, encode_shape, encode_tensor, decode_shape, decode_tensor
 from pydtnn.utils.constants import Array, NetworkAlgEnum, ArrayShape, Parameters
 from pydtnn.metrics.metric import Metric
+from pydtnn.utils.memory_pool import PrivateMemory, PreallocMemory
 
 
 # --- CONSTANS --- #
@@ -67,13 +67,13 @@ else:
     MPI_COMM = ModuleType
 
 
-def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_gpu: bool,
+def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_cudnn: bool,
                tracer_pmlib_server: str, tracer_pmlib_port: int, tracer_pmlib_device: str) -> Tracer:
 
     if tracer_output == "":
         tracer = ExtraeTracer(tracing)
     else:
-        if enable_gpu:
+        if enable_cudnn:
             tracer = SimpleTracerGPU(tracing, tracer_output, comm)
         else:
             if tracer_pmlib_device != "":
@@ -187,6 +187,12 @@ class Model[T: Array]:
     weights_and_bias_filename: str
     learning_rate_scaling: bool
     metrics: str
+    use_memory_pool: bool
+    augment_shuffle: bool
+    normalize: bool
+    transform_resize_size: int
+    normalize_offset: float
+    normalize_scale: float
 # ------------
 
     rank_weight: float
@@ -222,7 +228,7 @@ class Model[T: Array]:
     cuda_grid: tuple[int, int, int]
     cuda_block: tuple[int, int, int]
 
-    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_gpu: bool = False,
+    def __init__(self, parallel: ParallelMode = ParallelMode.SEQUENTIAL, use_blocking_mpi: bool = False, enable_cudnn: bool = False,
                  enable_gpudirect: bool = False, enable_nccl: bool = False, dtype: np.dtype = np.dtype(np.float32), tracing: bool = False,
                  tracer_output: str = "", tracer_pmlib_server: str = "127.0.0.1", tracer_pmlib_port: int = 6526,
                  tracer_pmlib_device: str = "", **kwargs):
@@ -230,27 +236,25 @@ class Model[T: Array]:
         # Attributes related to the given arguments
         self.parallel: Model.ParallelMode = Model.ParallelMode(parallel)
         self.blocking_mpi: bool = use_blocking_mpi
-        self.enable_gpu = self.enable_cudnn = enable_gpu
+        self.enable_cudnn = enable_cudnn
         self.gpudirect: bool = enable_gpudirect
         self.enable_nccl: bool = enable_nccl
         self.dtype: np.dtype = np.dtype(dtype)
-
-        self._sync_x_y = self._sync_x_y_gpu if self.enable_gpu else self._sync_x_y_cpu  # type: ignore
+        self.memory: PrivateMemory = None  # type: ignore (it will be intialized later if "self.use_memory_pool" is True)
 
         self.nparams = 0
+        self.real_memory_size = 0
+        self.temp_memory_size = 0
 
         # Get default values from parser and update them from the received kwargs
         self.kwargs: dict[str, Any] = PydtnnArgumentParser().get_default_values()
         self.kwargs.update(kwargs)
 
-        # NOTE: self.conv_variant comes from Parser
-        self.conv_variant = Conv2D.Variant[self.conv_variant.upper()]
-
         # Set MPI and comm
-        self._init_comms()
+        self._initialize_mpi()
 
         # Set tracer
-        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_gpu=enable_gpu,
+        self.tracer = get_tracer(tracer_output=tracer_output, tracing=tracing, comm=self.comm, enable_cudnn=enable_cudnn,
                                  tracer_pmlib_server=tracer_pmlib_server, tracer_pmlib_port=tracer_pmlib_port,
                                  tracer_pmlib_device=tracer_pmlib_device)
 
@@ -261,9 +265,6 @@ class Model[T: Array]:
         self.layers: list[LayerBase] = []
         self.layer_id_generator: abc.Iterator[int] = iter(itertools.count())
 
-        # Matmul
-        self.matmul = utils.matmul
-
         # Set current mode to unspecified
         self.mode: Model.Mode = Model.Mode.UNSPECIFIED
 
@@ -273,10 +274,12 @@ class Model[T: Array]:
         else:
             MemoryCache.disable()
 
+        self.memory_cls = PreallocMemory if self.shared_memory else PrivateMemory
+
         # Cuda
         if self.enable_cudnn:
             if gpuarray and drv and cublas:
-                self._initialize_cuda()
+                self._initialize_cudnn()
             else:
                 raise ExceptionGroup("CUDA import error", gpu_errors)
 
@@ -315,14 +318,14 @@ class Model[T: Array]:
             self.learning_rate = self.learning_rate / self.comm_size
 
         self.optimizer = select_optimizer(self.optimizer_name).from_model(self)
-        self.optimizer.init_backend_from_model(self)
+        self.optimizer.init_backend_with_model(self)
 
         self.schedulers = [
             select_scheduler(scheduler_name).from_model(self)
             for scheduler_name in filter(None, self.schedulers_names.split(","))
         ]
         for scheduler in self.schedulers:
-            scheduler.set_model(self)
+            scheduler.model = self
 
         # Metrics list
         self.metrics_list: list[str] = [m for m in self.metrics.replace(" ", "").split(",")]
@@ -343,7 +346,7 @@ class Model[T: Array]:
         # NOTE: This parameter come from Parser.
         self.model_sync_participation = Model.SyncParticipation(self.kwargs["model_sync_participation"])
 
-    def _init_comms(self) -> None:
+    def _initialize_mpi(self) -> None:
         # Communication type
         match self.parallel:
             case "sequential":
@@ -375,7 +378,7 @@ class Model[T: Array]:
             case _:
                 raise ValueError(f"MPI buffers option '{self.use_mpi_buffers}' not recognized.")
 
-    def _initialize_cuda(self) -> None:
+    def _initialize_cudnn(self) -> None:
         LIMIT_THREADS_AND_BLOCKS = 1024
         self.cuda_threads = min(self.batch_size, LIMIT_THREADS_AND_BLOCKS)
         self.cuda_blocks = (max(self.batch_size, LIMIT_THREADS_AND_BLOCKS) // self.cuda_threads) + 1
@@ -434,20 +437,6 @@ class Model[T: Array]:
         elif not self.dataset:
             raise ValueError("There is no dataset and the model has layers.")
 
-    @cached_property
-    def empty_x(self) -> TensorGPU:
-        # NOTE: Can not allocate a zero-size array, so slice one
-        assert gpuarray and self.cudnn_dtype
-        empty_x = gpuarray.empty((1, *self.dataset.input_shape), self.dtype)[:0]
-        return TensorGPU(empty_x, self.tensor_format, self.cudnn_dtype)
-
-    @cached_property
-    def empty_y_tag(self) -> TensorGPU:
-        # NOTE: Can not allocate a zero-size array, so slice one
-        assert gpuarray and self.cudnn_dtype
-        empty_y_tag = gpuarray.empty((1, *self.dataset.output_shape), self.dtype)[:0]
-        return TensorGPU(empty_y_tag, self.tensor_format, self.cudnn_dtype)
-
     @property
     def dataset_path(self) -> str:
         """Raw dataset path with rank substituted"""
@@ -456,10 +445,10 @@ class Model[T: Array]:
     def __getattr__(self, item) -> Any:
         return self.kwargs.get(item)
 
-    def _init_crypt(self, encryption_name: str) -> libcrypt.Context:
+    def _init_crypt(self, encryption_name: str) -> crypto.Context:
         """Initialize encryption context"""
         try:
-            module = importlib.import_module(f"pydtnn.libs.libcrypt.{encryption_name}")
+            module = importlib.import_module(f"pydtnn.crypto.{encryption_name}")
         except Exception as exc:
             raise ValueError(f"Unsupported encryption module {encryption_name}!") from exc
 
@@ -511,11 +500,11 @@ class Model[T: Array]:
         """Transform the shape from `model.tensor_format` order to `NCHW` order (supports 4 or 3 dimensions)."""
         return decode_shape(shape, self.tensor_format)
 
-    def encode_tensor(self, data: T) -> T:
+    def encode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `NCHW` format to `model.tensor_format` format (supports 4 or 3 dimensions)."""
         return encode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
 
-    def decode_tensor(self, data: T) -> T:
+    def decode_tensor(self, data: np.ndarray) -> np.ndarray:
         """Transpose elements of data from `model.tensor_format` format to `NCHW` format (supports 4 or 3 dimensions)."""
         return decode_tensor(data, self.tensor_format)  # type: ignore (TensorGPU does not have transpose yet)
 
@@ -530,7 +519,39 @@ class Model[T: Array]:
 
         if self.nparams > 0:
             props["params"] = self.nparams
-            props["memory"] = utils.convert_size_bytes(self.nparams * self.dtype.itemsize)
+
+        if self.real_memory_size > 0:
+            memory = utils.convert_size_bytes(self.real_memory_size)
+            if self.temp_memory_size > 0:
+                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
+                memory = f"{memory} ({tmp_memory} tmp)"
+            props["memory"] = memory
+
+        if self.optimizer:
+            optimizer_memory = utils.convert_size_bytes(self.optimizer.real_memory_size)
+            if self.optimizer.temp_memory_size > 0:
+                optimizer_tmp_memory = utils.convert_size_bytes(self.optimizer.temp_memory_size)
+                optimizer_memory = f"{optimizer_memory} ({optimizer_tmp_memory} tmp)"
+            props["optimizer-memory"] = optimizer_memory
+
+        if self.loss_func:
+            loss_memory = utils.convert_size_bytes(self.loss_func.real_memory_size)
+            if self.loss_func.temp_memory_size > 0:
+                loss_tmp_memory = utils.convert_size_bytes(self.loss_func.temp_memory_size)
+                loss_memory = f"{loss_memory} ({loss_tmp_memory} tmp)"
+            props["loss-memory"] = loss_memory
+
+        if self.metrics_funcs:
+            metrics_size = 0
+            metric_temp_size = 0
+            for metric in self.metrics_funcs:
+                metrics_size += metric.real_memory_size
+                metric_temp_size += metric.temp_memory_size
+            metrics_memory = utils.convert_size_bytes(metrics_size)
+            if metric_temp_size > 0:
+                metrics_tmp_memory = utils.convert_size_bytes(metric_temp_size)
+                metrics_memory = f"{metrics_memory} ({metrics_tmp_memory} tmp)"
+            props["metrics-memory"] = metrics_memory
 
         if self.layers:
             props["input"] = self.layers[0].shape
@@ -573,7 +594,7 @@ class Model[T: Array]:
         # Show header
         print(sep)
         for header, size in struct.items():
-            print(f"|{header.title():^{size}s}", end="")
+            print(f"|{header.replace('-', ' ').capitalize():^{size}s}", end="")
         print("|")
 
         # Show layers
@@ -606,7 +627,7 @@ class Model[T: Array]:
             layer.print_in_convdirect_format()
 
     def add(self, layer: LayerBase[T]) -> None:
-        layer.init_backend_from_model(self)
+        layer.init_backend_with_model(self)
 
         if self.layers:
             prev_shape = self.layers[-1].shape
@@ -618,6 +639,8 @@ class Model[T: Array]:
         layer.initialize(prev_shape, y)
 
         self.nparams += layer.nparams
+        self.real_memory_size += layer.real_memory_size
+        self.temp_memory_size += layer.temp_memory_size
         self.layers.append(layer)
 
         if layer.act:
@@ -638,7 +661,7 @@ class Model[T: Array]:
             this_recursion_layers += self.get_all_layers(children)
         return this_recursion_layers
 
-    def _select_fusion_3(self, fused_layers: list) -> tuple[str, list[LayerBase]]:
+    def _select_fusion_3(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
         layer0 = fused_layers[-3] if len(fused_layers) > 2 else None
@@ -651,12 +674,12 @@ class Model[T: Array]:
                 if self.enable_fused_conv_bn_relu:
                     layer_name = "conv_2d_batch_normalization_relu"
                 # else: layer_name = None
-            case default: pass  # else: layer_name = None
+            case _: pass  # else: layer_name = None
 
         return layer_name, [layer0, layer1, layer2]
     # ----
 
-    def _select_fusion_2(self, fused_layers: list) -> tuple[str, list[LayerBase]]:
+    def _select_fusion_2(self, fused_layers: list) -> tuple[str | None, list[LayerBase | FusedLayerMixIn | None]]:
         layer2 = fused_layers[-1] if len(fused_layers) > 0 else None
         layer1 = fused_layers[-2] if len(fused_layers) > 1 else None
 
@@ -677,7 +700,7 @@ class Model[T: Array]:
                 if self.enable_fused_bn_relu:
                     layer_name = "batch_normalization_relu"
                 # else: layer_name = None
-            case default: pass  # else: layer_name = None
+            case _: pass  # else: layer_name = None
 
         return layer_name, [layer1, layer2]
     # ----
@@ -699,7 +722,7 @@ class Model[T: Array]:
                 fused_layer = select_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
-                new_curr_layer.init_backend_from_model(self)
+                new_curr_layer.init_backend_with_model(self)
                 new_curr_layer.__dict__.update(dict_params)
                 try:
                     new_curr_layer.initialize(prev_shape=layers_to_fuse[0].prev_shape, x=layers_to_fuse[0].x)
@@ -720,25 +743,27 @@ class Model[T: Array]:
             self.__layer_fusion(self.layers, self._select_fusion_3)
             self.__layer_fusion(self.layers, self._select_fusion_2)
 
-    @property
-    def _backend(self) -> BackendType:
-        return BackendType.GPU if self.enable_gpu else BackendType.CPU
-
     def _initialize(self):
         if self._initialized:
             return
         self._apply_layer_fusion()
+
+        temp_memory_size = []
+
         loss_cls = select_loss(self.loss_func_name)
         self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
-        self.loss_func.init_backend_from_model(self)
+        self.loss_func.init_backend_with_model(self)
         self.loss_func.initialize()
-        self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in
-                              self.metrics_list]
+
+        self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
 
         for metric in self.metrics_funcs:
-            metric.init_backend_from_model(self)
+            metric.init_backend_with_model(self)
             metric.initialize()
+            self.real_memory_size += metric.real_memory_size
+            temp_memory_size.append(metric.temp_memory_size)
+
         self.loss_and_metrics = [self.loss_func_name] + self.metrics_list
         self.loss_and_metrics_format = [self.loss_func.format] + [metric.format for metric in self.metrics_funcs]
         self.total_metrics = np.array([0] + [0 for func in self.metrics_funcs], dtype=self.dtype)
@@ -750,8 +775,26 @@ class Model[T: Array]:
             self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer.initialize(self.get_all_layers(self.layers))
+        temp_memory_size.append(self.optimizer.temp_memory_size)
 
-    def export(self):
+        for layer in self.layers:
+            temp_memory_size.append(layer.temp_memory_size)
+
+        self.temp_memory_size = self.memory_cls._total(*temp_memory_size)
+        self.memory = self.memory_cls(size=self.temp_memory_size)
+
+        for layer in self.get_all_layers():
+            layer.post_initialize()
+
+        for metric in self.metrics_funcs:
+            metric.post_initialize()
+
+        self.loss_func.post_initialize()
+        self.optimizer.post_initialize()
+
+        # ----
+
+    def export(self) -> dict[str, Any]:
         data = {}
 
         if self.model_name is not None:
@@ -773,7 +816,7 @@ class Model[T: Array]:
             warn(f"Importing from different models! (self: {self.model_name}, got: {model_name})", RuntimeWarning)
 
         for layer, data in zip(self.layers, data[Parameters.LAYERS]):
-            layer.import_(data)
+            layer.import_(data)  # type: ignore (It is the right data type.)
 
     def load_weights_and_bias(self, filename: str) -> None:
         """
@@ -869,44 +912,6 @@ class Model[T: Array]:
                 string += ("%s, " % (prefix + loss_str)) % total[c]
         string = string[:-2]
         return total, count + batch_size, string
-
-    def _sync_x_y(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[T, T]:
-        raise TypeError("Please, use the cpu or gpu version.")
-    # --- _sync_x_y --- #
-
-    def _sync_x_y_cpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        self.real_batch_size = x_batch.shape[0]
-        x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
-        y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
-        return x_batch, y_batch
-    # --- _sync_x_y_cpu --- #
-
-    def _sync_x_y_gpu(self, x_batch: np.ndarray, y_batch: np.ndarray) -> tuple[TensorGPU, TensorGPU]:
-
-        # NOTE: in CUDA it's necessary to always have batches of the same size.
-        local_batch_size = x_batch.shape[0]
-
-        self.real_batch_size = local_batch_size
-        if local_batch_size != 0:
-            if local_batch_size != self.batch_size:
-                # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
-                num_repetitions = ceil(self.batch_size / local_batch_size)
-                x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.batch_size]
-                y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.batch_size]
-            # else: The batch has the right shape ==> Nothing to do.
-
-            x_batch = np.asarray(x_batch, dtype=self.dtype, order='C', copy=None)
-            y_batch = np.asarray(y_batch, dtype=self.dtype, order='C', copy=None)
-
-            assert isinstance(self.layers[0].y, TensorGPU) and isinstance(self.y_batch, TensorGPU)
-            self.layers[0].y.ary.set(x_batch)
-            self.y_batch.ary.set(y_batch)
-            x, y_targ = self.layers[0].y, self.y_batch
-        else:
-            x, y_targ = self.empty_x, self.empty_y_tag
-
-        return x, y_targ
-    # --- _sync_x_y_gpu --- #
 
     # TODO: Modify the method's name.
     def _weight_update(self, gradient=True, blocking=True):
@@ -1111,7 +1116,8 @@ class Model[T: Array]:
         for sched in self.schedulers:
             sched.on_batch_begin()
 
-        x, y_targ = self._sync_x_y(x_batch, y_batch)
+        self.real_batch_size = x_batch.shape[0]
+        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 
@@ -1198,7 +1204,8 @@ class Model[T: Array]:
     def _evaluate_batch(self, x_batch: np.ndarray, y_batch: np.ndarray, sync_model=True) -> np.ndarray:
         self.mode = Model.Mode.EVALUATE
 
-        x, y_targ = self._sync_x_y(x_batch, y_batch)
+        self.real_batch_size = x_batch.shape[0]
+        x, y_targ = self.layers[0]._sync_x_y(x_batch, y_batch)
 
         has_batch = x_batch.shape[0] > 0
 
