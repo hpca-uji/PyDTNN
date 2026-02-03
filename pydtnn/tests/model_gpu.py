@@ -35,6 +35,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
         # GPU model
         params = Params()
         params.model_name = model_name  # type: ignore
+        params.backend = "gpu"
         params.enable_cudnn = True  # type: ignore
         params.enable_cudnn_auto_conv_alg = True  # type: ignore
         params.tensor_format = TensorFormat.NHWC.upper()
