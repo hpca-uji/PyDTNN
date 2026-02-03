@@ -92,7 +92,7 @@ class AbstractConv2DStandardGPU(AbstractConv2DGPU):
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.im2_func(x.ary, self.weights.ary,
-                      self.im2_x.ary, self.y,
+                      self.im2_x.ary, self.y.ary,
                       self.biases.ary,
                       np.int32(self.dim_c), np.int32(self.dim_n),
                       np.int32(self.model.batch_size), np.int32(self.ci), np.int32(self.hi), np.int32(self.wi),
@@ -111,7 +111,6 @@ class AbstractConv2DStandardGPU(AbstractConv2DGPU):
     def backward(self, dy: TensorGPU) -> TensorGPU:
 
         self.dx.fill(0)
-
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self._2im_func(dy.ary,
@@ -170,7 +169,7 @@ class AbstractConv2DStandardGPU(AbstractConv2DGPU):
     def fwd_nchw(self, use_bias: bool) -> Function:
         # im2_var.shape = (self.dim_c, self.dim_n) = (self.ci * self.kh * self.kw, self.model.batch_size * self.ho * self.wo)
         code = \
-            """
+r"""
 // im2col-related macros
 #define GET_CI(row, h, w) row / (w * h)
 #define GET_KI(row, h, w) (row / w) % h
@@ -181,8 +180,8 @@ class AbstractConv2DStandardGPU(AbstractConv2DGPU):
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
-#define GET_I(idx, dim_j) * idx / dim_j
-#define GET_J(idx, dim_j) * idx % dim_j
+#define GET_I(idx, dim_j) idx / dim_j
+#define GET_J(idx, dim_j) idx % dim_j
 
 __global__ void {FUNC_NAME}(const {T} *const x,
                             const {T} *const weights,
@@ -195,13 +194,13 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                             int vpadding, int hpadding,
                             int vstride, int hstride,
                             int vdilation, int hdilation)
-{{
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x
+{{  
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_workers = blockDim.x * gridDim.x;
 
     // im2col const
     const int N = c * kh * kw;
-    const int dim_cols = n * self.ho * self.wo;
+    const int dim_cols = n * ho * wo;
     // matmul const
     const int N_MATMUL = co * dim_n;
 
@@ -269,19 +268,25 @@ __global__ void {FUNC_NAME}(const {T} *const x,
     def fwd_nhwc(self, use_bias: bool) -> Function:
         # cols.shape = (self.dim_n, self.dim_c) = (self.model.batch_size * self.ho * self.wo, self.ci * self.kh * self.kw)
         code = \
-            """
+r"""
 #define GET_NI(row, h, w) row / (w * h)
-#define GET_HO(row, h, w) (row / w) % h
-#define GET_WO(row, h, w) row % w
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT_ROWS(row, col, dim_cols) row * dim_cols + col
 // NOTE: This is NHWC
 #define SHIFT_X(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
+#define GET_N(idx, ho, wo, kh, kw, ci) (idx / (ci * kw * kh * wo * ho))
+#define GET_HO(idx, ho, wo, kh, kw, ci) (idx / (ci * kw * kh * wo)) % ho
+#define GET_WO(idx, ho, wo, kh, kw, ci) (idx / (ci * kw * kh)) % wo
+#define GET_CI(idx, ho, wo, kh, kw, ci) (idx / (kw * kh)) % ci
+#define GET_KH(idx, ho, wo, kh, kw, ci) (idx / kw) % kh
+#define GET_KW(idx, ho, wo, kh, kw, ci) (idx % kw)
+
+
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
-#define GET_I(idx, dim_j) * idx / dim_j
-#define GET_J(idx, dim_j) * idx % dim_j
+#define GET_I(idx, dim_j) idx / dim_j
+#define GET_J(idx, dim_j) idx % dim_j
 
 __global__ void {FUNC_NAME}(const {T} *const x,
                             const {T} *const weights,
@@ -295,51 +300,79 @@ __global__ void {FUNC_NAME}(const {T} *const x,
                             int vstride, int hstride,
                             int vdilation, int hdilation)
 {{
-    int ci, ki, kj, ni, hoi, hi, wi, woi, idx, row, col;
+    int ci, khi, kwi, ni, hoi, hi, wi, woi, idx;
     int i, j, k, i_j;
 
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x
+    const int base_idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_workers = blockDim.x * gridDim.x;
-    const int N = n * ho * wo;
-    const int dim_cols = n * self.ho * self.wo;
+    const int N = n * ho * wo * c * kh * kw;
+    const int dim_cols = n * ho * wo;
+    int samples_worker, samples_overworker, overworkers;
+    int n_samples, n_offset, end_offset;
 
     const int N_matmul = dim_n * co;
 
-    // Im2Row
-    for(row = idx; row < N; row += num_workers)
-    {{
-        ni = GET_NI(row, n, ho, wo);
-        hoi = GET_HO(row, n, ho, wo);
-        woi = GET_WO(row, n, ho, wo);
-        for (ci = 0; ci < c; ci++)
-        {{
-            for (ki = 0; ki < kh; ki++)
-            {{
-                hi = vstride * hoi + vdilation * ki - vpadding;
-                for (kj = 0; kj < kw; kj++)
-                {{
-                    wi = hstride * woi + hdilation * kj - hpadding;
-                    col = (ni * ho + hoi) * wo + woi;
+    overworkers = N % num_workers;
+    samples_worker = N / num_workers;
+    samples_overworker = samples_worker + 1;
 
-                    //im2_var[row, col] = ((0 <= hi) && (hi < h) && (0 <= wi) && (wi < w)) ? x[nn, cc, x_x, x_y] : ({T}) 0.0;
-                    if (IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
-                        *(im2_var + SHIFT_ROWS(row, col, dim_cols)) = *(x + SHIFT_X(n, ci, hi, wi, c, h, w));
-                    else
-                        *(im2_var + SHIFT_ROWS(row, col, dim_cols)) = ({T}) 0.0;
-                }}
-            }}
-        }}
+    if (base_idx < overworkers)
+    {{
+        n_samples = samples_overworker;
+        n_offset = base_idx * n_samples;
+    }}
+    else
+    {{
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (base_idx - overworkers);
+    }}
+    end_offset = n_offset + n_samples;
+
+    // Im2Row
+    for(idx = n_offset; idx < end_offset; idx++)
+    {{
+        ni = GET_N(idx, ho, wo, kh, kw, c);
+        hoi = GET_HO(idx, ho, wo, kh, kw, c);
+        woi = GET_WO(idx, ho, wo, kh, kw, c);
+        ci = GET_CI(idx, ho, wo, kh, kw, c);
+        khi = GET_KH(idx, ho, wo, kh, kw, c);
+        kwi = GET_KW(idx, ho, wo, kh, kw, c);
+
+        hi = vstride * hoi + vdilation * khi - vpadding;
+        wi = hstride * woi + hdilation * kwi - hpadding;
+
+        if(IS_BETWEEN(0, hi, h) && IS_BETWEEN(0, wi, w))
+            *(im2_var + idx) = *(x + SHIFT_X(ni, ci, hi, wi, c, h, w));
+        else
+            *(im2_var + idx) = ({T}) 0.0;
     }}
 
+
     __syncthreads();
+
+    overworkers = N_matmul % num_workers;
+    samples_worker = N_matmul / num_workers;
+    samples_overworker = samples_worker + 1;
+
+    if (base_idx < overworkers)
+    {{
+        n_samples = samples_overworker;
+        n_offset = base_idx * n_samples;
+    }}
+    else
+    {{
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (base_idx - overworkers);
+    }}
+    end_offset = n_offset + n_samples;
 
     // Matmul - im2_var X w_rows = y
     // im_var = (i, k)
     // w_rows = (k, j)
     // y = (i, j)
 
-    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.
-    for(i_j = idx; i_j < N_matmul; i_j += num_workers)
+    // im2_var.shape = (dim_n, dim_c); weights.shape "=" (dim_c, co); y.shape "=" (dim_n * co) || "=": because it's not equal, but "equivalent" in this situation.    
+    for(i_j = n_offset; i_j < end_offset; i_j++)
         for(k = 0; k < dim_c; k++)
     {{
         i = GET_I(i_j, co);
@@ -374,15 +407,15 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 
     def _backward_nchw(self, use_bias: bool) -> Function:
         code = \
-            """
+r"""
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 
 #define SHIFT_DY(ni, ci, hi, wi, n, c, h, w) (((((ni * c) + ci) * h) + hi) * w + wi)
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
-#define GET_I(idx, dim_j) * idx / dim_j
-#define GET_J(idx, dim_j) * idx % dim_j
+#define GET_I(idx, dim_j) idx / dim_j
+#define GET_J(idx, dim_j) idx % dim_j
 
 // im2col-related macros
 #define GET_N(idx, n, c, h, w) idx / (w * h * c)
@@ -393,7 +426,7 @@ __global__ void {FUNC_NAME}(const {T} *const x,
 __global__ void {FUNC_NAME}(const {T} *const dy,
                             const {T} *const im2_var,
                             const {T} *const weights,
-                            {T}* dw, {T}* db, {T}* dx
+                            {T}* dw, {T}* db, {T}* dx,
                             {T}* col_2im_var,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
@@ -413,7 +446,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
     // dx.shape = (n, c, h, w)
     // col_2im_var.shape = (dim_c, dim_n); dim_n = n * ho * wo; dim_c = c * kh * kw
 
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_workers = blockDim.x * gridDim.x;
     const int N_DW = co * c * kh * kw;
     const int N_COL2IM_VAR = dim_c * dim_n;
@@ -521,14 +554,14 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 
     def _backward_nhwc(self, use_bias: bool) -> Function:
         code = \
-            """
+r"""
 #define IS_BETWEEN(min_v, var, max_v) (min_v <= var) && (var < max_v)
 #define SHIFT_DY(ni, ci, hi, wi, c, h, w) ((ni * h + hi) * w + wi) * c + ci
 
 // matmul-related macros
 #define SHIFT(i, j, dim_j) i * dim_j + j
-#define GET_I(idx, dim_j) * idx / dim_j
-#define GET_J(idx, dim_j) * idx % dim_j
+#define GET_I(idx, dim_j) idx / dim_j
+#define GET_J(idx, dim_j) idx % dim_j
 
 // im2col-related macros
 #define GET_N(idx, n, c, h, w) idx / (c * w * h)
@@ -539,7 +572,7 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
 __global__ void {FUNC_NAME}(const {T} *const dy,
                             const {T} *const im2_var,
                             const {T} *const weights,
-                            {T}* dw, {T}* db, {T}* dx
+                            {T}* dw, {T}* db, {T}* dx,
                             {T}* row_2im_var,
                             int dim_c, int dim_n,
                             int n, int c, int h, int w,
@@ -549,13 +582,15 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
                             int vstride, int hstride,
                             int vdilation, int hdilation)
 {{
-    const int idx = blockIdx.x * blockDim.x + threadIdx.x
+    const int idx = blockIdx.x * blockDim.x + threadIdx.x;
     const int num_workers = blockDim.x * gridDim.x;
     const int N_DW = co * c * kh * kw;
     const int N_ROW2IM_VAR = dim_c * dim_n;
     const int N_ROW2IM = n * c * h * w;
 
-    int i, j, k, i_j, dim_j, dim_k, khi, kwi;
+    int i, j, k, i_j, khi, kwi, row, col, ni, hi, wi, ci, x_o, xx, y_o, yy;
+    int overworkers, samples_worker, samples_overworker;
+    int n_samples, n_offset, end_offset;
 
     // NOTE: c, h, w are the input ones and co, ho, wo are the output ones (they may differ)
     // base_dy.shape = (n, co, ho, wo)
@@ -567,8 +602,24 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
     // dx.shape = (n, c, h, w)
     // row_2im_var.shape = (dim_c, dim_n) || dim_n = n * ho * wo; dim_c = c * kh * kw
 
+    overworkers = N_DW % num_workers;
+    samples_worker = N_DW / num_workers;
+    samples_overworker = samples_worker + 1;
+
+    if (idx < overworkers)
+    {{
+        n_samples = samples_overworker;
+        n_offset = idx * n_samples;
+    }}
+    else
+    {{
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (idx - overworkers);
+    }}
+    end_offset = n_offset + n_samples;
+    
     // dw = np.matmul(im2_var.T, dy.reshape(n*ho*wo, self.co)); im2_var.T.shape = (ci*kh*kw, n*ho*wo)
-    for(i_j = idx; i_j < N_DW; i_j += workers)
+    for(i_j = n_offset; i_j < end_offset; i_j ++)
         for(k = 0; k < dim_n; k++)
     {{
         i = GET_I(i_j, co);
@@ -581,10 +632,27 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
     {DB}
 #endif
 
+    overworkers = N_DW % num_workers;
+    samples_worker = N_DW / num_workers;
+    samples_overworker = samples_worker + 1;
+
+    if (idx < overworkers)
+    {{
+        n_samples = samples_overworker;
+        n_offset = idx * n_samples;
+    }}
+    else
+    {{
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (idx - overworkers);
+    }}
+    end_offset = n_offset + n_samples;
+    
+
     // row_2im_var "=" (dim_c, dim_n)
     //mamtul(weights.reshape(self.ci * self.kh * self.kw, co), tranposed dy) <== mamtul(weights.reshape(co, -1).T, tranposed dy)
     // tranposed dy.shape = (co, n*ho*wo)
-    for(i_j = idx; i_j < N_ROW2IM_VAR; i_j += num_workers)
+    for(i_j = n_offset; i_j < end_offset; i_j++)
         for(k = 0; k < co; k++)
     {{
         i = GET_I(i_j, dim_n);
@@ -597,34 +665,50 @@ __global__ void {FUNC_NAME}(const {T} *const dy,
     __syncthreads();
 
     // Row2Im
-    for (i = idx; i < N_ROW2IM; i += num_workers)
+
+    overworkers = N_ROW2IM % num_workers;
+    samples_worker = N_ROW2IM / num_workers;
+    samples_overworker = samples_worker + 1;
+
+    if (idx < overworkers)
     {{
-        ni = GET_N(i, n, c, h, w);
-        ci = GET_C(i, n, c, h, w);
-        hx = GET_H(i, n, c, h, w);
-        wx = GET_W(i, n, c, h, w);
+        n_samples = samples_overworker;
+        n_offset = idx * n_samples;
+    }}
+    else
+    {{
+        n_samples = samples_worker;
+        n_offset = samples_overworker * overworkers + n_samples * (idx - overworkers);
+    }}
+    end_offset = n_offset + n_samples;
 
-        for (khi = 0; khi < kh; khi++)
-            for (kwi = 0; kwi < kw; kwi++)
+    for(i = n_offset; i < end_offset; i++)
+    {{
+        ni = GET_N(i, n, h, w, c);
+        hi = GET_H(i, n, h, w, c);
+        wi = GET_W(i, n, h, w, c);
+        ci = GET_C(i, n, h, w, c);
+
+        for(khi = 0; khi < kh; khi++)
+            for(kwi = 0; kwi < kw; kwi++)
         {{
-            // hx = vstride * xx + vdilation * khi - vpadding;
-            xx = (hx + vpadding - vdilation * khi) / vstride;
-            // wx = hstride * yy + hdilation * kwi - hpadding;
-            yy = (wx + hpadding - hdilation * kwi) / hstride;
+            x_o = (hi + vpadding - vdilation * khi);
+            xx = x_o / vstride;
+            x_o = x_o % vstride;
 
-            x_o = (int) xx;
-            y_o = (int) yy;
-
-            // if (the variables have no decimals) and (are bewteen 0 and ho/wo):
-            if ((x_o == xx) && (y_o == yy) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
+            y_o = (wi + hpadding - hdilation * kwi);
+            yy = y_o / hstride;
+            y_o = y_o % hstride;
+            
+            if((x_o == 0) && (y_o == 0) && IS_BETWEEN(0, xx, ho) && IS_BETWEEN(0, yy, wo))
             {{
-                row = nn * ho * wo + x_o * wo + y_o;
-                col = cc * kh * kw + ii * kw + jj;
-                //dx[nn, x_x, x_y, cc] += rows[row, col]
-                *(dx + i) += (*(row_2im_var + SHIFT(row, col, dim_c)));
+                row = ni * ho * wo + xx * wo + yy;
+                col = ci * kh * kw + khi * kw + kwi;
+                *(dx + i) += *(row_2im_var + SHIFT(row, col, dim_c));
             }}
         }}
     }}
+
 
 }}
 """

@@ -38,7 +38,7 @@ mpirun -np 1 "${MPI_ARGS[@]}" \
   --use-blocking-mpi=True \
   --use-mpi-buffers=False \
   --tracing=False \
-  --profile=True \
+  --profile=False \
   --backend=cpu \
   --enable-cudnn=False \
   --dtype=float32
