@@ -5,7 +5,6 @@ import numpy as np
 from pydtnn.layers.layer import Layer
 from pydtnn.tracers.events import PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, \
     PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape
 
 try:
     from pydtnn.libs.mpi import MPI
@@ -263,7 +262,7 @@ class LayerGPU(Layer[TensorGPU]):
         if local_batch_size != 0:
             if local_batch_size != self.model.batch_size:
                 # NOTE: if x_batch is empty (local_batch_size == 0), this will mean the end of the loop where this function is called.
-                num_repetitions = ceil(self.model.batch_size / local_batch_size)
+                num_repetitions = np.ceil(self.model.batch_size / local_batch_size)
                 x_batch = np.repeat(x_batch, num_repetitions, axis=0)[:self.model.batch_size]
                 y_batch = np.repeat(y_batch, num_repetitions, axis=0)[:self.model.batch_size]
             # else: The batch has the right shape ==> Nothing to do.
