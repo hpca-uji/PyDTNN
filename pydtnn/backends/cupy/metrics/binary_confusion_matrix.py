@@ -1,5 +1,5 @@
+from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixCPU
 from pydtnn.backends.cupy.metrics.metric import MetricCUPY
-from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
 import cupy as np
 
@@ -37,7 +37,7 @@ def swap_middle_axis(conf_matrix: np.ndarray) -> None:
     conf_matrix[:, 1] = b
 
 
-class BinaryConfusionMatrixCUPY(BinaryConfusionMatrix[np.ndarray], MetricCUPY):
+class BinaryConfusionMatrixCUPY(BinaryConfusionMatrixCPU, MetricCUPY):
 
     def initialize(self) -> None:
         super().initialize()

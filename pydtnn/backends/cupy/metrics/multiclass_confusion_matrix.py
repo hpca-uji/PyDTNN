@@ -1,10 +1,10 @@
+from pydtnn.backends.cpu.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrixCPU
 from pydtnn.backends.cupy.metrics.metric import MetricCUPY
-from pydtnn.metrics.multiclass_confusion_matrix import MulticlassConfusionMatrix
 
 import cupy as np
 
 
-class MulticlassConfusionMatrixCUPY(MulticlassConfusionMatrix[np.ndarray], MetricCUPY):
+class MulticlassConfusionMatrixCUPY(MulticlassConfusionMatrixCPU, MetricCUPY):
 
     def initialize(self) -> None:
         super().initialize()
