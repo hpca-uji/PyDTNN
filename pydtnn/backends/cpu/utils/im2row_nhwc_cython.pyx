@@ -85,7 +85,7 @@ def im2row_nhwc_cython(npDT[:,:,:,::1] x,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def row2im_nhwc_cython(npDT[:,::1] rows,
-                       npDT[:,:,:,::1] x,
+                       npDT[:,:,:,::1] dx,
                        int n, int h, int w, int c,
                        int kh, int kw, int ho, int wo,
                        int vpadding, int hpadding,
@@ -106,7 +106,7 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
                                 x_y = hstride * yy + hdilation * jj - hpadding
                                 if 0 <= x_y < w:
                                     col = (cc * kh + ii) * kw + jj
-                                    x[nn, x_x, x_y, cc] += rows[row, col]
+                                    dx[nn, x_x, x_y, cc] += rows[row, col]
     # FIXME: Optimization broken
     # else:
     #     for xx in prange(ho, nogil=True):
@@ -127,7 +127,7 @@ def row2im_nhwc_cython(npDT[:,::1] rows,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def alt_row2im_nhwc_cython(npDT[:,::1] rows,
-                           npDT[:,:,:,::1] x,
+                           npDT[:,:,:,::1] dx,
                            int n, int h, int w, int c,
                            int kh, int kw, int ho, int wo,
                            int vpadding, int hpadding,
@@ -155,5 +155,5 @@ def alt_row2im_nhwc_cython(npDT[:,::1] rows,
                             if (x_o == 0) and (y_o == 0) and ((0 <= xx < ho) and (0 <= yy < wo)):
                                 row = nn * ho * wo + xx * wo + yy
                                 col = cc * kh * kw + ii * kw + jj
-                                x[nn, x_x, x_y, cc] += rows[row, col]
+                                dx[nn, x_x, x_y, cc] += rows[row, col]
 # ========================================== #

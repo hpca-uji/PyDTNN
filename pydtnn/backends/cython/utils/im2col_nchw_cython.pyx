@@ -33,7 +33,7 @@ def im2col_nchw_cython(npDT[:,:,:,::1] x,
                        npDT[:,::1] cols,
                        int kh, int kw, int ho, int wo,
                        int vpadding, int hpadding,
-                       int vstride, int hstride, 
+                       int vstride, int hstride,
                        int vdilation, int hdilation) -> None:
     cdef int n = x.shape[0]
     cdef int c = x.shape[1]
@@ -67,9 +67,9 @@ def im2col_nchw_cython(npDT[:,:,:,::1] x,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def col2im_nchw_cython(npDT[:,::1] cols,
-                       npDT[:,:,:,::1] dx, 
+                       npDT[:,:,:,::1] dx,
                        int n, int c, int h, int w,
-                       int kh, int kw, int ho, int wo, 
+                       int kh, int kw, int ho, int wo,
                        int vpadding, int hpadding,
                        int vstride, int hstride,
                        int vdilation, int hdilation) -> None:
@@ -94,9 +94,9 @@ def col2im_nchw_cython(npDT[:,::1] cols,
 @cython.wraparound(False)
 @cython.initializedcheck(False)
 def alt_col2im_nchw_cython(npDT[:,::1] cols,
-                           npDT[:,:,:,::1] dx, 
+                           npDT[:,:,:,::1] dx,
                            int n, int c, int h, int w,
-                           int kh, int kw, int ho, int wo, 
+                           int kh, int kw, int ho, int wo,
                            int vpadding, int hpadding,
                            int vstride, int hstride,
                            int vdilation, int hdilation) -> None:

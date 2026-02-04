@@ -3,162 +3,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
+from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.cython.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython  # , alt_col2im_nchw_cython
+from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython  # , alt_row2im_nhwc_cython
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
-from pydtnn.utils.constants import ArrayShape
-from pydtnn.utils.tensor import TensorFormat, format_transpose
+from pydtnn.utils.tensor import format_transpose
 
 
-class Conv2DCPU(AbstractConv2DStandardCPU):
-
-    def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
-        super().initialize(prev_shape, x)
-
-        # dim_n: Dimension where the "n" of NCHW/NHWC is used in the calculations.
-        # self.dim_c: Dimension where the "c" of NCHW/NHWC is used in the calculations.
-        dim_n = self.model.batch_size * self.ho * self.wo
-        self.dim_c = self.ci * self.kh * self.kw
-
-        match self.model.tensor_format:
-            case TensorFormat.NCHW:
-                self.forward = self._forward_i2c_nchw
-                self.backward = self._backward_i2c_nchw
-                self._x_cr_shape = (self.dim_c, dim_n)
-                _dw_shape = (self.co, self.dim_c)
-            case TensorFormat.NHWC:
-                self.forward = self._forward_i2c_nhwc
-                self.backward = self._backward_i2c_nhwc
-                self._x_cr_shape = (dim_n, self.dim_c)
-                _dw_shape = (self.dim_c, self.co)
-            case _:
-                self._x_cr_shape = (None, )
-                _dw_shape = (None, )
-                raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
-        # -
-
-        self.temp_bw_shape = self._x_cr_shape
-        self.temp_bw_shape_size = np.prod(self.temp_bw_shape)
-
-        y_shape = (dim_n, self.co)
-        self.y_size = np.prod(y_shape)
-
-        # self.y = np.zeros(shape=(self.dim_n, self.co), dtype=self.model.dtype)
-        # self.real_memory_size += self.y.nbytes
-
-        if not self.model.evaluate_only:
-            self.dx_shape = self.model.encode_shape((self.model.batch_size, self.ci, self.hi, self.wi))
-            self._dw_shape = _dw_shape  # This shape is only for a intermediate operation.
-        else:
-            self.dx_shape = (0,)
-
-        self.dx_shape_size = int(np.prod(self.dx_shape))
-        # NOTE: These attributes only store data, their values before the operation doesn't matter; they're initalized due avoid warnings in "LayerAndActivationBase.export".
-        self.temp_c_r_dx = np.zeros(shape=(max(np.prod(self._x_cr_shape), self.dx_shape_size), ), dtype=self.model.dtype)
-        # self.temp_c_r_dx: Temporal array where the cols/rows and dx values are stored.
-        self.real_memory_size += self.temp_c_r_dx.nbytes
-
-        self.temp_y_bc_br = np.zeros(shape=(max(self.y_size, self.temp_bw_shape_size), ), dtype=self.model.dtype)
-        # self.temp_y_bc_br: Temporal array where the y and backward's cols/rows values are stored.
-        self.real_memory_size += self.temp_y_bc_br.nbytes
-
-        self.real_memory_size += self.temp_memory_size
-    # ---
-
-    def get_rows(self, batch_size: int) -> np.ndarray:
-        dim_n = batch_size * self.ho * self.wo
-        shape = (dim_n, self.dim_c)
-        x_rows: np.ndarray = self.temp_c_r_dx[:np.prod(shape)]
-        x_rows = x_rows.reshape(shape)
-        return x_rows
-
-    def get_cols(self, batch_size: int) -> np.ndarray:
-        dim_n = batch_size * self.ho * self.wo
-        shape = (self.dim_c, dim_n)
-        x_cols: np.ndarray = self.temp_c_r_dx[:np.prod(shape)]
-        x_cols = x_cols.reshape(shape)
-        return x_cols
-
-    def get_y(self, batch_size: int) -> np.ndarray:
-        dim_n = batch_size * self.ho * self.wo
-        shape = (dim_n, self.co)
-        y: np.ndarray = self.temp_y_bc_br[:np.prod(shape)]
-        y = y.reshape(shape)
-        return y
-
-    def im2row(self, x: np.ndarray, x_rows: np.ndarray):
-        n, _, _, _ = x.shape
-        for nn in range(n):
-            for xx in range(self.ho):
-                for yy in range(self.wo):
-                    row = (nn * self.ho + xx) * self.wo + yy
-                    for ii in range(self.kh):
-                        x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
-                        for jj in range(self.kw):
-                            x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
-                            for cc in range(self.ci):
-                                col = (cc * self.kh + ii) * self.kw + jj
-                                if (0 <= x_x < self.hi) and (0 <= x_y < self.wi):
-                                    x_rows[row, col] = x[nn, x_x, x_y, cc]
-                                else:
-                                    x_rows[row, col] = 0.0
-    # -----
-
-    def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
-        n, _, _, _ = dx.shape
-        x_rows.fill(0)
-        for nn in range(n):
-            for xx in range(self.ho):
-                for yy in range(self.wo):
-                    row = (nn * self.ho + xx) * self.wo + yy
-                    for cc in range(self.ci):
-                        for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
-                            if 0 <= x_x < self.hi:
-                                for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
-                                    if 0 <= x_y < self.wi:
-                                        col = (cc * self.kh + ii) * self.kw + jj
-                                        dx[nn, x_x, x_y, cc] += x_rows[row, col]
-# -----
-
-    def im2col(self, x: np.ndarray, x_cols: np.ndarray):
-        n, _, _, _ = x.shape
-
-        for cc in range(self.ci):
-            for ii in range(self.kh):
-                for jj in range(self.kw):
-                    row = (cc * self.kh + ii) * self.kw + jj
-                    for nn in range(n):
-                        for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
-                            for yy in range(self.wo):
-                                x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
-                                col = (nn * self.ho + xx) * self.wo + yy
-                                if (0 <= x_x < self.hi) and (0 <= x_y < self.wi):
-                                    x_cols[row, col] = x[nn, cc, x_x, x_y]
-                                else:
-                                    x_cols[row, col] = 0.0
-    # -----
-
-    def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
-        n, _, _, _ = dx.shape
-        x_cols.fill(0)
-        for cc in range(self.ci):
-            for ii in range(self.kh):
-                for jj in range(self.kw):
-                    row = (cc * self.kh + ii) * self.kw + jj
-                    for nn in range(n):
-                        for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
-                            if (0 <= x_x < self.hi):
-                                for yy in range(self.wo):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
-                                    col = (nn * self.ho + xx) * self.wo + yy
-                                    if (0 <= x_y < self.wi):
-                                        dx[nn, cc, x_x, x_y] = x_cols[row, col]
-    # -----
+class Conv2DCYTHON(Conv2DCPU):
 
     def _forward_i2c_nhwc(self, x: np.ndarray) -> np.ndarray:
         """Version of the forward function that uses im2col and matmul"""
@@ -171,7 +25,10 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
         y = self.get_y(x.shape[0])
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        self.im2row(x, x_rows)
+        im2row_nhwc_cython(x, x_rows,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         self.x_rows = x_rows
 
@@ -207,7 +64,10 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
         y = self.get_y(x.shape[0])
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        self.im2col(x, x_cols)
+        im2col_nchw_cython(x, x_cols,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.x_cols = x_cols
@@ -273,10 +133,14 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)
-        #dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        self.row2im(rows, dx)
+        row2im_nhwc_cython(rows, dx,
+                           dy.shape[0], self.hi, self.wi, self.ci,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype)
@@ -320,10 +184,14 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)
-        #dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        self.col2im(cols, dx)
+        col2im_nchw_cython(cols, dx,
+                           dy.shape[0], self.ci, self.hi, self.wi,
+                           self.kh, self.kw, self.ho, self.wo,
+                           self.vpadding, self.hpadding,
+                           self.vstride, self.hstride, self.vdilation, self.hdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype)

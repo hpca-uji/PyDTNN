@@ -7,7 +7,7 @@ import platform
 import weakref
 
 import numpy as np
-from pydtnn.backends.cpu.utils.im2col_nchw_cython import im2col_nchw_cython
+from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 
 from pydtnn.utils import load_library
 
