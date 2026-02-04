@@ -1,6 +1,6 @@
-import enum
-import importlib
+import re
 import typing
+import importlib
 
 if typing.TYPE_CHECKING:
     from pydtnn import model as model_module
@@ -8,6 +8,13 @@ if typing.TYPE_CHECKING:
 
 class PromoteToBackend:
     _backend: typing.Self
+    _frontend: typing.Self
+
+    _map_backend = {
+        "all": "pydtnn",
+        # "cpu": "numpy,cython",
+        # "gpu": "pycuda"
+    }
 
     def __new__(cls, *args, **kwds):
         # Save top-level constructor arguments
@@ -37,13 +44,20 @@ class PromoteToBackend:
         """
         groups = {}
 
+        alias = re.compile(fr"\b({r"|".join(self._map_backend)})\b")
+
+        def repl(match):
+            return self._map_backend[match.group()]
+
         for group in spec.split(";"):
             kv = group.split(":", 1)
             value = kv.pop()
             try:
                 key = kv.pop()
             except IndexError:
-                key = "pydtnn"
+                key = "all"
+            key = alias.sub(repl, key)
+            value = alias.sub(repl, value)
             groups[key] = value.split(",")[::-1]
 
         return dict(sorted(
