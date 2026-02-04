@@ -10,7 +10,7 @@ import numpy as np
 
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library
-from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 try:
     load_library("convDirect")
