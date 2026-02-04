@@ -19,11 +19,11 @@ class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.forward = self._forward_nchw_cython
-                self.backward = self._backward_nchw_cython
+                self.forward = self._forward_nchw
+                self.backward = self._backward_nchw
             case TensorFormat.NHWC:
-                self.forward = self._forward_nhwc_cython
-                self.backward = self._backward_nhwc_cython
+                self.forward = self._forward_nhwc
+                self.backward = self._backward_nhwc
             case _:
                 raise TypeError(f"Function: \'AbstractPool2DLayerCPU\'. Error:\n\tFormat: \'{self.model.tensor_format}\' not supported.")
 
@@ -80,14 +80,15 @@ class AbstractPool2DLayerCPU(AbstractPool2DLayer[np.ndarray], LayerCPU):
         raise NotImplementedError(f"Class \'AbstractPool2DLayerCPU\'. Error: {msg}")
     # ---
 
-    def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
-        raise NotImplementedError()
+    def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
+        raise NotImplementedError(f"This is a fake method. {self} must implement _forward_nchw.")
 
-    def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
-        raise NotImplementedError()
+    def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
+        raise NotImplementedError(f"This is a fake method. {self} must implement _backward_nchw.")
 
-    def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
-        raise NotImplementedError()
+    def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
+        raise NotImplementedError(f"This is a fake method. {self} must implement _forward_nhwc.")
 
-    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
-        raise NotImplementedError()
+    def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
+        raise NotImplementedError(f"This is a fake method. {self} must implement _backward_nhwc.")
+

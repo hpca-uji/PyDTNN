@@ -29,7 +29,6 @@ class PrecisionCPU(Precision[np.ndarray], MetricCPU):
             self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         true_positives = self.true_positives
         false_positives = self.false_positives
         are_zeros = self.are_zeros

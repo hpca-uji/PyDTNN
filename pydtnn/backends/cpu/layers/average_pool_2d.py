@@ -2,10 +2,6 @@ from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
-from pydtnn.backends.cpu.utils.average_pool_2d_nchw_cython import average_pool_2d_bwd_nchw_cython, average_pool_2d_fwd_nchw_cython
-from pydtnn.backends.cpu.utils.average_pool_2d_nhwc_cython import average_pool_2d_bwd_nhwc_cython, average_pool_2d_fwd_nhwc_cython
-from pydtnn.backends.cpu.utils.im2col_1ch_nchw_cython import col2im_1ch_nchw_cython, im2col_1ch_nchw_cython
-from pydtnn.backends.cpu.utils.im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython
 from pydtnn.backends.cpu.layers.abstract.pool_2d_layer import AbstractPool2DLayerCPU
 from pydtnn.layers.average_pool_2d import AveragePool2D
 
@@ -14,124 +10,121 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 
 class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
     # ----
-    ##############
-    ### CYTHON ###
-    ##############
 
-    def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
 
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        average_pool_2d_fwd_nhwc_cython(x, y,
-                                        self.kh, self.kw, self.ho, self.wo,
-                                        self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride,
-                                        self.vdilation, self.hdilation)
+
+        for nn in range(x.shape[0]):
+            for cc in range(self.ci):
+                for xx in range(self.ho):
+                    for yy in range(self.wo):
+                        accum = 0.0
+                        items = 0
+                        # accum, items = 0, (kh * kw)
+                        for ii in range(self.kh):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        accum += x[nn, cc, x_x, x_y]
+                                        items += 1
+                        y[nn, cc, xx, yy] = (accum / items)
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype)
     # -----
 
-    def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         # y:np.ndarray = self.y[:x.shape[0], :]
         y = self.get_y(x.shape[0])
-        average_pool_2d_fwd_nchw_cython(x, y,
-                                        self.kh, self.kw, self.ho, self.wo,
-                                        self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride,
-                                        self.vdilation, self.hdilation)
+
+        for nn in range(x.shape[0]):
+            for xx in range(self.ho):
+                for yy in range(self.wo):
+                    for cc in range(self.c9):
+                        accum = 0.0
+                        items = 0
+                        # accum, items = 0, (kh * kw)
+                        for ii in range(self.kh):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        accum += x[nn, x_x, x_y, cc]
+                                        items += 1
+                        y[nn, xx, yy, cc] = (accum / items)
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype)
     # -----
 
-    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
+    def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
         # dx:np.ndarray = self.dx[ :dy.shape[0], :]
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        average_pool_2d_bwd_nhwc_cython(dy, dx,
-                                        dy.shape[0], self.hi, self.wi, self.ci,
-                                        self.kh, self.kw, self.ho, self.wo,
-                                        self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride,
-                                        self.vdilation, self.hdilation)
+        for nn in range(dy.shape[0]):
+            for xx in range(self.ho):
+                for yy in range(self.wo):
+                    for cc in range(self.ci):
+                        items = 0
+                        avgval = dy[nn, xx, yy, cc]
+                        for ii in range(self.kh):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        items = items + 1
+                        avgval /= items
+                        # avgval = dy[nn, xx, yy, cc] // (kh * kw)
+                        for ii in range(self.kh):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        dx[nn, x_x, x_y, cc] += avgval
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype)
     # -----
 
-    def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
+    def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         # NOTE: It's necessary a new zero-initalized "dx" in every call since may be some values that are not re-set in the cython's function.
         # dx:np.ndarray = self.dx[ :dy.shape[0], :]
         dx = self.get_dx(dy.shape[0])
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        average_pool_2d_bwd_nchw_cython(dy, dx,
-                                        dy.shape[0], self.hi, self.wi, self.ci,
-                                        self.kh, self.kw, self.ho, self.wo,
-                                        self.vpadding, self.hpadding,
-                                        self.vstride, self.hstride,
-                                        self.vdilation, self.hdilation)
+
+        for nn in range(dy.shape[0]):
+            for cc in range(self.ci):
+                for xx in range(self.ho):
+                    for yy in range(self.wo):
+                        items = 0
+                        avgval = dy[nn, cc, xx, yy]
+                        for ii in range(self.kh):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        items = items + 1
+                        avgval /= items
+                        for ii in range(self.kh):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for jj in range(self.kw):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        dx[nn, cc, x_x, x_y] += avgval
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype)
     # -----
-
-    #############
-    #### I2C ####
-    #############
-
-    def _forward_nhwc_i2c(self, x: np.ndarray) -> np.ndarray:
-
-        x_rows: np.ndarray = np.zeros((x.shape[0] * self.ci * self.ho * self.wo, self.kh * self.kw), dtype=self.model.dtype)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        im2row_1ch_nhwc_cython(x, x_rows,
-                               self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        y: np.ndarray = np.mean(x_rows, axis=1, dtype=self.model.dtype)
-        return y.reshape((-1, self.ho, self.wo, self.co))
-
-    def _forward_nchw_i2c(self, x: np.ndarray) -> np.ndarray:
-        n, c, _, _ = x.shape
-        x_cols: np.ndarray = np.zeros((self.kh * self.kw, n * c * self.ho * self.wo), dtype=self.model.dtype)
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
-        im2col_1ch_nchw_cython(x, x_cols,
-                               self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        y: np.ndarray = np.mean(x_cols, axis=1, dtype=self.model.dtype)
-        return y.reshape((-1, self.co, self.ho, self.wo))
-
-    def _backward_nhwc_i2c(self, dy: np.ndarray) -> np.ndarray:
-        pool_size = np.prod(self.pool_shape)
-        dy_rows: np.ndarray = np.tile(dy.reshape(-1, 1, copy=False) / pool_size, (1, pool_size))  # type: ignore (it is correct.)
-        dx: np.ndarray = np.zeros_like(dy, dtype=self.model.dtype)
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        row2im_1ch_nhwc_cython(dy_rows, dx,
-                               dy.shape[0], self.hi, self.wi, self.ci,
-                               self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.hi, self.wi, self.ci))
-
-    def _backward_nchw_i2c(self, dy: np.ndarray) -> np.ndarray:
-        pool_size = np.prod(self.pool_shape)
-        dy_cols: np.ndarray = np.tile(dy.flatten() / pool_size, (pool_size, 1))  # type: ignore (it is correct.)
-        dy_cols: np.ndarray = np.asarray(dy_cols, dtype=self.model.dtype)
-        dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=self.model.dtype)
-
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
-        col2im_1ch_nchw_cython(dy_cols, dx,
-                               dy.shape[0], self.hi, self.wi, self.ci,
-                               self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride,
-                               self.vdilation, self.hdilation)
-        self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return dx.reshape((-1, self.ci, self.hi, self.wi))

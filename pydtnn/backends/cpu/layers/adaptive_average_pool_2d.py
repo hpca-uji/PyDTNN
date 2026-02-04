@@ -1,5 +1,3 @@
-from pydtnn.backends.cpu.utils.adaptive_avg_pooling_nchw_cython import adaptive_avg_pooling_bwd_nchw_cython, adaptive_avg_pooling_fwd_nchw_cython
-from pydtnn.backends.cpu.utils.adaptive_avg_pooling_nhwc_cython import adaptive_avg_pooling_bwd_nhwc_cython, adaptive_avg_pooling_fwd_nhwc_cython
 from pydtnn.layers.adaptive_average_pool_2d import AdaptiveAveragePool2D
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 
@@ -33,11 +31,11 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self._forward = self._forward_nchw_cython
-                self._backward = self._backward_nchw_cython
+                self._forward = self._forward_nchw
+                self._backward = self._backward_nchw
             case TensorFormat.NHWC:
-                self._forward = self._forward_nhwc_cython
-                self._backward = self._backward_nhwc_cython
+                self._forward = self._forward_nhwc
+                self._backward = self._backward_nhwc
             case _:
                 raise NotImplementedError(f"\"AdaptiveAveragePool2DCPU\" is not implemented for \"{self.model.tensor_format}\" format.")
 
@@ -62,32 +60,100 @@ class AdaptiveAveragePool2DCPU(AdaptiveAveragePool2D[np.ndarray], LayerCPU):
     def backward(self, dy: np.ndarray) -> np.ndarray:
         return self._backward(dy)
 
-    def _forward_nhwc_cython(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
-        adaptive_avg_pooling_fwd_nhwc_cython(x, y)
+
+        for nn in range(x.shape[0]):
+            for cc in range(self.ci):
+                for hi in range(self.ho):
+                    h_start = AdaptiveAveragePool2D._index_first_element(hi, self.hi, self.ho)
+                    h_end = AdaptiveAveragePool2D._index_last_element(hi, self.hi, self.ho)
+                    elements_h = h_end - h_start
+
+                    for wi in range(self.wo):
+                        w_start = AdaptiveAveragePool2D._index_first_element(wi, self.wi, self.wo)
+                        w_end = AdaptiveAveragePool2D._index_last_element(wi, self.wi, self.wo)
+                        elements = elements_h * (w_end - w_start)
+
+                        add = 0
+                        for i in range(h_start, h_end):
+                            for j in range(w_start, w_end):
+                                add += x[nn, cc, i, j]
+                        y[nn, cc, hi, wi] = add / elements
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype)
 
-    def _forward_nchw_cython(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_ADP_AVG_POOL)
-        adaptive_avg_pooling_fwd_nchw_cython(x, y)
+
+        for nn in range(x.shape[0]):
+            for cc in range(self.ci):
+                for hi in range(self.ho):
+                    h_start = AdaptiveAveragePool2D._index_first_element(hi, self.hi, self.ho)
+                    h_end = AdaptiveAveragePool2D._index_last_element(hi, self.hi, self.ho)
+                    elements_h = h_end - h_start
+
+                    for wi in range(self.wo):
+                        w_start = AdaptiveAveragePool2D._index_first_element(wi, self.wi, self.wo)
+                        w_end = AdaptiveAveragePool2D._index_last_element(wi, self.wi, self.wo)
+                        elements = elements_h * (w_end - w_start)
+
+                        add = 0
+                        for i in range(h_start, h_end):
+                            for j in range(w_start, w_end):
+                                add += x[nn, i, j, cc]
+                        y[nn, hi, wi, cc] = add / elements
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype)
 
-    def _backward_nhwc_cython(self, dy: np.ndarray) -> np.ndarray:
+    def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         dx: np.ndarray = self.dx[:dy.shape[0]]
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
-        adaptive_avg_pooling_bwd_nhwc_cython(dy, dx)
+
+        for nn in range(dy.shape[0]):
+            for cc in range(self.ci):
+                for ho in range(self.ho):
+                    h_start = AdaptiveAveragePool2D._index_first_element(ho, self.hi, self.ho)
+                    h_end = AdaptiveAveragePool2D._index_last_element(ho, self.hi, self.ho)
+                    elements_h = h_end - h_start
+                    for wo in range(self.wo):
+                        w_start = AdaptiveAveragePool2D._index_first_element(wo, self.wi, self.wo)
+                        w_end = AdaptiveAveragePool2D._index_last_element(wo, self.wi, self.wo)
+                        elements = elements_h * (w_end - w_start)
+
+                        delta = dy[nn, cc, ho, wo] / elements
+                        for i in range(h_start, h_end):
+                            for j in range(w_start, w_end):
+                                dx[nn, cc, i, j] += delta
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype)
 
-    def _backward_nchw_cython(self, dy: np.ndarray) -> np.ndarray:
+    def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
         dx: np.ndarray = self.dx[:dy.shape[0]]
         dx.fill(0)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_ADP_AVG_POOL)
-        adaptive_avg_pooling_bwd_nchw_cython(dy, dx)
+
+        for nn in range(dy.shape[0]):
+            for cc in range(self.ci):
+                for ho in range(self.ho):
+                    h_start = AdaptiveAveragePool2D._index_first_element(ho, self.hi, self.ho)
+                    h_end = AdaptiveAveragePool2D._index_last_element(ho, self.hi, self.ho)
+                    elements_h = h_end - h_start
+                    for wo in range(self.wo):
+                        w_start = AdaptiveAveragePool2D._index_first_element(wo, self.wi, self.wo)
+                        w_end = AdaptiveAveragePool2D._index_last_element(wo, self.wi, self.wo)
+                        elements = elements_h * (w_end - w_start)
+
+                        delta = dy[nn, ho, wo, cc] / elements
+                        for i in range(h_start, h_end):
+                            for j in range(w_start, w_end):
+                                dx[nn, i, j, cc] += delta
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype)

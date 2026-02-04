@@ -33,7 +33,7 @@ class LayerNormalizationCPU(LayerNormalization[np.ndarray], LayerCPU):
 
         # if self.need_dx:
         # dy = dy * self.gamma
-        np.mutliply(dy, self.gamma, out=dy)
+        np.multiply(dy, self.gamma, out=dy)
 
         # dx = dy - self.xn * np.mean(dy * self.xn, self.axis, keepdims=True)
         dx = np.mean(dy * self.xn, self.axis, keepdims=True)

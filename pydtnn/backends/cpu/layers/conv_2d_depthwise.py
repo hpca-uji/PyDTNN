@@ -1,6 +1,6 @@
 from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
-from pydtnn.backends.cpu.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
-from pydtnn.backends.cpu.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
+from pydtnn.backends.cython.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
+from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
 from pydtnn.layers.conv_2d_depthwise import Conv2DDepthwise
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
@@ -28,20 +28,18 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
 
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.forward = self._forward_depthwise_nchw
+                self.forward = self._forward_nchw
                 self.backward = self._backward_nchw
-                _y_shape = (self.model.batch_size, self.co, self.ho, self.wo)
-                dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
             case TensorFormat.NHWC:
-                self.forward = self._forward_depthwise_nhwc
+                self.forward = self._forward_nhwc
                 self.backward = self._backward_nhwc
-                _y_shape = (self.model.batch_size, self.ho, self.wo, self.co)
-                dx_shape = (self.model.batch_size, self.hi, self.wi, self.ci)
             case _:
                 _y_shape = None
                 dx_shape = None
                 raise NotImplementedError(f"Format \"{self.model.tensor_format}\" is not supported in \"Conv2DDepthwiseCPU\" layer.")
         # ---
+        _y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
+        dx_shape = self.model.encode_shape((self.model.batch_size, self.hi, self.wi, self.ci))
 
         self._y = np.zeros(shape=_y_shape, dtype=self.model.dtype)
         self.real_memory_size += self._y.nbytes
@@ -51,7 +49,7 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
             self.real_memory_size += self.dx.nbytes
     # ---
 
-    def _forward_depthwise_nhwc(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
 
         self.x = x
@@ -59,9 +57,19 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
-        depthwise_conv_nhwc_cython(x, self.weights, y, self.ho, self.wo,
-                                   self.vpadding, self.hpadding,
-                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
+
+        for nn in range(x.shape[0]):
+            for cc in range(self.ci):
+                for ii in range(self.kh):
+                    for jj in range(self.kw):
+                        for xx in range(self.ho):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for yy in range(self.wo):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        y[nn, cc, xx, yy] += self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
+
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -78,16 +86,24 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
 
         return np.asarray(y, dtype=self.model.dtype)
 
-    def _forward_depthwise_nchw(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
         """ Version of the forward that perform a depthwise convolution"""
         self.x = x
         y: np.ndarray = self._y[:x.shape[0], ]
         y.fill(0)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
-        depthwise_conv_nchw_cython(x, self.weights, y, self.ho, self.wo,
-                                   self.vpadding, self.hpadding,
-                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
+        for nn in range(x.shape[0]):
+            for ii in range(self.kh):
+                for jj in range(self.kw):
+                    for cc in range(self.ci):
+                        for xx in range(self.ho):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for yy in range(self.wo):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    if 0 <= x_y < self.wi:
+                                        y[nn, xx, yy, cc] += self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -109,11 +125,20 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
         dx: np.ndarray = self.dx[:dy.shape[0], ]
         dx.fill(0)
 
-        depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
-                                            dx, self.dw,
-                                            self.vpadding, self.hpadding,
-                                            self.vstride, self.hstride,
-                                            self.vdilation, self.hdilation)
+        for cc in range(self.ci):
+            for ii in range(self.kh):
+                for jj in range(self.kw):
+                    for nn in range(dy.shape[0]):
+                        val_k = self.weights[cc, ii, jj]
+                        for xx in range(self.ho):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for yy in range(self.wo):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    val_dy = dy[nn, xx, yy, cc]
+                                    if 0 <= x_y < self.wi:
+                                        self.dw[cc, ii, jj] = self.x[nn, x_x, x_y, cc] * val_dy
+                                        dx[nn, x_x, x_y, cc] += val_k * val_dy
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
@@ -127,11 +152,20 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
         dx: np.ndarray = self.dx[:dy.shape[0], ]
         dx.fill(0)
 
-        depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,
-                                            dx, self.dw,
-                                            self.vpadding, self.hpadding,
-                                            self.vstride, self.hstride,
-                                            self.vdilation, self.hdilation)
+        for cc in range(self.ci):
+            for ii in range(self.kh):
+                for jj in range(self.kw):
+                    for nn in range(dy.shape[0]):
+                        val_k = self.weights[cc, ii, jj]
+                        for xx in range(self.ho):
+                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            if 0 <= x_x < self.hi:
+                                for yy in range(self.wo):
+                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    val_dy = dy[nn, cc, xx, yy]
+                                    if 0 <= x_y < self.wi:
+                                        self.dw[cc, ii, jj] = self.x[nn, cc, x_x, x_y] * val_dy
+                                        dx[nn, cc, x_x, x_y] += val_k * val_dy
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)

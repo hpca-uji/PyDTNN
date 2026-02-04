@@ -40,4 +40,12 @@ class AdaptiveAveragePool2D[T: Array](Layer):
 
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
         self.n = np.prod(self.shape)
-    # - END initialize - #
+    # - END initialize - #º
+
+    @staticmethod
+    def _index_first_element(index: int, dim_in: int, dim_out: int) -> int:
+        return ((index * dim_in) // dim_out)
+
+    @staticmethod
+    def _index_last_element(index: int, dim_in: int, dim_out: int) -> int:
+        return ((((index + 1) * dim_in) + dim_out - 1) // dim_out)

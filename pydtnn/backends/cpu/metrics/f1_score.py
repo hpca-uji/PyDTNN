@@ -6,7 +6,6 @@ if TYPE_CHECKING:
 from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.backends.cpu.metrics.binary_confusion_matrix import BinaryConfusionMatrixCPU
 from pydtnn.metrics.f1_score import F1Score
-from pydtnn.backends.cpu.utils.div_arrays_set_if_zero import div_arrays_set_if_zero
 
 
 class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
@@ -32,7 +31,6 @@ class F1ScoreCPU(F1Score[np.ndarray], MetricCPU):
             self.are_zeros = self.model.memory.ndarray(self.temp_var_shape, dtype=np.bool)
 
     def compute(self, y_pred: np.ndarray, y_targ: np.ndarray) -> float:
-        y_targ = np.asarray(y_targ, dtype=self.model.dtype)
         true_positives = self.true_positives
         false_positives = self.false_positives
         false_negatives = self.false_negatives

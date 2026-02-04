@@ -61,10 +61,10 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
         super().initialize(prev_shape, x)
         match self.model.tensor_format:
             case TensorFormat.NCHW:
-                self.forward = self._forward_pointwise_nchw
+                self.forward = self._forward_nchw
                 self.backward = self._backward_nchw
             case TensorFormat.NHWC:
-                self.forward = self._forward_pointwise_nhwc
+                self.forward = self._forward_nhwc
                 self.backward = self._backward_nhwc
         # --
         y_shape = self.model.encode_shape((self.model.batch_size, self.co, self.ho, self.wo))
@@ -78,9 +78,8 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
             self.real_memory_size += self.dx.nbytes
     # ------
 
-    def _forward_pointwise_nhwc(self, x: np.ndarray) -> np.ndarray:
-        if self.model.mode is Model.Mode.TRAIN:
-            self.x: np.ndarray = x
+    def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
+        self.x: np.ndarray = x
 
         y = self.y[:x.shape[0], :]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_POINTWISE_CONV)
@@ -96,10 +95,9 @@ class Conv2DPointwiseCPU(AbstractConv2DCPU, Conv2DPointwise):
 
         return np.asarray(y, dtype=self.model.dtype)
 
-    def _forward_pointwise_nchw(self, x: np.ndarray) -> np.ndarray:
+    def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
 
-        if self.model.mode is Model.Mode.TRAIN:
-            self.x: np.ndarray = x
+        self.x: np.ndarray = x
 
         y: np.ndarray = self.y[:x.shape[0], :]
 
