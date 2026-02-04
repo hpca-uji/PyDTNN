@@ -11,6 +11,8 @@ except Exception:
     pass
 from pydtnn.utils.constants import ArrayShape
 from pydtnn.libs import numpy as np
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class LayerCPU(Layer[np.ndarray]):

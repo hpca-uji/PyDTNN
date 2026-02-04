@@ -1,4 +1,7 @@
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 from pydtnn.backends.cpu.utils.argmax_cython import argmax_cython
 from pydtnn.backends.cpu.utils.im2col_1ch_nchw_cython import col2im_1ch_nchw_cython, im2col_1ch_nchw_cython
 from pydtnn.backends.cpu.utils.im2row_1ch_nhwc_cython import im2row_1ch_nhwc_cython, row2im_1ch_nhwc_cython

@@ -1,4 +1,7 @@
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 from pydtnn.activations.arctanh import Arctanh
 from pydtnn.backends.cpu.activations.activation import ActivationCPU

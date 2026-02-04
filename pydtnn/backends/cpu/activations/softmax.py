@@ -1,4 +1,7 @@
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 from pydtnn.activations.softmax import Softmax
 from pydtnn.backends.cpu.activations.activation import ActivationCPU

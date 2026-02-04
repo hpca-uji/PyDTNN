@@ -2,6 +2,9 @@ from pydtnn.backends.cpu.metrics.metric import MetricCPU
 from pydtnn.metrics.binary_confusion_matrix import BinaryConfusionMatrix
 
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 TRUE_POSITIVE = (0, 0)
 TRUE_NEGATIVE = (1, 1)

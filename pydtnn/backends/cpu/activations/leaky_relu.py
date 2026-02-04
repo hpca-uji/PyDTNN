@@ -2,6 +2,9 @@ from pydtnn.activations.leaky_relu import LeakyRelu
 from pydtnn.backends.cpu.activations.activation import ActivationCPU
 
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class LeakyReluCPU(LeakyRelu[np.ndarray], ActivationCPU):

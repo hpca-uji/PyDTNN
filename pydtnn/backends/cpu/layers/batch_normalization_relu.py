@@ -4,6 +4,9 @@ from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.utils.constants import ArrayShape
 
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):

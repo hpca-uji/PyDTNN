@@ -1,6 +1,9 @@
 from pydtnn.backends.cpu.layers.layer import LayerCPU
 from pydtnn.layers.input import Input
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class InputCPU(Input[np.ndarray], LayerCPU):

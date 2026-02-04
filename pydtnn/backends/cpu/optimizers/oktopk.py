@@ -1,6 +1,9 @@
 import warnings
 
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 from pydtnn.backends.cpu.optimizers.optimizer import OptimizerCPU
 from pydtnn.backends.cpu.utils.oktopk_utils_cython import compute_dense_acc_cython, intersect_2d_indexes_cython, reset_residuals_cython, update_sparsed_weights_cython, update_sparsed_weights_mv_cython

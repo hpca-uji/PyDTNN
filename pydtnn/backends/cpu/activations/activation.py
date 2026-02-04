@@ -7,6 +7,9 @@ try:
 except Exception:
     pass
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class ActivationCPU(Activation[np.ndarray]):

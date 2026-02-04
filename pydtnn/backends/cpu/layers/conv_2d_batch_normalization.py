@@ -5,6 +5,9 @@ from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EV
 from pydtnn.utils.constants import ArrayShape, Parameters
 
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class Conv2DBatchNormalizationCPU(Conv2DBatchNormalization[np.ndarray], AbstractConv2DStandardCPU):

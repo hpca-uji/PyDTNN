@@ -4,6 +4,9 @@ from pydtnn.utils.performance_models import im2col_time, matmul_time
 from pydtnn.utils.constants import ArrayShape
 
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 
 class AbstractConv2DCPU(Conv2D[np.ndarray], LayerCPU):

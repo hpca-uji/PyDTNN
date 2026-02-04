@@ -1,4 +1,7 @@
 from pydtnn.libs import numpy as np
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    import numpy as np
 
 from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
 from pydtnn.layers.conv_2d_pointwise import Conv2DPointwise
