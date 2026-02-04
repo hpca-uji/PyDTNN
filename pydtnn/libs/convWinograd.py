@@ -12,7 +12,7 @@ from functools import partial
 
 import numpy as np
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
-from pydtnn.backends.cpu.utils.im2row_nhwc_cython import im2row_nhwc_cython
+from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 from pydtnn.utils import load_library
