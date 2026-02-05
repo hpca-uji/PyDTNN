@@ -1,7 +1,8 @@
 from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
-from pydtnn.layers.conv_2d_relu import Conv2DRelu
+from pydtnn.layer_base import FusedLayerMixIn
+from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape
+from pydtnn.utils.constants import Array, ArrayShape
 
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
@@ -12,7 +13,11 @@ if TYPE_CHECKING:
 # noinspection PyAbstractClass
 
 
-class Conv2DReluCPU(Conv2DRelu[np.ndarray], AbstractConv2DStandardCPU):
+class Conv2DRelu[T: Array](FusedLayerMixIn[T], Conv2D[T]):
+    pass
+
+
+class Conv2DReluFUSE(Conv2DRelu[np.ndarray], AbstractConv2DStandardCPU):
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 

@@ -1,7 +1,8 @@
 from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
-from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
-from pydtnn.utils.constants import ArrayShape
+from pydtnn.layer_base import FusedLayerMixIn
+from pydtnn.layers.batch_normalization import BatchNormalization
+from pydtnn.utils.constants import Array, ArrayShape
 
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
@@ -9,7 +10,11 @@ if TYPE_CHECKING:
     import numpy as np
 
 
-class BatchNormalizationReluCPU(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):
+class BatchNormalizationRelu[T: Array](FusedLayerMixIn[T], BatchNormalization[T]):
+    pass
+
+
+class BatchNormalizationReluFUSE(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 

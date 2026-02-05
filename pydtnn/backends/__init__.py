@@ -75,6 +75,9 @@ class PromoteToBackend:
         submodule_name = module_name.split(".", 1)[1]
         spec = self._parse_backend(self.model.backend)
 
+        if module_name.startswith("pydtnn.backends."):
+            return None  # We are a backend
+
         for group, backends in spec.items():
             if f".{group}." not in f".{module_name}.":
                 continue  # Spec not relevant to class
