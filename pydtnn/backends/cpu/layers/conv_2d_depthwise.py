@@ -63,10 +63,10 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
                 for ii in range(self.kh):
                     for jj in range(self.kw):
                         for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for yy in range(self.wo):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         y[nn, cc, xx, yy] += self.weights[cc, ii, jj] * x[nn, cc, x_x, x_y]
 
@@ -98,10 +98,10 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
                 for jj in range(self.kw):
                     for cc in range(self.ci):
                         for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for yy in range(self.wo):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         y[nn, xx, yy, cc] += self.weights[cc, ii, jj] * x[nn, x_x, x_y, cc]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -131,10 +131,10 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
                     for nn in range(dy.shape[0]):
                         val_k = self.weights[cc, ii, jj]
                         for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for yy in range(self.wo):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     val_dy = dy[nn, xx, yy, cc]
                                     if 0 <= x_y < self.wi:
                                         self.dw[cc, ii, jj] = self.x[nn, x_x, x_y, cc] * val_dy
@@ -158,10 +158,10 @@ class Conv2DDepthwiseCPU(AbstractConv2DCPU, Conv2DDepthwise):
                     for nn in range(dy.shape[0]):
                         val_k = self.weights[cc, ii, jj]
                         for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for yy in range(self.wo):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     val_dy = dy[nn, cc, xx, yy]
                                     if 0 <= x_y < self.wi:
                                         self.dw[cc, ii, jj] = self.x[nn, cc, x_x, x_y] * val_dy

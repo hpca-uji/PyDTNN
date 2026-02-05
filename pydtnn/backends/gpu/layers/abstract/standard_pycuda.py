@@ -98,9 +98,9 @@ class AbstractConv2DStandardGPU(AbstractConv2DGPU):
                       np.int32(self.model.batch_size), np.int32(self.ci), np.int32(self.hi), np.int32(self.wi),
                       np.int32(self.co), np.int32(self.ho), np.int32(self.wo),
                       np.int32(self.kh), np.int32(self.kw),
-                      np.int32(self.vpadding), np.int32(self.hpadding),
-                      np.int32(self.vstride), np.int32(self.hstride),
-                      np.int32(self.vdilation), np.int32(self.hdilation),
+                      np.int32(self.hpadding), np.int32(self.wpadding),
+                      np.int32(self.hstride), np.int32(self.wstride),
+                      np.int32(self.hdilation), np.int32(self.wdilation),
                       grid=self.grid, block=self.block,
                       stream=self.model.stream
                       )
@@ -124,9 +124,9 @@ class AbstractConv2DStandardGPU(AbstractConv2DGPU):
                        np.int32(self.model.batch_size), np.int32(self.ci), np.int32(self.hi), np.int32(self.wi),
                        np.int32(self.co), np.int32(self.ho), np.int32(self.wo),
                        np.int32(self.kh), np.int32(self.kw),
-                       np.int32(self.vpadding), np.int32(self.hpadding),
-                       np.int32(self.vstride), np.int32(self.hstride),
-                       np.int32(self.vdilation), np.int32(self.hdilation),
+                       np.int32(self.hpadding), np.int32(self.wpadding),
+                       np.int32(self.hstride), np.int32(self.wstride),
+                       np.int32(self.hdilation), np.int32(self.wdilation),
                        grid=self.grid, block=self.block,
                        stream=self.model.stream
                        )

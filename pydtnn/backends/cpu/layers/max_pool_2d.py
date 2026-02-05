@@ -41,10 +41,10 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
                         maxval = self.minval
                         idx_maxval = 0
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         val = x[nn, x_x, x_y, cc]
                                         if val > maxval:
@@ -68,10 +68,10 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
                         maxval = self.minval
                         idx_maxval = 0
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         val = x[nn, cc, x_x, x_y]
                                         if val > maxval:
@@ -94,8 +94,8 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
                         idx_maxval = self.idx_max[nn, xx, yy, cc]
                         ii = idx_maxval // self.kh
                         jj = idx_maxval % self.kw
-                        x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
-                        x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                        x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
+                        x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                         if 0 <= x_x < self.ho and 0 <= x_y < self.wo:
                             dx[nn, x_x, x_y, cc] += dy[nn, xx, yy, cc]
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -114,8 +114,8 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
                         idx_maxval = self.idx_max[nn, cc, xx, yy]
                         ii = idx_maxval // self.kh
                         jj = idx_maxval % self.kw
-                        x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
-                        x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                        x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
+                        x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                         if 0 <= x_x < self.ho and 0 <= x_y < self.wo:
                             dx[nn, cc, x_x, x_y] += dy[nn, cc, xx, yy]
 
@@ -125,25 +125,25 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
     ##########
     ## TEST ##
     ##########
-    
+
     def max_pool(self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x = np.pad(x, ((0,0), (0,0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)), mode="constant")
+        x = np.pad(x, ((0,0), (0,0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
         for kh in range(self.kh):
             for kw in range(self.kw):
-                h_start = kh * self.vdilation
-                w_start = kw * self.hdilation
-                h_end = h_start + self.vstride * self.ho
-                w_end = w_start + self.hstride * self.wo
+                h_start = kh * self.hdilation
+                w_start = kw * self.wdilation
+                h_end = h_start + self.hstride * self.ho
+                w_end = w_start + self.wstride * self.wo
                 
-                _x = x[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride]
+                _x = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
                 max_val: np.ndarray = np.max(_x, axis=(2, 3))
                 _idx_maxval: np.ndarray = np.argmax(np.argmax(_x, axis=3), axis=2)
 
                 #y[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = max_val[:, :]
                 #idx_maxval[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = _idx_maxval[:, :]
                 #breakpoint()
-                for i in range(h_start, h_end // self.vstride):
-                    for j in range(w_start, w_end // self.hstride):
+                for i in range(h_start, h_end // self.hstride):
+                    for j in range(w_start, w_end // self.wstride):
                         y[:, :, i, j] = max_val[:, :]
                         idx_maxval[:, :, i, j] = _idx_maxval[:, :]
                 #breakpoint()

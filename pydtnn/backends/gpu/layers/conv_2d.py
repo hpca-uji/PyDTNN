@@ -47,8 +47,8 @@ class Conv2DGPU(AbstractConv2DGPU):
 
         # Create convolution descriptor
         self.conv_desc = cudnn.cudnnCreateConvolutionDescriptor()
-        cudnn.cudnnSetConvolution2dDescriptor(self.conv_desc, self.vpadding, self.hpadding,
-                                              self.vstride, self.hstride, self.vdilation, self.hdilation,
+        cudnn.cudnnSetConvolution2dDescriptor(self.conv_desc, self.hpadding, self.wpadding,
+                                              self.hstride, self.wstride, self.hdilation, self.wdilation,
                                               conv_mode, self.model.cudnn_dtype)
         # Set grouping options
         # if self.grouping is Conv2D.Grouping.DEPTHWISE:

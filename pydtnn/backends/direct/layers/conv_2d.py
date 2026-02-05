@@ -74,9 +74,9 @@ class Conv2DDIRECT(AbstractConv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVDIRECT)
         y = self.cd[n].conv_direct(self.weights, x, self.out,
-                                   vpadding=self.vpadding, hpadding=self.hpadding,
-                                   vstride=self.vstride, hstride=self.hstride,
-                                   vdilation=self.vdilation, hdilation=self.hdilation)
+                                   vpadding=self.hpadding, hpadding=self.wpadding,
+                                   vstride=self.hstride, hstride=self.wstride,
+                                   vdilation=self.hdilation, hdilation=self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
 

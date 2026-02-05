@@ -38,9 +38,9 @@ class Conv2DGEMM(AbstractConv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y: np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x,
-                                               vpadding=self.vpadding, hpadding=self.hpadding,
-                                               vstride=self.vstride, hstride=self.hstride,
-                                               vdilation=self.vdilation, hdilation=self.hdilation,
+                                               vpadding=self.hpadding, hpadding=self.wpadding,
+                                               vstride=self.hstride, hstride=self.wstride,
+                                               vdilation=self.hdilation, hdilation=self.wdilation,
                                                biases=self.biases)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
@@ -53,9 +53,9 @@ class Conv2DGEMM(AbstractConv2DStandardCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res = self.cg.conv_gemm_nchw(self.weights, x,
-                                     vpadding=self.vpadding, hpadding=self.hpadding,
-                                     vstride=self.vstride, hstride=self.hstride,
-                                     vdilation=self.vdilation, hdilation=self.hdilation,
+                                     vpadding=self.hpadding, hpadding=self.wpadding,
+                                     vstride=self.hstride, hstride=self.wstride,
+                                     vdilation=self.hdilation, hdilation=self.wdilation,
                                      biases=self.biases)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return res
@@ -65,9 +65,9 @@ class Conv2DGEMM(AbstractConv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CONVGEMM)
         res: np.ndarray = np.zeros(self.weights.shape, dtype=dy.dtype)
         self.cg.conv_gemm_nhwc(dy, self.cg_x, out=res,
-                               vpadding=self.vpadding, hpadding=self.hpadding,
-                               vstride=self.vstride, hstride=self.hstride,
-                               vdilation=self.vdilation, hdilation=self.hdilation,
+                               vpadding=self.hpadding, hpadding=self.wpadding,
+                               vstride=self.hstride, hstride=self.wstride,
+                               vdilation=self.hdilation, hdilation=self.wdilation,
                                trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         self.dw = res
@@ -81,9 +81,9 @@ class Conv2DGEMM(AbstractConv2DStandardCPU):
                                      self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
         dx: np.ndarray = np.zeros((dy.shape[0], self.hi, self.wi, self.ci), dtype=dy.dtype)
         self.cg.deconv_gemm_nhwc(self.weights, dy, dx,
-                                 vpadding=self.vpadding, hpadding=self.hpadding,
-                                 vstride=self.vstride, hstride=self.hstride,
-                                 vdilation=self.vdilation, hdilation=self.hdilation)
+                                 vpadding=self.hpadding, hpadding=self.wpadding,
+                                 vstride=self.hstride, hstride=self.wstride,
+                                 vdilation=self.hdilation, hdilation=self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return dx
@@ -94,9 +94,9 @@ class Conv2DGEMM(AbstractConv2DStandardCPU):
         res = np.zeros(self.weights.shape, dtype=dy.dtype)
         # NOTE: conv_gemm_nchw, in this context seems that is being used as a matrix multiplication instead of a convolution.
         self.cg.conv_gemm_nchw(dy, self.cg_x, out=res,
-                               vpadding=self.vpadding, hpadding=self.hpadding,
-                               vstride=self.vstride, hstride=self.hstride,
-                               vdilation=self.vdilation, hdilation=self.hdilation,
+                               vpadding=self.hpadding, hpadding=self.wpadding,
+                               vstride=self.hstride, hstride=self.wstride,
+                               vdilation=self.hdilation, hdilation=self.wdilation,
                                trans=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         self.dw = res
@@ -110,9 +110,9 @@ class Conv2DGEMM(AbstractConv2DStandardCPU):
                                      self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_DECONV_GEMM)
         dx = np.zeros((dy.shape[0], self.ci, self.hi, self.wi), dtype=dy.dtype)
         self.cg.deconv_gemm_nchw(self.weights, dy, dx,
-                                 vpadding=self.vpadding, hpadding=self.hpadding,
-                                 vstride=self.vstride, hstride=self.hstride,
-                                 vdilation=self.vdilation, hdilation=self.hdilation)
+                                 vpadding=self.hpadding, hpadding=self.wpadding,
+                                 vstride=self.hstride, hstride=self.wstride,
+                                 vdilation=self.hdilation, hdilation=self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return dx

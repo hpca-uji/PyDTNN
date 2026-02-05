@@ -50,7 +50,7 @@ class Conv2DCUPY(Conv2D[np.ndarray], LayerCUPY):
         raise NotImplementedError("Use a real backwards variant!")
 
     def print_in_convdirect_format(self) -> None:
-        if self.hstride != 1 or self.vstride != 1:
+        if self.wstride != 1 or self.hstride != 1:
             return
         # #l kn wo ho t kh kw ci wi hi"
         ci, hi, wi = self.model.decode_shape(self.prev_shape)

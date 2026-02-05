@@ -13,9 +13,9 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         self.padding = padding
         self.stride = stride
         self.dilation = dilation
-        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
-        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
-        self.vdilation, self.hdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
+        self.hpadding, self.wpadding = (padding, padding) if isinstance(padding, int) else padding
+        self.hstride, self.wstride = (stride, stride) if isinstance(stride, int) else stride
+        self.hdilation, self.wdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.ci = self.hi = self.wi = self.kh = self.kw = self.ho = self.wo = self.co = self.n = 0
 
     def initialize(self, prev_shape, x: T | None):
@@ -27,8 +27,8 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
             self.pool_shape = (self.pool_shape[0], self.wi)
         self.kh, self.kw = self.pool_shape
         self.co = self.ci
-        self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
-        self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
+        self.ho = (self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1) // self.hstride + 1
+        self.wo = (self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1) // self.wstride + 1
         if not (self.ho > 0 and self.wo > 0):
             raise LayerError(f"Output dimensions must be greater than 0. ho: {self.ho}, wo: {self.wo}.")
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
@@ -38,8 +38,8 @@ class AbstractPool2DLayer[T: Array](Layer[T]):
         props = super()._show_props()
 
         props["pool"] = self.pool_shape
-        props["padding"] = (self.vpadding, self.hpadding)
-        props["stride"] = (self.vstride, self.hstride)
-        props["dilation"] = (self.vdilation, self.hdilation)
+        props["padding"] = (self.hpadding, self.wpadding)
+        props["stride"] = (self.hstride, self.wstride)
+        props["dilation"] = (self.hdilation, self.wdilation)
 
         return props

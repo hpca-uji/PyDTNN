@@ -27,8 +27,8 @@ class Conv2DCYTHON(Conv2DCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_nhwc_cython(x, x_rows,
                            self.kh, self.kw, self.ho, self.wo,
-                           self.vpadding, self.hpadding,
-                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+                           self.hpadding, self.wpadding,
+                           self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         self.x_rows = x_rows
 
@@ -66,8 +66,8 @@ class Conv2DCYTHON(Conv2DCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_nchw_cython(x, x_cols,
                            self.kh, self.kw, self.ho, self.wo,
-                           self.vpadding, self.hpadding,
-                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+                           self.hpadding, self.wpadding,
+                           self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.x_cols = x_cols
@@ -139,8 +139,8 @@ class Conv2DCYTHON(Conv2DCPU):
         row2im_nhwc_cython(rows, dx,
                            dy.shape[0], self.hi, self.wi, self.ci,
                            self.kh, self.kw, self.ho, self.wo,
-                           self.vpadding, self.hpadding,
-                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+                           self.hpadding, self.wpadding,
+                           self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype, order="C")
@@ -190,8 +190,8 @@ class Conv2DCYTHON(Conv2DCPU):
         col2im_nchw_cython(cols, dx,
                            dy.shape[0], self.ci, self.hi, self.wi,
                            self.kh, self.kw, self.ho, self.wo,
-                           self.vpadding, self.hpadding,
-                           self.vstride, self.hstride, self.vdilation, self.hdilation)
+                           self.hpadding, self.wpadding,
+                           self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         return np.asarray(dx, dtype=self.model.dtype, order="C")

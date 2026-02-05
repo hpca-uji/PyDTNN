@@ -68,9 +68,9 @@ class Conv2DDepthwiseGPU(AbstractConv2DGPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.fwd_func(x.ary, self.weights.ary, self.y.ary,
-                      np.int32(self.vpadding), np.int32(self.hpadding),
-                      np.int32(self.vstride), np.int32(self.hstride),
-                      np.int32(self.vdilation), np.int32(self.hdilation),
+                      np.int32(self.hpadding), np.int32(self.wpadding),
+                      np.int32(self.hstride), np.int32(self.wstride),
+                      np.int32(self.hdilation), np.int32(self.wdilation),
                       np.int32(n), np.int32(c), np.int32(h), np.int32(w),
                       np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
                       self.total_num_threads, grid=self.grid, block=self.block,
@@ -99,9 +99,9 @@ class Conv2DDepthwiseGPU(AbstractConv2DGPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.fwd_func(x.ary, self.weights.ary, self.y.ary,
-                      np.int32(self.vpadding), np.int32(self.hpadding),
-                      np.int32(self.vstride), np.int32(self.hstride),
-                      np.int32(self.vdilation), np.int32(self.hdilation),
+                      np.int32(self.hpadding), np.int32(self.wpadding),
+                      np.int32(self.hstride), np.int32(self.wstride),
+                      np.int32(self.hdilation), np.int32(self.wdilation),
                       np.int32(n), np.int32(c), np.int32(h), np.int32(w),
                       np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
                       self.total_num_threads, grid=self.grid, block=self.block,
@@ -131,9 +131,9 @@ class Conv2DDepthwiseGPU(AbstractConv2DGPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
                       self.dx.ary, self.dw.ary,
-                      np.int32(self.vpadding), np.int32(self.hpadding),
-                      np.int32(self.vstride), np.int32(self.hstride),
-                      np.int32(self.vdilation), np.int32(self.hdilation),
+                      np.int32(self.hpadding), np.int32(self.wpadding),
+                      np.int32(self.hstride), np.int32(self.wstride),
+                      np.int32(self.hdilation), np.int32(self.wdilation),
                       np.int32(n), np.int32(c), np.int32(h), np.int32(w),
                       np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
                       self.total_num_threads,
@@ -159,9 +159,9 @@ class Conv2DDepthwiseGPU(AbstractConv2DGPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         self.fwd_func(dy.ary, self.x.ary, self.weights.ary,
                       self.dx.ary, self.dw.ary,
-                      np.int32(self.vpadding), np.int32(self.hpadding),
-                      np.int32(self.vstride), np.int32(self.hstride),
-                      np.int32(self.vdilation), np.int32(self.hdilation),
+                      np.int32(self.hpadding), np.int32(self.wpadding),
+                      np.int32(self.hstride), np.int32(self.wstride),
+                      np.int32(self.hdilation), np.int32(self.wdilation),
                       np.int32(n), np.int32(c), np.int32(h), np.int32(w),
                       np.int32(self.kh), np.int32(self.kw), np.int32(self.ho), np.int32(self.wo),
                       self.total_num_threads, grid=self.grid, block=self.block,

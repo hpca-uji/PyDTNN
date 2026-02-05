@@ -25,10 +25,10 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                         items = 0
                         # accum, items = 0, (kh * kw)
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         accum += x[nn, cc, x_x, x_y]
                                         items += 1
@@ -51,10 +51,10 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                         items = 0
                         # accum, items = 0, (kh * kw)
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         accum += x[nn, x_x, x_y, cc]
                                         items += 1
@@ -77,19 +77,19 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                         items = 0
                         avgval = dy[nn, xx, yy, cc]
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         items = items + 1
                         avgval /= items
                         # avgval = dy[nn, xx, yy, cc] // (kh * kw)
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         dx[nn, x_x, x_y, cc] += avgval
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -110,18 +110,18 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                         items = 0
                         avgval = dy[nn, cc, xx, yy]
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         items = items + 1
                         avgval /= items
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         dx[nn, cc, x_x, x_y] += avgval
 

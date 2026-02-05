@@ -93,17 +93,17 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
 ##############
 
     def col2im_alt(self, x: np.ndarray, x_rows: np.ndarray) -> np.ndarray:
-        x = np.pad(x, ((0,0), (0,0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)), mode="constant")
+        x = np.pad(x, ((0,0), (0,0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
         cols = list[np.ndarray]()
 
         for kh in range(self.kh):
             for kw in range(self.kw):
-                h_start = kh * self.vdilation
-                w_start = kw * self.hdilation
-                h_end = h_start + self.vstride * self.ho
-                w_end = w_start + self.hstride * self.wo
+                h_start = kh * self.hdilation
+                w_start = kw * self.wdilation
+                h_end = h_start + self.hstride * self.ho
+                w_end = w_start + self.wstride * self.wo
 
-                col = x[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride]
+                col = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
                 cols.append(col)
         return np.stack(cols, axis=2).reshape(x_rows.shape)
 
@@ -117,9 +117,9 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                 for yy in range(self.wo):
                     row = (nn * self.ho + xx) * self.wo + yy
                     for ii in range(self.kh):
-                        x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                        x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                         for jj in range(self.kw):
-                            x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                            x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                             for cc in range(self.ci):
                                 col = (cc * self.kh + ii) * self.kw + jj
                                 if (0 <= x_x < self.hi) and (0 <= x_y < self.wi):
@@ -137,10 +137,10 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                     row = (nn * self.ho + xx) * self.wo + yy
                     for cc in range(self.ci):
                         for ii in range(self.kh):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if 0 <= x_x < self.hi:
                                 for jj in range(self.kw):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     if 0 <= x_y < self.wi:
                                         col = (cc * self.kh + ii) * self.kw + jj
                                         dx[nn, x_x, x_y, cc] += x_rows[row, col]
@@ -155,9 +155,9 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                     row = (cc * self.kh + ii) * self.kw + jj
                     for nn in range(n):
                         for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             for yy in range(self.wo):
-                                x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                 col = (nn * self.ho + xx) * self.wo + yy
                                 if (0 <= x_x < self.hi) and (0 <= x_y < self.wi):
                                     x_cols[row, col] = x[nn, cc, x_x, x_y]
@@ -174,10 +174,10 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                     row = (cc * self.kh + ii) * self.kw + jj
                     for nn in range(n):
                         for xx in range(self.ho):
-                            x_x = self.vstride * xx + self.vdilation * ii - self.vpadding
+                            x_x = self.hstride * xx + self.hdilation * ii - self.hpadding
                             if (0 <= x_x < self.hi):
                                 for yy in range(self.wo):
-                                    x_y = self.hstride * yy + self.hdilation * jj - self.hpadding
+                                    x_y = self.wstride * yy + self.wdilation * jj - self.wpadding
                                     col = (nn * self.ho + xx) * self.wo + yy
                                     if (0 <= x_y < self.wi):
                                         dx[nn, cc, x_x, x_y] = x_cols[row, col]

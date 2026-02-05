@@ -26,9 +26,9 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         max_pool_2d_fwd_nhwc_cython(x, y, self.idx_max,
                                     self.kh, self.kw, self.ho, self.wo,
-                                    self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride,
-                                    self.vdilation, self.hdilation,
+                                    self.hpadding, self.wpadding,
+                                    self.hstride, self.wstride,
+                                    self.hdilation, self.wdilation,
                                     self.minval)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return y
@@ -41,9 +41,9 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         max_pool_2d_fwd_nchw_cython(x, y, self.idx_max,
                                     self.kh, self.kw, self.ho, self.wo,
-                                    self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride,
-                                    self.vdilation, self.hdilation,
+                                    self.hpadding, self.wpadding,
+                                    self.hstride, self.wstride,
+                                    self.hdilation, self.wdilation,
                                     self.minval)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(y, dtype=self.model.dtype)
@@ -56,8 +56,8 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         max_pool_2d_bwd_nhwc_cython(dy, self.idx_max, dx,
                                     dy.shape[0], self.hi, self.wi, self.ci,
                                     self.kh, self.kw, self.ho, self.wo,
-                                    self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                    self.hpadding, self.wpadding,
+                                    self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx
 
@@ -70,8 +70,8 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         max_pool_2d_bwd_nchw_cython(dy, self.idx_max, dx,
                                     dy.shape[0], self.hi, self.wi, self.ci,
                                     self.kh, self.kw, self.ho, self.wo,
-                                    self.vpadding, self.hpadding,
-                                    self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                    self.hpadding, self.wpadding,
+                                    self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype)
 
@@ -88,8 +88,8 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2row_1ch_nhwc_cython(x, x_rows,
                                self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
+                               self.hpadding, self.wpadding,
+                               self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         idx_max: np.ndarray = argmax_cython(x_rows, y, amax, rng, axis=1)
 
@@ -108,8 +108,8 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_IM2COL)
         im2col_1ch_nchw_cython(x, x_cols,
                                self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
+                               self.hpadding, self.wpadding,
+                               self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         idx_max: np.ndarray = argmax_cython(x_cols, y, amax, rng, axis=0)
         if self.model.mode is Model.Mode.TRAIN:
@@ -124,8 +124,8 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         row2im_1ch_nhwc_cython(dy_rows, dx,
                                dy.shape[0], self.hi, self.wi, self.ci,
                                self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
+                               self.hpadding, self.wpadding,
+                               self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return dx.reshape((-1, self.hi, self.wi, self.ci))
 
@@ -138,8 +138,8 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
         col2im_1ch_nchw_cython(dy_cols, dx,
                                dy.shape[0], self.hi, self.wi, self.ci,
                                self.kh, self.kw, self.ho, self.wo,
-                               self.vpadding, self.hpadding,
-                               self.vstride, self.hstride, self.vdilation, self.hdilation)
+                               self.hpadding, self.wpadding,
+                               self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         dx: np.ndarray = dx.reshape((-1, self.ci, self.hi, self.wi))
         return dx

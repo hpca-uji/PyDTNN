@@ -32,15 +32,15 @@ class AbstractPool2DLayerGPU(AbstractPool2DLayer[TensorGPU], LayerGPU):
     def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorGPU, pool_mode: int) -> None:
         # pool_mode comes from cudnn.CudnnPoolingMode
 
-        if not (self.vdilation == 1 and self.hdilation == 1):
-            raise ParameterException(f"cuDNN does not support dilated pooling. vdilation: {self.vdilation}, hdilation: {self.hdilation}")
+        if not (self.hdilation == 1 and self.wdilation == 1):
+            raise ParameterException(f"cuDNN does not support dilated pooling. vdilation: {self.hdilation}, hdilation: {self.wdilation}")
 
         nan_prop = cudnn.cudnnNanPropagation['CUDNN_NOT_PROPAGATE_NAN']
 
         self.pool_desc = cudnn.cudnnCreatePoolingDescriptor()
         cudnn.cudnnSetPooling2dDescriptor(self.pool_desc, pool_mode, nan_prop,
-                                          self.kh, self.kw, self.vpadding, self.hpadding,
-                                          self.vstride, self.hstride)
+                                          self.kh, self.kw, self.hpadding, self.wpadding,
+                                          self.hstride, self.wstride)
         # Get output dimensions
         _, _, self.ho, self.wo = cudnn.cudnnGetPooling2dForwardOutputDim(self.pool_desc, x.desc)
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))

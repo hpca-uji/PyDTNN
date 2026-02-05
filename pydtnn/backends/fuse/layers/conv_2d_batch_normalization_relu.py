@@ -41,9 +41,9 @@ class Conv2DBatchNormalizationReluFUSE(Conv2DBatchNormalizationRelu[np.ndarray],
         """Version of the forward function that uses the convWinograd + BatchNorm + Relu"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         y: np.ndarray = self.cw.conv_winograd_nchw(self.weights, x, self.biases,
-                                                   vpadding=self.vpadding, hpadding=self.hpadding,
-                                                   vstride=self.vstride, hstride=self.hstride,
-                                                   vdilation=self.vdilation, hdilation=self.hdilation,
+                                                   vpadding=self.hpadding, hpadding=self.wpadding,
+                                                   vstride=self.hstride, hstride=self.wstride,
+                                                   vdilation=self.hdilation, hdilation=self.wdilation,
                                                    relu=True, bn=True,
                                                    running_mean=self.running_mean,
                                                    inv_std=self.inv_std, gamma=self.gamma, beta=self.beta)
@@ -55,9 +55,9 @@ class Conv2DBatchNormalizationReluFUSE(Conv2DBatchNormalizationRelu[np.ndarray],
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res: np.ndarray = self.cg.conv_gemm_nchw(self.weights, x,
-                                                 vpadding=self.vpadding, hpadding=self.hpadding,
-                                                 vstride=self.vstride, hstride=self.hstride,
-                                                 vdilation=self.vdilation, hdilation=self.hdilation,
+                                                 vpadding=self.hpadding, hpadding=self.wpadding,
+                                                 vstride=self.hstride, hstride=self.wstride,
+                                                 vdilation=self.hdilation, hdilation=self.wdilation,
                                                  biases=self.biases, bn_running_mean=self.running_mean,
                                                  bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
@@ -67,9 +67,9 @@ class Conv2DBatchNormalizationReluFUSE(Conv2DBatchNormalizationRelu[np.ndarray],
         """Version of the forward function that uses the convGemm + BatchNorm + Relu"""
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CONVGEMM)
         res: np.ndarray = self.cg.conv_gemm_nhwc(self.weights, x,
-                                                 vpadding=self.vpadding, hpadding=self.hpadding,
-                                                 vstride=self.vstride, hstride=self.hstride,
-                                                 vdilation=self.vdilation, hdilation=self.hdilation,
+                                                 vpadding=self.hpadding, hpadding=self.wpadding,
+                                                 vstride=self.hstride, hstride=self.wstride,
+                                                 vdilation=self.hdilation, hdilation=self.wdilation,
                                                  biases=self.biases, bn_running_mean=self.running_mean,
                                                  bn_inv_std=self.inv_std, bn_gamma=self.gamma, bn_beta=self.beta, relu=True)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)

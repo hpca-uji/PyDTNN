@@ -27,8 +27,8 @@ class Conv2DDepthwiseCYTHON(Conv2DDepthwiseCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         depthwise_conv_nhwc_cython(x, self.weights, y, self.ho, self.wo,
-                                   self.vpadding, self.hpadding,
-                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                   self.hpadding, self.wpadding,
+                                   self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -53,8 +53,8 @@ class Conv2DDepthwiseCYTHON(Conv2DDepthwiseCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_DEPTHWISE_CONV)
         depthwise_conv_nchw_cython(x, self.weights, y, self.ho, self.wo,
-                                   self.vpadding, self.hpadding,
-                                   self.vstride, self.hstride, self.vdilation, self.hdilation)
+                                   self.hpadding, self.wpadding,
+                                   self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         if self.use_bias:
@@ -78,9 +78,9 @@ class Conv2DDepthwiseCYTHON(Conv2DDepthwiseCPU):
 
         depthwise_conv_backward_nhwc_cython(dy, self.x, self.weights,
                                             dx, self.dw,
-                                            self.vpadding, self.hpadding,
-                                            self.vstride, self.hstride,
-                                            self.vdilation, self.hdilation)
+                                            self.hpadding, self.wpadding,
+                                            self.hstride, self.wstride,
+                                            self.hdilation, self.wdilation)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)
@@ -96,9 +96,9 @@ class Conv2DDepthwiseCYTHON(Conv2DDepthwiseCPU):
 
         depthwise_conv_backward_nchw_cython(dy, self.x, self.weights,
                                             dx, self.dw,
-                                            self.vpadding, self.hpadding,
-                                            self.vstride, self.hstride,
-                                            self.vdilation, self.hdilation)
+                                            self.hpadding, self.wpadding,
+                                            self.hstride, self.wstride,
+                                            self.hdilation, self.wdilation)
 
         if self.use_bias:
             self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_SUM_BIASES)

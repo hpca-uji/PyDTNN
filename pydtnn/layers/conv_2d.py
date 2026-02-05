@@ -25,9 +25,9 @@ class Conv2D[T: Array](Layer[T]):
         self.padding = padding
         self.stride = stride
         self.dilation = dilation
-        self.vpadding, self.hpadding = (padding, padding) if isinstance(padding, int) else padding
-        self.vstride, self.hstride = (stride, stride) if isinstance(stride, int) else stride
-        self.vdilation, self.hdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
+        self.hpadding, self.wpadding = (padding, padding) if isinstance(padding, int) else padding
+        self.hstride, self.wstride = (stride, stride) if isinstance(stride, int) else stride
+        self.hdilation, self.wdilation = (dilation, dilation) if isinstance(dilation, int) else dilation
         self.act = activation
         self.use_bias = use_bias
         self.weights_initializer: InitializerFunc = weights_initializer
@@ -54,8 +54,8 @@ class Conv2D[T: Array](Layer[T]):
         self.kh, self.kw = self.filter_shape
         self._initializing_special_parameters()
 
-        self.ho = (self.hi + 2 * self.vpadding - self.vdilation * (self.kh - 1) - 1) // self.vstride + 1
-        self.wo = (self.wi + 2 * self.hpadding - self.hdilation * (self.kw - 1) - 1) // self.hstride + 1
+        self.ho = (self.hi + 2 * self.hpadding - self.hdilation * (self.kh - 1) - 1) // self.hstride + 1
+        self.wo = (self.wi + 2 * self.wpadding - self.wdilation * (self.kw - 1) - 1) // self.wstride + 1
         self.shape = self.model.encode_shape((self.co, self.ho, self.wo))
 
         # NOTE: self.weights_shape must be defined in "self._initializing_special_parameters"
@@ -65,8 +65,8 @@ class Conv2D[T: Array](Layer[T]):
     def _show_props(self) -> dict:
         props = super()._show_props()
 
-        props["padding"] = (self.vpadding, self.hpadding)
-        props["stride"] = (self.vstride, self.hstride)
-        props["dilation"] = (self.vdilation, self.hdilation)
+        props["padding"] = (self.hpadding, self.wpadding)
+        props["stride"] = (self.hstride, self.wstride)
+        props["dilation"] = (self.hdilation, self.wdilation)
 
         return props
