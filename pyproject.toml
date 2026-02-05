@@ -44,10 +44,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cuda = [
+gpu = [
     "pycuda>=2021.1",
     "scikit-cuda>=0.5.3",
-    "nvidia-cudnn>=8.1.1.33"
+    "nvidia-cudnn>=8.1.1.33",
+    "cupy>=13.6.0"
 ]
 mpi = [
     "net-queue>=1.1.0",

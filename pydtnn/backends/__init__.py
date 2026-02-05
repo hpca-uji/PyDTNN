@@ -39,26 +39,29 @@ class PromoteToBackend:
 
     def _parse_backend(self, spec: str) -> dict[str, list[str]]:
         """
-        Parse a backend spec string
-        [module:]backend[,backend][;...]
+        Parse a backend spec string.
+        Format: [module[,module[,...]]:]backend[,backend[,...]][;...]
+        Example: all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython
         """
         groups = {}
 
-        alias = re.compile(fr"\b({r"|".join(self._map_backend)})\b")
-
-        def repl(match):
-            return self._map_backend[match.group()]
+        spec = re.sub(
+            fr"\b({r"|".join(self._map_backend)})\b",
+            lambda match: self._map_backend[match.group()],
+            spec
+        )
 
         for group in spec.split(";"):
             kv = group.split(":", 1)
-            value = kv.pop()
+
+            values = kv.pop()
             try:
-                key = kv.pop()
+                keys = kv.pop()
             except IndexError:
-                key = "all"
-            key = alias.sub(repl, key)
-            value = alias.sub(repl, value)
-            groups[key] = value.split(",")[::-1]
+                keys = "pydtnn"
+
+            for key in keys.split(","):
+                groups[key] = values.split(",")[::-1]
 
         return dict(sorted(
             groups.items(),

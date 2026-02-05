@@ -84,12 +84,12 @@ with:
 pip install .[mpi]
 ```
 
-Optionally, if you are going to use CUDA, you should have installed the
+Optionally, if you are going to use GPU, you should have installed the
 corresponding system libraries, and install the required Python packages
 with:
 ```sh
 pip install nvidia-pyindex
-pip install .[cuda]
+pip install .[gpu]
 ```
 
 Optionally, if you are going to use FHE, you should have installed the
@@ -115,6 +115,12 @@ export PYMPI_SSL_KEY=key.pem    # server private key
 export PYMPI_SSL_CERT=cert.pem  # server certificate
 ```
 
+Optionally, if you are going to use CuPy, you can switch NumPy implementation
+with:
+```sh
+export PYDTNN_CUPY=yes
+```
+
 For more information on how to manage external dependencies see
 `vendor/README.md`.
 
@@ -125,7 +131,10 @@ The PyDTNN framework comes with a utility launcher called
 - Model parameters:
   - `--model`: Neural network model: `simplemlp`, `simplecnn`,
     `alexnet`, `vgg11`, `vgg16`, etc. Default: `None`.
-  - `--backend`: Backend selection priority. Format: `[module:]backend[,backend][;...]`. Default: `cpu`.
+  - `--backend`: Backend selection priority.
+    Format: `[module[,module[,...]]:]backend[,backend[,...]][;...]`.
+    Example: `all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython`.
+    Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
   - `--global-batch-size`: Batch size between all MPI ranks. Default:
     `None`.

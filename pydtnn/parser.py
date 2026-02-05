@@ -106,15 +106,15 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
 
         # Model
         self.add_argument('--model', dest="model_name", type=str, default=None,
-                          help="Neural network model: \'simplemlp\', \'simplecnn\', \'alexnet\', \'vgg11\', \'vgg16\', etc. Default: \'None\'.")
+                          help="Neural network model: 'simplemlp', 'simplecnn', 'alexnet', 'vgg11', 'vgg16', etc. Default: 'None'.")
         self.add_argument('--backend', type=str, default="cpu",
-                          help="Backend selection priority. Format: [module:]backend[,backend][;...]. Default: cpu.")
+                          help="Backend selection priority. Format: [module[,module[,...]]:]backend[,backend[,...]][;...]. Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'. Default: 'cpu'.")
         self.add_argument('--batch-size', type=int, default=None,
-                          help="Batch size per MPI rank. Or \'batch_size\' or \'global_batch_size\' must have a value different from \'None\' (but not both). Default: \'None\'.")
+                          help="Batch size per MPI rank. Or 'batch_size' or 'global_batch_size' must have a value different from 'None' (but not both). Default: 'None'.")
         self.add_argument('--global-batch-size', type=int, default=None,
-                          help="Batch size between all MPI ranks. Or \'batch_size\' or \'global_batch_size\' must have a value different from \'None\' (but not both) Default: \'None\'.")
+                          help="Batch size between all MPI ranks. Or 'batch_size' or 'global_batch_size' must have a value different from 'None' (but not both) Default: 'None'.")
         self.add_argument('--dtype', type=np_dtype, default=np.float32,
-                          help="Datatype to use: \'float32\', \'float64\'. Default: float32.")
+                          help="Datatype to use: 'float32', 'float64'. Default: float32.")
         self.add_argument('--num-epochs', type=int, default=1,
                           help="Number of epochs to perform. Default: 1.")
         self.add_argument('--steps-per-epoch', type=float, default=0,
@@ -127,29 +127,23 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Load weights and bias from file. Default: None.")
         self.add_argument('--history-file', type=str, default=None,
                           help="Filename to save training loss and metrics.")
-        self.add_argument(
-            '--tensor-format',
-            type=lambda s: str(s).upper(),
-            default="NHWC",
-            help="Data format to be used: \'NHWC\' or \'NCHW\'. Optionally, the \'AUTO\' value sets \'NCHW\' when the option \'--enable-cudnn\' is set and \'NHWC\' otherwise. Default: \'NHWC\'.")
+        self.add_argument('--tensor-format', type=lambda s: str(s).upper(), default="NHWC",
+                          help="Data format to be used: 'NHWC' or 'NCHW'. Optionally, the 'AUTO' value sets 'NCHW' when the option '--enable-cudnn' is set and 'NHWC' otherwise. Default: 'NHWC'.")
         self.add_argument('--random-seed', type=int, default=57005,
-                          help='Initial state of random number generator. Default: \'57005\'.')
+                          help="Initial state of random number generator. Default: '57005'.")
         self.add_argument('--shared-memory', type=bool_lambda, default=False,
                           help="Allows to use a memory pool for all the temporary data structures.")
 
         # Synchronization options
         _sy_group = self.add_argument_group("Synchronization options")
         _sy_group.add_argument('--shared-storage', default=True, type=bool_lambda,
-                               help="If \'True\' ranks assume they share the file system. Default: True.")
-        _sy_group.add_argument(
-            '--model-sync-freq',
-            type=int,
-            default=0,
-            help="Number of batches between model synchronization. The \'0\' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
+                               help="If 'True' ranks assume they share the file system. Default: True.")
+        _sy_group.add_argument('--model-sync-freq', type=int, default=0,
+                               help="Number of batches between model synchronization. The '0' value synchronizes gradients every batch. Positive values synchronizes gradients and weights every N batches. Negative values disables synchronization. Default: 0.")
         _sy_group.add_argument('--model-sync-alg', type=str, default="avg", choices=["avg", "wavg", "invwavg"],
-                               help="Aggregation method used to synchronize models: \'avg\', \'wavg\' or \'invwavg\'. Default: \'avg\'.")
+                               help="Aggregation method used to synchronize models: 'avg', 'wavg' or 'invwavg'. Default: 'avg'.")
         _sy_group.add_argument('--model-sync-participation', type=str, default="all", choices=["all", "avail2all"],
-                               help="Rank participation to synchronize models: \'all\' or \'avail2all\'. Default: \'all\'.")
+                               help="Rank participation to synchronize models: 'all' or 'avail2all'. Default: 'all'.")
         _sy_group.add_argument('--model-sync-min-avail', type=int, default=0,
                                help="Minimum ranks with data required to synchronize models. Default: 0.")
         _sy_group.add_argument('--initial-model-sync', type=bool_lambda, default=True,
@@ -160,12 +154,9 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         # Dataset options
         _ds_group = self.add_argument_group("Dataset options")
         _ds_group.add_argument('--dataset', dest="dataset_name", type=str, default=None,
-                               help="Dataset to train: \'mnist\', \'cifar10\', \'synthetic\', …. Default: \'None\'.")
-        _ds_group.add_argument(
-            '--dataset-percentage',
-            type=float,
-            default=0.0,
-            help="Percentage of dataset that will be used. If it is \'0\': it is deactivated; if is is a value below \'1\' (and above 0): it will perform undersampling; and if is is a value above \'1\': it will perform oversampling. Default: 0.")
+                               help="Dataset to train: 'mnist', 'cifar10', 'synthetic', …. Default: 'None'.")
+        _ds_group.add_argument('--dataset-percentage', type=float, default=0.0,
+                               help="Percentage of dataset that will be used. If it is '0': it is deactivated; if is is a value below '1' (and above 0): it will perform undersampling; and if is is a value above '1': it will perform oversampling. Default: 0.")
         _ds_group.add_argument('--dataset-path', type=str, default=_default_dataset_path,
                                help="Path to the dataset.")
         _ds_group.add_argument('--dataset-lang', type=str, default="en",
@@ -231,70 +222,55 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _cm_group.add_argument('--conv-direct-method', type=str, default="",
                                help="Use ConvDirect module to realize convolutions in Conv2D layers. True if specified.")
         _cm_group.add_argument('--conv-direct-methods-for-best-of', type=str, default="",
-                               help="ConvDirect modules to compare in \'best_of\' option if specified.")
+                               help="ConvDirect modules to compare in 'best_of' option if specified.")
 
         # Optimizer options
         _op_group = self.add_argument_group("Optimizer options")
-        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd", choices=["sgd", "rmsprop", "adam", "nadam", "oktopk"],
-                               help="Optimizers: \'sgd\', \'rmsprop\', \'adam\', \'nadam\', \'oktopk\'. Default: \'sgd\'. ")
+        _op_group.add_argument('--optimizer', dest="optimizer_name", type=str, default="sgd",
+                               help="Optimizers: 'sgd', 'rmsprop', 'adam', 'nadam', 'oktopk'. Default: 'sgd'. ")
         _op_group.add_argument('--learning-rate', type=float, default=1e-2,
                                help="Learning rate. Default: 0.01.")
         _op_group.add_argument('--learning-rate-scaling', default=False, type=bool_lambda,
                                help="Scale learning rate in data parallelism: new_lr = lr / num_procs.  True if specified.")
         _op_group.add_argument('--optimizer-momentum', type=float, default=0.9,
-                               help="Decay rate for \'sgd\' optimizer. Default: 0.9. optimizers. Default: 1e-8.")
+                               help="Decay rate for 'sgd' optimizer. Default: 0.9. optimizers. Default: 1e-8.")
         _op_group.add_argument('--optimizer-decay', type=float, default=0.0,
                                help="Decay rate for optimizers. Default: 0.0.")
         _op_group.add_argument('--optimizer-nesterov', default=False, type=bool_lambda,
                                help="Whether to apply Nesterov momentum. Default: False.")
         _op_group.add_argument('--optimizer-beta1', type=float, default=0.99,
-                               help="Variable for \'adam\', \'nadam\' optimizers. Default: 0.99.")
+                               help="Variable for 'adam', 'nadam' optimizers. Default: 0.99.")
         _op_group.add_argument('--optimizer-beta2', type=float, default=0.999,
-                               help="Variable for \'adam\', \'nadam\' optimizers. Default: 0.999.")
+                               help="Variable for 'adam', 'nadam' optimizers. Default: 0.999.")
         _op_group.add_argument('--optimizer-epsilon', type=float, default=1e-7,
-                               help="Variable for \'rmsprop\', \'adam\', \'nadam\'. Default=1e-7.")
+                               help="Variable for 'rmsprop', 'adam', 'nadam'. Default=1e-7.")
         _op_group.add_argument('--optimizer-rho', type=float, default=0.9,
-                               help="Variable for \'rmsprop\' optimizers. Default: 0.99.")
+                               help="Variable for 'rmsprop' optimizers. Default: 0.99.")
         _op_group.add_argument('--optimizer-tau', type=int, default=64,
-                               help="Variable for \'oktopk\' optimizers. Default: 64.")
+                               help="Variable for 'oktopk' optimizers. Default: 64.")
         _op_group.add_argument('--optimizer-tau-prime', type=int, default=32,
-                               help="Variable for \'oktopk\' optimizers. Default: 32.")
+                               help="Variable for 'oktopk' optimizers. Default: 32.")
         _op_group.add_argument('--optimizer-density', type=float, default=0.01,
-                               help="Variable for \'oktopk\' optimizers. Default: 0.01.")
-        _op_group.add_argument(
-            '--loss-func',
-            dest="loss_func_name",
-            type=str,
-            default="categorical_cross_entropy",
-            choices=[
-                "categorical_cross_entropy",
-                "binary_cross_entropy",
-                "kl_divergence"],
-            help="Loss functions that is evaluated on each trained batch: \'categorical_cross_entropy\', \'binary_cross_entropy\' or \'kl_divergence\'. Default \'categorical_cross_entropy\'.")
-        _op_group.add_argument(
-            '--metrics',
-            type=str,
-            default="categorical_accuracy",
-            help="List of comma-separated metrics that are evaluated on each trained batch: \'categorical_accuracy\', \'categorical_hinge\', \'categorical_mse\', \'categorical_mae\', \'regression_mse\', \'regression_mae\', \'binary_confusion_matrix\', \'multiclass_confusion_matrix\', \'precision\', \'recall\', \'f1_score\'. Default: \'categorical_accuracy\'.")
+                               help="Variable for 'oktopk' optimizers. Default: 0.01.")
+        _op_group.add_argument('--loss-func', dest="loss_func_name", type=str, default="categorical_cross_entropy",
+                               help="Loss functions that is evaluated on each trained batch: 'categorical_cross_entropy', 'binary_cross_entropy' or 'kl_divergence'. Default 'categorical_cross_entropy'.")
+        _op_group.add_argument('--metrics', type=str, default="categorical_accuracy",
+                               help="List of comma-separated metrics that are evaluated on each trained batch: 'categorical_accuracy', 'categorical_hinge', 'categorical_mse', 'categorical_mae', 'regression_mse', 'regression_mae', 'binary_confusion_matrix', 'multiclass_confusion_matrix', 'precision', 'recall', 'f1_score'. Default: 'categorical_accuracy'.")
 
         # Schedulers options
         _sh_group = self.add_argument_group("Schedulers options")
-        _sh_group.add_argument(
-            '--schedulers',
-            dest="schedulers_names",
-            type=str,
-            default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
-            help="List of comma-separated LR schedulers: \'warm_up\', \'early_stopping\', \'reduce_lr_on_plateau\', \'reduce_lr_every_nepochs\', \'model_checkpoint\'. Default: \'early_stopping,reduce_lr_on_plateau,model_checkpoint\'.")
+        _sh_group.add_argument('--schedulers', dest="schedulers_names", type=str, default="early_stopping,reduce_lr_on_plateau,model_checkpoint",
+                               help="List of comma-separated LR schedulers: 'warm_up', 'early_stopping', 'reduce_lr_on_plateau', 'reduce_lr_every_nepochs', 'model_checkpoint'. Default: 'early_stopping,reduce_lr_on_plateau,model_checkpoint'.")
         _sh_group.add_argument('--warm-up-epochs', type=int, default=5,
                                help="Number of batches (ramp up) that the LR is scaled up from 0 until LR. Default: 5.")
         _sh_group.add_argument('--early-stopping-metric', type=str, default="val_categorical_cross_entropy",
-                               help="Loss metric monitored by early_stopping LR scheduler. Default: \'val_categorical_cross_entropy\'.")
+                               help="Loss metric monitored by early_stopping LR scheduler. Default: 'val_categorical_cross_entropy'.")
         _sh_group.add_argument('--early-stopping-patience', type=int, default=10,
                                help="Number of epochs with no improvement after which training will be stopped. Default: 10.")
         _sh_group.add_argument('--early-stopping-minimize', type=bool_lambda, default=True,
                                help="Whether to minimize the metric. If False, it will maximize. Default: True.")
         _sh_group.add_argument('--reduce-lr-on-plateau-metric', type=str, default="val_categorical_cross_entropy",
-                               help="Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default: \'val_categorical_cross_entropy\'.")
+                               help="Loss metric monitored by reduce_lr_on_plateau LR scheduler. Default: 'val_categorical_cross_entropy'.")
         _sh_group.add_argument('--reduce-lr-on-plateau-factor', type=float, default=0.1,
                                help="Factor by which the learning rate will be reduced. new_lr = lr * factor. Default: 0.1.")
         _sh_group.add_argument('--reduce-lr-on-plateau-patience', type=int, default=5,
@@ -308,42 +284,39 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _sh_group.add_argument('--reduce-lr-every-nepochs-min-lr', type=float, default=0,
                                help="Lower bound on the learning rate. Default: 0.")
         _sh_group.add_argument('--stop-at-loss-metric', type=str, default="val_accuracy",
-                               help="Loss metric monitored by stop_at_loss LR scheduler. Default: \'val_accuracy\'.")
+                               help="Loss metric monitored by stop_at_loss LR scheduler. Default: 'val_accuracy'.")
         _sh_group.add_argument('--stop-at-loss-threshold', type=float, default=0,
                                help="Metric threshold monitored by stop_at_loss LR scheduler. Default: 0.")
         _sh_group.add_argument('--model-checkpoint-metric', type=str, default="val_categorical_cross_entropy",
-                               help="Loss metric monitored by model_checkpoint LR scheduler. Default: \'val_categorical_cross_entropy\'")
+                               help="Loss metric monitored by model_checkpoint LR scheduler. Default: 'val_categorical_cross_entropy'")
         _sh_group.add_argument('--model-checkpoint-save-freq', type=int, default=2,
                                help="Frequency (in epochs) at which the model weights and bias will be saved by the model_checkpoint LR scheduler. Default: 2.")
 
         # Parallel execution options
         _pe_group = self.add_argument_group("Parallel execution options")
         _pe_group.add_argument('--parallel', type=str, default="sequential", choices=["sequential", "data"],
-                               help="Data parallelization modes: \'sequential\', \'data\' (MPI). Default: \'sequential\'.")
+                               help="Data parallelization modes: 'sequential', 'data' (MPI). Default: 'sequential'.")
         _pe_group.add_argument('--use-blocking-mpi', type=bool_lambda, default=True,
                                help="Enable non-blocking MPI primitives. Default: True.")
-        _pe_group.add_argument(
-            '--use-mpi-buffers',
-            type=bool_lambda,
-            default=None,
-            help="Enable the use of MPI buffers. Possible values: \'True\' (MPI operations by buffer), \'False\' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
+        _pe_group.add_argument('--use-mpi-buffers', type=bool_lambda,default=None,
+                               help="Enable the use of MPI buffers. Possible values: 'True' (MPI operations by buffer), 'False' (MPI operations by object) or undefined (auto-select the better option). Default: undefined.")
         _pe_group.add_argument('--enable-cudnn', type=bool_lambda, default=False,
                                help="Enable GPU, use cuDNN library. Default: False.")
         _pe_group.add_argument('--enable-gpudirect', type=bool_lambda, default=False,
                                help="Enable GPU pinned memory for gradients when using a CUDA-aware MPI version. Default: False.")
         _pe_group.add_argument('--enable-nccl', type=bool_lambda, default=False,
-                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set  with \'--enable-cudnn\'. Default. False.")
+                               help="Enable the use of the NCCL library for  collective communications on GPUs. This option can only be set  with '--enable-cudnn'. Default. False.")
         _pe_group.add_argument('--enable-cudnn-auto-conv-alg', type=bool_lambda, default=True,
                                help="Let cuDNN to select the best performing convolution algorithm. Default: True.")
 
         # Encryption options
         _cy_group = self.add_argument_group("Encryption options")
         _cy_group.add_argument('--encryption', dest="encryption_name", type=str, default="",
-                               help="Encryption library: \'tenseal\', \'openfhe\', \'\' (None). Default \'\' (None).")
+                               help="Encryption library: 'tenseal', 'openfhe', '' (None). Default '' (None).")
         _cy_group.add_argument('--encryption-poly-degree', type=int, default=13,
-                               help="Encryption polynomial degree. 2 ^ \'value\'. Default: 13.")
+                               help="Encryption polynomial degree. 2 ^ 'value'. Default: 13.")
         _cy_group.add_argument('--encryption-global-scale', type=int, default=40,
-                               help="Encryption global scale. 2 ^ \'value'\'. Default: 40.")
+                               help="Encryption global scale. 2 ^ 'value''. Default: 40.")
         _cy_group.add_argument('--encryption-security-level', type=int, default=128,
                                help="Encryption security level: 0 (Not set), 128, 192, 256. Default: 128.")
 
@@ -354,7 +327,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         _tr_group.add_argument('--tracer-output', type=str, default="",
                                help="Output file to store the Simple/Extrae-based traces.")
         _tr_group.add_argument('--tracer-pmlib-server', type=str, default="127.0.0.1",
-                               help="Address of PMlib tracer server. Default: \'127.0.0.1\'.")
+                               help="Address of PMlib tracer server. Default: '127.0.0.1'.")
         _tr_group.add_argument('--tracer-pmlib-port', type=int, default=6526,
                                help="Port of PMlib tracer server. Default: 6526.")
         _tr_group.add_argument('--tracer-pmlib-device', type=str, default="",
