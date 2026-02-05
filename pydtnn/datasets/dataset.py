@@ -352,6 +352,20 @@ class Dataset(ABC):
     def _actual_batch_generator(self, part: Part) -> Generator[tuple[np.ndarray, np.ndarray, int]]:
         # NOTE: global_batch_size should be MPI.reduce(x_local_batch.shape[0])
         # However to avoid communications per batch, we assume all process have our x_local_batch.shape[0]
+
+        # NOTE:
+        # batch_size: en memoria
+        # local_batch_size: a usar en esta iteración.
+
+        # Casos: 
+        # -> El generador ha devuelto más datos que los que se necesita (es decir, que batch_size >= local_batch_size)
+        #   ==> Se tienen que hacer un corte y guardarnos el restante para la sigueinte
+        # -> El generador ha devuelto menos datos que los que se necesita (es decir, que batch_size < local_batch_size)
+        #    * Queda dataset:
+        #       ==> Guardarnos los datos y usarlos en la siguiente iteración.
+        #    * No queda dataset:
+        #       ==> Devolver lo que tengamos
+
         local_batch_size = self.model.batch_size
         global_batch_size = self.model.batch_size * self.model.nprocs
 
@@ -367,6 +381,9 @@ class Dataset(ABC):
                 batch_size += x_data.shape[0]
                 if batch_size >= local_batch_size:
                     break
+                    # Quedan más datos, pero tenemos suficientes ==> continuamos fuera del for.
+                # else: Quedan datos, pero aún no hemos llenado el batch.
+            #else (del for): # No queda más dataset
 
             if batch_size <= 0:
                 break
@@ -383,7 +400,8 @@ class Dataset(ABC):
                 batch_online.append((x_extra, y_extra))
                 batch_size += extra_size
 
-            while x_data.shape[0] >= local_batch_size:
+            # while (tenemos datos) and ((tenemos un batch completo) or (es el ultimo batch del dataset)):
+            while (x_data.shape[0] > 0) and ((x_data.shape[0] >= local_batch_size) or (local_batch_size >= nsamples)):
                 x_batch, x_data = x_data[:local_batch_size], x_data[local_batch_size:]
                 y_batch, y_data = y_data[:local_batch_size], y_data[local_batch_size:]
 
