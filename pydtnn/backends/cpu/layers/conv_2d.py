@@ -87,6 +87,29 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
         y = y.reshape(shape)
         return y
 
+##########################################################################################################################
+##########################################################################################################################
+#### TEST ####
+##############
+
+    def col2im_alt(self, x: np.ndarray, x_rows: np.ndarray) -> np.ndarray:
+        x = np.pad(x, ((0,0), (0,0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)), mode="constant")
+        cols = list[np.ndarray]()
+
+        for kh in range(self.kh):
+            for kw in range(self.kw):
+                h_start = kh * self.vdilation
+                w_start = kw * self.hdilation
+                h_end = h_start + self.vstride * self.ho
+                w_end = w_start + self.hstride * self.wo
+
+                col = x[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride]
+                cols.append(col)
+        return np.stack(cols, axis=2).reshape(x_rows.shape)
+
+##########################################################################################################################
+##########################################################################################################################
+
     def im2row(self, x: np.ndarray, x_rows: np.ndarray):
         n, _, _, _ = x.shape
         for nn in range(n):
@@ -121,7 +144,7 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                                     if 0 <= x_y < self.wi:
                                         col = (cc * self.kh + ii) * self.kw + jj
                                         dx[nn, x_x, x_y, cc] += x_rows[row, col]
-# -----
+    # -----
 
     def im2col(self, x: np.ndarray, x_cols: np.ndarray):
         n, _, _, _ = x.shape

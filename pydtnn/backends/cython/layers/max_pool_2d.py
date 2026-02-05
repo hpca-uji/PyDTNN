@@ -11,7 +11,6 @@ from pydtnn.backends.cython.utils.max_pool_2d_nhwc_cython import max_pool_2d_bwd
 
 from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
-from pydtnn.utils.constants import ArrayShape
 
 
 class MaxPool2DCYTHON(MaxPool2DCPU):

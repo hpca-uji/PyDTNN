@@ -27,9 +27,6 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
         self.real_memory_size += self._idx_max.nbytes
     # ---
 
-    ##############
-    ### CYTHON ###
-    ##############
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
 
         # y:np.ndarray = self.y[:x.shape[0], :]
@@ -124,3 +121,30 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return np.asarray(dx, dtype=self.model.dtype)
+
+    ##########
+    ## TEST ##
+    ##########
+    
+    def max_pool(self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        x = np.pad(x, ((0,0), (0,0), (self.vpadding, self.vpadding), (self.hpadding, self.hpadding)), mode="constant")
+        for kh in range(self.kh):
+            for kw in range(self.kw):
+                h_start = kh * self.vdilation
+                w_start = kw * self.hdilation
+                h_end = h_start + self.vstride * self.ho
+                w_end = w_start + self.hstride * self.wo
+                
+                _x = x[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride]
+                max_val: np.ndarray = np.max(_x, axis=(2, 3))
+                _idx_maxval: np.ndarray = np.argmax(np.argmax(_x, axis=3), axis=2)
+
+                #y[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = max_val[:, :]
+                #idx_maxval[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = _idx_maxval[:, :]
+                #breakpoint()
+                for i in range(h_start, h_end // self.vstride):
+                    for j in range(w_start, w_end // self.hstride):
+                        y[:, :, i, j] = max_val[:, :]
+                        idx_maxval[:, :, i, j] = _idx_maxval[:, :]
+                #breakpoint()
+        return (y, idx_maxval)
