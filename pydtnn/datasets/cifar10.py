@@ -59,7 +59,7 @@ class CIFAR10(Dataset):
                 for filename, offset, nsamples in self._offset2files(xy_filenames, IMAGES_PER_FILE, self._local_offset[part], self._local_nsamples[part]):
                     with t.extractfile(filename) as f:
                         x, y_classes = self._read_file(f, offset, nsamples)
-                    x /= 255.0
+                    x = np.divide(x, 255.0, dtype=self.model.dtype, casting="unsafe")
 
                     y = np.zeros((*y_classes.shape, *self.output_shape), dtype=self.model.dtype)
                     self._decode_class(y, y_classes)
