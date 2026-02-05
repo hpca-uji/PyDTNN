@@ -61,7 +61,7 @@ class PromoteToBackend:
                 keys = "pydtnn"
 
             for key in keys.split(","):
-                groups[key] = values.split(",")[::-1]
+                groups.setdefault(key, []).extend(reversed(values.split(",")))
 
         return dict(sorted(
             groups.items(),

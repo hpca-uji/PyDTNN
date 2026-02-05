@@ -1,4 +1,4 @@
-from pydtnn.backends.cpu.utils.bn_inference_cython import bn_relu_inference_cython
+from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
 from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
 from pydtnn.layers.batch_normalization_relu import BatchNormalizationRelu
 from pydtnn.utils.constants import ArrayShape

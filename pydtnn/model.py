@@ -38,7 +38,7 @@ from pydtnn.optimizers.optimizer import select as select_optimizer
 from pydtnn.metrics.metric import select as select_metric
 from pydtnn.models.model import select as select_model
 from pydtnn.schedulers.scheduler import select as select_scheduler
-from pydtnn.layers.layer import select as select_layer
+from pydtnn.backends.fuse.layers import select as select_fuse_layer
 from pydtnn.parser import PydtnnArgumentParser
 from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
@@ -719,7 +719,7 @@ class Model[T: Array]:
             if layer_name:
                 dict_params = reduce(operator.or_, (layer.__dict__ for layer in reversed(layers_to_fuse)))
                 print(f"Fusing {' + '.join(map(lambda layer: layer.name_with_id, layers_to_fuse))}")
-                fused_layer = select_layer(layer_name)
+                fused_layer = select_fuse_layer(layer_name)
 
                 new_curr_layer = fused_layer(from_parent=dict_params)  # type: ignore (it's okay)
                 new_curr_layer.init_backend_with_model(self)
@@ -740,6 +740,7 @@ class Model[T: Array]:
 
         if not self.enable_cudnn and any([self.enable_fused_bn_relu, self.enable_fused_conv_relu, self.enable_fused_conv_bn, self.enable_fused_conv_bn_relu]):
             # NOTE: 1st the 3 layers fusion, then the rest:
+            self.backend = f"layers:fuse;{self.backend}"
             self.__layer_fusion(self.layers, self._select_fusion_3)
             self.__layer_fusion(self.layers, self._select_fusion_2)
 
