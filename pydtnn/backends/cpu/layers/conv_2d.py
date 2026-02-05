@@ -130,7 +130,6 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
 
     def row2im(self, x_rows: np.ndarray, dx: np.ndarray) -> None:
         n, _, _, _ = dx.shape
-        x_rows.fill(0)
         for nn in range(n):
             for xx in range(self.ho):
                 for yy in range(self.wo):
@@ -167,7 +166,6 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
 
     def col2im(self, x_cols: np.ndarray, dx: np.ndarray) -> None:
         n, _, _, _ = dx.shape
-        x_cols.fill(0)
         for cc in range(self.ci):
             for ii in range(self.kh):
                 for jj in range(self.kw):
@@ -295,8 +293,8 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)
-        #dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
+        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)[:dy.shape[0]]
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         self.row2im(rows, dx)
@@ -322,7 +320,7 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_RESHAPE_DW)
-        self.dw = self.dw.reshape(self.weights.shape).copy()
+        self.dw = self.dw.reshape(self.weights.shape)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
         # Biases gradient
@@ -342,8 +340,8 @@ class Conv2DCPU(AbstractConv2DStandardCPU):
                   dtype=self.model.dtype, order='C')
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
 
-        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)
-        #dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
+        dx: np.ndarray = self.temp_c_r_dx[:self.dx_shape_size].reshape(self.dx_shape)[:dy.shape[0]]
+        dx.fill(0)  # NOTE: It is necessary that dx is filled with 0s.
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.COMP_DX_COL2IM)
         self.col2im(cols, dx)
