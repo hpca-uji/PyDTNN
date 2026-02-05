@@ -27,13 +27,13 @@ class AbstractConv2DCPU(Conv2D[np.ndarray], LayerCPU):
             self.biases = np.asarray(self.biases_initializer(bias_shape, self.model.dtype))
             self.real_memory_size += self.biases.nbytes
 
-        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype))  # type: ignore (it's ok)
+        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype), order="C")
 
         self.real_memory_size += self.weights.nbytes
 
         if not self.model.evaluate_only:
             if self.use_bias:
-                self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype)
+                self.db = np.zeros(shape=bias_shape, dtype=self.model.dtype, order="C")
                 self.real_memory_size += self.db.nbytes
 
             self.dw: np.ndarray = np.zeros(self.weights.shape, dtype=self.model.dtype)

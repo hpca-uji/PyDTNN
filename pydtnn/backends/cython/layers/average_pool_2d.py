@@ -28,7 +28,7 @@ class AveragePool2DCYTHON(AveragePool2DCPU):
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
     # -----
 
     def _forward_nchw(self, x: np.ndarray) -> np.ndarray:
@@ -41,7 +41,7 @@ class AveragePool2DCYTHON(AveragePool2DCPU):
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
     # -----
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
@@ -57,7 +57,7 @@ class AveragePool2DCYTHON(AveragePool2DCPU):
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
     # -----
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
@@ -73,7 +73,7 @@ class AveragePool2DCYTHON(AveragePool2DCPU):
                                         self.hstride, self.wstride,
                                         self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
     # -----
 
     #############

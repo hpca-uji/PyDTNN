@@ -147,7 +147,7 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             y = y.reshape((n, self.hi, self.wi, self.ci))
             y = format_transpose(y, TensorFormat.NHWC, self.model.tensor_format)
 
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
 
@@ -183,4 +183,4 @@ class BatchNormalizationCPU(BatchNormalization[np.ndarray], LayerCPU):
             dx = format_transpose(dx, TensorFormat.NHWC, self.model.tensor_format)
         # else: nothing special (It has the right format)
 
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")

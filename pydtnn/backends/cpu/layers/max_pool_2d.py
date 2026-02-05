@@ -80,7 +80,7 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
                         y[nn, cc, xx, yy] = maxval
                         self.idx_max[nn, cc, xx, yy] = idx_maxval
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         # dx:np.ndarray = self.dx[ :dy.shape[0], :]
@@ -120,7 +120,7 @@ class MaxPool2DCPU(MaxPool2D[np.ndarray], AbstractPool2DLayerCPU):
                             dx[nn, cc, x_x, x_y] += dy[nn, cc, xx, yy]
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     ##########
     ## TEST ##

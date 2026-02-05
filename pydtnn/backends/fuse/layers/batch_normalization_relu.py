@@ -49,7 +49,7 @@ class BatchNormalizationReluFUSE(BatchNormalizationRelu[np.ndarray], BatchNormal
             y_shape = self.model.encode_shape((n, self.ci, self.hi, self.wi))
             y = y.reshape(y_shape, copy=False)
 
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward(self, dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError("Use a real backwards variant!")

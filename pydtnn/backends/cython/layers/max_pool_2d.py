@@ -46,7 +46,7 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
                                     self.hdilation, self.wdilation,
                                     self.minval)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         # dx:np.ndarray = self.dx[ :dy.shape[0], :]
@@ -73,7 +73,7 @@ class MaxPool2DCYTHON(MaxPool2DCPU):
                                     self.hpadding, self.wpadding,
                                     self.hstride, self.wstride, self.hdilation, self.wdilation)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
 
     ###########
     ### I2C ###

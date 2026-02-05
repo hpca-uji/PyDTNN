@@ -24,7 +24,7 @@ class FCCPU(FC[np.ndarray], LayerCPU):
 
     def initialize(self, prev_shape, x=None):
         super().initialize(prev_shape, x)
-        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype))
+        self.weights = np.asarray(self.weights_initializer(self.weights_shape, self.model.dtype), order="C")
         self.nparams += self.weights.size
         self.real_memory_size += self.weights.nbytes
 
@@ -33,12 +33,12 @@ class FCCPU(FC[np.ndarray], LayerCPU):
         self.y = np.zeros((self.model.batch_size, *self.shape), dtype=self.model.dtype)
         self.real_memory_size += self.y.nbytes
 
-        self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype)
-        self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype)
+        self.dx = np.zeros(shape=(self.model.batch_size, *self.prev_shape), dtype=self.model.dtype, order="C")
+        self.dw = np.zeros(shape=self.weights_shape, dtype=self.model.dtype, order="C")
         self.real_memory_size += self.dx.nbytes + self.dw.nbytes
 
         if self.use_bias:
-            self.biases = np.asarray(self.biases_initializer(self.shape, self.model.dtype))
+            self.biases = np.asarray(self.biases_initializer(self.shape, self.model.dtype), order="C")
             self.nparams += self.biases.size
             self.real_memory_size += self.biases.nbytes
 
@@ -74,7 +74,7 @@ class FCCPU(FC[np.ndarray], LayerCPU):
             np.add(y, self.biases, out=y,
                    dtype=self.model.dtype)
 
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
     # ---
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
@@ -96,5 +96,5 @@ class FCCPU(FC[np.ndarray], LayerCPU):
         np.matmul(dy, self.weights.T, out=dx,
                   dtype=self.model.dtype)
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
     # --

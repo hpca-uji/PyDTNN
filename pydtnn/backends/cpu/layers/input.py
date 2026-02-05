@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 class InputCPU(Input[np.ndarray], LayerCPU):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
-        return np.asarray(x, dtype=self.model.dtype)
+        return np.asarray(x, dtype=self.model.dtype, order="C")
 
     def backward(self, dy: np.ndarray) -> np.ndarray:
-        return np.asarray(dy, dtype=self.model.dtype)
+        return np.asarray(dy, dtype=self.model.dtype, order="C")

@@ -35,7 +35,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                         y[nn, cc, xx, yy] = (accum / items)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
     # -----
 
     def _forward_nhwc(self, x: np.ndarray) -> np.ndarray:
@@ -61,7 +61,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                         y[nn, xx, yy, cc] = (accum / items)
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(y, dtype=self.model.dtype)
+        return np.asarray(y, dtype=self.model.dtype, order="C")
     # -----
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
@@ -93,7 +93,7 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                     if 0 <= x_y < self.wi:
                                         dx[nn, x_x, x_y, cc] += avgval
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
     # -----
 
     def _backward_nchw(self, dy: np.ndarray) -> np.ndarray:
@@ -126,5 +126,5 @@ class AveragePool2DCPU(AveragePool2D[np.ndarray], AbstractPool2DLayerCPU):
                                         dx[nn, cc, x_x, x_y] += avgval
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
-        return np.asarray(dx, dtype=self.model.dtype)
+        return np.asarray(dx, dtype=self.model.dtype, order="C")
     # -----
