@@ -20,6 +20,12 @@ except Exception:
     MPI = None
 
 try:
+    import cupy  # type: ignore
+except Exception as e:
+    cupy = None
+    gpu_errors.append(e)
+
+try:
     import pycuda.driver as drv  # type: ignore
 except Exception as e:
     drv = None
@@ -92,22 +98,38 @@ else:
     nccl_comm = None  # type: ignore
 # ---
 
+# INIT CUPY
+if cupy is not None:
+    rank = MPI.COMM_WORLD.rank if MPI else 0
+    cupy.cuda.runtime.setDevice(rank % cupy.cuda.runtime.getDeviceCount())
+    stream: cupy.cuda.Stream = cupy.cuda.get_current_stream()
+    stream_handle = stream.ptr
+else:
+    pass  # Defaults handled later
+
 # INIT PYCUDA
-if drv is not None:  # equivalent: if has_drv:
+if drv is not None:
     drv.init()
     rank = MPI.COMM_WORLD.rank if MPI else 0
     device = drv.Device(rank % drv.Device.count())
     context = device.make_context()
     stream: drv.Stream = drv.Stream()  # type: ignore
+    stream_handle = stream.handle
     atexit.register(lambda: context.detach())  # type: ignore
 else:
+    context = None  # type: ignore
+    # Defaults handled later
+
+# DEFAULT CUDA
+if cupy is None and drv is None:
     device = None  # type: ignore
     context = None  # type: ignore
     stream = None  # type: ignore
+    stream_handle = None  # type: ignore
 # ---
 
 # INIT CUDNN
-if cudnn is not None and has_drv:
+if cudnn is not None and device is not None:
     # NOTE: CUDNN initalization must be done after "drv.init()"
     cudnn_handle: Cudnn_Handle_Type = cudnn.cudnnCreate()  # type: ignore
     atexit.register(lambda: cudnn.cudnnDestroy(cudnn_handle))  # type: ignore
@@ -116,19 +138,19 @@ else:
 # ---
 
 # INIT CUBLAS
-if cublas is not None:
+if cublas is not None and device is not None:
     cublas_handle: Cublas_Handle_Type = cublas.cublasCreate()  # type: ignore
     atexit.register(lambda: cublas.cublasDestroy(cublas_handle))  # type: ignore
 else:
     cublas_handle: Cublas_Handle_Type = None  # type: ignore
 # ---
 
-# SYNC CUDNN+PYCUDA
+# SYNC CUDNN+CUDA
 if cudnn is not None and stream is not None:
-    cudnn.cudnnSetStream(cudnn_handle, stream.handle)
+    cudnn.cudnnSetStream(cudnn_handle, stream_handle)
 # ---
 
-# SYNC CUBLAS+PYCUDA
+# SYNC CUBLAS+CUDA
 if cublas is not None and stream is not None:
-    cublas.cublasSetStream(cublas_handle, stream.handle)  # type: ignore
+    cublas.cublasSetStream(cublas_handle, stream_handle)  # type: ignore
 # ---
