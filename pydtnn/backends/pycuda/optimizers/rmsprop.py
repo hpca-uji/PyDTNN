@@ -15,8 +15,12 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
     RMSPropPycuda Optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0, dtype=np.dtype(np.float32)):
-        super().__init__(learning_rate, rho, epsilon, decay, dtype)
+    def __init__(self, learning_rate=1e-2, rho=0.9, epsilon=1e-7, decay=0.0):
+        super().__init__(learning_rate, rho, epsilon, decay)
+        # -------------
+
+    def get_pycuda_kernel(self) -> None:
+        dtype = np.dtype(self.model.dtype)
 
         pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[dtype]
 
@@ -47,7 +51,9 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
         # -------------
 
     def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)
+        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+        self.get_pycuda_kernel()
+
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
 

@@ -15,13 +15,15 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
     SGDPycuda optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0, dtype: np.dtype = np.dtype(np.float32)):
-        super().__init__(learning_rate, momentum, nesterov, decay, dtype)
+    def __init__(self, learning_rate=1e-2, momentum=0.9, nesterov=False, decay=0.0):
+        super().__init__(learning_rate, momentum, nesterov, decay)
 
+    def get_pycuda_kernel(self) -> None:
+        dtype = np.dtype(self.model.dtype)
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} * dw, {T} * v, float lr, float decay, float momentum".format(T=DTYPE2CTYPE[dtype])
         ops_gpu = {True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                   False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]
+                   False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]
         operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
 
         self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
@@ -43,7 +45,7 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
         """.format(
             T=DTYPE2CTYPE[dtype],
             nesterov_ops=({True: "w[i] -= lr * (decay * w[i] + dw[i] + momentum * v[i])",
-                           False: "w[i] -= lr * (decay * w[i] + v[i])"}[nesterov]),
+                           False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]),
             name=_name
         )
 
@@ -51,7 +53,9 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
         # ------------
 
     def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)
+        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+        self.get_pycuda_kernel()
+
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
 

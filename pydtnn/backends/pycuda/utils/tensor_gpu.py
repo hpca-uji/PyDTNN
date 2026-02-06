@@ -165,7 +165,7 @@ class TensorGPU:
             case 4:
                 self.shape = gpu_arr.shape
             case _:
-                raise ValueError(f"The expected len shape are 1, 2 or 4. Shape received: {len(gpu_arr.shape)}.")
+                raise ValueError(f"The expected len shape are 1, 2, 3 or 4. Shape received: {len(gpu_arr.shape)}.")
     # ---
 
     def _set_ptr(self, gpu_arr: "gpuarray.GPUArray") -> None:

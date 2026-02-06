@@ -16,9 +16,11 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
     NadamPycuda optimizer
     """
 
-    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0, dtype: np.dtype = np.dtype(np.float32)):
-        super().__init__(learning_rate, beta1, beta2, epsilon, decay, dtype)
+    def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0):
+        super().__init__(learning_rate, beta1, beta2, epsilon, decay)
 
+    def get_pycuda_kernel(self) -> None:
+        dtype = np.dtype(self.model.dtype)
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
         # --- GPU ---
@@ -58,7 +60,9 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
         # -----------
 
     def initialize(self, list_layers: list[LayerPycuda]) -> None:
-        super().initialize(list_layers)
+        super().initialize(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
+        self.get_pycuda_kernel()
+
         for layer in list_layers:
             self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()
             self.context[layer.id]["it"] = 0
