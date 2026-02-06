@@ -2,8 +2,12 @@ import numpy as np
 from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 from pydtnn.optimizers.optimizer import Optimizer
 
-from pycuda.driver import Function  # type: ignore
-from pycuda.elementwise import ElementwiseKernel  # type: ignore
+#  TODO: Fix this.
+try:
+    from pycuda.driver import Function  # type: ignore
+    from pycuda.elementwise import ElementwiseKernel  # type: ignore
+except:
+    pass
 
 
 class OptimizerPycuda(Optimizer[TensorGPU]):
@@ -16,7 +20,7 @@ class OptimizerPycuda(Optimizer[TensorGPU]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gpudirect = False
-        self.update_gpu: ElementwiseKernel = None # type: ign (It will be intialized later)
+        self.update_gpu: ElementwiseKernel = None # type: ignore (It will be intialized later)
         self.update_gpudirect: Function = None # type: ignore (It will be intialized later)
 
     def set_gpudirect(self, gpudirect: bool):
