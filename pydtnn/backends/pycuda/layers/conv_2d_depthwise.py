@@ -8,7 +8,7 @@ from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 from pydtnn.utils.tensor import TensorFormat
 from typing import Any, override
 
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 

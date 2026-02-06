@@ -1,6 +1,6 @@
 import numpy as np
 
-from pycuda.gpuarray import gpuarray
+from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 
 from pydtnn.layers.layer_normalization import LayerNormalization

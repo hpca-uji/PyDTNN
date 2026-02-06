@@ -2,7 +2,7 @@ from typing import Any
 from pydtnn.layers.conv_2d import Conv2D
 
 import pycuda.driver as drv  # type: ignore
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 

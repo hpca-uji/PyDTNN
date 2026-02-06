@@ -2,7 +2,7 @@
 import numpy as np
 
 from pydtnn.libs import cudnn as cudnn
-from pycuda.gpuarray import gpuarray
+from pycuda import gpuarray
 import pycuda
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda

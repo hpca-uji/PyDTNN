@@ -1,4 +1,4 @@
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 

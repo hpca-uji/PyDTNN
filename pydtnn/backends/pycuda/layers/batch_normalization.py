@@ -1,7 +1,7 @@
 from typing import Any
 import numpy as np
 import pycuda.driver as drv  # type: ignore
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.model import Model

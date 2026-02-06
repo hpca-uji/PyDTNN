@@ -1,5 +1,5 @@
 import numpy as np
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 
 from pydtnn.layers.input import Input
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda

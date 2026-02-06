@@ -4,7 +4,7 @@ from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.constants import ArrayShape
 
 from pydtnn.libs import cudnn as cudnn
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 
 
 class SoftmaxPycuda(Softmax[TensorGPU], ActivationPycuda):

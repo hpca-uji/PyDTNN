@@ -11,7 +11,7 @@ from typing import Any, override
 
 from pydtnn.libs import cudnn as cudnn
 from pydtnn.backends.pycuda.utils.memory_allocation import checkConvolutionMemory, getConvolutionWorkspaceSize, getConvolutionWorkspacePtr
-from pycuda.gpuarray import gpuarray  # type: ignore
+from pycuda import gpuarray  # type: ignore
 
 
 class Conv2DPycuda(AbstractConv2DPycuda):

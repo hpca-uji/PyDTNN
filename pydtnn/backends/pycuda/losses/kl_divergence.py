@@ -1,5 +1,5 @@
 import numpy as np
-from pycuda.gpuarray import gpuarray
+from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 
 from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
