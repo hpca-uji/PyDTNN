@@ -188,6 +188,12 @@ class PromoteToBackend:
 
         return f"<{name} {props}>" if props else f"<{name}>"
 
+    def initialize(self) -> None:
+        pass
+
+    def post_initialize(self) -> None:
+        pass
+
     def init_backend_with_model(self, model: "model_module.Model") -> None:
         """Initialize backend and link a new model instance"""
         self.model = model  # Set on frontend

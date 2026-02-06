@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
@@ -15,16 +13,24 @@ class SGD[T: Array](Optimizer[T]):
     """
 
     def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9,
-                 nesterov: bool = False, decay: float = 0.0, dtype: np.dtype = np.dtype(np.float32)):
-        super().__init__(learning_rate=learning_rate, dtype=dtype)
+                 nesterov: bool = False, decay: float = 0.0):
+        super().__init__(learning_rate=learning_rate)
         self.momentum: float = momentum
         self.nesterov: bool = nesterov
         self.decay: float = decay
+
+    def _show_props(self) -> dict:
+        props = super()._show_props()
+
+        props["momentum"] = self.momentum
+        props["nesterov"] = self.nesterov
+        props["decay"] = self.decay
+
+        return props
 
     @classmethod
     def from_model(cls, model: "Model") -> "SGD":
         return SGD(learning_rate=model.learning_rate,
                    momentum=model.optimizer_momentum,
                    nesterov=model.optimizer_nesterov,
-                   decay=model.optimizer_decay,
-                   dtype=model.dtype)
+                   decay=model.optimizer_decay)

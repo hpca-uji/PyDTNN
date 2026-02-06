@@ -1,7 +1,5 @@
 from typing import TYPE_CHECKING
 
-import numpy as np
-
 from pydtnn.optimizers.optimizer import Optimizer
 from pydtnn.utils.constants import Array
 
@@ -15,16 +13,24 @@ class RMSProp[T: Array](Optimizer[T]):
     """
 
     def __init__(self, learning_rate: float = 1e-2, rho: float = 0.9, epsilon: float = 1e-7,
-                 decay: float = 0.0, dtype: np.dtype = np.dtype(np.float32)):
-        super().__init__(learning_rate=learning_rate, dtype=dtype)
+                 decay: float = 0.0):
+        super().__init__(learning_rate=learning_rate)
         self.rho = rho
         self.epsilon = epsilon
         self.decay = decay
+
+    def _show_props(self) -> dict:
+        props = super()._show_props()
+
+        props["rho"] = self.rho
+        props["epsilon"] = self.epsilon
+        props["decay"] = self.decay
+
+        return props
 
     @classmethod
     def from_model(cls, model: "Model") -> "RMSProp":
         return RMSProp(learning_rate=model.learning_rate,
                        rho=model.optimizer_rho,
                        epsilon=model.optimizer_epsilon,
-                       decay=model.optimizer_decay,
-                       dtype=model.dtype)
+                       decay=model.optimizer_decay)

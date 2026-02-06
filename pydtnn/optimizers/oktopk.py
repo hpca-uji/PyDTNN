@@ -17,8 +17,7 @@ class OkTopk[T: Array](Optimizer[T]):
     def __init__(self, learning_rate: float = 1e-2, momentum: float = 0.9,
                  tau: int = 64, tau_prime: int = 32, density: float = 0.01, min_k_layer: int = 10):
 
-        super().__init__()
-        self.learning_rate = learning_rate
+        super().__init__(learning_rate=learning_rate)
         self.momentum = momentum
         self.residuals = {}
         self.tau = tau
@@ -32,7 +31,20 @@ class OkTopk[T: Array](Optimizer[T]):
         self.all_boundaries = {}
         self.info_messages = set()
 
+    def _show_props(self) -> dict:
+        props = super()._show_props()
+
+        props["momentum"] = self.momentum
+        props["tau"] = self.tau
+        props["tau_prime"] = self.tau_prime
+        props["density"] = self.density
+        props["min-k-layer"] = self.min_k_layer
+
+        return props
+
     def initialize(self, list_layers: list[LayerBase]) -> None:
+        super().initialize(list_layers)
+
         if self.model.model_sync_freq >= 0:
             warn("Optimizer does model sync but global model sync is also enabled!", RuntimeWarning)
 

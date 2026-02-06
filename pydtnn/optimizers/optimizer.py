@@ -1,5 +1,3 @@
-import numpy as np
-
 from pydtnn.backends import PromoteToBackend
 from pydtnn.layer_base import LayerBase
 from pydtnn.utils import find_component
@@ -11,20 +9,14 @@ class Optimizer[T: Array](PromoteToBackend):
     Optimizer abstract base class
     """
 
-    def __init__(self, learning_rate: float = 1e-2, dtype: np.dtype = np.dtype(np.float32)):
+    def __init__(self, learning_rate: float = 1e-2):
         super().__init__()
         self.learning_rate: float = learning_rate
-        self.dtype: np.dtype = dtype
         self.context = dict[int, dict[str, int | T]]()
 
-    def post_initialize(self) -> None:
-        """
-        Method were the operations that requiere a initialize are done.
-        """
-        pass
-
     def initialize(self, list_layers: list[LayerBase]) -> None:
-        raise NotImplementedError("method \"initialize\" of an Optimizer's child class is not implemented")
+        super().initialize()
+        self.dtype = self.model.dtype
 
     def update(self, layer: LayerBase) -> None:
         raise NotImplementedError("method \"update\" of an Optimizer's child class is not implemented")

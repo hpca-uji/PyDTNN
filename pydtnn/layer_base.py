@@ -100,17 +100,12 @@ class LayerBase[T: Array](PromoteToBackend):
         return props
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
+        super().initialize()
         self.id = next(self.model.layer_id_generator)
         self.prev_shape = prev_shape
         self.x = x  # type:ignore (If it's used, it will be type "T"; if not, it will never be accesed)
         self.fwd_time = np.zeros((4,), dtype=np.float32)
         self.bwd_time = np.zeros((4,), dtype=np.float32)
-
-    def post_initialize(self) -> None:
-        """
-        Method were the operations that requiere a initialize are done.
-        """
-        pass
 
     def forward(self, x: T) -> T:
         return x

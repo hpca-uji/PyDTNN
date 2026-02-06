@@ -15,13 +15,8 @@ class Metric[T: Array](PromoteToBackend):
         self.eps = eps
 
     def initialize(self) -> None:
+        super().initialize()
         self.shape = self.model._output_shape
-
-    def post_initialize(self) -> None:
-        """
-        Method were the operations that requiere a initialize are done.
-        """
-        pass
 
     @abstractmethod
     def compute(self, y_pred: T, y_targ: T) -> float | np.ndarray:
