@@ -85,14 +85,13 @@ class PromoteToBackend:
                 backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
                 try:
                     backend_module = importlib.import_module(backend_module_name)
-                    cls_name = f"{cls.__name__}{backend.title()}"
-                    cls = getattr(backend_module, cls_name)
                 except ModuleNotFoundError as exc:
                     if backend_module_name.startswith(exc.name):
                         continue
                     raise
-                else:
-                    return cls
+                cls_name = f"{cls.__name__}{backend.title()}"
+                cls = getattr(backend_module, cls_name)
+                return cls
 
         raise ValueError(f"Backend not found for {self} with {spec}")
 
