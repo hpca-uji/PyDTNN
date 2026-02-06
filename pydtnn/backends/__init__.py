@@ -82,13 +82,15 @@ class PromoteToBackend:
             if f".{group}." not in f".{module_name}.":
                 continue  # Spec not relevant to class
             for backend in backends:
+                backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
                 try:
-                    backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
                     backend_module = importlib.import_module(backend_module_name)
                     cls_name = f"{cls.__name__}{backend.title()}"
                     cls = getattr(backend_module, cls_name)
-                except (ModuleNotFoundError, AttributeError):
-                    pass  # Spec not found for class
+                except ModuleNotFoundError as exc:
+                    if backend_module_name.startswith(exc.name):
+                        continue
+                    raise
                 else:
                     return cls
 
