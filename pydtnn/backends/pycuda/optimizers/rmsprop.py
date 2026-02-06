@@ -47,6 +47,7 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
         # -------------
 
     def initialize(self, list_layers: list[LayerPycuda]) -> None:
+        super().initialize(list_layers)
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
 

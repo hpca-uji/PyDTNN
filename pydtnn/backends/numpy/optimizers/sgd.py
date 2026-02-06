@@ -12,6 +12,7 @@ from pydtnn.backends.numpy.layers.layer import LayerNumpy
 class SGDNumpy(SGD[np.ndarray], OptimizerNumpy):
 
     def initialize(self, list_layers: list[LayerNumpy]) -> None:
+        super().initialize(list_layers)
 
         temp_memory_size = []
 

@@ -58,6 +58,7 @@ class NadamPycuda(Nadam[TensorGPU], OptimizerPycuda):
         # -----------
 
     def initialize(self, list_layers: list[LayerPycuda]) -> None:
+        super().initialize(list_layers)
         for layer in list_layers:
             self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()
             self.context[layer.id]["it"] = 0
