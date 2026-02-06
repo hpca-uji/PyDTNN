@@ -108,7 +108,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
         self.add_argument('--model', dest="model_name", type=str, default=None,
                           help="Neural network model: 'simplemlp', 'simplecnn', 'alexnet', 'vgg11', 'vgg16', etc. Default: 'None'.")
         self.add_argument('--backend', type=str, default="cpu",
-                          help="Backend selection priority. Format: [module[,module[,...]]:]backend[,backend[,...]][;...]. Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'. Default: 'cpu'.")
+                          help="Backend selection priority. Format: [module[,module[,...]]:]backend[,backend[,...]][;...]. Example: 'all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython'. Selection: More specific modules are attempted first, backend order goes from least to most priority.Default: 'cpu'.")
         self.add_argument('--batch-size', type=int, default=None,
                           help="Batch size per MPI rank. Or 'batch_size' or 'global_batch_size' must have a value different from 'None' (but not both). Default: 'None'.")
         self.add_argument('--global-batch-size', type=int, default=None,
@@ -131,7 +131,7 @@ class PydtnnArgumentParser(argparse.ArgumentParser):
                           help="Data format to be used: 'NHWC' or 'NCHW'. Optionally, the 'AUTO' value sets 'NCHW' when the option '--enable-cudnn' is set and 'NHWC' otherwise. Default: 'NHWC'.")
         self.add_argument('--random-seed', type=int, default=57005,
                           help="Initial state of random number generator. Default: '57005'.")
-        self.add_argument('--shared-memory', type=bool_lambda, default=False,
+        self.add_argument('--shared-tmp-memory', type=bool_lambda, default=False,
                           help="Allows to use a memory pool for all the temporary data structures.")
 
         # Synchronization options

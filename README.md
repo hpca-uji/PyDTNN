@@ -134,6 +134,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--backend`: Backend selection priority.
     Format: `[module[,module[,...]]:]backend[,backend[,...]][;...]`.
     Example: `all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython`.
+    Selection: More specific modules are attempted first, backend order goes from least to most priority.
     Default: `cpu`.
   - `--batch-size`: Batch size per MPI rank. Default: `None`.
   - `--global-batch-size`: Batch size between all MPI ranks. Default:
@@ -152,7 +153,7 @@ The PyDTNN framework comes with a utility launcher called
   - `--tensor-format`: Data format to be used: `NHWC` or `NCHW`. Optionally,
     the `AUTO` value sets `NCHW` when the option `--enable-cudnn` is set and `NHWC` otherwise. Default: `NHWC`.
   - `--random-seed`: Initial state of random number generator. Default: `57005`.
-  - `--shared-memory`: Allows to use a common memory pool for all the temporary data structures.
+  - `--shared-tmp-memory`: Allows to use a common memory pool for all the temporary data structures.
   - `--shared-storage`: If `True` ranks assume they share the file
     system. Default: `True`.
   - `--model-sync-freq`: Number of batches between model synchronization.

@@ -274,7 +274,7 @@ class Model[T: Array]:
         else:
             MemoryCache.disable()
 
-        self.memory_cls = PreallocMemory if self.shared_memory else PrivateMemory
+        self.memory_cls = PreallocMemory if self.shared_tmp_memory else PrivateMemory
 
         # Cuda
         if self.enable_cudnn:

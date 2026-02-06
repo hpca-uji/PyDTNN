@@ -48,6 +48,7 @@ class PromoteToBackend:
         Parse a backend spec string.
         Format: [module[,module[,...]]:]backend[,backend[,...]][;...]
         Example: all:numpy;conv_2d:gemm;layers,optimizers:numpy,cython
+        Selection: More specific modules are attempted first, backend order goes from least to most priority.
         """
         groups = {}
 
