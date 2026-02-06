@@ -59,7 +59,6 @@ def main():
         print()
         model.show_layers()
         print()
-    breakpoint()
     # Print parameters
     if model.comm_rank == 0:
         print('**** Parameters:')
