@@ -1,5 +1,5 @@
-from pydtnn.backends.cpu.activations.activation import ActivationCPU
+from pydtnn.backends.numpy.activations.activation import ActivationNumpy
 
 
-class ActivationCYTHON(ActivationCPU):
+class ActivationCython(ActivationNumpy):
     ...

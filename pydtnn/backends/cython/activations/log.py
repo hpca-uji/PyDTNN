@@ -1,11 +1,11 @@
-from pydtnn.backends.cpu.activations.log import LogCPU
+from pydtnn.backends.numpy.activations.log import LogNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.backends.cython.utils.log_activation_cython import log_bwd_cython, log_fwd_cython
 
-from pydtnn.backends.cython.activations.activation import ActivationCYTHON
+from pydtnn.backends.cython.activations.activation import ActivationCython
 
 
-class LogCYTHON(LogCPU, ActivationCYTHON):
+class LogCython(LogNumpy, ActivationCython):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         y: np.ndarray = self.y[:x.shape[0], :]

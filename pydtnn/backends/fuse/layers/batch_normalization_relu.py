@@ -1,5 +1,5 @@
 from pydtnn.backends.fuse.utils.bn_inference_cython import bn_relu_inference_cython
-from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
+from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.layer_base import FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.utils.constants import Array, ArrayShape
@@ -14,14 +14,14 @@ class BatchNormalizationRelu[T: Array](FusedLayerMixIn[T], BatchNormalization[T]
     pass
 
 
-class BatchNormalizationReluFUSE(BatchNormalizationRelu[np.ndarray], BatchNormalizationCPU):
+class BatchNormalizationReluFuse(BatchNormalizationRelu[np.ndarray], BatchNormalizationNumpy):
 
     # NOTE: The "__init__" method is being made (more or less) in Model (in _apply_layer_fusion) and in FusedLayerMixIn.
 
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None):
         super().initialize(prev_shape, x)
 
-        self.inv_std = BatchNormalizationCPU.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
+        self.inv_std = BatchNormalizationNumpy.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
 
         # NOTE: This attribute only stores data, its value before the operation doesn't matter; it's initalized due avoid warnings in "LayerAndActivationBase.export".
         self.y: np.ndarray = np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype)

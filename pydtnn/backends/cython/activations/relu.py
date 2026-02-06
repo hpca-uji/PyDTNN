@@ -1,11 +1,11 @@
-from pydtnn.backends.cpu.activations.relu import ReluCPU
+from pydtnn.backends.numpy.activations.relu import ReluNumpy
 from pydtnn.libs import numpy as np
 
 from pydtnn.backends.cython.utils.relu_cython import relu_cython
-from pydtnn.backends.cython.activations.activation import ActivationCYTHON
+from pydtnn.backends.cython.activations.activation import ActivationCython
 
 
-class ReluCYTHON(ReluCPU, ActivationCYTHON):
+class ReluCython(ReluNumpy, ActivationCython):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         n = x.shape[0]

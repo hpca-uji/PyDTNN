@@ -1,11 +1,11 @@
-from pydtnn.backends.cpu.activations.sigmoid import SigmoidCPU
+from pydtnn.backends.numpy.activations.sigmoid import SigmoidNumpy
 from pydtnn.libs import numpy as np
 from pydtnn.backends.cython.utils.sigmoid_cython import sigmoid_bwd_cython, sigmoid_fwd_cython
 
-from pydtnn.backends.cython.activations.activation import ActivationCYTHON
+from pydtnn.backends.cython.activations.activation import ActivationCython
 
 
-class SigmoidCYTHON(SigmoidCPU, ActivationCYTHON):
+class SigmoidCython(SigmoidNumpy, ActivationCython):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y: np.ndarray = self._y[:x.shape[0], :]

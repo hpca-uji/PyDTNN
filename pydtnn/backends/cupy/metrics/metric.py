@@ -1,5 +1,5 @@
-from pydtnn.backends.cpu.metrics.metric import MetricCPU
+from pydtnn.backends.numpy.metrics.metric import MetricNumpy
 
 
-class MetricCUPY(MetricCPU):
+class MetricCUPY(MetricNumpy):
     ...

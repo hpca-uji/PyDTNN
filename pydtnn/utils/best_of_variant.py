@@ -1,7 +1,7 @@
 from typing import Callable, List
 
-from pydtnn.backends.cpu.layers.conv_2d.direct_cpu import Conv2DDirectCPU
-from pydtnn.backends.cpu.layers.conv_2d.winograd_cpu import Conv2DWinogradCPU
+from pydtnn.backends.numpy.layers.conv_2d.direct_cpu import Conv2DDirectNumpy
+from pydtnn.backends.numpy.layers.conv_2d.winograd_cpu import Conv2DWinogradNumpy
 from pydtnn.model import Model
 from pydtnn.utils.best_of import BestOf
 
@@ -10,7 +10,7 @@ from pydtnn.utils.constants import ArrayShape
 
 
 # FIXME: Broken since Conv2D to backend support
-class BestOfVariant(Conv2DWinogradCPU, Conv2DDirectCPU):
+class BestOfVariant(Conv2DWinogradNumpy, Conv2DDirectNumpy):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -24,7 +24,7 @@ class BestOfVariant(Conv2DWinogradCPU, Conv2DDirectCPU):
         super().initialize(prev_shape, x)
         if self.model.enable_best_of:
             # Set variant to 'best_of' and set alternatives to only forward, and forward backward best_ofs
-            self.variant = Conv2DDirectCPU.Variant.BEST_OF
+            self.variant = Conv2DDirectNumpy.Variant.BEST_OF
             # Bestof will honor the next configuration options:
             # - enable_conv_winograd
             # - enable_conv_gemm
@@ -34,21 +34,21 @@ class BestOfVariant(Conv2DWinogradCPU, Conv2DDirectCPU):
             alternatives_fw = []
             alternatives_fw_bw_pipeline = []
             if self.model.enable_conv_i2c:
-                alternatives_fw.append((Conv2DDirectCPU.Variant.I2C, self._get_class_forward_and_backward(Conv2DDirectCPU.Variant.I2C)[0]))
-                alternatives_fw_bw_pipeline.append((Conv2DDirectCPU.Variant.I2C, self._get_class_forward_and_backward(Conv2DDirectCPU.Variant.I2C)))
+                alternatives_fw.append((Conv2DDirectNumpy.Variant.I2C, self._get_class_forward_and_backward(Conv2DDirectNumpy.Variant.I2C)[0]))
+                alternatives_fw_bw_pipeline.append((Conv2DDirectNumpy.Variant.I2C, self._get_class_forward_and_backward(Conv2DDirectNumpy.Variant.I2C)))
             if self.model.enable_conv_gemm:
-                alternatives_fw.append((Conv2DDirectCPU.Variant.GEMM, self._get_class_forward_and_backward(Conv2DDirectCPU.Variant.GEMM)[0]))
-                alternatives_fw_bw_pipeline.append((Conv2DDirectCPU.Variant.GEMM, self._get_class_forward_and_backward(Conv2DDirectCPU.Variant.GEMM)))
+                alternatives_fw.append((Conv2DDirectNumpy.Variant.GEMM, self._get_class_forward_and_backward(Conv2DDirectNumpy.Variant.GEMM)[0]))
+                alternatives_fw_bw_pipeline.append((Conv2DDirectNumpy.Variant.GEMM, self._get_class_forward_and_backward(Conv2DDirectNumpy.Variant.GEMM)))
             if self.model.enable_conv_winograd and self.cw_constraints_fulfilled:
-                alternatives_fw.append((Conv2DDirectCPU.Variant.WINOGRAD, self._get_class_forward_and_backward(Conv2DDirectCPU.Variant.WINOGRAD)[0]))
-                alternatives_fw_bw_pipeline.append((Conv2DDirectCPU.Variant.WINOGRAD, self._get_class_forward_and_backward(Conv2DDirectCPU.Variant.WINOGRAD)))
+                alternatives_fw.append((Conv2DDirectNumpy.Variant.WINOGRAD, self._get_class_forward_and_backward(Conv2DDirectNumpy.Variant.WINOGRAD)[0]))
+                alternatives_fw_bw_pipeline.append((Conv2DDirectNumpy.Variant.WINOGRAD, self._get_class_forward_and_backward(Conv2DDirectNumpy.Variant.WINOGRAD)))
             if self.model.enable_conv_direct:
                 for n in range(len(self.cd)):
                     cdn = f"cd{n}"
                     alternatives_fw.append((cdn, self._get_class_forward_and_backward(cdn)[0]))
                     alternatives_fw_bw_pipeline.append((cdn, self._get_class_forward_and_backward(cdn)))
             self._best_fw = BestOf(
-                name="Conv2DCPU only forward",
+                name="Conv2DNumpy only forward",
                 alternatives=alternatives_fw,
                 get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
                 + (args[0].vstride,
@@ -57,7 +57,7 @@ class BestOfVariant(Conv2DWinogradCPU, Conv2DDirectCPU):
                    args[0].hdilation),
             )
             self._best_fw_bw_pipeline = BestOf(
-                name="Conv2DCPU forward backward",
+                name="Conv2DNumpy forward backward",
                 alternatives=alternatives_fw_bw_pipeline,
                 get_problem_size=lambda *args: tuple(args[0].shape) + tuple(args[0].weights.shape)
                 + (args[0].vpadding, args[0].hpadding,

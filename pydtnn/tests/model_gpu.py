@@ -3,7 +3,7 @@ import numpy as np
 
 import pycuda.gpuarray as gpuarray  # type: ignore
 
-from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 from pydtnn.layer_base import LayerBase
 from pydtnn.layers.addition_block import AdditionBlock
 from pydtnn.layers.concatenation_block import ConcatenationBlock

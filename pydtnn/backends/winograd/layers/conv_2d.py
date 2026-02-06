@@ -1,4 +1,4 @@
-from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
 from pydtnn.backends.cython.utils.im2col_nchw_cython import im2col_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython
 from pydtnn.libs.convWinograd import ConvWinograd
@@ -9,7 +9,7 @@ import numpy as np
 from pydtnn.utils.tensor import TensorFormat
 
 
-class Conv2DWINOGRAD(AbstractConv2DStandardCPU):
+class Conv2DWinograd(AbstractConv2DStandardNumpy):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

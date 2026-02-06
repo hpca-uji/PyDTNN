@@ -3,11 +3,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-from pydtnn.backends.cpu.layers.conv_2d import Conv2DCPU
+from pydtnn.backends.numpy.layers.conv_2d import Conv2DNumpy
 from pydtnn.backends.cython.utils.im2col_nchw_cython import col2im_nchw_cython, im2col_nchw_cython  # , alt_col2im_nchw_cython
 from pydtnn.backends.cython.utils.im2row_nhwc_cython import im2row_nhwc_cython, row2im_nhwc_cython  # , alt_row2im_nhwc_cython
 
-class Conv2DCYTHON(Conv2DCPU):
+class Conv2DCython(Conv2DNumpy):
 
     def im2row(self, x: np.ndarray, x_rows: np.ndarray) -> None:
         im2row_nhwc_cython(x, x_rows,

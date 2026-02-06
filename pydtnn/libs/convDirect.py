@@ -125,7 +125,7 @@ class ConvDirect:
         else:
             ci, kh, kw, co = weights.shape
 
-        # TODO: Move to Conv2D_CPU (or remove)
+        # TODO: Move to Conv2D_Numpy (or remove)
         if out is None:
             ho = (hi + 2 * vpadding - vdilation * (kh - 1) - 1) // vstride + 1
             wo = (wi + 2 * hpadding - hdilation * (kw - 1) - 1) // hstride + 1

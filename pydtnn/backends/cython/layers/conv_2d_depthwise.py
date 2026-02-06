@@ -1,4 +1,4 @@
-from pydtnn.backends.cpu.layers.conv_2d_depthwise import Conv2DDepthwiseCPU
+from pydtnn.backends.numpy.layers.conv_2d_depthwise import Conv2DDepthwiseNumpy
 from pydtnn.backends.cython.utils.depthwise_conv_nchw_cython import depthwise_conv_backward_nchw_cython, depthwise_conv_nchw_cython
 from pydtnn.backends.cython.utils.depthwise_conv_nhwc_cython import depthwise_conv_backward_nhwc_cython, depthwise_conv_nhwc_cython
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     import numpy as np
 
-class Conv2DDepthwiseCYTHON(Conv2DDepthwiseCPU):
+class Conv2DDepthwiseCython(Conv2DDepthwiseNumpy):
 
     def _initializing_special_parameters(self):
         super()._initializing_special_parameters()

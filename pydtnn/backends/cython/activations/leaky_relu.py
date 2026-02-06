@@ -1,11 +1,11 @@
-from pydtnn.backends.cpu.activations.leaky_relu import LeakyReluCPU
+from pydtnn.backends.numpy.activations.leaky_relu import LeakyReluNumpy
 from pydtnn.backends.cython.utils.relu_cython import leaky_relu_cython
-from pydtnn.backends.cython.activations.activation import ActivationCYTHON
+from pydtnn.backends.cython.activations.activation import ActivationCython
 
 from pydtnn.libs import numpy as np
 
 
-class LeakyReluCYTHON(LeakyReluCPU, ActivationCYTHON):
+class LeakyReluCython(LeakyReluNumpy, ActivationCython):
 
     def forward(self, x: np.ndarray) -> np.ndarray:
         self.y = self._y[:x.shape[0], :]

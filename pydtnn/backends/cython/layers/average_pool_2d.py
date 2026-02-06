@@ -1,4 +1,4 @@
-from pydtnn.backends.cpu.layers.average_pool_2d import AveragePool2DCPU
+from pydtnn.backends.numpy.layers.average_pool_2d import AveragePool2DNumpy
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ from pydtnn.backends.cython.utils.im2row_1ch_nhwc_cython import im2row_1ch_nhwc_
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
-class AveragePool2DCYTHON(AveragePool2DCPU):
+class AveragePool2DCython(AveragePool2DNumpy):
     # ----
     ##############
     ### CYTHON ###

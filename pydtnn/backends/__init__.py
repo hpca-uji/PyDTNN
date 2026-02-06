@@ -12,8 +12,8 @@ class PromoteToBackend:
 
     _map_backend = {
         "all": "pydtnn",
-        # "cpu": "numpy,cython",
-        # "gpu": "pycuda"
+        "cpu": "numpy,cython",
+        "gpu": "pycuda"
     }
 
     def __new__(cls, *args, **kwds):
@@ -85,7 +85,7 @@ class PromoteToBackend:
                 try:
                     backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
                     backend_module = importlib.import_module(backend_module_name)
-                    cls_name = f"{cls.__name__}{backend.upper()}"
+                    cls_name = f"{cls.__name__}{backend.title()}"
                     cls = getattr(backend_module, cls_name)
                 except (ModuleNotFoundError, AttributeError):
                     pass  # Spec not found for class

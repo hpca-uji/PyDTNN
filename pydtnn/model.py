@@ -22,9 +22,9 @@ from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors
 from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
 from pydtnn import utils
-from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 from pydtnn.activations.relu import Relu
-from pydtnn.backends.gpu.optimizers.optimizer import OptimizerGPU
+from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.libs.mpi import proto as PROTOCOL
 from pydtnn import crypto
 from pydtnn.datasets.dataset import Dataset
@@ -44,7 +44,7 @@ from pydtnn.utils.performance_models import allreduce_time
 from pydtnn.tracers.events import PYDTNN_EVENT_FINISHED, PYDTNN_MDL_EVENT, PYDTNN_MDL_EVENTS, PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_MDL_EVENT_enum, PYDTNN_OPS_EVENT_enum
 from pydtnn.tracers.extrae_tracer import ExtraeTracer
 from pydtnn.tracers.simple_tracer import SimpleTracer
-from pydtnn.tracers.simple_tracer_gpu import SimpleTracerGPU
+from pydtnn.tracers.simple_tracer_gpu import SimpleTracerPycuda
 from pydtnn.tracers.simple_tracer_pmlib import SimpleTracerPMLib
 from pydtnn.tracers.tracer import Tracer
 from pydtnn.utils.best_of import BestOf
@@ -74,7 +74,7 @@ def get_tracer(tracer_output: str, tracing: bool, comm: MPI_COMM | None, enable_
         tracer = ExtraeTracer(tracing)
     else:
         if enable_cudnn:
-            tracer = SimpleTracerGPU(tracing, tracer_output, comm)
+            tracer = SimpleTracerPycuda(tracing, tracer_output, comm)
         else:
             if tracer_pmlib_device != "":
                 tracer = SimpleTracerPMLib(tracing, tracer_output, comm, tracer_pmlib_server, tracer_pmlib_port, tracer_pmlib_device)
@@ -772,7 +772,7 @@ class Model[T: Array]:
         self._initialized = True
 
         if self.enable_cudnn:
-            assert isinstance(self.optimizer, OptimizerGPU), f"CUDA is enable but the optimizer's backend is not a GPU one ({type(self.optimizer)=})"
+            assert isinstance(self.optimizer, OptimizerPycuda), f"CUDA is enable but the optimizer's backend is not a GPU one ({type(self.optimizer)=})"
             self.optimizer.set_gpudirect(self.gpudirect)
 
         self.optimizer.initialize(self.get_all_layers(self.layers))

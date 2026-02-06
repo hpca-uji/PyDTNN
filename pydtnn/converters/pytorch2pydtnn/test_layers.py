@@ -10,7 +10,7 @@ from pydtnn.model import Model as PyDTNN_Model
 from pydtnn.layer_base import LayerBase
 from pydtnn.utils.best_of import BestOf
 
-from pydtnn.backends.gpu.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 try:
     import pycuda.gpuarray as gpuarray
     from pydtnn.libs import cudnn as cudnn

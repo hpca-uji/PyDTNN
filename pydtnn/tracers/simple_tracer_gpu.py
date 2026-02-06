@@ -14,9 +14,9 @@ else:
     MPI_COMM = ModuleType
 
 
-class SimpleTracerGPU(SimpleTracer):
+class SimpleTracerPycuda(SimpleTracer):
     """
-    SimpleTracerGPU
+    SimpleTracerPycuda
     """
 
     def __init__(self, tracing: bool, output_filename: str, comm: MPI_COMM | None):

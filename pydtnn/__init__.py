@@ -41,7 +41,7 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    from pydtnn.backends.gpu.utils import tensor_gpu  # type: ignore
+    from pydtnn.backends.pycuda.utils import tensor_gpu  # type: ignore
 except Exception as e:
     tensor_gpu = None
     gpu_errors.append(e)

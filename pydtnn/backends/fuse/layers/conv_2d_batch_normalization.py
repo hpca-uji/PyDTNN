@@ -1,5 +1,5 @@
-from pydtnn.backends.cpu.layers.abstract.conv_2d_standard import AbstractConv2DStandardCPU
-from pydtnn.backends.cpu.layers.batch_normalization import BatchNormalizationCPU
+from pydtnn.backends.numpy.layers.abstract.conv_2d_standard import AbstractConv2DStandardNumpy
+from pydtnn.backends.numpy.layers.batch_normalization import BatchNormalizationNumpy
 from pydtnn.layer_base import FusedLayerMixIn
 from pydtnn.layers.batch_normalization import BatchNormalization
 from pydtnn.layers.conv_2d import Conv2D
@@ -16,7 +16,7 @@ class Conv2DBatchNormalization[T: Array](FusedLayerMixIn[T], Conv2D[T], BatchNor
     pass
 
 
-class Conv2DBatchNormalizationFUSE(Conv2DBatchNormalization[np.ndarray], AbstractConv2DStandardCPU):
+class Conv2DBatchNormalizationFuse(Conv2DBatchNormalization[np.ndarray], AbstractConv2DStandardNumpy):
 
     @property
     def _ary_prop(self) -> set[str]:
@@ -29,7 +29,7 @@ class Conv2DBatchNormalizationFUSE(Conv2DBatchNormalization[np.ndarray], Abstrac
     def initialize(self, prev_shape: ArrayShape, x: np.ndarray | None = None) -> None:
         super().initialize(prev_shape, x)
 
-        self.inv_std = BatchNormalizationCPU.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
+        self.inv_std = BatchNormalizationNumpy.get_inv_std(self.running_var, self.epsilon, self.model.dtype)
         self.real_memory_size += self.inv_std.nbytes
 
         self.forward = {"_forward_cw_nchw": self._forward_nchw_cw,

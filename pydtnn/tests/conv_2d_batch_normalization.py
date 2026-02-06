@@ -5,7 +5,7 @@ from pydtnn.layers.concatenation_block import ConcatenationBlock
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.layers.conv_2d_batch_normalization import Conv2DBatchNormalization
 from pydtnn.model import Model
-from pydtnn.backends.cpu.layers.abstract.conv_2d import AbstractConv2DCPU
+from pydtnn.backends.numpy.layers.abstract.conv_2d import AbstractConv2DNumpy
 from pydtnn.tests.abstract.common import D
 from pydtnn.tests.abstract.common import Params
 from pydtnn.tests.abstract.conv_2d_common import Conv2DCommonTestCase
@@ -22,7 +22,7 @@ class Conv2DBatchNormalizationTestCase(Conv2DCommonTestCase):
     del Conv2DCommonTestCase
 
     @staticmethod
-    def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DCPU, AbstractConv2DCPU]:
+    def _get_layers(d: D, deconv=False, trans=False) -> tuple[AbstractConv2DNumpy, AbstractConv2DNumpy]:
         params = Params()
         params.tensor_format = TensorFormat.NCHW.upper()
         params.batch_size = d.b

@@ -1,4 +1,4 @@
-from pydtnn.backends.cpu.layers.max_pool_2d import MaxPool2DCPU
+from pydtnn.backends.numpy.layers.max_pool_2d import MaxPool2DNumpy
 from pydtnn.libs import numpy as np
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -13,7 +13,7 @@ from pydtnn.model import Model
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 
 
-class MaxPool2DCYTHON(MaxPool2DCPU):
+class MaxPool2DCython(MaxPool2DNumpy):
     ##############
     ### CYTHON ###
     ##############
