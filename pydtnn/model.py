@@ -750,13 +750,13 @@ class Model[T: Array]:
         self._apply_layer_fusion()
 
         temp_memory_size = []
+        self._output_shape = (self.batch_size, *self.layers[-1].shape)
 
-        loss_cls = select_loss(self.loss_func_name)
-        self.loss_func = loss_cls(shape=(self.batch_size, *self.layers[-1].shape))
+        self.loss_func = select_loss(self.loss_func_name)()
         self.loss_func.init_backend_with_model(self)
         self.loss_func.initialize()
 
-        self.metrics_funcs = [select_metric(m)(shape=(self.batch_size, *self.layers[-1].shape)) for m in self.metrics_list]
+        self.metrics_funcs = [select_metric(m)() for m in self.metrics_list]
         self.metrics_funcs.sort(key=lambda metric: metric.order)
 
         for metric in self.metrics_funcs:

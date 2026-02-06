@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils import find_component
-from pydtnn.utils.constants import ArrayShape, Array
+from pydtnn.utils.constants import Array
 import numpy as np
 
 
@@ -10,14 +10,12 @@ class Metric[T: Array](PromoteToBackend):
     format = ""
     order = 0   # No need of special order.
 
-    def __init__(self, shape: ArrayShape, eps=1e-8):
-        self.shape = shape
+    def __init__(self, eps=1e-8):
+        super().__init__()
         self.eps = eps
-        self.real_memory_size: int = 0
-        self.temp_memory_size: int = 0
 
     def initialize(self) -> None:
-        pass
+        self.shape = self.model._output_shape
 
     def post_initialize(self) -> None:
         """

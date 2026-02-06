@@ -1,20 +1,17 @@
 from pydtnn.backends import PromoteToBackend
 from pydtnn.utils import find_component
 from pydtnn.utils.constants import Array
-from pydtnn.utils.constants import ArrayShape
 
 
 class Loss[T: Array](PromoteToBackend):
     format = ""
 
-    def __init__(self, shape: ArrayShape, eps=1e-8):
-        self.shape = shape
+    def __init__(self, eps=1e-8):
+        super().__init__()
         self.eps = eps
-        self.real_memory_size: int = 0
-        self.temp_memory_size: int = 0
 
     def initialize(self) -> None:
-        pass
+        self.shape = self.model._output_shape
 
     def compute(self, y_pred: T, y_targ: T, batch_size: int) -> tuple[float, T]:
         raise NotImplementedError()

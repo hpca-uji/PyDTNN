@@ -20,6 +20,7 @@ except Exception:
 
 class LayerBase[T: Array](PromoteToBackend):
     def __init__(self, shape: ArrayShape = ()) -> None:
+        super().__init__()
         self.nparams: int = 0
         self.shape: ArrayShape = shape
         self.x: T = None  # type: ignore
@@ -34,24 +35,12 @@ class LayerBase[T: Array](PromoteToBackend):
         self.reqs_allred = {}
         self.parent_layer: LayerBase | None = None
 
-        self.temp_memory_size: int = 0
-        self.real_memory_size: int = 0
-
         # The following attributes will be initialized later
         self.id: int = None  # type: ignore
         self.model: Model = None  # type: ignore
         self.prev_shape: ArrayShape = None  # type: ignore
         self.stream_2: Stream = None  # type: ignore
         self.is_block_layer: bool = False
-
-    @property
-    def canonical_name(self) -> str:
-        frontend = getattr(self, "_frontend", self)
-        return type(frontend).__name__
-
-    @property
-    def name(self) -> str:
-        return self.__class__.__name__
 
     @property
     def name_with_id(self) -> str:
@@ -89,20 +78,10 @@ class LayerBase[T: Array](PromoteToBackend):
         if paths:
             props["path"] = ",".join(map(str, paths))
 
-        props["name"] = self.canonical_name
-
-        if self.name != self.canonical_name:
-            props["backend"] = self.name.removeprefix(self.canonical_name)
+        props.update(super()._show_props())
 
         if self.nparams > 0:
             props["params"] = self.nparams
-
-        if self.real_memory_size > 0:
-            memory = utils.convert_size_bytes(self.real_memory_size)
-            if self.temp_memory_size > 0:
-                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
-                memory = f"{memory} ({tmp_memory} tmp)"
-            props["memory"] = memory
 
         if self.prev_shape:
             props["input"] = self.prev_shape
@@ -119,17 +98,6 @@ class LayerBase[T: Array](PromoteToBackend):
             props["weights"] = self.weights.shape
 
         return props
-
-    def __repr__(self) -> str:
-        props = self._show_props()
-        name = props.pop("name")
-
-        props = " ".join(
-            f"{key}={value!r}"
-            for key, value in props.items()
-        )
-
-        return f"<{name} {props}>"
 
     def initialize(self, prev_shape: ArrayShape, x: T | None = None) -> None:
         self.id = next(self.model.layer_id_generator)

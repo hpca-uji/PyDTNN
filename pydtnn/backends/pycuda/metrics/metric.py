@@ -11,8 +11,8 @@ class MetricPycuda(Metric[TensorGPU]):
     Extends a Metric class with the attributes and methods required by GPU Metrics.
     """
 
-    def __init__(self, shape: ArrayShape, eps=1e-8):
-        super().__init__(shape, eps)
+    def __init__(self, eps=1e-8):
+        super().__init__(eps)
         # NOTE: The following attributes will be initializated later.
         self.grid = None
         self.block = None

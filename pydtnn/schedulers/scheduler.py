@@ -8,6 +8,7 @@ class Scheduler(PromoteToBackend):
     """
 
     def __init__(self, verbose: bool):
+        super().__init__()
         self.verbose = verbose
         self.epoch_count = 0
         # NOTE: Only used in early_stopping and stop_at_loss.

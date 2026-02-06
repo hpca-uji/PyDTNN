@@ -2,6 +2,8 @@ import re
 import typing
 import importlib
 
+from pydtnn import utils
+
 if typing.TYPE_CHECKING:
     from pydtnn import model as model_module
 
@@ -21,6 +23,10 @@ class PromoteToBackend:
         self = super().__new__(cls)
         self._new_backend = (args, kwds)  # type: ignore
         return self
+
+    def __init__(self) -> None:
+        self.temp_memory_size: int = 0
+        self.real_memory_size: int = 0
 
     def __getattribute__(self, name: str):
         ref = "_backend"
@@ -145,12 +151,48 @@ class PromoteToBackend:
     # Base class
     model: "model_module.Model"
 
+    @property
+    def name(self) -> str:
+        return type(self).__name__
+
+    @property
+    def canonical_name(self) -> str:
+        frontend = getattr(self, "_frontend", self)
+        return type(frontend).__name__
+
+    def _show_props(self) -> dict:
+        props = {}
+
+        props["name"] = self.canonical_name
+
+        if self.name != self.canonical_name:
+            props["backend"] = self.name.removeprefix(self.canonical_name).lower()
+
+        if self.real_memory_size > 0:
+            memory = utils.convert_size_bytes(self.real_memory_size)
+            if self.temp_memory_size > 0:
+                tmp_memory = utils.convert_size_bytes(self.temp_memory_size)
+                memory = f"{memory} ({tmp_memory} tmp)"
+            props["memory"] = memory
+
+        return props
+
+    def __repr__(self) -> str:
+        props = self._show_props()
+        name = props.pop("name")
+
+        props = " ".join(
+            f"{key}={value!r}"
+            for key, value in props.items()
+        )
+
+        return f"<{name} {props}>" if props else f"<{name}>"
+
     def init_backend_with_model(self, model: "model_module.Model") -> None:
         """Initialize backend and link a new model instance"""
         self.model = model  # Set on frontend
         self.init_backend()
         self.model = model  # Set on backend
-    # ---
 
     @classmethod
     def from_model[C](cls: type[C], model: "model_module.Model") -> C:
