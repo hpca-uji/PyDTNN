@@ -26,19 +26,17 @@ except Exception as e:
     gpu_errors.append(e)
 
 try:
-    import pycuda.driver as drv  # type: ignore
+    import pycuda  # type: ignore
 except Exception as e:
-    drv = None
     gpu_errors.append(e)
+    pycuda = None
+    drv = None
+    gpuarray = None
     has_drv = False
 else:
-    has_drv = True
-
-try:
+    import pycuda.driver as drv  # type: ignore
     import pycuda.gpuarray as gpuarray  # type: ignore
-except Exception as e:
-    gpuarray = None
-    gpu_errors.append(e)
+    has_drv = True
 
 try:
     from pydtnn.backends.pycuda.utils import tensor_gpu  # type: ignore
