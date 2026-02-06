@@ -89,7 +89,8 @@ class LayerBase[T: Array](PromoteToBackend):
         if paths:
             props["path"] = ",".join(map(str, paths))
 
-        props["name"] = self.name
+        props["name"] = self.canonical_name
+        props["backend"] = self.name.removeprefix(self.canonical_name).lower()
 
         if self.nparams > 0:
             props["params"] = self.nparams
