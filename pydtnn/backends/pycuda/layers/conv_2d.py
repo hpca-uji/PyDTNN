@@ -108,7 +108,7 @@ class Conv2DPycuda(AbstractConv2DPycuda):
         self.forward = self._forward_standard
         self.backward = self._backward_standard
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes + (getConvolutionWorkspaceSize() - base_conv_memory)
+        self.real_memory_size += (getConvolutionWorkspaceSize() - base_conv_memory)
     # -----
 
     def _forward_standard(self, x: TensorGPU) -> TensorGPU:

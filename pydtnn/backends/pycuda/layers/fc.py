@@ -61,24 +61,30 @@ class FCPycuda(FC[TensorGPU], LayerPycuda):
         self.weights_cpu = self.weights_initializer(self.weights_shape, self.model.dtype)
         weights_gpu = gpuarray.to_gpu(self.weights_cpu)
         self.weights = TensorGPU(weights_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.real_memory_size += self.weights.nbytes
 
         if self.use_bias:
             # Biases
             self.biases_cpu = self.biases_initializer((1, *self.shape), self.model.dtype)
             biases_gpu = gpuarray.to_gpu(self.biases_cpu)
             self.biases = TensorGPU(biases_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+            self.real_memory_size += self.biases.nbytes
 
         y_gpu = gpuarray.empty((self.model.batch_size, self.shape[0]), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.real_memory_size += self.y.nbytes
 
         dx_gpu = gpuarray.empty((self.model.batch_size, *prev_shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.real_memory_size += self.dx.nbytes
 
         self.dw_cpu, self.dw = TensorGPU.initialize(self.weights.ary.shape, self.model.dtype,
                                                     tensor_format=self.model.tensor_format,
                                                     cudnn_dtype=self.model.cudnn_dtype,
                                                     gpudirect=self.model.gpudirect,
                                                     drv=(drv if self.model.gpudirect else None))
+        self.real_memory_size += self.dw.nbytes
+
         if self.use_bias:
             self.biases: TensorGPU
             self.db_cpu, self.db = TensorGPU.initialize(self.biases.ary.shape, self.model.dtype,
@@ -86,13 +92,12 @@ class FCPycuda(FC[TensorGPU], LayerPycuda):
                                                         cudnn_dtype=self.model.cudnn_dtype,
                                                         gpudirect=self.model.gpudirect,
                                                         drv=(drv if self.model.gpudirect else None))
-
-            self.real_memory_size += self.db.nbytes + self.biases.nbytes
+            self.real_memory_size += self.db.nbytes 
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
-        self.nparams = self.weights.nbytes + (self.biases.nbytes if self.use_bias else 0)
+        self.real_memory_size += self.one_vec_gpu.nbytes
 
-        self.real_memory_size += self.dx.nbytes + self.y.nbytes + self.weights.nbytes
+        self.nparams = self.weights.nbytes + (self.biases.nbytes if self.use_bias else 0)
 
         self.fwd_time = \
             matmul_time(m=self.model.batch_size, n=self.weights_cpu.shape[1], k=self.weights_cpu.shape[0],

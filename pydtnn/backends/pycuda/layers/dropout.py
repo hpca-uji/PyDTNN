@@ -29,26 +29,29 @@ class DropoutPycuda(Dropout[TensorGPU], LayerPycuda):
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.real_memory_size += self.y.nbytes
 
         # Derivative dx
         dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.real_memory_size += self.dx.nbytes
 
         self.states_size = cudnn.cudnnDropoutGetStatesSize(self.model.cudnn_handle)
         self.space_size = cudnn.cudnnDropoutGetReserveSpaceSize(self.y.desc)
 
         space_gpu = gpuarray.empty((self.space_size.value,), np.byte)
         self.space = TensorGPU(space_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
+        self.real_memory_size += self.space.nbytes
 
         states_gpu = gpuarray.empty((self.states_size.value,), np.byte)
         self.states = TensorGPU(states_gpu, self.model.tensor_format, self.model.cudnn_dtype, TensorGPU.TensorTypeEnum.OTHER)
+        self.real_memory_size += self.states.nbytes
 
         self.drop_desc = cudnn.cudnnCreateDropoutDescriptor()
 
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
                                         self.states.ptr, self.states_size, seed=0)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes + self.space.sinbytesze + self.states.nbytes
 
     def forward(self, x: TensorGPU) -> TensorGPU:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)

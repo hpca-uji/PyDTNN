@@ -50,11 +50,12 @@ class Conv2DPointwisePycuda(AbstractConv2DPycuda):
 
         y_gpu = gpuarray.to_gpu(np.zeros(shape=(self.model.batch_size, *self.shape), dtype=self.model.dtype))
         self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.real_memory_size += self.y.nbytes
 
         dx_gpu = gpuarray.zeros((self.model.batch_size, *self.shape), self.model.dtype)
         self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.real_memory_size += self.y.nbytes + self.dx.nbytes
+        self.real_memory_size += self.dx.nbytes
 
         self.forward = self._forward_pointwise
         self.backward = self._backward_pointwise
