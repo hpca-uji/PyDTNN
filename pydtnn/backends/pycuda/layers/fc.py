@@ -2,7 +2,7 @@ from typing import Any
 import numpy as np
 
 import pycuda.driver as drv  # type: ignore
-import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.gpuarray import gpuarray  # type: ignore
 
 from pydtnn.layers.fc import FC
 from pydtnn.utils.performance_models import matmul_time

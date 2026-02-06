@@ -1,5 +1,5 @@
 import numpy as np
-import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.gpuarray import gpuarray  # type: ignore
 
 from pydtnn.layers.dropout import Dropout
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum

@@ -1,6 +1,6 @@
 from pydtnn.layers.abstract.pool_2d_layer import AbstractPool2DLayer
 from pydtnn.libs import cudnn as cudnn
-import pycuda.gpuarray as gpuarray   # type: ignore
+from pycuda.gpuarray import gpuarray   # type: ignore
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda

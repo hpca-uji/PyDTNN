@@ -19,7 +19,7 @@ except Exception as e:
 from numpy import ndarray
 from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 
-import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.gpuarray import gpuarray  # type: ignore
 
 
 class LayerPycuda(Layer[TensorGPU]):

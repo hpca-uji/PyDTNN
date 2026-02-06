@@ -1,6 +1,6 @@
 import numpy as np
 
-import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.gpuarray import gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda

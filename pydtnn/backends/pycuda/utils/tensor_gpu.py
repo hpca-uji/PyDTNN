@@ -8,7 +8,7 @@ from pydtnn.utils.constants import ArrayShape
 from pydtnn.utils.tensor import TensorFormat, encode_shape, decode_shape
 
 try:
-    import pycuda.gpuarray as gpuarray  # type: ignore
+    from pycuda.gpuarray import gpuarray  # type: ignore
     from pycuda import driver as pycuda_driver  # type: ignore
     from pydtnn.libs import cudnn as cudnn
 except Exception:

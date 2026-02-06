@@ -1,4 +1,4 @@
-import pycuda.gpuarray as gpuarray  # type: ignore
+from pycuda.gpuarray import gpuarray  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU

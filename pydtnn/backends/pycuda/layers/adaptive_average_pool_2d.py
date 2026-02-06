@@ -6,7 +6,7 @@ from pydtnn.utils.constants import DTYPE2CTYPE
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
 from pydtnn.utils.performance_models import im2col_time, col2im_time
-import pycuda.gpuarray as gpuarray   # type: ignore
+from pycuda.gpuarray import gpuarray   # type: ignore
 from pycuda.compiler import SourceModule   # type: ignore
 from pycuda.driver import Function   # type: ignore
 

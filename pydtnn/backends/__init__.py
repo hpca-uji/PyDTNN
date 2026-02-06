@@ -78,7 +78,6 @@ class PromoteToBackend:
         if module_name.startswith("pydtnn.backends."):
             return None  # We are a backend
 
-        # importlib.invalidate_caches()
         for group, backends in spec.items():
             if f".{group}." not in f".{module_name}.":
                 continue  # Spec not relevant to class
@@ -86,7 +85,6 @@ class PromoteToBackend:
                 try:
                     backend_module_name = f"pydtnn.backends.{backend}.{submodule_name}"
                     backend_module = importlib.import_module(backend_module_name)
-                    # backend_module = importlib.import_module(f"{backend}.{submodule_name}", "pydtnn.backends")
                     cls_name = f"{cls.__name__}{backend.title()}"
                     cls = getattr(backend_module, cls_name)
                 except (ModuleNotFoundError, AttributeError):
