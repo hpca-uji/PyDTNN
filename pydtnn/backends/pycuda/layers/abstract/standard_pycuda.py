@@ -51,12 +51,12 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
 
-        self.im2_x = TensorArray.create_zeros_tensor(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.x_2im_var = TensorArray.create_zeros_tensor(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.im2_x = TensorArray.new_zeros(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.x_2im_var = TensorArray.new_zeros(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.y = TensorArray.create_zeros_tensor((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dw = TensorArray.create_zeros_tensor(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dx = TensorArray.create_zeros_tensor(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.new_zeros((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dw = TensorArray.new_zeros(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.new_zeros(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
     # -----
 
     @override

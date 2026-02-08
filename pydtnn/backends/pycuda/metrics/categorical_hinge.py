@@ -14,10 +14,10 @@ class CategoricalHingePycuda(CategoricalHinge[TensorArray], MetricPycuda):
 
     def _model_init(self) -> None:
         super()._model_init()
-        self.res = TensorArray.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
-                                                   tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_res = TensorArray.create_zeros_tensor(shape=(self.model.batch_size, ), dtype=np.dtype(self.model.dtype),
-                                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.res = TensorArray.new_zeros(shape=(1, ), dtype=np.dtype(self.model.dtype),
+                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_res = TensorArray.new_zeros(shape=(self.model.batch_size, ), dtype=np.dtype(self.model.dtype),
+                                               tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def _kernel_init(self) -> Function:
         _name = "categorical_hinge"

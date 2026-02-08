@@ -17,11 +17,11 @@ class RegressionMSEPycuda(RegressionMSE[TensorArray], MetricPycuda):
         n = self.model.batch_size
         num_classes = self.model.output_shape
 
-        self.res = TensorArray.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
-                                                   tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.res = TensorArray.new_zeros(shape=(1, ), dtype=np.dtype(self.model.dtype),
+                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
-        self.local_res = TensorArray.create_zeros_tensor(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
-                                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_res = TensorArray.new_zeros(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
+                                               tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
     # ----
 
     def _kernel_init(self) -> Function:
