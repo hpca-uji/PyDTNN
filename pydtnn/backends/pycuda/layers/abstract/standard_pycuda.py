@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.layers.abstract.conv_2d import AbstractConv2DPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE, ArrayShape
 
 
@@ -27,7 +27,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
     # -----
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
 
         self.dim_n = self.model.batch_size * self.ho * self.wo
@@ -51,12 +51,12 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
             case _:
                 raise NotImplementedError(f"\"{self.model.tensor_format}\" format not implemented.")
 
-        self.im2_x = TensorGPU.create_zeros_tensor(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.x_2im_var = TensorGPU.create_zeros_tensor(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.im2_x = TensorArray.create_zeros_tensor(im2_x_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.x_2im_var = TensorArray.create_zeros_tensor(x_2im_var_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
 
-        self.y = TensorGPU.create_zeros_tensor((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dw = TensorGPU.create_zeros_tensor(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
-        self.dx = TensorGPU.create_zeros_tensor(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray.create_zeros_tensor((self.model.batch_size, *self.shape), self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dw = TensorArray.create_zeros_tensor(dw_shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray.create_zeros_tensor(self.x.ary.shape, self.model.dtype, self.model.tensor_format, self.model.cudnn_dtype)
     # -----
 
     @override
@@ -88,7 +88,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
                 return super()._import_prop(key, value)
     # ---
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         # im2col / im2row
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         self.im2_func(x.ary, self.weights.ary,
@@ -108,7 +108,7 @@ class AbstractConv2DStandardPycuda(AbstractConv2DPycuda):
         return self.y
     # ---
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
 
         self.dx.fill(0)
         # im2col / im2row

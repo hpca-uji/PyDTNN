@@ -2,12 +2,12 @@ import numpy as np
 from pycuda import gpuarray
 from pycuda.compiler import SourceModule
 
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.metrics.kl_divergence_metric import KLDivergenceMetric
 from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
 
 
-class KLDivergenceMetricPycuda(KLDivergenceMetric[TensorGPU], MetricPycuda):
+class KLDivergenceMetricPycuda(KLDivergenceMetric[TensorArray], MetricPycuda):
 
     def _kernel_init(self):
         module = SourceModule("""

@@ -5,11 +5,11 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.losses.categorical_cross_entropy import CategoricalCrossEntropy
 from pydtnn.backends.pycuda.losses.loss import LossPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorGPU]):
+class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorArray]):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "categorical_cross_entropy"
@@ -51,7 +51,7 @@ class CategoricalCrossEntropyPycuda(LossPycuda, CategoricalCrossEntropy[TensorGP
 
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:
         self.kernel(y_targ.ary, y_pred.ary, self.loss, self.dx.ary,
                     np.int32(batch_size), np.int32(self.shape[1]), np.float32(self.eps),
                     grid=self.grid, block=self.block,

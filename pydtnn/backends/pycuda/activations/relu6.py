@@ -1,6 +1,6 @@
 from pydtnn.activations.relu6 import Relu6
 from pydtnn.utils.performance_models import im2col_time, col2im_time
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
@@ -11,22 +11,22 @@ from pycuda.compiler import SourceModule  # type: ignore
 from pycuda.driver import Function  # type: ignore
 
 
-class Relu6Pycuda(Relu6[TensorGPU], ActivationPycuda):
+class Relu6Pycuda(Relu6[TensorArray], ActivationPycuda):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.mask: TensorGPU = None  # type: ignore
-        self.y: TensorGPU = None  # type: ignore
+        self.mask: TensorArray = None  # type: ignore
+        self.y: TensorArray = None  # type: ignore
     # ---
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
 
         y_gpu = gpuarray.zeros(x.ary.shape, self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         mask_gpu = gpuarray.zeros((self.model.batch_size, *self.prev_shape), self.model.dtype)
-        self.mask = TensorGPU(mask_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.mask = TensorArray(mask_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.memory_used += self.y.nbytes + self.mask.nbytes
 
@@ -97,7 +97,7 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         return SourceModule(code).get_function(_func_name)
     # ----
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
 
         n = np.prod(x.shape, dtype=np.int32)
@@ -106,13 +106,13 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
                            np.float32(self.cap), self.total_num_threads, n,
                            grid=self.grid, block=self.block, stream=self.model.stream)
 
-        self.y: TensorGPU = self.mask
+        self.y: TensorArray = self.mask
 
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, 0)
 
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
 
         n = np.prod(dy.shape, dtype=np.int32)
@@ -132,14 +132,14 @@ __global__ void {func_name}({T}* dx, {T}* dy, {T}* mask,
         n: int = self.model.batch_size * self.hi * self.wi * self.ci
 
         _max = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.max = TensorGPU(_max, self.model.tensor_format, self.model.cudnn_dtype)
+        self.max = TensorArray(_max, self.model.tensor_format, self.model.cudnn_dtype)
 
         _mask = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.mask = TensorGPU(_mask, self.model.tensor_format, self.model.cudnn_dtype)
+        self.mask = TensorArray(_mask, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.fwd_time = \
             im2col_time(m=self.ci, n=n, cpu_speed=self.model.cpu_speed,

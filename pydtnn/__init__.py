@@ -39,9 +39,9 @@ else:
     has_drv = True
 
 try:
-    from pydtnn.backends.pycuda.utils import tensor_gpu  # type: ignore
+    from pydtnn.backends.pycuda.utils import tensor_array  # type: ignore
 except Exception as e:
-    tensor_gpu = None
+    tensor_array = None
     gpu_errors.append(e)
 
 try:

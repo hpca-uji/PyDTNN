@@ -2,7 +2,7 @@ import numpy as np
 
 from pydtnn.activations.log import Log
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape, DTYPE2CTYPE
 
 from pydtnn.libs import cudnn as cudnn
@@ -10,14 +10,14 @@ from pycuda import gpuarray  # type: ignore
 from pycuda.elementwise import ElementwiseKernel  # type: ignore
 
 
-class LogPycuda(Log[TensorGPU], ActivationPycuda):
+class LogPycuda(Log[TensorArray], ActivationPycuda):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.log: ElementwiseKernel = None
         self.dlog: ElementwiseKernel = None
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
 
         self.log = ElementwiseKernel(
@@ -34,19 +34,19 @@ class LogPycuda(Log[TensorGPU], ActivationPycuda):
 
         # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         self.log(x.ary, self.y.ary, stream=self.model.stream)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         # Compute dx
         self.dlog(dy.ary, self.dx.ary, stream=self.model.stream)
         return self.dx

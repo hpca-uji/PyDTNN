@@ -4,13 +4,13 @@ from pycuda import gpuarray   # type: ignore
 
 from pydtnn.tracers.events import PYDTNN_OPS_EVENT, PYDTNN_OPS_EVENTS, PYDTNN_EVENT_FINISHED, PYDTNN_OPS_EVENT_enum
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.performance_models import im2col_time, col2im_time
 from pydtnn.layers.layer import ParameterException
 from pydtnn.utils.constants import ArrayShape
 
 
-class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
+class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorArray], LayerPycuda):
     """
     Provides common methods to Pool2DPycuda classes.
     """
@@ -29,7 +29,7 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
         self.ho: int = None  # type: ignore
         self.wo: int = None  # type: ignore
 
-    def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorGPU, pool_mode: int) -> None:
+    def initialize_pool_2d_gpu(self, prev_shape: ArrayShape, x: TensorArray, pool_mode: int) -> None:
         # pool_mode comes from cudnn.CudnnPoolingMode
 
         if not (self.hdilation == 1 and self.wdilation == 1):
@@ -47,12 +47,12 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
 
         # Activations y
         y_gpu = gpuarray.empty((self.model.batch_size, *self.shape), self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.y.nbytes
 
         # Derivative dx
         dx_gpu = gpuarray.empty(self.x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
         self.memory_used += self.dx.nbytes
 
         self.fwd_time = \
@@ -64,7 +64,7 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
                         cpu_speed=self.model.cpu_speed, memory_bw=self.model.memory_bw,
                         dtype=self.model.dtype)
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnPoolingForward(self.model.cudnn_handle, self.pool_desc, alpha,
@@ -73,7 +73,7 @@ class AbstractPool2DLayerPycuda(AbstractPool2DLayer[TensorGPU], LayerPycuda):
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, PYDTNN_EVENT_FINISHED)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.BACKWARD_CUDNN_DX)
         # Compute dx

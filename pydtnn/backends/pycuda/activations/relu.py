@@ -3,17 +3,17 @@ from pycuda import gpuarray  # type: ignore
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.pycuda.activations.activation import ActivationPycuda
 from pydtnn.libs import cudnn as cudnn
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import ArrayShape
 
 
-class ReluPycuda(Relu[TensorGPU], ActivationPycuda):
+class ReluPycuda(Relu[TensorArray], ActivationPycuda):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.act_desc = None
 
-    def _model_init(self, prev_shape: ArrayShape, x: TensorGPU) -> None:
+    def _model_init(self, prev_shape: ArrayShape, x: TensorArray) -> None:
         super()._model_init(prev_shape, x)
 
         self.act_desc = cudnn.cudnnCreateActivationDescriptor()
@@ -27,22 +27,22 @@ class ReluPycuda(Relu[TensorGPU], ActivationPycuda):
 
         # Activations y
         y_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-        self.y = TensorGPU(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.y = TensorArray(y_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         # Derivative dx
         dx_gpu = gpuarray.empty(x.ary.shape, self.model.dtype)
-        self.dx = TensorGPU(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
+        self.dx = TensorArray(dx_gpu, self.model.tensor_format, self.model.cudnn_dtype)
 
         self.memory_used += self.y.nbytes + self.dx.nbytes
 
-    def forward(self, x: TensorGPU) -> TensorGPU:
+    def forward(self, x: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationForward(self.model.cudnn_handle, self.act_desc, alpha,
                                      x.desc, x.ptr, beta,
                                      self.y.desc, self.y.ptr)
         return self.y
 
-    def backward(self, dy: TensorGPU) -> TensorGPU:
+    def backward(self, dy: TensorArray) -> TensorArray:
         alpha, beta = 1.0, 0.0
         cudnn.cudnnActivationBackward(self.model.cudnn_handle, self.act_desc, alpha,
                                       self.y.desc, self.y.ptr,

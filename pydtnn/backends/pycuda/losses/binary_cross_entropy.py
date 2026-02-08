@@ -4,11 +4,11 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.losses.binary_cross_entropy import BinaryCrossEntropy
 from pydtnn.backends.pycuda.losses.loss import LossPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorGPU]):
+class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorArray]):
 
     def __init_gpu_kernel__(self) -> Function:
         _name = "binary_cross_entropy"
@@ -42,7 +42,7 @@ class BinaryCrossEntropyPycuda(LossPycuda, BinaryCrossEntropy[TensorGPU]):
         module = SourceModule(code).get_function(_name)
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU, batch_size: int) -> tuple[float, TensorGPU]:
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray, batch_size: int) -> tuple[float, TensorArray]:
         assert len(y_targ.shape) == 2
         self.kernel(y_targ, y_pred, self.loss, self.dx.ary,
                     batch_size, self.shape[1], self.eps,

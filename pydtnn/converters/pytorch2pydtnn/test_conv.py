@@ -11,7 +11,7 @@ from copy import deepcopy
 from pydtnn.layers.conv_2d import Conv2D
 from pydtnn.utils import random
 
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 try:
     import pycuda.gpuarray as gpuarray
     from pydtnn.libs import cudnn as cudnn
@@ -98,7 +98,7 @@ def main():
 
         x = deepcopy(dataset)
         if KWARGS["enable_cudnn"]:
-            _dataset = TensorGPU(
+            _dataset = TensorArray(
                 gpu_arr=gpuarray.empty(shape=dataset.shape, dtype=KWARGS["dtype"]),
                 tensor_format=model.tensor_format, cudnn_dtype=model.cudnn_dtype)
             _dataset.ary.set(dataset)
@@ -109,7 +109,7 @@ def main():
         for i in range(num_layers):
             layer: Layer = model.layers[i]
             print(f"{layer=}")
-            x: np.ndarray | TensorGPU = layer.forward(x)
+            x: np.ndarray | TensorArray = layer.forward(x)
             print(f"{x.shape=}")
         print("\n----------")
 
@@ -117,7 +117,7 @@ def main():
         print("Backward")
         for i in range(num_layers - 1, 0, -1):
             layer: Layer = model.layers[i]
-            dy: np.ndarray | TensorGPU = layer.backward(dy)
+            dy: np.ndarray | TensorArray = layer.backward(dy)
             print(f"{dy.shape=}")
         print("\n=========\n")
 

@@ -5,11 +5,11 @@ from pycuda.driver import Function  # type: ignore
 
 from pydtnn.metrics.categorical_accuracy import CategoricalAccuracy
 from pydtnn.backends.pycuda.metrics.metric import MetricPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorGPU], MetricPycuda):
+class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorArray], MetricPycuda):
 
     def _model_init(self) -> None:
         super()._model_init()
@@ -45,7 +45,7 @@ class CategoricalAccuracyPycuda(CategoricalAccuracy[TensorGPU], MetricPycuda):
         module = SourceModule(code).get_function(_name)
         return module
 
-    def compute(self, y_pred: TensorGPU, y_targ: TensorGPU) -> float:
+    def compute(self, y_pred: TensorArray, y_targ: TensorArray) -> float:
         self.kernel(y_targ.ary, y_pred.ary, self.cost,
                     np.int32(self.model.batch_size), np.int32(self.shape[1]),
                     grid=self.grid, block=self.block,

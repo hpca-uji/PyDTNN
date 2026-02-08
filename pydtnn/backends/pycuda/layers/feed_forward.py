@@ -1,12 +1,12 @@
 from pydtnn.backends.pycuda.layers.abstract.block_layer import AbstractBlockLayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.fc import FC
 from pydtnn.layers.dropout import Dropout
 from pydtnn.activations.relu import Relu
 from pydtnn.layers.feed_forward import FeedForward
 
 
-class FeedForwardPycuda(FeedForward[TensorGPU], AbstractBlockLayerPycuda):
+class FeedForwardPycuda(FeedForward[TensorArray], AbstractBlockLayerPycuda):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.FC_1 = FC(shape=(self.d_ff,), use_bias=False)

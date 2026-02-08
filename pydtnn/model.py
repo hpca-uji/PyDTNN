@@ -18,11 +18,11 @@ import numpy as np
 from tqdm import tqdm
 
 # TODO: Check if all the elements imported here are necessary and if they are corretly set in Model's code.
-from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_gpu, nccl, cudnn, cublas  # type: ignore (cublas exist)
+from pydtnn import MPI_MODULE, Cudnn_Handle_Type, Cublas_Handle_Type, gpu_errors, MPI, drv, gpuarray, tensor_array, nccl, cudnn, cublas  # type: ignore (cublas exist)
 from pydtnn import rank, nprocs, hostname, ranks_per_node, num_gpus, supported_gpu, nccl_comm, cudnn_handle, cublas_handle, device, context, stream
 
 from pydtnn import utils
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.activations.relu import Relu
 from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.libs.mpi import proto as PROTOCOL
@@ -944,10 +944,10 @@ class Model[T: Array]:
         # If working with CUDA, self.y_batch must be in a GPU's data structure.
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = TensorGPU(
+            tensor_ary = TensorArray(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
-            self.y_batch = tensor_gpu  # type: ignore
+            self.y_batch = tensor_ary  # type: ignore
 
         self.history = {lm: [] for lm in (self.loss_and_metrics + [f"val_{m}" for m in self.loss_and_metrics])}
 
@@ -1236,10 +1236,10 @@ class Model[T: Array]:
 
         if self.enable_cudnn and self.y_batch is None:
             assert gpuarray and self.cudnn_dtype
-            tensor_gpu = TensorGPU(
+            tensor_ary = TensorArray(
                 gpuarray.empty((self.batch_size, *self.layers[-1].shape), self.dtype),
                 self.tensor_format, self.cudnn_dtype)
-            self.y_batch = tensor_gpu  # type: ignore
+            self.y_batch = tensor_ary  # type: ignore
 
         self.comm_nsamples = list(zip(*self.comm.allgather(self.dataset._nsamples) if self.comm else [self.dataset._nsamples]))
 

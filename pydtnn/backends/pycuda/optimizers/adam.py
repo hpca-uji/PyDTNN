@@ -7,11 +7,11 @@ from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.optimizers.adam import Adam
 
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
+class AdamPycuda(Adam[TensorArray], OptimizerPycuda):
     """
     AdamPycuda optimizer
     """
@@ -79,8 +79,8 @@ class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             m = self.context[layer.id]["m_%s" % w_]
             v = self.context[layer.id]["v_%s" % w_]
-            w: TensorGPU
-            dw: TensorGPU
+            w: TensorArray
+            dw: TensorArray
             m: gpuarray.GPUArray
             v: gpuarray.GPUArray
 

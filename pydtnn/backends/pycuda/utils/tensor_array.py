@@ -15,7 +15,7 @@ except Exception:
     pass
 
 
-class TensorGPU:
+class TensorArray:
 
     class TensorTypeEnum(StrEnum):
         TENSOR = auto()
@@ -30,8 +30,8 @@ class TensorGPU:
                             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int | None = None,
                             gpudirect: bool = False, cublas: bool = False):
         gpu_arr = gpuarray.empty(shape, dtype)
-        return TensorGPU(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
-                         tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
+                           tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
     # ---
 
     @staticmethod
@@ -40,19 +40,19 @@ class TensorGPU:
                             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR, desc: int | None = None,
                             gpudirect: bool = False, cublas: bool = False):
         gpu_arr = gpuarray.zeros(shape, dtype)
-        return TensorGPU(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
-                         tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
+        return TensorArray(gpu_arr=gpu_arr, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype,
+                           tensor_type=tensor_type, desc=desc, gpudirect=gpudirect, cublas=cublas)
 
     @staticmethod
     def new_gpudirect(drv: "pycuda_driver", shape: ArrayShape, dtype: np.dtype,
                       tensor_format: TensorFormat, cudnn_dtype: int,
                       tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                      desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
+                      desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = drv.aligned_zeros(shape, dtype)
         x_gpu = drv.register_host_memory(x_cpu, flags=drv.mem_host_register_flags.DEVICEMAP)
 
-        x_gpu = TensorGPU(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                          desc=desc, gpudirect=gpudirect, cublas=cublas)
+        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                            desc=desc, gpudirect=gpudirect, cublas=cublas)
 
         return (x_cpu, x_gpu)
     # ---
@@ -61,12 +61,12 @@ class TensorGPU:
     def new_standard(shape: ArrayShape, dtype: np.dtype,
                      tensor_format: TensorFormat, cudnn_dtype: int,
                      tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                     desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorGPU"]:
+                     desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.empty(shape, dtype)
 
-        x_gpu = TensorGPU(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                          desc=desc, gpudirect=gpudirect, cublas=cublas)
+        x_gpu = TensorArray(x_gpu, tensor_format=tensor_format, cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                            desc=desc, gpudirect=gpudirect, cublas=cublas)
 
         return (x_cpu, x_gpu)
 
@@ -75,16 +75,16 @@ class TensorGPU:
             tensor_format: TensorFormat, cudnn_dtype: int,
             tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
             desc: int | None = None, gpudirect: bool = False, cublas: bool = False,
-            drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorGPU"]:
+            drv: "pycuda_driver" = None) -> tuple[np.ndarray, "TensorArray"]:
         if drv is not None:
-            return TensorGPU.new_gpudirect(drv=drv, shape=shape,
-                                           dtype=dtype, tensor_format=tensor_format,
-                                           cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                           desc=desc, gpudirect=gpudirect, cublas=cublas)
+            return TensorArray.new_gpudirect(drv=drv, shape=shape,
+                                             dtype=dtype, tensor_format=tensor_format,
+                                             cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                             desc=desc, gpudirect=gpudirect, cublas=cublas)
         else:
-            return TensorGPU.new_standard(shape=shape, dtype=dtype, tensor_format=tensor_format,
-                                          cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                          desc=desc, gpudirect=gpudirect, cublas=cublas)
+            return TensorArray.new_standard(shape=shape, dtype=dtype, tensor_format=tensor_format,
+                                            cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                            desc=desc, gpudirect=gpudirect, cublas=cublas)
 
     # ---
 
@@ -112,22 +112,22 @@ class TensorGPU:
         return copy.deepcopy(self)
 
     def __copy__(self):
-        return TensorGPU(gpu_arr=self.ary,
-                         tensor_format=self.tensor_format,
-                         cudnn_dtype=self.cudnn_dtype,
-                         tensor_type=self.tensor_type,
-                         gpudirect=self.gpudirect,
-                         cublas=self.cublas,
-                         desc=self.desc)
+        return TensorArray(gpu_arr=self.ary,
+                           tensor_format=self.tensor_format,
+                           cudnn_dtype=self.cudnn_dtype,
+                           tensor_type=self.tensor_type,
+                           gpudirect=self.gpudirect,
+                           cublas=self.cublas,
+                           desc=self.desc)
 
     def __deepcopy__(self, memo: dict):
-        obj = TensorGPU(gpu_arr=copy.deepcopy(self.ary, memo),
-                        tensor_format=self.tensor_format,
-                        cudnn_dtype=self.cudnn_dtype,
-                        tensor_type=self.tensor_type,
-                        gpudirect=self.gpudirect,
-                        cublas=self.cublas,
-                        desc=-1)
+        obj = TensorArray(gpu_arr=copy.deepcopy(self.ary, memo),
+                          tensor_format=self.tensor_format,
+                          cudnn_dtype=self.cudnn_dtype,
+                          tensor_type=self.tensor_type,
+                          gpudirect=self.gpudirect,
+                          cublas=self.cublas,
+                          desc=-1)
         memo[id(self)] = obj
         return obj
 

@@ -7,7 +7,7 @@ from pydtnn.layers.multi_head_attention import MultiHeadAttention
 from pydtnn.layers.dropout import Dropout
 from pydtnn.layers.feed_forward import FeedForward
 from pydtnn.layers.layer_normalization import LayerNormalization
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.layers.encoder import Encoder
 
 
@@ -49,21 +49,21 @@ class EncoderPycuda(AbstractBlockLayerPycuda, Encoder):
         # self.dropout_1.initialize(prev_shape=self.multiheadattention.shape, x=self.multiheadattention.y)
         self.layernormalization_1._model_init(prev_shape=self.shape, x=self.multiheadattention.y)
 
-        self.layernormalization_1_y_flatten = TensorGPU(self.flatten(self.layernormalization_1.y).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.layernormalization_1_y_flatten = TensorArray(self.flatten(self.layernormalization_1.y).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         self.feedforward._model_init(prev_shape=self.layernormalization_1.shape, x=self.layernormalization_1_y_flatten)
 
-        self.feedforward_y_unflatten = TensorGPU(self.unflatten(self.feedforward.y).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
-        self.feedforward_dx_unflatten = TensorGPU(self.unflatten(self.feedforward.dx).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.feedforward_y_unflatten = TensorArray(self.unflatten(self.feedforward.y).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.feedforward_dx_unflatten = TensorArray(self.unflatten(self.feedforward.dx).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         self.dropout_2._model_init(prev_shape=self.feedforward.shape, x=self.feedforward_y_unflatten)
-        self.dropout_2_dx_flatten = TensorGPU(self.flatten(self.dropout_2.dx).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dropout_2_dx_flatten = TensorArray(self.flatten(self.dropout_2.dx).ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         self.layernormalization_2._model_init(prev_shape=self.dropout_2.shape, x=self.dropout_2.y)
 
         self.y = self.layernormalization_2.y
         x_aux = self.multiheadattention.dquery
-        self.dx = TensorGPU(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
+        self.dx = TensorArray(x_aux.ary, self.model.tensor_fmt, self.model.cudnn_dtype)
 
         self.flatten(self.feedforward.y)  # FeedForward uses shape while LayerNormalization and Dropout dont
         self.flatten(self.feedforward.dx)  # FeedForward uses shape while LayerNormalization and Dropout dont

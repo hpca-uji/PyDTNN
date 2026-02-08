@@ -6,11 +6,11 @@ from pycuda.elementwise import ElementwiseKernel  # type: ignore
 from pydtnn.backends.pycuda.optimizers.optimizer import OptimizerPycuda
 from pydtnn.optimizers.rmsprop import RMSProp
 from pydtnn.backends.pycuda.layers.layer import LayerPycuda
-from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.backends.pycuda.utils.tensor_array import TensorArray
 from pydtnn.utils.constants import DTYPE2CTYPE
 
 
-class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
+class RMSPropPycuda(RMSProp[TensorArray], OptimizerPycuda):
     """
     RMSPropPycuda Optimizer
     """
@@ -66,8 +66,8 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
         for w_, dw_ in layer.grad_vars.items():
             w, dw = getattr(layer, w_), getattr(layer, dw_)
             cache = self.context[layer.id]["cache_%s" % w_]
-            w: TensorGPU
-            dw: TensorGPU
+            w: TensorArray
+            dw: TensorArray
             cache: gpuarray.GPUArray
 
             if self.gpudirect:
