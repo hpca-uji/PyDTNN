@@ -1,5 +1,6 @@
 import numpy as np
 from pydtnn.backends.pycuda.utils.tensor_gpu import TensorGPU
+from pydtnn.layer_base import LayerBase
 from pydtnn.optimizers.optimizer import Optimizer
 
 #  TODO: Fix this.
@@ -34,3 +35,10 @@ class OptimizerPycuda(Optimizer[TensorGPU]):
         threads = min(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS)
         blocks = max(self.model.real_batch_size, self.LIMIT_THREADS_AND_BLOCKS) // threads + 1
         return threads, blocks
+
+    def _model_init(self, list_layers: list[LayerBase[TensorGPU]]) -> None:
+        super()._model_init(list_layers)
+        self._kernel_init()
+
+    def _kernel_init(self) -> Function:
+        pass

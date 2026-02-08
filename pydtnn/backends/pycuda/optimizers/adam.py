@@ -18,19 +18,18 @@ class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
 
     def __init__(self, learning_rate=1e-2, beta1=0.99, beta2=0.999, epsilon=1e-7, decay=0.0):
         super().__init__(learning_rate, beta1, beta2, epsilon, decay)
-    
-    def get_pycuda_kernel(self) -> None:
-        dtype = np.dtype(self.model.dtype)
+
+    def _kernel_init(self) -> None:
         func_pow = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}
 
         # --- GPU ---
         parameters_gpu = "{T} *w, {T} *dw, {T} *m, {T} *v, float it, " \
-                         "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[dtype])
+                         "float lr, float decay, float beta1, float beta2, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         operations_gpu = """
             m[i] = beta1 * m[i] + (1 - beta1) * dw[i];
             v[i] = beta2 * v[i] + (1 - beta2) * {func}(dw[i], 2);
             w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
-        """.format(func=func_pow[dtype])
+        """.format(func=func_pow[self.model.dtype])
 
         self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
         # -----------
@@ -51,8 +50,8 @@ class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
                                               sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
                 }}
             }}"""
-        code = code.format(T=DTYPE2CTYPE[dtype],
-                           func=func_pow[dtype],
+        code = code.format(T=DTYPE2CTYPE[self.model.dtype],
+                           func=func_pow[self.model.dtype],
                            name=_name)
 
         self.update_gpudirect = SourceModule(code).get_function(_name)
@@ -60,7 +59,6 @@ class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
         super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
-        self.get_pycuda_kernel()
 
         for layer in list_layers:
             self.context[layer.id] = dict[str, int | gpuarray.GPUArray]()

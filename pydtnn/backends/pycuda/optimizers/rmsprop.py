@@ -19,13 +19,11 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
         super().__init__(learning_rate, rho, epsilon, decay)
         # -------------
 
-    def get_pycuda_kernel(self) -> None:
-        dtype = np.dtype(self.model.dtype)
-
-        pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[dtype]
+    def _kernel_init(self) -> None:
+        pow_func = {np.dtype(np.float32): "powf", np.dtype(np.float64): "pow"}[self.model.dtype]
 
         # --- GPU ---
-        parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[dtype])
+        parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         operations_gpu = "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2); \
                                              w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(func=pow_func)
         self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
@@ -43,7 +41,7 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
                     w[i] -= lr * (decay * w[i] + (dw[i] / sqrt(cache[i] + epsilon)));
                 }}
         }}
-        """.format(T=DTYPE2CTYPE[dtype],
+        """.format(T=DTYPE2CTYPE[self.model.dtype],
                    func=pow_func,
                    name=_name
                    )
@@ -52,7 +50,6 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
 
     def _model_init(self, list_layers: list[LayerPycuda]) -> None:
         super()._model_init(list_layers)  # type: ignore (The type is correct: LayerPycuda extends LayerBase)
-        self.get_pycuda_kernel()
 
         for layer in list_layers:
             list_grad_vars = list(layer.grad_vars.keys())
