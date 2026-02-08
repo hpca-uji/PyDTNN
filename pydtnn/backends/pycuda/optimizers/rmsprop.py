@@ -26,7 +26,7 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
         parameters_gpu = "{T} *w, {T} *dw, {T} *cache, float lr, float decay, float rho, float epsilon".format(T=DTYPE2CTYPE[self.model.dtype])
         operations_gpu = "cache[i] = rho * cache[i] + (1 - rho) * {func}(dw[i], 2); \
                                              w[i] -= lr * (decay * w[i] + (dw[i] / sqrtf(cache[i] + epsilon)))".format(func=pow_func)
-        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
+        self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "RMSProp_kernel")
         # -----------
 
         # GPU DIRECT -
@@ -81,6 +81,6 @@ class RMSPropPycuda(RMSProp[TensorGPU], OptimizerPycuda):
                                       grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
                                       stream=layer.stream_2)
             else:
-                self.update_gpu(w.ary, dw.ary, cache, np.float32(self.learning_rate),
+                self.update_kernel(w.ary, dw.ary, cache, np.float32(self.learning_rate),
                                 np.float32(self.decay), np.float32(self.rho),
                                 np.float32(self.epsilon), stream=layer.stream_2)

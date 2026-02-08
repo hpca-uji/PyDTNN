@@ -25,7 +25,7 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
                    False: "w[i] -= lr * (decay * w[i] + v[i])"}[self.nesterov]
         operations_gpu = "v[i] = momentum * v[i] + dw[i]; {nesterov_ops};".format(nesterov_ops=ops_gpu)
 
-        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
+        self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "SGD_kernel")
         # ------------
 
         # GPU Direct -
@@ -84,6 +84,6 @@ class SGDPycuda(SGD[TensorGPU], OptimizerPycuda):
                                       stream=layer.stream_2)
             else:
                 n = np.int32(np.prod(w.shape))
-                self.update_gpu(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
+                self.update_kernel(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
                                 np.float32(self.decay), np.float32(self.momentum),
                                 stream=layer.stream_2)

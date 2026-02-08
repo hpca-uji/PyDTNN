@@ -21,7 +21,7 @@ class OptimizerPycuda(Optimizer[TensorGPU]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gpudirect = False
-        self.update_gpu: ElementwiseKernel = None # type: ignore (It will be intialized later)
+        self.update_kernel: ElementwiseKernel = None # type: ignore (It will be intialized later)
         self.update_gpudirect: Function = None # type: ignore (It will be intialized later)
 
     def set_gpudirect(self, gpudirect: bool):

@@ -31,7 +31,7 @@ class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
             w[i] -= lr * (decay * w[i] + ((m[i] / (1 - {func}(beta1, it))) / sqrt(v[i] / (1 - {func}(beta2, it)) + epsilon)));
         """.format(func=func_pow[self.model.dtype])
 
-        self.update_gpu = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
+        self.update_kernel = ElementwiseKernel(parameters_gpu, operations_gpu, "Adam_kernel")
         # -----------
 
         # GPU DIRECT-
@@ -96,7 +96,7 @@ class AdamPycuda(Adam[TensorGPU], OptimizerPycuda):
                                       grid=(int(blocks), 1, 1), block=(int(threads), 1, 1),
                                       stream=layer.stream_2)
             else:
-                self.update_gpu(w.ary, dw.ary, m, v,
+                self.update_kernel(w.ary, dw.ary, m, v,
                                 np.float32(it), np.float32(self.learning_rate),
                                 np.float32(self.decay), np.float32(self.beta1),
                                 np.float32(self.beta2), np.float32(self.epsilon),
