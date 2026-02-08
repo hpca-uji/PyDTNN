@@ -357,7 +357,7 @@ class Dataset(ABC):
         # batch_size: en memoria
         # local_batch_size: a usar en esta iteración.
 
-        # Casos: 
+        # Casos:
         # -> El generador ha devuelto más datos que los que se necesita (es decir, que batch_size >= local_batch_size)
         #   ==> Se tienen que hacer un corte y guardarnos el restante para la sigueinte
         # -> El generador ha devuelto menos datos que los que se necesita (es decir, que batch_size < local_batch_size)
@@ -383,7 +383,7 @@ class Dataset(ABC):
                     break
                     # Quedan más datos, pero tenemos suficientes ==> continuamos fuera del for.
                 # else: Quedan datos, pero aún no hemos llenado el batch.
-            #else (del for): # No queda más dataset
+            # else (del for): # No queda más dataset
 
             if batch_size <= 0:
                 break

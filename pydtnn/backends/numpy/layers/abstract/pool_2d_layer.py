@@ -91,4 +91,3 @@ class AbstractPool2DLayerNumpy(AbstractPool2DLayer[np.ndarray], LayerNumpy):
 
     def _backward_nhwc(self, dy: np.ndarray) -> np.ndarray:
         raise NotImplementedError(f"This is a fake method. {self} must implement _backward_nhwc.")
-

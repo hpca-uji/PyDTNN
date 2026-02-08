@@ -63,7 +63,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
             if gpu_layer.weights_cpu is not None:
                 weights_gpu = gpuarray.to_gpu(gpu_layer.weights_cpu)
                 gpu_layer.weights = TensorArray(weights_gpu, gpu_layer.model.tensor_format,
-                                              gpu_layer.model.cudnn_dtype, TensorArray.TensorTypeEnum.FILTER)
+                                                gpu_layer.model.cudnn_dtype, TensorArray.TensorTypeEnum.FILTER)
             if gpu_layer.use_bias:
                 if cpu_layer.biases is None:
                     continue
@@ -72,7 +72,7 @@ class ModelGpuTestCase(ModelCommonTestCase):
                 if gpu_layer.biases_cpu is not None:
                     biases_gpu = gpuarray.to_gpu(gpu_layer.biases_cpu)
                     gpu_layer.biases = TensorArray(biases_gpu, gpu_layer.model.tensor_format,
-                                                 gpu_layer.model.cudnn_dtype)
+                                                   gpu_layer.model.cudnn_dtype)
 
     def set_data_to_ary(self, ary: "gpuarray",  # type: ignore
                         data: np.ndarray, layer: LayerBase) -> None:

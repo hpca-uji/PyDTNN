@@ -79,20 +79,20 @@ class FCPycuda(FC[TensorArray], LayerPycuda):
         self.memory_used += self.dx.nbytes
 
         self.dw_cpu, self.dw = TensorArray.new(self.weights.ary.shape, self.model.dtype,
-                                                    tensor_format=self.model.tensor_format,
-                                                    cudnn_dtype=self.model.cudnn_dtype,
-                                                    gpudirect=self.model.gpudirect,
-                                                    drv=(drv if self.model.gpudirect else None))
+                                               tensor_format=self.model.tensor_format,
+                                               cudnn_dtype=self.model.cudnn_dtype,
+                                               gpudirect=self.model.gpudirect,
+                                               drv=(drv if self.model.gpudirect else None))
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.biases: TensorArray
             self.db_cpu, self.db = TensorArray.new(self.biases.ary.shape, self.model.dtype,
-                                                        tensor_format=self.model.tensor_format,
-                                                        cudnn_dtype=self.model.cudnn_dtype,
-                                                        gpudirect=self.model.gpudirect,
-                                                        drv=(drv if self.model.gpudirect else None))
-            self.memory_used += self.db.nbytes 
+                                                   tensor_format=self.model.tensor_format,
+                                                   cudnn_dtype=self.model.cudnn_dtype,
+                                                   gpudirect=self.model.gpudirect,
+                                                   drv=(drv if self.model.gpudirect else None))
+            self.memory_used += self.db.nbytes
 
         self.one_vec_gpu = gpuarray.to_gpu(np.ones((self.model.batch_size,), self.model.dtype))
         self.memory_used += self.one_vec_gpu.nbytes

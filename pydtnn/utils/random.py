@@ -27,7 +27,7 @@ class SafeGenerator:
     def __getattr__(self, key: str):
         return getattr(self._generator, key)
 
-    def shuffle(self, x: list | np.ndarray, axis=0) ->  None:
+    def shuffle(self, x: list | np.ndarray, axis=0) -> None:
         """Modify an array or sequence in-place by shuffling its contents."""
         # NOTE: CuPy does not provide an implementation
 

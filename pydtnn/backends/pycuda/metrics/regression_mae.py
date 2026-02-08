@@ -18,10 +18,10 @@ class RegressionMAEPycuda(RegressionMAE[TensorArray], MetricPycuda):
         num_classes = self.model.output_shape
 
         self.res = TensorArray.create_zeros_tensor(shape=(1, ), dtype=np.dtype(self.model.dtype),
-                                                 tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+                                                   tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
         self.local_res = TensorArray.create_zeros_tensor(shape=(n, *num_classes), dtype=np.dtype(self.model.dtype),
-                                                       tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+                                                         tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def _kernel_init(self) -> Function:
         _name = "regression_mae"

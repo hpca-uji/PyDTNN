@@ -85,5 +85,5 @@ class SGDPycuda(SGD[TensorArray], OptimizerPycuda):
             else:
                 n = np.int32(np.prod(w.shape))
                 self.update_kernel(w.ary, dw.ary, velocity, np.float32(self.learning_rate),
-                                np.float32(self.decay), np.float32(self.momentum),
-                                stream=layer.stream_2)
+                                   np.float32(self.decay), np.float32(self.momentum),
+                                   stream=layer.stream_2)

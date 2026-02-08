@@ -52,7 +52,6 @@ class DropoutPycuda(Dropout[TensorArray], LayerPycuda):
         cudnn.cudnnSetDropoutDescriptor(self.drop_desc, self.model.cudnn_handle, self.rate,
                                         self.states.ptr, self.states_size, seed=0)
 
-
     def forward(self, x: TensorArray) -> TensorArray:
         self.model.tracer.emit_event(PYDTNN_OPS_EVENT, self.id * PYDTNN_OPS_EVENTS + PYDTNN_OPS_EVENT_enum.FORWARD_CUDNN)
         cudnn.cudnnDropoutForward(self.model.cudnn_handle, self.drop_desc,

@@ -98,7 +98,7 @@ class NadamPycuda(Nadam[TensorArray], OptimizerPycuda):
                                       stream=layer.stream_2)
             else:
                 self.update_kernel(w.ary, dw.ary, m, v,
-                                np.float32(it), np.float32(self.learning_rate),
-                                np.float32(self.decay), np.float32(self.beta1),
-                                np.float32(self.beta2), np.float32(self.epsilon),
-                                stream=layer.stream_2)
+                                   np.float32(it), np.float32(self.learning_rate),
+                                   np.float32(self.decay), np.float32(self.beta1),
+                                   np.float32(self.beta2), np.float32(self.epsilon),
+                                   stream=layer.stream_2)

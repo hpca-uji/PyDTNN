@@ -127,24 +127,24 @@ class MaxPool2DNumpy(MaxPool2D[np.ndarray], AbstractPool2DLayerNumpy):
     ##########
 
     def max_pool(self, x: np.ndarray, y: np.ndarray, idx_maxval: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-        x = np.pad(x, ((0,0), (0,0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
+        x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
         for kh in range(self.kh):
             for kw in range(self.kw):
                 h_start = kh * self.hdilation
                 w_start = kw * self.wdilation
                 h_end = h_start + self.hstride * self.ho
                 w_end = w_start + self.wstride * self.wo
-                
+
                 _x = x[:, :, h_start:h_end:self.hstride, w_start:w_end:self.wstride]
                 max_val: np.ndarray = np.max(_x, axis=(2, 3))
                 _idx_maxval: np.ndarray = np.argmax(np.argmax(_x, axis=3), axis=2)
 
-                #y[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = max_val[:, :]
-                #idx_maxval[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = _idx_maxval[:, :]
-                #breakpoint()
+                # y[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = max_val[:, :]
+                # idx_maxval[:, :, h_start:h_end:self.vstride, w_start:w_end:self.hstride] = _idx_maxval[:, :]
+                # breakpoint()
                 for i in range(h_start, h_end // self.hstride):
                     for j in range(w_start, w_end // self.wstride):
                         y[:, :, i, j] = max_val[:, :]
                         idx_maxval[:, :, i, j] = _idx_maxval[:, :]
-                #breakpoint()
+                # breakpoint()
         return (y, idx_maxval)

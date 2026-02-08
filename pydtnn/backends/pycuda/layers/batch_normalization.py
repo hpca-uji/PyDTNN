@@ -74,17 +74,17 @@ class BatchNormalizationPycuda(BatchNormalization[TensorArray], LayerPycuda):
         self.memory_used += self.beta.nbytes
 
         self.dgamma_cpu, self.dgamma = TensorArray.new(self.gamma.ary.shape, self.model.dtype,
-                                                            tensor_format=self.model.tensor_format,
-                                                            cudnn_dtype=self.model.cudnn_dtype,
-                                                            gpudirect=self.model.gpudirect,
-                                                            drv=(drv if self.model.gpudirect else None))
+                                                       tensor_format=self.model.tensor_format,
+                                                       cudnn_dtype=self.model.cudnn_dtype,
+                                                       gpudirect=self.model.gpudirect,
+                                                       drv=(drv if self.model.gpudirect else None))
         self.memory_used += self.dgamma.nbytes
 
         self.dbeta_cpu, self.dbeta = TensorArray.new(self.beta.ary.shape, self.model.dtype,
-                                                          tensor_format=self.model.tensor_format,
-                                                          cudnn_dtype=self.model.cudnn_dtype,
-                                                          gpudirect=self.model.gpudirect,
-                                                          drv=(drv if self.model.gpudirect else None))
+                                                     tensor_format=self.model.tensor_format,
+                                                     cudnn_dtype=self.model.cudnn_dtype,
+                                                     gpudirect=self.model.gpudirect,
+                                                     drv=(drv if self.model.gpudirect else None))
         self.memory_used += self.dbeta.nbytes
 
         running_mean_gpu = gpuarray.to_gpu(self.moving_mean_initializer(shape_, self.model.dtype))

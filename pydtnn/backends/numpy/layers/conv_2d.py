@@ -93,7 +93,7 @@ class Conv2DNumpy(AbstractConv2DStandardNumpy):
 ##############
 
     def col2im_alt(self, x: np.ndarray, x_rows: np.ndarray) -> np.ndarray:
-        x = np.pad(x, ((0,0), (0,0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
+        x = np.pad(x, ((0, 0), (0, 0), (self.hpadding, self.hpadding), (self.wpadding, self.wpadding)), mode="constant")
         cols = list[np.ndarray]()
 
         for kh in range(self.kh):

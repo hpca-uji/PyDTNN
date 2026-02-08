@@ -64,15 +64,15 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 
         # Derivative dw and derivative db
         self.dw_cpu, self.dw = TensorArray.new(self.weights.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
-                                                    cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
-                                                    tensor_type=TensorArray.TensorTypeEnum.FILTER, drv=_drv)
+                                               cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
+                                               tensor_type=TensorArray.TensorTypeEnum.FILTER, drv=_drv)
         self.memory_used += self.dw.nbytes
 
         if self.use_bias:
             self.biases: TensorArray
             self.db_cpu, self.db = TensorArray.new(self.biases.ary.shape, self.model.dtype, tensor_format=self.model.tensor_format,
-                                                        cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
-                                                        tensor_type=bias_tensor_type, drv=_drv)
+                                                   cudnn_dtype=self.model.cudnn_dtype, gpudirect=self.model.gpudirect,
+                                                   tensor_type=bias_tensor_type, drv=_drv)
             self.memory_used += self.db.nbytes
     # ----
 
@@ -153,6 +153,7 @@ class AbstractConv2DPycuda(Conv2D[TensorArray], LayerPycuda):
 #########################################################################################################
 ## CUDA-RELATED COMMON CODE ##
 ##############################
+
 
     def cuda_sum_bias_axis_023(self, _func_name: str = "bias_sum_bwd_depthwise_conv_nchw") -> Function:
         _t = DTYPE2CTYPE[self.model.dtype]  # variable Type

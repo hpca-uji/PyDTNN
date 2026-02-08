@@ -7,7 +7,7 @@ from pydtnn.optimizers.optimizer import Optimizer
 try:
     from pycuda.driver import Function  # type: ignore
     from pycuda.elementwise import ElementwiseKernel  # type: ignore
-except:
+except BaseException:
     pass
 
 
@@ -21,8 +21,8 @@ class OptimizerPycuda(Optimizer[TensorArray]):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gpudirect = False
-        self.update_kernel: ElementwiseKernel = None # type: ignore (It will be intialized later)
-        self.update_gpudirect: Function = None # type: ignore (It will be intialized later)
+        self.update_kernel: ElementwiseKernel = None  # type: ignore (It will be intialized later)
+        self.update_gpudirect: Function = None  # type: ignore (It will be intialized later)
 
     def set_gpudirect(self, gpudirect: bool):
         self.gpudirect = gpudirect
