@@ -58,10 +58,10 @@ class TensorArray:
     # ---
 
     @staticmethod
-    def new_pair_standard(shape: ArrayShape, dtype: np.dtype,
-                          tensor_format: TensorFormat, cudnn_dtype: int,
-                          tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
-                          desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
+    def new_pair(shape: ArrayShape, dtype: np.dtype,
+                 tensor_format: TensorFormat, cudnn_dtype: int,
+                 tensor_type: TensorTypeEnum = TensorTypeEnum.TENSOR,
+                 desc: int | None = None, gpudirect: bool = False, cublas: bool = False) -> tuple[np.ndarray, "TensorArray"]:
         x_cpu = np.zeros(shape, dtype)
         x_gpu = gpuarray.empty(shape, dtype)
 
@@ -82,9 +82,9 @@ class TensorArray:
                                                   cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
                                                   desc=desc, gpudirect=gpudirect, cublas=cublas)
         else:
-            return TensorArray.new_pair_standard(shape=shape, dtype=dtype, tensor_format=tensor_format,
-                                                 cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
-                                                 desc=desc, gpudirect=gpudirect, cublas=cublas)
+            return TensorArray.new_pair(shape=shape, dtype=dtype, tensor_format=tensor_format,
+                                        cudnn_dtype=cudnn_dtype, tensor_type=tensor_type,
+                                        desc=desc, gpudirect=gpudirect, cublas=cublas)
 
     # ---
 

@@ -14,10 +14,10 @@ class RecallPycuda(Recall[TensorArray], MetricPycuda):
     def _model_init(self) -> None:
         super()._model_init()
         target_classes = self.model.output_shape[0]
-        self.recall = TensorArray.create_zeros_tensor(shape=(1, ), dtype=np.dtype(np.int32),
-                                                      tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
-        self.local_recall = TensorArray.create_zeros_tensor(shape=(target_classes, ), dtype=np.dtype(np.int32),
-                                                            tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.recall = TensorArray.new_zeros(shape=(1, ), dtype=np.dtype(np.int32),
+                                            tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
+        self.local_recall = TensorArray.new_zeros(shape=(target_classes, ), dtype=np.dtype(np.int32),
+                                                  tensor_format=self.model.tensor_format, cudnn_dtype=self.model.cudnn_dtype)
 
     def _kernel_init(self) -> Function:
         _name = "binary_confusion_matrix"
